@@ -288,8 +288,8 @@ var VodHome = (function () {
   function options() {
     var s = mode === 'wall' ? wall : shelves[at], it = current();
     UI.menu(kind === 'series' ? 'Shows' : 'Movies', [
-      { label: 'Order: ' + sortName(), action: sortMenu },
-      mode === 'home' && s && { label: 'See all of ' + RAW(s.title), sub: count(s.items.length, '1 title', '{n} titles') + ' as posters', action: function () { openWall(s); } },
+      { label: typeof I18n === 'undefined' ? 'Order: ' + sortName() : I18n.t('Order: {x}', { x: I18n.t(sortName()) }), action: sortMenu },
+      mode === 'home' && s && { label: typeof I18n === 'undefined' ? 'See all of ' + RAW(s.title) : I18n.t('See all of {x}', { x: String(s.title) }), sub: count(s.items.length, '1 title', '{n} titles') + ' as posters', action: function () { openWall(s); } },
       mode === 'home' && { label: 'Go to a shelf', action: function () { UI.menu('Go to a shelf', shelves.map(function (x, i) { return { label: RAW(x.title), sub: String(x.items.length), current: i === at, action: function () { at = i; draw(); } }; })); } },
       mode === 'home' && { label: 'Arrange shelves', sub: 'Move, switch off, pin categories', action: function () { arrangeMenu(s && (s.id.indexOf('holiday:') === 0 ? 'holidays' : s.id)); } },
       { label: 'All categories', sub: 'Green', action: function () { A.list(s && s.cat, it); } },

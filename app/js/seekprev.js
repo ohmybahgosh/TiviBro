@@ -14,6 +14,8 @@
    at a time, so a long jump has one ready. */
 var SeekPrev = (function () {
   'use strict';
+  // Elements with words on them, in the viewer's language (I18n: titles and names come as RAW and stay as they are).
+  function tel(tag, cls, text) { return U.el(tag, cls, text == null || typeof I18n === 'undefined' ? text : I18n.t(text)); }
   var STEP = 10, W = 320;
   var key = '', ok = null, movie = null, box = null, img = null, label = null, shownT = -1, wantT = -1, t0 = 0, timer = null, fill = null, made = {};
 
@@ -63,7 +65,7 @@ var SeekPrev = (function () {
   function build() {
     if (box) return box;
     var prog = document.querySelector('#osd .osd-prog'); if (!prog) return null;
-    box = U.el('div', 'seekprev hidden'); img = U.el('img', 'seekprev-pic'); img.alt = ''; label = U.el('div', 'seekprev-time');
+    box = tel('div', 'seekprev hidden'); img = tel('img', 'seekprev-pic'); img.alt = ''; label = tel('div', 'seekprev-time');
     img.onload = function () { box.classList.remove('wait'); box.classList.add('has'); };
     img.onerror = function () { box.classList.remove('wait'); };
     box.appendChild(img); box.appendChild(label); prog.appendChild(box);
@@ -83,11 +85,11 @@ var SeekPrev = (function () {
     var c = movie && movie.chapters || [], k = movie ? movie.u + '|' + d + '|' + c.length + '|' + bar.offsetWidth : '';
     if (k === marksFor) return;
     marksFor = k;
-    if (!marksEl) { marksEl = U.el('div', 'chapmarks'); prog.appendChild(marksEl); }
+    if (!marksEl) { marksEl = tel('div', 'chapmarks'); prog.appendChild(marksEl); }
     marksEl.innerHTML = '';
     marksEl.style.left = bar.offsetLeft + 'px'; marksEl.style.width = bar.offsetWidth + 'px'; marksEl.style.top = bar.offsetTop + 'px';
     if (!d || c.length < 2) return;
-    c.forEach(function (x) { if (x.s < 1 || x.s > d - 1) return; var e = U.el('i'); e.style.left = (100 * x.s / d) + '%'; marksEl.appendChild(e); });
+    c.forEach(function (x) { if (x.s < 1 || x.s > d - 1) return; var e = tel('i'); e.style.left = (100 * x.s / d) + '%'; marksEl.appendChild(e); });
   }
 
   /* The player's seek (views.js osd): t the time being sought to (null: not seeking), d the length, dir the way. */
@@ -166,9 +168,9 @@ var SeekPrev = (function () {
     var c = movie && movie.chapters || []; if (c.length < 2) return false;
     var v = video(), now = v ? v.currentTime : 0, at = 0;
     c.forEach(function (x, i) { if (now >= x.s) at = i; });
-    sheet = { at: at, onJump: onJump, onClose: onClose, el: U.el('div', 'chapsheet') };
-    sheet.el.appendChild(U.el('div', 'chapsheet-title', 'Chapters'));
-    sheet.track = U.el('div', 'chapsheet-track'); sheet.el.appendChild(sheet.track);
+    sheet = { at: at, onJump: onJump, onClose: onClose, el: tel('div', 'chapsheet') };
+    sheet.el.appendChild(tel('div', 'chapsheet-title', 'Chapters'));
+    sheet.track = tel('div', 'chapsheet-track'); sheet.el.appendChild(sheet.track);
     document.body.appendChild(sheet.el);
     drawChapters();
     return true;
@@ -178,10 +180,10 @@ var SeekPrev = (function () {
     var c = movie && movie.chapters || [], from = Math.max(0, Math.min(sheet.at - 2, c.length - 5)), pics = allowed();
     sheet.track.innerHTML = '';
     for (var i = from; i < Math.min(c.length, from + 5); i++) (function (x, i) {
-      var card = U.el('div', 'chapcard' + (i === sheet.at ? ' sel' : '') + (pics ? '' : ' nopic'));
-      if (pics) { var im = U.el('img', 'chapcard-pic'); im.alt = ''; im.onload = function () { card.classList.add('has'); }; im.src = link(picTime(x), i !== sheet.at); card.appendChild(im); made[picTime(x)] = 1; }
-      card.appendChild(U.el('div', 'chapcard-name', chapterName(x, i)));
-      card.appendChild(U.el('div', 'chapcard-time', fmt(x.s)));
+      var card = tel('div', 'chapcard' + (i === sheet.at ? ' sel' : '') + (pics ? '' : ' nopic'));
+      if (pics) { var im = tel('img', 'chapcard-pic'); im.alt = ''; im.onload = function () { card.classList.add('has'); }; im.src = link(picTime(x), i !== sheet.at); card.appendChild(im); made[picTime(x)] = 1; }
+      card.appendChild(tel('div', 'chapcard-name', chapterName(x, i)));
+      card.appendChild(tel('div', 'chapcard-time', fmt(x.s)));
       card.onclick = function () { sheet.at = i; jumpChapter(); };
       sheet.track.appendChild(card);
     })(c[i], i);

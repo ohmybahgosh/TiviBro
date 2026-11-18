@@ -5,13 +5,15 @@
    collection you have.  ◀ ▶ move along a row, ▲ ▼ between the buttons and the collection, Back closes. */
 var MediaMoviePage = (function () {
   'use strict';
+  // Elements with words on them, in the viewer's language (I18n: titles and names come as RAW and stay as they are).
+  function tel(tag, cls, text) { return U.el(tag, cls, text == null || typeof I18n === 'undefined' ? text : I18n.t(text)); }
   var $ = U.$, RAW = function (s) { return typeof I18n !== 'undefined' && I18n.raw ? I18n.raw(s) : s; };
   var pg = null;   // { m, back, row: 'buttons' | 'more', at, more: [], moreAt, trailer }
   var trailers = {};   // TMDB id -> YouTube id ('' none), for this session
 
   function box() {
     var b = $('mediaMovie');
-    if (!b) { b = U.el('div', 'shp-page mshp mmp'); b.id = 'mediaMovie'; $('viewMedia').appendChild(b); }
+    if (!b) { b = tel('div', 'shp-page mshp mmp'); b.id = 'mediaMovie'; $('viewMedia').appendChild(b); }
     return b;
   }
   function md(m) { return (m && m.metadata) || {}; }
@@ -67,7 +69,7 @@ var MediaMoviePage = (function () {
   }
   function reopen(m, back) { return function () { open(m, back); }; }
 
-  function img(src, cls) { var i = U.el('img', cls); i.decoding = 'async'; i.src = src; i.onerror = function () { if (!(typeof Net !== 'undefined' && Net.retryImage && Net.retryImage(this))) this.remove(); }; return i; }
+  function img(src, cls) { var i = tel('img', cls); i.decoding = 'async'; i.src = src; i.onerror = function () { if (!(typeof Net !== 'undefined' && Net.retryImage && Net.retryImage(this))) this.remove(); }; return i; }
   function hints() {
     UI.hints(pg.row === 'more' ? [['', 'OK  open'], ['', '◀ ▶  the collection'], ['', '▲  buttons'], ['', 'Back  close', 'back']]
       : [['', 'OK  choose'], ['', '◀ ▶  buttons'], pg.more.length > 1 ? ['', '▼  the collection'] : null, ['', 'Hold OK  options', 'hold'], ['', 'Back  close', 'back']].filter(Boolean));
@@ -77,42 +79,42 @@ var MediaMoviePage = (function () {
     var b = box(), m = pg.m, d = md(m);
     b.innerHTML = '';
     var bd = d.backdropHd || d.backdrop || '';
-    if (bd) { var bg = U.el('div', 'shp-bd'); bg.style.backgroundImage = 'url("' + String(bd).replace(/"/g, '%22') + '")'; b.appendChild(bg); }
-    b.appendChild(U.el('div', 'shp-fade'));
-    var info = U.el('div', 'shp-info');
-    info.appendChild(U.el('div', 'media-kicker', 'Movie'));
+    if (bd) { var bg = tel('div', 'shp-bd'); bg.style.backgroundImage = 'url("' + String(bd).replace(/"/g, '%22') + '")'; b.appendChild(bg); }
+    b.appendChild(tel('div', 'shp-fade'));
+    var info = tel('div', 'shp-info');
+    info.appendChild(tel('div', 'media-kicker', 'Movie'));
     if (d.logo) { var lg = img(d.logo, 'mmp-logo'); lg.alt = d.title || m.title; info.appendChild(lg); }
-    else info.appendChild(U.el('div', 'media-title', RAW(d.title || m.title || '')));
+    else info.appendChild(tel('div', 'media-title', RAW(d.title || m.title || '')));
     var px = (m.info || []).filter(function (x) { return /2160p|4K|HDR|Dolby Vision|DV/i.test(x); }).slice(0, 2).join(' ');
     var facts = [d.year || m.year, rt(d.runtime), String(d.genre || '').split(/\s*,\s*/).slice(0, 3).join(', '), d.rating ? '★ ' + d.rating : '', px,
       MediaStore.isWatched && MediaStore.isWatched(m.id) ? '✓ Watched' : ''].filter(Boolean).join('   ·   ');
-    if (facts) info.appendChild(U.el('div', 'media-facts', facts));
-    if (d.plot) info.appendChild(U.el('div', 'media-summary shp-plot mmp-plot', RAW(d.plot)));
+    if (facts) info.appendChild(tel('div', 'media-facts', facts));
+    if (d.plot) info.appendChild(tel('div', 'media-summary shp-plot mmp-plot', RAW(d.plot)));
     var who = [(d.directors || []).length ? 'Directed by ' + d.directors.join(', ') : '', d.cast ? 'With ' + d.cast : ''].filter(Boolean).join('   ·   ');
-    if (who) info.appendChild(U.el('div', 'mmp-who', RAW(who)));
+    if (who) info.appendChild(tel('div', 'mmp-who', RAW(who)));
     b.appendChild(info);
     // The buttons.
-    var row = U.el('div', 'mmp-buttons'), bs = buttons();
+    var row = tel('div', 'mmp-buttons'), bs = buttons();
     pg.at = Math.min(pg.at, bs.length - 1);
     var r = resumeOf(m);
     bs.forEach(function (x, i) {
-      var e = U.el('div', 'mmp-btn' + (pg.row === 'buttons' && i === pg.at ? ' sel' : '') + (i === 0 ? ' main' : '') + (x.round ? ' round' : ''));
-      e.appendChild(U.el('span', '', x.label));
-      if (x.sub) e.appendChild(U.el('small', '', x.sub));
-      if (i === 0 && r) { var bar = U.el('div', 'mmp-btn-bar'), f = U.el('i'); f.style.width = Math.min(100, Math.round(100 * r.pos / r.dur)) + '%'; bar.appendChild(f); e.appendChild(bar); }
+      var e = tel('div', 'mmp-btn' + (pg.row === 'buttons' && i === pg.at ? ' sel' : '') + (i === 0 ? ' main' : '') + (x.round ? ' round' : ''));
+      e.appendChild(tel('span', '', x.label));
+      if (x.sub) e.appendChild(tel('small', '', x.sub));
+      if (i === 0 && r) { var bar = tel('div', 'mmp-btn-bar'), f = tel('i'); f.style.width = Math.min(100, Math.round(100 * r.pos / r.dur)) + '%'; bar.appendChild(f); e.appendChild(bar); }
       e.onclick = function () { pg.row = 'buttons'; pg.at = i; press(x.id); };
       row.appendChild(e);
     });
     b.appendChild(row);
     var on = pg.row === 'buttons' && bs[pg.at];
-    if (on && on.name) b.appendChild(U.el('div', 'mmp-btn-name', on.name));
+    if (on && on.name) b.appendChild(tel('div', 'mmp-btn-name', on.name));
     // The collection.
     if (pg.more.length > 1) {
-      b.appendChild(U.el('div', 'mshp-row mmp-more-title', RAW((d.collection && d.collection.name) || 'The collection')));
-      var track = U.el('div', 'mmp-more'), from = Math.max(0, Math.min(pg.moreAt - 3, pg.more.length - 8));
+      b.appendChild(tel('div', 'mshp-row mmp-more-title', RAW((d.collection && d.collection.name) || 'The collection')));
+      var track = tel('div', 'mmp-more'), from = Math.max(0, Math.min(pg.moreAt - 3, pg.more.length - 8));
       pg.more.slice(from, from + 8).forEach(function (x, j) {
-        var i = from + j, c = U.el('div', 'mmp-poster' + (pg.row === 'more' && i === pg.moreAt ? ' sel' : '') + (x === m ? ' this' : ''));
-        if (md(x).poster) c.appendChild(img(md(x).poster, 'shp-pic')); else c.appendChild(U.el('span', 'mshp-noart', RAW(md(x).title || x.title)));
+        var i = from + j, c = tel('div', 'mmp-poster' + (pg.row === 'more' && i === pg.moreAt ? ' sel' : '') + (x === m ? ' this' : ''));
+        if (md(x).poster) c.appendChild(img(md(x).poster, 'shp-pic')); else c.appendChild(tel('span', 'mshp-noart', RAW(md(x).title || x.title)));
         c.onclick = function () { if (x !== m) open(x, pg.back); };
         track.appendChild(c);
       });
@@ -138,10 +140,10 @@ var MediaMoviePage = (function () {
   var tr = null;
   function watchTrailer(id) {
     if (!(typeof Net !== 'undefined' && Net.port && Net.active)) return youtubeApp(id);
-    var box = U.el('div', 'mmp-trailer'), f = U.el('iframe');
+    var box = tel('div', 'mmp-trailer'), f = tel('iframe');
     f.src = 'http://127.0.0.1:' + Net.port + '/trailer?v=' + id; f.setAttribute('allow', 'autoplay; encrypted-media; fullscreen'); f.tabIndex = -1;
     box.appendChild(f);
-    var tip = U.el('div', 'mmp-trailer-tip', 'Back  returns to the movie      Yellow  open in the YouTube app');
+    var tip = tel('div', 'mmp-trailer-tip', 'Back  returns to the movie      Yellow  open in the YouTube app');
     box.appendChild(tip);
     document.body.appendChild(box);
     // The keys stay with TiviBro (the player never takes the focus), so Back always works.

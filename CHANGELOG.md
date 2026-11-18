@@ -1,10 +1,14 @@
 # Changelog
 
-## 0.6.0 (alpha 157, 2026-11-17)
+## 0.6.0 (alpha 158, 2026-11-17)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 157
+### New in alpha 158
+
+- **The newer screens in Spanish, Portuguese and Russian.**  Everything added to My media, the player and Settings in the last few alphas now shows in your language: the Library shelf and its All movies, All shows and Collections pages (sorting, poster sizes, season counts), the movie and show pages and their buttons, Trakt and its lists, libraries, holiday shelves, arranging the shelves, seek previews, chapters, Skip intro and Up next, the copy picker, the subtitle position, brightness and weight, burn-in protection, and the background activity chip.  About 400 texts in each language.
+
+### In alpha 157
 
 - **The best copy for this TV.**  A movie you have more than once (a 4K remux and a 1080p, on two sources) plays the copy this TV shows best: one it can't play (AV1 on a TV without it) never, then the best picture (4K, Dolby Vision where the TV has it, HDR10), with a copy too heavy for an internet source (over 60 Mb/s from Google Drive or Dropbox) a step down.  The copy you were watching still comes first.  "N copies" on a movie's page (and Choose a copy in its options) lists them with what each is, where and how big, the best one marked, and says when a copy can't play here or is Dolby Vision 7 (UHD Blu-ray remuxes, which LG TVs play as HDR10).
 - **Audio tracks, clearer and picked better.**  The player's Audio track list says each track's language, its sound (Dolby Digital 5.1, DTS-HD MA 7.1, AAC stereo) and its name in the file, with commentaries and described audio marked, for movies and episodes from files.  A commentary is never picked by itself, and a file that starts on one switches to the movie's own track.

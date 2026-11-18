@@ -22,7 +22,8 @@ const RULES = [
   new RegExp(`\\b(?:label|sub|title|hint)\\s*:\\s*${STR}`, 'g'),
   new RegExp(`\\b(?:U|UI)\\.(?:toast|menu|confirm|prompt|panel|pin|notify)\\(\\s*${STR}(?:\\s*,\\s*${STR})?`, 'g'),
   new RegExp(`\\bI18n\\.t\\(\\s*${STR}`, 'g'),
-  new RegExp(`\\[\\s*'[a-z]*'\\s*,\\s*${STR}\\s*\\]`, 'g')        // hints: ['ok', 'Play']
+  new RegExp(`\\[\\s*'[a-z]*'\\s*,\\s*${STR}\\s*\\]`, 'g'),       // hints: ['ok', 'Play']
+  new RegExp(`\\btel\\(\\s*'[a-z]+'\\s*,\\s*'[^']*'\\s*,\\s*${STR}`, 'g')            // tel('div', 'cls', 'Words'): the pages' own elements
 ];
 // choice(label, sub, values, ['3 hours', '6 hours'], ...): the names of the choices.
 const CHOICE_LABELS = /\bchoice\([^;]*?\],\s*\[((?:\s*(?:'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")\s*,?)+)\]/g;

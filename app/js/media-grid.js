@@ -8,6 +8,8 @@
    My media > Library poster size): small (11 to a row), medium (9), large (7) or extra large (5). */
 var MediaGrid = (function () {
   'use strict';
+  // Elements with words on them, in the viewer's language (I18n: titles and names come as RAW and stay as they are).
+  function tel(tag, cls, text) { return U.el(tag, cls, text == null || typeof I18n === 'undefined' ? text : I18n.t(text)); }
   var $ = U.$, RAW = function (s) { return typeof I18n !== 'undefined' && I18n.raw ? I18n.raw(s) : s; };
   var COLS = 9, ROW_H = 336, COL_W = 182, TILE_W = 164, ART_H = 246, VISIBLE = 3, PAGE = 2;
   // The grid's room: 1628 px across (less 16 px each side for the focused poster's grown border), 894 down.
@@ -80,7 +82,7 @@ var MediaGrid = (function () {
   }
   function box() {
     var b = $('mediaGrid');
-    if (!b) { b = U.el('div', 'mgr'); b.id = 'mediaGrid'; $('viewMedia').appendChild(b); }
+    if (!b) { b = tel('div', 'mgr'); b.id = 'mediaGrid'; $('viewMedia').appendChild(b); }
     return b;
   }
   function close() {
@@ -99,7 +101,7 @@ var MediaGrid = (function () {
     state.open(m, resume(state));
   }
 
-  function img(src) { var i = U.el('img', 'mgr-pic'); i.decoding = 'async'; i.src = src; i.onerror = function () { if (!(typeof Net !== 'undefined' && Net.retryImage && Net.retryImage(this))) this.remove(); }; return i; }
+  function img(src) { var i = tel('img', 'mgr-pic'); i.decoding = 'async'; i.src = src; i.onerror = function () { if (!(typeof Net !== 'undefined' && Net.retryImage && Net.retryImage(this))) this.remove(); }; return i; }
   function hints() {
     if (g.zone === 'letters') return UI.hints([['', '▲ ▼  letters'], ['', 'OK  go there'], ['', 'Back  close', 'back']]);
     UI.hints([['', 'OK  open'], ['', 'CH+ CH−  page'], g.custom || g.sort !== 'title' ? null : ['', '▶ at the end  letters'], g.kind === 'collection' ? null : ['', 'Hold OK  options', 'hold'], ['red', g.custom ? 'Options' : 'Sort, filter, poster size'], ['', 'Back  close', 'back']].filter(Boolean));
@@ -111,35 +113,35 @@ var MediaGrid = (function () {
     // The focused row stays in the middle once there is room above it.
     g.top = Math.max(0, Math.min(row - 1, Math.ceil(n / COLS) - 2));
     b.innerHTML = '';
-    var head = U.el('div', 'mgr-head');
-    head.appendChild(U.el('div', 'mgr-title', RAW(g.title)));
+    var head = tel('div', 'mgr-head');
+    head.appendChild(tel('div', 'mgr-title', RAW(g.title)));
     var what = [n + (g.kind === 'collection' ? (n === 1 ? ' collection' : ' collections') : g.kind === 'show' ? (n === 1 ? ' show' : ' shows') : (n === 1 ? ' movie' : ' movies'))];
     if (!g.custom) what.push(sorts().filter(function (s) { return s[0] === g.sort; })[0][1]);
     if (g.filter) what.push(g.filter.name);
-    head.appendChild(U.el('div', 'mgr-sub', what.join('   ·   ')));
+    head.appendChild(tel('div', 'mgr-sub', what.join('   ·   ')));
     b.appendChild(head);
-    if (!n) { b.appendChild(U.el('div', 'shp-empty mgr-empty', g.filter ? 'Nothing here with that filter.  Red changes it.' : 'Nothing here yet.')); hints(); return; }
-    var grid = U.el('div', 'mgr-grid mgr-' + sz);
+    if (!n) { b.appendChild(tel('div', 'shp-empty mgr-empty', g.filter ? 'Nothing here with that filter.  Red changes it.' : 'Nothing here yet.')); hints(); return; }
+    var grid = tel('div', 'mgr-grid mgr-' + sz);
     for (var r = g.top; r < g.top + VISIBLE + 1; r++) {
       for (var c = 0; c < COLS; c++) {
         var i = r * COLS + c; if (i >= n) break;
         (function (m, i) {
-          var t = U.el('div', 'mgr-tile' + (g.zone === 'grid' && i === g.sel ? ' sel' : ''));
+          var t = tel('div', 'mgr-tile' + (g.zone === 'grid' && i === g.sel ? ' sel' : ''));
           // 12 px of room above for the focused poster's grown border.
           t.style.top = ((r - g.top) * ROW_H + 12) + 'px';
           t.style.left = (c * COL_W + PAD) + 'px';   // and 16 px at the left, so the first column's border isn't cut off
           t.style.width = TILE_W + 'px';
-          var art = U.el('div', 'mgr-art'), pic = md(m).poster || m.poster;
+          var art = tel('div', 'mgr-art'), pic = md(m).poster || m.poster;
           art.style.width = TILE_W + 'px'; art.style.height = ART_H + 'px';
-          if (pic) art.appendChild(img(pic)); else art.appendChild(U.el('span', 'mshp-noart', RAW(nameOf(m))));
-          if (watched(m)) art.appendChild(U.el('span', 'shp-done', '✓'));
-          if (g.kind === 'collection') art.appendChild(U.el('span', 'mgr-count', String(m.count)));
+          if (pic) art.appendChild(img(pic)); else art.appendChild(tel('span', 'mshp-noart', RAW(nameOf(m))));
+          if (watched(m)) art.appendChild(tel('span', 'shp-done', '✓'));
+          if (g.kind === 'collection') art.appendChild(tel('span', 'mgr-count', String(m.count)));
           t.appendChild(art);
-          t.appendChild(U.el('div', 'mgr-name', RAW(nameOf(m))));
+          t.appendChild(tel('div', 'mgr-name', RAW(nameOf(m))));
           var sub = g.kind === 'collection' ? (m.count + (m.count === 1 ? ' movie' : ' movies'))
             : g.kind === 'show' && m.seasons ? [yearOf(m), m.seasons + (m.seasons === 1 ? ' season' : ' seasons')].filter(Boolean).join('  ·  ') : yearOf(m);
-          if (g.kind === 'show' && m.seasons) art.appendChild(U.el('span', 'mgr-count', m.seasons + ' S'));
-          if (sub) t.appendChild(U.el('div', 'mgr-year', sub));
+          if (g.kind === 'show' && m.seasons) art.appendChild(tel('span', 'mgr-count', m.seasons + ' S'));
+          if (sub) t.appendChild(tel('div', 'mgr-year', sub));
           t.onclick = function () { g.zone = 'grid'; g.sel = i; choose(); };
           grid.appendChild(t);
         })(g.list[i], i);
@@ -148,15 +150,15 @@ var MediaGrid = (function () {
     b.appendChild(grid);
     // The letters (sorted by title only: by date or rating they would jump nowhere useful).
     if (!g.custom && g.sort === 'title') {
-      var have = present(), rail = U.el('div', 'mgr-letters'), cur = letterOf(g.list[g.sel]);
+      var have = present(), rail = tel('div', 'mgr-letters'), cur = letterOf(g.list[g.sel]);
       LETTERS.forEach(function (L, i) {
-        var e = U.el('div', 'mgr-letter' + (have[L] ? '' : ' none') + (L === cur ? ' cur' : '') + (g.zone === 'letters' && i === g.letter ? ' sel' : ''), L);
+        var e = tel('div', 'mgr-letter' + (have[L] ? '' : ' none') + (L === cur ? ' cur' : '') + (g.zone === 'letters' && i === g.letter ? ' sel' : ''), L);
         if (have[L]) e.onclick = function () { jump(L); g.zone = 'grid'; draw(); };
         rail.appendChild(e);
       });
       b.appendChild(rail);
     }
-    b.appendChild(U.el('div', 'mgr-pos', (g.sel + 1) + ' of ' + n));
+    b.appendChild(tel('div', 'mgr-pos', (g.sel + 1) + ' of ' + n));
     hints();
   }
   function jump(L) {

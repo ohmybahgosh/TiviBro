@@ -10,6 +10,8 @@
    turns both off. */
 var Skipper = (function () {
   'use strict';
+  // Elements with words on them, in the viewer's language (I18n: titles and names come as RAW and stay as they are).
+  function tel(tag, cls, text) { return U.el(tag, cls, text == null || typeof I18n === 'undefined' ? text : I18n.t(text)); }
   var INTRO = /^\s*(intro|introduction|opening( credits| titles| theme)?|recap|previously( on)?|cold open)\b/i;
   var CREDITS = /\b(end(ing)? credits|credits|end titles|closing( credits)?|outro)\b/i;
   var chaps = [], box = null, shown = '', hidden = {}, bound = false;
@@ -24,7 +26,7 @@ var Skipper = (function () {
   }
   function el() {
     if (box) return box;
-    box = U.el('div', 'skipper hidden'); document.body.appendChild(box);
+    box = tel('div', 'skipper hidden'); document.body.appendChild(box);
     return box;
   }
   function hide() { if (box) box.classList.add('hidden'); shown = ''; }
@@ -55,9 +57,9 @@ var Skipper = (function () {
     var b = el(); b._act = act; b._id = id;
     if (shown === id) return;
     shown = id; b.innerHTML = '';
-    if (kicker) b.appendChild(U.el('small', '', kicker));
-    b.appendChild(U.el('b', '', label));
-    b.appendChild(U.el('span', 'skipper-key', 'OK'));
+    if (kicker) b.appendChild(tel('small', '', kicker));
+    b.appendChild(tel('b', '', label));
+    b.appendChild(tel('span', 'skipper-key', 'OK'));
     b.classList.remove('hidden');
   }
   /* The player's keys first (views.js fullKeys): OK does the button's thing, Back hides it.  True: used. */

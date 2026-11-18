@@ -4,6 +4,8 @@
    Activity.set(id, text), and Activity.set(id, '') when it is done. */
 var Activity = (function () {
   'use strict';
+  // Elements with words on them, in the viewer's language (I18n: titles and names come as RAW and stay as they are).
+  function tel(tag, cls, text) { return U.el(tag, cls, text == null || typeof I18n === 'undefined' ? text : I18n.t(text)); }
   var items = {}, order = [], at = 0, el = null, timer = null;
   function box() {
     if (!el && typeof document !== 'undefined' && document.body) { el = document.createElement('div'); el.id = 'activity'; el.className = 'activity hidden'; el.setAttribute('aria-live', 'polite'); document.body.appendChild(el); }
@@ -14,12 +16,12 @@ var Activity = (function () {
     if (!order.length) { b.classList.add('hidden'); b.textContent = ''; return; }
     at = at % order.length;
     // "Fetching details: 120 movies to go": the first part bold, as the guide's chip says "Loading guide 14%".
-    var t = items[order[at]], c = t.indexOf(': ');
+    var t = String(typeof I18n === 'undefined' ? items[order[at]] : I18n.t(items[order[at]])), c = t.indexOf(': ');
     b.innerHTML = '';
     b.appendChild(U.el('b', '', c > 0 ? t.slice(0, c) : t));
     if (c > 0) b.appendChild(document.createTextNode(t.slice(c + 2)));
-    if (order.length > 1) b.appendChild(U.el('small', '', '  ' + (at + 1) + '/' + order.length));
-    b.appendChild(U.el('i', 'indet'));
+    if (order.length > 1) b.appendChild(tel('small', '', '  ' + (at + 1) + '/' + order.length));
+    b.appendChild(tel('i', 'indet'));
     var g = document.getElementById('epgProg');
     b.classList.toggle('above', !!(g && !g.classList.contains('hidden') && g.offsetHeight));
     b.classList.remove('hidden');

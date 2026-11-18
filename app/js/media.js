@@ -150,7 +150,7 @@ var Media = (function () {
       var la = U.el('div', 'media-libart lib-' + movie.libArt);
       var ic = U.el('div', 'media-libart-icon'); for (var k = 0; k < (movie.libArt === 'collections' ? 3 : 6); k++) ic.appendChild(U.el('i'));
       la.appendChild(ic);
-      la.appendChild(U.el('div', 'media-libart-name', String(nameOf(movie)).toUpperCase()));
+      la.appendChild(U.el('div', 'media-libart-name', typeof I18n !== 'undefined' ? I18n.t(nameOf(movie)) : nameOf(movie)));   // capitals by CSS, so the words translate
       la.appendChild(U.el('div', 'media-libart-sub', String(movie.year || '')));
       slot.art.appendChild(la);
     } else slot.art.appendChild(U.el('span', 'media-monogram', String(nameOf(movie)).slice(0, 1).toUpperCase()));
@@ -1441,7 +1441,7 @@ var Media = (function () {
       { label: (show ? 'Sort TV shows: ' : 'Sort movies: ') + sortName(show ? 'show' : 'movie'), action: function () { sortMenu(show ? 'show' : 'movie'); } },
       { label: 'Go to a shelf', sub: count(shelves.length, '1 shelf', '{n} shelves'), action: function () { UI.menu('Go to a shelf', shelves.map(function (x) { return { label: RAW(x.title), sub: String(x.movies.length), current: x === s, action: function () { goShelf(x.id); } }; })); } },
       { label: 'Arrange shelves', sub: 'Move shelves up or down, switch them off', action: function () { arrangeMenu(s && (s.id.indexOf('holiday:') === 0 ? 'holidays' : s.genre ? 'genres' : s.id)); } },
-      MediaStore.sources().length > 1 && { label: 'Show: ' + (src ? RAW(src.name) : 'All sources'), action: sourceMenuPick },
+      MediaStore.sources().length > 1 && { label: typeof I18n === 'undefined' ? 'Show: ' + (src ? RAW(src.name) : 'All sources') : I18n.t('Show: {x}', { x: src ? String(src.name) : I18n.t('All sources') }), action: sourceMenuPick },
       m && { label: m.kind === 'show' ? 'Show options' : m.kind === 'live' ? (m.live.live ? 'Watch now' : 'Remind me') : 'Movie options', action: function () { itemMenu(m); } },
       has().shows && !(split && section === 'movies') && { label: 'TV shows', action: function () { MediaSeries.open(); } },
       // Episodes TiviBro couldn't place: not on the Movies tab, where they aren't (only TV shows have them).

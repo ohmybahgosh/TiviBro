@@ -904,7 +904,7 @@ video.mkv-captions-active::cue,video.subs-drawn::cue{color:transparent;backgroun
 .lib-collections .media-libart-icon i:nth-child(1){transform:translateX(-26px) rotate(-10deg);background:rgba(255,255,255,.55)}
 .lib-collections .media-libart-icon i:nth-child(2){transform:translateX(26px) rotate(10deg);background:rgba(255,255,255,.7)}
 .lib-collections .media-libart-icon i:nth-child(3){background:#fff}
-.media-libart-name{font-size:34px;font-weight:800;letter-spacing:2px;line-height:1.1;padding:0 12px}
+.media-libart-name{font-size:34px;font-weight:800;letter-spacing:2px;text-transform:uppercase;line-height:1.1;padding:0 12px}
 .media-libart-sub{font-size:21px;opacity:.85;margin-top:10px}
 /* Fetching details: N movies and N shows to go (media.js setBusy) */
 .activity{position:fixed;right:40px;bottom:36px;z-index:39;background:rgba(20,26,46,.95);border:2px solid var(--line);border-radius:14px;padding:12px 20px 16px;font-size:20px;color:var(--text);min-width:300px;max-width:760px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}

@@ -6,12 +6,14 @@
    It looks like the provider Shows page (vod.js, the shp-* classes), drawn here from the library's own data. */
 var MediaShowPage = (function () {
   'use strict';
+  // Elements with words on them, in the viewer's language (I18n: titles and names come as RAW and stay as they are).
+  function tel(tag, cls, text) { return U.el(tag, cls, text == null || typeof I18n === 'undefined' ? text : I18n.t(text)); }
   var $ = U.$, RAW = function (s) { return typeof I18n !== 'undefined' && I18n.raw ? I18n.raw(s) : s; };
   var pg = null;   // { card, show, seasons, at, eps, sel, level: 'seasons' | 'eps', loading, back }
 
   function box() {
     var b = $('mediaShow');
-    if (!b) { b = U.el('div', 'shp-page mshp'); b.id = 'mediaShow'; $('viewMedia').appendChild(b); }
+    if (!b) { b = tel('div', 'shp-page mshp'); b.id = 'mediaShow'; $('viewMedia').appendChild(b); }
     return b;
   }
   // "Season 13" as Plex says it; TMDB's own name for it ("Murder House", "13") goes under it.
@@ -59,28 +61,28 @@ var MediaShowPage = (function () {
 
   function md(x) { return (x && x.metadata) || {}; }
   function niceDate(d) { var t = Date.parse(String(d || '') + 'T12:00:00'); return t ? new Date(t).toLocaleDateString(U.loc ? U.loc() : undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : ''; }
-  function img(src, cls) { var i = U.el('img', cls); i.decoding = 'async'; i.src = src; i.onerror = function () { if (!(typeof Net !== 'undefined' && Net.retryImage && Net.retryImage(this))) this.remove(); }; return i; }
+  function img(src, cls) { var i = tel('img', cls); i.decoding = 'async'; i.src = src; i.onerror = function () { if (!(typeof Net !== 'undefined' && Net.retryImage && Net.retryImage(this))) this.remove(); }; return i; }
 
   function draw() {
     if (!pg) return;
     var b = box(), s = pg.show || pg.card, m = md(s), cm = md(pg.card);
     b.innerHTML = '';
     var bd = m.backdropHd || m.backdrop || cm.backdropHd || cm.backdrop || '';
-    if (bd) { var bg = U.el('div', 'shp-bd'); bg.style.backgroundImage = 'url("' + String(bd).replace(/"/g, '%22') + '")'; b.appendChild(bg); }
-    b.appendChild(U.el('div', 'shp-fade'));
-    var info = U.el('div', 'shp-info'), cur = pg.level === 'eps' ? pg.seasons[pg.at] : null;
-    info.appendChild(U.el('div', 'media-kicker', cur ? RAW(m.title || s.title || '') : 'TV show'));
-    info.appendChild(U.el('div', 'media-title', cur ? RAW(seasonName(s, cur)) : RAW(m.title || s.title || '')));
+    if (bd) { var bg = tel('div', 'shp-bd'); bg.style.backgroundImage = 'url("' + String(bd).replace(/"/g, '%22') + '")'; b.appendChild(bg); }
+    b.appendChild(tel('div', 'shp-fade'));
+    var info = tel('div', 'shp-info'), cur = pg.level === 'eps' ? pg.seasons[pg.at] : null;
+    info.appendChild(tel('div', 'media-kicker', cur ? RAW(m.title || s.title || '') : 'TV show'));
+    info.appendChild(tel('div', 'media-title', cur ? RAW(seasonName(s, cur)) : RAW(m.title || s.title || '')));
     var n = pg.seasons.filter(function (x) { return x.key !== '0'; }).length;
     var facts = cur ? [seasonOwn(s, cur), cur.count + (cur.count === 1 ? ' episode' : ' episodes')]
       : [m.year, n ? n + (n === 1 ? ' season' : ' seasons') : '', m.genre, m.rating ? '★ ' + m.rating : ''];
     facts = facts.filter(Boolean).join('   ·   ');
-    if (facts) info.appendChild(U.el('div', 'media-facts', facts));
+    if (facts) info.appendChild(tel('div', 'media-facts', facts));
     var plot = cur ? cur.plot || m.plot : m.plot;
-    if (plot) info.appendChild(U.el('div', 'media-summary shp-plot', RAW(plot)));
+    if (plot) info.appendChild(tel('div', 'media-summary shp-plot', RAW(plot)));
     b.appendChild(info);
     hints();
-    if (pg.loading) { b.appendChild(U.el('div', 'shp-empty', pg.level === 'eps' ? 'Loading episodes…' : 'Loading seasons…')); return; }
+    if (pg.loading) { b.appendChild(tel('div', 'shp-empty', pg.level === 'eps' ? 'Loading episodes…' : 'Loading seasons…')); return; }
     if (pg.level === 'seasons') return drawSeasons(b, s, m);
     drawEpisodes(b, s, m);
   }
@@ -90,49 +92,49 @@ var MediaShowPage = (function () {
       : [['', 'OK  episodes'], ['', '◀ ▶  seasons'], ['', 'Hold OK  show options', 'hold'], ['', 'Back  close', 'back']]);
   }
   function drawSeasons(b, s, m) {
-    if (!pg.seasons.length) { b.appendChild(U.el('div', 'shp-empty', 'No episodes found for this show.')); return; }
-    b.appendChild(U.el('div', 'mshp-row', 'Seasons'));
-    var track = U.el('div', 'mshp-seasons'), from = Math.max(0, Math.min(pg.at - 2, pg.seasons.length - 7)), to = Math.min(pg.seasons.length, from + 7);
+    if (!pg.seasons.length) { b.appendChild(tel('div', 'shp-empty', 'No episodes found for this show.')); return; }
+    b.appendChild(tel('div', 'mshp-row', 'Seasons'));
+    var track = tel('div', 'mshp-seasons'), from = Math.max(0, Math.min(pg.at - 2, pg.seasons.length - 7)), to = Math.min(pg.seasons.length, from + 7);
     for (var i = from; i < to; i++) (function (x, i) {
-      var c = U.el('div', 'mshp-season' + (i === pg.at ? ' sel' : '')), art = U.el('div', 'mshp-poster'), pic = x.poster || m.poster;
+      var c = tel('div', 'mshp-season' + (i === pg.at ? ' sel' : '')), art = tel('div', 'mshp-poster'), pic = x.poster || m.poster;
       if (pic) art.appendChild(img(pic, 'shp-pic'));
-      else art.appendChild(U.el('span', 'mshp-noart', seasonName(s, x)));
+      else art.appendChild(tel('span', 'mshp-noart', seasonName(s, x)));
       c.appendChild(art);
-      c.appendChild(U.el('div', 'shp-name', RAW(seasonName(s, x))));
-      c.appendChild(U.el('div', 'shp-sub', RAW((seasonOwn(s, x) ? seasonOwn(s, x) + '  ·  ' : '') + x.count + (x.count === 1 ? ' episode' : ' episodes'))));
+      c.appendChild(tel('div', 'shp-name', RAW(seasonName(s, x))));
+      c.appendChild(tel('div', 'shp-sub', RAW((seasonOwn(s, x) ? seasonOwn(s, x) + '  ·  ' : '') + x.count + (x.count === 1 ? ' episode' : ' episodes'))));
       c.onclick = function () { pg.at = i; season(i); };
       track.appendChild(c);
     })(pg.seasons[i], i);
     b.appendChild(track);
-    b.appendChild(U.el('div', 'shp-pos', (pg.at + 1) + ' of ' + pg.seasons.length));
+    b.appendChild(tel('div', 'shp-pos', (pg.at + 1) + ' of ' + pg.seasons.length));
   }
   function drawEpisodes(b, s, m) {
     var list = pg.eps;
-    if (!list.length) { b.appendChild(U.el('div', 'shp-empty', 'No episodes in this season.')); return; }
+    if (!list.length) { b.appendChild(tel('div', 'shp-empty', 'No episodes in this season.')); return; }
     var spoilers = typeof Store !== 'undefined' && Store.settings && Store.settings.noSpoilers;
-    var track = U.el('div', 'shp-track mshp-eps'), from = Math.max(0, pg.sel - 2), to = Math.min(list.length, from + 8);
+    var track = tel('div', 'shp-track mshp-eps'), from = Math.max(0, pg.sel - 2), to = Math.min(list.length, from + 8);
     for (var i = from; i < to; i++) (function (e, i) {
       var em = md(e), w = e.watchState === 'watched', hide = spoilers && !w;
-      var c = U.el('div', 'shp-card' + (i === pg.sel ? ' sel' : '')), art = U.el('div', 'shp-art'), pic = !hide && em.still || em.poster || m.backdrop || m.poster;
+      var c = tel('div', 'shp-card' + (i === pg.sel ? ' sel' : '')), art = tel('div', 'shp-art'), pic = !hide && em.still || em.poster || m.backdrop || m.poster;
       if (pic) art.appendChild(img(pic, 'shp-pic' + (pic === em.still ? '' : ' cover')));
-      art.appendChild(U.el('span', 'shp-num', e.order === 'date' ? String(e.airDate || '') : 'E' + (e.number != null ? e.number : e.absoluteNumber || '?')));
-      if (w) art.appendChild(U.el('span', 'shp-done', '✓'));
+      art.appendChild(tel('span', 'shp-num', e.order === 'date' ? String(e.airDate || '') : 'E' + (e.number != null ? e.number : e.absoluteNumber || '?')));
+      if (w) art.appendChild(tel('span', 'shp-done', '✓'));
       c.appendChild(art);
-      c.appendChild(U.el('div', 'shp-name', RAW((!hide && em.title) || e.title || ('Episode ' + (e.number || '?')))));
+      c.appendChild(tel('div', 'shp-name', RAW((!hide && em.title) || e.title || ('Episode ' + (e.number || '?')))));
       var sub = [em.runtime ? em.runtime + ' min' : '', niceDate(em.airDate || e.airDate), e.versionCount > 1 ? e.versionCount + ' copies' : ''].filter(Boolean).join('   ·   ');
-      if (sub) c.appendChild(U.el('div', 'shp-sub', sub));
+      if (sub) c.appendChild(tel('div', 'shp-sub', sub));
       c.onclick = function () { pg.sel = i; play(); };
       track.appendChild(c);
     })(list[i], i);
     b.appendChild(track);
     var cur = list[pg.sel], cm = md(cur);
     if (cur) {
-      var foot = U.el('div', 'shp-foot');
-      foot.appendChild(U.el('b', '', (cur.order === 'date' ? cur.airDate : 'S' + cur.season + ' E' + (cur.number || '?')) + '   '));
+      var foot = tel('div', 'shp-foot');
+      foot.appendChild(tel('b', '', (cur.order === 'date' ? cur.airDate : 'S' + cur.season + ' E' + (cur.number || '?')) + '   '));
       foot.appendChild(document.createTextNode(spoilers && cur.watchState !== 'watched' ? 'Summary hidden until you watch it (Hide spoilers is on).' : RAW(cm.plot || '')));
       b.appendChild(foot);
     }
-    b.appendChild(U.el('div', 'shp-pos', (pg.sel + 1) + ' of ' + list.length));
+    b.appendChild(tel('div', 'shp-pos', (pg.sel + 1) + ' of ' + list.length));
   }
   function play() {
     var e = pg && pg.eps[pg.sel]; if (!e) return;
