@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 162, 2026-11-18)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 162
 
 - **Subtitles inside episodes from Dropbox and Google Drive.**  St Denis Medical's English and Arabic subtitles, inside its MKV, showed in Plex but never in TiviBro: an episode's link from those services doesn't end in ".mkv", so TiviBro didn't look inside.  It goes by the file's own name now.
 - **Subtitle files beside a video, as Plex reads them.**  "Movie.srt", "Movie.en.srt", "Episode.eng.forced.srt" next to the file, a Subs or Subtitles folder beside it (with the video's own folder in it, as release groups do), or any subtitle file in a folder with only that video: each is a track in the Subtitles menu, named for its language (and Forced or SDH), and one comes on as embedded ones do.  Dropbox, WebDAV and Google Drive.
@@ -8,11 +12,7 @@
 - **Stalker portals: Shows categories that came up empty** (issue #118).  A category's shows were asked for with the category as a genre too, and that portal answered nothing.  Now as other players ask (genre=*), with the old way as a fallback.
 - **Stalker portals whose movies come as HLS** (issue #118).  The movie link was a playlist, and the TV's player and the MPEG-TS one both failed on it.  TiviBro now plays it as HLS, and remembers that the portal does that, so its other movies start that way at once, without first checking the sound (which took the portal's one connection).
 
-## 0.6.0 (alpha 161, 2026-11-18)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 161
+### In alpha 161
 
 - **What's watched, on the poster, as on Plex.**  A show's poster has the number of its episodes you haven't watched in its corner, and a ✓ once you've seen them all; a movie you've watched has a ✓.  On shelves and in All movies and All shows.  **Settings > My media > Watched marks on posters** turns them off.
 - **New since your last visit.**  What came into your libraries since you were last in My media (your downloads, Sonarr and Radarr) gets a small dot by its name and a shelf of its own near the top, newest first.  No pop-ups: the dot goes once you open it, and a visit only counts once you've stayed a minute or opened something.  A library you've just added isn't all "new".  **Settings > My media > Mark what's new** turns it off.
