@@ -176,6 +176,20 @@ function listFolder(source, path, cb) {
     });
   })('');
 }
+/* Everything in one folder (not recursive): files and folders, for the subtitle files beside a video (sidecar.js). */
+function listFiles(source, path, cb) {
+  var out = [], pages = 0;
+  (function next(cursor) {
+    var call = cursor ? rpc.bind(null, source.refresh, 'files/list_folder/continue', { cursor: cursor })
+      : rpc.bind(null, source.refresh, 'files/list_folder', { path: folderPath(path), recursive: false, include_media_info: false, limit: PAGE_LIMIT });
+    call(function (e, j) {
+      if (e) return cb(e);
+      (j.entries || []).forEach(function (x) { out.push(slim(x)); });
+      if (j.has_more && ++pages < FOLDER_PAGES) return next(j.cursor);
+      cb(null, out);
+    });
+  })('');
+}
 /* The signed-in account, for display: "Name (email)". */
 function account(refresh, cb) {
   rpc(refresh, 'users/get_current_account', null, function (e, j) {
@@ -211,7 +225,7 @@ function revoke(refresh, cb) {
 }
 
 module.exports = {
-  APP_KEY: APP_KEY, folderPath: folderPath, accessToken: accessToken, listPage: listPage, listAll: listAll, listFolder: listFolder, latestCursor: latestCursor, changesSince: changesSince, account: account, tempLink: tempLink, revoke: revoke, forget: forget,
+  APP_KEY: APP_KEY, folderPath: folderPath, accessToken: accessToken, listPage: listPage, listAll: listAll, listFolder: listFolder, listFiles: listFiles, latestCursor: latestCursor, changesSince: changesSince, account: account, tempLink: tempLink, revoke: revoke, forget: forget,
   // For tests: how long a 429 waits (ms in, ms out), and the caches.
   _wait: function (ms) { return ms; }, _tokens: tokens, _links: links, content: content
 };

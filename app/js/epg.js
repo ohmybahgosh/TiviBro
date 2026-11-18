@@ -702,7 +702,12 @@ var Epg = (function () {
     function get(what, json) { return fetch(hUrl(what, kind, pid), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('no stored guide'); return json ? r.json() : r.text(); }); }
     return Promise.all([get('meta', true), get('titles', false)]).then(function (x) {
       var meta = x[0], text = x[1], map = {}, seen = new Map(), i = 0, n = text.length;
+      /* Read in slices of about 30 ms, letting the remote's presses through in between: the whole guide in one go
+         held the TV up for most of a second at every start. */
+      return new Promise(function (done) { (function slice() {
+      var until = Date.now() + 30;
       while (i < n) {
+        if (Date.now() > until) return setTimeout(slice, 0);
         var j = text.indexOf('\n', i); if (j < 0) j = n;
         var a = text.indexOf('\t', i), b = text.indexOf('\t', a + 1), c = text.indexOf('\t', b + 1);
         if (a > i && c > 0 && c < j) {
@@ -717,7 +722,8 @@ var Epg = (function () {
       }
       meta.map = map;
       if (meta.extra) for (var k in meta.extra) if (!(k in meta)) meta[k] = meta.extra[k];
-      return meta;
+      done(meta);
+      })(); });
     });
   }
   // What the helper has stored: the full guide when its signature is sig, else just when it was made.

@@ -47,6 +47,10 @@ var Views = (function () {
   };
   // Movies and Shows appear only when this playlist actually has them (checked in the background).
   function buildTabs() {
+    /* The menu open while it is rebuilt (the movie check or My media adding a screen a few seconds after the start):
+       the screen you were on in it stays picked and lit.  Before, the highlight went and the next ▲ ▼ counted
+       from a place that had moved, so presses seemed not to register. */
+    var navOpen = document.body.classList.contains('nav-open'), was = navOpen && tabs ? tabs[tabSel] : null;
     tabs = home() === 'live' ? ['live', 'guide'] : channelsInMenu() ? ['guide', 'live'] : ['guide'];
     // Movies on now (onnow.js): in the menu while a TMDB token is saved and movie details are on.
     if (typeof Movies !== 'undefined' && Movies.on()) tabs.push('onnow');
@@ -70,6 +74,7 @@ var Views = (function () {
       s.addEventListener('mousemove', function () { if (UI.pointer && !document.body.classList.contains('nav-open') && !full) openNavFromPointer(); });
       nav.appendChild(s);
     });
+    if (navOpen) { var at = was ? tabs.indexOf(was) : -1; tabSel = at >= 0 ? at : Math.min(tabSel, tabs.length - 1); var els = nav.children; if (els[tabSel]) els[tabSel].classList.add('focus'); }
     if (tabs.indexOf(tab) < 0 && tab !== 'live' && ready()) switchTab(home());
   }
   function ready() { return !!chansVL; }

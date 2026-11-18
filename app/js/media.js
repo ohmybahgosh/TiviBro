@@ -1375,6 +1375,17 @@ var Media = (function () {
       clearInterval(progressTimer);
       if (m.kind === 'episode') progressTimer = setInterval(function () { checkpoint(true); if (playingMeta && !playingMeta.boundaryPending && playingMeta.item.endSec != null && Player.position >= playingMeta.item.endSec) boundary(); },1000);
       Views.playVod(playingMeta, url, startAt, function () { open(true);if(m.returnTo)m.returnTo(); });
+      // Subtitle files beside it (a .srt next to the file, or in a Subs folder), once it has started (subs.js).
+      if (typeof Subs !== 'undefined' && Subs.sidecar) {
+        var sideSrc = MediaStore.source(m.src), mine = playingMeta;
+        var tries = 0, wait = function () {
+          if (token !== playToken || playingMeta !== mine) return;
+          if (!(typeof Player !== 'undefined' && Player.playing) && ++tries < 40) return setTimeout(wait, 1500);   // after the picture comes (a start resets the tracks)
+          Subs.sidecar(fileH ? { source: sideSrc, handle: fileH } : { source: sideSrc, path: m.path });
+        };
+        var fileH = m.kind === 'episode' && /^file_/.test(String(m.id || '')) ? m.id : '';   // an episode's file (its id), not the episode's own handle
+        if (sideSrc && (fileH || m.path)) setTimeout(wait, 1500);
+      }
     }
     if (m.url) return go(m.url);
     var src = MediaStore.source(m.src);

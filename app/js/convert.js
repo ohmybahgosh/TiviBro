@@ -140,6 +140,9 @@ var Convert = (function () {
         if (!bad && !hint) return null;
         return { offer: NAMES[bad ? known[0] : 'dts'] || 'DTS', guessed: !bad };
       }
+      /* A Stalker movie that comes as HLS (issue #118): a playlist has no sound to check, and the check took the
+         portal's one link, so the player's own was refused. */
+      if (/\.m3u8(\?|$)/i.test(o.url) || (typeof Player !== 'undefined' && Player.vodHls && Player.vodHls(o.url))) return null;
       return within(probe(o.url), 12000).then(function (info) {
         var d = decide(info.audio, c, { lang: settings().audioLang === 'orig' ? '' : settings().audioLang || '' });
         /* Dolby Vision profile 7 (UHD Blu-ray remuxes): LG's player shows only its HDR10 base.  Through the

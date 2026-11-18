@@ -144,6 +144,20 @@ const req = (method, u, body, headers) => new Promise((res, rej) => {
   ok('movies still come from the movie module', x.j.length === 28, x.j.length);
   m4.server.close();
 
+  // Issue #118: a portal whose categories need genre=*, and whose movie links are HLS playlists.
+  const m8 = Mock.create({ stream: 'http://127.0.0.1:1/live/stream.ts', series: true, genreStrict: true, vodHls: true });
+  await new Promise((f) => m8.server.listen(0, '127.0.0.1', f));
+  const login8 = b64({ portal: 'http://127.0.0.1:' + m8.server.address().port + '/stalker_portal/c/', mac: '00:1a:79:00:00:01' });
+  const X8 = (q) => req('GET', H + '/stalker/xc/player_api.php?stb=' + login8 + '&action=' + q).then((r) => ({ status: r.status, j: JSON.parse(r.body || 'null') }));
+  await X8('get_series_categories');
+  x = await X8('get_series&category_id=70&max=2000');
+  ok('a category\'s shows with genre=* (not 0 because genre was the category)', x.status === 200 && x.j.length === 30 && m8.seen.seriesGenres.every((g) => g === '*'), x.j && x.j.length + ' ' + m8.seen.seriesGenres);
+  a = await req('GET', H + '/stalker/vod/510.mp4?stb=' + login8);
+  ok('a movie whose link is HLS, asked for as .mp4: 415, "ask for the .m3u8"', a.status === 415 && a.headers['x-tivibro-format'] === 'm3u8', a.status);
+  a = await req('GET', H + '/stalker/vod/510.m3u8?stb=' + login8);
+  ok('...and as .m3u8: on to the playlist', a.status === 302 && /playlist\.m3u8/.test(a.headers.location || ''), a.status + ' ' + a.headers.location);
+  m8.server.close();
+
   // The guide asking for many channels at once on a portal it hasn't signed in to yet: one sign-in for all of
   // them, on a portal that keeps only the newest token.
   const m2 = Mock.create({ stream: 'http://127.0.0.1:1/live/stream.ts', oneToken: true });

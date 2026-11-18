@@ -258,14 +258,23 @@ var progress = {};
 function progOf(L, type) { var k = keyOf(L); return (progress[k] || (progress[k] = {}))[type === 'series' ? 'series' : 'movie'] || null; }
 function setProg(L, type, v) { var k = keyOf(L); (progress[k] || (progress[k] = {}))[type === 'series' ? 'series' : 'movie'] = v; }
 function vodPages(L, cat, cb0, type, max) {
-  function page(n, then) { act(L, { type: type || 'vod', action: 'get_ordered_list', category: cat, genre: cat, sortby: 'added', fav: 0, p: n }, then); }
+  /* A category's titles: category=<id> with genre=* (what other players send; issue #118: genre=<the category's
+     id> gave every Shows category 0 titles on a big portal).  A portal that files its titles by genre instead
+     gets genre=<id> once, when the first answer is empty.  Shows (type=series) also say movie_id=0. */
+  var genre = '*';
+  function page(n, then) {
+    var q = { type: type || 'vod', action: 'get_ordered_list', category: cat, genre: genre, sortby: 'added', fav: 0, p: n };
+    if (type === 'series') { q.movie_id = 0; q.season_id = 0; q.episode_id = 0; }
+    act(L, q, then);
+  }
   // Any list being read (the whole one, or a category's on a big portal): the newest one says how far it has come.
   var whole = true, P = { got: 0, total: 0, at: Date.now(), cat: cat };
   setProg(L, type, P);
   function cb(e, list) { if (whole) { P.done = true; P.failed = !!e; P.got = list ? list.length : P.got; } cb0(e, list); }
   function count(d) { if (P && d) P.got += d.length; }
-  page(1, function (e, js) {
+  page(1, function first1(e, js) {
     if (e) return cb(e);
+    if (cat !== '*' && genre === '*' && !(js && Array.isArray(js.data) && js.data.length)) { genre = cat; return page(1, first1); }
     var first = js && Array.isArray(js.data) ? js.data : [], total = +(js && js.total_items) || first.length, per = +(js && js.max_page_items) || first.length || 1;
     if (P) { P.total = total; count(first); }
     // max: only the newest max titles (a big portal's Recently added, or one category of it, issue #118).
@@ -464,18 +473,18 @@ function vodLinkOf(js) {
 }
 function vodPlay(L, id, res, ALLOW, log, port, ext) {
   var em = /^e(\d+)x([A-Za-z0-9_-]+)$/.exec(id);
-  if (em) return vodTry(L, [unb64u(em[2])], em[1], res, ALLOW, log, port, '');
+  if (em) return vodTry(L, [unb64u(em[2])], em[1], res, ALLOW, log, port, '', ext);
   cmdOf(L, id, function (own) {
     var usual = '/media/file_' + id + '.mpg', tries = [];
     if (own) tries.push(own);
     if (own !== usual) tries.push(usual);
     // A portal built on an Xtream panel: its movies' commands are this, base64 (when the one from the list is gone).
     if (!own && /^\d+$/.test(id)) tries.push(b64('{"type":"movie","stream_id":"' + id + '","stream_source":null,"target_container":"[\\"' + (ext || 'mp4') + '\\"]"}'));
-    vodTry(L, tries, '', res, ALLOW, log, port, linkOf(own));
+    vodTry(L, tries, '', res, ALLOW, log, port, linkOf(own), ext);
   });
 }
 // create_link with each command in turn until one gives a link; the command's own address as a last resort.
-function vodTry(L, tries, series, res, ALLOW, log, port, direct) {
+function vodTry(L, tries, series, res, ALLOW, log, port, direct, asked) {
   var i = 0, seen = [], lastE = null, lastJs = null;
   (function next() {
     if (i >= tries.length) {
@@ -492,6 +501,14 @@ function vodTry(L, tries, series, res, ALLOW, log, port, direct) {
     seen.push(cmdKind(cmd));
     act(L, { type: 'vod', action: 'create_link', cmd: cmd, series: series, forced_storage: 'undefined', disable_ad: 0, download: 0 }, function (e, js) {
       var to = e ? '' : vodLinkOf(js);
+      /* Issue #118: a portal whose movie links are HLS playlists (".../playlist.m3u8?token=...") while the player
+         asked for the file (".mp4"): the TV's player and the MPEG-TS one both failed on a playlist.  As for
+         channels (issue #88), 415 tells the player to ask again for the .m3u8 and play it as HLS. */
+      if (to && asked && asked !== 'm3u8' && isHlsLink(to)) {
+        if (log) log({ lv: 'info', event: 'stalker movie link is HLS; the player asked for ' + asked });
+        var h415 = { 'Content-Type': 'text/plain', 'X-TiviBro-Format': 'm3u8' }; for (var k415 in ALLOW) h415[k415] = ALLOW[k415];
+        res.writeHead(415, h415); return res.end('hls');
+      }
       if (to) return sendOn(res, ALLOW, port, to);
       lastE = e; lastJs = js;
       if (e && e.auth) i = tries.length;

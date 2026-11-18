@@ -194,6 +194,13 @@ var Teams = (function () {
   });
   var CITY_N = {};
   ALL.forEach(function (x) { if (x.city) CITY_N[x.league + '|' + x.city] = (CITY_N[x.league + '|' + x.city] || 0) + 1; });
+  /* Teams by the words of their names, nicknames and cities: named() looks only at the teams with a word in the
+     text, not at every team of every league for every programme (it held the remote up at each start). */
+  var BY_WORD = {};
+  ALL.forEach(function (x) {
+    x.full.concat(x.nk, x.city ? [x.city] : [], x.schools || []).forEach(function (w) { w.trim().split(' ').forEach(function (y) { if (y) { var l = BY_WORD[y] || (BY_WORD[y] = []); if (l[l.length - 1] !== x) l.push(x); } }); });
+  });
+  var flagged = [];
   // A nickname that stands alone in the original text: not "Parkland Rangers".
   function nickAlone(x, text) {
     for (var i = 0; i < x.rx.length; i++) {
@@ -208,14 +215,14 @@ var Teams = (function () {
   }
   function named(text, ctx, teams, abbrs) {
     text = String(text || '');
-    var t = norm(text), c = norm(ctx || '') + t, hits = [], code = {}, word = {}, k;
+    var t = norm(text), cn = norm(ctx || ''), c = cn + t, hits = [], code = {}, word = {}, k;
     var minor = MINOR.test(text + ' ' + (ctx || ''));
     for (k in LEAGUE_WORDS) if (LEAGUE_WORDS[k].test(c)) word[k] = 1;
     for (k in CODES) if (CODES[k].test(c)) code[k] = 1;
     var seen = {}, seenCity = {};                    // league -> teams of it named in the text
     function note(m, team) { (m[team.league] || (m[team.league] = {}))[team.id] = 1; }
     // College football: not when the text (or, if it doesn't say football, the channel) is another sport.
-    var tn = norm(text), cn = norm(ctx || ''), other = OTHER.test(tn) || (!CFB.test(tn) && OTHER.test(cn)), rest = t;
+    var tn = t, other = OTHER.test(tn) || (!CFB.test(tn) && OTHER.test(cn)), rest = t;
     /* Basketball the same way: not a women's game, another sport or football (in the text, or in the channel
        when the text doesn't say basketball). */
     var bb = CBB.test(c) || (/basketball|hoops/.test(c) && !WOMEN.test(c)), otherB = WOMEN.test(tn) || NOT_CBB.test(tn) || CFB.test(tn) ||
@@ -226,7 +233,12 @@ var Teams = (function () {
        the channel, a school counts only against another FBS school during the football season (issue: a
        basketball game as a football reminder).  College basketball works the same, in its own season.  The
        sport's tag is kept for oneSide(). */
-    ALL.forEach(function (x) {
+    flagged.forEach(function (x) { x._school = x._full = x._nick = x._city = 0; });
+    flagged = [];
+    var cand = [], had = {};
+    t.split(' ').forEach(function (y) { (BY_WORD[y] || []).forEach(function (x) { if (!had[x.id]) { had[x.id] = 1; cand.push(x); } }); });
+    cand.forEach(function (x) {
+      flagged.push(x);
       x._school = 0;
       if (x.schools) {
         x._full = x._nick = x._city = 0; x._tag = tagged[x.league];
@@ -249,7 +261,7 @@ var Teams = (function () {
       // Another school with that name in it: "Central Connecticut", "Alabama State", "Arkansas Pine Bluff".
       for (var pi = 0; pi < parts.length - 1; pi++) if (!NOT_BEFORE.test(parts[pi]) && !NOT_AFTER.test(parts[pi + 1])) own = true;
       rest = parts.join(' # ');
-      if (own) sxs.forEach(function (sx) { if (tagged[sx.league] && !no[sx.league] && !sx._full) { sx._school = 1; note(seen, sx); note(seenCity, sx); } });
+      if (own) sxs.forEach(function (sx) { if (tagged[sx.league] && !no[sx.league] && !sx._full) { sx._school = 1; flagged.push(sx); note(seen, sx); note(seenCity, sx); } });
     }
     function n(m, l) { return m[l] ? Object.keys(m[l]).length : 0; }
     var up = abbrs ? ' ' + text.replace(/[^A-Za-z0-9]+/g, ' ') + ' ' : '';
@@ -341,7 +353,9 @@ var Teams = (function () {
        other games this week decide (sportOf, below), so the guide is looked through a week ahead when a school
        is followed, whatever the window.  curTag: the sport the listing names, 'f', 'b' or ''. */
     var schools = teams.some(function (x) { return !!x.schools; }), far = schools ? Math.max(to, now + 7 * 86400e3) : to, proof = {};
-    function tagOf(text) { var t = norm(text); return CFB.test(t) ? 'f' : CBB.test(t) || (/basketball|hoops/.test(t) && !WOMEN.test(t)) ? 'b' : ''; }
+    var tags = {};
+    function tagOf(text) { return tags[text] != null ? tags[text] : (tags[text] = tagOf1(text)); }
+    function tagOf1(text) { var t = norm(text); return CFB.test(t) ? 'f' : CBB.test(t) || (/basketball|hoops/.test(t) && !WOMEN.test(t)) ? 'b' : ''; }
     function pairOf(x) { return (lastVs[x.league] || '').replace(/ncaa[fb]:/g, ''); }
     function prove(s) {
       var did = {};
@@ -388,7 +402,11 @@ var Teams = (function () {
     var quick = new RegExp(words.map(function (w) { return w.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|'));
     var byEpg = {}, all = looked(), i;
     if (Epg.xml) for (i = 0; i < all.length; i++) { var id = Epg.epgId(all[i]); if (id && (!byEpg[id] || (!shown(byEpg[id]) && shown(all[i])))) byEpg[id] = all[i]; }   // one in the lists, if any
-    Epg.search(function (t) { return quick.test(norm(t)); }, 4000).forEach(function (r) {
+    /* Each title once (the guide repeats them on every channel, every day), and a cheap look at its letters
+       before the full one: this ran on every programme at every start and held the remote up for seconds. */
+    var pre = new RegExp(words.map(function (w) { var k = w.trim().split(' ').sort(function (a, b) { return b.length - a.length; })[0]; return k === 'and' ? '(?:and|&)' : k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).filter(Boolean).join('|')), looked1 = {}, played = {};
+    var fold = function (t) { var l = t.toLowerCase(); return /[^\x00-\x7f]/.test(l) && l.normalize ? l.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : l; };
+    Epg.search(function (t) { var v = looked1[t]; if (v === undefined) v = looked1[t] = pre.test(fold(t)) && quick.test(norm(t)); return v; }, 4000).forEach(function (r) {
       var c = Library.find(r.key) || byEpg[r.key], p = r.p;
       if (c && Library.mixed && !Library.mixed(c, 'teams')) c = byEpg[r.key] || null;     // a playlist not mixed into My teams
       // Team channels' "Next game: Lions at Vikings at 11/02/2026 01:00 PM" blocks: the game is at that time.
@@ -401,7 +419,10 @@ var Teams = (function () {
       if (!c || p.e <= now || p.s > far || p.rp) return;
       var ctx = c.n + ' | ' + (gname[c.g] || '');
       curTag = tagOf(p.t + ' | ' + ctx);
-      var mineHits = playing(p.t, ctx, false);
+      // The same title on the same channel (every airing): worked out once.
+      var pk = p.t + '\u0001' + ctx, was = played[pk], mineHits;
+      if (was) { mineHits = was.h; lastVs = was.vs; lastAll = was.all; }
+      else { mineHits = playing(p.t, ctx, false); played[pk] = { h: mineHits, vs: lastVs, all: lastAll }; }
       if (schools) prove(p.s);
       mineHits.forEach(function (x) { take(c, p, x); });
     });

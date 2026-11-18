@@ -46,9 +46,10 @@ function create(o) {
     if (q.type === 'vod' && q.action === 'get_categories') return js(res, [{ id: '*', title: 'All' }, { id: '10', title: 'Films' }, { id: '11', title: 'More films' }]);
     if (limit > 0 && seen.profile && q.action !== 'handshake' && q.action !== 'get_profile') { limit--; seen.limited = (seen.limited || 0) + 1; res.writeHead(429, { 'Retry-After': '1' }); return res.end('slow down'); }
     if (o.series && q.type === 'series' && q.action === 'get_categories') return js(res, [{ id: '*', title: 'All' }, { id: '70', title: 'HINDI | TV SERIALS' }, { id: '71', title: 'URDU | TV SERIALS' }]);
-    if (o.series && q.type === 'series' && q.action === 'get_ordered_list' && q.movie_id) return js(res, { total_items: 1, data: [{ id: q.movie_id + ':1', name: 'Season 1', series: [1, 2], cmd: 'c2Vhc29uMQ==' }] });
-    if (o.series && q.type === 'series' && q.action === 'get_ordered_list') { seen.seriesPages = (seen.seriesPages || 0) + 1; return page(shows.filter(function (x) { return q.category === '*' || !q.category || x.category_id === q.category; }), q.p, res); }
-    if (q.type === 'vod' && q.action === 'get_ordered_list' && q.movie_id) {
+    if (o.series && q.type === 'series' && q.action === 'get_ordered_list' && q.movie_id && q.movie_id !== '0') return js(res, { total_items: 1, data: [{ id: q.movie_id + ':1', name: 'Season 1', series: [1, 2], cmd: 'c2Vhc29uMQ==' }] });
+    /* o.genreStrict (issue #118): a category's shows only with genre=* (genre=<the category> finds none). */
+    if (o.series && q.type === 'series' && q.action === 'get_ordered_list') { seen.seriesPages = (seen.seriesPages || 0) + 1; seen.seriesGenres = (seen.seriesGenres || []).concat([q.genre]); if (o.genreStrict && q.category !== '*' && q.genre !== '*') return page([], q.p, res); return page(shows.filter(function (x) { return q.category === '*' || !q.category || x.category_id === q.category; }), q.p, res); }
+    if (q.type === 'vod' && q.action === 'get_ordered_list' && q.movie_id && q.movie_id !== '0') {
       if (q.movie_id !== '505' && q.movie_id !== '520') return js(res, { total_items: 0, data: [] });
       return js(res, { total_items: 2, data: [{ id: q.movie_id + ':1', name: 'Season 1', series: [1, 2, 3], cmd: 'eyJzZWFzb24iOjF9' }, { id: q.movie_id + ':2', name: 'Season 2', series: [1, 2], cmd: 'eyJzZWFzb24iOjJ9' }] });
     }
@@ -61,6 +62,8 @@ function create(o) {
       if (!sid || +sid > 520) return js(res, { id: 1, cmd: '/media/file_' + (sid || '0') + '.mpg', error: 'nothing_to_play' });
       return js(res, { id: 1, cmd: 'ffmpeg http://127.0.0.1:1/movie/u/p/' + sid + '.mp4' });
     }
+    // o.vodHls (issue #118): movie links that are HLS playlists.
+    if (o.vodHls && q.type === 'vod' && q.action === 'create_link') { seen.vodLinks = (seen.vodLinks || []).concat([q.cmd]); return js(res, { id: 1, cmd: 'http://127.0.0.1:1/5e9ab/playlist.m3u8?token=t&vtt_mode=standard' }); }
     if (q.type === 'vod' && q.action === 'create_link') { seen.vodLinks = (seen.vodLinks || []).concat([q.cmd + '|' + (q.series || '')]); return js(res, { id: 1, cmd: 'ffmpeg http://127.0.0.1:1/vod/' + encodeURIComponent(q.cmd) + '.mp4?series=' + (q.series || '') }); }
     if (q.type === 'epg' && q.action === 'get_simple_data_table') {
       seen.epgDays = (seen.epgDays || []).concat([q.date]);

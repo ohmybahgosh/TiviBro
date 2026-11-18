@@ -675,6 +675,11 @@ function libraryRequest(kind, q, req, res, ALLOW, log) {
     if (kind === 'source') { if (q.action === 'remove' && activeScanControls[q.sourceId]) activeScanControls[q.sourceId].paused = true; return lib.source(q, answer); }
     if (kind === 'progress') return lib.progress(q, answer);
     if (kind === 'continue') return lib.continuing(answer);
+    // Subtitle files beside an episode (service/sidecar.js): its file's folder on the source.
+    if (kind === 'sidecar') return lib.file(q.handle, function (err, file) {
+      if (err || !file || !q.source || q.source.id !== file.sourceId || !file.path) return answer(null, { subs: [] });
+      require('./sidecar').lookup(q.source, file.path, function (r) { log({ lv: 'info', event: 'sidecar subtitles', found: r.subs.length, looked: r.looked, seen: r.seen }); answer(null, r); });
+    });
     if (kind === 'query') return lib.query(q, answer);
     if (kind === 'detail') return lib.detail(q, answer);
     if (kind === 'edit') { delete q._commandPrepared; delete q._single; return lib.edit(q, answer); }
@@ -794,11 +799,11 @@ function gdriveRequest(kind, q, res, ALLOW, log) {
 }
 function handle(req, res, ALLOW, log) {
   var route = req.url.split('?')[0];
-  var libraryRoute = /^\/media\/library\/(query|detail|edit|migrate|progress|continue|chapters|source|adopt|resolve|status)$/.exec(route);
+  var libraryRoute = /^\/media\/library\/(query|detail|edit|migrate|progress|continue|chapters|source|adopt|resolve|status|sidecar)$/.exec(route);
   var subs = /^\/media\/subs\/(search|get|login)$/.exec(route);
   var dropbox = /^\/media\/dropbox\/(folders|account|revoke)$/.exec(route);
   var gdrive = /^\/media\/gdrive\/(places|folders)$/.exec(route);
-  if (req.method !== 'POST' || (!libraryRoute && !subs && !dropbox && !gdrive && route !== '/media/scan/control' && route !== '/media/discover' && route !== '/media/scan' && route !== '/media/resolve' && route !== '/media/vformat' && route !== '/media/check' && route !== '/media/metadata' && route !== '/media/trakt')) return send(res, ALLOW, 404, { error: 'unknown media route' });
+  if (req.method !== 'POST' || (!libraryRoute && !subs && !dropbox && !gdrive && route !== '/media/scan/control' && route !== '/media/discover' && route !== '/media/scan' && route !== '/media/resolve' && route !== '/media/sidecar' && route !== '/media/sidecar/get' && route !== '/media/vformat' && route !== '/media/check' && route !== '/media/metadata' && route !== '/media/trakt')) return send(res, ALLOW, 404, { error: 'unknown media route' });
   var body = '', over = false, bodyBytes = 0, bodyLimit = libraryRoute ? 1048576 : 65536;
   if (req.setEncoding) req.setEncoding('utf8');
   req.on('data', function (c) { if (over) return; body += c; bodyBytes += Buffer.byteLength(c, 'utf8'); if (bodyBytes > bodyLimit) { over = true; send(res, ALLOW, 413, { error: 'too large' }); } });
@@ -813,6 +818,9 @@ function handle(req, res, ALLOW, log) {
       log({ lv: r.error ? 'warn' : 'info', event: 'subtitles ' + subs[1], results: r.results ? r.results.length : undefined, error: r.error || null });
       send(res, ALLOW, 200, r);
     });
+    // Subtitle files beside a movie, and one of them (service/sidecar.js).
+    if (route === '/media/sidecar') return require('./sidecar').lookup(q.source, q.path, function (r) { log({ lv: 'info', event: 'sidecar subtitles', found: r.subs.length, looked: r.looked, seen: r.seen }); send(res, ALLOW, 200, r); });
+    if (route === '/media/sidecar/get') return require('./sidecar').get(q.source, q.path, q.lang, function (r) { if (r.error) log({ lv: 'warn', event: 'sidecar subtitle', error: r.error }); send(res, ALLOW, 200, r); });
     if (route === '/media/scan/control') {
       var control = activeScanControls[q.sourceId]; if (control) control.paused = true;
       return send(res, ALLOW, 200, { paused: true });
@@ -860,4 +868,4 @@ function hideLinksFrom(host) {
   host = str(host).toLowerCase();
   if (host && signedHosts.indexOf(host) < 0) { signedHosts.push(host); if (signedHosts.length > 50) signedHosts.splice(1, 1); }
 }
-module.exports = { changeCheck: changeCheck, catalog: catalog, scanResults: scanResults, originKey: originKey, samePath: samePath, moviesOf: moviesOf, skipFolder: skipFolder, newSkipped: newSkipped, signedHosts: signedHosts, hideLinksFrom: hideLinksFrom, handle: handle, scan: scan, resolve: resolve, discover: discover, titleOf: titleOf, isJunk: isJunk, tokens: tokens, parseBrowse: parseBrowse, parsePropfind: parsePropfind, parseDevice: parseDevice, errorKind: errorKind, failure: failure };
+module.exports = { basicAuth: basic, changeCheck: changeCheck, catalog: catalog, scanResults: scanResults, originKey: originKey, samePath: samePath, moviesOf: moviesOf, skipFolder: skipFolder, newSkipped: newSkipped, signedHosts: signedHosts, hideLinksFrom: hideLinksFrom, handle: handle, scan: scan, resolve: resolve, discover: discover, titleOf: titleOf, isJunk: isJunk, tokens: tokens, parseBrowse: parseBrowse, parsePropfind: parsePropfind, parseDevice: parseDevice, errorKind: errorKind, failure: failure };

@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **Subtitles inside episodes from Dropbox and Google Drive.**  St Denis Medical's English and Arabic subtitles, inside its MKV, showed in Plex but never in TiviBro: an episode's link from those services doesn't end in ".mkv", so TiviBro didn't look inside.  It goes by the file's own name now.
+- **Subtitle files beside a video, as Plex reads them.**  "Movie.srt", "Movie.en.srt", "Episode.eng.forced.srt" next to the file, a Subs or Subtitles folder beside it (with the video's own folder in it, as release groups do), or any subtitle file in a folder with only that video: each is a track in the Subtitles menu, named for its language (and Forced or SDH), and one comes on as embedded ones do.  Dropbox, WebDAV and Google Drive.
+- **Smoother first seconds after starting.**  Right after TiviBro opened, the remote could lag or a press seem lost.  My teams looked through every programme in the guide, team by team, at every start, holding the TV up for seconds; it now takes a fraction of that, and the stored guide is read in short slices that let presses through.  The side menu, open while a screen was added to it (Movies or My media, a few seconds in), lost its highlight and counted ▲ ▼ from a place that had moved: it keeps the screen you were on.
+- **Stalker portals: Shows categories that came up empty** (issue #118).  A category's shows were asked for with the category as a genre too, and that portal answered nothing.  Now as other players ask (genre=*), with the old way as a fallback.
+- **Stalker portals whose movies come as HLS** (issue #118).  The movie link was a playlist, and the TV's player and the MPEG-TS one both failed on it.  TiviBro now plays it as HLS, and remembers that the portal does that, so its other movies start that way at once, without first checking the sound (which took the portal's one connection).
+
 ## 0.6.0 (alpha 161, 2026-11-18)
 
 Pre-release: expect rough edges, and keep a backup before installing.

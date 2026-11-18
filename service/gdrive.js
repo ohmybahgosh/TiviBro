@@ -305,7 +305,7 @@ function idOf(path) { var m = /^gd:([A-Za-z0-9_-]{5,200})(\/|$)/.exec(str(path))
 
 module.exports = {
   SCOPE: SCOPE, parseKey: parseKey, keyText: keyText, accessToken: accessToken, account: account, places: places, folders: folders, listAll: listAll, entriesUnder: entriesUnder,
-  startToken: startToken, changesSince: changesSince, topFingerprint: topFingerprint, fileUrl: fileUrl, authorizer: authorizer, idOf: idOf, validId: validId, forget: forget,
+  startToken: startToken, changesSince: changesSince, topFingerprint: topFingerprint, fileUrl: fileUrl, authorizer: authorizer, idOf: idOf, validId: validId, forget: forget, get: get,
   // For tests: how long a retry waits (ms in, ms out), and the cache.
   _wait: function (ms) { return ms; }, _tokens: tokens
 };

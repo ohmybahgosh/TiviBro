@@ -445,7 +445,9 @@ var Player = (function () {
     // the same resulting session URL; opening the entry separately can evict video.
     // MKV and MP4 files carry subtitles the TV's player doesn't show: their reader finds them.
     var subs = null, reader = null;
-    var item = cur.meta && cur.meta.item || {}, container = item.ext || item.container_extension || '';
+    // The file's own name when the link doesn't say (a Dropbox or Google Drive episode: St Denis Medical's
+    // subtitles inside its MKV never showed, since the link has no ".mkv" and episodes carried no ext).
+    var item = cur.meta && cur.meta.item || {}, container = item.ext || item.container_extension || ((/\.([a-z0-9]{2,4})$/i.exec(String(item.file || '')) || [])[1] || '').toLowerCase();
     if (!cur.live && (/\.mkv(\?|#|$)/i.test(url) || /^mkv$/i.test(container)) && typeof MkvSubs !== 'undefined') reader = MkvSubs;
     else if (!cur.live && typeof Mp4Subs !== 'undefined' && Mp4Subs.isMp4(url, container)) reader = Mp4Subs;
     if (reader) subs = reader.extract(url, video, loadNative, container);
@@ -607,7 +609,8 @@ var Player = (function () {
          (issue #88).  Straight to its HLS version, and that channel starts as HLS from then on. */
       if (http === 415 && kind !== 'hls' && !st.started && window.Hls && Hls.isSupported() && hlsVariant(cur.origUrl || cur.url) && !(cur.tried && cur.tried.hls)) {
         preferHls[cur.origUrl || cur.url] = 1;
-        Log.info('player', 'The portal sends this channel as HLS; playing it that way');
+        if (!cur.live) vodHls(cur.origUrl || cur.url, true);
+        Log.info('player', cur.live ? 'The portal sends this channel as HLS; playing it that way' : 'The portal sends this movie as HLS; playing it that way, and its other movies too');
         useEngine('hls'); return start(myToken);
       }
       if ((http === 404 || http === 410) && !st.started && cur.live && !cur.timeshift && !cur.everPlayed) {
@@ -768,7 +771,23 @@ var Player = (function () {
      of the same channel.  Once all have failed there is no point in eight reconnects. */
   var ENGINE_NAMES = { ts: 'built-in demuxer', native: 'TV player', hls: 'HLS version of this channel', dash: 'DASH player' };
   // A live channel's HLS address: Xtream's /live/.../1.ts as 1.m3u8, and a Stalker channel's (the helper asks the portal either way).
-  function hlsVariant(url) { return cur && cur.live && !cur.timeshift && /\/(?:live|stalker\/play)\/[^?]+\.ts(\?|$)/i.test(url) ? url.replace(/\.ts(\?|$)/i, '.m3u8$1') : null; }
+  function hlsVariant(url) {
+    if (cur && cur.live && !cur.timeshift && /\/(?:live|stalker\/play)\/[^?]+\.ts(\?|$)/i.test(url)) return url.replace(/\.ts(\?|$)/i, '.m3u8$1');
+    // A Stalker portal's movie or episode whose link is an HLS playlist (issue #118): the same address, .m3u8.
+    if (cur && !cur.live && /\/stalker\/vod\/[^?\/]+\.[a-z0-9]{2,5}(\?|$)/i.test(url) && !/\.m3u8(\?|$)/i.test(url)) return url.replace(/\.[a-z0-9]{2,5}(\?|$)/i, '.m3u8$1');
+    return null;
+  }
+  /* Stalker portals whose movies come as HLS (issue #118), remembered on the TV by their login: their movies start
+     as HLS straight away, without the TV player and the MPEG-TS one failing first (each try costs the portal a link,
+     and a portal allowing one at a time refused the next). */
+  var VOD_HLS_KEY = 'tivibro.stalkerVodHls';
+  function stbOf(url) { var m = /[?&]stb=([^&]+)/.exec(url || ''); return m ? m[1].slice(0, 200) : ''; }
+  function vodHls(url, set) {
+    var k = stbOf(url); if (!k || !/\/stalker\/vod\//.test(url || '')) return false;
+    var o = {}; try { o = JSON.parse(localStorage.getItem(VOD_HLS_KEY) || '{}') || {}; } catch (e) {}
+    if (set) { o[k] = 1; try { localStorage.setItem(VOD_HLS_KEY, JSON.stringify(o)); } catch (e) {} }
+    return !!o[k];
+  }
   /** Can this TV use pipeline [k] for the current channel? */
   function engineOk(k) {
     var u = cur.origUrl || cur.url, isHlsUrl = /\.m3u8(\?|$)/i.test(u);
@@ -1310,7 +1329,8 @@ var Player = (function () {
     if (want === 'ts' && /\/live\/[^?]+\.m3u8(\?|$)/i.test(cur.url)) { cur.url = cur.url.replace(/\.m3u8(\?|$)/i, '.ts$1'); cur.usual = pickEngine(cur.url); }
     if (want) Log.info('player', 'Stream format for this channel: ' + (want === 'hls' ? 'HLS' : 'MPEG-TS') + ' (chosen for it)');
     if (want === 'hls' && !/\.m3u8(\?|$)/i.test(cur.url) && window.Hls && Hls.isSupported() && hlsVariant(cur.url)) useEngine('hls');
-    if (!want && cur.live && !cur.timeshift && preferHls[cur.url] && window.Hls && Hls.isSupported() && hlsVariant(cur.url)) { Log.info('player', 'Using the HLS version of this channel, which played better earlier'); useEngine('hls'); }
+    if (!cur.live && !cur.conv && vodHls(cur.url) && window.Hls && Hls.isSupported() && hlsVariant(cur.url)) { Log.info('player', 'This portal sends its movies as HLS: playing it that way'); useEngine('hls'); }
+    else if (!want && cur.live && !cur.timeshift && preferHls[cur.url] && window.Hls && Hls.isSupported() && hlsVariant(cur.url)) { Log.info('player', 'Using the HLS version of this channel, which played better earlier'); useEngine('hls'); }
     // What this channel needed last time (playmemo.js): its pipeline (unless a format was chosen for it),
     // and the cushion it earned.
     else if (cur.live && !cur.timeshift && window.PlayMemo && Store.settings.engine !== 'native') {
@@ -1647,7 +1667,7 @@ var Player = (function () {
 
   return {
     _test: { reconnect: function (why) { reconnect(token, why || 'test'); }, get holding() { return holding; }, get kind() { return st && st.kind; } },
-    PRESETS: PRESETS, memorySafe: memorySafe, get converting() { return !!(cur && cur.conv); }, get userPaused() { return !!(st && st.userPaused); }, get memSafe() { return memSafe() ? (typeof Store !== 'undefined' && Store.settings && Store.settings.memSafe === 'on' ? 'turned on in Settings' : safeWhy || (navigator.deviceMemory ? 'this TV has 1 GB of memory or less' : 'an HD or Full HD TV, with about 1 GB of memory')) : ''; }, bind: bind, play: play, _dashProtection: dashProtection, heardAudio: heardAudio, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, retryNow: retryNow, get startStatus() { return startStatus(); }, on: on,
+    PRESETS: PRESETS, memorySafe: memorySafe, get converting() { return !!(cur && cur.conv); }, vodHls: function (u) { return vodHls(u); }, get userPaused() { return !!(st && st.userPaused); }, get memSafe() { return memSafe() ? (typeof Store !== 'undefined' && Store.settings && Store.settings.memSafe === 'on' ? 'turned on in Settings' : safeWhy || (navigator.deviceMemory ? 'this TV has 1 GB of memory or less' : 'an HD or Full HD TV, with about 1 GB of memory')) : ''; }, bind: bind, play: play, _dashProtection: dashProtection, heardAudio: heardAudio, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, retryNow: retryNow, get startStatus() { return startStatus(); }, on: on,
     seek: seek, seekTo: seekTo, liveWindow: liveWindow, liveSeek: liveSeek, applyDisplay: applyDisplay, suspend: suspend, resume: resume,
     audioTracks: function () { return eng && eng.audio ? eng.audio() : []; }, describeTrack: describeTrack,
     qualities: function () { return eng && eng.levels ? eng.levels() : []; },

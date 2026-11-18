@@ -165,10 +165,10 @@ var Subs = (function () {
      lose them).  Such a track can't be removed, so when the video ends it is switched off and left out
      of every list (gone()). */
   var dead = [];
-  function addTrack(label, lang, cues) {
+  function addTrack(label, lang, cues, quiet) {
     var v = video(), tr = v.addTextTrack('subtitles', label, lang || '');
-    for (var i = 0; i < v.textTracks.length; i++) if (v.textTracks[i] !== tr && v.textTracks[i].kind === 'subtitles') v.textTracks[i].mode = 'disabled';
-    tr.mode = 'showing';
+    if (!quiet) { for (var i = 0; i < v.textTracks.length; i++) if (v.textTracks[i] !== tr && v.textTracks[i].kind === 'subtitles') v.textTracks[i].mode = 'disabled'; }
+    tr.mode = quiet ? 'hidden' : 'showing';
     cues.forEach(function (c) { try { var p = placed(c.s, c.e), q = new VTTCue(p.s, p.e, c.text); q._s0 = c.s; q._e0 = c.e; tr.addCue(q); } catch (e) {} });
     added.push(tr);
     version++;
@@ -177,6 +177,46 @@ var Subs = (function () {
     return tr;
   }
   function gone(t) { return dead.indexOf(t) >= 0; }
+  /* Subtitle files beside a My media video (service/sidecar.js; St Denis Medical's .srt that Plex showed and
+     TiviBro didn't): q { source, path } for a movie or { source, handle } for an episode.  Each comes in as a
+     track named for its language (and Forced or SDH), in the Subtitles menu, and one turns on as embedded
+     tracks do (Settings > Playback > Audio and subtitles, or what you chose for this title or show last time). */
+  var sideToken = 0;
+  function post(route, body, ms) {
+    if (!Net.port) return Promise.reject(new Error('no helper'));
+    return Promise.race([Net.ctlFetch('http://127.0.0.1:' + Net.port + '/media/' + route, { method: 'POST', cache: 'no-store', headers: ({ 'Content-Type': 'application/json' }), body: JSON.stringify(body) }).then(function (r) { return r.json(); }),
+      new Promise(function (_, no) { setTimeout(function () { no(new Error('timeout')); }, ms || 20000); })]);
+  }
+  function sidecar(q) {
+    var my = ++sideToken, v = video();
+    if (!q || !q.source || (!q.path && !q.handle)) return Promise.resolve(0);
+    return post(q.handle ? 'library/sidecar' : 'sidecar', q.handle ? { source: q.source, handle: q.handle } : { source: q.source, path: q.path }).then(function (r) {
+      var list = (r && r.subs) || [], want = Store.settings.subsLang || langs()[0] || '';
+      if (my !== sideToken || !list.length) return 0;
+      // Your language first, then the rest; at most 6.
+      list = list.slice().sort(function (a, b) { return ((b.lang === want) - (a.lang === want)) || ((a.forced || a.sdh) - (b.forced || b.sdh)); }).slice(0, 6);
+      if (typeof Log !== 'undefined') Log.info('subs', 'Subtitle files beside it: ' + list.map(function (x) { return x.name; }).join(', '));
+      var made = [];
+      return list.reduce(function (p, x) {
+        return p.then(function () {
+          if (my !== sideToken || video() !== v) return;
+          return post('sidecar/get', { source: q.source, path: x.path, lang: x.lang }, 30000).then(function (g) {
+            var cues = g && g.text ? parse(g.text) : [];
+            if (!cues.length || my !== sideToken) return;
+            var label = (x.lang ? langName(x.lang) : shortName(x.name.replace(/\.[^.]+$/, ''), 30)) + (x.forced ? ' (forced)' : x.sdh ? ' (SDH)' : '');
+            var tr = addTrack(label, x.lang, cues, true); tr._forced = !!x.forced; tr._sidecar = true; made.push(tr);
+          }, function () {});
+        });
+      }, Promise.resolve()).then(function () {
+        if (my !== sideToken || !made.length) return made.length;
+        var vid = video(), on = made.filter(function (t) { return autoOn(t, vid); })[0];
+        if (on) { for (var i = 0; i < vid.textTracks.length; i++) if (vid.textTracks[i] !== on && vid.textTracks[i].kind === 'subtitles') vid.textTracks[i].mode = 'disabled'; on.mode = 'showing'; }
+        made.forEach(function (t) { if (t !== on) t.mode = 'disabled'; });
+        if (typeof Log !== 'undefined') Log.info('subs', made.length + ' subtitle file' + (made.length === 1 ? '' : 's') + ' added' + (on ? ', "' + on.label + '" on' : ''));
+        return made.length;
+      });
+    }, function () { return 0; });
+  }
   function reset() {
     forget();
     keepTiming();
@@ -623,7 +663,7 @@ var Subs = (function () {
     try { localStorage.setItem(AMEMO, JSON.stringify(all)); } catch (e) {}
   }
 
-  return { memoFor: memoFor, remember: remember, audioFor: audioFor, rememberAudio: rememberAudio, showKey: showKey, find: find, gone: gone, forget: forget, refresh: applyDelay, fresh: fresh, timingOf: timingOf, autoOn: autoOn, timingMenu: timingMenu, lineUpMenu: lineUpMenu, langMenu: langMenu, reset: reset, restore: restore, setup: setup, test: test, forgetKept: forgetKept, setKey: setKey, signIn: signIn, langs: langs, langName: langName,
+  return { sidecar: sidecar, memoFor: memoFor, remember: remember, audioFor: audioFor, rememberAudio: rememberAudio, showKey: showKey, find: find, gone: gone, forget: forget, refresh: applyDelay, fresh: fresh, timingOf: timingOf, autoOn: autoOn, timingMenu: timingMenu, lineUpMenu: lineUpMenu, langMenu: langMenu, reset: reset, restore: restore, setup: setup, test: test, forgetKept: forgetKept, setKey: setKey, signIn: signIn, langs: langs, langName: langName,
     get delay() { return delay; }, get rate() { return rate; }, get timing() { return timingSummary(); }, setRate: setRate, draw: drawLines, get configured() { return !!state.key; }, get user() { return state.user || ''; }, get allowed() { return state.allowed || 0; },
     _test: { keepOn: keepOn, listed: listed, shortName: shortName, keep: keep, parse: parse, align: align, clean: clean, guess: guess, shift: shift, addTrack: addTrack, linesAt: linesAt, snapshot: snapshot, setRate: setRate, lineUp: lineUp, applyDelay: applyDelay } };
 })();
