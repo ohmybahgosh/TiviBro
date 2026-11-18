@@ -41,7 +41,7 @@ jobs:
           sudo apt-get update -q
           sudo apt-get install -y -q --no-install-recommends \
             binutils-arm-linux-gnueabihf binutils-aarch64-linux-gnu \
-            qemu-user-static ffmpeg make xz-utils bzip2
+            qemu-user ffmpeg make xz-utils bzip2
 
       - name: Cache toolchain and sources
         uses: actions/cache@v4
@@ -97,7 +97,7 @@ jobs:
           cp parts/ffmpeg-armv7/LICENSE.md parts/ffmpeg-armv7/COPYING.LGPLv2.1 parts/ffmpeg-armv7/COPYING.LGPLv3 dist/
           if [ -f parts/ffmpeg-armv7/LICENSE.mbedtls.txt ]; then cp parts/ffmpeg-armv7/LICENSE.mbedtls.txt dist/; fi
           {
-            echo "ffmpeg for TiviBro (audio conversion), release $TAG"
+            echo "ffmpeg for TiviBro (audio conversion and seek previews), release $TAG"
             echo "Built by .github/workflows/ffmpeg.yml from $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/tree/$GITHUB_SHA"
             echo "Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
             echo
@@ -132,7 +132,7 @@ jobs:
           Licenses: \`LICENSE.md\`, \`COPYING.LGPLv3\`, \`COPYING.LGPLv2.1\`, \`LICENSE.mbedtls.txt\`.  Checksums: \`SHA256SUMS\`.
           More: docs/FFMPEG.md in the repository.
           EOF
-          TITLE="ffmpeg for TiviBro (audio conversion)"
+          TITLE="ffmpeg for TiviBro (audio conversion and seek previews)"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release edit "$TAG" --title "$TITLE" --notes-file notes.md --prerelease --latest=false
             gh release upload "$TAG" dist/* --clobber
