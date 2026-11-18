@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 167, 2026-11-18)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 167
 
 - **A show you're part-way through has its progress bar on every shelf**, not only Next up on the TV shows tab.  Cunk on Cinema, paused on Plex and brought in by Trakt, showed its bar in Next up but not in Home's Recently watched (Trakt).
 - **Home's Continue watching puts what you watched last first**, movies and shows together.  Shows used to come after every movie, so an episode you just paused was at the far end of the row.
@@ -9,11 +13,7 @@
 - **Back from an episode started on Next up goes back to Next up.**  It opened the season's episodes, then the show, then the TV shows list, one after another.  The next episode playing by itself goes back to the same place.
 - Trakt's Sync now says "Synced with Trakt" when it's done.
 
-## 0.6.0 (alpha 166, 2026-11-18)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 166
+### In alpha 166
 
 - **Fixed: alphas 164 and 165 didn't open the playlist** and went to adding one ("numLen is not defined").  The smaller long channel numbers were drawn by a part of the guide that couldn't reach the code that sizes them.  Nothing was lost: your playlist and settings were kept, and open again with this update.
 - Fixed: in the guide, Show or hide channels > Hide channels with no guide information stopped with an error, for the same reason.
