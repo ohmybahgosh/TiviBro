@@ -28,11 +28,11 @@ var crypto = require('crypto'), zlib = require('zlib'), cp = require('child_proc
 var Storage = require('./storage');
 
 /* ---------- the release (the lead fills in the hashes after running the build) ---------- */
-var TAG = 'ffmpeg-7.1-tb3';   // tb3: dovi_rpu with p81 (Dolby Vision 7 as 8.1, convert.js); tb2: video decoders and JPEG for seek previews
+var TAG = 'ffmpeg-7.1-tb4';   // tb4: no L5 letterbox for a cropped remux; tb3: dovi_rpu with p81 (Dolby Vision 7 as 8.1, convert.js); tb2: video decoders and JPEG for seek previews
 var BASE = 'https://github.com/ohmybahgosh/TiviBro/releases/download/' + TAG + '/';
 var SHA256 = {
-  armv7: 'ce985dfbbaf9bc74ed7a93630138b1b2316fe074ca2b30357e929691227caaf4',
-  aarch64: 'bfea671a7fb37353a8d830421e4a672a9e6ab061974b3e49bf79ca126152298b'
+  armv7: '677b29d978d0d25d974e9cbbb2c27d2bc85ec8cd5bdcddc8f8ab07431badd064',
+  aarch64: '3f15380d3db16f8b7307c0b9a333ab09a381fa25e4a18fec3304bdcb8de3025b'
 };
 var MAX_BYTES = 16 * 1024 * 1024;           // the .gz is about 1.6 MB; anything far bigger is not it
 
