@@ -5,6 +5,8 @@
 - **A show you're part-way through has its progress bar on every shelf**, not only Next up on the TV shows tab.  Cunk on Cinema, paused on Plex and brought in by Trakt, showed its bar in Next up but not in Home's Recently watched (Trakt).
 - **Home's Continue watching puts what you watched last first**, movies and shows together.  Shows used to come after every movie, so an episode you just paused was at the far end of the row.
 - **Find subtitles for an episode from My media searches for the show**, its season and episode: it searched for "S1E2 Episode 2", which no subtitle site knows.
+- **Next up keeps a show when its episode ends, on the next episode**, as Plex does ("Up next: S1E3").  It used to leave the row.
+- **Back from an episode started on Next up goes back to Next up.**  It opened the season's episodes, then the show, then the TV shows list, one after another.  The next episode playing by itself goes back to the same place.
 - Trakt's Sync now says "Synced with Trakt" when it's done.
 
 ## 0.6.0 (alpha 166, 2026-11-18)

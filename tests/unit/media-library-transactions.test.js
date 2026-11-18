@@ -51,6 +51,15 @@ function ep(n) { const name = 'Harbour.S01E0' + n + '.mkv'; return { id: 'w:/Har
   assert.equal(Object.values(JSON.parse(fs.readFileSync(progressFile, 'utf8')).p)[0].position, 200, 'written at once when playback stops');
   assert.equal((await call(c, 'progress', { handle, position: 5, duration: 1500, session: 's', sequence: 3, startedAt: started })).ignored, true, 'an older report is ignored');
   assert.equal((await call(c, 'continuing')).items.length, 1);
+  // Next up, as Plex's: played to the end, the show stays on its next episode (it left the row before).
+  const cont0 = (await call(c, 'continuing')).items[0];
+  assert.equal(cont0.label, 'S1E1'); assert(!cont0.nextUp);
+  await call(c, 'progress', { handle, position: 1500, duration: 1500, session: 's', sequence: 11, startedAt: started, final: true });
+  const next = (await call(c, 'continuing')).items;
+  assert.equal(next.length, 1, 'a finished episode keeps its show in Next up');
+  assert(next[0].nextUp && next[0].label === 'S1E2' && next[0].progressPercent === 0, JSON.stringify(next[0]));
+  const ep2 = await call(c, 'detail', { kind: 'episode', handle: next[0].continueEpisode });
+  assert.equal(ep2.number, 2, 'on the next episode');
   console.log('PASS robust write queue, full-disk rollback, retryable imports, idempotent commands and progress outside the revision');
  } finally { fs.rmSync(root, { recursive: true, force: true }); }
 })().catch(e => { console.error(e); process.exitCode = 1; });

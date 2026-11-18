@@ -842,7 +842,9 @@ Catalog.prototype.continuing = function (cb) {
         if (err) return done(err);
         var disabled = {}, cards = {}, count = 0;
         Object.keys(ctx.index.sources).forEach(function (id) { var s = ctx.index.sources[id]; if (s.active === false || s.contentMode === 'movies') disabled[id] = true; });
-        var list = Object.keys(doc.p).map(function (k) { return doc.p[k]; }).filter(function (p) { return p.position >= 5 && p.position < p.duration - 1 && !disabled[p.sourceId || sourceOfFileId(p.id)]; });
+        /* Next up, as Plex's: a show whose episode was finished (watched, or played to the end) stays, on its next
+           episode not watched.  Before, it left the row when an episode ended (Cunk on Cinema). */
+        var list = Object.keys(doc.p).map(function (k) { return doc.p[k]; }).filter(function (p) { return p.position >= 5 && !disabled[p.sourceId || sourceOfFileId(p.id)]; });
         list.sort(function (a, b) { return b.at - a.at; });
         series(list.slice(0, 300), function (p, next) {
           if (count >= 60) return next();
@@ -850,10 +852,25 @@ Catalog.prototype.continuing = function (cb) {
           if (!isShowShard(sid) || !show || show.orphaned || cards[sid]) return next();
           self.readShard(sid, function (e2, shard) {
             if (e2) return next(e2);
-            shard.episodes.some(function (ep) {
-              if (ep.orphaned || ep.watchState === 'watched' || (ep.fileIds || []).indexOf(p.id) < 0) return false;
-              var card = project(show); card.at = p.at; card.continueEpisode = ep.id; card.continueFile = p.handle; card.progressPercent = Math.round(100 * p.position / p.duration);
-              cards[sid] = card; count++;
+            var eps = shard.episodes.filter(function (ep) { return !ep.orphaned; }).sort(sortEpisodes);
+            eps.some(function (ep, i) {
+              if ((ep.fileIds || []).indexOf(p.id) < 0) return false;
+              var finished = ep.watchState === 'watched' || p.position >= p.duration - 1;
+              if (!finished) {
+                var card = project(show); card.at = p.at; card.continueEpisode = ep.id; card.continueFile = p.handle; card.progressPercent = Math.round(100 * p.position / p.duration);
+                card.label = 'S' + ep.season + 'E' + ep.number;
+                cards[sid] = card; count++;
+                return true;
+              }
+              // The next one not watched, that has a file.
+              for (var j = i + 1; j < eps.length; j++) {
+                var nx = eps[j];
+                if (nx.watchState === 'watched' || !(nx.fileIds || []).length) continue;
+                var c2 = project(show); c2.at = p.at; c2.continueEpisode = nx.id; c2.continueFile = ''; c2.nextUp = true; c2.progressPercent = 0;
+                c2.label = 'S' + nx.season + 'E' + nx.number;
+                cards[sid] = c2; count++;
+                break;
+              }
               return true;
             });
             next();

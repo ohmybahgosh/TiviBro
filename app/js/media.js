@@ -722,7 +722,7 @@ var Media = (function () {
     box.appendChild(U.el('div', 'media-facts', facts.filter(Boolean).join('   ·   ')));
     formatSoon(m, function (x) { if (itemsVL.current() === x) showInfo(); });
     box.appendChild(U.el('p', 'media-summary', md.plot || (m.kind === 'show' ? 'Press OK for its seasons and episodes.' : 'Press OK to play.  Red for options.')));
-    var bottom = m.kind === 'live' ? liveLine(m.live) + '  ·  ' + (m.live.live ? 'OK to watch' : 'OK for a reminder') : m.continueEpisode ? 'Continue with ' + (m.label || 'the next episode') + (m.progressPercent ? ',  ' + m.progressPercent + '% watched' : '')
+    var bottom = m.kind === 'live' ? liveLine(m.live) + '  ·  ' + (m.live.live ? 'OK to watch' : 'OK for a reminder') : m.continueEpisode && m.nextUp ? 'Up next: ' + (m.label || 'the next episode') + '  ·  OK to play' : m.continueEpisode ? 'Continue with ' + (m.label || 'the next episode') + (m.progressPercent ? ',  ' + m.progressPercent + '% watched' : '')
       : r ? 'Resume at ' + RT(Math.max(1, Math.floor(r.pos / 60))) + ' of ' + RT(Math.floor(r.dur / 60)) : m.kind === 'show' ? (m.newLine ? m.newLine + '  ·  ' : '') + 'OK for episodes' : 'Ready to watch';
     box.appendChild(U.el('div', 'media-caption', bottom + (src ? '   ·   ' + src.name : '')));
     if (md.provider && ((md.fallbackFields || []).length || MediaStore.preferences().language !== (md.requestedLanguage || md.language || 'en'))) box.appendChild(U.el('span', 'media-language-note', (md.fallbackFields || []).length ? 'English fallback: ' + md.fallbackFields.join(', ') : 'Saved metadata language differs from your preference'));
