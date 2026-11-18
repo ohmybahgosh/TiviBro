@@ -1093,7 +1093,7 @@ var Views = (function () {
   function osdLegend() {
     var el = $('osdKeys'), items = [];
     function chip(key, label, color) { items.push([key, label, color]); }
-    if (mode === 'vod') { chip('ok', 'Pause'); chip('left', '◀ ▶  Skip ' + Store.settings.skip + 's'); chip('up', '▲ ▼  Skip 10 min'); chip('red', 'Options', 'red'); chip('back', 'Back  Stop'); }
+    if (mode === 'vod') { chip('ok', 'Pause'); chip('left', '◀ ▶  Skip ' + Store.settings.skip + 's'); chip('up', '▲ ▼  Skip 10 min'); if (typeof SeekPrev !== 'undefined' && SeekPrev.chapters.length > 1) chip('chup', 'CH  Chapters'); chip('red', 'Options', 'red'); chip('back', 'Back  Stop'); }
     else if (mode === 'catchup') { chip('ok', 'Pause'); chip('left', '◀ ▶  Skip ' + Store.settings.skip + 's'); chip('up', '▲ ▼  Skip 5 min'); chip('yellow', 'Back to live', 'yellow'); chip('red', 'Options', 'red'); }
     else {
       var g = function (b) { var a = Keymap.get('player', b); return a && a !== 'none' ? Keymap.SHORT[a] || Keymap.ACTIONS[a] : ''; };
@@ -1198,11 +1198,14 @@ var Views = (function () {
     var hidden = $('osd').classList.contains('hidden');
     if (mode === 'vod') {
       // Skip intro or Up next showing (skipper.js): OK does it, Back hides it.
+      if (typeof SeekPrev !== 'undefined' && SeekPrev.chapterKey(a)) return true;     // the chapter strip, while open
       if (typeof Skipper !== 'undefined' && vs.pending == null && Skipper.key(a)) return true;
       if (a === 'back') { if (vs.pending != null) { vodSeekCancel(); return true; } if (!hidden) { $('osd').classList.add('hidden'); return true; } exitFull(); }
       else if (a === 'left') vodSeek(-Store.settings.skip, true);
       else if (a === 'stop') exitFull();       // discussion #36: Stop on the remote stops the movie (where it got to is kept)
       else if (a === 'right') vodSeek(+Store.settings.skip, true);
+      // CH+ CH−: the next or previous chapter in a file with chapters, else 10 minutes like ▲ ▼.
+      else if ((a === 'chdown' || a === 'chup') && typeof SeekPrev !== 'undefined' && SeekPrev.chapters.length > 1) { var ct = SeekPrev.chapterStep(a === 'chup' ? 1 : -1, vs.pending != null ? vs.pending : Player.position); if (ct >= 0) vodSeek(ct - (vs.pending != null ? vs.pending : Player.position)); }
       else if (a === 'down' || a === 'chdown') vodSeek(-600);
       else if (a === 'rew') vodSeek(-(+Store.settings.ffStep || 120), true);
       else if (a === 'ff') vodSeek(+Store.settings.ffStep || 120, true);
@@ -2040,6 +2043,7 @@ var Views = (function () {
     if (tracks.length > 1) items.push({ label: 'Audio track', sub: (tracks.filter(function (t) { return t.on; })[0] || {}).label, action: audioMenu });
     items.push({ label: 'Aspect', sub: Player.aspectName(Player.displayFor(aspectTarget())), action: pictureMenu });
     if (Player.qualities().length > 1) items.push({ label: 'Video quality', sub: qualityLabel(), action: qualityMenu });
+    if (mode === 'vod' && typeof SeekPrev !== 'undefined' && SeekPrev.chapters.length > 1) items.push({ label: 'Chapters', sub: SeekPrev.chapters.length + ' in this ' + (vod && vod.meta && vod.meta.item && vod.meta.item.kind === 'episode' || vod && vod.meta && vod.meta.seriesKey ? 'episode' : 'movie') + '  ·  CH+ CH− go from one to the next', action: function () { SeekPrev.openChapters(function (t) { vs.pending = t; vodSeekCommit(); }); } });
     if (mode === 'vod' && typeof SeekPrev !== 'undefined') items.push({ label: 'Seek previews', sub: ({ auto: 'Automatic', on: 'On', off: 'Off' })[SeekPrev.setting()] + (SeekPrev.available === false ? '  ·  needs the TiviBro update with the new converter' : ''), action: seekPrevMenu });
     if (mode === 'vod' || mode === 'catchup') items.push({ label: 'Playback speed', sub: Player.rate === 1 ? 'Normal' : Player.rate + '×', action: speedMenu });
     // Live captions (CEA-608) have their own switch; Subtitles is for real subtitle tracks.

@@ -57,7 +57,7 @@ var SeekPrev = (function () {
       return fetch(base() + '/preview/' + key + '/status', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) { ok = !!j.ok; if (!ok) Log.info('player', 'Seek previews need the newer converter on this TV: it comes with the next TiviBro update'); return ok; });
     }).then(function () { if (movie === m) fillSoon(20000); }, function () {});
   }
-  function stop() { movie = null; made = {}; clearTimeout(fill); fill = null; hide(); marksFor = null; if (marksEl) marksEl.innerHTML = ''; if (typeof Skipper !== 'undefined') Skipper.chapters([]); }
+  function stop() { if (sheet) { sheet.el.remove(); sheet = null; } movie = null; made = {}; clearTimeout(fill); fill = null; hide(); marksFor = null; if (marksEl) marksEl.innerHTML = ''; if (typeof Skipper !== 'undefined') Skipper.chapters([]); }
 
   function build() {
     if (box) return box;
@@ -144,6 +144,7 @@ var SeekPrev = (function () {
     var spots = [], seen = {}, here = v.currentTime, skip = +Store.settings.skip || 30;
     [1, 2, -1, 3, 4, -2].forEach(function (k) { var t = bucket(here + k * skip); if (t > 0 && t < d - 5 && !seen[t]) { seen[t] = 1; spots.push(t); } });
     [600, -600].forEach(function (k) { var t = bucket(here + k); if (t > 0 && t < d - 5 && !seen[t]) { seen[t] = 1; spots.push(t); } });
+    (movie.chapters || []).forEach(function (c) { var t = picTime(c); if (!seen[t]) { seen[t] = 1; spots.push(t); } });   // each chapter's picture
     for (var s = 1; s < SPREAD; s <<= 1) for (var j = 1; j < 2 * s; j += 2) { var t = bucket(d * j / (2 * s)); if (!seen[t]) { seen[t] = 1; spots.push(t); } }
     var next = spots.filter(function (x) { return !made[x]; })[0];
     if (next == null) return;
@@ -153,5 +154,56 @@ var SeekPrev = (function () {
     im.src = link(next, true);
   }
 
-  return { start: start, stop: stop, show: show, hide: hide, get available() { return ok; }, setting: setting, chapterAt: chapterAt, get chapters() { return movie ? movie.chapters : []; }, _source: source };
+  /* Chapters with their pictures (Red > Chapters in the player, or CH+ CH− there): a strip of the movie's chapters,
+     each with a picture of its first moments (when previews are on), its name and when it starts.  ◀ ▶ move along,
+     OK jumps there, Back closes.  The picture is a little after the chapter's start (its very first frame is often
+     black). */
+  var sheet = null;
+  function picTime(c) { return bucket(c.s + Math.min(20, Math.max(2, (c.e - c.s) * 0.1))); }
+  function openChapters(onJump, onClose) {
+    var c = movie && movie.chapters || []; if (c.length < 2) return false;
+    var v = video(), now = v ? v.currentTime : 0, at = 0;
+    c.forEach(function (x, i) { if (now >= x.s) at = i; });
+    sheet = { at: at, onJump: onJump, onClose: onClose, el: U.el('div', 'chapsheet') };
+    sheet.el.appendChild(U.el('div', 'chapsheet-title', 'Chapters'));
+    sheet.track = U.el('div', 'chapsheet-track'); sheet.el.appendChild(sheet.track);
+    document.body.appendChild(sheet.el);
+    drawChapters();
+    return true;
+  }
+  function drawChapters() {
+    if (!sheet) return;
+    var c = movie && movie.chapters || [], from = Math.max(0, Math.min(sheet.at - 2, c.length - 5)), pics = allowed();
+    sheet.track.innerHTML = '';
+    for (var i = from; i < Math.min(c.length, from + 5); i++) (function (x, i) {
+      var card = U.el('div', 'chapcard' + (i === sheet.at ? ' sel' : '') + (pics ? '' : ' nopic'));
+      if (pics) { var im = U.el('img', 'chapcard-pic'); im.alt = ''; im.onload = function () { card.classList.add('has'); }; im.src = link(picTime(x), i !== sheet.at); card.appendChild(im); made[picTime(x)] = 1; }
+      card.appendChild(U.el('div', 'chapcard-name', chapterName(x, i)));
+      card.appendChild(U.el('div', 'chapcard-time', fmt(x.s)));
+      card.onclick = function () { sheet.at = i; jumpChapter(); };
+      sheet.track.appendChild(card);
+    })(c[i], i);
+  }
+  function closeChapters() { if (!sheet) return; var s0 = sheet; sheet = null; s0.el.remove(); if (s0.onClose) s0.onClose(); }
+  function jumpChapter() { if (!sheet) return; var c = movie.chapters[sheet.at], f = sheet.onJump; closeChapters(); if (c && f) f(c.s); }
+  // The player's keys while the strip is open (views.js fullKeys).  True: used.
+  function chapterKey(a) {
+    if (!sheet) return false;
+    var n = movie && movie.chapters ? movie.chapters.length : 0;
+    if (a === 'left' && sheet.at > 0) { sheet.at--; drawChapters(); }
+    else if (a === 'right' && sheet.at < n - 1) { sheet.at++; drawChapters(); }
+    else if (a === 'ok') jumpChapter();
+    else if (a === 'back' || a === 'red') closeChapters();
+    return true;
+  }
+  // CH+ / CH−: the next or the previous chapter's start (back to this one's start if more than 5 s in).  -1: none.
+  function chapterStep(dir, t) {
+    var c = movie && movie.chapters || []; if (c.length < 2) return -1;
+    if (dir > 0) { for (var i = 0; i < c.length; i++) if (c[i].s > t + 1) return c[i].s; return -1; }
+    for (var j = c.length - 1; j >= 0; j--) if (c[j].s < t - 5) return c[j].s;
+    return 0;
+  }
+
+  return { start: start, stop: stop, show: show, hide: hide, get available() { return ok; }, setting: setting, chapterAt: chapterAt, get chapters() { return movie ? movie.chapters : []; },
+    openChapters: openChapters, chapterKey: chapterKey, chapterStep: chapterStep, get chaptersOpen() { return !!sheet; }, _source: source };
 })();
