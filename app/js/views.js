@@ -79,7 +79,7 @@ var Views = (function () {
     if (vk.indexOf('series') >= 0) tabs.push('shows');
     // My media: in the menu once a media source is added (Settings > My media is the way in before that).
     if (typeof MediaStore !== 'undefined' && MediaStore.sources().length) tabs.push('media');
-    // Recordings: once a USB drive is in the TV, or something's been recorded (a shortcut, like Edit on phone).
+    // Recordings (recordings.js): once a USB drive is in the TV, or something's been recorded.
     if (typeof Record !== 'undefined' && Record.shown()) tabs.push('recordings');
     tabs.push('search', 'editor', 'settings');
     // Test builds: Report a problem one press away (it also stays in Settings > System).
@@ -90,7 +90,7 @@ var Views = (function () {
       var s = U.el('div', 'tab' + (t === tab ? ' on' : '')); s.setAttribute('data-tab', t);
       s.innerHTML = '<svg viewBox="0 0 24 24" class="ico">' + ICONS[t] + '</svg>';
       s.appendChild(U.el('span', 'lbl', T(TAB_LABELS[t])));
-      s.addEventListener('click', function () { closeNav(); if (full) exitFull(true); UI.close(); if (t === 'editor') WebEdit.showJoin(); else if (t === 'recordings') Record.open(); else if (t === 'report') Diag.openReport(); else switchTab(t); });
+      s.addEventListener('click', function () { closeNav(); if (full) exitFull(true); UI.close(); if (t === 'editor') WebEdit.showJoin(); else if (t === 'report') Diag.openReport(); else switchTab(t); });
       s.addEventListener('mousemove', function () { if (UI.pointer && !document.body.classList.contains('nav-open') && !full) openNavFromPointer(); });
       nav.appendChild(s);
     });
@@ -634,7 +634,7 @@ var Views = (function () {
 
   var guideSeen = false;
   function switchTab(t) {
-    if (tabs.indexOf(t) < 0 && t !== 'live') t = home();
+    if (tabs.indexOf(t) < 0 && t !== 'live' && t !== 'recordings') t = home();
     if (t === 'settings' && tab !== 'settings') return Parental.gate('settings', null, function () { doSwitch(t); });
     doSwitch(t);
   }
@@ -642,6 +642,7 @@ var Views = (function () {
     if (lvis && t !== 'live') endListVis(true);
     if (tab === 'media' && t !== 'media') Media.leave();
     if (tab === 'onnow' && t !== 'onnow') OnNow.leave();
+    if (tab === 'recordings' && t !== 'recordings' && typeof Recordings !== 'undefined') Recordings.leave();
     document.body.classList.toggle('media-open', t === 'media');
     if ((tab === 'movies' || tab === 'shows') && t !== 'movies' && t !== 'shows' && typeof VodHome !== 'undefined') VodHome.hide();                 // the clock over a backdrop gets a shadow
     if ((t === 'settings' || t === 'search') && (tab === 'guide' || tab === 'live')) pipFrom = tab;
@@ -654,7 +655,7 @@ var Views = (function () {
       if (on) tabSel = i;
     });
     if (t !== 'guide') Guide.leave();
-    ['Live', 'Guide', 'Settings', 'Vod', 'Media', 'Onnow', 'Search'].forEach(function (x) {
+    ['Live', 'Guide', 'Settings', 'Vod', 'Media', 'Onnow', 'Recordings', 'Search'].forEach(function (x) {
       var want = t === 'movies' || t === 'shows' ? 'Vod' : t.charAt(0).toUpperCase() + t.slice(1);
       var v = $('view' + x);
       if (v) v.classList.toggle('hidden', x !== want);
@@ -684,6 +685,7 @@ var Views = (function () {
       else if (t === 'movies' || t === 'shows') Vod.open(t === 'shows' ? 'series' : 'movie');
       else if (t === 'media') Media.open();
       else if (t === 'onnow') OnNow.open();
+      else if (t === 'recordings') Recordings.open();
       else if (t === 'search') Search.open();
     }
   }
@@ -714,7 +716,6 @@ var Views = (function () {
         // Edit on phone is a shortcut, not a screen: it shows the editor's QR code over the screen you are on.
         if (tabs[tabSel] === 'editor') { if (a === 'ok') { done(); onBack(); WebEdit.showJoin(); } }
         else if (tabs[tabSel] === 'report') { if (a === 'ok') { done(); onBack(); Diag.openReport(); } }
-        else if (tabs[tabSel] === 'recordings') { if (a === 'ok') { done(); onBack(); Record.open(); } }
         else { done(); if (tabs[tabSel] === tab) onBack(); else switchTab(tabs[tabSel]); }
       }
       else if (a === 'back') {

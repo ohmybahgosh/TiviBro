@@ -212,6 +212,7 @@ function hls(S, u) {
   io.getText(u, function (e, text) {
     if (S.stopped) return;
     if (e) return again(S, e.message);
+    if (!/^\s*#EXTM3U/.test(text)) return again(S, 'the provider\'s answer wasn\'t a playlist');
     var lines = text.split(/\r?\n/), best = null, bw = -1;
     for (var i = 0; i < lines.length; i++) {
       var m = /^#EXT-X-STREAM-INF:(.*)$/.exec(lines[i]);

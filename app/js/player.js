@@ -1381,6 +1381,7 @@ var Player = (function () {
       forceNative: false, triedNative: false, live: opts.live !== false, startAt: opts.startAt || 0, meta: opts.meta || null,
       timeshift: !!opts.timeshift, urlFn: opts.urlFn || null, pos: opts.startAt || 0,
       tshift: !!opts.tshift, tsFrom: opts.tsFrom != null ? opts.tsFrom : -1,
+      knownDur: +(opts.dur || (opts.meta && opts.meta.dur)) || 0,      // a recording's length (an MPEG-TS file says none)
       media: opts.media || (opts.meta && opts.meta.media) || null, opts: opts };
     // keepTrying: a channel known to work here (back from its backups during an outage) retries
     // like one that has played, instead of giving up after the first round.
@@ -1773,7 +1774,7 @@ var Player = (function () {
     get mediaInfo() { return cur && cur.media; },
     get engine() { return st ? ENGINE_NAMES[st.kind] || st.kind : ''; },
     get position() { return position(); },
-    get duration() { return cur && cur.conv && cur.conv.dur ? cur.conv.dur : video && isFinite(video.duration) ? video.duration : 0; },
+    get duration() { return cur && cur.conv && cur.conv.dur ? cur.conv.dur : video && isFinite(video.duration) && video.duration > 0 ? video.duration : cur && cur.knownDur ? cur.knownDur : 0; },
     // Sound being converted right now: { codec, track, from } (Stream info, tests).
     get converting() { return cur && cur.conv ? { codec: cur.conv.codec, track: cur.conv.a, from: cur.conv.t, base: cur.conv.base, fmt: cur.conv.fmt, url: st && st.state !== 'idle' && video ? video.getAttribute('src') || '' : '' } : null; },
     get paused() { return !video || video.paused; },

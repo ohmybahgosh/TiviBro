@@ -1030,7 +1030,6 @@ body.vod-home-open:not(.full) #clock{text-shadow:0 2px 10px rgba(0,0,0,.85),0 0 
 .on-later.focus .on-art img,.on-later.focus .on-ph{opacity:1}
 .on-later .on-cap .on-t{color:var(--muted)}
 .on-live .on-cap .on-t{color:var(--text)}
-.gd-badge.up{background:var(--raised);color:var(--muted)}
 .on-card.focus .on-art{box-shadow:0 0 0 5px var(--accent)}
 body.focus-ring .on-card.focus .on-art{box-shadow:0 0 0 5px var(--accent),0 0 0 9px #fff}
 .on-cap{display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-size:22px;color:var(--muted);white-space:nowrap}
@@ -1296,3 +1295,56 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .ts-card .ts-sub{font-size:26px;color:var(--muted);margin-top:12px}
 .ts-card .ts-hint{font-size:22px;color:var(--muted);margin-top:40px}
 .stage.preview .ts-card .ts-title{font-size:32px}.stage.preview .ts-card .ts-hint{display:none}
+
+/* Recordings (recordings.js): the list on the left, the focused one on the right, the drive at the top. */
+.view.recs{padding-right:0}
+.recs .rc-main{flex:1;min-width:0;display:flex;flex-direction:column;padding-right:40px}
+.recs .rc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.recs .rc-head h1{font-size:44px;font-weight:600;margin:0}
+.recs .rc-drive{display:flex;align-items:center;font-size:22px;color:var(--muted)}
+.recs .rc-dname{color:var(--text);margin-right:16px}
+.recs .rc-dbar{display:block;width:220px;height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin-right:16px}
+.recs .rc-dbar b{display:block;height:100%;background:var(--accent)}
+.recs .rc-dbar.low b{background:var(--air)}
+.recs .rc-dfree.low{color:var(--air)}
+.recs .rc-headrow{display:flex;align-items:flex-end;height:58px;padding:0 0 10px 6px;font-size:22px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);margin-bottom:6px}
+.recs .rc-headrow .rc-n{margin-left:12px;color:var(--dim)}
+.recs .rc-row{display:flex;align-items:center;height:86px;padding:0 22px;border-radius:12px;margin-bottom:6px;background:transparent}
+.recs .rc-row.sub{margin-left:56px}
+.recs .rc-row.focus{background:var(--accent);color:var(--on-accent)}
+.recs .rc-row.focus small{color:var(--on-accent-dim)}
+.recs .rc-ic{flex:none;width:40px;height:40px;margin-right:20px}
+.recs .rc-ic svg{width:40px;height:40px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.recs .rc-row.st-recording .rc-ic{color:var(--air)}
+.recs .rc-row.focus .rc-ic{color:inherit}
+.recs .rc-row.st-failed,.recs .rc-row.st-missed,.recs .rc-row.st-cancelled{color:var(--muted)}
+.recs .rc-txt{flex:1;min-width:0}
+.recs .rc-txt b{display:block;font-size:30px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recs .rc-txt small{display:block;font-size:21px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}
+.recs .rc-seen{display:block;height:5px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:6px;width:60%}
+.recs .rc-seen b{display:block;height:100%;background:var(--accent2)}
+.recs .rc-row.focus .rc-seen{background:var(--on-accent-dim)}
+.recs .rc-row.focus .rc-seen b{background:var(--on-accent)}
+.recs .rc-badge{flex:none;font-size:18px;font-weight:600;padding:3px 12px;border-radius:7px;margin-left:16px}
+.recs .rc-badge.rec{background:var(--air);color:#fff}
+.recs .rc-badge.new{background:var(--raised);color:var(--accent2)}
+.recs .rc-row.focus .rc-badge.new{background:var(--on-accent);color:var(--accent)}
+.recs .rc-chev{flex:none;font-size:28px;margin-left:16px;color:var(--muted)}
+.recs .rc-row.focus .rc-chev{color:inherit}
+.recs .rc-tick{flex:none;width:34px;height:34px;border-radius:8px;border:3px solid var(--muted);margin-right:18px;position:relative}
+.recs .rc-tick.none{visibility:hidden}
+.recs .rc-tick.on{background:var(--accent2);border-color:var(--accent2)}
+.recs .rc-tick.on::after{content:'';position:absolute;left:9px;top:3px;width:9px;height:17px;border:solid var(--ink);border-width:0 4px 4px 0;transform:rotate(45deg)}
+.recs .rc-empty{margin-top:140px;text-align:center}
+.recs .rc-empty b{display:block;font-size:40px;font-weight:600;margin-bottom:18px}
+.recs .rc-empty p{font-size:26px;color:var(--muted);max-width:1100px;margin:0 auto;line-height:1.5}
+.recs .rc-side{flex:none;width:560px;background:var(--panel);border-left:1px solid var(--line);padding:56px 48px}
+.recs .rc-side .rc-logo{max-width:180px;max-height:100px;object-fit:contain;margin-bottom:26px}
+.recs .rc-side h2{font-size:38px;font-weight:600;margin:0 0 10px;line-height:1.2}
+.recs .rc-side .rc-ch{font-size:24px;color:var(--muted);margin-bottom:20px}
+.recs .rc-side .rc-meta{font-size:22px;color:var(--muted);margin-bottom:16px}
+.recs .rc-side .rc-facts{font-size:24px;line-height:1.5;margin-bottom:16px}
+.recs .rc-side .rc-err{font-size:22px;color:var(--warn);line-height:1.4;margin-bottom:16px}
+.recs .rc-side .rc-watched{font-size:22px;color:var(--muted);margin-top:18px}
+.recs .rc-side .rc-seen.big{width:100%;height:8px;margin-bottom:10px}
+.gd-badge.up{background:var(--raised);color:var(--muted)}

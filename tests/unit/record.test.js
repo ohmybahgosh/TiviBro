@@ -115,6 +115,15 @@ function call(method, url, body, headers) {
   r = await call('POST', '/record/stop', { id: r.j.id });
   ok('a scheduled one stopped is cancelled', r.j.status === 'cancelled');
 
+  // HLS first, the other format when it never starts (a 404, or a .m3u8 that's really a stream).
+  r = await call('POST', '/record/start', { url: base + '/missing.m3u8', alt: base + '/ts', title: 'Swap', end: Date.now() + 1500 });
+  await wait(2200);
+  rec = (await call('GET', '/record/list')).j.recs.filter((x) => x.id === r.j.id)[0];
+  ok('HLS missing: recorded from the other format', rec.status === 'done' && rec.bytes > 0 && rec.kind === 'ts', JSON.stringify(rec));
+  ok('its length is known', rec.dur >= 1 && rec.dur <= 3, rec.dur);
+  r = (await call('GET', '/record/list')).j;
+  ok('the list says the drive and its room', r.drive && r.drive.name === 'sda' && typeof r.drive.freeMB === 'number', JSON.stringify(r.drive));
+
   // Delete: the files too.
   const before = fs.readdirSync(path.join(drive, 'TiviBro Recordings')).length;
   r = await call('POST', '/record/delete', { id: tsId });

@@ -74,9 +74,36 @@ function save() {
   }, 300);
 }
 function byId(id) { var hit = null; load().recs.forEach(function (r) { if (r.id === id) hit = r; }); return hit; }
+/* How long it is to watch: the time it was recording, less the time a dropped connection took to come back. */
+function lengthOf(r) {
+  if (!r.startedAt) return 0;
+  var to = r.status === 'recording' ? Date.now() : (r.endedAt || Math.min(r.end, Date.now()));
+  var down = (r.down || 0) + (r.status === 'recording' && run[r.id] && run[r.id].downSince ? Date.now() - run[r.id].downSince : 0);
+  return Math.max(0, Math.round((to - r.startedAt - down) / 1000));
+}
 function pub(r) {
   return { id: r.id, title: r.title, channel: r.channel, start: r.start, end: r.end, status: r.status, bytes: r.bytes || 0, parts: (r.parts || []).length,
-    kind: r.kind || '', error: r.error || '', drive: r.driveName || '', startedAt: r.startedAt || 0, gaps: r.gaps || 0 };
+    kind: r.kind || '', error: r.error || '', drive: r.driveName || '', startedAt: r.startedAt || 0, gaps: r.gaps || 0, dur: lengthOf(r), endedAt: r.endedAt || 0, logo: r.logo || '' };
+}
+/* The drive's room (df), looked at every 30 s at most: free and total MB. */
+var spaceAt = 0, spaceWas = null;
+function space(dir) {
+  if (spaceWas && spaceWas.dir === dir && Date.now() - spaceAt < 30000) return spaceWas;
+  var out = { dir: dir, freeMB: -1, totalMB: -1 };
+  try {
+    var t = String(require('child_process').execFileSync('df', ['-k', dir], { timeout: 3000, stdio: ['ignore', 'pipe', 'ignore'] }));
+    var c = t.trim().split('\n').pop().trim().split(/\s+/);
+    out.freeMB = Math.round(+c[c.length - 3] / 1024); out.totalMB = Math.round(+c[c.length - 5] / 1024);
+  } catch (e) {}
+  spaceAt = Date.now(); spaceWas = out;
+  return out;
+}
+var LOW_MB = 500;
+// A drive's write error, said the way a person would.
+function driveError(e) {
+  if (e && e.code === 'ENOSPC') return 'the USB drive is full';
+  if (e && /^(ENOENT|EIO|EROFS|ENODEV|ENXIO)$/.test(e.code)) return 'the USB drive was unplugged or stopped working';
+  return 'the drive refused it: ' + (e && e.message || e);
 }
 
 /* ---------- drives ---------- */
@@ -132,7 +159,8 @@ function getText(u, cb) {
     res.on('error', cb);
   });
 }
-function isPlaylist(res, u) { return /mpegurl/i.test(res.headers['content-type'] || '') || /\.m3u8(\?|$)/i.test(u); }
+// A playlist by its type, or by its name when the type says nothing useful (a .m3u8 that answers video/mp2t is a stream).
+function isPlaylist(res, u) { var ct = res.headers['content-type'] || ''; return /mpegurl/i.test(ct) || (/\.m3u8(\?|$)/i.test(u) && !/^video\/|octet-stream/i.test(ct)); }
 
 /* ---------- writing ---------- */
 function openPart(r, R) {
@@ -140,7 +168,7 @@ function openPart(r, R) {
   var n = (r.parts || []).length + 1, file = path.join(R.dir, nameFor(r, r.kind === 'mp4' ? 'mp4' : 'ts', n));
   r.parts = (r.parts || []).concat([file]);
   R.out = fs.createWriteStream(file, { flags: 'a' }); R.partBytes = 0;
-  R.out.on('error', function (e) { fail(r, 'the drive refused it: ' + e.message); });
+  R.out.on('error', function (e) { fail(r, driveError(e)); });
   if (R.init) { R.out.write(R.init); R.partBytes += R.init.length; }
   save();
 }
@@ -157,7 +185,10 @@ function begin(r) {
   var drive = r.drive, all = drives();
   if (!drive || !all.some(function (d) { return d.dir === drive; })) drive = all.length ? all[0].dir : '';
   if (!drive) return fail(r, 'no USB drive TiviBro can write to');
-  var R = run[r.id] = { dir: folderOn(drive), out: null, req: null, stopped: false, seen: {}, init: null };
+  var sp = space(drive);
+  if (sp.freeMB >= 0 && sp.freeMB < LOW_MB) return fail(r, 'the USB drive is full');
+  var fdir; try { fdir = folderOn(drive); } catch (e) { return fail(r, driveError(e)); }
+  var R = run[r.id] = { dir: fdir, out: null, req: null, stopped: false, seen: {}, init: null };
   r.driveName = path.basename(drive); r.status = 'recording'; r.startedAt = r.startedAt || Date.now();
   note('info', 'recording started', { title: r.title, drive: r.driveName });
   connect(r, R);
@@ -167,7 +198,13 @@ function connect(r, R) {
   if (R.stopped) return;
   R.req = get(r.url, function (e, res, at) {
     if (R.stopped) { if (res) res.resume(); return; }
-    if (e || res.statusCode !== 200) { if (res) res.resume(); return again(r, R, e ? e.message : 'HTTP ' + res.statusCode); }
+    if (e || res.statusCode !== 200) {
+      if (res) res.resume();
+      // HLS first (a dropped piece is fetched again), the channel's other format when that never started.
+      if (r.alt && !r.bytes && !R.swapped) { R.swapped = true; var u0 = r.url; r.url = r.alt; r.alt = u0; note('info', 'recording: the other format', { title: r.title, e: e ? e.message : 'HTTP ' + res.statusCode }); return connect(r, R); }
+      return again(r, R, e ? e.message : 'HTTP ' + res.statusCode);
+    }
+    back(r, R);
     if (isPlaylist(res, at)) { res.resume(); return hls(r, R, at); }
     if (!r.kind) r.kind = 'ts';
     if (!R.out) openPart(r, R);
@@ -180,17 +217,25 @@ function again(r, R, why) {
   if (R.stopped) return;
   if (Date.now() >= r.end) return finish(r);
   r.gaps = (r.gaps || 0) + 1;
+  if (!R.downSince) R.downSince = Date.now();
   // Slower each time until data arrives again (3, 6, 12 ... 30 s): a provider blocks an account that asks every few seconds.
   R.fails = (R.fails || 0) + 1;
   var ms = Math.min(30000, RETRY_MS * Math.pow(2, R.fails - 1));
   if (r.gaps === 1 || r.gaps % 10 === 0) note('warn', 'recording reconnecting', { title: r.title, e: why, gaps: r.gaps, inMs: ms });
   R.retry = setTimeout(function () { connect(r, R); }, ms);
 }
+// Connected again: the time it was down doesn't count in its length.
+function back(r, R) { if (R.downSince) { r.down = (r.down || 0) + (Date.now() - R.downSince); R.downSince = 0; } }
 /* HLS: the playlist, again and again; each new piece once, in order. */
 function hls(r, R, u) {
   getText(u, function (e, text) {
     if (R.stopped) return;
     if (e) return again(r, R, e.message);
+    if (!/^\s*#EXTM3U/.test(text)) {
+      // Not a playlist after all: the other format, or again later.
+      if (r.alt && !r.bytes && !R.swapped) { R.swapped = true; var u0 = r.url; r.url = r.alt; r.alt = u0; note('info', 'recording: the other format', { title: r.title, e: 'not a playlist' }); return connect(r, R); }
+      return again(r, R, 'the provider\'s answer wasn\'t a playlist');
+    }
     var lines = text.split(/\r?\n/), best = null, bw = -1;
     for (var i = 0; i < lines.length; i++) {
       var m = /^#EXT-X-STREAM-INF:(.*)$/.exec(lines[i]);
@@ -249,6 +294,8 @@ function halt(r) {
   delete run[r.id];
 }
 function finish(r) {
+  var R0 = run[r.id]; if (R0) back(r, R0);
+  r.endedAt = Date.now();
   halt(r);
   r.status = r.bytes > 0 ? 'done' : 'failed';
   if (!r.bytes && !r.error) r.error = 'nothing arrived from the provider';
@@ -256,6 +303,7 @@ function finish(r) {
   save();
 }
 function fail(r, why) {
+  if (!r.endedAt && r.startedAt) r.endedAt = Date.now();
   halt(r);
   r.status = r.bytes > 0 ? 'done' : 'failed'; r.error = why;
   note('warn', 'recording failed', { title: r.title, e: why });
@@ -288,7 +336,7 @@ function body(req, cb) {
 function newId() { return 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 function okUrl(u) { return /^http:\/\/127\.0\.0\.1:\d+\//.test(String(u || '')); }     // the relay only: no recording of arbitrary addresses
 function add(q, scheduled) {
-  var now = Date.now(), r = { id: newId(), url: String(q.url), title: String(q.title || q.channel || 'Recording').slice(0, 200), channel: String(q.channel || '').slice(0, 200),
+  var now = Date.now(), r = { id: newId(), url: String(q.url), alt: okUrl(q.alt) && q.alt !== q.url ? String(q.alt) : '', logo: String(q.logo || '').slice(0, 500), title: String(q.title || q.channel || 'Recording').slice(0, 200), channel: String(q.channel || '').slice(0, 200),
     start: scheduled ? +q.start : now, end: +q.end, status: 'scheduled', drive: q.drive ? String(q.drive) : '', bytes: 0, parts: [] };
   load().recs.push(r); save();
   if (!scheduled || r.start <= now) begin(r);
@@ -384,7 +432,11 @@ function handleHere(req, res, ALLOW) {
   var u = URL_.parse(req.url, true), p = u.pathname;
   if (req.method === 'GET' && p === '/record/ping') return send(res, ALLOW, 200, { ok: true, agent: AGENT });
   if (req.method === 'GET' && p === '/record/drives') { var dv = drives(); return send(res, ALLOW, 200, { drives: dv, skipped: seen, uid: process.getuid ? process.getuid() : null, gids: process.getgroups ? process.getgroups() : null }); }
-  if (req.method === 'GET' && p === '/record/list') { tick(); return send(res, ALLOW, 200, { recs: load().recs.map(pub) }); }
+  if (req.method === 'GET' && p === '/record/list') {
+    tick();
+    var dl = drives(), sp0 = dl.length ? space(dl[0].dir) : null;
+    return send(res, ALLOW, 200, { recs: load().recs.map(pub), drive: sp0 ? { name: dl[0].name, freeMB: sp0.freeMB, totalMB: sp0.totalMB, low: sp0.freeMB >= 0 && sp0.freeMB < LOW_MB } : null });
+  }
   var fm = /^\/record\/file\/([A-Za-z0-9]+)(?:\/[^\/]*)?$/.exec(p);       // "/rec.ts" after the id tells the player what it is
   if (fm && (req.method === 'GET' || req.method === 'HEAD')) { var fr = byId(fm[1]); return fr ? serveFile(req, res, ALLOW, fr, u.query.part != null ? +u.query.part : null) : send(res, ALLOW, 404, { error: 'no such recording' }); }
   if (p.indexOf('/record/ts/') === 0 && req.method !== 'POST') { if (TS.route(req, res, ALLOW, p, u.query, send) !== null) return; return send(res, ALLOW, 404, { error: 'no such route' }); }

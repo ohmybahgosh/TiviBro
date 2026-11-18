@@ -7,7 +7,7 @@ var Record = (function () {
   'use strict';
   var L = Library;
   var PAD_BEFORE = 2 * 60000, PAD_AFTER = 5 * 60000;
-  var last = { recs: [], at: 0 }, drive = false;
+  var last = { recs: [], at: 0 }, drive = false, space = null;
 
   function T(s, o) { var t = typeof I18n !== 'undefined' ? I18n.t(s) : s; return t.replace(/\{(\w+)\}/g, function (a, k) { return o && o[k] != null ? o[k] : a; }); }
   function base() { return Net.port ? 'http://127.0.0.1:' + Net.port : ''; }
@@ -22,15 +22,21 @@ var Record = (function () {
     });
   }
   // The address the player would use for this channel, through the helper.
-  function urlFor(ch) {
-    var u = Source.streamUrl(ch, Store.settings.format);
-    return Net.wrap(u, { pl: Store.plOf ? Store.plOf(ch) : Store.playlist, ua: ch.ua || '', hdr: ch.hdr || null, always: true });
+  function wrap(ch, u) { return Net.wrap(u, { pl: Store.plOf ? Store.plOf(ch) : Store.playlist, ua: ch.ua || '', hdr: ch.hdr || null, always: true }); }
+  function urlFor(ch) { return wrap(ch, Source.streamUrl(ch, Store.settings.format)); }
+  /* For a recording: HLS first when the channel has it (a piece that's missed is fetched again, where a dropped
+     MPEG-TS connection loses what aired meanwhile), and the other format if HLS never starts (the helper swaps). */
+  function recUrls(ch) {
+    var h = Source.streamUrl(ch, 'm3u8'), t = Source.streamUrl(ch, 'ts');
+    if (h && t && h !== t) return { url: wrap(ch, h), alt: wrap(ch, t) };
+    return { url: urlFor(ch), alt: '' };
   }
+  function logo(ch) { try { return Views.logoOf(ch) || ''; } catch (e) { return ''; } }
   function sig(recs) { return recs.map(function (r) { return r.id + r.status + r.end; }).join(); }
   function list() {
     return api('/record/list').then(function (j) {
       var was = sig(last.recs), had = shown();
-      last = { recs: j.recs || [], at: Date.now() };
+      last = { recs: j.recs || [], at: Date.now() }; space = j.drive || null; if (space) drive = true;
       // The guide marks what's recording, so it's redrawn when that changes.
       if (shown() !== had && typeof Views !== 'undefined' && Views.buildTabs) Views.buildTabs();
       if (sig(last.recs) !== was && typeof Guide !== 'undefined' && Guide.vis) try { Guide.draw(); } catch (e) {}
@@ -56,20 +62,22 @@ var Record = (function () {
   /* Now, until the programme ends (with a few minutes after), or for an hour when the guide says nothing. */
   function now(ch, p) {
     var end = p && p.e > Date.now() ? p.e + PAD_AFTER : Date.now() + 60 * 60000;
-    return api('/record/start', { url: urlFor(ch), title: p && p.t || L.name(ch), channel: L.name(ch), end: end }).then(function (r) {
+    var u = recUrls(ch);
+    return api('/record/start', { url: u.url, alt: u.alt, logo: logo(ch), title: p && p.t || L.name(ch), channel: L.name(ch), end: end }).then(function (r) {
       U.toast(T('Recording "{x}" until {t}', { x: r.title, t: U.hhmm(end) }), 4000);
       Log.info('record', 'Recording ' + L.name(ch) + ' until ' + U.hhmm(end));
       return list();
     }, say);
   }
   function schedule(ch, p) {
-    return api('/record/schedule', { url: urlFor(ch), title: p.t || L.name(ch), channel: L.name(ch), start: p.s - PAD_BEFORE, end: p.e + PAD_AFTER }).then(function (r) {
+    var u = recUrls(ch);
+    return api('/record/schedule', { url: u.url, alt: u.alt, logo: logo(ch), title: p.t || L.name(ch), channel: L.name(ch), start: p.s - PAD_BEFORE, end: p.e + PAD_AFTER }).then(function (r) {
       U.toast(T('Will record "{x}" at {t}', { x: r.title, t: U.hhmm(p.s) }), 4000);
       return list();
     }, say);
   }
   function stop(id) { return api('/record/stop', { id: id }).then(list, say); }
-  function remove(id) { return api('/record/delete', { id: id }).then(list, say); }
+  function remove(id) { forget(id); return api('/record/delete', { id: id }).then(list, say); }
 
   // What the guide knows: is this programme being recorded or due to be?
   function of(ch, p) {
@@ -100,6 +108,10 @@ var Record = (function () {
 
   /* Recordings…: newest first.  OK on one watches it (or, scheduled or recording, offers to stop it). */
   function open() {
+    if (typeof Recordings !== 'undefined' && !Views.full) { Views.switchTab('recordings'); return; }
+    menuList();
+  }
+  function menuList() {
     list().then(function (recs) {
       if (!recs.length) return drives().then(function (d) {
         UI.menu('Recordings', [{ label: d.length ? 'Nothing recorded yet' : 'No USB drive', sub: d.length ? 'Hold OK on a programme in the guide > Record.' : 'Plug a USB drive into the TV to record to.' }]);
@@ -122,10 +134,34 @@ var Record = (function () {
     } });
     UI.menu(r.title, items, null, { sub: whenOf(r) + '  ·  ' + r.channel });
   }
-  function watch(r) {
+  /* Where each recording was left (this TV only), for Resume and the bar on the Recordings screen. */
+  var POS_KEY = 'tivibro.recPos', pos = {};
+  try { pos = JSON.parse(localStorage.getItem(POS_KEY) || '{}') || {}; } catch (e) { pos = {}; }
+  function savePos() { try { localStorage.setItem(POS_KEY, JSON.stringify(pos)); } catch (e) {} }
+  function posOf(id) { return pos[id] || null; }
+  var watching = null, posT = null;
+  function watch(r, fromStart, onExit) {
     var url = base() + '/record/file/' + r.id + '/rec.' + (r.kind === 'mp4' ? 'mp4' : 'ts');
-    Views.playVod({ id: 'rec:' + r.id, title: r.title, sub: r.channel + '  ·  ' + whenOf(r), item: { recording: true } }, url, 0, function () { open(); });
+    var p0 = posOf(r.id), at = !fromStart && p0 && p0.t > 30 && (!r.dur || p0.t < r.dur - 60) ? p0.t : 0;
+    if (at) U.toast(T('Resuming at {t}', { t: hms(at) }), 2500);
+    watching = r.id;
+    Views.playVod({ id: 'rec:' + r.id, title: r.title, sub: r.channel + '  ·  ' + whenOf(r), dur: r.status === 'recording' ? 0 : r.dur, item: { recording: true } }, url, at, function () {
+      note(); watching = null; clearInterval(posT);
+      (onExit || open)();
+    });
+    clearInterval(posT); posT = setInterval(note, 5000);
+    pos[r.id] = { t: at, d: r.dur || 0, at: Date.now() }; savePos();
   }
+  // While one plays: where it is, every few seconds (Back stops the player before it could be read).
+  function note() {
+    if (!watching) return;
+    var m = Views.vodMeta;
+    if (!m || m.id !== 'rec:' + watching) return;
+    var t = Player.position, d = Player.duration;
+    if (t > 0) { pos[watching] = { t: t, d: d || (pos[watching] && pos[watching].d) || 0, at: Date.now() }; savePos(); }
+  }
+  function forget(id) { delete pos[id]; savePos(); }
+  function hms(s) { s = Math.round(s); var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ':' + (m < 10 ? '0' : '') : '') + m + ':' + (x < 10 ? '0' : '') + x; }
 
   // Known as TiviBro starts and every few minutes (the guide's menu and the quick menu say Record or Stop recording).
   (function poll() { if (base()) { list().catch(function () {}); drives().catch(function () {}); } setTimeout(poll, 120000); })();
@@ -137,6 +173,6 @@ var Record = (function () {
   function tsStop(id) { return api('/record/ts/stop', { id: id }).catch(function () {}); }
   function canPause() { return !!base() && drive; }
 
-  return { now: now, schedule: schedule, tsStart: tsStart, tsPing: tsPing, tsStop: tsStop, canPause: canPause, base: base, stop: stop, remove: remove, list: list, drives: drives, open: open, shown: shown, menuItem: menuItem, of: of, urlFor: urlFor,
+  return { now: now, schedule: schedule, tsStart: tsStart, tsPing: tsPing, tsStop: tsStop, canPause: canPause, base: base, stop: stop, remove: remove, list: list, drives: drives, open: open, shown: shown, watch: watch, posOf: posOf, forget: forget, hms: hms, sizeOf: sizeOf, whenOf: whenOf, get space() { return space; }, menuItem: menuItem, of: of, urlFor: urlFor,
     get recs() { return last.recs; } };
 })();
