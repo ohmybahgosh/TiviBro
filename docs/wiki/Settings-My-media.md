@@ -13,7 +13,7 @@ Your libraries, like Plex's: each one is a folder of movies or TV shows on a med
 | **Scan all libraries** | | Same as Green on My media: scan every library for movies and episodes. |
 | **Fetch details for all** | | Same as Yellow: look up details for movies, shows and the episodes you have, and refresh outdated language details. |
 | **Edit on a computer** *(on the TV)* | | Shows a code for a computer or phone browser: the web editor's My media page, for typing server logins, fixing many matches at once and TV show episodes. |
-| **Display and shelves ›** | | Sorting (**Sort movies by**, **Sort TV shows by**, reversed or not), **Arrange shelves** (one per tab with movies and shows), **Library poster size**, **Play the next one automatically**, **Favorites also in lists** and **Metadata language**. |
+| **Display and shelves ›** | | Sorting (**Sort movies by**, **Sort TV shows by**, reversed or not), **Arrange shelves** (one per tab with movies and shows), **Library poster size**, **Watched marks on posters**, **Mark what's new**, **Open where you left off**, **Play the next one automatically**, **Favorites also in lists** and **Metadata language**. |
 | **Trakt ›** | | [Settings: Trakt](Settings-My-media#settings-trakt). |
 | **TMDB API token ›** | | Opens [API keys](Settings-Playlists-and-accounts#settings-api-keys), the one place the token lives: add, test or remove it there. |
 
