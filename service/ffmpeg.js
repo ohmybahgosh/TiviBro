@@ -5,7 +5,7 @@
    Settings > Playback.
 
    Where it lives: Storage.sub('bin'), on the TV's big app storage (allows running programs, nosuid),
-   named with its version (ffmpeg-7.1-tb2-armv7).  Never in memory (/tmp): if the helper's storage is
+   named with its version (ffmpeg-7.1-tb3-armv7).  Never in memory (/tmp): if the helper's storage is
    only memory, there is no converter.  Older versions are removed when a new one is in place.
 
    The bundled .gz or the download: the .gz for this TV's userland from the GitHub release below, checked against the
@@ -28,11 +28,11 @@ var crypto = require('crypto'), zlib = require('zlib'), cp = require('child_proc
 var Storage = require('./storage');
 
 /* ---------- the release (the lead fills in the hashes after running the build) ---------- */
-var TAG = 'ffmpeg-7.1-tb2';   // tb2: the video decoders and the JPEG encoder for seek previews (seekprev.js)
+var TAG = 'ffmpeg-7.1-tb3';   // tb3: dovi_rpu with p81 (Dolby Vision 7 as 8.1, convert.js); tb2: video decoders and JPEG for seek previews
 var BASE = 'https://github.com/ohmybahgosh/TiviBro/releases/download/' + TAG + '/';
 var SHA256 = {
-  armv7: 'c56e75689bc4b6258ac96cfde84d898012304683baaa43b27d2c9a2786a6cb98',
-  aarch64: '9070b3ab2596c327bfbf78e897d4c83ca08b571f6ee0fb4adf9e3c77e17183cb'
+  armv7: 'ce985dfbbaf9bc74ed7a93630138b1b2316fe074ca2b30357e929691227caaf4',
+  aarch64: 'bfea671a7fb37353a8d830421e4a672a9e6ab061974b3e49bf79ca126152298b'
 };
 var MAX_BYTES = 16 * 1024 * 1024;           // the .gz is about 1.6 MB; anything far bigger is not it
 
