@@ -2216,5 +2216,6 @@ I18n.add('pt-BR', {
   "Pin or hide": "Fixar ou ocultar",
   "home": "início",
   "categories": "categorias",
-  "The TV's own": "O da TV"
+  "The TV's own": "O da TV",
+  "All sources": "Todas as fontes"
 });

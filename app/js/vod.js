@@ -452,6 +452,14 @@ var Vod = (function () {
   }
   // 7.634 -> ★ 7.6; nothing for 0 or a missing rating.
   function stars(r) { r = Math.round(parseFloat(r) * 10) / 10; return r > 0 ? '★ ' + r : ''; }
+  // Each category's name as shown: cleaned by the name rules, unless that makes it the same as another's (then the provider's own).
+  function catLabels(d) {
+    if (d._labels) return d._labels;
+    var clean = {}, same = {}, out = {}, key = function (c) { return (c.pl || '') + '|' + String(clean[c.id]).toLowerCase(); };
+    d.cats.forEach(function (c) { clean[c.id] = cleanCat(c.name, c.pl); same[key(c)] = (same[key(c)] || 0) + 1; });
+    d.cats.forEach(function (c) { out[c.id] = same[key(c)] > 1 ? c.name : clean[c.id]; });
+    return (d._labels = out);
+  }
   function cleanCat(n, pl) { var p = pl && Store.byId ? Store.byId(pl) : null; return p && p.names ? Names.cleanGroupWith(p.names, n) : Names.cleanGroup(n); }
 
   function renderCat(row, c) {
@@ -511,9 +519,13 @@ var Vod = (function () {
     if (fresh) out.push({ id: NEW, name: 'Recently added', count: fresh });
     var hid = {}; vodPls().forEach(function (q, n) { hiddenCats(kind, q).forEach(function (c) { hid[(n && d.multi ? q.id + ':' : '') + c] = 1; }); });
     var later = [], section = null;
+    /* The name rules take "HINDI | " off a category, which on a big provider leaves "UPCOMING MOVIES" four
+       times, one per language (issue #118).  Names that would come out the same keep the provider's own. */
+    var labels = catLabels(d);
     d.cats.forEach(function (c) {
       if (!counts[c.id] || hid[c.id]) return;
-      var adult = !!(d.adultCat && d.adultCat[c.id]), row = { id: c.id, name: cleanCat(c.name, c.pl), count: counts[c.id], adult: adult, pl: c.pl || '' };
+      var name = labels[c.id];
+      var adult = !!(d.adultCat && d.adultCat[c.id]), row = { id: c.id, name: name, count: counts[c.id], adult: adult, pl: c.pl || '' };
       if (adult) { later.push(row); return; }
       // Several playlists: a heading with the playlist's name above its categories.
       if (d.multi && (c.pl || '') !== section) { section = c.pl || ''; var pp = section ? Store.byId(section) : Store.playlist; out.push({ id: '@' + (section || 'first'), head: true, name: (pp && pp.name) || 'Playlist' }); }
@@ -561,7 +573,7 @@ var Vod = (function () {
   var catNames = null, catNamesFor = null;
   function catName(it) {
     var d = data[kind]; if (!d) return '';
-    if (catNamesFor !== d) { catNames = {}; catNamesFor = d; d.cats.forEach(function (c) { catNames[c.id] = cleanCat(c.name, c.pl); }); }
+    if (catNamesFor !== d) { catNames = catLabels(d); catNamesFor = d; }
     return catNames[it.cat] || '';
   }
 

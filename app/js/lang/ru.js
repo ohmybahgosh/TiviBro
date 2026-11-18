@@ -1703,5 +1703,6 @@ I18n.add('ru', {
   "Pin or hide": "Закрепить или скрыть",
   "home": "главная",
   "categories": "категории",
-  "The TV's own": "Телевизора"
+  "The TV's own": "Телевизора",
+  "All sources": "Все источники"
 });

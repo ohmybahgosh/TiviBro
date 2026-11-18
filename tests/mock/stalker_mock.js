@@ -19,7 +19,7 @@ function create(o) {
   ];
   // Movies and shows: 30 titles in two categories, sent 14 to a page as portals do; titles 5 and 20 are shows.
   var vods = [];
-  for (var v = 1; v <= 30; v++) vods.push({ id: String(500 + v), name: 'Portal Title ' + v, category_id: v <= 15 ? '10' : '11', cmd: v === 3 ? 'eyJ0eXBlIjoibW92aWUiLCJpZCI6NTAzfQ==' : '/media/file_' + (500 + v) + '.mpg',
+  for (var v = 1; v <= 30; v++) vods.push({ id: String(500 + v), name: 'Portal Title ' + v, category_id: v <= 15 ? '10' : '11', cmd: o.xtreamVod ? Buffer.from('{"type":"movie","stream_id":"' + (500 + v) + '","stream_source":null}').toString('base64') : v === 3 ? 'eyJ0eXBlIjoibW92aWUiLCJpZCI6NTAzfQ==' : '/media/file_' + (500 + v) + '.mpg',
     screenshot_uri: 'http://img.example/' + v + '.jpg', rating_imdb: '7.' + (v % 10), added: '2026-10-' + ('0' + (v % 28 + 1)).slice(-2) + ' 12:00:00', is_series: v === 5 || v === 20 ? '1' : '0',
     year: '2020', description: 'About title ' + v, director: 'A. Director', actors: 'Someone', genres_str: 'Drama', time: 95 });
   /* o.series: a portal with a shows module of its own (type=series, issue #113): 40 shows in two categories,
@@ -52,6 +52,14 @@ function create(o) {
       return js(res, { total_items: 2, data: [{ id: q.movie_id + ':1', name: 'Season 1', series: [1, 2, 3], cmd: 'eyJzZWFzb24iOjF9' }, { id: q.movie_id + ':2', name: 'Season 2', series: [1, 2], cmd: 'eyJzZWFzb24iOjJ9' }] });
     }
     if (q.type === 'vod' && q.action === 'get_ordered_list') return page(vods.filter(function (x) { return q.category === '*' || !q.category || x.category_id === q.category; }), q.p, res);
+    /* xtreamVod: a portal built on an Xtream panel (issue #118): its movies' commands are base64 JSON with the
+       stream_id, and "/media/file_<id>.mpg" gets no link ("nothing_to_play"), as do titles past 520. */
+    if (o.xtreamVod && q.type === 'vod' && q.action === 'create_link') {
+      seen.vodLinks = (seen.vodLinks || []).concat([q.cmd + '|' + (q.series || '')]);
+      var sid = ''; try { sid = String(JSON.parse(Buffer.from(String(q.cmd), 'base64').toString('utf8')).stream_id || ''); } catch (e) {}
+      if (!sid || +sid > 520) return js(res, { id: 1, cmd: '/media/file_' + (sid || '0') + '.mpg', error: 'nothing_to_play' });
+      return js(res, { id: 1, cmd: 'ffmpeg http://127.0.0.1:1/movie/u/p/' + sid + '.mp4' });
+    }
     if (q.type === 'vod' && q.action === 'create_link') { seen.vodLinks = (seen.vodLinks || []).concat([q.cmd + '|' + (q.series || '')]); return js(res, { id: 1, cmd: 'ffmpeg http://127.0.0.1:1/vod/' + encodeURIComponent(q.cmd) + '.mp4?series=' + (q.series || '') }); }
     if (q.type === 'epg' && q.action === 'get_simple_data_table') {
       seen.epgDays = (seen.epgDays || []).concat([q.date]);

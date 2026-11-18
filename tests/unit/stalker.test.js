@@ -1,7 +1,8 @@
 // Stalker portals through the helper (service/stalker.js, discussion #60): the box's login, the channel
 // list in groups, a fresh link when a channel starts (sent on through the relay with the box's
 // User-Agent), the short guide in Xtream's shape, and a MAC the portal doesn't know.
-const http = require('http'), path = require('path');
+const http = require('http'), path = require('path'), fs = require('fs'), os = require('os');
+process.env.TIVIBRO_KV_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'tb-stalker-'));
 const proxy = require(path.join(__dirname, '../../service/proxy.js'));
 const Mock = require(path.join(__dirname, '../mock/stalker_mock.js'));
 let fail = 0;
@@ -79,6 +80,29 @@ const req = (method, u, body, headers) => new Promise((res, rej) => {
   ok('a movie plays from its own command', a.status === 302 && m.seen.vodLinks.slice(-1)[0] === 'eyJ0eXBlIjoibW92aWUiLCJpZCI6NTAzfQ==|' && /\/x\/http\/127\.0\.0\.1:1\/vod\//.test(a.headers.location || ''), a.status + ' ' + m.seen.vodLinks);
   a = await req('GET', H + '/stalker/vod/' + eps['2'][1].id + '.mp4?stb=' + login);
   ok('an episode is its season\'s command with its number', a.status === 302 && m.seen.vodLinks.slice(-1)[0] === 'eyJzZWFzb24iOjJ9|2', m.seen.vodLinks.slice(-1)[0]);
+
+  // Issue #118: a portal built on an Xtream panel, whose movies play only from their own commands, after the helper started again.
+  S._keepMs = 5;
+  const m5 = Mock.create({ stream: 'http://127.0.0.1:1/live/stream.ts', xtreamVod: true });
+  await new Promise((f) => m5.server.listen(0, '127.0.0.1', f));
+  const login5 = b64({ portal: 'http://127.0.0.1:' + m5.server.address().port + '/stalker_portal/c/', mac: '00:1a:79:00:00:01' });
+  x = await req('GET', H + '/stalker/xc/player_api.php?stb=' + login5 + '&action=get_vod_streams').then((r) => ({ status: r.status, j: JSON.parse(r.body || 'null') }));
+  ok('xtream-style portal: its movies', x.status === 200 && x.j.length === 28, x.status);
+  a = await req('GET', H + '/stalker/vod/510.mp4?stb=' + login5);
+  ok('a movie plays from its base64 command', a.status === 302 && /\/movie\/u\/p\/510\.mp4/.test(a.headers.location || ''), a.status);
+  await new Promise((f) => setTimeout(f, 100));
+  const kept = fs.readdirSync(process.env.TIVIBRO_KV_DIR + '/kv').filter((n) => /^stalker-vodcmd-/.test(n));
+  ok('the movies\' commands are kept on the TV', kept.length === 1, fs.readdirSync(process.env.TIVIBRO_KV_DIR + '/kv').join());
+  S._reset();
+  a = await req('GET', H + '/stalker/vod/512.mp4?stb=' + login5);
+  ok('after the helper started again: still its own command (read back), not "/media/file_512.mpg"', a.status === 302 && /\/512\.mp4/.test(a.headers.location || '') && !/media\/file/.test(m5.seen.vodLinks.slice(-1)[0]), a.status + ' ' + m5.seen.vodLinks.slice(-2));
+  kept.forEach((n) => fs.unlinkSync(process.env.TIVIBRO_KV_DIR + '/kv/' + n)); S._reset();
+  a = await req('GET', H + '/stalker/vod/514.mp4?stb=' + login5);
+  ok('with nothing kept: the usual command, then the Xtream panel\'s', a.status === 302 && /\/514\.mp4/.test(a.headers.location || '') && /^\/media\/file_514\.mpg/.test(m5.seen.vodLinks.slice(-2)[0]), a.status + ' ' + m5.seen.vodLinks.slice(-2));
+  a = await req('GET', H + '/stalker/vod/525.mp4?stb=' + login5);
+  ok('a movie the portal has no link for: 404 with its reason (the player stops at once)', a.status === 404 && /nothing_to_play/.test(a.body), a.status + ' ' + a.body);
+  ok('the answer\'s shape, for the log, without addresses', S._shapeOf({ id: 1, cmd: 'ffmpeg http://h.example/x.mp4?token=1', error: '' }) === '{id,cmd,error} cmd=ffmpeg <link>' && S._vodLinkOf({ cmd: 'ffmpeg http://localhost/ch/1' }) === '', S._shapeOf({ id: 1, cmd: 'ffmpeg http://h.example/x.mp4?token=1', error: '' }));
+  m5.server.close();
 
   // Issue #113: a portal with a shows module of its own, posters on the portal, and HTTP 429 when asked too fast.
   S._wait = () => 5;

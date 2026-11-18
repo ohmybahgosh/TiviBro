@@ -1700,5 +1700,6 @@ I18n.add('es', {
   "Pin or hide": "Fijar u ocultar",
   "home": "inicio",
   "categories": "categorías",
-  "The TV's own": "El de la TV"
+  "The TV's own": "El de la TV",
+  "All sources": "Todas las fuentes"
 });

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Stalker portals: movies play after TiviBro's helper starts again** (issue #118).  A portal built on an Xtream panel plays a movie only from the command its list gave, and the helper forgot those whenever webOS restarted it (on a TV short of memory, often), while Movies still showed every title from the copy kept on the TV: every movie then failed with no link.  The commands are now kept on the TV with the lists, and a movie whose command is missing tries the usual one and then the Xtream panel's.  When the portal really has no link for a movie, the player says so at once instead of retrying for half a minute, and the problem report shows what the portal answered.
+- **Movies and Shows show up on a big portal right away** (issue #118).  A Stalker portal with tens of thousands of titles can take minutes to list them all, longer than TiviBro waited, so a fresh install showed no Movies or Shows tab until a later check.  A provider with movie or show categories now gets its tabs at once, and they still go if two checks in a row find nothing in them.
+- **Categories keep their language when the name rules would make them the same** (issue #118).  The name rules take "HINDI | " off "HINDI | UPCOMING MOVIES", which left several categories all called "UPCOMING MOVIES".  When cleaning would give two categories the same name, they keep the provider's own.
+
 ## 0.6.0 (alpha 158, 2026-11-17)
 
 Pre-release: expect rough edges, and keep a backup before installing.

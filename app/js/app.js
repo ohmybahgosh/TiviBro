@@ -435,7 +435,11 @@ var App = (function () {
       if (c[0] === null && c[1] === null) return;               // could not tell: keep what we knew
       return Promise.all([offered(c[0], 'get_vod_streams'), offered(c[1], 'get_series')]).then(function (r) {
         var old = p.vod || {};
-        var v = { movies: r[0] === null ? !!old.movies : !!r[0], series: r[1] === null ? !!old.series : !!r[1], at: Date.now() };
+        /* Its titles couldn't be counted in time (a big Stalker portal reads a page of a dozen titles at a time, issue
+           #118: 34,000 movies took longer than the 90 s wait), but it has categories: shown, unless a check before
+           found none.  An empty kind still goes once two checks in a row really find none. */
+        var guess = function (cats, was) { return was != null ? !!was : !!(cats && cats.length); };
+        var v = { movies: r[0] === null ? guess(c[0], old.movies) : !!r[0], series: r[1] === null ? guess(c[1], old.series) : !!r[1], at: Date.now() };
         /* A kind that was there goes only when two checks in a row find none: one odd answer from a busy
            panel no longer takes Movies or Shows out of the menu (issue #117). */
         var gone = { movies: old.movies && !v.movies, series: old.series && !v.series };
@@ -444,7 +448,7 @@ var App = (function () {
           if (miss < 2) { p.vod = Object.assign({}, old, { miss: miss }); Store.upsertPlaylist(p); Log.warn('app', 'The provider answered with no ' + (gone.movies ? 'movies' : 'shows') + ' once: kept in the menu until it says so again'); return; }
         }
         v.miss = 0;
-        var say = function (cats, n) { return cats === null ? 'could not tell' : !cats.length ? 'no' : n ? 'yes (' + cats.length + ' categories)' : n === 0 ? 'no (' + cats.length + ' categories, all empty)' : 'could not tell'; };
+        var say = function (cats, n) { return cats === null ? 'could not tell' : !cats.length ? 'no' : n ? 'yes (' + cats.length + ' categories)' : n === 0 ? 'no (' + cats.length + ' categories, all empty)' : cats.length + ' categories, titles not counted in time'; };
         Log.info('app', 'Provider offers movies: ' + say(c[0], r[0]) + ', shows: ' + say(c[1], r[1]));
         if (old.movies === v.movies && old.series === v.series) return;
         p.vod = v; Store.upsertPlaylist(p);

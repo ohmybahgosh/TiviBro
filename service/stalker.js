@@ -15,7 +15,7 @@
    with the serial and device ids some portals check.  Logs never carry it (proxy.js and log.js redact
    "stb=").  Plain ES5 for Node 0.12 (webOS 4). */
 'use strict';
-var http = require('http'), https = require('https'), URL_ = require('url'), crypto = require('crypto');
+var http = require('http'), https = require('https'), URL_ = require('url'), crypto = require('crypto'), fs = require('fs'), path = require('path');
 
 var UA = 'Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG200 stbapp ver: 2 rev: 250 Safari/533.3';
 var BODY_MAX = 16 * 1024, TEXT_MAX = 200 * 1024 * 1024;
@@ -284,6 +284,7 @@ function vodItems(L, cat, cb) {
     if (e) return cb(e);
     var items = list.filter(function (x) { return x && x.id != null; }).map(function (x) { return slim(x, L); });
     items.forEach(function (x) { if (x.cmd) V.cmd[x.id] = x.cmd; });
+    keepCmds(L);
     V.lists[key] = { at: Date.now(), items: items };
     cb(null, items);
   });
@@ -386,15 +387,86 @@ function linkFail(res, ALLOW, log, e, what) {
   if (log) log({ lv: 'warn', event: 'stalker ' + what + ' failed', e: e ? e.message : 'no link' });
   res.writeHead(e && e.auth ? 403 : e && e.missing ? 404 : 502, ALLOW); res.end(e ? e.message : 'the portal gave no link');
 }
-function vodPlay(L, id, res, ALLOW, log, port) {
-  var em = /^e(\d+)x([A-Za-z0-9_-]+)$/.exec(id), cmd, series = '';
-  if (em) { cmd = unb64u(em[2]); series = em[1]; }
-  else cmd = vodOf(L).cmd[id] || '/media/file_' + id + '.mpg';         // the usual command when the list is gone (a helper restart)
-  act(L, { type: 'vod', action: 'create_link', cmd: cmd, series: series, forced_storage: 'undefined', disable_ad: 0, download: 0 }, function (e, js) {
-    var to = linkOf(js && js.cmd);
-    if (e || !to) return linkFail(res, ALLOW, log, e, 'movie link');
-    sendOn(res, ALLOW, port, to);
+/* Movie commands, kept on the TV (issue #118).  A movie plays from its own command (create_link with the
+   cmd its list gave), and the helper knew those only while it held the list in memory.  The lists themselves
+   are kept on the TV's storage (vod.js), so after the helper started again (webOS stops it on a TV short of
+   memory) Movies still showed every title, but each one was asked for with the usual "/media/file_<id>.mpg",
+   which a portal built on an Xtream panel doesn't know: "no link" for every movie.  Now the commands that
+   aren't that usual one are written next to the lists, and read back when one is missing. */
+var cmdDisk = {};
+function cmdFile(L) {
+  try { var d = require('./kv').liveDir(); return d ? path.join(d, 'stalker-vodcmd-' + hash(keyOf(L)) + '.json') : ''; } catch (e) { return ''; }
+}
+function keepCmds(L) {
+  var f = cmdFile(L), V = vodOf(L); if (!f) return;
+  var D = cmdDisk[f] || (cmdDisk[f] = { timer: null });
+  clearTimeout(D.timer);
+  D.timer = setTimeout(function () {
+    var out = {}, n = 0;
+    for (var id in V.cmd) if (V.cmd[id] !== '/media/file_' + id + '.mpg') { out[id] = V.cmd[id]; n++; }
+    if (!n) return;
+    fs.writeFile(f + '.tmp', JSON.stringify(out), function (e) { if (!e) fs.rename(f + '.tmp', f, function () {}); });
+  }, module.exports._keepMs || 5000);
+}
+function cmdOf(L, id, cb) {
+  var V = vodOf(L); if (V.cmd[id]) return cb(V.cmd[id]);
+  var f = cmdFile(L); if (!f || V.cmdRead) return cb('');
+  fs.readFile(f, 'utf8', function (e, t) {
+    V.cmdRead = true;
+    var m = null; try { m = e ? null : JSON.parse(t); } catch (x) {}
+    if (m && typeof m === 'object') for (var k in m) if (!V.cmd[k]) V.cmd[k] = String(m[k]);
+    cb(V.cmd[id] || '');
   });
+}
+// What create_link answered, for the log: its fields, its error, and its command without addresses.
+function shapeOf(js) {
+  if (js == null) return 'nothing';
+  if (typeof js !== 'object') return typeof js + ' ' + String(js).replace(/https?:\/\/\S+/gi, '<link>').slice(0, 60);
+  var c = js.cmd == null ? '' : String(js.cmd).replace(/https?:\/\/\S+/gi, '<link>').slice(0, 60);
+  return '{' + Object.keys(js).slice(0, 12).join(',') + '}' + (js.error ? ' error=' + String(js.error).slice(0, 40) : '') + (c ? ' cmd=' + c : '');
+}
+function cmdKind(c) { return /^\/media\/file_\d+\.mpg$/.test(c) ? 'usual' : /^[A-Za-z0-9+\/=]{16,}$/.test(c) ? 'base64' : /https?:\/\//i.test(c) ? 'link' : 'other'; }
+// The link in an answer: its cmd (or url), never one on the box itself ("http://localhost/...": the portal's placeholder).
+function vodLinkOf(js) {
+  var to = js && typeof js === 'object' ? (linkOf(js.cmd) || linkOf(js.url)) : linkOf(js);
+  return to && !/^https?:\/\/localhost[:\/]/i.test(to) ? to : '';
+}
+function vodPlay(L, id, res, ALLOW, log, port, ext) {
+  var em = /^e(\d+)x([A-Za-z0-9_-]+)$/.exec(id);
+  if (em) return vodTry(L, [unb64u(em[2])], em[1], res, ALLOW, log, port, '');
+  cmdOf(L, id, function (own) {
+    var usual = '/media/file_' + id + '.mpg', tries = [];
+    if (own) tries.push(own);
+    if (own !== usual) tries.push(usual);
+    // A portal built on an Xtream panel: its movies' commands are this, base64 (when the one from the list is gone).
+    if (!own && /^\d+$/.test(id)) tries.push(b64('{"type":"movie","stream_id":"' + id + '","stream_source":null,"target_container":"[\\"' + (ext || 'mp4') + '\\"]"}'));
+    vodTry(L, tries, '', res, ALLOW, log, port, linkOf(own));
+  });
+}
+// create_link with each command in turn until one gives a link; the command's own address as a last resort.
+function vodTry(L, tries, series, res, ALLOW, log, port, direct) {
+  var i = 0, seen = [], lastE = null, lastJs = null;
+  (function next() {
+    if (i >= tries.length) {
+      if (direct && !/^https?:\/\/localhost[:\/]/i.test(direct)) return sendOn(res, ALLOW, port, direct);
+      if (log) log({ lv: 'warn', event: 'stalker movie link failed', e: lastE ? lastE.message : 'no link', tried: seen.join(' '), got: shapeOf(lastJs) });
+      if (lastE && lastE.auth) return linkFail(res, ALLOW, null, lastE, 'movie link');
+      // The portal answered, without a link: it has nothing to play there, and asking again gets the same (404, the player stops).
+      var why = lastJs && lastJs.error ? String(lastJs.error).slice(0, 60) : '';
+      var hd = { 'Content-Type': 'text/plain' }; for (var hk in ALLOW) hd[hk] = ALLOW[hk];
+      res.writeHead(lastE ? 502 : 404, hd);
+      return res.end(lastE ? lastE.message : 'the portal gave no link for this movie' + (why ? ' (' + why + ')' : ''));
+    }
+    var cmd = tries[i++];
+    seen.push(cmdKind(cmd));
+    act(L, { type: 'vod', action: 'create_link', cmd: cmd, series: series, forced_storage: 'undefined', disable_ad: 0, download: 0 }, function (e, js) {
+      var to = e ? '' : vodLinkOf(js);
+      if (to) return sendOn(res, ALLOW, port, to);
+      lastE = e; lastJs = js;
+      if (e && e.auth) i = tries.length;
+      next();
+    });
+  })();
 }
 /* Catch-up: the programme of the channel's archive that starts at that time (the portal's own guide, by day:
    the day in UTC and the ones each side, since the portal's days are in its own time zone), then its link. */
@@ -470,7 +542,7 @@ function handle(req, res, ALLOW, log, port) {
   }
   if (route === '/stalker/xc/player_api.php') return xc(L2, u.query, res, ALLOW);
   var vm = /^\/stalker\/vod\/([A-Za-z0-9_-]{1,1200})\.[a-z0-9]{2,5}$/.exec(route);
-  if (vm) return vodPlay(L2, vm[1], res, ALLOW, log, port);
+  if (vm) return vodPlay(L2, vm[1], res, ALLOW, log, port, (/\.([a-z0-9]{2,5})$/.exec(route) || [])[1]);
   var am = /^\/stalker\/archive\/([A-Za-z0-9_-]{1,40})\.[a-z0-9]{2,5}$/.exec(route);
   if (am) { var st = +u.query.start || 0; if (!st) return send(res, ALLOW, 400, { error: 'no start time' }); return archive(L2, am[1], st, res, ALLOW, log, port); }
   if (route === '/stalker/epg') {
@@ -488,4 +560,4 @@ function handle(req, res, ALLOW, log, port) {
   send(res, ALLOW, 404, { error: 'unknown stalker route' });
 }
 
-module.exports = { _wait: function (ms) { return ms; }, handle: handle, _login: login, _apis: apis, _linkOf: linkOf, _fillStream: fillStream, _archDays: archDays, _isHlsLink: isHlsLink };
+module.exports = { _wait: function (ms) { return ms; }, handle: handle, _login: login, _apis: apis, _linkOf: linkOf, _fillStream: fillStream, _archDays: archDays, _isHlsLink: isHlsLink, _vodLinkOf: vodLinkOf, _shapeOf: shapeOf, _reset: function () { vodMem = {}; } };
