@@ -16,10 +16,10 @@
 'use strict';
 var http = require('http'), https = require('https'), URL_ = require('url');
 
-var BLOCK = 131072, WINDOW = 262144, IDLE = 600000;
+var BLOCK = 131072, WINDOW = 262144, WINDOW_MAX = 2097152, IDLE = 600000;
 var st = fresh('', 0);
 
-function fresh(origin, cap) { return { origin: origin, size: -1, blocks: {}, order: [], bytes: 0, cap: cap || 16 << 20, noRange: false, pending: {}, timer: null, reads: 0, misses: 0 }; }
+function fresh(origin, cap) { return { origin: origin, size: -1, end: -1, win: WINDOW, blocks: {}, order: [], bytes: 0, cap: cap || 16 << 20, noRange: false, pending: {}, timer: null, reads: 0, misses: 0 }; }
 // The movie this cache is for (another one empties it), and how much it may keep.
 function use(origin, cap) {
   if (st.origin !== origin) { clearTimeout(st.timer); st = fresh(origin, cap); }
@@ -82,11 +82,17 @@ function serve(req, res, origin, cap) {
   var s = use(origin, cap);
   var rg = /bytes=(\d+)-(\d*)/.exec(req.headers.range || ''), from = rg ? +rg[1] : 0, gone = false;
   req.on('close', function () { gone = true; });
-  // The size comes with the first piece.
-  piece(s, Math.floor(from / BLOCK), 2, function (e) {
+  /* ffmpeg reading on from where the last answer ended (the header, an MP4's moov, a big keyframe): each answer
+     twice as big, up to 2 MB, so a long read is a few requests to the source, not one per 256 KB.  A jump
+     elsewhere starts again at 256 KB. */
+  s.win = from === s.end + 1 ? Math.min(WINDOW_MAX, s.win * 2) : WINDOW;
+  var win = s.win;
+  // The whole window in one request to the source (the size comes with it the first time).
+  piece(s, Math.floor(from / BLOCK), Math.ceil((from % BLOCK + win) / BLOCK), function (e) {
     if (gone) return;
     if (e || s.size < 0) { res.writeHead(s.size >= 0 && from >= s.size ? 416 : 502, { 'Content-Range': 'bytes */' + Math.max(0, s.size) }); return res.end(); }
-    var last = Math.min(rg && rg[2] ? +rg[2] : s.size - 1, s.size - 1, from + WINDOW - 1);
+    var last = Math.min(rg && rg[2] ? +rg[2] : s.size - 1, s.size - 1, from + win - 1);
+    s.end = last;
     if (from > last) { res.writeHead(416, { 'Content-Range': 'bytes */' + s.size }); return res.end(); }
     res.writeHead(rg ? 206 : 200, Object.assign({ 'Content-Type': 'application/octet-stream', 'Accept-Ranges': 'bytes', 'Content-Length': last - from + 1 }, rg ? { 'Content-Range': 'bytes ' + from + '-' + last + '/' + s.size } : {}));
     if (req.method === 'HEAD') return res.end();

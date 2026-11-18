@@ -1,20 +1,20 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 156, 2026-11-17)
 
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 156
+
+- **Seek previews.**  While you seek in a movie or an episode (◀ ▶, the jumps, or the Magic Remote over the bar), a picture of the movie at that time shows over the bar, so you can see where you'll land.  The TV makes the pictures from the movie playing, one frame at a time: nothing of your library is read.  It's on by itself (Settings > Playback > Seek previews, or Red in the player); on a TV short of memory it skips 4K movies.  The audio converter on the TV is updated with it.  After the first picture, the TV keeps the movie's start and index in memory (16 MB at most, 4 MB on a TV short of memory), so the next pictures read only around their own frame.
 - **Chapters on the bar, Skip intro and Up next.**  A movie or episode file with chapters shows them as marks on the progress bar, and their names as you seek.  Red > Chapters lists them with a picture of each, and CH+ CH− go from one chapter to the next.  Where the file marks an intro or a recap, "Skip intro" shows while it plays, and where it marks the end credits, "Up next" offers the next episode (or the next movie of a collection you play).  OK does it, Back hides it.  Nothing is guessed: a file without those chapters shows neither.  Settings > Playback > Skip intro and Up next.
 - **Your audio and subtitle choice carries to the next episode.**  The audio track and the subtitles you pick in the player are kept for that movie or episode, and for the rest of its show.
 - **Subtitle position, brightness and weight.**  Raise the lines (clear of a score bar or burnt-in captions), dim them (easier in a dark room, and on an OLED) or make them bold: Settings > Playback, or Subtitles > Size and style in the player.
-- **Seek previews.**  While you seek in a movie or an episode (◀ ▶, the jumps, or the Magic Remote over the bar), a picture of the movie at that time shows over the bar, so you can see where you'll land.  The TV makes the pictures from the movie playing, one frame at a time: nothing of your library is read.  It's on by itself (Settings > Playback > Seek previews, or Red in the player); on a TV short of memory it skips 4K movies.  The audio converter on the TV is updated with it.  After the first picture, the TV keeps the movie's start and index in memory (16 MB at most, 4 MB on a TV short of memory), so the next pictures read only around their own frame.
 - **Channel logos no longer flash over a channel that's starting.**  For a moment while a channel opened from Live TV, a column of channel logos could show on a blank screen.  The logos now hide with the rest of the screen.
 - **A team reminder no longer "moves" every 10 minutes.**  When the guide named a game two ways, its reminder was moved to the channel it was already on, with a line in the log each time.
 - **My media library grid:** ◀ from the first column opens the side menu.
 
-## 0.6.0 (alpha 155, 2026-11-17)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 155
+### In alpha 155
 
 - **A warning before the TV runs out of memory.**  TiviBro weighs what it holds (channels, guide sources, movies and shows) against the TV's memory, and reads the browser's own memory gauge where the TV has one.  When it's a lot, it asks once to turn on Memory-safe playback, or, if that's already on, points to what helps most (Settings > System > Fix a problem).  It never asks over fullscreen video, Not now waits 30 days, and Memory-safe playback set to Off is respected.
 - **Search no longer loads every movie and show on a TV short of memory (issue #116).**  Opening Search loaded the provider's whole movie and show lists into the app, 41,000 titles on one 1 GB TV, and the TV closed TiviBro.  With Memory-safe playback on, the TiviBro service on the TV searches the lists it keeps and hands over only the matches.
