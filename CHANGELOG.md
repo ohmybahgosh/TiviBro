@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Try again and Start over keep the player a channel plays on**: a channel that plays as HLS (its chosen format, or it played better that way) went back to MPEG-TS, and some providers hang up on that within a minute.
+
 ## 0.6.0 (alpha 167, 2026-11-18)
 
 Pre-release: expect rough edges, and keep a backup before installing.

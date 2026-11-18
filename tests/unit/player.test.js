@@ -853,5 +853,25 @@ ok('other files play directly, without subtitle extraction', mp4.calls.length ==
   ok('issue #118: a Stalker movie with no link (404) is not retried', t.made.length === n0 && /^error: The portal has no link/.test(t.states[t.states.length - 1]), t.made.length - n0 + ' ' + t.states.slice(-1));
 }
 
+
+// ---- Try again keeps the player a channel started on (HLS because it played better that way) ----
+{
+  const ls = {};
+  let t = setup({ memo: ls, settings: { format: 'ts' } });
+  t.P.play({ n: 'Prefers HLS', url: 'http://p/live/u/p/150.ts', k: 'h150' });
+  t.feed(0, 30); t.run(3000);
+  const drop = () => { t.last().h.err('NetworkError', 'EarlyEof', {}); t.run(1500); t.feed(0, 30); t.run(3000); };
+  drop(); drop();
+  const onHls = t.last().kind === 'hls';
+  t.P.retryNow(); t.run(500);
+  ok('Try again on a channel that switched to HLS (it played better) stays on HLS', onHls && t.last().kind === 'hls', t.made.map(x => x.kind).join(','));
+  t = setup({ memo: ls, settings: { format: 'ts' } });
+  t.P.play({ n: 'Prefers HLS', url: 'http://p/live/u/p/150.ts', k: 'h150' });
+  t.feed(0, 30); t.run(3000);
+  const k0 = t.last().kind;
+  t.P.retryNow(); t.run(500);
+  ok('Try again starts on the player the channel started on', t.last().kind === k0, k0 + ' -> ' + t.made.map(x => x.kind).join(','));
+}
+
 if (fail) { console.log(fail + ' player test(s) failed'); process.exit(1); }
 console.log('all player tests passed');

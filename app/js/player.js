@@ -1399,6 +1399,8 @@ var Player = (function () {
       if (!want && memo.engine && memo.engine !== cur.usual && engineOk(memo.engine)) { Log.info('player', 'Starting with the ' + (memo.engine === 'hls' ? 'HLS version' : ENGINE_NAMES[memo.engine]) + ', which played this channel last time'); useEngine(memo.engine); }
       if (memo.boost && !cur.preview) { cur.boost = memo.boost; cur.boostAt = Date.now(); }
     }
+    // The player this channel starts on (its chosen format, or what played it before): Try again starts there too.
+    cur.firstKind = cur.forceKind || null;
     // Movies, episodes and My media files: is the sound one this TV plays?  (convert.js)
     if (window.Convert && !cur.live && !cur.timeshift && !cur.preview && Convert.on()) {
       var my = token, item = cur.meta && cur.meta.item || {};
@@ -1692,6 +1694,10 @@ var Player = (function () {
     cur.retries = 0; cur.triedNative = false; cur.failed = false; cur.slowSince = 0; cur.slow = ''; cur.lastWhy = ''; cur.deadCounted = false; cur.halfSwitched = false; cur.spinKind = null; cur.spunOnce = false;   // a try of its own
     cur.tried = null; cur.late = null; cur.forceKind = null; cur.forceNative = false; cur.routed = false; cur.httpFails = 0; cur.lastHttp = 0;
     if (isFile() && !cur.startAt && cur.pos > 5) cur.startAt = cur.pos;      // a movie tries again where it was
+    /* On the player it started on: a channel that plays as HLS (its format, or it played better that way) went back
+       to MPEG-TS on Try again or Start over, and the provider hung up on it 40 s later (seen on the LG C2). */
+    var again = cur.live && !cur.timeshift && preferHls[cur.origUrl || cur.url] ? 'hls' : cur.firstKind;
+    if (again && engineOk(again)) useEngine(again);
     start(token);
   }
 
