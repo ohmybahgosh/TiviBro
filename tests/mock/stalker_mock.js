@@ -69,6 +69,10 @@ function create(o) {
     }
     // o.vodHls (issue #118): movie links that are HLS playlists.
     if (o.vodHls && q.type === 'vod' && q.action === 'create_link') { seen.vodLinks = (seen.vodLinks || []).concat([q.cmd]); return js(res, { id: 1, cmd: 'http://127.0.0.1:1/5e9ab/playlist.m3u8?token=t&vtt_mode=standard' }); }
+    /* As stalker_portal's Master::play: a forced_storage that names no storage leaves none ("undefined" did, issue #118);
+       o.vodAds: the answer is a list, the ad first. */
+    if (q.type === 'vod' && q.action === 'create_link' && q.forced_storage) return js(res, { id: 0, cmd: '', error: 'nothing_to_play' });
+    if (o.vodAds && q.type === 'vod' && q.action === 'create_link' && q.disable_ad !== '1') return js(res, [{ id: 0, media_type: 'vclub_ad', cmd: 'http://ads.example/ad.mp4' }, { id: 1, cmd: 'ffmpeg http://127.0.0.1:1/vod/' + encodeURIComponent(q.cmd) + '.mp4' }]);
     if (q.type === 'vod' && q.action === 'create_link') { seen.vodLinks = (seen.vodLinks || []).concat([q.cmd + '|' + (q.series || '')]); return js(res, { id: 1, cmd: 'ffmpeg http://127.0.0.1:1/vod/' + encodeURIComponent(q.cmd) + '.mp4?series=' + (q.series || '') }); }
     if (q.type === 'epg' && q.action === 'get_simple_data_table') {
       seen.epgDays = (seen.epgDays || []).concat([q.date]);

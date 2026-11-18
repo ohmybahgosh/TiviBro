@@ -466,13 +466,15 @@ function cmdOf(L, id, cb) {
 // What create_link answered, for the log: its fields, its error, and its command without addresses.
 function shapeOf(js) {
   if (js == null) return 'nothing';
+  if (Array.isArray(js)) return 'list of ' + js.length + (js.length ? ': ' + shapeOf(js[js.length - 1]) : '');
   if (typeof js !== 'object') return typeof js + ' ' + String(js).replace(/https?:\/\/\S+/gi, '<link>').slice(0, 60);
   var c = js.cmd == null ? '' : String(js.cmd).replace(/https?:\/\/\S+/gi, '<link>').slice(0, 60);
   return '{' + Object.keys(js).slice(0, 12).join(',') + '}' + (js.error ? ' error=' + String(js.error).slice(0, 40) : '') + (c ? ' cmd=' + c : '');
 }
-function cmdKind(c) { return /^\/media\/file_\d+\.mpg$/.test(c) ? 'usual' : /^[A-Za-z0-9+\/=]{16,}$/.test(c) ? 'base64' : /https?:\/\//i.test(c) ? 'link' : 'other'; }
+function cmdKind(c) { return /^\/media\/file_\d+\.mpg$/.test(c) ? 'usual' : /^\/media\/\d+\.mpg$/.test(c) ? 'id' : /^[A-Za-z0-9+\/=]{16,}$/.test(c) ? 'base64' : /https?:\/\//i.test(c) ? 'link' : 'other'; }
 // The link in an answer: its cmd (or url), never one on the box itself ("http://localhost/...": the portal's placeholder).
 function vodLinkOf(js) {
+  if (Array.isArray(js)) js = js.filter(function (x) { return x && x.cmd && !x.is_advert && !/advert|vclub_ad/.test(String(x.media_type || '')); }).pop() || null;
   var to = js && typeof js === 'object' ? (linkOf(js.cmd) || linkOf(js.url)) : linkOf(js);
   return to && !/^https?:\/\/localhost[:\/]/i.test(to) ? to : '';
 }
@@ -480,8 +482,11 @@ function vodPlay(L, id, res, ALLOW, log, port, ext) {
   var em = /^e(\d+)x([A-Za-z0-9_-]+)$/.exec(id);
   if (em) return vodTry(L, [unb64u(em[2])], em[1], res, ALLOW, log, port, '', ext);
   cmdOf(L, id, function (own) {
-    var usual = '/media/file_' + id + '.mpg', tries = [];
+    /* Without its own command: "/media/<id>.mpg" is the movie by its id; "/media/file_<id>.mpg" is a FILE by that id
+       (stalker_portal's createLink), right only where the two ids match, as on portals built on other panels. */
+    var usual = '/media/file_' + id + '.mpg', byId = '/media/' + id + '.mpg', tries = [];
     if (own) tries.push(own);
+    if (!own && /^\d+$/.test(id)) tries.push(byId);
     if (own !== usual) tries.push(usual);
     // A portal built on an Xtream panel: its movies' commands are this, base64 (when the one from the list is gone).
     if (!own && /^\d+$/.test(id)) tries.push(b64('{"type":"movie","stream_id":"' + id + '","stream_source":null,"target_container":"[\\"' + (ext || 'mp4') + '\\"]"}'));
@@ -523,7 +528,11 @@ function vodTry(L, tries, series, res, ALLOW, log, port, direct, asked, movieId)
     }
     var cmd = tries[i++];
     seen.push(cmdKind(cmd));
-    act(L, { type: 'vod', action: 'create_link', cmd: cmd, series: series, forced_storage: 'undefined', disable_ad: 0, download: 0 }, function (e, js) {
+    /* forced_storage empty, disable_ad 1 (issue #118).  The reference portal (stalker_portal's Master::play) keeps
+       only the storage named in forced_storage when it isn't empty, so "undefined" left none and every movie on
+       the portal's own storage answered nothing_to_play; a movie with a custom address skipped that check, which
+       is why some portals played.  With ads on, the answer is a list (the ad, then the movie). */
+    act(L, { type: 'vod', action: 'create_link', cmd: cmd, series: series, forced_storage: '', disable_ad: 1, download: 0 }, function (e, js) {
       var to = e ? '' : vodLinkOf(js);
       /* Issue #118: a portal whose movie links are HLS playlists (".../playlist.m3u8?token=...") while the player
          asked for the file (".mp4"): the TV's player and the MPEG-TS one both failed on a playlist.  As for
@@ -554,7 +563,7 @@ function archive(L, sid, start, res, ALLOW, log, port) {
         var d = js && Array.isArray(js.data) ? js.data : [], hit = null;
         d.forEach(function (p) { var s = +p.start_timestamp || when(p.time), en = +p.stop_timestamp || when(p.time_to); if (!hit && s <= start + 90 && en > start) hit = p; });
         if (hit) {
-          return act(L, { type: 'tv_archive', action: 'create_link', cmd: 'auto /media/' + hit.id + '.mpg', series: '', forced_storage: 'undefined', disable_ad: 0, download: 0 }, function (e2, j2) {
+          return act(L, { type: 'tv_archive', action: 'create_link', cmd: 'auto /media/' + hit.id + '.mpg', series: '', forced_storage: '', disable_ad: 1, download: 0 }, function (e2, j2) {
             var to = linkOf(j2 && j2.cmd);
             if (e2 || !to) return linkFail(res, ALLOW, log, e2, 'archive');
             sendOn(res, ALLOW, port, to);

@@ -150,6 +150,17 @@ const req = (method, u, body, headers) => new Promise((res, rej) => {
   ok('movies still come from the movie module', x.j.length === 28, x.j.length);
   m4.server.close();
 
+  // Issue #118: a stock portal answers nothing_to_play when forced_storage names no storage, and a list when ads are on.
+  {
+    const m9 = Mock.create({ stream: 'http://127.0.0.1:1/live/stream.ts', vodAds: true });
+    await new Promise((f) => m9.server.listen(0, '127.0.0.1', f));
+    const login9 = b64({ portal: 'http://127.0.0.1:' + m9.server.address().port + '/stalker_portal/c/', mac: '00:1a:79:00:00:01' });
+    const r9 = await req('GET', H + '/stalker/vod/503.mp4?stb=' + login9);
+    ok('issue #118: a movie link asks with forced_storage empty and no ad (a link, not nothing_to_play or the ad)', r9.status === 302 && /\/vod\//.test(r9.headers.location || '') && !/ads\.example/.test(r9.headers.location || ''), r9.status + ' ' + (r9.headers.location || r9.body));
+    ok('issue #118: an answer that lists an ad first gives the movie', /h\.example\/m\.mp4/.test(S._vodLinkOf([{ media_type: 'vclub_ad', cmd: 'http://ads.example/x.mp4' }, { id: 1, cmd: 'ffmpeg http://h.example/m.mp4' }])));
+    m9.server.close();
+  }
+
   // Issue #118: a portal whose categories need genre=*, and whose movie links are HLS playlists.
   const m8 = Mock.create({ stream: 'http://127.0.0.1:1/live/stream.ts', series: true, genreStrict: true, vodHls: true });
   await new Promise((f) => m8.server.listen(0, '127.0.0.1', f));
