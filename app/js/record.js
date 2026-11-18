@@ -55,7 +55,14 @@ var Record = (function () {
   // What the guide knows: is this programme being recorded or due to be?
   function of(ch, p) {
     var name = L.name(ch);
-    return last.recs.filter(function (r) { return (r.status === 'recording' || r.status === 'scheduled') && r.channel === name && (!p || (r.start <= p.s + PAD_BEFORE + 1000 && r.end >= p.e)); })[0] || null;
+    // A recording started partway through ("from now") starts after the programme does, so it covers the programme
+    // when it began before the programme ends and runs to its end.
+    return last.recs.filter(function (r) {
+      if ((r.status !== 'recording' && r.status !== 'scheduled') || r.channel !== name) return false;
+      if (!p) return true;
+      if (r.end < p.e) return false;
+      return r.status === 'recording' ? r.start < p.e : r.start <= p.s + PAD_BEFORE + 1000;
+    })[0] || null;
   }
   // For the guide's Hold OK menu: Record or Stop recording, for a programme on now or later.
   function menuItem(ch, p) {
