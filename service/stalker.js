@@ -500,7 +500,13 @@ function vodTry(L, tries, series, res, ALLOW, log, port, direct, asked, movieId)
       filesAsked = true;
       return act(L, { type: 'vod', action: 'get_ordered_list', movie_id: movieId, season_id: 0, episode_id: 0, category: '*', fav: 0, p: 1 }, function (e, js) {
         var d = !e && js && Array.isArray(js.data) ? js.data : [], add = 0;
-        d.forEach(function (f) { if (add < 2 && f && f.cmd && !Array.isArray(f.series) && tries.indexOf(String(f.cmd)) < 0) { tries.push(String(f.cmd)); add++; } });
+        /* A file row whose protocol is "custom" carries a raw address; the portal's own player (and IPTVnator after
+           it) asks create_link for "/media/file_<the file's id>.mpg" instead.  Subtitle files are left out. */
+        d.forEach(function (f) {
+          if (add >= 2 || !f || !f.cmd || Array.isArray(f.series) || /\.(srt|vtt|sub|ass|ssa)(\?|$)/i.test(String(f.cmd))) return;
+          var c = f.protocol === 'custom' && /^\d+$/.test(String(f.id)) ? '/media/file_' + f.id + '.mpg' : String(f.cmd);
+          if (tries.indexOf(c) < 0) { tries.push(c); add++; }
+        });
         if (log) log({ lv: 'info', event: 'stalker movie files', n: d.length, using: add });
         next();
       });

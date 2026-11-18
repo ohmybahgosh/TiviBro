@@ -51,7 +51,8 @@ function create(o) {
     if (o.series && q.type === 'series' && q.action === 'get_ordered_list') { seen.seriesPages = (seen.seriesPages || 0) + 1; seen.seriesGenres = (seen.seriesGenres || []).concat([q.genre]); if (o.genreStrict && q.category !== '*' && q.genre !== '*') return page([], q.p, res); return page(shows.filter(function (x) { return q.category === '*' || !q.category || x.category_id === q.category; }), q.p, res); }
     if (q.type === 'vod' && q.action === 'get_ordered_list' && q.movie_id && q.movie_id !== '0') {
       // o.files (issue #118): a movie past 525 plays only from its own file's command (newer portals).
-      if (o.files && +q.movie_id > 525) return js(res, { total_items: 1, data: [{ id: '9' + q.movie_id, name: 'HD', cmd: '/media/file_9' + q.movie_id + '.mpg' }] });
+      // A file row with protocol "custom" has a raw address; it plays as "/media/file_<its id>.mpg".
+      if (o.files && +q.movie_id > 525) return js(res, { total_items: 2, data: [{ id: '8' + q.movie_id, name: 'subs', cmd: 'http://h.example/x.srt' }, { id: '9' + q.movie_id, name: 'HD', protocol: 'custom', cmd: 'http://storage.example/raw/' + q.movie_id + '.mkv' }] });
       if (q.movie_id !== '505' && q.movie_id !== '520') return js(res, { total_items: 0, data: [] });
       return js(res, { total_items: 2, data: [{ id: q.movie_id + ':1', name: 'Season 1', series: [1, 2, 3], cmd: 'eyJzZWFzb24iOjF9' }, { id: q.movie_id + ':2', name: 'Season 2', series: [1, 2], cmd: 'eyJzZWFzb24iOjJ9' }] });
     }
