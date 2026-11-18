@@ -9,7 +9,7 @@
    ES5 / Node 0.12. */
 'use strict';
 var M = require('./media-catalog'), Corrections = require('./media-corrections');
-var SCAN_FIELDS = ['file', 'title', 'year', 'size', 'ext', 'info', 'path', 'url', 'etag', 'modified', 'ancestors', 'server'];
+var SCAN_FIELDS = ['file', 'title', 'year', 'size', 'ext', 'info', 'path', 'url', 'etag', 'modified', 'ancestors', 'server', 'subs'];
 var OWN = { id: 1, handle: 1, sourceId: 1, kind: 1, classification: 1, override: 1, showOverride: 1, groupKey: 1, showId: 1, episodeIds: 1, availability: 1, addedAt: 1, missingSince: 1 };
 var MISSING_DAYS = 30;
 SCAN_FIELDS.forEach(function (k) { OWN[k] = 1; });

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Subtitles from DLNA servers.**  A media server that offers subtitles with its videos (Jellyfin, Emby, Plex, Serviio, minidlna and others, as a subtitle stream of the video or a caption link) now gives them to TiviBro too, as tracks in the Subtitles menu.  They're noted at the scan, so a library scanned before needs a Rescan to pick them up.  Together with alpha 162's subtitle files beside a video (Dropbox, WebDAV, Google Drive) and the subtitles inside MKV and MP4 files, every kind of library now brings its own.
 - A movie that couldn't play left an "Unhandled promise rejection" error in the log (issue #118): the MPEG-TS player finishing a read after it was closed.  It's noted as a warning now, since nothing stopped.
 
 ## 0.6.0 (alpha 162, 2026-11-18)

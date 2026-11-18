@@ -1381,10 +1381,10 @@ var Media = (function () {
         var tries = 0, wait = function () {
           if (token !== playToken || playingMeta !== mine) return;
           if (!(typeof Player !== 'undefined' && Player.playing) && ++tries < 40) return setTimeout(wait, 1500);   // after the picture comes (a start resets the tracks)
-          Subs.sidecar(fileH ? { source: sideSrc, handle: fileH } : { source: sideSrc, path: m.path });
+          Subs.sidecar(fileH ? { source: sideSrc, handle: fileH } : { source: sideSrc, path: m.path, subs: m.subs });
         };
         var fileH = m.kind === 'episode' && /^file_/.test(String(m.id || '')) ? m.id : '';   // an episode's file (its id), not the episode's own handle
-        if (sideSrc && (fileH || m.path)) setTimeout(wait, 1500);
+        if (sideSrc && (fileH || m.path || (m.subs && m.subs.length))) setTimeout(wait, 1500);   // m.subs: a DLNA server's own
       }
     }
     if (m.url) return go(m.url);

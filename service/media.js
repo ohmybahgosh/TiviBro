@@ -188,11 +188,18 @@ function parseBrowse(raw) {
     if (!it.dir) {
       var seriesTitle = tag(m[3], 'upnp:seriesTitle'), episodeNumber = tag(m[3], 'upnp:episodeNumber');
       if (seriesTitle && /^[1-9][0-9]*$/.test(episodeNumber)) it.server = {validated:true,showTitle:seriesTitle,number:+episodeNumber};
-      var rre = /<res\b([^>]*)>([\s\S]*?)<\/res>/g, rm;
+      var rre = /<res\b([^>]*)>([\s\S]*?)<\/res>/g, rm, subs = [];
       while ((rm = rre.exec(m[3]))) {
         var proto = attr(rm[1], 'protocolInfo');
         if (/:video\//i.test(proto) && !it.url) { it.url = unescapeXml(rm[2]).trim(); it.proto = proto; it.size = +attr(rm[1], 'size') || 0; }
+        // Subtitles the server offers with the video (Jellyfin, Serviio, Universal Media Server): a res of their own.
+        else if (/:(?:text\/(?:srt|vtt|x-subrip)|application\/x-subrip|smi\/caption)/i.test(proto)) subs.push({ url: unescapeXml(rm[2]).trim(), lang: attr(rm[1], 'language') || attr(rm[1], 'xml:lang') || '' });
       }
+      // ...or as Samsung's caption tag (minidlna, Plex, Emby).
+      var cre = /<sec:CaptionInfo(?:Ex)?\b[^>]*>([\s\S]*?)<\/sec:CaptionInfo(?:Ex)?>/gi, cm;
+      while ((cm = cre.exec(m[3]))) subs.push({ url: unescapeXml(cm[1]).trim(), lang: '' });
+      subs = subs.filter(function (x, i) { return /^https?:\/\//i.test(x.url) && x.url.length < 2000 && subs.map(function (y) { return y.url; }).indexOf(x.url) === i; }).slice(0, 6);
+      if (subs.length) it.subs = subs;
     }
     items.push(it);
   }
@@ -253,7 +260,7 @@ function scanDlna(source, cb) {
     var key = u.pathname + (discovery(source) ? u.search || '' : ''), named = /\(\d{4}\)\s*$/.test(folderName), was = byPath[key];
     if (was && (was.named || !named) && !discovery(source)) return;
     if (discovery(source)) {
-      var entry = observed(source, file, ancestors, { id: 'd:' + u.pathname, size: it.size || 0, ext: extOf(file, it.proto), info: tokens(file), url: it.url, server: it.server });
+      var entry = observed(source, file, ancestors, { id: 'd:' + u.pathname, size: it.size || 0, ext: extOf(file, it.proto), info: tokens(file), url: it.url, server: it.server, subs: it.subs });
       var prior=discovered[key];
       if(prior && prior.classification.review.length <= entry.classification.review.length && prior.ancestors.length >= entry.ancestors.length) entry=prior;
       var owner=pathOwners[u.pathname];
@@ -263,7 +270,7 @@ function scanDlna(source, cb) {
       if (entry.kind !== 'movie' || source.contentMode === 'shows') return;
     }
     var t = titleOf(folderName, file);
-    byPath[key] = { named: named, movie: { id: 'd:' + key, title: t.title, year: t.year, file: file, size: it.size || 0, ext: extOf(file, it.proto), info: tokens(file), url: it.url } };
+    byPath[key] = { named: named, movie: { id: 'd:' + key, title: t.title, year: t.year, file: file, size: it.size || 0, ext: extOf(file, it.proto), info: tokens(file), url: it.url, subs: it.subs } };
   }
   function done() {
     var movies = Object.keys(byPath).map(function (k) { return byPath[k].movie; });
@@ -677,7 +684,9 @@ function libraryRequest(kind, q, req, res, ALLOW, log) {
     if (kind === 'continue') return lib.continuing(answer);
     // Subtitle files beside an episode (service/sidecar.js): its file's folder on the source.
     if (kind === 'sidecar') return lib.file(q.handle, function (err, file) {
-      if (err || !file || !q.source || q.source.id !== file.sourceId || !file.path) return answer(null, { subs: [] });
+      if (err || !file || !q.source || q.source.id !== file.sourceId) return answer(null, { subs: [] });
+      if (file.subs && file.subs.length) return answer(null, { subs: require('./sidecar').fromServer(file.subs) });   // a DLNA server's own
+      if (!file.path) return answer(null, { subs: [] });
       require('./sidecar').lookup(q.source, file.path, function (r) { log({ lv: 'info', event: 'sidecar subtitles', found: r.subs.length, looked: r.looked, seen: r.seen }); answer(null, r); });
     });
     if (kind === 'query') return lib.query(q, answer);
@@ -819,6 +828,7 @@ function handle(req, res, ALLOW, log) {
       send(res, ALLOW, 200, r);
     });
     // Subtitle files beside a movie, and one of them (service/sidecar.js).
+    if (route === '/media/sidecar' && Array.isArray(q.subs) && q.subs.length) return send(res, ALLOW, 200, { subs: require('./sidecar').fromServer(q.subs) });
     if (route === '/media/sidecar') return require('./sidecar').lookup(q.source, q.path, function (r) { log({ lv: 'info', event: 'sidecar subtitles', found: r.subs.length, looked: r.looked, seen: r.seen }); send(res, ALLOW, 200, r); });
     if (route === '/media/sidecar/get') return require('./sidecar').get(q.source, q.path, q.lang, function (r) { if (r.error) log({ lv: 'warn', event: 'sidecar subtitle', error: r.error }); send(res, ALLOW, 200, r); });
     if (route === '/media/scan/control') {

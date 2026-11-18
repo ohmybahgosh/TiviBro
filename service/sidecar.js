@@ -122,12 +122,24 @@ function lookup(source, path, cb) {
   if (source.type === 'webdav' || source.address) {
     return webdavList(source, path.replace(/\/[^\/]*$/, ''), function (entries) { walk(function (x, then) { webdavList(source, x.path, then); }, entries, finish); });
   }
-  cb({ subs: [] });   // DLNA: its server gives subtitles of its own, if any
+  cb({ subs: [], looked: 0, seen: [] });   // DLNA: the server's own come with the file (fromServer)
 }
+/* A DLNA server's own subtitles for a video (media.js parseBrowse: a res of their own, or Samsung's caption tag),
+   kept with the file at the scan: [{ url, lang }] -> the shape lookup() gives. */
+function fromServer(list) {
+  return (Array.isArray(list) ? list : []).filter(function (x) { return x && /^https?:\/\//i.test(str(x.url)); }).slice(0, 6).map(function (x) {
+    var name = decodeURIComponent(str(x.url).split('?')[0].split('/').pop() || '') || 'Subtitles', l = str(x.lang).toLowerCase().replace(/[^a-z-]/g, '');
+    var d = describe(name, ''), lang = NAMES[l] || NAMES[l.split('-')[0]] || d.lang;
+    return { name: name.slice(0, 120), lang: lang, forced: d.forced, sdh: d.sdh, path: str(x.url) };
+  }).map(function (x, i, all) { if (!x.lang) x.name = 'Subtitles' + (all.length > 1 ? ' ' + (i + 1) : '') + '.srt'; return x; });   // "123.srt" says nothing
+}
+function sameHost(a, b) { try { return URL_.parse(a).hostname === URL_.parse(b).hostname; } catch (e) { return false; } }
 function get(source, path, lang, cb) {
   source = source || {}; path = str(path);
-  if (!SUB.test(path.replace(/\?.*$/, ''))) return cb({ error: 'not a subtitle file' });
   var decode = function (e, buf) { if (e) return cb({ error: 'HTTP ' + (e.status || 'error') }); cb({ text: require('./subtitles')._test.decode(buf, lang) }); };
+  // DLNA: the server's own address for it (any name), only from the server the source is.
+  if (source.type === 'dlna') { if (!/^https?:\/\//i.test(path) || !sameHost(path, source.control)) return cb({ error: 'address' }); return getText(path, {}, decode); }
+  if (!SUB.test(path.replace(/\?.*$/, ''))) return cb({ error: 'not a subtitle file' });
   if (source.type === 'dropbox') return require('./dropbox').tempLink(source, path, function (e, url) { if (e) return cb({ error: e.message }); getText(url, {}, decode); });
   if (source.type === 'gdrive') {
     var G = require('./gdrive'), id = G.idOf(path);
@@ -138,4 +150,4 @@ function get(source, path, lang, cb) {
   if (!u || !u.hostname || path.charAt(0) !== '/') return cb({ error: 'address' });
   getText(u.protocol + '//' + u.host + path.split('/').map(function (p) { return encodeURIComponent(p); }).join('/'), { Authorization: require('./media').basicAuth(source) }, decode);
 }
-module.exports = { lookup: lookup, get: get, _test: { pick: pick, describe: describe } };
+module.exports = { lookup: lookup, get: get, fromServer: fromServer, _test: { pick: pick, describe: describe } };

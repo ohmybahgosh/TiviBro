@@ -189,8 +189,8 @@ var Subs = (function () {
   }
   function sidecar(q) {
     var my = ++sideToken, v = video();
-    if (!q || !q.source || (!q.path && !q.handle)) return Promise.resolve(0);
-    return post(q.handle ? 'library/sidecar' : 'sidecar', q.handle ? { source: q.source, handle: q.handle } : { source: q.source, path: q.path }).then(function (r) {
+    if (!q || !q.source || (!q.path && !q.handle && !(q.subs && q.subs.length))) return Promise.resolve(0);
+    return post(q.handle ? 'library/sidecar' : 'sidecar', q.handle ? { source: q.source, handle: q.handle } : { source: q.source, path: q.path || '', subs: q.subs || undefined }).then(function (r) {
       var list = (r && r.subs) || [], want = Store.settings.subsLang || langs()[0] || '';
       if (my !== sideToken || !list.length) return 0;
       // Your language first, then the rest; at most 6.
