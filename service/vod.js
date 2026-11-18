@@ -60,7 +60,7 @@ function send(res, ALLOW, code, obj) {
 }
 
 // Fetches a relay address on this helper and parses the JSON answer.
-function getJSON(url, cb) {
+function getJSON(url, cb, ms) {
   var done = false;
   function finish(e, v) { if (!done) { done = true; cb(e, v); } }
   var req = http.get(url, function (res) {
@@ -75,7 +75,7 @@ function getJSON(url, cb) {
     res.on('error', function (e) { finish(e); });
   });
   req.on('error', function (e) { finish(e); });
-  req.setTimeout(180000, function () { req.abort(); finish(new Error('timed out')); });
+  req.setTimeout(ms || 180000, function () { req.abort(); finish(new Error('timed out')); });
 }
 
 /* ---------- the full lists, kept here ---------- */
@@ -193,6 +193,10 @@ function list(q, res, ALLOW, log, port) {
   var fresh = d && d.rows && d.rows.length && !q.refresh && (maxAge <= 0 || Date.now() - d.at < maxAge);
   if (fresh) return send(res, ALLOW, 200, shown(kind, d, q));
   var t0 = Date.now();
+  /* A Stalker portal sends a dozen titles a page: 34,000 movies took several minutes (issue #118), and the app
+     shows how far it has come (stalker.js /stalker/progress), so wait for it.  Its silent connection is the
+     helper's own, here on the TV. */
+  var slow = /\/stalker\/xc\//.test(str(q.u)) ? 30 * 60000 : 0;
   getJSON(str(q.uc), function (e1, cats) {
     getJSON(str(q.u), function (e, j) {
       if (e || !Array.isArray(j)) {
@@ -215,8 +219,8 @@ function list(q, res, ALLOW, log, port) {
       writeList(pl, kind, { v: 2, at: nd.at, sig: sig, rows: nd.rows, cats: nd.cats }, function (we) { if (we && log) log({ lv: 'warn', event: 'vod list not saved', kind: kind, e: we.message }); });
       keep(pl, kind, nd);
       send(res, ALLOW, 200, shown(kind, nd, q));
-    });
-  });
+    }, slow);
+  }, slow);
   }
 }
 
@@ -242,6 +246,8 @@ function find(q, res, ALLOW, log, port) {
 
 function handle(req, res, ALLOW, log, port) {
   var route = req.url.split('?')[0];
+  // A Stalker portal's list can take minutes (issue #118): older Node closes a quiet connection after 2.
+  if (req.method === 'POST' && (route === '/vod/list' || route === '/vod/find') && req.socket && req.socket.setTimeout) req.socket.setTimeout(31 * 60000);
   if (req.method === 'POST' && route === '/vod/find') return readBody(req, res, ALLOW, function (q) { find(q || {}, res, ALLOW, log, port); });
   if (req.method === 'POST' && route === '/vod/list') return readBody(req, res, ALLOW, function (q) { list(q || {}, res, ALLOW, log, port); });
   if (req.method === 'POST' && route === '/vod/m3u') return readBody(req, res, ALLOW, function (q) { m3u(q || {}, res, ALLOW); });

@@ -266,6 +266,7 @@ var Vod = (function () {
         return d;
       }, function (e) {
         if (Source.m3uVod(p)) throw e;               // an M3U list's library lives with the helper only
+        if (p.type === 'stalker') throw e;           // a portal's titles come through the helper anyway (issue #118)
         Log.warn('vod', 'The helper could not give the ' + (k === 'series' ? 'show' : 'movie') + ' list (' + (e && e.message || e) + '), loading it here');
         return own(k, p);
       });
@@ -279,10 +280,40 @@ var Vod = (function () {
   var freshAt = 0, freshDone = {};
   function wantFresh(k, p) { var key = k + ':' + p.id; if (!freshAt || freshDone[key] >= freshAt) return false; freshDone[key] = freshAt; return true; }
   function fromHelper(k, p) {
-    var t0 = Date.now(), body = listBody(k, p, wantFresh(k, p));
-    return postJSON('http://127.0.0.1:' + Net.port + '/vod/list', body, 240000).then(function (j) {
+    var t0 = Date.now(), body = listBody(k, p, wantFresh(k, p)), portal = p.type === 'stalker';
+    // A Stalker portal sends a dozen titles a page: a big one takes minutes the first time (issue #118), so wait, and say how far it has come.
+    var stop = portal ? watchPortal(k, p) : function () {};
+    return postJSON('http://127.0.0.1:' + Net.port + '/vod/list', body, portal ? 30 * 60000 : 240000).then(function (j) {
+      stop();
       return gotList(k, p, j, t0);
-    });
+    }, function (e) { stop(); throw e; });
+  }
+  /* "Loading movies from the portal: 4,200 of 34,384": on the Movies or Shows screen while it waits, and in the
+     corner (activity.js) on every other screen, from the helper's count (stalker.js /stalker/progress). */
+  var loadingNow = {};
+  function watchPortal(k, p) {
+    var id = 'portal-' + k, what = k === 'series' ? 'shows' : 'movies', stopped = false, timer = null;
+    var fmt = function (n) { return Number(n).toLocaleString(); };
+    function say(t, short) {
+      loadingNow[k] = t;
+      if (typeof Activity !== 'undefined') Activity.set(id, short || '');
+      if (kind === k && !data[k]) {
+        if (itemsVL) { itemsVL.empty = t || 'Loading…'; itemsVL.refresh(); }
+        var sum = document.querySelector('#vodHomeInfo .media-summary'); if (sum) sum.textContent = t || I18n.t('Loading…');
+      }
+    }
+    function tick() {
+      if (stopped) return;
+      U.getJSON('http://127.0.0.1:' + Net.port + '/stalker/progress?stb=' + Source.stb(p), 5000).then(function (j) {
+        if (stopped) return;
+        var x = j && (k === 'series' ? j.series || j.movie : j.movie);
+        if (!x || x.done || !(x.total > 0)) return;
+        var short = I18n.t('Loading {x} from the portal', { x: I18n.t(what) }) + ': ' + I18n.t('{x} of {y}', { x: fmt(Math.min(x.got, x.total)), y: fmt(x.total) });
+        say(short + (x.secs > 20 ? '.  ' + I18n.t('A big portal takes a few minutes the first time.') : ''), short);
+      }, function () {}).then(function () { if (!stopped) timer = setTimeout(tick, 3000); });
+    }
+    timer = setTimeout(tick, 1500);
+    return function () { stopped = true; clearTimeout(timer); say(''); };
   }
   // What /vod/list and /vod/find are asked with: the playlist's list, and what of it shows.
   function listBody(k, p, again) {
@@ -939,7 +970,7 @@ var Vod = (function () {
   function toHome() { if (episodes) closeSeries(); showFromHome = false; homeMode = true; VodHome.show(kind, homeApi, false); }
   var homeApi = {
     CW: CW, MY: MY, NEW: NEW, ALL: ALL,
-    data: function () { return data[kind]; }, cats: function () { return catList(); }, items: function (id) { return itemsFor(id); },
+    data: function () { return data[kind]; }, loading: function () { return loadingNow[kind] || ''; }, cats: function () { return catList(); }, items: function (id) { return itemsFor(id); },
     key: function (it) { return key(it); }, adultOpen: function () { return adultOpen(); }, catName: function (it) { return catName(it); }, stars: function (it) { return stars(it.rating); },
     progress: function (it) { return progressOf(it); }, where: function (it) { return whereOf(it); }, details: function (it, then) { return detailsOf(it, then); },
     isMine: function (it) { return E().myList.indexOf(key(it)) >= 0; }, isWatched: function (it) { return isWatched(idOf(it)); },

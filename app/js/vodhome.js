@@ -202,7 +202,7 @@ var VodHome = (function () {
     var it = current(), box = $('vodHomeInfo'), s = mode === 'wall' ? wall : shelves[at];
     if (mode === 'wall') return;
     box.innerHTML = '';
-    if (!it) { backdrop(''); box.appendChild(U.el('h1', 'media-title', kind === 'series' ? 'Shows' : 'Movies')); box.appendChild(U.el('p', 'media-summary', A.data() ? 'Nothing to show yet.  Green opens All categories.' : 'Loading…')); return; }
+    if (!it) { backdrop(''); box.appendChild(U.el('h1', 'media-title', kind === 'series' ? 'Shows' : 'Movies')); box.appendChild(U.el('p', 'media-summary', A.data() ? 'Nothing to show yet.  Green opens All categories.' : (A.loading && A.loading()) || 'Loading…')); return; }
     var d = A.details(it, quick ? null : function (x) { if (current() === it) hero(true); }) || {};
     backdrop(d.backdrop || '');
     if (s) box.appendChild(U.el('div', 'media-kicker', s.title));

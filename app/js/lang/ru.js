@@ -1704,5 +1704,9 @@ I18n.add('ru', {
   "home": "главная",
   "categories": "категории",
   "The TV's own": "Телевизора",
-  "All sources": "Все источники"
+  "All sources": "Все источники",
+  "{x} of {y}": "{x} из {y}",
+  "shows": "сериалы",
+  "Loading {x} from the portal": "Загрузка с портала ({x})",
+  "A big portal takes a few minutes the first time.": "Большой портал в первый раз загружается несколько минут."
 });

@@ -252,11 +252,21 @@ function vodCats(L, cb) {
   });
 }
 // A category's titles ('*': every one), page by page (a portal sends a dozen or so at a time), four at once.
-function vodPages(L, cat, cb, type) {
+/* How far a whole list has come ('*' only), for the app's "Loading movies: 4,200 of 34,384" (issue #118: a portal
+   with 56,000 titles takes minutes, and nothing said so).  GET /stalker/progress. */
+var progress = {};
+function progOf(L, type) { var k = keyOf(L); return (progress[k] || (progress[k] = {}))[type === 'series' ? 'series' : 'movie'] || null; }
+function setProg(L, type, v) { var k = keyOf(L); (progress[k] || (progress[k] = {}))[type === 'series' ? 'series' : 'movie'] = v; }
+function vodPages(L, cat, cb0, type) {
   function page(n, then) { act(L, { type: type || 'vod', action: 'get_ordered_list', category: cat, genre: cat, sortby: 'added', fav: 0, p: n }, then); }
+  var whole = cat === '*', P = whole ? { got: 0, total: 0, at: Date.now() } : null;
+  if (whole) setProg(L, type, P);
+  function cb(e, list) { if (whole) { P.done = true; P.failed = !!e; P.got = list ? list.length : P.got; } cb0(e, list); }
+  function count(d) { if (P && d) P.got += d.length; }
   page(1, function (e, js) {
     if (e) return cb(e);
     var first = js && Array.isArray(js.data) ? js.data : [], total = +(js && js.total_items) || first.length, per = +(js && js.max_page_items) || first.length || 1;
+    if (P) { P.total = total; count(first); }
     var pages = Math.min(PAGES_MAX, Math.ceil(total / per)), got = {}, next = 2, running = 0, stop = false, finished = false, fails = 0;
     if (pages <= 1 || !first.length) return cb(null, first);
     (function pump() {
@@ -265,8 +275,8 @@ function vodPages(L, cat, cb, type) {
           running++;
           // A page that fails is asked once more; only three failing in a row stop the rest (issue #111: one busy moment lost every title after it).
           page(n, function (e2, j2) {
-            if (e2) return setTimeout(function () { page(n, function (e3, j3) { running--; if (e3) { if (++fails >= 3) stop = true; } else { fails = 0; got[n] = j3 && Array.isArray(j3.data) ? j3.data : []; } pump(); }); }, module.exports._retryMs || 1000);
-            running--; fails = 0; got[n] = j2 && Array.isArray(j2.data) ? j2.data : []; pump();
+            if (e2) return setTimeout(function () { page(n, function (e3, j3) { running--; if (e3) { if (++fails >= 3) stop = true; } else { fails = 0; got[n] = j3 && Array.isArray(j3.data) ? j3.data : []; count(got[n]); } pump(); }); }, module.exports._retryMs || 1000);
+            running--; fails = 0; got[n] = j2 && Array.isArray(j2.data) ? j2.data : []; count(got[n]); pump();
           });
         })(next++);
       }
@@ -277,17 +287,25 @@ function vodPages(L, cat, cb, type) {
     })();
   });
 }
+/* One reading of a list at a time: a second asker (the app timed out and asked again, the phone app, the
+   Movies check) waits for the reading under way instead of starting the portal's thousands of pages over. */
+var reading = {};
+function shared(k, cb, start) {
+  if (reading[k]) return reading[k].push(cb);
+  reading[k] = [cb];
+  start(function (e, v) { var l = reading[k] || []; delete reading[k]; l.forEach(function (f) { f(e, v); }); });
+}
 function vodItems(L, cat, cb) {
   var V = vodOf(L), key = cat || '*', hit = V.lists[key];
   if (hit && Date.now() - hit.at < VOD_FOR) return cb(null, hit.items);
-  vodPages(L, key, function (e, list) {
+  shared(keyOf(L) + '|vod|' + key, cb, function (cb) { vodPages(L, key, function (e, list) {
     if (e) return cb(e);
     var items = list.filter(function (x) { return x && x.id != null; }).map(function (x) { return slim(x, L); });
     items.forEach(function (x) { if (x.cmd) V.cmd[x.id] = x.cmd; });
     keepCmds(L);
     V.lists[key] = { at: Date.now(), items: items };
     cb(null, items);
-  });
+  }); });
 }
 /* Shows.  Newer portals keep them in a module of their own (type=series, with its own categories): those are
    the shows other players list, and the movie module has only a few marked as series (issue #113: 58 of a
@@ -312,12 +330,12 @@ function showItems(L, cat, cb) {
   if (!S.own) return fromVod();
   var key = cat || '*', hit = S.lists[key];
   if (hit && Date.now() - hit.at < VOD_FOR) return cb(null, hit.items);
-  vodPages(L, key, function (e, list) {
+  shared(keyOf(L) + '|series|' + key, cb, function (cb) { vodPages(L, key, function (e, list) {
     if (e) return cb(e);
     var items = list.filter(function (x) { return x && x.id != null; }).map(function (x) { var y = slim(x, L); y.series = true; y.module = 'series'; return y; });
     S.lists[key] = { at: Date.now(), items: items };
     cb(null, items);
-  }, 'series');
+  }, 'series'); });
 }
 function findItem(L, id, show) {
   var V = vodOf(L), S = seriesOf(L), hit = null;
@@ -540,11 +558,19 @@ function handle(req, res, ALLOW, log, port) {
     });
     return;
   }
-  if (route === '/stalker/xc/player_api.php') return xc(L2, u.query, res, ALLOW);
+  if (route === '/stalker/xc/player_api.php') {
+    // A whole list can take minutes (issue #118): older Node closes a quiet connection after 2.
+    if (req.socket && req.socket.setTimeout) req.socket.setTimeout(31 * 60000);
+    return xc(L2, u.query, res, ALLOW);
+  }
   var vm = /^\/stalker\/vod\/([A-Za-z0-9_-]{1,1200})\.[a-z0-9]{2,5}$/.exec(route);
   if (vm) return vodPlay(L2, vm[1], res, ALLOW, log, port, (/\.([a-z0-9]{2,5})$/.exec(route) || [])[1]);
   var am = /^\/stalker\/archive\/([A-Za-z0-9_-]{1,40})\.[a-z0-9]{2,5}$/.exec(route);
   if (am) { var st = +u.query.start || 0; if (!st) return send(res, ALLOW, 400, { error: 'no start time' }); return archive(L2, am[1], st, res, ALLOW, log, port); }
+  if (route === '/stalker/progress') {
+    var pv = function (t) { var x = progOf(L2, t); return x ? { got: x.got, total: x.total, done: !!x.done, failed: !!x.failed, secs: Math.round((Date.now() - x.at) / 1000) } : null; };
+    return send(res, ALLOW, 200, { movie: pv('vod'), series: pv('series') });
+  }
   if (route === '/stalker/epg') {
     var limit = Math.max(1, Math.min(48, +u.query.limit || 10));
     act(L2, { type: 'itv', action: 'get_short_epg', ch_id: String(u.query.ch || ''), size: limit }, function (e, js) {
@@ -560,4 +586,4 @@ function handle(req, res, ALLOW, log, port) {
   send(res, ALLOW, 404, { error: 'unknown stalker route' });
 }
 
-module.exports = { _wait: function (ms) { return ms; }, handle: handle, _login: login, _apis: apis, _linkOf: linkOf, _fillStream: fillStream, _archDays: archDays, _isHlsLink: isHlsLink, _vodLinkOf: vodLinkOf, _shapeOf: shapeOf, _reset: function () { vodMem = {}; } };
+module.exports = { _wait: function (ms) { return ms; }, handle: handle, _login: login, _apis: apis, _linkOf: linkOf, _fillStream: fillStream, _archDays: archDays, _isHlsLink: isHlsLink, _vodLinkOf: vodLinkOf, _shapeOf: shapeOf, _reset: function () { vodMem = {}; progress = {}; } };

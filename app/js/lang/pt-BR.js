@@ -2217,5 +2217,9 @@ I18n.add('pt-BR', {
   "home": "início",
   "categories": "categorias",
   "The TV's own": "O da TV",
-  "All sources": "Todas as fontes"
+  "All sources": "Todas as fontes",
+  "{x} of {y}": "{x} de {y}",
+  "shows": "séries",
+  "Loading {x} from the portal": "Carregando {x} do portal",
+  "A big portal takes a few minutes the first time.": "Um portal grande leva alguns minutos na primeira vez."
 });

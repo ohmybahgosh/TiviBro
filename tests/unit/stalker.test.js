@@ -104,6 +104,16 @@ const req = (method, u, body, headers) => new Promise((res, rej) => {
   ok('the answer\'s shape, for the log, without addresses', S._shapeOf({ id: 1, cmd: 'ffmpeg http://h.example/x.mp4?token=1', error: '' }) === '{id,cmd,error} cmd=ffmpeg <link>' && S._vodLinkOf({ cmd: 'ffmpeg http://localhost/ch/1' }) === '', S._shapeOf({ id: 1, cmd: 'ffmpeg http://h.example/x.mp4?token=1', error: '' }));
   m5.server.close();
 
+  // Issue #118: one reading of a big list at a time, and how far it has come.
+  const m6 = Mock.create({ stream: 'http://127.0.0.1:1/live/stream.ts' });
+  await new Promise((f) => m6.server.listen(0, '127.0.0.1', f));
+  const login6 = b64({ portal: 'http://127.0.0.1:' + m6.server.address().port + '/stalker_portal/c/', mac: '00:1a:79:00:00:01' });
+  const both = await Promise.all([1, 2].map(() => req('GET', H + '/stalker/xc/player_api.php?stb=' + login6 + '&action=get_vod_streams')));
+  ok('two askers at once: one reading of the portal\'s pages, both answered', both.every((r) => r.status === 200 && JSON.parse(r.body).length === 28) && m6.seen.vodPages === 3, m6.seen.vodPages);
+  const pr = JSON.parse((await req('GET', H + '/stalker/progress?stb=' + login6)).body);
+  ok('progress: the whole list read, of how many', pr.movie && pr.movie.done && pr.movie.got === 30 && pr.movie.total === 30 && pr.series === null, JSON.stringify(pr));
+  m6.server.close();
+
   // Issue #113: a portal with a shows module of its own, posters on the portal, and HTTP 429 when asked too fast.
   S._wait = () => 5;
   const m4 = Mock.create({ stream: 'http://127.0.0.1:1/live/stream.ts', series: true, limit: 2 });

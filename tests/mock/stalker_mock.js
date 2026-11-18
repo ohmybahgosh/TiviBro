@@ -19,7 +19,7 @@ function create(o) {
   ];
   // Movies and shows: 30 titles in two categories, sent 14 to a page as portals do; titles 5 and 20 are shows.
   var vods = [];
-  for (var v = 1; v <= 30; v++) vods.push({ id: String(500 + v), name: 'Portal Title ' + v, category_id: v <= 15 ? '10' : '11', cmd: o.xtreamVod ? Buffer.from('{"type":"movie","stream_id":"' + (500 + v) + '","stream_source":null}').toString('base64') : v === 3 ? 'eyJ0eXBlIjoibW92aWUiLCJpZCI6NTAzfQ==' : '/media/file_' + (500 + v) + '.mpg',
+  for (var v = 1; v <= (+o.titles || 30); v++) vods.push({ id: String(500 + v), name: 'Portal Title ' + v, category_id: v <= 15 ? '10' : '11', cmd: o.xtreamVod ? Buffer.from('{"type":"movie","stream_id":"' + (500 + v) + '","stream_source":null}').toString('base64') : v === 3 ? 'eyJ0eXBlIjoibW92aWUiLCJpZCI6NTAzfQ==' : '/media/file_' + (500 + v) + '.mpg',
     screenshot_uri: 'http://img.example/' + v + '.jpg', rating_imdb: '7.' + (v % 10), added: '2026-10-' + ('0' + (v % 28 + 1)).slice(-2) + ' 12:00:00', is_series: v === 5 || v === 20 ? '1' : '0',
     year: '2020', description: 'About title ' + v, director: 'A. Director', actors: 'Someone', genres_str: 'Drama', time: 95 });
   /* o.series: a portal with a shows module of its own (type=series, issue #113): 40 shows in two categories,
@@ -28,7 +28,8 @@ function create(o) {
   for (var w = 1; w <= 40; w++) shows.push({ id: String(900 + w), name: 'Serial ' + w, category_id: w <= 30 ? '70' : '71', cmd: '', screenshot_uri: '/stalker_portal/screenshots/' + w + '.jpg', added: '2026-10-01 12:00:00', year: '2024', description: 'About serial ' + w });
   var limit = +o.limit || 0;
   var now0 = Math.floor(Date.now() / 1000);
-  function page(list, p, res) { var per = 14, pg = Math.max(1, +p || 1); seen.vodPages = (seen.vodPages || 0) + 1; js(res, { total_items: list.length, max_page_items: per, data: list.slice((pg - 1) * per, pg * per) }); }
+  // o.pageMs: every page after the first that slow (a big portal, issue #118); o.titles: that many movies.
+  function page(list, p, res) { var per = 14, pg = Math.max(1, +p || 1); seen.vodPages = (seen.vodPages || 0) + 1; if (o.pageMs && pg > 1) return setTimeout(function () { js(res, { total_items: list.length, max_page_items: per, data: list.slice((pg - 1) * per, pg * per) }); }, o.pageMs); js(res, { total_items: list.length, max_page_items: per, data: list.slice((pg - 1) * per, pg * per) }); }
   function js(res, v) { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ js: v })); }
   var server = http.createServer(function (req, res) {
     var u = url.parse(req.url, true), q = u.query;

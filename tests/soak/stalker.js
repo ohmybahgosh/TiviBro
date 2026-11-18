@@ -72,6 +72,27 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     ok('the web editor and phone add a Stalker portal too (a MAC without colons is read)', /Added "Portal two" with 3 channels/.test(wr), wr);
     const bad = await ev((a) => WebEdit.run('addPlaylist', { type: 'stalker', name: 'Wrong', portal: a.portal, mac: '00:1A:79:99:99:99' }).then((r) => r.msg, (e) => 'ERR ' + e.message), { portal });
     ok('a MAC the portal doesn\'t know: says to check it with the provider', /^ERR .*turned this MAC address down.*Check the MAC address/.test(bad), bad);
+    // Issue #118: a big portal's movies take minutes the first time; the Movies screen and the corner chip say how far it has come.
+    const m2 = Mock.create({ mac: '00:1A:79:00:00:01', titles: 420, pageMs: 700 });
+    await new Promise((f) => m2.server.listen(0, '127.0.0.1', f));
+    const portal2 = 'http://127.0.0.1:' + m2.server.address().port + '/stalker_portal/c/';
+    const big = await ev((a) => WebEdit.run('addPlaylist', { type: 'stalker', name: 'Big portal', portal: a, mac: '00:1A:79:00:00:01' }).then((r) => r.msg, (e) => 'ERR ' + e.message), portal2);
+    const bigId = await ev(() => (Store.settings.playlists.find((x) => x.name === 'Big portal') || {}).id);
+    await ev((id) => App.switchPlaylist(id), bigId);
+    await page.waitForFunction(() => Library.data.channels.some((c) => c.n === 'Portal News') && Views.tabs && true, null, { timeout: 30000 }).catch(() => {});
+    await page.waitForFunction(() => (Store.playlist.vod || {}).movies, null, { timeout: 15000 }).catch(() => {});
+    const tabsAt = await ev(() => !!(Store.playlist.vod || {}).movies);
+    ok('a big portal: the Movies tab is there before its titles are counted', /Added "Big portal"/.test(big) && tabsAt, big + ' ' + tabsAt);
+    await ev(() => Views.switchTab('movies'));
+    await page.waitForFunction(() => /Loading movies from the portal: \d+ of 420/.test(document.body.innerText), null, { timeout: 15000 }).catch(() => {});
+    const shown = await ev(() => ({ screen: (document.body.innerText.match(/Loading movies from the portal: \d+ of 420[^\n]*/) || [''])[0], chip: Activity.list().join(' | ') }));
+    if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT });
+    ok('...and while they load, it says how far it has come', /Loading movies from the portal: \d+ of 420/.test(shown.screen) && /Loading movies from the portal: \d+ of 420/.test(shown.chip), JSON.stringify(shown));
+    await page.waitForFunction(() => !/Loading movies from the portal/.test(Activity.list().join(' ')), null, { timeout: 60000 }).catch(() => {});
+    const after = await ev(() => ({ chip: Activity.list().join(' | '), n: (document.querySelectorAll('#vodItems .row, #vodHome .vh-card').length) }));
+    ok('...and the chip goes when they are in', !/Loading movies from the portal/.test(after.chip), JSON.stringify(after));
+    m2.server.close();
+
     const logs = await ev(() => Log.lines().map((l) => l.msg || l).join('\n'));
     ok('the MAC is never in the log', logs.indexOf('00:1A:79:00:00:01') < 0 && !/stb=[A-Za-z0-9_-]{8}/.test(logs), (logs.match(/.{0,60}00:1A:79.{0,30}/) || [''])[0]);
   } catch (e) { ok('harness: ' + e.message, false); }

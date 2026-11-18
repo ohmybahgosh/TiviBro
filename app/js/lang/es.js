@@ -1701,5 +1701,9 @@ I18n.add('es', {
   "home": "inicio",
   "categories": "categorías",
   "The TV's own": "El de la TV",
-  "All sources": "Todas las fuentes"
+  "All sources": "Todas las fuentes",
+  "{x} of {y}": "{x} de {y}",
+  "shows": "series",
+  "Loading {x} from the portal": "Cargando {x} del portal",
+  "A big portal takes a few minutes the first time.": "Un portal grande tarda unos minutos la primera vez."
 });

@@ -426,5 +426,5 @@ var Source = (function () {
 
   return { get account() { return account; }, load: load, busy: busy, stop: stop, get loading() { return Object.keys(running).length > 0; }, sig: sig, friendly: friendly, api: api, base: base, clean: clean, candidates: candidates, detect: detect, credsFromLink: credsFromLink, userShape: userShape, panelHost: panelHost, streamUrl: streamUrl, shortEpgUrl: shortEpgUrl, parseM3U: parseM3U, stalkerMac: stalkerMac,
     catchupUrl: catchupUrl, setTz: setTz,
-    vodCats: vodCats, vodList: vodList, vodInfo: vodInfo, seriesInfo: seriesInfo, movieUrl: movieUrl, movieLink: movieLink, episodeUrl: episodeUrl, m3uVod: m3uVod };
+    stb: function (p) { return stb(P(p)); }, vodCats: vodCats, vodList: vodList, vodInfo: vodInfo, seriesInfo: seriesInfo, movieUrl: movieUrl, movieLink: movieLink, episodeUrl: episodeUrl, m3uVod: m3uVod };
 })();
