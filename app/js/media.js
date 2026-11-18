@@ -367,7 +367,8 @@ var Media = (function () {
   function posterMark(m) {
     if (!m || !setting('mediaMarks') || m.kind === 'live' || m.kind === 'section' || m.libArt || m.continueEpisode) return '';
     if (m.kind === 'show') { if (!(m.eps > 0)) return ''; var left = m.eps - (m.seen || 0); return left > 0 ? String(left) : '✓'; }
-    return MediaStore.isWatched && MediaStore.isWatched(m.id) ? '✓' : '';
+    // Part-way through (watching it again): its progress bar says so, not a ✓ (Dune in Continue watching).
+    return MediaStore.isWatched && MediaStore.isWatched(m.id) && !MediaStore.resume(m.id) ? '✓' : '';
   }
   function yearOf(m) { return String(m.year || (m.metadata && m.metadata.year) || ''); }
   // A shelf's own line under a poster: when it came, as Plex's Recently added does ("2026 · 2 days ago").
@@ -415,7 +416,8 @@ var Media = (function () {
     built.aired = { title: 'Recently aired', sub: 'Episodes you have that aired in the last 30 days', movies: opts.phone ? [] : airedShows.filter(mine), line: function (m) { return m.airedEp ? m.airedEp + ' · ' + dayWord(Date.parse(m.airedOn + 'T12:00:00')) : yearOf(m); } };
     // Shows you haven't begun (newest first), and ones you started and left (Plex's Start watching and Rediscover).
     var going = {}; continuingShows.forEach(function (c) { going[c.showId || c.id] = 1; });
-    var startL = shows.filter(function (x) { return x.eps > 0 && !x.seen; }).sort(function (a, b) { return (b.newAt || 0) - (a.newAt || 0); }).slice(0, 40);
+    var onNew = {}; newShows.slice(0, 40).forEach(function (x) { onNew[x.id] = 1; });   // not the same shows as the shelf above it
+    var startL = shows.filter(function (x) { return x.eps > 0 && !x.seen && !onNew[x.id]; }).sort(function (a, b) { return (b.newAt || 0) - (a.newAt || 0); }).slice(0, 40);
     built.start = { title: 'Start watching', sub: 'Shows you haven\'t begun, newest first', movies: startL.length >= 3 ? startL : [] };
     var leftL = shows.filter(function (x) { return x.seen > 0 && x.seen < x.eps && x.seenAt && Date.now() - x.seenAt > 45 * 864e5 && !going[x.id]; }).sort(function (a, b) { return b.seenAt - a.seenAt; }).slice(0, 40);
     built.rediscover = { title: 'Rediscover', sub: 'Shows you started and haven\'t watched in a while', movies: leftL.length >= 2 ? leftL : [] };
@@ -573,7 +575,8 @@ var Media = (function () {
   /* Search My media: the Search tab (or Red > Search My media) asks for words; the results replace the shelves:
      movies and TV shows whose name, original name, collection or director has them.  Back ends the search. */
   var query = '', searchTab = false;
-  function words(t) { return String(t || '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9\u00c0-\u024f]+/g, ' ').trim(); }
+  // Accents folded both ways: "timothee" finds Timothée Chalamet (it found nothing on the TV).
+  function words(t) { var s = String(t || '').toLowerCase(); if (s.normalize && /[^\x00-\x7f]/.test(s)) s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); return s.replace(/&/g, ' and ').replace(/[^a-z0-9\u00c0-\u024f]+/g, ' ').trim(); }
   /* Names first (starting with the words, then having them), then cast, genre, director, collection and network.
      Episodes by their title come from the service a moment later (epSearch), as a shelf of their own. */
   function searchHits(q) {
@@ -1271,13 +1274,18 @@ var Media = (function () {
       var y = +yearOf(m) || +String((m.metadata && m.metadata.releaseDate) || '').slice(0, 4);
       if (y) { var d = y < 1980 ? 1900 : Math.floor(y / 10) * 10; add('d:' + d, d === 1900 ? 'Before 1980' : d + 's', 'decade', m); }
     });
-    Object.keys(by).forEach(function (k) {
-      var c = by[k]; if (c.list.length < 2) return;
-      var art = c.list.filter(function (m) { return m.metadata && (m.metadata.backdrop || m.metadata.poster); }).sort(function (a, b) { return rating(b) - rating(a); })[0];
-      c.count = c.list.length; c.metadata = { title: c.title, poster: art ? art.metadata.backdrop || art.metadata.poster : '' };
-      out.push(c);
+    Object.keys(by).forEach(function (k) { var c = by[k]; if (c.list.length >= 2) { c.count = c.list.length; out.push(c); } });
+    out.sort(function (a, b) { return (a.type === b.type ? 0 : a.type === 'genre' ? -1 : 1) || (a.type === 'decade' ? (a.title < b.title ? 1 : -1) : a.title < b.title ? -1 : 1); });
+    // Each tile its own picture: the best rated title not already on an earlier tile (Action, Animation and
+    // Comedy all showed the same show on the TV).
+    var used = {};
+    out.forEach(function (c) {
+      var arts = c.list.filter(function (m) { return m.metadata && (m.metadata.backdrop || m.metadata.poster); }).sort(function (a, b) { return rating(b) - rating(a); });
+      var art = arts.filter(function (m) { return !used[m.id]; })[0] || arts[0];
+      if (art) used[art.id] = 1;
+      c.metadata = { title: c.title, poster: art ? art.metadata.backdrop || art.metadata.poster : '' };
     });
-    return out.sort(function (a, b) { return (a.type === b.type ? 0 : a.type === 'genre' ? -1 : 1) || (a.type === 'decade' ? (a.title < b.title ? 1 : -1) : a.title < b.title ? -1 : 1); });
+    return out;
   }
   function openGrid(spec) {
     if (typeof MediaGrid === 'undefined') return;
