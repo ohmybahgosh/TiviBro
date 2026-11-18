@@ -9,9 +9,12 @@
    - HLS: its playlist is followed (the best quality of a master playlist), and each new piece is added to the
      file in order: .ts pieces as one .ts, fMP4 pieces after their init segment as one .mp4.  Encrypted
      playlists are refused (not yet).
-   Drives: what webOS mounted under /tmp/usb/<disk>/<partition> and the helper can write to.  webOS shares those
-   into the helper's own jail (gid 5000, group-writable), so this needs no root.  TV storage is never used: about
-   1 GB free, 15 to 30 minutes of HD, and it is webOS's too.
+   Drives: what webOS mounted under /tmp/usb/<disk>/<partition> and the helper can write to (gid 5000, group-
+   writable).  The helper runs in webOS's developer-mode jail, and that jail leaves USB drives out (its
+   "mountusbdir" line is commented out in /etc/jail_native_devmode.conf), so the helper's /tmp/usb is empty.  On a
+   rooted TV the Homebrew Channel's root exec binds the TV's /tmp/usb into the helper's own view as /tmp/tvusb
+   (bindUsb).  Without root, recording to USB isn't possible from a developer-mode app.  TV storage is never used:
+   about 1 GB free, 15 to 30 minutes of HD, and it is webOS's too.
    The list of recordings (scheduled, recording, done, failed) is kept in the helper's storage (storage.js).
 
    Routes (on the relay, with TiviBro's secret like /kv/):
@@ -26,7 +29,22 @@
 'use strict';
 var http = require('http'), fs = require('fs'), path = require('path'), URL_ = require('url');
 
-var USB = process.env.TIVIBRO_USB_DIR || '/tmp/usb';
+var ROOTS = process.env.TIVIBRO_USB_DIR ? [process.env.TIVIBRO_USB_DIR] : ['/tmp/usb', '/tmp/tvusb'];
+var lcall = null, bindAt = 0, bindSaid = '';
+function setCall(f) { lcall = f; }
+/* A rooted TV: the TV's USB drives into the helper's view (see above), again when none is seen (a drive plugged in
+   later), at most once a minute. */
+function bindUsb(cb) {
+  cb = cb || function () {};
+  if (!lcall || Date.now() - bindAt < 60000) return cb(false);
+  bindAt = Date.now();
+  var cmd = 'nsenter -t ' + process.pid + ' -m sh -c "umount -l /tmp/tvusb 2>/dev/null; mkdir -p /tmp/tvusb && mount --rbind /proc/1/root/tmp/usb /tmp/tvusb"';
+  lcall('luna://org.webosbrew.hbchannel.service/exec', { command: cmd }, function (r) {
+    var said = r && r.returnValue !== false && !r.stderrString ? 'bound' : 'not possible: ' + (r && (r.errorText || r.stderrString) || 'no answer');
+    if (said !== bindSaid) { bindSaid = said; note(said === 'bound' ? 'info' : 'warn', 'USB drives for recording ' + said); }
+    cb(said === 'bound');
+  });
+}
 var FOLDER = 'TiviBro Recordings', PART_MAX = +(process.env.TIVIBRO_REC_PART_MAX || 3900 * 1024 * 1024);
 var RETRY_MS = +(process.env.TIVIBRO_REC_RETRY_MS || 3000), TICK_MS = +(process.env.TIVIBRO_REC_TICK_MS || 15000), BODY_MAX = 64 * 1024;
 
@@ -65,18 +83,24 @@ function pub(r) {
 }
 
 /* ---------- drives ---------- */
-function writable(d) { try { var t = path.join(d, '.tivibro-w'); fs.writeFileSync(t, '1'); fs.unlinkSync(t); return true; } catch (e) { return false; } }
+var seen = [];      // what drives() looked at and why it was left out, for /record/drives and the log
+function writable(d) { try { var t = path.join(d, '.tivibro-w'); fs.writeFileSync(t, '1'); fs.unlinkSync(t); return true; } catch (e) { seen.push(d + ': ' + e.code); return false; } }
 function drives() {
   var out = [];
-  var disks = []; try { disks = fs.readdirSync(USB); } catch (e) {}
-  disks.forEach(function (d) {
-    var parts = []; try { parts = fs.readdirSync(path.join(USB, d)); } catch (e) {}
-    parts.forEach(function (p) {
-      var dir = path.join(USB, d, p);
-      try { if (!fs.statSync(dir).isDirectory()) return; } catch (e) { return; }
-      if (writable(dir)) out.push({ dir: dir, name: p, freeMB: require('./storage')._freeMB(dir) });
+  seen = [];
+  ROOTS.forEach(function (USB) {
+    var disks = []; try { disks = fs.readdirSync(USB); } catch (e) { return; }
+    disks.forEach(function (d) {
+      var parts = []; try { parts = fs.readdirSync(path.join(USB, d)); } catch (e) {}
+      parts.forEach(function (p) {
+        var dir = path.join(USB, d, p);
+        try { if (!fs.statSync(dir).isDirectory()) return; } catch (e) { return; }
+        if (out.some(function (o) { return o.name === p; })) return;      // the same drive seen twice (/tmp/usb and /tmp/tvusb)
+        if (writable(dir)) out.push({ dir: dir, name: p, freeMB: require('./storage')._freeMB(dir) });
+      });
     });
   });
+  if (!out.length) bindUsb();
   return out;
 }
 function folderOn(drive) {
@@ -307,7 +331,7 @@ function serveFile(req, res, ALLOW, r, part) {
 function handle(req, res, ALLOW, log) {
   if (log) logf = log;
   var u = URL_.parse(req.url, true), p = u.pathname;
-  if (req.method === 'GET' && p === '/record/drives') return send(res, ALLOW, 200, { drives: drives() });
+  if (req.method === 'GET' && p === '/record/drives') { var dv = drives(); return send(res, ALLOW, 200, { drives: dv, skipped: seen, uid: process.getuid ? process.getuid() : null, gids: process.getgroups ? process.getgroups() : null }); }
   if (req.method === 'GET' && p === '/record/list') { tick(); return send(res, ALLOW, 200, { recs: load().recs.map(pub) }); }
   var fm = /^\/record\/file\/([A-Za-z0-9]+)(?:\/[^\/]*)?$/.exec(p);       // "/rec.ts" after the id tells the player what it is
   if (fm && (req.method === 'GET' || req.method === 'HEAD')) { var fr = byId(fm[1]); return fr ? serveFile(req, res, ALLOW, fr, u.query.part != null ? +u.query.part : null) : send(res, ALLOW, 404, { error: 'no such recording' }); }
@@ -318,8 +342,12 @@ function handle(req, res, ALLOW, log) {
       if (!okUrl(q.url)) return send(res, ALLOW, 400, { error: 'not a relayed address' });
       if (!(+q.end > Date.now())) return send(res, ALLOW, 400, { error: 'it ends in the past' });
       if (p === '/record/schedule' && !(+q.start > 0)) return send(res, ALLOW, 400, { error: 'no start time' });
-      if (!drives().length) return send(res, ALLOW, 409, { error: 'Plug in a USB drive to record to.', code: 'nodrive' });
-      return send(res, ALLOW, 200, pub(add(q, p === '/record/schedule')));
+      var go = function () {
+        if (!drives().length) return send(res, ALLOW, 409, { error: 'Plug in a USB drive to record to.', code: 'nodrive', root: bindSaid });
+        send(res, ALLOW, 200, pub(add(q, p === '/record/schedule')));
+      };
+      if (drives().length) return go();
+      bindAt = 0; return bindUsb(function () { setTimeout(go, 300); });
     }
     var r = byId(String(q.id || ''));
     if (!r) return send(res, ALLOW, 404, { error: 'no such recording' });
@@ -338,4 +366,4 @@ function handle(req, res, ALLOW, log) {
   });
 }
 
-module.exports = { handle: handle, start: start, drives: drives, _tick: tick, _reset: function () { Object.keys(run).forEach(function (k) { halt(byId(k) || { id: k }); }); state = null; }, _nameFor: nameFor };
+module.exports = { handle: handle, start: start, drives: drives, setCall: setCall, _tick: tick, _reset: function () { Object.keys(run).forEach(function (k) { halt(byId(k) || { id: k }); }); state = null; }, _nameFor: nameFor };
