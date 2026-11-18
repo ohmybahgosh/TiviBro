@@ -149,6 +149,7 @@ var Settings = (function () {
       ['auto', 'on', 'off'], ['Automatic', 'Always on', 'Off'], function () { return s.memSafe || 'auto'; }, function (v) { s.memSafe = v; save(); }));
     out.push(choice('Seek previews', 'A picture of the movie or episode where you\'re seeking to, over the bar, made on the TV from what plays (nothing of your library is read).  Automatic: with Memory-safe playback on, only for movies up to 1080p and nothing made ahead.  Red in the player too.',
       ['auto', 'on', 'off'], ['Automatic', 'On, 4K too', 'Off'], function () { return s.seekPreviews || 'auto'; }, function (v) { s.seekPreviews = v; save(); }));
+    out.push(toggle('Skip intro and Up next', 'From the file\'s chapters: "Skip intro" while an intro or recap plays, and "Up next" when the credits start (the next episode, or the next movie of a collection you play).  OK does it, Back hides it.', function () { return s.skipIntro !== false; }, function (v) { s.skipIntro = v; save(); }));
     out.push(head('Switching channels'));
     out.push(choice('When a channel stops working', 'Switches to another version of the same channel, such as the HD copy of a Full HD channel, or one you hid.  It only happens once the player has run out of retries.',
       ['auto', 'ask', 'off'], ['Switch to another version', 'Ask me', 'Keep retrying'], function () { return s.backups || 'auto'; }, function (v) { s.backups = v; save(); }));
@@ -183,6 +184,9 @@ var Settings = (function () {
     out.push(choice('Subtitle size', '', ['s', 'm', 'l', 'xl'], ['Small', 'Medium', 'Large', 'Extra large'], function () { return s.subSize || 'm'; }, function (v) { s.subSize = v; Views.applyLook(); save(); }));
     out.push(choice('Subtitle background', 'Outline keeps the picture clear; a box is easier to read over bright scenes.', ['outline', 'box', 'solid'], ['Outline', 'See-through box', 'Black box'],
       function () { return s.subBack || 'outline'; }, function (v) { s.subBack = v; Views.applyLook(); save(); }));
+    out.push(choice('Subtitle position', 'Higher keeps the lines clear of a picture\'s own captions or a score bar.  For subtitles TiviBro draws (most of them); the TV\'s own keep their place.  Also in the player: Subtitles > Size and style.', ['low', '', 'up1', 'up2', 'up3'], ['Lowest', 'Normal', 'A little higher', 'Higher', 'Highest'], function () { return s.subPos || ''; }, function (v) { s.subPos = v; Views.applyLook(); save(); }));
+    out.push(choice('Subtitle brightness', 'Dimmer white lines are easier on the eyes in a dark room, and on an OLED.', ['', '90', '75', '60'], ['Full', '90 %', '75 %', '60 %'], function () { return s.subBright || ''; }, function (v) { s.subBright = v; Views.applyLook(); save(); }));
+    out.push(toggle('Bold subtitles', '', function () { return !!s.subBold; }, function (v) { s.subBold = v; Views.applyLook(); save(); }));
     out.push(head('Subtitles from OpenSubtitles'));
     out.push(action('Subtitle languages', 'For Find subtitles (Subtitles in a movie or show\'s menu).  Several at once: English and Spanish (Latin America), say.', function () { Subs.langMenu(function () { build(); }); },
       function () { return Subs.langs().map(Subs.langName).join(', '); }));

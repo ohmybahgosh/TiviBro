@@ -590,17 +590,39 @@ var Subs = (function () {
   var MEMO = 'tivibro.subsMemo';
   function memoAll() { try { var o = JSON.parse(localStorage.getItem(MEMO) || '{}'); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } }
   function memoKey(meta) { return meta ? String(meta.id || '') : ''; }
-  function memoFor(meta) { var k = memoKey(meta), m = k && memoAll()[k]; return m && typeof m === 'object' ? m : null; }
+  /* The show an episode belongs to: what you chose for one episode carries to the next ones of the same show
+     (an episode's own choice still wins).  A provider's show (meta.seriesKey, vod.js) or a My media show. */
+  function showKey(meta) {
+    if (!meta) return '';
+    if (meta.seriesKey) return 'show:' + meta.seriesKey;
+    var it = meta.item; return it && it.kind === 'episode' && it.showId ? 'show:mm:' + it.showId : '';
+  }
+  function memoFor(meta) { var all = memoAll(), k = memoKey(meta), m = k && all[k], sk = showKey(meta); if (!(m && typeof m === 'object') && sk) m = all[sk]; return m && typeof m === 'object' ? m : null; }
   function remember(meta, track) {
     var k = memoKey(meta); if (!k) return;
-    var all = memoAll();
+    var all = memoAll(), sk = showKey(meta);
     all[k] = track ? { on: true, lang: U.lang(track.language || track.label) || '', label: String(track.label || '').slice(0, 80), at: Date.now() } : { on: false, at: Date.now() };
+    if (sk) all[sk] = all[k];
     var keys = Object.keys(all);
     if (keys.length > 600) keys.sort(function (a, b) { return (all[a].at || 0) - (all[b].at || 0); }).slice(0, keys.length - 600).forEach(function (x) { delete all[x]; });
     try { localStorage.setItem(MEMO, JSON.stringify(all)); } catch (e) {}
   }
 
-  return { memoFor: memoFor, remember: remember, find: find, gone: gone, forget: forget, refresh: applyDelay, fresh: fresh, timingOf: timingOf, autoOn: autoOn, timingMenu: timingMenu, lineUpMenu: lineUpMenu, langMenu: langMenu, reset: reset, restore: restore, setup: setup, test: test, forgetKept: forgetKept, setKey: setKey, signIn: signIn, langs: langs, langName: langName,
+  /* The audio track's language, chosen in the player's Audio track menu: for that movie or episode, and for the
+     rest of its show.  It comes before Settings > Playback > Audio language when the movie or episode plays. */
+  var AMEMO = 'tivibro.audioMemo';
+  function amemoAll() { try { var o = JSON.parse(localStorage.getItem(AMEMO) || '{}'); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } }
+  function audioFor(meta) { var all = amemoAll(), k = memoKey(meta), sk = showKey(meta), m = (k && all[k]) || (sk && all[sk]); return m && m.lang || ''; }
+  function rememberAudio(meta, track) {
+    var k = memoKey(meta), lang = track ? U.lang(track.language || track.label) : ''; if (!k || !lang) return;
+    var all = amemoAll(), sk = showKey(meta), v = { lang: lang, at: Date.now() };
+    all[k] = v; if (sk) all[sk] = v;
+    var keys = Object.keys(all);
+    if (keys.length > 600) keys.sort(function (a, b) { return (all[a].at || 0) - (all[b].at || 0); }).slice(0, keys.length - 600).forEach(function (x) { delete all[x]; });
+    try { localStorage.setItem(AMEMO, JSON.stringify(all)); } catch (e) {}
+  }
+
+  return { memoFor: memoFor, remember: remember, audioFor: audioFor, rememberAudio: rememberAudio, showKey: showKey, find: find, gone: gone, forget: forget, refresh: applyDelay, fresh: fresh, timingOf: timingOf, autoOn: autoOn, timingMenu: timingMenu, lineUpMenu: lineUpMenu, langMenu: langMenu, reset: reset, restore: restore, setup: setup, test: test, forgetKept: forgetKept, setKey: setKey, signIn: signIn, langs: langs, langName: langName,
     get delay() { return delay; }, get rate() { return rate; }, get timing() { return timingSummary(); }, setRate: setRate, draw: drawLines, get configured() { return !!state.key; }, get user() { return state.user || ''; }, get allowed() { return state.allowed || 0; },
     _test: { keepOn: keepOn, listed: listed, shortName: shortName, keep: keep, parse: parse, align: align, clean: clean, guess: guess, shift: shift, addTrack: addTrack, linesAt: linesAt, snapshot: snapshot, setRate: setRate, lineUp: lineUp, applyDelay: applyDelay } };
 })();

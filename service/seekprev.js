@@ -8,6 +8,9 @@
          can read, too slow).  p=1: a picture asked ahead (the spread over the movie, or the next presses): it waits
          behind the pictures asked for now, and is dropped when a newer request for now comes.
      GET /preview/<key>/status   { ok: can it make pictures, made, cached }
+     GET /preview/<key>/chapters?u=<movie link>[&ua=]   { chapters: [{ s, e, t }] } (seconds, title): the file's own
+         chapters (Matroska, MP4), read by ffmpeg from the file's header (any converter will do, no decoders
+         needed).  For chapter marks on the player's bar, Skip intro and the next-episode card at the credits.
 
    The key is the converter's (convert.js: random each start, only TiviBro has it), since an <img> can't send the
    helper's secret.  One ffmpeg at a time, at a low priority (nice 15), one decoding thread: on a 4K HEVC movie a
@@ -56,6 +59,30 @@ function args(input, t, w) {
     '-q:v', '5', '-f', 'mjpeg', 'pipe:1'];
 }
 
+/* ---------- chapters ---------- */
+var chapterCache = {}, chapterOrder = [];
+function parseChapters(text) {
+  var out = [], cur = null;
+  String(text).split('\n').forEach(function (l) {
+    var m = /^\s*Chapter #\d+:\d+: start (-?[\d.]+), end (-?[\d.]+)/.exec(l);
+    if (m) { cur = { s: Math.max(0, +m[1]), e: Math.max(0, +m[2]), t: '' }; out.push(cur); return; }
+    var t = /^\s*title\s*:\s*(.*)$/.exec(l);
+    if (t && cur && !cur.t) cur.t = t[1].trim().slice(0, 120);
+    if (/^\s*Stream #/.test(l)) cur = null;
+  });
+  return out.filter(function (c) { return c.e > c.s; }).slice(0, 200);
+}
+function chapters(input, cb) {
+  if (chapterCache[input]) return cb(chapterCache[input]);
+  var bin = Ffmpeg.binary(); if (!bin) return cb([]);
+  var err = '', p, done = false;
+  try { p = cp.spawn(bin, ['-hide_banner', '-nostdin', '-protocol_whitelist', 'http,tcp,file', '-probesize', '2000000', '-analyzeduration', '0', '-i', input], { stdio: ['ignore', 'ignore', 'pipe'] }); } catch (e) { return cb([]); }
+  var timer = setTimeout(function () { stopProc(p); }, 15000);
+  p.stderr.on('data', function (d) { if (err.length < 400000) err += d; });
+  var end = function () { if (done) return; done = true; clearTimeout(timer); var c = parseChapters(err); chapterCache[input] = c; chapterOrder.push(input); while (chapterOrder.length > 20) delete chapterCache[chapterOrder.shift()]; cb(c); };
+  p.on('error', end); p.on('close', end);
+}
+
 function next() {
   if (running || !queue.length) return;
   var job = queue.shift(), bin = Ffmpeg.binary();
@@ -100,12 +127,13 @@ function picture(input, t, w, ahead, cb) {
 }
 
 function handle(req, res, ALLOW, log, port) {
-  var m = /^\/preview\/([a-f0-9]{32})\/(frame\.jpg|status)/.exec(req.url);
+  var m = /^\/preview\/([a-f0-9]{32})\/(frame\.jpg|status|chapters)/.exec(req.url);
   if (!m || m[1] !== Convert.key) { res.writeHead(403, ALLOW); return res.end(); }
   if (m[2] === 'status') return capable(function (ok) { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, ALLOW)); res.end(JSON.stringify({ ok: ok, made: made, cached: order.length })); });
   var q = query(req.url), t = Math.max(0, Math.round(+q.t || 0)), w = Math.max(96, Math.min(640, +q.w | 0 || 320));
   var input = Convert.inputFor(q.u, q.ua || '', port);
   if (!input) { res.writeHead(400, ALLOW); return res.end('not a web address'); }
+  if (m[2] === 'chapters') return chapters(input, function (c) { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, ALLOW)); res.end(JSON.stringify({ chapters: c })); });
   capable(function (ok) {
     if (!ok) { res.writeHead(204, ALLOW); return res.end(); }
     // Another movie: the last one's pictures go.
@@ -122,4 +150,4 @@ function handle(req, res, ALLOW, log, port) {
 }
 function isRoute(url) { return url.indexOf('/preview/') === 0; }
 
-module.exports = { handle: handle, isRoute: isRoute, args: args, _reset: function () { cache = {}; order = []; movie = ''; queue = []; can = null; made = 0; } };
+module.exports = { handle: handle, isRoute: isRoute, args: args, parseChapters: parseChapters, _reset: function () { cache = {}; order = []; movie = ''; queue = []; can = null; made = 0; } };

@@ -738,8 +738,10 @@ var Player = (function () {
       return;
     }
     if (cur.badTracks) list = list.filter(function (t) { return !cur.badTracks[t.id]; });
-    var b = bestAudio(list, s.audioLang || '', !!s.audioSurround, s.audioFallback || '');
-    if (b && !b.on) { Log.info('player', 'Audio: "' + b.label + '" (preferred language' + (s.audioSurround ? ', surround' : '') + ')'); eng.setAudio(b.id); }
+    // The language chosen for this movie or episode, or another episode of its show, comes first (subs.js).
+    var memo = cur.meta && typeof Subs !== 'undefined' && Subs.audioFor ? Subs.audioFor(cur.meta) : '';
+    var b = bestAudio(list, memo || s.audioLang || '', !!s.audioSurround, memo ? s.audioLang || s.audioFallback || '' : s.audioFallback || '');
+    if (b && !b.on) { Log.info('player', 'Audio: "' + b.label + '" (' + (memo ? 'as chosen for this ' + (Subs.showKey(cur.meta) ? 'show' : 'title') : 'preferred language') + (s.audioSurround ? ', surround' : '') + ')'); eng.setAudio(b.id); }
   }
 
   // Stream facts arrive in pieces (movie details, then the stream); later, more specific wins.

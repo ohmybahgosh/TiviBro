@@ -324,6 +324,11 @@ var Views = (function () {
     if (/^(yellow|gold|cyan|green)$/.test(s.subColor)) b.add('sub-' + s.subColor);
     if (/^(s|l|xl)$/.test(s.subSize)) b.add('sub-' + s.subSize);
     if (/^(box|solid)$/.test(s.subBack)) b.add('sub-' + s.subBack);
+    // Where the lines sit, how bright they are and how heavy (subtitles TiviBro draws; the TV's own keep theirs).
+    var st = document.body.style;
+    st.setProperty('--sub-bottom', ({ low: '3%', up1: '14%', up2: '22%', up3: '32%' })[s.subPos] || '7%');
+    st.setProperty('--sub-op', ({ 90: '0.9', 75: '0.75', 60: '0.6' })[s.subBright] || '1');
+    st.setProperty('--sub-weight', s.subBold ? '700' : '400');
     if (s.guideRows === 'l' || s.guideRows === 'xl') b.add('gr-' + s.guideRows);
     if (!pal && s.theme && s.theme !== 'dark') b.add('theme-' + s.theme);
     b.toggle('pal', !!pal);
@@ -866,7 +871,7 @@ var Views = (function () {
   function audioMenu() {
     var tracks = Player.audioTracks();
     if (tracks.length < 2) { U.toast('This stream has one audio track'); return; }
-    UI.menu('Audio track', tracks.map(function (t) { return { label: t.label, sub: t.on ? 'playing' : '', action: function () { Player.setAudio(t.id); } }; }));
+    UI.menu('Audio track', tracks.map(function (t) { return { label: t.label, sub: t.on ? 'playing' : '', action: function () { Player.setAudio(t.id); if (mode === 'vod' && vod && Subs.rememberAudio) Subs.rememberAudio(vod.meta, t); } }; }));
   }
   function sleepMenu() {
     UI.menu('Sleep timer', [15, 30, 45, 60, 90, 120].map(function (m) {
@@ -1192,6 +1197,8 @@ var Views = (function () {
     if (a === 'ok' && !verr.classList.contains('hidden')) { Player.retryNow(); U.toast('Trying again'); return true; }
     var hidden = $('osd').classList.contains('hidden');
     if (mode === 'vod') {
+      // Skip intro or Up next showing (skipper.js): OK does it, Back hides it.
+      if (typeof Skipper !== 'undefined' && vs.pending == null && Skipper.key(a)) return true;
       if (a === 'back') { if (vs.pending != null) { vodSeekCancel(); return true; } if (!hidden) { $('osd').classList.add('hidden'); return true; } exitFull(); }
       else if (a === 'left') vodSeek(-Store.settings.skip, true);
       else if (a === 'stop') exitFull();       // discussion #36: Stop on the remote stops the movie (where it got to is kept)
@@ -1482,7 +1489,7 @@ var Views = (function () {
     spinPlain = s === 'buffering' && (!msg || msg === 'Buffering');
     verr.classList.toggle('hidden', s !== 'error');
     if (s === 'error') verr.textContent = msg;
-    if (s === 'ended' && mode === 'vod') { if (vod && vod.meta.local) Media.ended(); else Vod.ended(); }
+    if (s === 'ended' && mode === 'vod') endVod();
     if (s === 'error' && mode === 'live') downSoon();
     // Playing again: a later failure is a new incident (recent failures are still skipped for 10 min).
     if (s === 'playing' && fo && playing) { foFailed[playing.k] = 0; fo.tried = {}; fo.exhausted = false; }
@@ -1942,8 +1949,11 @@ var Views = (function () {
   var SUB_SIZE = [['s', 'Small'], ['m', 'Medium'], ['l', 'Large'], ['xl', 'Extra large']];
   var SUB_COLOR = [['white', 'White'], ['yellow', 'Yellow'], ['gold', 'Gold'], ['cyan', 'Light blue'], ['green', 'Light green']];
   var SUB_BACK = [['outline', 'Outline'], ['box', 'See-through box'], ['solid', 'Black box']];
+  var SUB_POS = [['low', 'Lowest'], ['', 'Normal'], ['up1', 'A little higher'], ['up2', 'Higher'], ['up3', 'Highest']];
+  var SUB_BRIGHT = [['', 'Full'], ['90', '90 %'], ['75', '75 %'], ['60', '60 %']];
+  var SUB_WEIGHT = [['', 'Regular'], ['bold', 'Bold']];
   function nameIn(list, v, d) { var x = list.filter(function (p) { return p[0] === v; })[0]; return (x || list.filter(function (p) { return p[0] === d; })[0])[1]; }
-  function subStyleLine() { var s = Store.settings; return [nameIn(SUB_SIZE, s.subSize, 'm'), nameIn(SUB_COLOR, s.subColor, 'white'), nameIn(SUB_BACK, s.subBack, 'outline')].join(', '); }
+  function subStyleLine() { var s = Store.settings; return [nameIn(SUB_SIZE, s.subSize, 'm'), nameIn(SUB_COLOR, s.subColor, 'white'), nameIn(SUB_BACK, s.subBack, 'outline')].concat(s.subPos ? [nameIn(SUB_POS, s.subPos, '').toLowerCase()] : [], s.subBright ? [s.subBright + ' %'] : [], s.subBold ? ['bold'] : []).join(', '); }
   function subStyleMenu() {
     var s = Store.settings;
     function pick(title, list, key, d) {
@@ -1952,7 +1962,10 @@ var Views = (function () {
     UI.menu('Size and style', [
       { label: 'Size', sub: nameIn(SUB_SIZE, s.subSize, 'm'), action: function () { pick('Subtitle size', SUB_SIZE, 'subSize', 'm'); } },
       { label: 'Colour', sub: nameIn(SUB_COLOR, s.subColor, 'white'), action: function () { pick('Subtitle colour', SUB_COLOR, 'subColor', 'white'); } },
-      { label: 'Background', sub: nameIn(SUB_BACK, s.subBack, 'outline'), action: function () { pick('Subtitle background', SUB_BACK, 'subBack', 'outline'); } }
+      { label: 'Background', sub: nameIn(SUB_BACK, s.subBack, 'outline'), action: function () { pick('Subtitle background', SUB_BACK, 'subBack', 'outline'); } },
+      { label: 'Position', sub: nameIn(SUB_POS, s.subPos || '', ''), action: function () { pick('Subtitle position', SUB_POS, 'subPos', ''); } },
+      { label: 'Brightness', sub: nameIn(SUB_BRIGHT, s.subBright || '', ''), action: function () { pick('Subtitle brightness', SUB_BRIGHT, 'subBright', ''); } },
+      { label: 'Weight', sub: s.subBold ? 'Bold' : 'Regular', action: function () { UI.menu('Subtitle weight', SUB_WEIGHT.map(function (p) { var on = !!s.subBold === (p[0] === 'bold'); return { label: p[1], sub: on ? 'on' : '', current: on, action: function () { s.subBold = p[0] === 'bold'; applyLook(); Store.saveSettings(); Subs.refresh(); subStyleMenu(); } }; }), subStyleMenu); } }
     ], subtitleMenu);
   }
   function subtitleMenu() {
@@ -2187,9 +2200,12 @@ var Views = (function () {
       { label: (cur === 'off' ? '✓  ' : '') + 'Off', current: cur === 'off', action: set('off') }
     ]);
   }
+  // The movie or episode is over (it ended, or Up next at the credits: skipper.js): My media's or the provider's next step.
+  function endVod(force) { if (mode !== 'vod') return; if (vod && vod.meta.local) Media.ended(); else Vod.ended(force === true); }
   function stopAll() { Subs.reset(); if (typeof SeekPrev !== 'undefined') SeekPrev.stop(); if (full) { full = false; document.body.classList.remove('full'); stage.classList.remove('full'); stage.classList.add('preview'); } Player.stop(); playing = null; mode = 'live'; cu = null; vod = null; stage.classList.add('off');  if (pipTab()) pipUpdate(); }
 
   return {
+    endVod: endVod, get vodMeta() { return mode === 'vod' && vod ? vod.meta : null; },
     pipUpdate: pipUpdate, pipStop: pipStop, pipFull: pipFull, pipRestart: pipRestart, get pipOn() { return pipOn(); },
     init: init, reload: reload, switchTab: switchTab, setZone: setZone, resume: resume, refreshLists: refreshLists,
     closeNav: closeNav, chanMenu: chanMenu, startChannel: startChannel, goFull: goFull, playCatchup: playCatchup, refreshVodMeta:function(){if(mode==='vod')osd(true);}, playVod: playVod,

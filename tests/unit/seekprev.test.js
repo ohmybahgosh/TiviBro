@@ -17,6 +17,16 @@ ok('the converter\'s stream gives its u=', S._source('http://127.0.0.1:47811/con
 ok('HLS gets no pictures', S._source('https://cdn.example/a/index.m3u8') === '');
 ok('setting: Automatic unless On or Off', S.setting() === 'auto');
 
+// Chapters as ffmpeg prints them (service/seekprev.js parseChapters), and which of them skipper.js treats as an intro.
+const SP = require('../../service/seekprev.js');
+const ch = SP.parseChapters('  Chapters:\n    Chapter #0:0: start 0.000000, end 95.500000\n      Metadata:\n        title           : Opening Credits\n    Chapter #0:1: start 95.500000, end 2400.000000\n      Metadata:\n        title           : Chapter 2\n    Chapter #0:2: start 2400.000000, end 2520.000000\n    Chapter #0:3: start 2520.000000, end 2600.000000\n      Metadata:\n        title           : End Credits\n  Stream #0:0: Video: h264\n      Metadata:\n        title           : not a chapter\n');
+ok('four chapters with their times and titles', ch.length === 4 && ch[0].t === 'Opening Credits' && ch[0].e === 95.5 && ch[2].t === '' && ch[3].t === 'End Credits', ch);
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js/skipper.js'), 'utf8') + ';this.Skipper = Skipper;', ctx);
+const K = ctx.Skipper._test;
+ok('an Opening Credits chapter is an intro, while it plays', !!K.introAt(ch, 30) && !K.introAt(ch, 94) && !K.introAt(ch, 200));
+ok('Recap and Previously on count, a plain chapter and Credits do not', K.INTRO.test('Recap') && K.INTRO.test('Previously on') && !K.INTRO.test('Chapter 2') && !K.INTRO.test('End Credits'));
+ok('the credits are found by name', K.CREDITS.test('End Credits') && K.CREDITS.test('Closing') && !K.CREDITS.test('Chapter 12'));
+
 const FF = process.env.TIVIBRO_FFMPEG || '/usr/local/bin/ffmpeg';
 const enc = (() => { try { return String(cp.execFileSync(FF, ['-hide_banner', '-encoders'], { stdio: ['ignore', 'pipe', 'ignore'] })); } catch (e) { return ''; } })();
 if (!/ mjpeg /.test(enc)) { console.log('SKIP the service part: no ffmpeg with an mjpeg encoder at ' + FF); process.exit(fail ? 1 : 0); }

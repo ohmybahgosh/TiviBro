@@ -115,7 +115,16 @@ body.full .vid-error{left:50%;right:auto;bottom:auto;top:40%;transform:translate
 .seekprev-pic{display:block;width:320px;height:180px;object-fit:cover;border-radius:10px;background:#000;opacity:0;transition:opacity 160ms ease}
 .seekprev.has .seekprev-pic{opacity:1}
 .seekprev.wait.has .seekprev-pic{opacity:.45}
-.seekprev-time{text-align:center;font-size:24px;font-weight:700;color:#fff;padding:6px 0 2px;font-variant-numeric:tabular-nums}
+.seekprev.nopic{width:auto;padding:6px 18px}
+.seekprev.nopic .seekprev-pic{display:none}
+/* Skip intro and Up next (skipper.js): over the movie, bottom right, above the hints */
+.skipper{position:fixed;right:80px;bottom:150px;z-index:8;display:flex;align-items:center;gap:14px;padding:16px 22px 16px 30px;border-radius:999px;background:rgba(255,255,255,.94);color:#111;box-shadow:0 10px 30px rgba(0,0,0,.55);font-size:28px}
+.skipper small{font-size:20px;font-weight:600;color:#555;text-transform:none}
+.skipper b{font-weight:800}
+.skipper-key{font-size:18px;font-weight:700;padding:3px 10px;border-radius:8px;background:#111;color:#fff}
+.chapmarks{position:absolute;height:6px;pointer-events:none}
+.chapmarks i{position:absolute;top:-3px;width:3px;height:12px;margin-left:-1px;border-radius:2px;background:rgba(255,255,255,.75)}
+.seekprev-time{text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:24px;font-weight:700;color:#fff;padding:6px 0 2px;font-variant-numeric:tabular-nums}
 .osd-now{font-size:30px}
 .osd-next{font-size:24px;color:var(--muted);margin-top:8px}
 /* Info pressed again on a live channel: what's on, in full (discussion #36) */
@@ -804,6 +813,8 @@ body.noguidenames .gch,body.noguidenames .guide-group{width:260px}
 .mkv-captions,.subs-captions{position:absolute;left:6%;right:6%;bottom:7%;text-align:center;color:#fff;font:42px sans-serif;white-space:pre-line;text-shadow:2px 2px 3px #000,-2px -2px 3px #000;z-index:10;pointer-events:none}
 /* Subtitle look (Settings > Playback > Subtitle colour, size and background): lines are one span each, so a box
    hugs each line.  The TV's own drawing (::cue) follows too, except where TiviBro draws instead (below). */
+/* Subtitle position, brightness and weight (Settings > Playback, Size and style in the player): views.js applyLook */
+.mkv-captions,.subs-captions{bottom:var(--sub-bottom,7%);opacity:var(--sub-op,1);font-weight:var(--sub-weight,400)}
 .mkv-captions span,.subs-captions span{padding:0 .2em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
 .sub-yellow .mkv-captions,.sub-yellow .subs-captions{color:#ffe14d}
 .sub-gold .mkv-captions,.sub-gold .subs-captions{color:#f5c542}

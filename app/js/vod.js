@@ -766,9 +766,10 @@ var Vod = (function () {
     }
     playingMeta = null;
   }
-  function ended() {
+  // force: Next episode chosen at the credits (skipper.js), whatever Play the next one automatically says.
+  function ended(force) {
     var m = playingMeta;
-    if (m && m.item && m.item.ep && episodes && Store.settings.autoNext !== false) {
+    if (m && m.item && m.item.ep && episodes && (force || Store.settings.autoNext !== false)) {
       mark(m.id, true);
       var i = episodes.indexOf(m.item);
       if (i >= 0 && episodes[i + 1]) { playingMeta = null; U.toast('Next episode'); if (episodes[i + 1].season !== m.item.season) showSeason(episodes[i + 1]); else itemsVL.setItems(itemsVL.items, Math.max(0, itemsVL.items.indexOf(episodes[i + 1]))); play(episodes[i + 1], true); return; }

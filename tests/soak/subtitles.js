@@ -42,7 +42,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await subsMenu();
   let m = await modal();
   ok('Subtitles offers Find subtitles in a movie', /No subtitles in this video/.test(m) && /Find subtitles/.test(m), m);
-  ok('Subtitles: a Settings heading above Find subtitles, an In this movie heading above what the movie has', JSON.stringify(await heads()) === '["Settings","In this movie"]' && /^# Settings,Find subtitles…,# In this movie,No subtitles in this video$/.test((await rows()).join(',')), (await rows()).join(','));
+  ok('Subtitles: a Settings heading above Find subtitles, an In this movie heading above what the movie has', JSON.stringify(await heads()) === '["Settings","In this movie"]' && /^# Settings,Find subtitles…,Size and style,# In this movie,No subtitles in this video$/.test((await rows()).join(',')), (await rows()).join(','));
   await pick('^Find subtitles');
   m = await modal();
   ok('without a key it offers the step-by-step setup', /Set up OpenSubtitles first/.test(m) && /step by step/.test(m), m);
@@ -108,7 +108,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await subsMenu();
   m = await modal();
   ok('Line up with another track appears with two tracks', /Line up with another track/.test(m), m);
-  ok('with subtitles: settings first, then the subtitles under In this movie with their count', /^# Settings,Find subtitles…,Timing,Line up with another track…,# In this movie · 2,Off,English \(OpenSubtitles\),Spanish \(OpenSubtitles\)$/.test((await rows()).join(',')), (await rows()).join(','));
+  ok('with subtitles: settings first, then the subtitles under In this movie with their count', /^# Settings,Find subtitles…,Size and style,Timing,Line up with another track…,# In this movie · 2,Off,English \(OpenSubtitles\),Spanish \(OpenSubtitles\)$/.test((await rows()).join(',')), (await rows()).join(','));
   ok('the menu opens on the subtitle that is on', /^Spanish/.test(await focused()), await focused());
   await shot('tv-subs-menu');
   for (let k = 0; k < 3; k++) { await page.keyboard.press('ArrowUp'); await page.waitForTimeout(50); }

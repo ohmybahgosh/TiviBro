@@ -44,16 +44,20 @@ var SeekPrev = (function () {
   function start(meta, url) {
     stop();
     var u = source(url);
-    if (!u || setting() === 'off' || !base() || typeof Convert === 'undefined') return;
-    movie = { u: u, ua: meta && meta.ua || '' };
+    if (!u || !base() || typeof Convert === 'undefined') return;
+    movie = { u: u, ua: meta && meta.ua || '', chapters: [] };
     var m = movie;
     Convert.ensureKey().then(function (k) {
       key = k;
+      // The file's chapters (marks on the bar, their names as you seek, Skip intro: skipper.js), with previews on or off.
+      fetch(base() + '/preview/' + key + '/chapters?u=' + encodeURIComponent(m.u) + (m.ua ? '&ua=' + encodeURIComponent(m.ua) : ''), { cache: 'no-store' })
+        .then(function (r) { return r.json(); }).then(function (j) { if (movie !== m) return; m.chapters = (j.chapters || []).filter(function (c) { return c.e > c.s; }); marksFor = null; if (m.chapters.length) Log.info('player', 'This file has ' + m.chapters.length + ' chapters'); if (typeof Skipper !== 'undefined') Skipper.chapters(m.chapters); }, function () {});
+      if (setting() === 'off') return false;
       if (ok !== null) return ok;
       return fetch(base() + '/preview/' + key + '/status', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) { ok = !!j.ok; if (!ok) Log.info('player', 'Seek previews need the newer converter on this TV: it comes with the next TiviBro update'); return ok; });
     }).then(function () { if (movie === m) fillSoon(20000); }, function () {});
   }
-  function stop() { movie = null; made = {}; clearTimeout(fill); fill = null; hide(); }
+  function stop() { movie = null; made = {}; clearTimeout(fill); fill = null; hide(); marksFor = null; if (marksEl) marksEl.innerHTML = ''; if (typeof Skipper !== 'undefined') Skipper.chapters([]); }
 
   function build() {
     if (box) return box;
@@ -67,15 +71,42 @@ var SeekPrev = (function () {
   function hide() { if (box) { box.classList.add('hidden'); box.classList.remove('has', 'wait'); } shownT = -1; wantT = -1; clearTimeout(timer); }
   function fmt(s) { s = Math.max(0, Math.floor(s)); var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ':' + (m < 10 ? '0' : '') : '') + m + ':' + (x < 10 ? '0' : '') + x; }
 
+  // The chapter a time is in (its title), or null.
+  function chapterAt(t) { var c = movie && movie.chapters || []; for (var i = 0; i < c.length; i++) if (t >= c[i].s && t < c[i].e) return c[i]; return null; }
+  function chapterName(c, i) { return c && (c.t && !/^chapter\s*\d+$/i.test(c.t) ? c.t : 'Chapter ' + (i + 1)); }
+  // The chapters as small marks on the bar (each chapter's start), drawn again only when the movie or its length changes.
+  var marksEl = null, marksFor = null;
+  function marks(d) {
+    var prog = document.querySelector('#osd .osd-prog'), bar = prog && prog.querySelector('.bar'); if (!bar) return;
+    var c = movie && movie.chapters || [], k = movie ? movie.u + '|' + d + '|' + c.length + '|' + bar.offsetWidth : '';
+    if (k === marksFor) return;
+    marksFor = k;
+    if (!marksEl) { marksEl = U.el('div', 'chapmarks'); prog.appendChild(marksEl); }
+    marksEl.innerHTML = '';
+    marksEl.style.left = bar.offsetLeft + 'px'; marksEl.style.width = bar.offsetWidth + 'px'; marksEl.style.top = bar.offsetTop + 'px';
+    if (!d || c.length < 2) return;
+    c.forEach(function (x) { if (x.s < 1 || x.s > d - 1) return; var e = U.el('i'); e.style.left = (100 * x.s / d) + '%'; marksEl.appendChild(e); });
+  }
+
   /* The player's seek (views.js osd): t the time being sought to (null: not seeking), d the length, dir the way. */
   function show(t, d, dir) {
+    if (d) marks(d);
+    var c = t != null ? chapterAt(t) : null, ci = c ? movie.chapters.indexOf(c) : -1;
+    // No pictures (Off, a TV short of memory on a 4K movie, no newer converter): the chapter's name alone, if any.
+    if (t != null && d && !allowed() && c && movie.chapters.length > 1 && build()) {
+      box.classList.remove('hidden', 'has', 'wait'); box.classList.add('nopic');
+      var bar0 = document.querySelector('#osd .osd-prog .bar');
+      box.style.left = Math.max(W / 2 + 8, bar0 ? bar0.offsetLeft + Math.max(0, Math.min(1, t / d)) * bar0.offsetWidth : 0) + 'px';
+      label.textContent = chapterName(c, ci) + '  ·  ' + fmt(t);
+      return;
+    }
     if (t == null || !d || !allowed() || !build()) return hide();
-    box.classList.remove('hidden');
+    box.classList.remove('hidden', 'nopic');
     // Over the bar (900 px, not the whole width), its middle where the seek lands, kept on the screen.
     var bar = document.querySelector('#osd .osd-prog .bar'), f = Math.max(0, Math.min(1, t / d));
     var x = bar ? bar.offsetLeft + f * bar.offsetWidth : 0;
     box.style.left = Math.max(W / 2 + 8, x) + 'px';
-    label.textContent = fmt(t);
+    label.textContent = (c && movie.chapters.length > 1 ? chapterName(c, ci) + '  ·  ' : '') + fmt(t);
     var b = bucket(t);
     if (b === wantT) return;
     wantT = b; t0 = Date.now();
@@ -122,5 +153,5 @@ var SeekPrev = (function () {
     im.src = link(next, true);
   }
 
-  return { start: start, stop: stop, show: show, hide: hide, get available() { return ok; }, setting: setting, _source: source };
+  return { start: start, stop: stop, show: show, hide: hide, get available() { return ok; }, setting: setting, chapterAt: chapterAt, get chapters() { return movie ? movie.chapters : []; }, _source: source };
 })();
