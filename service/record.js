@@ -9,12 +9,13 @@
    - HLS: its playlist is followed (the best quality of a master playlist), and each new piece is added to the
      file in order: .ts pieces as one .ts, fMP4 pieces after their init segment as one .mp4.  Encrypted
      playlists are refused (not yet).
-   Drives: what webOS mounted under /tmp/usb/<disk>/<partition> and the helper can write to (gid 5000, group-
-   writable).  The helper runs in webOS's developer-mode jail, and that jail leaves USB drives out (its
-   "mountusbdir" line is commented out in /etc/jail_native_devmode.conf), so the helper's /tmp/usb is empty.  On a
-   rooted TV the Homebrew Channel's root exec binds the TV's /tmp/usb into the helper's own view as /tmp/tvusb
-   (bindUsb).  Without root, recording to USB isn't possible from a developer-mode app.  TV storage is never used:
-   about 1 GB free, 15 to 30 minutes of HD, and it is webOS's too.
+   Drives: what webOS mounted under /tmp/usb/<disk>/<partition> (gid 5000, group-writable).  The helper runs in
+   webOS's developer-mode jail, and that jail leaves USB drives out (its "mountusbdir" line is commented out in
+   /etc/jail_native_devmode.conf; entering the jail's mount namespace from outside fails too), so the helper sees no
+   drive.  On a rooted TV the recording agent does the work instead: this same file run as root outside the jail
+   (record-agent.js), started through the Homebrew Channel's root exec, on 127.0.0.1:47820.  The helper hands it
+   every /record/ request.  Without root, recording to USB isn't possible from a developer-mode app.  TV storage is
+   never used: about 1 GB free, 15 to 30 minutes of HD, and it is webOS's too.
    The list of recordings (scheduled, recording, done, failed) is kept in the helper's storage (storage.js).
 
    Routes (on the relay, with TiviBro's secret like /kv/):
@@ -29,21 +30,16 @@
 'use strict';
 var http = require('http'), fs = require('fs'), path = require('path'), URL_ = require('url');
 
-var ROOTS = process.env.TIVIBRO_USB_DIR ? [process.env.TIVIBRO_USB_DIR] : ['/tmp/usb', '/tmp/tvusb'];
-var lcall = null, bindAt = 0, bindSaid = '';
+var ROOTS = process.env.TIVIBRO_USB_DIR ? [process.env.TIVIBRO_USB_DIR] : ['/tmp/usb'];
+var AGENT = process.env.TIVIBRO_REC_AGENT === '1', AGENT_PORT = +(process.env.TIVIBRO_REC_AGENT_PORT || 47820);
+var lcall = null, agentSaid = '', agentStarting = null, agentCtl = '';
 function setCall(f) { lcall = f; }
-/* A rooted TV: the TV's USB drives into the helper's view (see above), again when none is seen (a drive plugged in
-   later), at most once a minute. */
-function bindUsb(cb) {
-  cb = cb || function () {};
-  if (!lcall || Date.now() - bindAt < 60000) return cb(false);
-  bindAt = Date.now();
-  var cmd = 'nsenter -t ' + process.pid + ' -m sh -c "umount -l /tmp/tvusb 2>/dev/null; mkdir -p /tmp/tvusb && mount --rbind /proc/1/root/tmp/usb /tmp/tvusb"';
-  lcall('luna://org.webosbrew.hbchannel.service/exec', { command: cmd }, function (r) {
-    var said = r && r.returnValue !== false && !r.stderrString ? 'bound' : 'not possible: ' + (r && (r.errorText || r.stderrString) || 'no answer');
-    if (said !== bindSaid) { bindSaid = said; note(said === 'bound' ? 'info' : 'warn', 'USB drives for recording ' + said); }
-    cb(said === 'bound');
-  });
+/* The agent's secret: kept in the helper's storage, so an agent still running from an earlier helper is the same. */
+function agentKey() {
+  if (agentCtl) return agentCtl;
+  var f = ''; try { f = path.join(require('./storage').sub('rec'), 'agent.key'); agentCtl = fs.readFileSync(f, 'utf8').trim(); } catch (e) {}
+  if (!/^[0-9a-f]{32}$/.test(agentCtl)) { agentCtl = require('crypto').randomBytes(16).toString('hex'); try { fs.writeFileSync(f, agentCtl); } catch (e) {} }
+  return agentCtl;
 }
 var FOLDER = 'TiviBro Recordings', PART_MAX = +(process.env.TIVIBRO_REC_PART_MAX || 3900 * 1024 * 1024);
 var RETRY_MS = +(process.env.TIVIBRO_REC_RETRY_MS || 3000), TICK_MS = +(process.env.TIVIBRO_REC_TICK_MS || 15000), BODY_MAX = 64 * 1024;
@@ -61,8 +57,8 @@ function note(lv, event, more) { var o = { lv: lv, event: event }; for (var k in
 function load() {
   if (state) return state;
   state = { recs: [] };
-  try { listFile = path.join(require('./storage').sub('rec'), 'recordings.json'); } catch (e) { listFile = ''; }
-  if (process.env.TIVIBRO_REC_LIST) listFile = process.env.TIVIBRO_REC_LIST;
+  if (process.env.TIVIBRO_REC_LIST) listFile = process.env.TIVIBRO_REC_LIST;          // the agent: never the helper's storage (root would lock the helper out of it)
+  else { try { listFile = path.join(require('./storage').sub('rec'), 'recordings.json'); } catch (e) { listFile = ''; } }
   try { var j = JSON.parse(fs.readFileSync(listFile, 'utf8')); if (j && Array.isArray(j.recs)) state = j; } catch (e) {}
   // Recording when the helper stopped (webOS closed it, the TV turned off): carries on if its time isn't over.
   state.recs.forEach(function (r) { if (r.status === 'recording') r.status = r.end > Date.now() ? 'scheduled' : 'done'; });
@@ -100,7 +96,6 @@ function drives() {
       });
     });
   });
-  if (!out.length) bindUsb();
   return out;
 }
 function folderOn(drive) {
@@ -328,9 +323,62 @@ function serveFile(req, res, ALLOW, r, part) {
     rs.pipe(res, { end: false });
   })();
 }
+/* ---------- the agent (rooted TVs) ---------- */
+function agentUp(cb) {
+  var r = http.get({ hostname: '127.0.0.1', port: AGENT_PORT, path: '/record/ping', headers: { 'X-TiviBro-Ctl': agentKey() } }, function (res) { res.resume(); cb(res.statusCode === 200, res.statusCode); });
+  r.on('error', function () { cb(false); }); r.setTimeout(1500, function () { r.abort(); });
+}
+function ensureAgent(cb) {
+  agentUp(function (up, code) {
+    if (up) return cb(true);
+    if (!lcall) return cb(false);
+    if (agentStarting) return agentStarting.push(cb);
+    agentStarting = [cb];
+    var done = function (ok) { var l = agentStarting || []; agentStarting = null; l.forEach(function (f) { f(ok); }); };
+    // One with another secret (its key file was lost): stopped first.  Then ours, in the background.
+    var pidf = '/media/developer/.tivibro-rec/agent.pid';
+    var cmd = (code === 403 ? 'kill $(cat ' + pidf + ') 2>/dev/null; sleep 1; ' : '') + 'TIVIBRO_REC_CTL=' + agentKey() + ' nohup /usr/bin/node ' + path.join(__dirname, 'record-agent.js') + ' >/dev/null 2>&1 &';
+    lcall('luna://org.webosbrew.hbchannel.service/exec', { command: cmd }, function (r) {
+      var ok0 = r && r.returnValue !== false, tries = 0;
+      if (!ok0) { var s0 = 'not possible: ' + (r && (r.errorText || r.stderrString) || 'no Homebrew Channel'); if (s0 !== agentSaid) { agentSaid = s0; note('warn', 'recording agent ' + s0); } return done(false); }
+      (function wait() {
+        agentUp(function (up) {
+          if (up) { if (agentSaid !== 'up') { agentSaid = 'up'; note('info', 'recording agent started (root, for USB drives)'); } return done(true); }
+          if (++tries > 10) { agentSaid = 'did not start'; note('warn', 'recording agent did not start'); return done(false); }
+          setTimeout(wait, 300);
+        });
+      })();
+    });
+  });
+}
+// The request as it came, to the agent, and its answer back.
+function toAgent(req, res, ALLOW) {
+  var h = {}; for (var k in req.headers) h[k] = req.headers[k];
+  h['x-tivibro-ctl'] = agentKey();
+  var up = http.request({ hostname: '127.0.0.1', port: AGENT_PORT, path: req.url, method: req.method, headers: h }, function (ar) {
+    var oh = {}; for (var k2 in ar.headers) oh[k2] = ar.headers[k2];
+    for (var k3 in ALLOW) oh[k3] = ALLOW[k3];
+    res.writeHead(ar.statusCode, oh); ar.pipe(res);
+  });
+  up.on('error', function (e) { send(res, ALLOW, 502, { error: 'the recording agent didn\'t answer: ' + e.message }); });
+  req.pipe(up);
+}
 function handle(req, res, ALLOW, log) {
   if (log) logf = log;
+  /* In the helper (jailed): its own drives when it sees any (a test, or a future webOS that shares them), else
+     the agent on a rooted TV, else the answer that there's no drive. */
+  if (!AGENT && !drives().length && lcall) {
+    req.pause();
+    return ensureAgent(function (ok) {
+      if (ok) return toAgent(req, res, ALLOW);            // pipe() resumes it
+      handleHere(req, res, ALLOW); req.resume();
+    });
+  }
+  handleHere(req, res, ALLOW);
+}
+function handleHere(req, res, ALLOW) {
   var u = URL_.parse(req.url, true), p = u.pathname;
+  if (req.method === 'GET' && p === '/record/ping') return send(res, ALLOW, 200, { ok: true, agent: AGENT });
   if (req.method === 'GET' && p === '/record/drives') { var dv = drives(); return send(res, ALLOW, 200, { drives: dv, skipped: seen, uid: process.getuid ? process.getuid() : null, gids: process.getgroups ? process.getgroups() : null }); }
   if (req.method === 'GET' && p === '/record/list') { tick(); return send(res, ALLOW, 200, { recs: load().recs.map(pub) }); }
   var fm = /^\/record\/file\/([A-Za-z0-9]+)(?:\/[^\/]*)?$/.exec(p);       // "/rec.ts" after the id tells the player what it is
@@ -342,12 +390,8 @@ function handle(req, res, ALLOW, log) {
       if (!okUrl(q.url)) return send(res, ALLOW, 400, { error: 'not a relayed address' });
       if (!(+q.end > Date.now())) return send(res, ALLOW, 400, { error: 'it ends in the past' });
       if (p === '/record/schedule' && !(+q.start > 0)) return send(res, ALLOW, 400, { error: 'no start time' });
-      var go = function () {
-        if (!drives().length) return send(res, ALLOW, 409, { error: 'Plug in a USB drive to record to.', code: 'nodrive', root: bindSaid });
-        send(res, ALLOW, 200, pub(add(q, p === '/record/schedule')));
-      };
-      if (drives().length) return go();
-      bindAt = 0; return bindUsb(function () { setTimeout(go, 300); });
+      if (!drives().length) return send(res, ALLOW, 409, { error: 'Plug in a USB drive to record to.', code: 'nodrive' });
+      return send(res, ALLOW, 200, pub(add(q, p === '/record/schedule')));
     }
     var r = byId(String(q.id || ''));
     if (!r) return send(res, ALLOW, 404, { error: 'no such recording' });

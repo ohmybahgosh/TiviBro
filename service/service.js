@@ -88,7 +88,7 @@ var APP = 'app.tivibro.tv', WAKE = 'tivibro-companion', AM = 'luna://com.palm.ac
 function lcall(uri, params, cb) {
   try { service.call(uri, params, function (m) { cb((m && m.payload) || {}); }); } catch (e) { cb({ returnValue: false, errorText: e.message }); }
 }
-require('./record').setCall(lcall);      // the Homebrew Channel's root exec, for USB drives on a rooted TV (record.js)
+require('./record').setCall(lcall);      // the Homebrew Channel's root exec starts the recording agent on a rooted TV (record.js)
 var companion = require('./companion').create({
   dir: __dirname, alt: function () { return require('./kv').sub('companion'); }, log: function (o) { proxy.log(o); }, version: require('./package.json').version,
   launch: function (params, cb) {
