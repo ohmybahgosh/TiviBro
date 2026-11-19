@@ -33,7 +33,7 @@ var http = require('http'), fs = require('fs'), path = require('path'), URL_ = r
 
 var ROOTS = process.env.TIVIBRO_USB_DIR ? [process.env.TIVIBRO_USB_DIR] : ['/tmp/usb'];
 var AGENT = process.env.TIVIBRO_REC_AGENT === '1', AGENT_PORT = +(process.env.TIVIBRO_REC_AGENT_PORT || 47820);
-var lcall = null, agentSaid = '', agentStarting = null, agentCtl = '';
+var agentNoUntil = 0, lcall = null, agentSaid = '', agentStarting = null, agentCtl = '';
 function setCall(f) { lcall = f; }
 /* The agent's secret: kept in the helper's storage, so an agent still running from an earlier helper is the same. */
 function agentKey() {
@@ -99,6 +99,16 @@ function space(dir) {
   return out;
 }
 var LOW_MB = 500;
+/* No USB drive: live pause can still use a little of the TV's own storage (a 10-minute pause at most, and only
+   while it has room to spare: webOS needs it, and the always-on rewind buffer never goes there, to spare the flash).
+   The helper's own folder (or the agent's, as root), and only with 1.5 GB free. */
+var TV_ROOM_MB = +(process.env.TIVIBRO_TS_TV_ROOM_MB || 1500);
+function tvRoom() {
+  var d = '';
+  try { d = AGENT ? path.join('/media/developer/.tivibro-rec', 'pause') : require('./storage').sub('pause'); if (AGENT) { try { fs.mkdirSync(d); } catch (e) {} } } catch (e) { return ''; }
+  var sp = space(d);
+  return sp.freeMB < 0 || sp.freeMB >= TV_ROOM_MB ? d : '';
+}
 // A drive's write error, said the way a person would.
 function driveError(e) {
   if (e && e.code === 'ENOSPC') return 'the USB drive is full';
@@ -324,6 +334,8 @@ function ensureAgent(cb) {
   agentUp(function (up, code) {
     if (up) return cb(true);
     if (!lcall) return cb(false);
+    // No Homebrew Channel (a TV that isn't rooted): not asked again for 10 minutes.
+    if (agentNoUntil > Date.now()) return cb(false);
     if (agentStarting) return agentStarting.push(cb);
     agentStarting = [cb];
     var done = function (ok) { var l = agentStarting || []; agentStarting = null; l.forEach(function (f) { f(ok); }); };
@@ -332,7 +344,7 @@ function ensureAgent(cb) {
     var cmd = (code === 403 ? 'kill $(cat ' + pidf + ') 2>/dev/null; sleep 1; ' : '') + 'TIVIBRO_REC_CTL=' + agentKey() + ' nohup /usr/bin/node ' + path.join(__dirname, 'record-agent.js') + ' >/dev/null 2>&1 &';
     lcall('luna://org.webosbrew.hbchannel.service/exec', { command: cmd }, function (r) {
       var ok0 = r && r.returnValue !== false, tries = 0;
-      if (!ok0) { var s0 = 'not possible: ' + (r && (r.errorText || r.stderrString) || 'no Homebrew Channel'); if (s0 !== agentSaid) { agentSaid = s0; note('warn', 'recording agent ' + s0); } return done(false); }
+      if (!ok0) { agentNoUntil = Date.now() + 600000; var s0 = 'not possible: ' + (r && (r.errorText || r.stderrString) || 'no Homebrew Channel'); if (s0 !== agentSaid) { agentSaid = s0; note('warn', 'recording agent ' + s0); } return done(false); }
       (function wait() {
         agentUp(function (up) {
           if (up) { if (agentSaid !== 'up') { agentSaid = 'up'; note('info', 'recording agent started (root, for USB drives)'); } return done(true); }
@@ -375,7 +387,8 @@ function handleHere(req, res, ALLOW) {
   if (req.method === 'GET' && p === '/record/list') {
     tick();
     var dl = drives(), sp0 = dl.length ? space(dl[0].dir) : null;
-    return send(res, ALLOW, 200, { recs: load().recs.map(pub), drive: sp0 ? { name: dl[0].name, freeMB: sp0.freeMB, totalMB: sp0.totalMB, low: sp0.freeMB >= 0 && sp0.freeMB < LOW_MB } : null });
+    return send(res, ALLOW, 200, { recs: load().recs.map(pub), drive: sp0 ? { name: dl[0].name, freeMB: sp0.freeMB, totalMB: sp0.totalMB, low: sp0.freeMB >= 0 && sp0.freeMB < LOW_MB } : null,
+      pauseHere: !dl.length && !!tvRoom() });
   }
   var fm = /^\/record\/file\/([A-Za-z0-9]+)(?:\/[^\/]*)?$/.exec(p);       // "/rec.ts" after the id tells the player what it is
   if (fm && (req.method === 'GET' || req.method === 'HEAD')) { var fr = byId(fm[1]); return fr ? serveFile(req, res, ALLOW, fr, u.query.part != null ? +u.query.part : null) : send(res, ALLOW, 404, { error: 'no such recording' }); }
@@ -388,8 +401,9 @@ function handleHere(req, res, ALLOW) {
       TS.setup({ feed: Feed, freeMB: function (d) { return require('./storage')._freeMB(d); }, log: logf });
       if (p === '/record/ts/start') {
         if (!okUrl(q.url)) return send(res, ALLOW, 400, { error: 'not a relayed address' });
-        var dv = drives(); if (!dv.length) return send(res, ALLOW, 409, { error: 'Plug in a USB drive to pause live TV.', code: 'nodrive' });
-        var tsr = TS.post(p, q, folderOn(dv[0].dir));
+        var dv = drives(), small = !dv.length, where = dv.length ? folderOn(dv[0].dir) : tvRoom();
+        if (!where) return send(res, ALLOW, 409, { error: 'Plug in a USB drive to pause live TV.', code: 'nodrive' });
+        var tsr = TS.post(p, q, where, small);
         return send(res, ALLOW, tsr.error && !tsr.id ? 500 : 200, tsr);
       }
       var tr = TS.post(p, q);

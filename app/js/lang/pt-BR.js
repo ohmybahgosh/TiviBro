@@ -2385,5 +2385,8 @@ I18n.add('pt-BR', {
   "Keeps the channel you watch fullscreen on the USB drive the whole time, so \u25c0 goes back to something you just missed without pausing first (like a DVR).  Channels start a second or two slower, and the drive is written all the time.  Needs Pause live TV to a USB drive.": "Guarda no pendrive o tempo todo o canal que você assiste em tela cheia, assim ◀ volta a algo que você perdeu sem pausar antes (como um DVR).  Os canais demoram um ou dois segundos a mais para começar e o pendrive é gravado o tempo todo.  Precisa de Pausar a TV ao vivo num pendrive.",
   "30 min": "30 min",
   "1 hour": "1 hora",
-  "2 hours": "2 horas"
+  "2 hours": "2 horas",
+  "Pause live TV": "Pausar a TV ao vivo",
+  "Pause keeps the channel, and Play carries on from where you paused, with \u25c0 \u25b6 to go back and forth in it.  On a USB drive (a rooted TV) it keeps up to 2 hours; without one, up to 10 minutes in the TV's own storage.  Off: pause holds for as long as the player's buffer, then Play is live.": "Pausar guarda o canal e Reproduzir continua de onde você pausou, com ◀ ▶ para voltar e avançar.  Num pendrive (TV com root) guarda até 2 horas; sem ele, até 10 minutos no armazenamento da TV.  Desligado: a pausa dura o que o buffer do player aguenta e depois Reproduzir volta ao vivo.",
+  "Keeps the channel you watch fullscreen on the USB drive the whole time, so \u25c0 goes back to something you just missed without pausing first (like a DVR).  Channels start a second or two slower, and the drive is written all the time.  Needs a USB drive in the TV and Pause live TV on.": "Guarda no pendrive o tempo todo o canal que você assiste em tela cheia, assim ◀ volta a algo que você perdeu sem pausar antes (como um DVR).  Os canais demoram um ou dois segundos a mais para começar e o pendrive é gravado o tempo todo.  Precisa de um pendrive na TV e de Pausar a TV ao vivo ligado."
 });

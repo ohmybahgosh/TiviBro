@@ -1388,7 +1388,7 @@ var Views = (function () {
      plays from its copy on the drive the whole time (a few seconds behind live), so ◀ goes back without pausing
      first.  The first piece is cut a second in (timeshift.js), and the drive's playlist waits for it, so a channel
      starts about as fast as it does directly. */
-  function tsAlways() { var m = +Store.settings.rewindBuffer || 0; return m > 0 && tsOn() ? m : 0; }
+  function tsAlways() { var m = +Store.settings.rewindBuffer || 0; return m > 0 && tsOn() && Record.canBuffer() ? m : 0; }
   function startBuffered(c) {
     var my = tsh = { c: c, at: Date.now(), id: null, always: true };
     Player.stop();

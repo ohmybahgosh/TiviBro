@@ -76,7 +76,9 @@ function stream(from, to) { const parts = []; for (let i = from; i < to; i++) { 
   const base = 'http://127.0.0.1:' + srv.address().port;
 
   let r = await call('POST', '/record/ts/start', { url: base + '/ts' });
-  ok('no USB drive: refused with code nodrive', r.code === 409 && r.j.code === 'nodrive', r.code);
+  ok('no USB drive: a short pause in the TV\'s own storage (10 minutes at most)', r.code === 200 && r.j.small === true && r.j.max === 600, JSON.stringify(r.j));
+  ok('the TV\'s own storage is said in the list', (await call('GET', '/record/list')).j.pauseHere === true);
+  await call('POST', '/record/ts/stop', { id: r.j.id });
   const drive = path.join(tmp, 'usb', 'sda', 'sda1'); fs.mkdirSync(drive, { recursive: true });
 
   r = await call('POST', '/record/ts/start', { url: base + '/ts', max: 60 });

@@ -1872,5 +1872,8 @@ I18n.add('ru', {
   "Keeps the channel you watch fullscreen on the USB drive the whole time, so \u25c0 goes back to something you just missed without pausing first (like a DVR).  Channels start a second or two slower, and the drive is written all the time.  Needs Pause live TV to a USB drive.": "Канал, который вы смотрите на весь экран, всё время сохраняется на USB-накопитель, поэтому ◀ возвращает к пропущенному без паузы (как DVR).  Каналы запускаются на секунду-две дольше, а накопитель записывается постоянно.  Нужна Пауза эфира на USB-накопитель.",
   "30 min": "30 мин",
   "1 hour": "1 час",
-  "2 hours": "2 часа"
+  "2 hours": "2 часа",
+  "Pause live TV": "Пауза эфира",
+  "Pause keeps the channel, and Play carries on from where you paused, with \u25c0 \u25b6 to go back and forth in it.  On a USB drive (a rooted TV) it keeps up to 2 hours; without one, up to 10 minutes in the TV's own storage.  Off: pause holds for as long as the player's buffer, then Play is live.": "Пауза сохраняет канал, а Воспроизведение продолжает с места паузы, ◀ ▶ перемещают назад и вперёд.  На USB-накопителе (телевизор с root) хранится до 2 часов; без него до 10 минут в памяти телевизора.  Выключено: пауза держится, пока хватает буфера плеера, затем Воспроизведение идёт в эфир.",
+  "Keeps the channel you watch fullscreen on the USB drive the whole time, so \u25c0 goes back to something you just missed without pausing first (like a DVR).  Channels start a second or two slower, and the drive is written all the time.  Needs a USB drive in the TV and Pause live TV on.": "Канал, который вы смотрите на весь экран, всё время сохраняется на USB-накопитель, поэтому ◀ возвращает к пропущенному без паузы (как DVR).  Каналы запускаются на секунду-две дольше, а накопитель записывается постоянно.  Нужен USB-накопитель в телевизоре и включённая Пауза эфира."
 });

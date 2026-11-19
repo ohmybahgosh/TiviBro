@@ -19,7 +19,7 @@
 var fs = require('fs'), path = require('path');
 
 var PIECE = +(process.env.TIVIBRO_TS_PIECE || 4), MAX_SEC = 2 * 3600, IDLE_MS = +(process.env.TIVIBRO_TS_IDLE_MS || 90000);
-var MIN_FREE_MB = 1024, MAX_SESSIONS = 2;
+var MIN_FREE_MB = 1024, MAX_SESSIONS = 2, SMALL_SEC = 10 * 60, SMALL_FREE_MB = +(process.env.TIVIBRO_TS_SMALL_FREE_MB || 600);
 var WAIT_MS = +(process.env.TIVIBRO_TS_WAIT_MS || 10000);
 var sessions = {}, reaper = null, io = null, logf = function () {};
 
@@ -40,15 +40,16 @@ function clearOld(base) {
 
 /* ---------- a session ---------- */
 function newId() { return 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
-function begin(url, max, folder, key, alt) {
+function begin(url, max, folder, key, alt, small) {
   key = String(key || url);
   for (var k in sessions) if (sessions[k].key === key && !sessions[k].stopped) { sessions[k].seen = Date.now(); return sessions[k]; }
   // The oldest goes when there are too many (a channel change leaves one behind until it idles out).
   var ids = Object.keys(sessions).sort(function (a, b) { return sessions[a].born - sessions[b].born; });
   while (ids.length >= MAX_SESSIONS) stop(sessions[ids.shift()], 'another channel');
   var base = baseOn(folder); clearOld(base);
-  var S = { id: newId(), key: key, url: url, max: Math.min(Math.max(+max || MAX_SEC, 60), 6 * 3600), born: Date.now(), seen: Date.now(),
-    pieces: [], n: 0, disc: 0, cutDisc: false, stopped: false, error: '', kind: '', init: null, folder: folder, alt: alt || '' };
+  // small: the TV's own storage (no USB drive): a short pause, and more room left free (webOS needs it too).
+  var S = { id: newId(), key: key, url: url, max: Math.min(Math.max(+max || MAX_SEC, 60), small ? SMALL_SEC : 6 * 3600), born: Date.now(), seen: Date.now(),
+    pieces: [], n: 0, disc: 0, cutDisc: false, stopped: false, error: '', kind: '', init: null, folder: folder, alt: alt || '', minFree: small ? SMALL_FREE_MB : MIN_FREE_MB, small: !!small };
   S.dir = path.join(base, S.id);
   try { fs.mkdirSync(S.dir); } catch (e) { S.error = 'the drive refused it: ' + e.message; }
   sessions[S.id] = S;
@@ -98,11 +99,11 @@ function added(S, p) {
   // Room on the drive, looked at every 30 s (df is a process).
   if (io.freeMB && (!S.freeAt || Date.now() - S.freeAt > 30000)) { S.freeAt = Date.now(); S.free = io.freeMB(S.folder); }
   var free = S.free >= 0 ? S.free - p.bytes / 1048576 : 1e9; S.free = free;
-  while (S.pieces.length > 2 && (total(S) - S.pieces[0].dur > S.max || free < MIN_FREE_MB)) {
+  while (S.pieces.length > 2 && (total(S) - S.pieces[0].dur > S.max || free < S.minFree)) {
     var old = S.pieces.shift();
     if (old.disc || (S.pieces[0] && S.pieces[0].disc)) S.disc++;
     try { fs.unlinkSync(path.join(S.dir, old.f)); } catch (e) {}
-    if (free < MIN_FREE_MB) free += old.bytes / 1048576;
+    if (free < S.minFree) free += old.bytes / 1048576;
   }
   if (S.free < 1e9) S.free = free;
 }
@@ -215,7 +216,7 @@ function playlist(S) {
   if (S.stopped) out.push('#EXT-X-ENDLIST');
   return out.join('\n') + '\n';
 }
-function status(S) { return { id: S.id, playlist: '/record/ts/' + S.id + '/live.m3u8', sec: Math.round(total(S)), pieces: S.pieces.length, ready: S.pieces.length >= 1, error: S.error, kind: S.kind, max: S.max }; }
+function status(S) { return { small: S.small, id: S.id, playlist: '/record/ts/' + S.id + '/live.m3u8', sec: Math.round(total(S)), pieces: S.pieces.length, ready: S.pieces.length >= 1, error: S.error, kind: S.kind, max: S.max }; }
 
 /* ---------- routes (from record.js) ---------- */
 function route(req, res, ALLOW, p, q, send) {
@@ -244,8 +245,8 @@ function route(req, res, ALLOW, p, q, send) {
   }
   return null;
 }
-function post(p, q, folder) {
-  if (p === '/record/ts/start') return status(begin(String(q.url), q.max, folder, q.key, q.alt));
+function post(p, q, folder, small) {
+  if (p === '/record/ts/start') return status(begin(String(q.url), q.max, folder, q.key, q.alt, small));
   var S = sessions[String(q.id || '')];
   if (p === '/record/ts/ping') { if (!S) return { error: 'gone', gone: true }; S.seen = Date.now(); return status(S); }
   if (p === '/record/ts/stop') { if (S) stop(S, 'asked'); return { ok: true }; }

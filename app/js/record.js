@@ -7,7 +7,7 @@ var Record = (function () {
   'use strict';
   var L = Library;
   var PAD_BEFORE = 2 * 60000, PAD_AFTER = 5 * 60000;
-  var last = { recs: [], at: 0 }, drive = false, space = null;
+  var last = { recs: [], at: 0 }, drive = false, space = null, pauseHere = false;
 
   function T(s, o) { var t = typeof I18n !== 'undefined' ? I18n.t(s) : s; return t.replace(/\{(\w+)\}/g, function (a, k) { return o && o[k] != null ? o[k] : a; }); }
   function base() { return Net.port ? 'http://127.0.0.1:' + Net.port : ''; }
@@ -36,7 +36,7 @@ var Record = (function () {
   function list() {
     return api('/record/list').then(function (j) {
       var was = sig(last.recs), had = shown();
-      last = { recs: j.recs || [], at: Date.now() }; space = j.drive || null; if (space) drive = true;
+      last = { recs: j.recs || [], at: Date.now() }; space = j.drive || null; drive = !!space; pauseHere = !!j.pauseHere;
       // The guide marks what's recording, so it's redrawn when that changes.
       if (shown() !== had && typeof Views !== 'undefined' && Views.buildTabs) Views.buildTabs();
       if (sig(last.recs) !== was && typeof Guide !== 'undefined' && Guide.vis) try { Guide.draw(); } catch (e) {}
@@ -171,8 +171,11 @@ var Record = (function () {
   function tsStart(ch, max) { return api('/record/ts/start', { url: urlFor(ch), key: ch.k, max: max || 0 }).then(function (r) { if (r.error && !r.id) throw new Error(r.error); return r; }); }
   function tsPing(id) { return api('/record/ts/ping', { id: id }).catch(function (e) { if (/gone|HTTP 404/.test(e && e.message)) e.gone = true; throw e; }); }
   function tsStop(id) { return api('/record/ts/stop', { id: id }).catch(function () {}); }
-  function canPause() { return !!base() && drive; }
+  // Live pause: to the USB drive, or (no drive, or a TV that isn't rooted) a short one in the TV's own storage.
+  function canPause() { return !!base() && (drive || pauseHere); }
+  // The always-on rewind buffer: the USB drive only (it writes all the time).
+  function canBuffer() { return !!base() && drive; }
 
-  return { now: now, schedule: schedule, tsStart: tsStart, tsPing: tsPing, tsStop: tsStop, canPause: canPause, base: base, stop: stop, remove: remove, list: list, drives: drives, open: open, shown: shown, watch: watch, posOf: posOf, forget: forget, hms: hms, sizeOf: sizeOf, whenOf: whenOf, get space() { return space; }, menuItem: menuItem, of: of, urlFor: urlFor,
+  return { now: now, schedule: schedule, tsStart: tsStart, tsPing: tsPing, tsStop: tsStop, canPause: canPause, canBuffer: canBuffer, base: base, stop: stop, remove: remove, list: list, drives: drives, open: open, shown: shown, watch: watch, posOf: posOf, forget: forget, hms: hms, sizeOf: sizeOf, whenOf: whenOf, get space() { return space; }, menuItem: menuItem, of: of, urlFor: urlFor,
     get recs() { return last.recs; } };
 })();
