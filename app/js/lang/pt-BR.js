@@ -2495,5 +2495,7 @@ I18n.add('pt-BR', {
   "Previous channel (the one above in the list)": "Canal anterior (o de cima na lista)",
   "Last channel (the one you watched before)": "Último canal (o que você assistia antes)",
   "Channel below": "Canal de baixo",
-  "Channel above": "Canal de cima"
+  "Channel above": "Canal de cima",
+  "No open reports": "Nenhum relatório aberto",
+  "Closed": "Fechados"
 });

@@ -1979,5 +1979,7 @@ I18n.add('es', {
   "Previous channel (the one above in the list)": "Canal anterior (el de arriba en la lista)",
   "Last channel (the one you watched before)": "Último canal (el que veías antes)",
   "Channel below": "Canal de abajo",
-  "Channel above": "Canal de arriba"
+  "Channel above": "Canal de arriba",
+  "No open reports": "Sin reportes abiertos",
+  "Closed": "Cerrados"
 });

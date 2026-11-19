@@ -1354,9 +1354,12 @@ var Settings = (function () {
     }, function () { return '›'; }));
     rp.epage = 'report'; out.push(rp);
     if (Reports.list.length) out.push(page('Your problem reports', 'The reports this TV sent, and whether the developer has answered.  TiviBro also tells you when one gets a reply.', 'Your problem reports', function () {
-      var o = Reports.list.map(function (r) {
-        return action('#' + r.n + '  ' + (r.title || 'Problem report'), 'Sent ' + Reports.when(r.sent) + ' from ' + (r.version || '?') + '.  ' + Reports.statusText(r), function () { Reports.show(r.n); }, function () { return '›'; });
-      });
+      // Open ones first, then the closed ones under their own heading (discussion #101).
+      var row = function (r) { return action('#' + r.n + '  ' + (r.title || 'Problem report'), 'Sent ' + Reports.when(r.sent) + ' from ' + (r.version || '?') + '.  ' + Reports.statusText(r), function () { Reports.show(r.n); }, function () { return '›'; }); };
+      var shut = function (r) { return r.state === 'closed' || r.gone; };
+      var o = Reports.list.filter(function (r) { return !shut(r); }).map(row), cl = Reports.list.filter(shut);
+      if (!o.length) o.push(head('No open reports'));
+      if (cl.length) { o.push(head('Closed')); o = o.concat(cl.map(row)); }
       o.push(action('Check now', 'Asks GitHub, through the report relay, for news on these reports.  Only the report numbers are sent.', function () {
         U.toast('Checking…', 2000);
         Reports.check(true).then(function () { build(); U.toast('Checked', 2000); });

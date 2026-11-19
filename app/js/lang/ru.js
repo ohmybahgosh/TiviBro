@@ -1982,5 +1982,7 @@ I18n.add('ru', {
   "Previous channel (the one above in the list)": "Предыдущий канал (выше в списке)",
   "Last channel (the one you watched before)": "Последний канал (тот, что смотрели до этого)",
   "Channel below": "Канал ниже",
-  "Channel above": "Канал выше"
+  "Channel above": "Канал выше",
+  "No open reports": "Нет открытых сообщений",
+  "Closed": "Закрытые"
 });

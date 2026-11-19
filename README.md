@@ -57,6 +57,10 @@
 ### ✨ New lately
 
 - **Recording, live pause and rewind.**  Record from the guide to a USB drive on a rooted TV, with a **Recordings** screen (posters from TMDB, resume, delete several at once).  **Pause any live channel** and carry on from there, even without catch-up, and an optional **rewind buffer** lets ◀ go back to something you just missed.  Without a USB drive, pause still works for 10 minutes on any TV.
+- **A timeline in the player, like TiviMate's.**  ▲ puts a dot on the progress bar showing what's kept and what's recorded; move it and press OK to watch from there.  It's in the quick menu too, and ◀ ▶ move back and forth whenever you're behind live, so a Magic Remote with no ⏪ ⏩ buttons works.
+- **Stalker portals, much better:** every season of long shows, the right movie every time, empty categories hidden, big portals kept between starts, and categories A to Z or as a full-screen poster wall.
+- **Watched at 90%**, as Plex (85, 90, 95 or 98% in Settings), for movies, shows, My media and recordings.
+- **Link other versions of a channel yourself** when TiviBro doesn't find them by name, and **Fixed now** on your problem reports closes them from the TV.
 - **Go back to an earlier version** from Settings > System if an update causes trouble, with your settings saved first.
 - **My teams** gathers your teams' games at the top of the guide, now with college basketball.  Games on now are tinted in the theme's colour, and one game reads the same on every channel.
 - **Sixteen themes**, from Tokyo Night and Dracula to a green-phosphor Terminal, and the guide's category colours follow the theme.
@@ -151,7 +155,9 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | Guided set-up built from your playlist | ✅ Countries, feeds, city, events, logos, look | ❌ |
 | Set up by scanning a QR code with your phone | ✅ From the first screen | ❌ Type it with the remote |
 | Fills in missing channel logos | ✅ Two open logo libraries, two styles | ❌ |
-| Recording | Not yet | ✅ Premium |
+| Recording | ✅ Free, to a USB drive (rooted TVs) | ✅ Premium |
+| Pause and rewind any live channel, not only catch-up | ✅ With a timeline and a rewind buffer | ❌ |
+| Link a channel's other copies yourself | ✅ | ❌ |
 
 <sub>TiviMate column from its own site and public guides, October 2026.  TiviMate is a great app; this is what TiviBro adds.</sub>
 

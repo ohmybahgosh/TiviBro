@@ -363,7 +363,7 @@ module.exports = [
     ['Does TiviBro support catch-up?', 'Yes, on channels where your provider offers it.  Replay past programmes from the guide, or restart what\'s on now.'],
     ['Can I use more than one playlist?', 'Yes.  Every playlist you turn on is used at the same time, each with its own groups, guide and reload schedule.'],
     ['Does TiviBro show movie and TV show details in the guide?', 'Yes, with your own free TMDB key.  Movies get a poster, year, runtime, genres and rating, series get a poster, network, genres, rating and the episode\'s own title, and Movies on now lists every movie on now and starting soon.'],
-    ['Does TiviBro record?', 'Not yet.']
+    ['Does TiviBro record?', 'Yes, on a rooted TV with a USB drive: record what\'s on or schedule from the guide, with a Recordings screen.  Pausing and rewinding live TV works on any channel, and without a drive, pause works for 10 minutes on any TV.']
   ],
   related: ['tivimate-for-lg-tv', 'how-to-install', 'videos']
 },
