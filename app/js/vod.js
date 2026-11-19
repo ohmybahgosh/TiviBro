@@ -656,7 +656,14 @@ var Vod = (function () {
       if (kind !== k || !catsVL || catsVL.current() !== c) return;
       if (!list.length) { itemsVL.empty = 'Nothing here'; itemsVL.setItems([], 0); setZone('items'); return; }
       homeMode = true; showFromHome = false;
-      VodHome.wallOf(k, homeApi, c, list, function () { homeMode = false; VodHome.hide(); UI.setHandler(keys); setZone('cats'); hints(); });
+      VodHome.wallOf(k, homeApi, c, list, function () {
+        homeMode = false; VodHome.hide(); UI.setHandler(keys);
+        // Back on the same category (opening a show from the wall builds the list again).
+        var i = catsVL.items.findIndex(function (x) { return x.id === c.id; });
+        if (i >= 0 && catsVL.current() !== catsVL.items[i]) catsVL.select(i);
+        var cc = catsVL.current(); if (cc && cc.id === c.id) { itemsVL.setItems(itemsFor(c.id), 0); onItem(); }
+        setZone('cats'); hints();
+      });
     })();
   }
   function itemsFor(cid) {

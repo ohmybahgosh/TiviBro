@@ -217,7 +217,7 @@ var VodHome = (function () {
   /* ---------- the wall: one shelf's every title as posters ---------- */
   var wallViews = [];
   function openWall(s) {
-    wall = { id: s.id, cat: s.cat, title: s.title, items: s.items.slice() }; wallAt = Math.max(0, pos[s.id] || 0); mode = 'wall';
+    wall = { id: s.id, cat: s.cat, title: s.title, items: s.items.slice(), back: s.back || null }; wallAt = Math.max(0, pos[s.id] || 0); mode = 'wall';
     $('vodHome').classList.add('wall'); drawWall();
   }
   function closeWall() {
@@ -229,8 +229,7 @@ var VodHome = (function () {
   // A category from the categories list as a full-screen wall of posters (Settings > Movies and shows > Open a category as).
   function wallOf(k, api, c, items, back) {
     show(k, api, false);
-    openWall({ id: 'catwall:' + c.id, cat: c.id, title: c.name, items: items });
-    wall.back = back;
+    openWall({ id: 'catwall:' + c.id, cat: c.id, title: c.name, items: items, back: back });
   }
   function drawWall() {
     var box = $('vodWall'), rows = Math.ceil(wall.items.length / WALL_COLS), r = Math.floor(wallAt / WALL_COLS);

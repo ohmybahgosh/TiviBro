@@ -1,10 +1,14 @@
 # Changelog
 
-## 0.6.0 (alpha 170, 2026-11-19)
+## 0.6.0 (alpha 171, 2026-11-19)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 170
+### New in alpha 171
+
+- **A category's poster wall:** Back after opening a show from it lands on the same category again (it went to the top of the list), and the wall's hints say "Back  categories".
+
+### In alpha 170
 
 - **Stalker portals: every season of a long show (issue #118).**  A portal lists a show's seasons 14 to a page, and TiviBro read only the first, so a show with 17 seasons was missing seasons 1 to 3.  Every page is read now (up to 10), and the same for a season's episodes.
 - **Stalker portals: the right movie plays (issue #118).**  When a movie's own command gave no link, TiviBro tried "/media/file_<id>.mpg", which is a file by that number, and on some portals that file belongs to another movie.  It now asks the portal for the movie's own files instead.  An episode is no longer guessed by its place in the list when the portal numbers its episodes.
