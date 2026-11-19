@@ -22,4 +22,26 @@ server.listen(+(process.env.TIVIBRO_REC_AGENT_PORT || 47820), '127.0.0.1', funct
   try { fs.writeFileSync(path.join(DIR, 'agent.pid'), String(process.pid)); } catch (e) {}
   log({ lv: 'info', event: 'agent listening' }); Record.start({ log: log });
 });
+/* The helper, kept up for the phone app (Bob: the phone said "TiviBro's connection starting" for good).  Installing a
+   new TiviBro stops the helper and clears the wake-ups it sets with webOS, and nothing starts it again until TiviBro
+   is opened.  This agent runs as root the whole time (rooted TVs): once a minute, with the phone app connection
+   switched on and nothing answering on its port, it asks webOS to start the helper (its "wake" method). */
+var SVC_DIR = __dirname;
+function helperUp(port, cb) {
+  var done = false, s = require('net').connect(port, '127.0.0.1');
+  function end(v) { if (done) return; done = true; try { s.destroy(); } catch (e) {} cb(v); }
+  s.on('connect', function () { end(true); }); s.on('error', function () { end(false); }); s.setTimeout(3000, function () { end(false); });
+}
+var wokeAt = 0;
+setInterval(function () {
+  var c = null; try { c = JSON.parse(fs.readFileSync(path.join(SVC_DIR, 'companion.json'), 'utf8')); } catch (e) {}
+  if (!c || c.on !== true) return;
+  helperUp(+c.port || 47810, function (up) {
+    if (up || Date.now() - wokeAt < 50000) return;
+    wokeAt = Date.now();
+    require('child_process').exec("luna-send -n 1 luna://app.tivibro.tv.service/wake '{}'", { timeout: 20000 }, function (err) {
+      log({ lv: err ? 'warn' : 'info', event: 'agent woke the helper for the phone app', e: err ? err.message : undefined });
+    });
+  });
+}, 60000);
 process.on('uncaughtException', function (e) { log({ lv: 'error', event: 'agent uncaught', e: e && (e.stack || e.message) }); });

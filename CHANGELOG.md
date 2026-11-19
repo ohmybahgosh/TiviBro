@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **The phone app reaches the TV after an update without opening TiviBro first.**  Installing a new TiviBro stopped its helper, and nothing started it again until TiviBro was opened, so the phone said "TiviBro's connection starting" for good.  On a rooted TV the recording agent (which keeps running as root) now starts the helper within a minute when the phone app connection is on, and a newer TiviBro replaces an older agent once it isn't recording.
+- **Turn on no longer says to turn on Wi-Fi when it's on.**  With a VPN on, or the phone leaning on mobile data for a moment, the app thought it wasn't on Wi-Fi.  Any Wi-Fi or Ethernet connection counts now, and once the TV answers on the network, the Bluetooth sighting isn't taken as "no Wi-Fi".
+
 ## 0.6.0 (alpha 176, 2026-11-19)
 
 Pre-release: expect rough edges, and keep a backup before installing.

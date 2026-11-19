@@ -130,10 +130,15 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     private val conn = app.getSystemService(ConnectivityManager::class.java)
     private var netCheck: Job? = null
     /** Wi-Fi or Ethernet: the way the phone reaches its TVs (not mobile data). */
+    /* Not only the default network: with a VPN on, or mobile data preferred for a moment (Pixel's adaptive
+       connectivity), the default isn't Wi-Fi while the phone is still on it, and Turn on said "turn on Wi-Fi" with
+       Wi-Fi on (Bob).  Any connected Wi-Fi or Ethernet network counts. */
+    private fun lanCaps(c: NetworkCapabilities?) = c != null && (c.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) || c.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET))
+    @Suppress("DEPRECATION")
     private fun onLan(n: Network?): Boolean = runCatching {
         val cm = conn ?: return@runCatching true
-        val c = cm.getNetworkCapabilities(n ?: cm.activeNetwork) ?: return@runCatching false
-        c.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) || c.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
+        if (n != null) return@runCatching lanCaps(cm.getNetworkCapabilities(n))
+        lanCaps(cm.getNetworkCapabilities(cm.activeNetwork)) || cm.allNetworks.any { lanCaps(cm.getNetworkCapabilities(it)) }
     }.getOrDefault(true)
     /** Android calls onAvailable once at once for the network the phone is already on: that one is skipped. */
     @Volatile private var netSeen = false
@@ -380,7 +385,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
                 }
                 delay(1000)
                 // Without Wi-Fi, the TV's Bluetooth advertisement is the only sign it came on.
-                if (bleOn.get() && !onLan(null)) break
+                if (bleOn.get() && !tvUp && !onLan(null)) break
                 // Answering isn't enough: a TV in network standby answers too.  On is its power state saying so.
                 if (System.currentTimeMillis() >= nextWol - 500) {
                     said = withContext(Dispatchers.IO) { runCatching { Pairing.hello(host, port, 1500); if (TvClient(tv(id) ?: tv).info().optString("power", "").isStandby()) 1 else 2 }.getOrDefault(0) }
@@ -408,7 +413,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         }
         setUi(id) { it.copy(power = Power.CHECKING) }
         if (on) { check(tv(id) ?: tv); say("${tv.name} is on") }
-        else if (bleOn.get() && !onLan(null)) {
+        else if (bleOn.get() && !tvUp && !onLan(null)) {
             setUi(id) { it.copy(power = Power.OFF) }
             say("${tv.name} is on (the phone saw it over Bluetooth).  Turn on Wi-Fi on the phone to use it.")
         }
