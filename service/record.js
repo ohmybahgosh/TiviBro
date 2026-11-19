@@ -360,7 +360,9 @@ function serveFile(req, res, ALLOW, r, part) {
   })();
 }
 /* ---------- the agent (rooted TVs) ---------- */
-var OWN_V = (function () { try { return require('./package.json').version; } catch (e) { return ''; } })();
+/* Raised whenever record-agent.js or what it runs changes in a way an old agent would miss (2: it keeps the helper up
+   for the phone app).  The version can't tell: every alpha is 0.6.0 to the helper. */
+var AGENT_REV = 2;
 function agentUp(cb) {
   var r = http.get({ hostname: '127.0.0.1', port: AGENT_PORT, path: '/record/ping', headers: { 'X-TiviBro-Ctl': agentKey() } }, function (res) {
     var b = ''; res.on('data', function (d) { b += d; });
@@ -373,7 +375,7 @@ function ensureAgent(cb) {
   agentUp(function (up, code, j) {
     /* An agent from an older TiviBro (it keeps running through an update): replaced, once it isn't recording or
        buffering, so its fixes (the helper watchdog) take effect.  code 403 below stops it first. */
-    if (up && j && j.v !== undefined && OWN_V && j.v !== OWN_V && !j.busy && !agentRenewed) { agentRenewed = true; note('info', 'recording agent is from ' + (j.v || 'an older TiviBro') + ': starting this one'); up = false; code = 403; }
+    if (up && j && (+j.rev || 1) < AGENT_REV && !j.busy && !agentRenewed) { agentRenewed = true; note('info', 'recording agent is an older one (' + (+j.rev || 1) + '): starting this one'); up = false; code = 403; }
     if (up) return cb(true);
     if (!lcall) return cb(false);
     // No Homebrew Channel (a TV that isn't rooted): not asked again for 10 minutes.
@@ -424,8 +426,8 @@ function handle(req, res, ALLOW, log) {
 }
 function handleHere(req, res, ALLOW) {
   var u = URL_.parse(req.url, true), p = u.pathname;
-  // v: the agent's version, so a helper from a newer TiviBro restarts an old agent; busy: not while it records or buffers.
-  if (req.method === 'GET' && p === '/record/ping') return send(res, ALLOW, 200, { ok: true, agent: AGENT, v: OWN_V,
+  // rev: what the agent does (AGENT_REV), so a helper from a newer TiviBro restarts an old agent; busy: not while it records or buffers.
+  if (req.method === 'GET' && p === '/record/ping') return send(res, ALLOW, 200, { ok: true, agent: AGENT, rev: AGENT_REV,
     busy: load().recs.some(function (r) { return r.status === 'recording'; }) || Object.keys(TS._sessions).some(function (k) { return !TS._sessions[k].stopped; }) });
   if (req.method === 'GET' && p === '/record/drives') { var dv = drives(); return send(res, ALLOW, 200, { drives: dv, skipped: seen, uid: process.getuid ? process.getuid() : null, gids: process.getgroups ? process.getgroups() : null }); }
   if (req.method === 'GET' && p === '/record/list') {
