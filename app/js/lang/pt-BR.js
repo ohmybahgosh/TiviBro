@@ -2466,5 +2466,6 @@ I18n.add('pt-BR', {
   "A list beside the categories, or a full-screen wall of posters (Back goes to the categories).": "Uma lista ao lado das categorias, ou uma parede de pôsteres em tela cheia (Voltar retorna às categorias).",
   "List": "Lista",
   "Posters, full screen": "Pôsteres, tela cheia",
-  "Back  categories": "Voltar  categorias"
+  "Back  categories": "Voltar  categorias",
+  "◀ ▶  move      ▲ ▼  switch row, ▲ at the top: timeline      OK  choose      Back  close": "◀ ▶  mover      ▲ ▼  trocar de linha, ▲ no topo: linha do tempo      OK  escolher      Voltar  fechar"
 });

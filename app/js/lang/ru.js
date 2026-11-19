@@ -1953,5 +1953,6 @@ I18n.add('ru', {
   "A list beside the categories, or a full-screen wall of posters (Back goes to the categories).": "Список рядом с категориями или стена постеров на весь экран (Назад возвращает к категориям).",
   "List": "Список",
   "Posters, full screen": "Постеры на весь экран",
-  "Back  categories": "Назад  категории"
+  "Back  categories": "Назад  категории",
+  "◀ ▶  move      ▲ ▼  switch row, ▲ at the top: timeline      OK  choose      Back  close": "◀ ▶  выбор      ▲ ▼  другой ряд, ▲ наверху: шкала времени      OK  выбрать      Назад  закрыть"
 });

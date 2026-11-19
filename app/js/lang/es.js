@@ -1950,5 +1950,6 @@ I18n.add('es', {
   "A list beside the categories, or a full-screen wall of posters (Back goes to the categories).": "Una lista junto a las categorías, o un muro de pósteres a pantalla completa (Atrás vuelve a las categorías).",
   "List": "Lista",
   "Posters, full screen": "Pósteres, pantalla completa",
-  "Back  categories": "Atrás  categorías"
+  "Back  categories": "Atrás  categorías",
+  "◀ ▶  move      ▲ ▼  switch row, ▲ at the top: timeline      OK  choose      Back  close": "◀ ▶  mover      ▲ ▼  cambiar de fila, ▲ arriba: línea de tiempo      OK  elegir      Atrás  cerrar"
 });

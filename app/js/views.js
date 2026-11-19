@@ -1173,9 +1173,12 @@ var Views = (function () {
       var g = function (b) { var a = Keymap.get('player', b); return a && a !== 'none' ? Keymap.SHORT[a] || Keymap.ACTIONS[a] : ''; };
       // The quick menu starts with Pause, Rewind and Record: said here, as a Magic Remote has no buttons for them.
       if (g('ok')) chip('ok', 'OK  ' + (Keymap.get('player', 'ok') === 'panel' ? 'Pause, record, more' : g('ok')));
-      if (canScrub() && !$('osd').classList.contains('hidden')) chip('up', '▲  Timeline');
-      if (g('up') === 'Previous channel' && g('down') === 'Next channel') chip('down', '▲ ▼  Change channel');
-      else { if (g('up')) chip('up', '▲  ' + g('up')); if (g('down')) chip('down', '▼  ' + g('down')); }
+      // With the info bar up, ▲ is the timeline (live pause, the rewind buffer or a recording), whatever ▲ is set to.
+      // (The legend is drawn before the bar shows, so this can't wait for it: Bob saw "▲  Recent" with the dot there.)
+      var tlUp = canScrub();
+      if (tlUp) chip('up', '▲  Timeline');
+      if (!tlUp && g('up') === 'Previous channel' && g('down') === 'Next channel') chip('down', '▲ ▼  Change channel');
+      else { if (g('up') && !tlUp) chip('up', '▲  ' + g('up')); if (g('down')) chip('down', '▼  ' + g('down')); }
       // ◀ rewinds what's kept (live pause, the rewind buffer, a DASH window) or catch-up, else it's the last channel.
       var canBack = Player.tshift || !!Player.liveWindow() || (playing && playing.arch);
       if (g('left')) chip('left', '◀  ' + (Keymap.get('player', 'left') === 'rewind' && !canBack ? 'Last channel' : g('left')));
@@ -2187,9 +2190,22 @@ var Views = (function () {
     head.appendChild(U.el('span', 'n', (Store.settings.showNumbers ? c.num + '  ' : '') + L.name(c)));
     head.appendChild(U.el('span', 't', nn && nn.now ? (nn.now.up || nn.now.ended ? '' : U.hhmm(nn.now.s) + ' – ' + U.hhmm(nn.now.e) + '   ') + nn.now.t : L.groupName(c.g)));
     el.appendChild(head);
-    var bar = U.el('div', 'qp-bar'), fill = U.el('i');
-    fill.style.width = nn && nn.now ? Math.round(100 * (now - nn.now.s) / (nn.now.e - nn.now.s)) + '%' : '0';
-    bar.appendChild(fill); el.appendChild(bar);
+    var bar = U.el('div', 'qp-bar'), fill = U.el('i'), tl = timeline();
+    if (tl) {
+      // Live pause, the rewind buffer or a recording: the same timeline as the info bar (what's kept, what's
+      // recorded, where you are), and ▲ moves the dot (Bob: OK's panel had no timeline, ▶'s info bar did).
+      var span = Math.max(1, tl.to - tl.from), pc = function (t) { return U.clamp((t - tl.from) / span, 0, 1) * 100; };
+      bar.classList.add('tl');
+      fill.style.width = pc(tl.now) + '%';
+      if (tl.w) { var kp = U.el('i', 'k'); kp.style.left = pc(tl.keptFrom) + '%'; kp.style.width = (pc(tl.now) - pc(tl.keptFrom)) + '%'; bar.appendChild(fill); bar.appendChild(kp); }
+      else bar.appendChild(fill);
+      if (tl.rec) { var rc = U.el('i', 'r'), r0s = Math.max(tl.from, tl.rec.startedAt); rc.style.left = pc(r0s) + '%'; rc.style.width = (pc(tl.now) - pc(r0s)) + '%'; bar.appendChild(rc); }
+      var dot = U.el('b', 'd'); dot.style.left = pc(tl.at) + '%'; bar.appendChild(dot);
+    } else {
+      fill.style.width = nn && nn.now ? Math.round(100 * (now - nn.now.s) / (nn.now.e - nn.now.s)) + '%' : '0';
+      bar.appendChild(fill);
+    }
+    el.appendChild(bar);
     el.appendChild(U.el('div', 'qp-row-title', 'Quick actions'));
     var r0 = U.el('div', 'qp-actions');
     qp.rows[0].forEach(function (it, i) {
@@ -2214,7 +2230,7 @@ var Views = (function () {
       });
       el.appendChild(r1);
     }
-    el.appendChild(U.el('div', 'qp-row-title', '◀ ▶  move      ▲ ▼  switch row      OK  choose      Back  close'));
+    el.appendChild(U.el('div', 'qp-row-title', tl ? '◀ ▶  move      ▲ ▼  switch row, ▲ at the top: timeline      OK  choose      Back  close' : '◀ ▶  move      ▲ ▼  switch row      OK  choose      Back  close'));
     focusPanel();
   }
   function hook(b, row, col) {
@@ -2229,6 +2245,8 @@ var Views = (function () {
     else if (a === 'right') qp.col = Math.min(rowItems.length - 1, qp.col + 1);
     else if (a === 'down' && qp.rows[1].length && qp.row === 0) { qp.row = 1; qp.col = Math.min(qp.col, qp.rows[1].length - 1); }
     else if (a === 'up' && qp.row === 1) { qp.row = 0; qp.col = Math.min(qp.col, qp.rows[0].length - 1); }
+    // ▲ on the top row: the timeline (live pause, the rewind buffer or a recording), as ▲ does on the info bar.
+    else if (a === 'up' && qp.row === 0 && canScrub()) { closePanel(); scrubStart(); return true; }
     else if (a === 'ok') { var it = rowItems[qp.col]; if (it) it.run(); return true; }
     else if (a === 'back' || a === 'info') { closePanel(); return true; }
     else if (a === 'chup' || a === 'chdown') { closePanel(); fullKeys(a); return true; }

@@ -585,6 +585,10 @@ body:not(.nav-hidden) #viewGuide .guide-groups{left:96px}
 .qp-head .t{font-size:26px;color:var(--muted)}
 .qp-bar{height:6px;width:auto;align-self:stretch;background:rgba(255,255,255,.18);border-radius:3px;margin:14px 0 26px;overflow:hidden}
 .qp-bar i{display:block;height:100%;background:var(--accent)}
+.qp-bar.tl{position:relative;overflow:visible;height:8px}
+.qp-bar.tl .k{position:absolute;top:0;bottom:0;background:var(--accent2);border-radius:4px}
+.qp-bar.tl .r{position:absolute;bottom:-7px;height:4px;background:var(--air);border-radius:2px}
+.qp-bar.tl .d{position:absolute;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px rgba(0,0,0,.35)}
 .qp-row-title{font-size:22px;color:var(--muted);margin:0 0 12px}
 .qp-actions{display:flex;gap:14px;flex-wrap:nowrap;margin-bottom:28px}
 .qp-act{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-width:150px;height:96px;padding:0 18px;border-radius:14px;background:var(--panel);font-size:21px;text-align:center}
