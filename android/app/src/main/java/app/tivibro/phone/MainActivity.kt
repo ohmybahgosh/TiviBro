@@ -45,6 +45,7 @@ import app.tivibro.phone.ui.CodeScreen
 import app.tivibro.phone.ui.DropboxDialog
 import app.tivibro.phone.ui.EditorScreen
 import app.tivibro.phone.ui.OfflineEditorScreen
+import app.tivibro.phone.ui.RecordingsScreen
 import app.tivibro.phone.ui.RemindersScreen
 import app.tivibro.phone.ui.HomeScreen
 import app.tivibro.phone.ui.TbTheme
