@@ -12,7 +12,7 @@ var Phone = (function () {
 
   function base() { return Net.port ? 'http://127.0.0.1:' + Net.port : ''; }
   function call(path, body) {
-    if (!base()) return Promise.reject(new Error('The network helper is not running, so phones can\'t connect.  See Settings, Diagnostics.'));
+    if (!base()) return Promise.reject(new Error('The network helper is not running, so phones can\'t connect.  See Settings, System.'));
     return Net.ctlFetch(base() + path, { method: body ? 'POST' : 'GET', cache: 'no-store', headers: (body ? { 'Content-Type': 'application/json' } : {}), body: body ? JSON.stringify(body) : undefined })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || U.httpSays(r.status, 'helper')); return j; }); });
   }

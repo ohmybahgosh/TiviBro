@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **New screenshots and clips everywhere** for the 18-section Settings, the phone app's Recordings page and the rest of this month's changes: README, user guide, wiki, tivibro.app and the demo clips.
+- **Hidden channel and group notes say where to find them again**: Settings, Channels and groups, Hidden channels/groups.
+
 ## 0.6.0 (alpha 177, 2026-11-19)
 
 Pre-release: expect rough edges, and keep a backup before installing.

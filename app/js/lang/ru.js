@@ -1993,5 +1993,7 @@ I18n.add('ru', {
   "Pair the TiviBro app to use your phone as a remote, or edit groups, names and the guide from a computer.": "Свяжите приложение TiviBro, чтобы использовать телефон как пульт, или редактируйте группы, названия и телепрограмму с компьютера.",
   "Edit groups, names and the guide from a computer.": "Редактируйте группы, названия и телепрограмму с компьютера.",
   "Paired": "Связан",
-  "Which buttons show when you press OK in fullscreen.  Buttons only appear when they apply, e.g. Audio needs two or more tracks.": "Какие кнопки показываются при нажатии OK на весь экран.  Кнопки появляются, только когда нужны: например, «Аудио»: при двух и более дорожках."
+  "Which buttons show when you press OK in fullscreen.  Buttons only appear when they apply, e.g. Audio needs two or more tracks.": "Какие кнопки показываются при нажатии OK на весь экран.  Кнопки появляются, только когда нужны: например, «Аудио»: при двух и более дорожках.",
+  "Hidden.  Restore it in Settings, Channels and groups, Hidden channels.": "Скрыто.  Вернуть: Настройки, Каналы и группы, Скрытые каналы.",
+  "Hidden.  Restore it in Settings, Channels and groups, Hidden groups.": "Скрыто.  Вернуть: Настройки, Каналы и группы, Скрытые группы."
 });

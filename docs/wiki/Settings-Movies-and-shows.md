@@ -4,6 +4,8 @@
 
 The Movies and Shows screens, and the TMDB details for them and the guide.
 
+<p align="center"><a href="https://tivibro.app/view/#tv-set-vod"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-vod.png" width="60%" alt="Movies and shows"></a></p>
+
 | Setting | Choices | What it does |
 |---|---|---|
 | **Order movies and shows** | **The provider's order** · Recently added first · Name (A–Z) · Rating (highest first) | The order of titles in each Movies and Shows category and My list.  All movies and All shows stay newest first in the provider's order; Recently added is always newest first. |

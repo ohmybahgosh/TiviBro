@@ -8,6 +8,8 @@ Your version, new versions from GitHub, and finding out what's wrong.  See [Upda
 
 <p align="center"><a href="https://tivibro.app/view/#tv-set-updates"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-updates.png" width="60%" alt="System"></a></p>
 
+<p align="center"><a href="https://tivibro.app/view/#tv-set-fix"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-fix.png" width="60%" alt="Fix a problem"></a></p>
+
 | Setting | Choices | What it does |
 |---|---|---|
 | **TiviBro**, **Status** | (information) | The version you have (test versions are marked), and whether a newer one is out. |

@@ -1993,7 +1993,7 @@ var Views = (function () {
       } },
       canManage(gid) && { label: 'Show or hide channels…', sub: 'tick the channels to keep in ' + L.groupName(gid), action: function () { manageVisibility(gid, c); } },
       hidden ? { label: 'Show channel', action: function () { L.hideChannel(c.k, false); U.toast('Channel restored'); refreshLists(true); } }
-             : { label: 'Hide channel', sub: 'restore from Settings', action: function () { L.hideChannel(c.k, true); U.toast('Hidden.  Restore it in Settings, Groups and hidden items.'); refreshLists(true); } },
+             : { label: 'Hide channel', sub: 'restore from Settings', action: function () { L.hideChannel(c.k, true); U.toast('Hidden.  Restore it in Settings, Channels and groups, Hidden channels.'); refreshLists(true); } },
       { label: 'Hide with the content filter', sub: 'gone from everything, not just this list', action: function () { filterOut('channel', c.n, L.name(c)); } }
     ];
   }
@@ -2448,7 +2448,7 @@ var Views = (function () {
       } },
       canManage(g.id) && { label: 'Show or hide channels…', sub: 'tick the channels to keep', action: function () { manageVisibility(g.id); } },
       !virtual && (hidden ? { label: 'Show group', action: function () { L.hideGroup(g.id, false); U.toast('Group restored'); refreshLists(true); } }
-                          : { label: 'Hide group', sub: 'restore from Settings', action: function () { L.hideGroup(g.id, true); U.toast('Hidden.  Restore it in Settings, Groups and hidden items.'); refreshLists(); } }),
+                          : { label: 'Hide group', sub: 'restore from Settings', action: function () { L.hideGroup(g.id, true); U.toast('Hidden.  Restore it in Settings, Channels and groups, Hidden groups.'); refreshLists(); } }),
       !virtual && !custom && { label: 'Hide with the content filter', sub: 'the group and its channels, gone from everything', action: function () { filterOut('group', g.name, L.groupName(g.id)); } },
       custom && { label: 'Delete group', action: function () { UI.confirm('Delete ' + g.name + '?', 'Delete', function () { L.deleteGroup(g.id); refreshLists(); }); } },
       { label: 'Edit on a phone or computer…', sub: 'scan a QR code: rename, hide and sort with a real keyboard', action: function () { WebEdit.showJoin(); } }

@@ -30,12 +30,15 @@ const CODES = { play: [415, '▶❙❙ PLAY'], rew: [412, '◀◀ REW'], ff: [41
 
 // TB_LANG=ru node tests/soak/<test>.js: the same test with TiviBro in another language (for page errors
 // and layout; checks that read English text then fail, which is expected).
+const DEMO_VERSION = (() => { try { return require('child_process').execSync('git describe --tags --abbrev=0 --match "v*-*"', { cwd: ROOT }).toString().trim().replace(/^v/, ''); } catch (e) { return '0.6.0-alpha.1'; } })();
 function init(opts) {
   // Runs in the page before the app: fixed prime-time clock, demo data, and the key banner.
   return [`(() => {
     const OFF = ${opts.time} - Date.now(), RD = Date;
     class D extends RD { constructor(...a) { if (!a.length) super(RD.now() + OFF); else super(...a); } static now() { return RD.now() + OFF; } }
     window.Date = D;
+    // As a release reads (a checkout says 0.6.0, which hides the phone app): the newest tag.
+    Object.defineProperty(window, 'TIVIBRO_VERSION', { get: function () { return ${JSON.stringify(DEMO_VERSION)}; }, set: function () {}, configurable: true });
     window.close = function () { window.__exitTried = (window.__exitTried || 0) + 1; };   // Back twice must not end a recording
     ${opts.fresh ? `if (!sessionStorage.getItem('demoInit')) { localStorage.clear(); sessionStorage.setItem('demoInit', '1'); }` : `if (!sessionStorage.getItem('demoInit')) { localStorage.clear();
       localStorage.setItem('tivibro.settings', ${JSON.stringify(JSON.stringify(Object.assign({}, SETTINGS, process.env.TB_LANG ? { lang: process.env.TB_LANG } : {}, opts.settings || {})))});
@@ -94,7 +97,7 @@ function helpers(page) {
   const section = async (name, enter, silent) => {
     if ((await ev(() => Views.tab)) !== 'settings') await open('Settings', 1000);
     for (let i = 0; i < 8 && !(await ev(() => document.getElementById('setNav').classList.contains('active'))); i++) await quiet('Escape', 300);
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 26; i++) {
       const cur = await focusText('#setNav .on');
       if (cur === name) break;
       const names = await ev(() => [].map.call(document.querySelectorAll('#setNav > div'), d => d.innerText.trim()));
@@ -103,7 +106,7 @@ function helpers(page) {
     if (enter) { if (silent) await quiet('ArrowRight', 500); else await press('ArrowRight', name, 900); }
   };
   const row = async label => {
-    for (const dir of ['ArrowUp', 'ArrowDown']) for (let i = 0; i < 90; i++) { if ((await focusText('#setBody .opt.focus .ol')).indexOf(label) === 0) return; await quiet(dir, 50); }
+    for (const dir of ['ArrowUp', 'ArrowDown']) for (let i = 0; i < 160; i++) { if ((await focusText('#setBody .opt.focus .ol')).indexOf(label) === 0) return; await quiet(dir, 50); }
     throw new Error('no settings row: ' + label);
   };
   const pick = async (label, caption, wait) => {
@@ -361,38 +364,36 @@ if (require.main === module) (async () => {
     await seedReminders();
     await open('Settings', 2400);
     const bottom = async () => { for (let i = 0; i < 60; i++) await quiet('ArrowDown', 50); await page.waitForTimeout(400); };
-    // The eleven sections (Advanced view off, as most people see them), then the pages inside them.
-    const S = [['Playlists and accounts', 'playlists'], ['Guide', 'guide'], ['Channels and groups', 'groups'], ['Reminders and watchlist', 'reminders'],
-      ['Playback', 'playback'], ['Movies and shows', 'vod'], ['My media', 'media'], ['Appearance', 'look'], ['Parental controls', 'parental'], ['System', 'updates']];
+    // Every section (the second overhaul: 18, nothing more than one page down), then the pages that are left.
+    const S = [['Playlists and accounts', 'playlists'], ['Guide', 'guide'], ['Channels and groups', 'groups'], ['Channel and group names', 'names'],
+      ['Playback', 'playback'], ['Audio and subtitles', 'audio'], ['Recording and live pause', 'recording'], ['Remote and buttons', 'remote'],
+      ['Movies and shows', 'vod'], ['My media', 'my-media'], ['Reminders and watchlist', 'reminders'], ['Parental controls', 'parental'], ['Appearance', 'look'],
+      ['API keys', 'keys'], ['Backups and restore points', 'backups'], ['System', 'updates']];
     for (const [name, id] of S) {
       await section(name, true, true);
-      await page.waitForTimeout(300);
+      await page.waitForTimeout(id === 'backups' ? 1500 : 300);
       await shot('tv-set-' + id);
       if (id === 'playback' || id === 'groups' || id === 'guide') { await bottom(); await shot('tv-set-' + id + '-2'); }
       if (id === 'look') { await row('Theme'); await page.waitForTimeout(400); await shot('tv-set-look-2'); }
       if (id === 'updates') { await row('Report a problem'); await page.waitForTimeout(400); await shot('tv-set-diag'); }
+      // Each screen's buttons and the quick menu's, further down Remote and buttons.
+      if (id === 'remote') { await row('Hold OK'); await page.waitForTimeout(400); await shot('tv-set-remote-player'); await row('Sleep timer'); await page.waitForTimeout(400); await shot('tv-set-quick-menu'); }
     }
     const sub = async (sec, rowLabel, name, more) => { await section(sec, true, true); await row(rowLabel); await quiet('Enter', 900); if (more) await more(); await shot(name); };
-    const phoneRow = async () => { try { await row('Phone app and web editor'); } catch (e) { await row('Web editor'); } };
-    await sub('Channels and groups', 'Channel and group names', 'tv-set-names');
-    await sub('Playback', 'Remote and buttons', 'tv-set-remote');
-    await sub('Playback', 'Audio and subtitles', 'tv-set-audio');
-    await section('System', true, true); await row('Backups and restore points'); await quiet('Enter', 2000); await shot('tv-set-backups');
+    const phoneRow = async () => { try { await section('Phone app and web editor', true, true); } catch (e) { await section('Web editor', true, true); } };
     await section('System', true, true); await row('Fix a problem'); await quiet('Enter', 900); await shot('tv-set-fix');
-    await section('Playlists and accounts', true, true); await phoneRow(); await quiet('Enter', 900); await shot('tv-set-editor');
-    await section('Playback', true, true); await row('Remote and buttons'); await quiet('Enter', 900); await row('In the player'); await quiet('Enter', 900); await shot('tv-set-remote-player');
-    await section('Playback', true, true); await row('Remote and buttons'); await quiet('Enter', 900); await row('Quick menu buttons'); await quiet('Enter', 900); await shot('tv-set-quick-menu');
+    await phoneRow(); await page.waitForTimeout(500); await shot('tv-set-editor');
     await sub('Playlists and accounts', 'Demo provider', 'tv-set-playlist');
     await sub('Playlists and accounts', 'Demo provider', 'tv-set-playlist-2', bottom);
     await sub('Channels and groups', 'Manage groups', 'tv-set-manage-groups');
-    // The rows behind Advanced, for the pictures of them.
-    await page.evaluate(() => { Store.settings.advView = true; });
+    await sub('Channels and groups', 'Event channels', 'tv-set-events');
     await sub('System', 'What this TV can play', 'tv-set-caps');
     await section('System', true, true); await row('Run connection test'); await quiet('Enter', 200); await page.waitForTimeout(7000); await shot('tv-set-diag-test'); await quiet('Escape', 600);
     await section('System', true, true); await row('View app log'); await quiet('Enter', 1200); await shot('tv-set-diag-log'); await quiet('Escape', 600);
-    await page.evaluate(() => { Store.settings.advView = false; });
-    await page.evaluate(() => WebEdit.start()); await page.waitForTimeout(1500);
-    await section('Playlists and accounts', true, true); await phoneRow(); await quiet('Enter', 900); await page.waitForTimeout(800); await shot('tv-set-editor-on');
+    // The helper may still be starting: wait for it, then the editor (a picture without it is still taken).
+    await page.waitForFunction(() => window.Net && Net.port, null, { timeout: 20000 }).catch(() => {});
+    await page.evaluate(() => WebEdit.start().catch(() => {})); await page.waitForTimeout(1500);
+    await phoneRow(); await page.waitForTimeout(1300); await shot('tv-set-editor-on');
     await page.evaluate(() => WebEdit.stop()); await page.waitForTimeout(500);
   });
 
@@ -452,6 +453,7 @@ if (require.main === module) (async () => {
 
   // Every page of the web editor, as screenshots (1440x860).
   if (want('editor')) await editorShots(browser);
+  else if (want('feeds')) await feedsShot(browser);
 
   await browser.close();
 })();
@@ -524,6 +526,12 @@ async function dual(browser, name, opts, fn) {
 
 module.exports = { init, helpers, primeTime, SETTINGS, EDITS, APP, EDITOR, SHOTS, RAW };
 
+// Unsent work left on the TV by an earlier run: start clean.
+async function throwAway(ed) {
+  const b = ed.locator('#modal button', { hasText: 'Throw them away' });
+  if (await b.isVisible().catch(() => false)) { await b.click(); await ed.waitForTimeout(800); await ed.evaluate(() => document.getElementById('toast').classList.add('hidden')); }
+}
+
 // Every page of the web editor: a seeded TV in one tab, the editor in another (1440x860).
 async function editorShots(browser) {
   await stopEditor();
@@ -540,6 +548,7 @@ async function editorShots(browser) {
   const go = async p => { await ed.click('#nav [data-page=' + p + ']'); await ed.waitForTimeout(1200); };
   const close = async () => { await ed.keyboard.press('Escape'); await ed.waitForTimeout(400); };
   await ed.goto(EDITOR); await ed.fill('#pw', pw); await ed.click('#loginBtn'); await ed.waitForTimeout(2500);
+  await throwAway(ed);
   await snap('editor-overview');
   // Overview's "Clean up your guide" steps, with Skip and the fold button.
   await ed.evaluate(() => document.getElementById('stepsCard').scrollIntoView({ block: 'start' })); await snap('editor-steps');
@@ -606,6 +615,7 @@ async function feedsShot(browser) {
   const pw = await tv.evaluate(() => WebEdit.password());
   const ed = await (await browser.newContext({ viewport: { width: 1440, height: 860 }, timezoneId: 'America/Detroit' })).newPage();
   await ed.goto(EDITOR); await ed.fill('#pw', pw); await ed.click('#loginBtn'); await ed.waitForTimeout(2500);
+  await throwAway(ed);
   await ed.click('#nav [data-page=tools]'); await ed.waitForTimeout(1200);
   if (await ed.$('#lcQ')) {
     await ed.fill('#lcQ', 'mi'); await ed.waitForTimeout(400);

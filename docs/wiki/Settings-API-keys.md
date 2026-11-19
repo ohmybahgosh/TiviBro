@@ -4,6 +4,8 @@
 
 Every key you paste, in one place.  Typing them from the TiviBro phone app (Settings > API keys) is easiest: a phone keyboard and copy and paste.
 
+<p align="center"><a href="https://tivibro.app/view/#tv-set-keys"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-keys.png" width="60%" alt="API keys"></a></p>
+
 | Setting | Choices | What it does |
 |---|---|---|
 | **Add TMDB API token** | | Your free key or Read Access Token from themoviedb.org/settings/api, for movie and show details and posters (My media, Movies on now).  Then **Test TMDB token** and **Remove TMDB token**. |

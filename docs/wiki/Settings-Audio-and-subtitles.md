@@ -4,6 +4,8 @@
 
 Which audio track plays, sound the TV can't play, subtitles and captions, and subtitles from OpenSubtitles.
 
+<p align="center"><a href="https://tivibro.app/view/#tv-set-audio"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-audio.png" width="60%" alt="Audio and subtitles"></a></p>
+
 | Setting | Choices | What it does |
 |---|---|---|
 | **Audio language** | **The stream's own choice** · English · Spanish · French · German · and more | When a channel or movie has more than one audio track, tries this language, then the fallback language if you set one, else keeps the stream's own track.  This also applies to My media.  Language tags must be present in the file or stream.  Audio description tracks are skipped unless nothing else is in that language.  A track you pick from the quick menu wins until you change channel.  **Original language**: each movie's own language (TMDB), never a dub or a commentary. |

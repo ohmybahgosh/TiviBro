@@ -1990,5 +1990,7 @@ I18n.add('es', {
   "Pair the TiviBro app to use your phone as a remote, or edit groups, names and the guide from a computer.": "Empareja la app TiviBro para usar tu teléfono como mando, o edita grupos, nombres y la guía desde un ordenador.",
   "Edit groups, names and the guide from a computer.": "Edita grupos, nombres y la guía desde un ordenador.",
   "Paired": "Emparejado",
-  "Which buttons show when you press OK in fullscreen.  Buttons only appear when they apply, e.g. Audio needs two or more tracks.": "Qué botones aparecen al presionar OK en pantalla completa.  Los botones solo aparecen cuando aplican, p. ej. Audio necesita dos o más pistas."
+  "Which buttons show when you press OK in fullscreen.  Buttons only appear when they apply, e.g. Audio needs two or more tracks.": "Qué botones aparecen al presionar OK en pantalla completa.  Los botones solo aparecen cuando aplican, p. ej. Audio necesita dos o más pistas.",
+  "Hidden.  Restore it in Settings, Channels and groups, Hidden channels.": "Oculto.  Restáuralo en Configuración, Canales y grupos, Canales ocultos.",
+  "Hidden.  Restore it in Settings, Channels and groups, Hidden groups.": "Oculto.  Restáuralo en Configuración, Canales y grupos, Grupos ocultos."
 });

@@ -490,6 +490,9 @@ A backup holds every playlist with its login, your groups, favorites, names, gui
   <a href="https://tivibro.app/view/#tv-set-names"><img src="docs/screenshots/tv-set-names.png" width="32%" alt="Channel and group names"></a>
   <a href="https://tivibro.app/view/#tv-set-reminders"><img src="docs/screenshots/tv-set-reminders.png" width="32%" alt="Reminders and watchlist, with Coming up"></a>
   <a href="https://tivibro.app/view/#tv-set-playback"><img src="docs/screenshots/tv-set-playback.png" width="32%" alt="Playback"></a>
+  <a href="https://tivibro.app/view/#tv-set-audio"><img src="docs/screenshots/tv-set-audio.png" width="32%" alt="Audio and subtitles"></a>
+  <a href="https://tivibro.app/view/#tv-set-recording"><img src="docs/screenshots/tv-set-recording.png" width="32%" alt="Recording and live pause"></a>
+  <a href="https://tivibro.app/view/#tv-set-keys"><img src="docs/screenshots/tv-set-keys.png" width="32%" alt="API keys"></a>
   <a href="https://tivibro.app/view/#tv-set-my-media"><img src="docs/screenshots/tv-set-my-media.png" width="32%" alt="My media"></a>
   <a href="https://tivibro.app/view/#tv-set-remote"><img src="docs/screenshots/tv-set-remote.png" width="32%" alt="Remote and buttons"></a>
   <a href="https://tivibro.app/view/#tv-set-look"><img src="docs/screenshots/tv-set-look.png" width="32%" alt="Appearance"></a>

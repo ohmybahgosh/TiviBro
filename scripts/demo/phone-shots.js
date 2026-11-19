@@ -34,7 +34,7 @@ const calm = ed => ed.evaluate(() => { const b = [].slice.call(document.querySel
   await shot(x.ed, 'editor-phone-welcome');
   await x.ed.evaluate(() => show('playlists')); await x.ed.waitForTimeout(800);
   await x.ed.evaluate(() => { const f = document.getElementById('addForm'); if (f) f.scrollIntoView({ block: 'start' }); window.scrollBy(0, -70); });
-  await x.ed.click('#addSeg [data-t=xtream]'); await x.ed.waitForTimeout(300);   // Full link is the first tab
+  await x.ed.evaluate(() => { const t = document.querySelector('#addSeg [data-t=xtream]'); if (t) t.click(); }); await x.ed.waitForTimeout(300);   // Full link is the first tab (a click, as on a narrow screen the tabs scroll)
   await x.ed.fill('#aServer', 'http://my.provider.example:8080'); await x.ed.focus('#aServer'); await x.ed.waitForTimeout(500);
   await shot(x.ed, 'editor-phone-add');
   // The demo playlist: Smart clean-up.

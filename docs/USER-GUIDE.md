@@ -1010,6 +1010,8 @@ How channels start, how much video TiviBro holds, which player it uses, and what
 
 Which audio track plays, sound the TV can't play, subtitles and captions, and subtitles from OpenSubtitles.
 
+<p align="center"><a href="https://tivibro.app/view/#tv-set-audio"><img src="screenshots/tv-set-audio.png" width="60%" alt="Audio and subtitles"></a></p>
+
 | Setting | Choices | What it does |
 |---|---|---|
 | **Audio language** | **The stream's own choice** · English · Spanish · French · German · and more | When a channel or movie has more than one audio track, tries this language, then the fallback language if you set one, else keeps the stream's own track.  This also applies to My media.  Language tags must be present in the file or stream.  Audio description tracks are skipped unless nothing else is in that language.  A track you pick from the quick menu wins until you change channel.  **Original language**: each movie's own language (TMDB), never a dub or a commentary. |
@@ -1036,6 +1038,8 @@ Which audio track plays, sound the TV can't play, subtitles and captions, and su
 ### Settings: Recording and live pause
 
 Recording to a USB drive in the TV, pausing live TV, and the rewind buffer.  How they work is in [Recording, live pause and rewind](#recording-live-pause-and-rewind).
+
+<p align="center"><a href="https://tivibro.app/view/#tv-set-recording"><img src="screenshots/tv-set-recording.png" width="60%" alt="Recording and live pause"></a></p>
 
 | Setting | Choices | What it does |
 |---|---|---|
@@ -1093,6 +1097,8 @@ Actions you can give a button in the player: nothing, quick menu, channel guide 
 ### Settings: Movies and shows
 
 The Movies and Shows screens, and the TMDB details for them and the guide.
+
+<p align="center"><a href="https://tivibro.app/view/#tv-set-vod"><img src="screenshots/tv-set-vod.png" width="60%" alt="Movies and shows"></a></p>
 
 | Setting | Choices | What it does |
 |---|---|---|
@@ -1239,6 +1245,8 @@ Which screen TiviBro opens on, where the lists start, colours, sizes and what's 
 
 Every key you paste, in one place.  Typing them from the TiviBro phone app (Settings > API keys) is easiest: a phone keyboard and copy and paste.
 
+<p align="center"><a href="https://tivibro.app/view/#tv-set-keys"><img src="screenshots/tv-set-keys.png" width="60%" alt="API keys"></a></p>
+
 | Setting | Choices | What it does |
 |---|---|---|
 | **Add TMDB API token** | | Your free key or Read Access Token from themoviedb.org/settings/api, for movie and show details and posters (My media, Movies on now).  Then **Test TMDB token** and **Remove TMDB token**. |
@@ -1272,6 +1280,8 @@ Your version, new versions from GitHub, and finding out what's wrong.  See [Upda
 **Fix a problem** (the first row) lists the common problems: channels freeze or buffer, a channel won't play, no guide or the wrong programmes, no sound or the wrong language, subtitles or captions, movies or shows missing, TiviBro closed by itself or is slow.  Each says what to try first, and lists the settings that matter for it: OK on one goes straight to that setting.
 
 <p align="center"><a href="https://tivibro.app/view/#tv-set-updates"><img src="screenshots/tv-set-updates.png" width="60%" alt="System"></a></p>
+
+<p align="center"><a href="https://tivibro.app/view/#tv-set-fix"><img src="screenshots/tv-set-fix.png" width="60%" alt="Fix a problem"></a></p>
 
 | Setting | Choices | What it does |
 |---|---|---|

@@ -4,6 +4,8 @@
 
 Recording to a USB drive in the TV, pausing live TV, and the rewind buffer.  How they work is in [Recording, live pause and rewind](Recording-live-pause-and-rewind).
 
+<p align="center"><a href="https://tivibro.app/view/#tv-set-recording"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-recording.png" width="60%" alt="Recording and live pause"></a></p>
+
 | Setting | Choices | What it does |
 |---|---|---|
 | **Open Recordings** | (button) | The Recordings screen: what's recording, scheduled and recorded. |
