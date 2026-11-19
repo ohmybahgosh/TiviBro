@@ -1542,6 +1542,7 @@ var Views = (function () {
     var el = $('tsCard');
     if (!c) { if (el) el.classList.add('hidden'); return; }
     if (!el) { el = U.el('div', 'ts-card hidden'); el.id = 'tsCard'; stage.appendChild(el); }
+    if (full) stage.classList.remove('off');             // paused in fullscreen: the card shows, whatever screen it came from
     var logo = logoOf(c);
     el.innerHTML = '';
     if (logo) { var im = U.el('img', 'ts-logo'); im.src = logo; im.onerror = function () { im.remove(); }; el.appendChild(im); }
@@ -2475,9 +2476,10 @@ var Views = (function () {
   }
   function pipUpdate() {
     ['viewSettings', 'viewSearch'].forEach(function (id) { var e = $(id); if (e) e.classList.toggle('pip', tab === (id === 'viewSearch' ? 'search' : 'settings') && pipOK()); });
+    if (full) return;                    // fullscreen (from Settings or Search): the corner box waits, the picture stays
     var on = pipTab() && pipOK(), v = tab === 'search' ? searchNow() : $('viewSettings');
     if (!v) return;
-    if (!on) { if (pipTab()) stage.classList.add('off'); return; }
+    if (!on) { if (pipTab() && !full) stage.classList.add('off'); return; }
     var c = playing, nn = Epg.nowNext ? Epg.nowNext(c) : null, now = nn && nn.now, box = v.querySelector('.set-now-info');
     var lines = [['sn-l', T(mode === 'catchup' ? 'Catch-up' : 'Now playing')], ['sn-c', (c.num ? c.num + '  ' : '') + L.name(c)]];
     if (now && mode === 'live') lines.push(['sn-p', now.t + '   ' + U.hhmm(now.s) + '–' + U.hhmm(now.e)]);

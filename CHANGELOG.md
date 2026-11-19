@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 168, 2026-11-18)
+
+Pre-release: expect rough edges, and keep a backup before installing.  Scheduled recordings need the TV on (or woken by its own timer).
+
+### New in alpha 168
 
 - **Recording to a USB drive (first version, discussion #94).**  Hold OK on a programme in the guide > **Record**: one on now records from now until it ends, a later one is scheduled (two minutes before to five after).  In fullscreen, the quick menu has **Record** and **Stop recording**.  The guide marks a programme being recorded with a red dot (a ring when it's scheduled).  Recording needs a rooted TV: webOS keeps USB drives out of a developer-mode app's reach, and the Homebrew Channel lets TiviBro's helper in.  It runs in the background, without decoding, as long as the TV is on.  Recordings go in a "TiviBro Recordings" folder on the drive, split into 3.9 GB parts that play as one.  A channel is recorded as HLS when it has it (a missed piece is fetched again), and as MPEG-TS otherwise.  Encrypted HLS and DRM channels can't be recorded yet.
 - **Recordings screen**, in the side menu once a USB drive is in: Recording now, Scheduled, Recorded and Didn't record, with the drive's free space.  A show recorded more than once is one row that opens to its recordings.  OK watches from where you left off, with the length on the seek bar.  Hold OK or Red: watch from the start, stop, cancel, delete, or select several to delete at once.  With a TMDB token, a recording gets its poster, backdrop and plot (else the guide's description).  Watching one that's still recording, yellow goes to the channel live.
@@ -10,14 +14,16 @@
 - **Settings > Playback > Recording and live pause:** the drive and its room, how early a recording starts and how long it keeps going after (2 and 5 minutes at first), delete watched recordings, and the pause and rewind buffer settings.  **● REC** on LG remotes that have it records what's on (in the guide, the programme you're on), and any button can be set to Record or Recordings.
 - **Go back to an earlier version** (Settings > System, rooted TVs): an earlier release, checked and installed like an update, with your settings and edits saved first and put back with one press after you update again.
 - **The "not playing" mark now says "didn't play the last 2 times"**, and a provider that's down or refusing everyone (like a 418) no longer marks the channels tried during the outage.
+- **Timeline in the player (like TiviMate):** while the channel is paused, buffered or recording, ▲ shows a dot on the progress bar where you are, with what's kept and what's recorded marked on it.  ◀ ▶ move the dot and the time it points to, OK watches from there (live, the kept part, the recording or catch-up), and Back cancels.
+- **Forward** joins Rewind: a button can be set to it, and the quick menu has it when you're behind live.
+- **No REC button needed.**  On a Magic Remote, OK in fullscreen opens the quick menu with Pause and Record first, and the info bar's hints say which buttons rewind, go forward and go back to live.
+- **Fewer connections to your provider:** going back to live waits for the paused copy to let go of its connection, and a pause copy nobody uses lets go after 30 seconds (was 90).
+- The info bar's progress bar is full width again when a channel starts.
+- Fullscreen started from Settings no longer loses its picture after a few seconds.
 - Recording carries on if TiviBro closes or crashes, and the recording helper is started again within a minute if it stops while a recording is due.  Pause buffers left by a crash are cleared at the next start.
 - **Try again and Start over keep the player a channel plays on**: a channel that plays as HLS (its chosen format, or it played better that way) went back to MPEG-TS, and some providers hang up on that within a minute.
 
-## 0.6.0 (alpha 167, 2026-11-18)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 167
+### In alpha 167
 
 - **A show you're part-way through has its progress bar on every shelf**, not only Next up on the TV shows tab.  Cunk on Cinema, paused on Plex and brought in by Trakt, showed its bar in Next up but not in Home's Recently watched (Trakt).
 - **Home's Continue watching puts what you watched last first**, movies and shows together.  Shows used to come after every movie, so an episode you just paused was at the far end of the row.
