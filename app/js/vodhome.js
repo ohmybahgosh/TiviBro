@@ -205,10 +205,13 @@ var VodHome = (function () {
     if (!it) { backdrop(''); box.appendChild(U.el('h1', 'media-title', kind === 'series' ? 'Shows' : 'Movies')); box.appendChild(U.el('p', 'media-summary', A.data() ? 'Nothing to show yet.  Green opens All categories.' : (A.loading && A.loading()) || 'Loading…')); return; }
     var d = A.details(it, quick ? null : function (x) { if (current() === it) hero(true); }) || {};
     backdrop(d.backdrop || '');
-    if (s) box.appendChild(U.el('div', 'media-kicker', s.title));
+    // A shelf of several categories (Recently added, Continue watching, My list, TMDB's lists): the title's own
+    // category up top beside the shelf's name, where it's seen (discussion #60: "on Home the category is not shown").
+    var cn = A.catName(it);
+    if (s) box.appendChild(U.el('div', 'media-kicker', s.title + (cn && !s.cat ? '  ·  ' + cn : '')));
     if (d.logo) { var lg = U.el('img', 'media-logo'); lg.alt = it.name; lg.onerror = function () { if (lg.parentNode) { lg.parentNode.insertBefore(U.el('h1', 'media-title', it.name), lg); lg.parentNode.removeChild(lg); } }; lg.src = wrap(d.logo); box.appendChild(lg); }
     else box.appendChild(U.el('h1', 'media-title', it.name));
-    box.appendChild(U.el('div', 'media-facts', [d.year || yearOf(it), d.dur, d.genre, A.stars(it) || (d.rating ? '★ ' + d.rating : ''), d.media, it.lang, A.catName(it)].filter(Boolean).join('   ·   ')));
+    box.appendChild(U.el('div', 'media-facts', [d.year || yearOf(it), d.dur, d.genre, A.stars(it) || (d.rating ? '★ ' + d.rating : ''), d.media, it.lang, s && !s.cat ? '' : cn].filter(Boolean).join('   ·   ')));
     if (d.plot) box.appendChild(U.el('p', 'media-summary', d.plot));
     var line = A.where(it) || [d.cast ? 'Cast: ' + d.cast : '', d.director ? 'Director: ' + d.director : ''].filter(Boolean).join('   ·   ');
     if (line) box.appendChild(U.el('div', 'media-caption', line));
@@ -234,7 +237,8 @@ var VodHome = (function () {
   function drawWall() {
     var box = $('vodWall'), rows = Math.ceil(wall.items.length / WALL_COLS), r = Math.floor(wallAt / WALL_COLS);
     $('vodWallHead').innerHTML = '';
-    $('vodWallHead').appendChild(U.el('div', 'media-kicker', (kind === 'series' ? 'Shows' : 'Movies') + '  ›  ' + wall.title));
+    var wcn = !wall.cat && wall.items[wallAt] ? A.catName(wall.items[wallAt]) : '';   // a mixed wall: the focused title's category
+    $('vodWallHead').appendChild(U.el('div', 'media-kicker', (kind === 'series' ? 'Shows' : 'Movies') + '  ›  ' + wall.title + (wcn ? '  ·  ' + wcn : '')));
     $('vodWallHead').appendChild(U.el('h1', 'media-title', wall.title));
     $('vodWallHead').appendChild(U.el('div', 'media-facts', count(wall.items.length, '1 ' + word(), '{n} ' + word() + 's') + (wall.id.indexOf('tmdb:') && wall.id.indexOf('holiday:') && wall.id !== 'recent' && wall.id !== 'continue' ? '   ·   ' + sortName() : '')));
     var first = Math.max(0, Math.min(r - 1, rows - 2)), need = Math.min(rows, first + 3) - first, n = need * WALL_COLS;

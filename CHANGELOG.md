@@ -6,6 +6,7 @@ Pre-release: expect rough edges, and keep a backup before installing.
 
 ### New in alpha 174
 
+- **The Movies and Shows home names each title's category** beside the shelf's name on Recently added, Continue watching, My list and the other mixed shelves, and on their poster walls (discussion #60).
 - **Your problem reports list the open ones first**, with the closed ones under their own heading (discussion #101).
 - **Fixed now, for your problem reports (discussion #121).**  A report sent from the TV now has **Fixed now** next to Still happening (on the report's note and in Settings > System > Your problem reports): it tells the developer it works on your version, with a note if you like, and closes the report.  Still happening opens it again if it comes back.
 - **◀ set to Last channel now says so on the info bar (issue #128).**  With Settings > Playback > ◀ on a live channel with catch-up set to Last channel, the hint still read "◀  Rewind" on catch-up channels.
