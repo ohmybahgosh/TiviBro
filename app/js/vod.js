@@ -256,10 +256,15 @@ var Vod = (function () {
     if (rk && again) return Promise.resolve(view(k, rk, p));
     // A Stalker portal: how big first.  Over BIG titles it's browsed by category, not read whole (issue #118).
     if (p.type === 'stalker' && helped(p) && sources(k).length <= 1) {
-      return U.getJSON(Source.api(p, 'count', '&kind=' + k), 30000).then(function (j) {
-        var n = +(j && j.total) || 0;
-        return n > bigPortal() ? browse(k, p, n) : full();
-      }, function () { return full(); });
+      var fresh = wantFresh(k, p);
+      return (fresh ? Promise.resolve(null) : Store.bigGet(browseKey(k, p)).catch(function () { return null; })).then(function (c) {
+        var kept = keptBrowse(k, p, c);
+        if (kept) return kept;
+        return U.getJSON(Source.api(p, 'count', '&kind=' + k), 30000).then(function (j) {
+          var n = +(j && j.total) || 0;
+          return n > bigPortal() ? browse(k, p, n).then(function (d) { saveBrowse(k, d); return d; }) : full();
+        }, function () { return full(); });
+      });
     }
     return full();
     function full() {
@@ -303,6 +308,30 @@ var Vod = (function () {
       return { browse: true, p: p, at: Date.now(), cats: cats, items: items, recent: items.slice(), langs: {}, keep: null, total: total, adultCat: adultCat, catItems: {}, catOrder: [] };
     }, function (e) { stop(); throw e; });
   }
+  /* A big portal's categories, newest titles and the categories read so far, kept on the TV (issue #118: "after
+     the update all movies and series scanning again").  Used again for as long as the playlist's refresh says
+     (a day when it has none), unless the playlist was just loaded again from the provider. */
+  function browseKey(k, p) { return 'vodbrowse:' + String(p.id).replace(/[^A-Za-z0-9_-]/g, '') + ':' + k; }
+  function browseAge(p) { var h = +p.plRefresh; return (h > 0 ? h : 24) * 3600e3; }
+  function keptBrowse(k, p, c) {
+    if (!c || c.v !== 1 || c.sig !== Source.sig(p) || !Array.isArray(c.cats) || !(Date.now() - c.at < browseAge(p))) return null;
+    var items = (c.recent || []).slice(), have = {};
+    items.forEach(function (it) { have[it.id] = 1; });
+    (c.catOrder || []).forEach(function (cid) { (c.catItems[cid] || []).forEach(function (it) { if (!have[it.id]) { have[it.id] = 1; items.push(it); } }); });
+    Log.info('vod', 'A big portal: its ' + (k === 'series' ? 'shows' : 'movies') + ' as kept on the TV (' + Math.round((Date.now() - c.at) / 60000) + ' min old), no new read');
+    return { browse: true, p: p, at: c.at, cats: c.cats, items: items, recent: c.recent || [], langs: {}, keep: null, total: c.total, adultCat: c.adultCat || {}, catItems: c.catItems || {}, catOrder: c.catOrder || [] };
+  }
+  var saveT = {};
+  function saveBrowse(k, d) {
+    if (!d || !d.browse || !d.p) return;
+    var key = browseKey(k, d.p);
+    clearTimeout(saveT[key]);
+    saveT[key] = setTimeout(function () {
+      var ci = {}, order = d.catOrder.filter(function (cid) { return Array.isArray(d.catItems[cid]); });
+      order.forEach(function (cid) { ci[cid] = d.catItems[cid]; });
+      Store.bigSet(key, { v: 1, sig: Source.sig(d.p), at: d.at, cats: d.cats, recent: d.recent, total: d.total, adultCat: d.adultCat, catItems: ci, catOrder: order });
+    }, 3000);
+  }
   // Xtream-shaped titles from the helper to the app's own items.
   function rowsOf(k, list, adultCat) {
     return (list || []).map(function (x) {
@@ -330,6 +359,7 @@ var Vod = (function () {
         delete d.catItems[gone];
         d.items = d.items.filter(function (it) { return !drop[it.id] || d.recent.indexOf(it) >= 0; });
       }
+      saveBrowse(k, d);
       Log.info('vod', 'Category ' + cid + ': ' + items.length + (items.length >= CAT_MAX ? ' (the newest ' + CAT_MAX + ')' : '') + ' ' + (k === 'series' ? 'shows' : 'movies'));
       if (kind === k && data[k] === d && catsVL) {
         var c = catsVL.current(), cl = catList();

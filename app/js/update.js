@@ -164,6 +164,15 @@ var Update = (function () {
     if (c && c.latest && compare(c.latest.version, current()) > 0 && c.latest.sha256) set({ state: 'available', latest: c.latest, checked: c.checked });
     clearInterval(timer);
     timer = setInterval(function () { if (auto() && Date.now() - ((load() || {}).checked || 0) >= EVERY) check(true).catch(function () {}); }, 30 * 60000);
+    /* Brought back to the front (Android keeps an app in the background for days; webOS too, when TiviBro was
+       left open): look again when the last look is over an hour old (Bob's phone saw alpha 171 only after a
+       force stop). */
+    if (!autoCheck.vis && typeof document !== 'undefined' && document.addEventListener) {
+      autoCheck.vis = true;
+      document.addEventListener('visibilitychange', function () {
+        if (!document.hidden && auto() && Date.now() - ((load() || {}).checked || 0) >= 3600e3) check(true).catch(function () {});
+      });
+    }
     if (!auto()) return;
     atLaunch = true;
     setTimeout(function () { check(true).then(function () { atLaunch = false; }); }, 10000);

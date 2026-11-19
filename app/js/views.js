@@ -1056,7 +1056,11 @@ var Views = (function () {
       if (v && v.onExit) v.onExit();
       return;
     }
-    if (tsh && mode === 'live') { var tpc = tsh.c; tsEnd(); if (playing && playing.k === tpc.k) { Player.stop(); afterTs(function () { if (playing && playing.k === tpc.k && !full) startChannel(tpc, true); }); } }
+    /* The rewind buffer keeps playing in the guide's (or Channels') window: before, it was stopped and the channel
+       tuned again from the provider every time you left fullscreen (Bob), and fullscreen again started a new
+       buffer.  A pause you made yourself still ends here, back to live. */
+    if (tsh && tsh.always && mode === 'live' && playing && tsh.c.k === playing.k && fullFrom !== 'onnow' && fullFrom !== 'media') { tsCard(null); if (Player.paused && Player.setPaused) Player.setPaused(false); }
+    else if (tsh && mode === 'live') { var tpc = tsh.c; tsEnd(); if (playing && playing.k === tpc.k) { Player.stop(); afterTs(function () { if (playing && playing.k === tpc.k && !full) startChannel(tpc, true); }); } }
     // Back to Movies on now (or My media, after a movie on a live channel): no window for the picture, so the channel stops.
     if (fullFrom === 'onnow' || fullFrom === 'media') {
       mode = 'live'; cu = null; Player.stop();
@@ -1799,7 +1803,8 @@ var Views = (function () {
     if (slowOpen && (s === 'playing' || playing !== slowOpen)) { slowOpen = null; if (UI.modalOpen) UI.close(); }
     if (s === 'playing' || s === 'error' || s === 'idle') stage.classList.remove('blank');
     spin.classList.toggle('hidden', !(s === 'loading' || s === 'buffering'));
-    spinText.textContent = s === 'loading' ? (msg || 'Tuning') : (msg || 'Buffering');
+    // "Tuning" is a channel's word: a movie, an episode, a recording or My media is "Loading" (Bob).
+    spinText.textContent = s === 'loading' ? (msg || (mode === 'vod' ? 'Loading' : 'Tuning')) : (msg || 'Buffering');
     spinPlain = s === 'buffering' && (!msg || msg === 'Buffering');
     verr.classList.toggle('hidden', s !== 'error');
     if (s === 'error') verr.textContent = msg;
