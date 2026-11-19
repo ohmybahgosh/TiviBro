@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 176, 2026-11-19)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 176
 
 - **Settings, flatter: nothing is more than one page down.**  Things that took two or three pages to reach (Playback > Recording and live pause > Remote and buttons > In the player) are now in reach at once.  Six pages became sections of their own in the menu: **Channel and group names**, **Audio and subtitles**, **Recording and live pause**, **Remote and buttons**, **API keys** and **Backups and restore points**.  Your guide sources and public fill-in, each screen's buttons, My media's display and Trakt, and every problem under Fix a problem are on their page instead of behind another row.  A page's advanced settings sit at its bottom under an **Advanced** heading, so the Advanced view switch is gone.  The TMDB token and the OpenSubtitles key live only under API keys; other places take you there.  The phone app and the web editor show the same sections, and a row that leads to another section opens it there.  No setting changed its value.
 - **OK behind live does what it's set to.**  Rewound or paused live TV ignored your OK button and always paused; now OK opens the quick menu (or whatever it's set to), which starts with Pause.
@@ -9,11 +13,7 @@
 - **The quick menu's Timeline button fits its card** (its "move back and forth" ran off the bottom): it shows ◀ ▶, and a button's second line never wraps out of its card.
 - **My teams says in the log when a reminder is dropped because its listing is a replay.**
 
-## 0.6.0 (alpha 175, 2026-11-19)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 175
+### In alpha 175
 
 - **Recordings in the phone app.**  A new **Recordings** tile on the TV's card (red while something records) lists what's on the TV's USB drive, as the TV's Recordings screen does: the drive's room, Recording now, Scheduled, Recorded and Didn't record.  Watch one on the TV (where you left off, or from the start), stop or cancel one, or delete it.  Record from the phone too: **Record** on a programme in the Guide (on now records to its end, later is scheduled), and **Record now** when you press and hold a channel.  Needs this TiviBro on the TV and the new phone app.
 - **My teams no longer keeps reminders for games that aren't on.**  A reminder whose listing turned out to be a replay (NHL Network's afternoon encore of a game) or whose event channel went Offline with nothing in its guide is dropped, unless the game is found on another channel.
