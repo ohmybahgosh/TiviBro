@@ -1867,5 +1867,10 @@ I18n.add('ru', {
   "Tick the ones to delete with OK": "Отметьте OK то, что нужно удалить",
   "Resuming at {t}": "Продолжаем с {t}",
   "tick or untick": "отметить или снять",
-  "done": "готово"
+  "done": "готово",
+  "Rewind buffer": "Буфер перемотки",
+  "Keeps the channel you watch fullscreen on the USB drive the whole time, so \u25c0 goes back to something you just missed without pausing first (like a DVR).  Channels start a second or two slower, and the drive is written all the time.  Needs Pause live TV to a USB drive.": "Канал, который вы смотрите на весь экран, всё время сохраняется на USB-накопитель, поэтому ◀ возвращает к пропущенному без паузы (как DVR).  Каналы запускаются на секунду-две дольше, а накопитель записывается постоянно.  Нужна Пауза эфира на USB-накопитель.",
+  "30 min": "30 мин",
+  "1 hour": "1 час",
+  "2 hours": "2 часа"
 });

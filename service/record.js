@@ -29,7 +29,7 @@
      /record/ts/...                           live pause (timeshift.js)
    Plain ES5 and callbacks for Node 0.12 (webOS 4). */
 'use strict';
-var http = require('http'), fs = require('fs'), path = require('path'), URL_ = require('url'), TS = require('./timeshift');
+var http = require('http'), fs = require('fs'), path = require('path'), URL_ = require('url'), TS = require('./timeshift'), Feed = require('./feed');
 
 var ROOTS = process.env.TIVIBRO_USB_DIR ? [process.env.TIVIBRO_USB_DIR] : ['/tmp/usb'];
 var AGENT = process.env.TIVIBRO_REC_AGENT === '1', AGENT_PORT = +(process.env.TIVIBRO_REC_AGENT_PORT || 47820);
@@ -43,7 +43,7 @@ function agentKey() {
   return agentCtl;
 }
 var FOLDER = 'TiviBro Recordings', PART_MAX = +(process.env.TIVIBRO_REC_PART_MAX || 3900 * 1024 * 1024);
-var RETRY_MS = +(process.env.TIVIBRO_REC_RETRY_MS || 3000), TICK_MS = +(process.env.TIVIBRO_REC_TICK_MS || 15000), BODY_MAX = 64 * 1024;
+var TICK_MS = +(process.env.TIVIBRO_REC_TICK_MS || 15000), BODY_MAX = 64 * 1024;
 
 var state = null, run = {}, logf = function () {}, timer = null, listFile = '';
 
@@ -162,6 +162,8 @@ function getText(u, cb) {
 // A playlist by its type, or by its name when the type says nothing useful (a .m3u8 that answers video/mp2t is a stream).
 function isPlaylist(res, u) { var ct = res.headers['content-type'] || ''; return /mpegurl/i.test(ct) || (/\.m3u8(\?|$)/i.test(u) && !/^video\/|octet-stream/i.test(ct)); }
 
+Feed.setup({ get: get, getText: getText, fetchAll: function (u, cb) { fetchAll(u, cb); }, isPlaylist: isPlaylist, log: function (o) { logf(o); } });
+
 /* ---------- writing ---------- */
 function openPart(r, R) {
   if (R.out) { try { R.out.end(); } catch (e) {} }
@@ -180,6 +182,8 @@ function write(r, R, buf) {
 }
 
 /* ---------- a recording ---------- */
+/* What arrives on the channel's feed (feed.js: one connection to the provider per channel, shared with live pause
+   of the same channel), written as it comes. */
 function begin(r) {
   if (run[r.id]) return;
   var drive = r.drive, all = drives();
@@ -188,94 +192,30 @@ function begin(r) {
   var sp = space(drive);
   if (sp.freeMB >= 0 && sp.freeMB < LOW_MB) return fail(r, 'the USB drive is full');
   var fdir; try { fdir = folderOn(drive); } catch (e) { return fail(r, driveError(e)); }
-  var R = run[r.id] = { dir: fdir, out: null, req: null, stopped: false, seen: {}, init: null };
+  var R = run[r.id] = { dir: fdir, out: null, stopped: false, init: null };
   r.driveName = path.basename(drive); r.status = 'recording'; r.startedAt = r.startedAt || Date.now();
   note('info', 'recording started', { title: r.title, drive: r.driveName });
-  connect(r, R);
-  save();
-}
-function connect(r, R) {
-  if (R.stopped) return;
-  R.req = get(r.url, function (e, res, at) {
-    if (R.stopped) { if (res) res.resume(); return; }
-    if (e || res.statusCode !== 200) {
-      if (res) res.resume();
-      // HLS first (a dropped piece is fetched again), the channel's other format when that never started.
-      if (r.alt && !r.bytes && !R.swapped) { R.swapped = true; var u0 = r.url; r.url = r.alt; r.alt = u0; note('info', 'recording: the other format', { title: r.title, e: e ? e.message : 'HTTP ' + res.statusCode }); return connect(r, R); }
-      return again(r, R, e ? e.message : 'HTTP ' + res.statusCode);
-    }
-    back(r, R);
-    if (isPlaylist(res, at)) { res.resume(); return hls(r, R, at); }
-    if (!r.kind) r.kind = 'ts';
-    if (!R.out) openPart(r, R);
-    res.on('data', function (c) { if (!write(r, R, c)) { res.pause(); R.out.once('drain', function () { res.resume(); }); } });
-    res.on('end', function () { again(r, R, 'the provider closed the stream'); });
-    res.on('error', function (e2) { again(r, R, e2.message); });
+  R.feed = Feed.open(r.key || r.url, r.url, r.alt, {
+    kind: function (k) { if (!r.bytes) r.kind = k; },
+    init: function (b) { R.init = b; },
+    data: function (c) { if (R.stopped) return; if (!R.out) openPart(r, R); write(r, R, c); },
+    piece: function (pc) { if (R.stopped) return; if (!pc.buf) { r.gaps = (r.gaps || 0) + 1; return; } if (!R.out) openPart(r, R); write(r, R, pc.buf); },
+    down: function (why) {
+      r.gaps = (r.gaps || 0) + 1;
+      if (!R.downSince) R.downSince = Date.now();
+      if (r.gaps === 1 || r.gaps % 10 === 0) note('warn', 'recording reconnecting', { title: r.title, e: why, gaps: r.gaps });
+    },
+    up: function () { back(r, R); },
+    fatal: function (why) { fail(r, why); },
+    ended: function () { finish(r); }
   });
-}
-function again(r, R, why) {
-  if (R.stopped) return;
-  if (Date.now() >= r.end) return finish(r);
-  r.gaps = (r.gaps || 0) + 1;
-  if (!R.downSince) R.downSince = Date.now();
-  // Slower each time until data arrives again (3, 6, 12 ... 30 s): a provider blocks an account that asks every few seconds.
-  R.fails = (R.fails || 0) + 1;
-  var ms = Math.min(30000, RETRY_MS * Math.pow(2, R.fails - 1));
-  if (r.gaps === 1 || r.gaps % 10 === 0) note('warn', 'recording reconnecting', { title: r.title, e: why, gaps: r.gaps, inMs: ms });
-  R.retry = setTimeout(function () { connect(r, R); }, ms);
+  if (R.feed.shared) note('info', 'recording: sharing the channel\'s connection', { title: r.title });
+  R.endT = setTimeout(function () { if (run[r.id] === R) finish(r); }, Math.max(0, r.end - Date.now()));
+  save();
 }
 // Connected again: the time it was down doesn't count in its length.
 function back(r, R) { if (R.downSince) { r.down = (r.down || 0) + (Date.now() - R.downSince); R.downSince = 0; } }
-/* HLS: the playlist, again and again; each new piece once, in order. */
-function hls(r, R, u) {
-  getText(u, function (e, text) {
-    if (R.stopped) return;
-    if (e) return again(r, R, e.message);
-    if (!/^\s*#EXTM3U/.test(text)) {
-      // Not a playlist after all: the other format, or again later.
-      if (r.alt && !r.bytes && !R.swapped) { R.swapped = true; var u0 = r.url; r.url = r.alt; r.alt = u0; note('info', 'recording: the other format', { title: r.title, e: 'not a playlist' }); return connect(r, R); }
-      return again(r, R, 'the provider\'s answer wasn\'t a playlist');
-    }
-    var lines = text.split(/\r?\n/), best = null, bw = -1;
-    for (var i = 0; i < lines.length; i++) {
-      var m = /^#EXT-X-STREAM-INF:(.*)$/.exec(lines[i]);
-      if (m) { var b = +((/BANDWIDTH=(\d+)/.exec(m[1]) || [])[1]) || 0, next = (lines[i + 1] || '').trim(); if (next && b > bw) { bw = b; best = next; } }
-    }
-    if (best) return hls(r, R, URL_.resolve(u, best));                 // a master playlist: its best quality
-    if (/#EXT-X-KEY:METHOD=(?!NONE)/.test(text)) return fail(r, 'this channel is encrypted HLS, which TiviBro can\'t record yet');
-    var seq = +((/#EXT-X-MEDIA-SEQUENCE:(\d+)/.exec(text) || [])[1]) || 0, target = +((/#EXT-X-TARGETDURATION:(\d+)/.exec(text) || [])[1]) || 6;
-    var map = (/#EXT-X-MAP:.*URI="([^"]+)"/.exec(text) || [])[1], segs = [];
-    lines.forEach(function (l) { l = l.trim(); if (l && l.charAt(0) !== '#') segs.push(l); });
-    if (!r.kind) r.kind = map ? 'mp4' : 'ts';
-    var queue = [];
-    segs.forEach(function (s, k) { var n = seq + k; if (!R.seen[n]) queue.push({ n: n, u: URL_.resolve(u, s) }); });
-    // The first look: only the newest few pieces (live, not the whole window behind).
-    if (R.lastSeq == null && queue.length > 3) queue = queue.slice(-3);
-    var ended = /#EXT-X-ENDLIST/.test(text);
-    (function initThen(go) {
-      if (!map || R.init) return go();
-      fetchAll(URL_.resolve(u, map), function (e2, buf) { if (e2) return again(r, R, 'init: ' + e2.message); R.init = buf; go(); });
-    })(function () {
-      if (!R.out) openPart(r, R);
-      (function step() {
-        if (R.stopped) return;
-        if (Date.now() >= r.end) return finish(r);
-        var s = queue.shift();
-        if (!s) {
-          if (ended) return finish(r);
-          R.poll = setTimeout(function () { hls(r, R, u); }, Math.max(1000, target * 500));
-          return;
-        }
-        R.seen[s.n] = 1; R.lastSeq = s.n;
-        fetchAll(s.u, function (e3, buf) {
-          if (R.stopped) return;
-          if (e3) { r.gaps = (r.gaps || 0) + 1; return step(); }        // a lost piece is a short gap, not the end
-          write(r, R, buf); step();
-        });
-      })();
-    });
-  });
-}
+
 function fetchAll(u, cb) {
   get(u, function (e, res) {
     if (e) return cb(e);
@@ -288,8 +228,8 @@ function fetchAll(u, cb) {
 }
 function halt(r) {
   var R = run[r.id]; if (!R) return;
-  R.stopped = true; clearTimeout(R.retry); clearTimeout(R.poll);
-  try { if (R.req) R.req.abort(); } catch (e) {}
+  R.stopped = true; clearTimeout(R.endT);
+  try { if (R.feed) R.feed.close(); } catch (e) {}
   try { if (R.out) R.out.end(); } catch (e) {}
   delete run[r.id];
 }
@@ -336,7 +276,7 @@ function body(req, cb) {
 function newId() { return 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 function okUrl(u) { return /^http:\/\/127\.0\.0\.1:\d+\//.test(String(u || '')); }     // the relay only: no recording of arbitrary addresses
 function add(q, scheduled) {
-  var now = Date.now(), r = { id: newId(), url: String(q.url), alt: okUrl(q.alt) && q.alt !== q.url ? String(q.alt) : '', logo: String(q.logo || '').slice(0, 500), title: String(q.title || q.channel || 'Recording').slice(0, 200), channel: String(q.channel || '').slice(0, 200),
+  var now = Date.now(), r = { id: newId(), url: String(q.url), alt: okUrl(q.alt) && q.alt !== q.url ? String(q.alt) : '', key: String(q.key || '').slice(0, 200), logo: String(q.logo || '').slice(0, 500), title: String(q.title || q.channel || 'Recording').slice(0, 200), channel: String(q.channel || '').slice(0, 200),
     start: scheduled ? +q.start : now, end: +q.end, status: 'scheduled', drive: q.drive ? String(q.drive) : '', bytes: 0, parts: [] };
   load().recs.push(r); save();
   if (!scheduled || r.start <= now) begin(r);
@@ -445,7 +385,7 @@ function handleHere(req, res, ALLOW) {
     if (e) return send(res, ALLOW, 400, { error: 'bad request' });
     // Live pause (timeshift.js): a buffer on the drive the player plays from.
     if (p.indexOf('/record/ts/') === 0) {
-      TS.setup({ get: get, getText: getText, fetchAll: fetchAll, isPlaylist: isPlaylist, freeMB: function (d) { return require('./storage')._freeMB(d); }, log: logf });
+      TS.setup({ feed: Feed, freeMB: function (d) { return require('./storage')._freeMB(d); }, log: logf });
       if (p === '/record/ts/start') {
         if (!okUrl(q.url)) return send(res, ALLOW, 400, { error: 'not a relayed address' });
         var dv = drives(); if (!dv.length) return send(res, ALLOW, 409, { error: 'Plug in a USB drive to pause live TV.', code: 'nodrive' });

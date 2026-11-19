@@ -603,7 +603,8 @@ var Views = (function () {
       stage.classList.remove('off');
       if (Store.settings.blackSwitch) stage.classList.add('blank');
       video._subsChoice = false; video._subsWantKey = null; video._subsMemo = null; Subs.forget();           // a new playback: subtitles may turn on by themselves again
-      Player.play(c, { preview: preview, keepTrying: foSwitching === 'back' });
+      if (!preview && tsAlways()) startBuffered(c);
+      else Player.play(c, { preview: preview, keepTrying: foSwitching === 'back' });
       chansVL.refreshWhere(function (x) { return x && (x.k === c.k || (lastPlayed && x.k === lastPlayed.k)); });
       if (then) then();
     });
@@ -1023,6 +1024,8 @@ var Views = (function () {
     document.body.classList.add('full');
     stage.classList.remove('preview', 'off'); stage.classList.add('full');
     Player.upgrade(false);
+    // Rewind buffer on: a channel brought to fullscreen from its window plays from the drive from now on.
+    if (mode === 'live' && playing && !tsh && !Player.tshift && tsAlways()) startBuffered(playing);
     zapIdx = L.channels(curGroup).findIndex(function (c) { return playing && c.k === playing.k; });
     UI.setHandler(fullKeys);
     Keymap.setContext('player');
@@ -1149,7 +1152,7 @@ var Views = (function () {
 
   /* What every button does right now, at the bottom of the info panel.  Follows the remote map,
      and each chip can be clicked with the Magic Remote pointer. */
-  function behindLive() { if (mode !== 'live' || !(lw || Player.tshift)) return null; var w = Player.liveWindow(); return w && w.behind > 4 ? w : null; }
+  function behindLive() { if (mode !== 'live' || !(lw || Player.tshift)) return null; var w = Player.liveWindow(); return w && w.behind > (Player.tshift ? 10 : 4) ? w : null; }
   function osdLegend() {
     var el = $('osdKeys'), items = [];
     function chip(key, label, color) { items.push([key, label, color]); }
@@ -1381,6 +1384,31 @@ var Views = (function () {
      live.  Changing channel, catch-up, a movie or stopping lets the copy go (deleted). */
   var tsh = null;
   function tsOn() { return Store.settings.livePause !== false && typeof Record !== 'undefined' && Record.canPause(); }
+  /* Rewind buffer (Settings > Playback): minutes kept while watching fullscreen, 0 when off.  The channel then
+     plays from its copy on the drive the whole time (a few seconds behind live), so ◀ goes back without pausing
+     first.  The first piece is cut a second in (timeshift.js), and the drive's playlist waits for it, so a channel
+     starts about as fast as it does directly. */
+  function tsAlways() { var m = +Store.settings.rewindBuffer || 0; return m > 0 && tsOn() ? m : 0; }
+  function startBuffered(c) {
+    var my = tsh = { c: c, at: Date.now(), id: null, always: true };
+    Player.stop();
+    Record.tsStart(c, tsAlways() * 60).then(function (r) {
+      if (tsh !== my) { Record.tsStop(r.id); return; }
+      my.id = r.id; my.url = Record.base() + r.playlist;
+      my.ping = setInterval(function () {
+        if (tsh !== my) return;
+        Record.tsPing(my.id).then(function (st) { if (tsh === my && st && st.error) { U.toast(T('Live pause stopped: {e}', { e: st.error }), 6000); backFromPause(); } },
+          function (e) { if (tsh === my && e && e.gone) backFromPause(); });
+      }, 30000);
+      Player.play(c, { url: my.url, tshift: true, tsFrom: -1 });
+      Log.info('player', 'Playing ' + L.name(c) + ' from the rewind buffer on the USB drive');
+    }, function (e) {
+      // No drive or no agent: straight from the provider, as without the buffer.
+      Log.warn('player', 'Rewind buffer didn\'t start: ' + (e && e.message || e));
+      if (tsh === my) tsh = null;
+      if (playing && playing.k === c.k) Player.play(c, { preview: false });
+    });
+  }
   function tsEnd() {
     if (!tsh) return;
     var t = tsh; tsh = null;

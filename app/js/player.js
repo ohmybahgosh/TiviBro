@@ -163,7 +163,8 @@ var Player = (function () {
       // Every playlist, key and segment request goes through the relay when it is in use.
       xhrSetup: function (xhr, u) { xhr.open('GET', Net.wrap(u, pw), true); },
       debug: false, enableWorker: workerOk, lowLatencyMode: false, startFragPrefetch: true,
-      liveSyncDurationCount: p.chase ? 2 : Math.round(U.clamp(p.prebuffer / 2 + 2, 3, 6)),
+      // The rewind buffer (live pause, started at its end): its newest piece, not three back.
+      liveSyncDurationCount: cur.tshift && cur.tsFrom < 0 ? 1 : p.chase ? 2 : Math.round(U.clamp(p.prebuffer / 2 + 2, 3, 6)),
       liveMaxLatencyDurationCount: p.chase && !cur.tshift ? 5 : Infinity,     // live pause: never pulled to the end
       maxBufferLength: p.ahead, maxMaxBufferLength: p.ahead * 2, backBufferLength: p.back,
       // Memory-safe TVs (1 GB) keep less in memory here too.

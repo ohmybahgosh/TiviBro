@@ -63,7 +63,7 @@ var Record = (function () {
   function now(ch, p) {
     var end = p && p.e > Date.now() ? p.e + PAD_AFTER : Date.now() + 60 * 60000;
     var u = recUrls(ch);
-    return api('/record/start', { url: u.url, alt: u.alt, logo: logo(ch), title: p && p.t || L.name(ch), channel: L.name(ch), end: end }).then(function (r) {
+    return api('/record/start', { url: u.url, alt: u.alt, key: ch.k, logo: logo(ch), title: p && p.t || L.name(ch), channel: L.name(ch), end: end }).then(function (r) {
       U.toast(T('Recording "{x}" until {t}', { x: r.title, t: U.hhmm(end) }), 4000);
       Log.info('record', 'Recording ' + L.name(ch) + ' until ' + U.hhmm(end));
       return list();
@@ -71,7 +71,7 @@ var Record = (function () {
   }
   function schedule(ch, p) {
     var u = recUrls(ch);
-    return api('/record/schedule', { url: u.url, alt: u.alt, logo: logo(ch), title: p.t || L.name(ch), channel: L.name(ch), start: p.s - PAD_BEFORE, end: p.e + PAD_AFTER }).then(function (r) {
+    return api('/record/schedule', { url: u.url, alt: u.alt, key: ch.k, logo: logo(ch), title: p.t || L.name(ch), channel: L.name(ch), start: p.s - PAD_BEFORE, end: p.e + PAD_AFTER }).then(function (r) {
       U.toast(T('Will record "{x}" at {t}', { x: r.title, t: U.hhmm(p.s) }), 4000);
       return list();
     }, say);
@@ -168,7 +168,7 @@ var Record = (function () {
   setTimeout(function () { if (base()) { list().catch(function () {}); drives().catch(function () {}); } }, 8000);
 
   /* Live pause (views.js): the buffer on the drive (service/timeshift.js). */
-  function tsStart(ch) { return api('/record/ts/start', { url: urlFor(ch) }).then(function (r) { if (r.error && !r.id) throw new Error(r.error); return r; }); }
+  function tsStart(ch, max) { return api('/record/ts/start', { url: urlFor(ch), key: ch.k, max: max || 0 }).then(function (r) { if (r.error && !r.id) throw new Error(r.error); return r; }); }
   function tsPing(id) { return api('/record/ts/ping', { id: id }).catch(function (e) { if (/gone|HTTP 404/.test(e && e.message)) e.gone = true; throw e; }); }
   function tsStop(id) { return api('/record/ts/stop', { id: id }).catch(function () {}); }
   function canPause() { return !!base() && drive; }

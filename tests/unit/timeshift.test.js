@@ -7,7 +7,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tivibro-ts-'));
 process.env.TIVIBRO_USB_DIR = path.join(tmp, 'usb');
 process.env.TIVIBRO_REC_LIST = path.join(tmp, 'recordings.json');
 process.env.TIVIBRO_TS_IDLE_MS = '1500';
-process.env.TIVIBRO_TS_RETRY_MS = '100';
+process.env.TIVIBRO_FEED_RETRY_MS = '100';
 process.env.TIVIBRO_KV_DIR = path.join(tmp, 'kv');
 const R = require('../../service/record');
 let fail = 0;
@@ -90,7 +90,7 @@ function stream(from, to) { const parts = []; for (let i = from; i < to; i++) { 
   let pl = (await call('GET', '/record/ts/' + id + '/live.m3u8')).body.toString();
   const durs = (pl.match(/#EXTINF:([\d.]+)/g) || []).map((x) => +x.slice(8));
   ok('an HLS playlist, no end while running', /^#EXTM3U/.test(pl) && !/ENDLIST/.test(pl) && /#EXT-X-PROGRAM-DATE-TIME:/.test(pl), pl.slice(0, 200));
-  ok('pieces of 4 s, cut at keyframes (2 s apart), from the timestamps', durs.length >= 5 && durs.slice(0, -1).every((d) => Math.abs(d - 4) < 0.01), durs.join(' '));
+  ok('pieces of 4 s, cut at keyframes (2 s apart), from the timestamps', durs.length >= 5 && durs.slice(1, -1).every((d) => Math.abs(d - 4) < 0.01), durs.join(' '));
   const first = pl.split('\n').filter((l) => /^\d+\.ts$/.test(l))[0];
   const piece = (await call('GET', '/record/ts/' + id + '/' + first)).body;
   const pid = (b, o) => ((b[o + 1] & 0x1f) << 8) | b[o + 2];

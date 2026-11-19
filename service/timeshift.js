@@ -16,10 +16,11 @@
      GET  /record/ts/<id>/live.m3u8, /record/ts/<id>/<n>.ts|.m4s, /record/ts/<id>/init.mp4   (no secret: the player)
    Plain ES5 for Node 0.12. */
 'use strict';
-var fs = require('fs'), path = require('path'), URL_ = require('url');
+var fs = require('fs'), path = require('path');
 
 var PIECE = +(process.env.TIVIBRO_TS_PIECE || 4), MAX_SEC = 2 * 3600, IDLE_MS = +(process.env.TIVIBRO_TS_IDLE_MS || 90000);
-var RETRY_MS = +(process.env.TIVIBRO_TS_RETRY_MS || 2000), MIN_FREE_MB = 1024, MAX_SESSIONS = 2;
+var MIN_FREE_MB = 1024, MAX_SESSIONS = 2;
+var WAIT_MS = +(process.env.TIVIBRO_TS_WAIT_MS || 10000);
 var sessions = {}, reaper = null, io = null, logf = function () {};
 
 function note(lv, event, more) { var o = { lv: lv, event: event }; for (var k in more || {}) o[k] = more[k]; logf(o); }
@@ -39,20 +40,21 @@ function clearOld(base) {
 
 /* ---------- a session ---------- */
 function newId() { return 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
-function begin(url, max, folder) {
-  for (var k in sessions) if (sessions[k].url === url && !sessions[k].stopped) { sessions[k].seen = Date.now(); return sessions[k]; }
+function begin(url, max, folder, key, alt) {
+  key = String(key || url);
+  for (var k in sessions) if (sessions[k].key === key && !sessions[k].stopped) { sessions[k].seen = Date.now(); return sessions[k]; }
   // The oldest goes when there are too many (a channel change leaves one behind until it idles out).
   var ids = Object.keys(sessions).sort(function (a, b) { return sessions[a].born - sessions[b].born; });
   while (ids.length >= MAX_SESSIONS) stop(sessions[ids.shift()], 'another channel');
   var base = baseOn(folder); clearOld(base);
-  var S = { id: newId(), url: url, max: Math.min(Math.max(+max || MAX_SEC, 60), 6 * 3600), born: Date.now(), seen: Date.now(),
-    pieces: [], n: 0, disc: 0, cutDisc: false, stopped: false, error: '', kind: '', init: null, folder: folder };
+  var S = { id: newId(), key: key, url: url, max: Math.min(Math.max(+max || MAX_SEC, 60), 6 * 3600), born: Date.now(), seen: Date.now(),
+    pieces: [], n: 0, disc: 0, cutDisc: false, stopped: false, error: '', kind: '', init: null, folder: folder, alt: alt || '' };
   S.dir = path.join(base, S.id);
   try { fs.mkdirSync(S.dir); } catch (e) { S.error = 'the drive refused it: ' + e.message; }
   sessions[S.id] = S;
   if (!reaper) { reaper = setInterval(reap, 10000); if (reaper.unref) reaper.unref(); }
-  note('info', 'timeshift started', { id: S.id });
-  if (!S.error) connect(S);
+  if (!S.error) listen(S);
+  note('info', 'timeshift started', { id: S.id, shared: !!(S.feed && S.feed.shared) });
   return S;
 }
 function reap() {
@@ -62,46 +64,35 @@ function reap() {
 }
 function stop(S, why) {
   if (!S) return;
-  S.stopped = true; clearTimeout(S.retry); clearTimeout(S.poll);
-  try { if (S.req) S.req.abort(); } catch (e) {}
-  try { if (S.out) S.out.end(); } catch (e) {}
+  S.stopped = true;
+  try { if (S.feed) S.feed.close(); } catch (e) {}
   delete sessions[S.id];
   note('info', 'timeshift stopped', { id: S.id, why: why || '', sec: Math.round(total(S)) });
   setTimeout(function () { rmrf(S.dir); }, 1500);       // after a read in flight
 }
 function total(S) { var t = 0; S.pieces.forEach(function (p) { t += p.dur; }); return t; }
-/* Asked again, slower each time (2, 4, 8 ... 30 s) until a piece arrives: a provider that refused (HTTP 4xx) is
-   given 5 s at least.  Every 2 s made Bob's provider block the account for a while. */
-function backoff(X, why) {
-  X.fails = (X.fails || 0) + 1;
-  var ms = Math.min(30000, RETRY_MS * Math.pow(2, X.fails - 1));
-  if (/HTTP 4\d\d/.test(why || '')) ms = Math.max(ms, Math.min(30000, 5 * RETRY_MS));
-  return ms;
-}
-function again(S, why) {
-  if (S.stopped) return;
-  S.cutDisc = true; S.gaps = (S.gaps || 0) + 1;
-  var ms = backoff(S, why);
-  if (S.gaps === 1 || S.gaps % 5 === 0) note('warn', 'timeshift reconnecting', { id: S.id, e: why, gaps: S.gaps, inMs: ms });
-  S.retry = setTimeout(function () { connect(S); }, ms);
-}
-function connect(S) {
-  if (S.stopped) return;
-  S.req = io.get(S.url, function (e, res, at) {
-    if (S.stopped) { if (res) res.resume(); return; }
-    if (e || res.statusCode !== 200) { if (res) res.resume(); return again(S, e ? e.message : 'HTTP ' + res.statusCode); }
-    if (io.isPlaylist(res, at)) { res.resume(); S.kind = S.kind || 'hls'; return hls(S, at); }
-    S.kind = 'ts';
-    var cut = S.cutter = cutter(S);
-    res.on('data', function (c) { cut.push(c); });
-    res.on('end', function () { again(S, 'the provider closed the stream'); });
-    res.on('error', function (e2) { again(S, e2.message); });
+/* What arrives on the channel's feed (feed.js: one connection per channel, shared with a recording of it):
+   MPEG-TS bytes are cut into pieces here, HLS pieces are kept as they come. */
+function listen(S) {
+  S.feed = io.feed.open(S.key, S.url, S.alt, {
+    kind: function (k) { S.kind = k; },
+    init: function (b) { S.init = b; try { fs.writeFileSync(path.join(S.dir, 'init.mp4'), b); } catch (e) {} },
+    data: function (c) { if (S.stopped) return; if (!S.cutter) S.cutter = cutter(S); S.cutter.push(c); },
+    piece: function (pc) {
+      if (S.stopped) return;
+      if (!pc.buf) { S.cutDisc = true; return; }
+      if (pc.disc) S.cutDisc = true;
+      var n = S.n++, f = n + (S.init ? '.m4s' : '.ts');
+      try { fs.writeFileSync(path.join(S.dir, f), pc.buf); } catch (x) { S.error = 'the drive refused it: ' + x.message; return stop(S, S.error); }
+      added(S, { n: n, f: f, dur: pc.dur, bytes: pc.buf.length, at: Date.now() });
+    },
+    // A dropped connection: what's half cut is let go, and the playlist marks the join.
+    down: function () { S.cutDisc = true; S.cutter = null; S.gaps = (S.gaps || 0) + 1; },
+    fatal: function (why) { S.error = why; stop(S, why); }
   });
 }
-
 /* A finished piece: listed, and the oldest dropped past the limit or when the drive is nearly full. */
 function added(S, p) {
-  S.fails = 0;
   if (S.cutDisc && S.pieces.length) { p.disc = true; S.cutDisc = false; }
   S.pieces.push(p);
   // Room on the drive, looked at every 30 s (df is a process).
@@ -186,7 +177,9 @@ function cutter(S) {
           var since = pts - C.startPts; if (since < -4294967296) since += 8589934592; if (since < 0) since = 0;
           var jumped = Math.abs(pts - C.lastPts) > 90000 * 10 && Math.abs(pts - C.lastPts) < 8589934592 - 90000 * 10;
           if (jumped) { close(C.lastPts); S.cutDisc = true; open(pts); }
-          else if ((key && since >= PIECE * 90000) || since >= PIECE * 3 * 90000) { close(pts); open(pts); }
+          // The first piece is cut at the first keyframe after a second, so playing can start that soon; the rest
+          // at about PIECE seconds.
+          else if ((key && since >= (S.n === 0 ? 1 : PIECE) * 90000) || since >= PIECE * 3 * 90000) { close(pts); open(pts); }
           C.lastPts = pts;
         }
       }
@@ -205,59 +198,6 @@ function cutter(S) {
     if (C.bytes > 64 * 1024 * 1024) { close(C.lastPts); open(C.lastPts); }   // no keyframe found in a long while: cut anyway
   };
   return C;
-}
-
-/* ---------- HLS from the provider: its pieces, kept ---------- */
-function hls(S, u) {
-  io.getText(u, function (e, text) {
-    if (S.stopped) return;
-    if (e) return again(S, e.message);
-    if (!/^\s*#EXTM3U/.test(text)) return again(S, 'the provider\'s answer wasn\'t a playlist');
-    var lines = text.split(/\r?\n/), best = null, bw = -1;
-    for (var i = 0; i < lines.length; i++) {
-      var m = /^#EXT-X-STREAM-INF:(.*)$/.exec(lines[i]);
-      if (m) { var b = +((/BANDWIDTH=(\d+)/.exec(m[1]) || [])[1]) || 0, nx = (lines[i + 1] || '').trim(); if (nx && b > bw) { bw = b; best = nx; } }
-    }
-    if (best) return hls(S, URL_.resolve(u, best));
-    if (/#EXT-X-KEY:METHOD=(?!NONE)/.test(text)) { S.error = 'this channel is encrypted HLS, which TiviBro can\'t pause yet'; return stop(S, S.error); }
-    var seq = +((/#EXT-X-MEDIA-SEQUENCE:(\d+)/.exec(text) || [])[1]) || 0, target = +((/#EXT-X-TARGETDURATION:(\d+)/.exec(text) || [])[1]) || 6;
-    var map = (/#EXT-X-MAP:.*URI="([^"]+)"/.exec(text) || [])[1], queue = [], k = 0, dur = 0, disc = false;
-    lines.forEach(function (l) {
-      l = l.trim();
-      var d = /^#EXTINF:([\d.]+)/.exec(l);
-      if (d) dur = +d[1];
-      else if (l === '#EXT-X-DISCONTINUITY') disc = true;
-      else if (l && l.charAt(0) !== '#') { var n = seq + k++; if (S.last == null || n > S.last) queue.push({ n: n, u: URL_.resolve(u, l), dur: dur || target, disc: disc }); dur = 0; disc = false; }
-    });
-    if (S.last == null && queue.length > 2) queue = queue.slice(-2);
-    // Sequence numbers that went backwards (the provider's stream restarted): start over from its newest.
-    if (S.last != null && seq + k - 1 < S.last) { S.last = null; S.cutDisc = true; queue = queue.slice(-2); }
-    (function initThen(go) {
-      if (!map || S.init) return go();
-      io.fetchAll(URL_.resolve(u, map), function (e2, buf) {
-        if (e2) return again(S, 'init: ' + e2.message);
-        S.init = buf; S.kind = 'mp4';
-        try { fs.writeFileSync(path.join(S.dir, 'init.mp4'), buf); } catch (x) {}
-        go();
-      });
-    })(function () {
-      (function step() {
-        if (S.stopped) return;
-        var s = queue.shift();
-        if (!s) { S.poll = setTimeout(function () { hls(S, u); }, Math.max(1000, target * 500)); return; }
-        S.last = s.n;
-        io.fetchAll(s.u, function (e3, buf) {
-          if (S.stopped) return;
-          if (e3) { S.cutDisc = true; return step(); }
-          var n = S.n++, f = n + (S.init ? '.m4s' : '.ts');
-          try { fs.writeFileSync(path.join(S.dir, f), buf); } catch (x) { S.error = 'the drive refused it: ' + x.message; return stop(S, S.error); }
-          if (s.disc) S.cutDisc = true;
-          added(S, { n: n, f: f, dur: s.dur, bytes: buf.length, at: Date.now() });
-          step();
-        });
-      })();
-    });
-  });
 }
 
 /* ---------- the playlist ---------- */
@@ -286,8 +226,14 @@ function route(req, res, ALLOW, p, q, send) {
     S.seen = Date.now();
     var h = { 'Cache-Control': 'no-store' }; for (var k in ALLOW) h[k] = ALLOW[k];
     if (m[2] === 'live.m3u8') {
-      var txt = playlist(S); h['Content-Type'] = 'application/vnd.apple.mpegurl';
-      res.writeHead(200, h); return res.end(req.method === 'HEAD' ? '' : txt);
+      // Nothing kept yet (just started): the answer waits for the first piece (10 s at most), so the player opens
+      // the moment there's something to play instead of failing on an empty playlist.
+      var t0 = Date.now();
+      return (function answer() {
+        if (!S.pieces.length && !S.stopped && !S.error && Date.now() - t0 < WAIT_MS) return setTimeout(answer, 100);
+        var txt = playlist(S); h['Content-Type'] = 'application/vnd.apple.mpegurl';
+        res.writeHead(200, h); res.end(req.method === 'HEAD' ? '' : txt);
+      })();
     }
     var file = path.join(S.dir, m[2]), size = 0;
     try { size = fs.statSync(file).size; } catch (e) { return send(res, ALLOW, 404, { error: 'gone' }); }
@@ -299,7 +245,7 @@ function route(req, res, ALLOW, p, q, send) {
   return null;
 }
 function post(p, q, folder) {
-  if (p === '/record/ts/start') return status(begin(String(q.url), q.max, folder));
+  if (p === '/record/ts/start') return status(begin(String(q.url), q.max, folder, q.key, q.alt));
   var S = sessions[String(q.id || '')];
   if (p === '/record/ts/ping') { if (!S) return { error: 'gone', gone: true }; S.seen = Date.now(); return status(S); }
   if (p === '/record/ts/stop') { if (S) stop(S, 'asked'); return { ok: true }; }

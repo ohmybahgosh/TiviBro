@@ -1864,5 +1864,10 @@ I18n.add('es', {
   "Tick the ones to delete with OK": "Marca con OK las que quieras eliminar",
   "Resuming at {t}": "Reanudando en {t}",
   "tick or untick": "marcar o desmarcar",
-  "done": "listo"
+  "done": "listo",
+  "Rewind buffer": "Búfer para retroceder",
+  "Keeps the channel you watch fullscreen on the USB drive the whole time, so \u25c0 goes back to something you just missed without pausing first (like a DVR).  Channels start a second or two slower, and the drive is written all the time.  Needs Pause live TV to a USB drive.": "Guarda en la memoria USB todo el tiempo el canal que ves a pantalla completa, así ◀ vuelve a algo que te perdiste sin pausar antes (como un DVR).  Los canales tardan un segundo o dos más en empezar y la memoria se escribe todo el tiempo.  Necesita Pausar la TV en vivo en una memoria USB.",
+  "30 min": "30 min",
+  "1 hour": "1 hora",
+  "2 hours": "2 horas"
 });
