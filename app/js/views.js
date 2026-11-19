@@ -597,6 +597,8 @@ var Views = (function () {
       if (!foSwitching) fo = null;            // picking a channel yourself ends a backup chain
       if (playing && playing.k !== c.k) lastPlayed = playing;
       if (tsh && !tsh.keep) tsEnd();
+      // From a movie with subtitles downloaded for it (issue #117: they kept showing over live TV): gone.
+      if (vod || mode === 'vod') Subs.reset();
       playing = c; mode = 'live'; cu = null; vod = null; lw = false;
       playStart = Date.now(); recentDone = false;
       Store.edits.last = c.k; Store.saveEdits();
@@ -1052,7 +1054,7 @@ var Views = (function () {
       var v = vod;
       vodSeekCommit();
       Vod.stopped(); Media.stopped();
-      vod = null; mode = 'live'; Player.stop(); playing = null; stage.classList.add('off');
+      vod = null; mode = 'live'; Player.stop(); playing = null; stage.classList.add('off'); Subs.reset();
       if (v && v.onExit) v.onExit();
       return;
     }
