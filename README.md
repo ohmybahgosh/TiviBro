@@ -22,7 +22,17 @@
 </p>
 
 > [!IMPORTANT]
-> **📱 TiviBro for Android is on Google Play, and it needs testers.**  Google won't publish it until enough people have kept it installed for 14 days.  [**Join the Play test**](https://tivibro.app/android-test/) in three steps: join the testers group with your Google account, opt in, install.  Already using the APK?  Uninstall it first (Google Play only installs and updates its own copy), then pair your TV again.  The APK on GitHub stays either way.
+> **📱 Help get TiviBro for Android into the Play Store.**  The free phone app (remote and TV guide for TiviBro on your TV) is in closed testing on Google Play.  To publish it for everyone, Google needs **12 testers opted in for 14 days in a row**.
+>
+> **You don't have to use it.**  Even if you never open the app, joining and **leaving it installed for 14 days** counts.  Please sign up, and **ask friends and family with an Android phone to do the same**.  Every tester gets us closer to the store.
+>
+> **How to join (about 2 minutes):**
+> 1. **Join the tester group.**  With the Google account your phone uses, open [TiviBro Android testers](https://groups.google.com/g/tivibro-testers) and choose **Join group**.  Nobody sees your address and the group sends no mail.
+> 2. **Opt in on Google Play.**  Open [the TiviBro test page](https://play.google.com/apps/testing/app.tivibro.phone) and choose **Become a tester**, signed in with that same account.  It can take a few minutes after joining the group before this works.
+> 3. **Install it** from that page, or search the Play Store on your phone once you've opted in.
+> 4. **Leave it installed** for at least 14 days.  That's it.
+>
+> Step by step: [tivibro.app/android-test](https://tivibro.app/android-test/) · Questions: [discussion #130](https://github.com/ohmybahgosh/TiviBro/discussions/130).  Already using the APK?  Uninstall it first (Google Play only installs and updates its own copy), then pair your TV again.  The APK on GitHub stays either way.
 
 <p align="center">
   <a href="https://tivibro.app"><b>tivibro.app</b></a> ·

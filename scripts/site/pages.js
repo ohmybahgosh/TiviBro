@@ -376,7 +376,7 @@ module.exports = [
   short: 'Join the Google Play test of TiviBro for Android in three steps.',
   kicker: 'Android app', h1: 'Test the TiviBro app on Google Play',
   published: '2026-11-15', image: 'img/shots/tv-tour-phone.webp',
-  lead: 'TiviBro for Android, the remote, TV guide and setup app for TiviBro on your LG TV, is coming to Google Play.  Before it can be public, Google asks for at least 12 people to test it for 14 days.  It takes a minute to join.',
+  lead: 'TiviBro for Android, the remote, TV guide and setup app for TiviBro on your LG TV, is in closed testing on Google Play.  To publish it for everyone, Google needs 12 testers opted in for 14 days in a row.  <b>You don\'t have to use it:</b> even if you never open the app, joining and leaving it installed for 14 days counts.  Please sign up, and ask friends and family with an Android phone to do the same.  Every tester gets us closer to the store.',
   answer: '<b>Three steps:</b>  join the tester group, opt in to the test on Google Play, then install TiviBro from Play.  Keep it installed for 14 days and you\'ve helped it get published for everyone.  <b>Don\'t want Google Play?</b>  The <a href="/apk/">APK from GitHub</a> is still here and always will be: same app, same features, updates itself.',
   body: [
     '<ol class="steps-list">',
@@ -385,7 +385,8 @@ module.exports = [
     '<li id="step-3"><b>Install TiviBro.</b>  From <a href="https://play.google.com/store/apps/details?id=app.tivibro.phone">TiviBro on Google Play</a>, on your Android phone.  Then pair it with the TV: on the TV, open TiviBro, <b>Settings &gt; Phone app and web editor &gt; Pair a phone</b>, and scan the code.</li>',
     '</ol>',
     '<h2>What to know</h2><ul>',
-    '<li><b>Keep it installed for 14 days.</b>  That\'s what Google counts.  You don\'t have to use it every day.</li>',
+    '<li><b>Keep it installed for 14 days.</b>  That\'s what Google counts.  You don\'t have to use it at all, so it\'s an easy favor to ask: please share this page with friends and family who have an Android phone.</li>',
+    '<li><b>Questions?</b>  Ask in <a href="https://github.com/ohmybahgosh/TiviBro/discussions/130">discussion #130</a>.</li>',
     '<li><b>Already using the APK from GitHub?</b>  Google Play only installs and updates its own copy: with the APK on your phone it says the app didn\'t come from Google Play and offers Uninstall.  Uninstall the APK, then install TiviBro from Google Play and pair your TV again (on the TV: Settings &gt; Phone app and web editor).  Updates then come from Google Play.</li>',
     '<li><b>Found something?</b>  <a href="https://github.com/ohmybahgosh/TiviBro/issues/new/choose">Report it on GitHub</a>, or use <b>Report a problem</b> in TiviBro on the TV.</li>',
     '<li><b>Leaving the test</b> is the same page as step 2: choose <b>Leave the program</b>.</li>',

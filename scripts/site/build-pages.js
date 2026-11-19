@@ -58,7 +58,7 @@ function head(p, url, graph) {
 }
 
 // The Google Play test, at the top of every page (not on its own page).
-var PLAYBAR = '  <a class="playbar" href="/android-test/"><b>New: TiviBro for Android is on Google Play.</b>  Help us publish it: join the test in three steps and keep it 14 days. <span>Join the Play test &rarr;</span></a>\n';
+var PLAYBAR = '  <a class="playbar" href="/android-test/"><b>Help get TiviBro for Android into the Play Store.</b>  You don&rsquo;t have to use it: just join and keep it installed 14 days, and ask your friends to as well. <span>Join the Play test &rarr;</span></a>\n';
 function header(slug) {
   return '<body>\n' + SPRITE + '\n<header class="top" id="top-bar">\n' + (slug === 'android-test' ? '' : PLAYBAR) + '  <div class="wrap bar">\n' +
     '    <a class="brand" href="/" aria-label="TiviBro home"><img src="/img/wordmark.webp" alt="tiviBro" width="140" height="36"></a>\n' +
