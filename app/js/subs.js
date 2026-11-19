@@ -658,7 +658,7 @@ var Subs = (function () {
   }
 
   /* The audio track's language, chosen in the player's Audio track menu: for that movie or episode, and for the
-     rest of its show.  It comes before Settings > Playback > Audio language when the movie or episode plays. */
+     rest of its show.  It comes before Settings > Audio and subtitles > Audio language when the movie or episode plays. */
   var AMEMO = 'tivibro.audioMemo';
   function amemoAll() { try { var o = JSON.parse(localStorage.getItem(AMEMO) || '{}'); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } }
   function audioFor(meta) { var all = amemoAll(), k = memoKey(meta), sk = showKey(meta), m = (k && all[k]) || (sk && all[sk]); return m && m.lang || ''; }

@@ -19,7 +19,7 @@ var UA = 'TiviBro v' + (function () { try { return require('./package.json').ver
 function str(v, n) { return typeof v === 'string' ? v.slice(0, n || 200) : typeof v === 'number' ? String(v) : ''; }
 function message(code, body) {
   var m = body && (body.message || (body.errors && body.errors.join ? body.errors.join('  ') : ''));
-  if (code === 401 || code === 403) return 'OpenSubtitles refused the API key.  Check it in Settings > Playback > Subtitles from OpenSubtitles.';
+  if (code === 401 || code === 403) return 'OpenSubtitles refused the API key.  Check it in Settings > Audio and subtitles > Subtitles from OpenSubtitles.';
   if (code === 406 || code === 429) return m || 'The daily download limit is reached.  Sign in for more, or try again tomorrow.';
   return m || 'OpenSubtitles answered ' + code + '.';
 }
@@ -118,7 +118,7 @@ function rank(list, q) {
   return list.map(function (r) { delete r._s; delete r._i; return r; });
 }
 function search(q, cb) {
-  if (!keyOk(q)) return cb({ error: 'key', message: 'Add your OpenSubtitles API key first: Settings > Playback > Subtitles from OpenSubtitles.' });
+  if (!keyOk(q)) return cb({ error: 'key', message: 'Add your OpenSubtitles API key first: Settings > Audio and subtitles > Subtitles from OpenSubtitles.' });
   if (!str(q.query, 120).trim()) return cb({ error: 'query', message: 'Say what to look for.' });
   var langs = [];
   (Array.isArray(q.langs) ? q.langs : []).forEach(function (l) { l = str(l, 8).toLowerCase(); if (/^[a-z]{2}(-[a-z]{2})?$/.test(l) && langs.indexOf(l) < 0) langs.push(l); });

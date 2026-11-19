@@ -125,7 +125,7 @@ var Update = (function () {
   // At start: once a day at most, quietly, well after the guide has loaded.
   /* Install numbers (relay/worker.js, tivibro.app/stats): once a day TiviBro says which version runs on
      which webOS version, nothing else (no address kept, no ID, nothing about channels).  Off in
-     Settings, Updates and about. */
+     Settings, System. */
   function countMe() {
     if (Store.settings.countMe === false) return;
     // Real TVs only: not the simulator, tests or a desktop browser.  An installed app runs from the

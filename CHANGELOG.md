@@ -1,15 +1,16 @@
 # Changelog
 
-## Unreleased
-
-- **The phone app reaches the TV after an update without opening TiviBro first.**  Installing a new TiviBro stopped its helper, and nothing started it again until TiviBro was opened, so the phone said "TiviBro's connection starting" for good.  On a rooted TV the recording agent (which keeps running as root) now starts the helper within a minute when the phone app connection is on, and a newer TiviBro replaces an older agent once it isn't recording.
-- **Turn on no longer says to turn on Wi-Fi when it's on.**  With a VPN on, or the phone leaning on mobile data for a moment, the app thought it wasn't on Wi-Fi.  Any Wi-Fi or Ethernet connection counts now, and once the TV answers on the network, the Bluetooth sighting isn't taken as "no Wi-Fi".
-
-## 0.6.0 (alpha 176, 2026-11-19)
+## 0.6.0 (alpha 177, 2026-11-19)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 176
+### New in alpha 177
+
+- **Every "Settings > ..." hint follows the new Settings layout**: in TiviBro's own notes, the web editor, the phone app, the user guide, the wiki, tivibro.app and its privacy page (a few still named sections from before the first overhaul, like Playlists and guide, Updates and about, or Diagnostics).
+- **The phone app reaches the TV after an update without opening TiviBro first.**  Installing a new TiviBro stopped its helper, and nothing started it again until TiviBro was opened, so the phone said "TiviBro's connection starting" for good.  On a rooted TV the recording agent (which keeps running as root) now starts the helper within a minute when the phone app connection is on, and a newer TiviBro replaces an older agent once it isn't recording.
+- **Turn on no longer says to turn on Wi-Fi when it's on.**  With a VPN on, or the phone leaning on mobile data for a moment, the app thought it wasn't on Wi-Fi.  Any Wi-Fi or Ethernet connection counts now, and once the TV answers on the network, the Bluetooth sighting isn't taken as "no Wi-Fi".
+
+### In alpha 176
 
 - **Settings, flatter: nothing is more than one page down.**  Things that took two or three pages to reach (Playback > Recording and live pause > Remote and buttons > In the player) are now in reach at once.  Six pages became sections of their own in the menu: **Channel and group names**, **Audio and subtitles**, **Recording and live pause**, **Remote and buttons**, **API keys** and **Backups and restore points**.  Your guide sources and public fill-in, each screen's buttons, My media's display and Trakt, and every problem under Fix a problem are on their page instead of behind another row.  A page's advanced settings sit at its bottom under an **Advanced** heading, so the Advanced view switch is gone.  The TMDB token and the OpenSubtitles key live only under API keys; other places take you there.  The phone app and the web editor show the same sections, and a row that leads to another section opens it there.  No setting changed its value.
 - **OK behind live does what it's set to.**  Rewound or paused live TV ignored your OK button and always paused; now OK opens the quick menu (or whatever it's set to), which starts with Pause.

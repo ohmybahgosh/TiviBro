@@ -6,7 +6,7 @@ The easiest way on a rooted TV, with updates from the TV itself:
 
 1. Open the **Homebrew Channel**, go to **Settings**, and choose **Add repository**.
 2. Enter `https://tivibro.app/repo`
-3. TiviBro appears in the Homebrew Channel's app list.  Open it and choose **Install**.  New versions show up there as **Update** (and inside TiviBro under **Settings > Updates and about**).
+3. TiviBro appears in the Homebrew Channel's app list.  Open it and choose **Install**.  New versions show up there as **Update** (and inside TiviBro under **Settings > System**).
 
 Want every test build as soon as it's out?  Add `https://tivibro.app/testing` instead.  Until the first full release, both addresses give you the newest test build.
 
@@ -65,7 +65,7 @@ If `scp` fails, pipe the file instead: `cat app.tivibro.tv_0.6.0_all.ipk | ssh r
 
 ## Updating
 
-TiviBro checks for a new release once a day (**Settings > Updates and about**).  On a rooted TV with the Homebrew Channel, **Install** there downloads it, checks it and installs it, and TiviBro restarts on the new version with all your settings.  On other TVs it shows the new version; install it the same way you installed TiviBro.
+TiviBro checks for a new release once a day (**Settings > System**).  On a rooted TV with the Homebrew Channel, **Install** there downloads it, checks it and installs it, and TiviBro restarts on the new version with all your settings.  On other TVs it shows the new version; install it the same way you installed TiviBro.
 
 ## Next
 
@@ -73,5 +73,5 @@ TiviBro checks for a new release once a day (**Settings > Updates and about**). 
 
 <p align="center">
   <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-first-run.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-first-run.png" width="49%" alt="The first screen after installing"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-updates.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-updates.png" width="49%" alt="Settings, Updates and about"></a>
+  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-updates.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-updates.png" width="49%" alt="Settings, System"></a>
 </p>

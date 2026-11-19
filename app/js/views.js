@@ -261,7 +261,7 @@ var Views = (function () {
     applyLook();
   }
 
-  /* Full themes: every colour from one palette (Settings > Look > Theme).  '' is "Your own mix", the
+  /* Full themes: every colour from one palette (Settings > Appearance > Theme).  '' is "Your own mix", the
      Background (app.css body.theme-*) and Accent settings.  Colours from each theme's published palette. */
   var V = ['ink', 'panel', 'raised', 'line', 'text', 'muted', 'dim', 'accent', 'accent2', 'warn', 'air', 'ok', 'side'];
   var PALETTES = {
@@ -1507,7 +1507,7 @@ var Views = (function () {
     else Record.now(c, p);
   }
   /* ---------- live pause (to a USB drive) ----------
-     Pause on a live channel, fullscreen, with a USB drive in (Settings > Playback > Pause live TV): the recording
+     Pause on a live channel, fullscreen, with a USB drive in (Settings > Recording and live pause > Pause live TV): the recording
      agent starts keeping the channel on the drive (timeshift.js), the player lets go of its own connection (one
      connection to the provider, as before), and Play picks up where it was paused from the drive's copy.  From
      there it's like a channel with a window: ◀ ▶ move in what's been kept, pause holds, Back or ▶ to the end is

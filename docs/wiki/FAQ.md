@@ -11,7 +11,7 @@ LG TVs from webOS 4 (2018) to webOS 26.  webOS 25 is the main target and is test
 No.  It is built from scratch for webOS, with the TiviMate way of working in mind: guide first, preview then fullscreen, quick menu, groups beside the guide.  See [TiviMate parity](https://github.com/ohmybahgosh/TiviBro/blob/main/docs/TIVIMATE-PARITY.md) for a feature-by-feature list.
 
 **Does it play 4K, HDR and Dolby Vision?**
-Yes, as far as your TV and provider do.  Dolby Vision goes through the TV's own player, which switches the screen into Dolby Vision; HDR10 and HLG play in TiviBro's built-in player unless you choose otherwise under **Settings > Playback and buffering > HDR and Dolby Vision**.  **Settings > Diagnostics > What this TV can play** lists what your TV handles.  See [Watching fullscreen](Watching-fullscreen).
+Yes, as far as your TV and provider do.  Dolby Vision goes through the TV's own player, which switches the screen into Dolby Vision; HDR10 and HLG play in TiviBro's built-in player unless you choose otherwise under **Settings > Playback > HDR and Dolby Vision**.  **Settings > System > What this TV can play** lists what your TV handles.  See [Watching fullscreen](Watching-fullscreen).
 
 <p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-caps.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-caps.png" width="60%" alt="What this TV can play"></a></p>
 
@@ -26,7 +26,7 @@ Every option, with its choices and default, is in the [Every setting](Settings-P
 Yes, by itself.  When your playlist has the same channel more than once, TiviBro switches to another version once the player gives up.  See [Other versions of a channel](Other-versions-of-a-channel).
 
 **Can I use more than one playlist?**
-Yes.  **Settings > Playlists and guide > Add playlist…**.  Each playlist keeps its own groups, favorites, hidden items, names and guide setup.
+Yes.  **Settings > Playlists and accounts > Add playlist…**.  Each playlist keeps its own groups, favorites, hidden items, names and guide setup.
 
 **Does it work with Dispatcharr or other proxies?**
 Yes.  Use the proxy's address as the server (Xtream) or playlist address (M3U).
@@ -44,4 +44,4 @@ Not without your passphrase.  See [Backup and restore](Backup-and-restore) and [
 webOS lets an app play only one video at a time, so a second channel always stops the first.  An earlier test build tried it and it didn't work on real TVs, so it was taken out.
 
 **Something else?**
-Try [Troubleshooting](Troubleshooting), or open an [issue](https://github.com/ohmybahgosh/TiviBro/issues) with a copy of **Settings > Diagnostics > View app log** (it hides usernames and passwords).
+Try [Troubleshooting](Troubleshooting), or open an [issue](https://github.com/ohmybahgosh/TiviBro/issues) with a copy of **Settings > System > View app log** (it hides usernames and passwords).

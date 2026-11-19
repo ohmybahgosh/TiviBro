@@ -175,7 +175,7 @@ var Library = (function () {
     }
     return !!growable[String(prefix)];
   }
-  // Groups the provider adds later can arrive hidden (Settings > Channels and groups > Newly added groups),
+  // Groups the provider adds later can arrive hidden (Settings > Channels and groups > Groups your provider adds later),
   // so a tidy "hide all, show a few" setup stays tidy after refreshes.
   function trackNewGroups(groups) {
     try {
@@ -522,7 +522,7 @@ var Library = (function () {
       }
     }
     if (!showHidden) list = list.filter(function (c) { return !e.hiddenChannels[c.k]; });
-    // Hide channels with nothing on (Settings > Channel names): judged on the name the provider sends
+    // Hide channels with nothing on (Settings > Channel and group names): judged on the name the provider sends
     // now, so a channel comes back by itself once an event is named on it.  Favorites keep theirs.
     if (!showHidden && gid !== FAV && anyHideIdle()) list = list.filter(function (c) { return !(hideIdleOf(c) && idle(c)); });
     // Your own order for a provider group (moved on the TV or dragged in the web editor): the
