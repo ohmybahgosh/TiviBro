@@ -592,7 +592,9 @@ var Views = (function () {
   }
 
   // Every way of starting a live channel goes through here, so the PIN check can't be skipped.
-  function startChannel(c, preview, then) {
+  /* buffer: a channel you chose to watch in a window (OK in the guide) starts in the rewind buffer as fullscreen would,
+     so going fullscreen after doesn't tune it again (Bob); a preview while you move through the lists doesn't. */
+  function startChannel(c, preview, then, buffer) {
     Parental.gate('channels', c, function () {
       if (!foSwitching) fo = null;            // picking a channel yourself ends a backup chain
       if (playing && playing.k !== c.k) lastPlayed = playing;
@@ -605,7 +607,7 @@ var Views = (function () {
       stage.classList.remove('off');
       if (Store.settings.blackSwitch) stage.classList.add('blank');
       video._subsChoice = false; video._subsWantKey = null; video._subsMemo = null; Subs.forget();           // a new playback: subtitles may turn on by themselves again
-      if (!preview && tsAlways()) startBuffered(c);
+      if ((!preview || buffer) && tsAlways()) startBuffered(c);
       else Player.play(c, { preview: preview, keepTrying: foSwitching === 'back' });
       chansVL.refreshWhere(function (x) { return x && (x.k === c.k || (lastPlayed && x.k === lastPlayed.k)); });
       if (then) then();
@@ -3403,11 +3405,11 @@ var Guide = (function () {
     draw();
   }
 
-  function preview(c) { Views.startChannel(c, true, function () { Views.placePreview(); draw(); hints(); }); }
+  function preview(c, chosen) { Views.startChannel(c, true, function () { Views.placePreview(); draw(); hints(); }, chosen); }
   function watch(c) {
     if (isPlaying(c)) return Views.goFull();
     if (Store.settings.guideOk === 'full') return Views.startChannel(c, false, Views.goFull);
-    preview(c);
+    preview(c, true);
   }
   // The channel in the window, fullscreen, from anywhere in the guide.
   function watchPreview() { if (previewing()) { Views.goFull(); return true; } return false; }
@@ -3425,7 +3427,7 @@ var Guide = (function () {
     var h = progAt(c, focusT), now = Date.now(), items = [];
     if (h.p && h.p.e <= now && c.arch) items.push({ label: 'Replay this programme', icon: 'replay', action: function () { Views.playCatchup(c, h.p, 0); } });
     items.push({ label: 'Watch fullscreen', icon: 'full', action: function () { if (isPlaying(c)) Views.goFull(); else Views.startChannel(c, false, Views.goFull); } });
-    if (!isPlaying(c)) items.push({ label: 'Play in the window', icon: 'window', action: function () { preview(c); } });
+    if (!isPlaying(c)) items.push({ label: 'Play in the window', icon: 'window', action: function () { preview(c, true); } });
     if (h.p && h.p.s <= now && h.p.e > now && c.arch) items.push({ label: 'Watch from the start', icon: 'start', sub: 'catch-up', action: function () { Views.playCatchup(c, h.p, 0); } });
     if (c.arch) items.push({ label: 'Earlier programmes…', icon: 'history', sub: T('catch-up {n} days', { n: c.arch }), action: function () { Views.catchupList(c); } });
     // Recording to a USB drive (record.js): the programme on now or later.
