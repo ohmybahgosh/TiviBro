@@ -26,12 +26,15 @@ function open(key, url, alt, sub) {
   key = String(key || url);
   var F = feeds[key];
   if (!F) {
-    F = feeds[key] = { key: key, url: url, alt: alt && alt !== url ? alt : '', subs: [], stopped: false, fails: 0, swapped: false, got: false, kind: '', init: null, last: null, down: false, gaps: 0 };
+    F = feeds[key] = { key: key, url: url, alt: alt && alt !== url ? alt : '', subs: [], stopped: false, fails: 0, swapped: false, got: false, kind: '', init: null, last: null, down: false, gaps: 0, tail: [], tailBytes: 0, lastPiece: null };
     connect(F);
   } else {
-    // Joining: what it is, and fMP4's init so the next piece makes sense.
+    // Joining: what it is, fMP4's init, and the last few seconds already here (a pause or the rewind buffer joining
+    // a recording starts at once instead of waiting for the provider's next piece).
     if (F.kind && sub.kind) sub.kind(F.kind);
     if (F.init && sub.init) sub.init(F.init);
+    if (F.lastPiece && sub.piece) sub.piece(F.lastPiece);
+    if (F.tail.length && sub.data) F.tail.forEach(function (c) { sub.data(c); });
   }
   F.subs.push(sub);
   return {
@@ -50,6 +53,12 @@ function stop(F) {
   if (feeds[F.key] === F) delete feeds[F.key];
 }
 function fatal(F, why) { each(F, 'fatal', why); F.subs = []; stop(F); }
+// MPEG-TS: the last few MB (several seconds, with a keyframe in it) for whoever joins.
+var TAIL_MAX = 4 * 1024 * 1024;
+function keep(F, c) {
+  F.tail.push(c); F.tailBytes += c.length;
+  while (F.tailBytes - F.tail[0].length > TAIL_MAX) F.tailBytes -= F.tail.shift().length;
+}
 function setKind(F, k) { if (F.kind !== k) { F.kind = k; each(F, 'kind', k); } }
 function flowing(F) { F.fails = 0; F.got = true; if (F.down) { F.down = false; each(F, 'up'); } }
 
@@ -83,7 +92,7 @@ function connect(F) {
     }
     if (io.isPlaylist(res, at)) { res.resume(); return hls(F, at); }
     setKind(F, 'ts');
-    res.on('data', function (c) { if (F.stopped) return; flowing(F); each(F, 'data', c); });
+    res.on('data', function (c) { if (F.stopped) return; flowing(F); keep(F, c); each(F, 'data', c); });
     res.on('end', function () { again(F, 'the provider closed the stream'); });
     res.on('error', function (e2) { again(F, e2.message); });
   });
@@ -135,6 +144,7 @@ function hls(F, u) {
           if (F.stopped) return;
           if (e3) { F.gaps++; each(F, 'piece', { buf: null, dur: s.dur, disc: true, lost: true }); return step(); }     // a lost piece is a short gap
           flowing(F);
+          F.lastPiece = { buf: buf, dur: s.dur, disc: true };
           each(F, 'piece', { buf: buf, dur: s.dur, disc: s.disc });
           step();
         });

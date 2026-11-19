@@ -1635,7 +1635,8 @@ var Player = (function () {
      DASH providers answer with an error, or protect without saying how).  null when there's no such window. */
   function liveWindow() {
     // A DASH channel's own window, or live pause's buffer on the USB drive (HLS, from where it started).
-    if (!video || !cur || !cur.live || cur.timeshift || !st || !(st.kind === 'dash' || (cur.tshift && st.kind === 'hls')) || !playing()) return null;
+    // (The drive's copy counts while it buffers too: ◀ there must never fall through to another channel.)
+    if (!video || !cur || !cur.live || cur.timeshift || !st || !(st.kind === 'dash' || (cur.tshift && st.kind === 'hls')) || !(playing() || cur.tshift)) return null;
     var r = video.seekable;
     if (!r || !r.length) return null;
     var a = r.start(0), b = r.end(r.length - 1);

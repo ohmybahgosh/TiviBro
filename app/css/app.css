@@ -1348,3 +1348,15 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .recs .rc-side .rc-watched{font-size:22px;color:var(--muted);margin-top:18px}
 .recs .rc-side .rc-seen.big{width:100%;height:8px;margin-bottom:10px}
 .gd-badge.up{background:var(--raised);color:var(--muted)}
+
+.recs .rc-poster{flex:none;width:48px;height:72px;margin:0 20px 0 -4px;border-radius:6px;overflow:hidden;background:var(--raised)}
+.recs .rc-poster img{width:100%;height:100%;object-fit:cover;display:block}
+.recs .rc-side{position:relative;overflow:hidden}
+.recs .rc-side .rc-bd{position:absolute;left:0;top:0;right:0;height:360px;background-size:cover;background-position:center top;opacity:.45}
+.recs .rc-side .rc-bd::after{content:'';position:absolute;left:0;right:0;bottom:0;height:200px;background:linear-gradient(transparent,var(--panel))}
+.recs .rc-side>*{position:relative}
+.recs .rc-side.has-bd{padding-top:150px}
+.recs .rc-side .rc-bigposter{width:160px;height:240px;object-fit:cover;border-radius:10px;margin-bottom:24px;box-shadow:0 12px 40px rgba(0,0,0,.5);display:block}
+.recs .rc-side .rc-tmdb{font-size:22px;color:var(--muted);margin:-4px 0 14px}
+.recs .rc-side .rc-ep{font-size:22px;color:var(--accent2);margin:-4px 0 14px}
+.recs .rc-side .rc-plot{font-size:22px;line-height:1.5;color:var(--text);opacity:.85;margin:6px 0 16px;max-height:200px;overflow:hidden}

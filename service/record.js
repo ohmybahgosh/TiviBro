@@ -83,7 +83,7 @@ function lengthOf(r) {
 }
 function pub(r) {
   return { id: r.id, title: r.title, channel: r.channel, start: r.start, end: r.end, status: r.status, bytes: r.bytes || 0, parts: (r.parts || []).length,
-    kind: r.kind || '', error: r.error || '', drive: r.driveName || '', startedAt: r.startedAt || 0, gaps: r.gaps || 0, dur: lengthOf(r), endedAt: r.endedAt || 0, logo: r.logo || '' };
+    kind: r.kind || '', error: r.error || '', drive: r.driveName || '', startedAt: r.startedAt || 0, gaps: r.gaps || 0, dur: lengthOf(r), endedAt: r.endedAt || 0, logo: r.logo || '', key: r.key || '', desc: r.desc || '', ep: r.ep || '', meta: r.meta || null };
 }
 /* The drive's room (df), looked at every 30 s at most: free and total MB. */
 var spaceAt = 0, spaceWas = null;
@@ -283,10 +283,20 @@ function body(req, cb) {
   req.on('data', function (c) { if (over) return; b += c; if (b.length > BODY_MAX) over = true; });
   req.on('end', function () { if (over) return cb(new Error('too large')); try { cb(null, JSON.parse(b || '{}')); } catch (e) { cb(e); } });
 }
+function cleanMeta(m) {
+  if (!m || typeof m !== 'object') return null;
+  if (m.miss) return { miss: true, at: Date.now() };
+  var out = {}, url = function (u) { u = String(u || ''); return /^https:\/\/[^\s"']{1,500}$/.test(u) ? u : ''; };
+  ['title', 'year', 'genre', 'runtime', 'rating', 'kind'].forEach(function (k) { if (m[k] != null) out[k] = String(m[k]).slice(0, 120); });
+  out.plot = String(m.plot || '').slice(0, 1200);
+  ['poster', 'backdrop', 'backdropHd', 'logo'].forEach(function (k) { var u = url(m[k]); if (u) out[k] = u; });
+  out.at = Date.now();
+  return out;
+}
 function newId() { return 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 function okUrl(u) { return /^http:\/\/127\.0\.0\.1:\d+\//.test(String(u || '')); }     // the relay only: no recording of arbitrary addresses
 function add(q, scheduled) {
-  var now = Date.now(), r = { id: newId(), url: String(q.url), alt: okUrl(q.alt) && q.alt !== q.url ? String(q.alt) : '', key: String(q.key || '').slice(0, 200), logo: String(q.logo || '').slice(0, 500), title: String(q.title || q.channel || 'Recording').slice(0, 200), channel: String(q.channel || '').slice(0, 200),
+  var now = Date.now(), r = { id: newId(), url: String(q.url), alt: okUrl(q.alt) && q.alt !== q.url ? String(q.alt) : '', key: String(q.key || '').slice(0, 200), desc: String(q.desc || '').slice(0, 1500), ep: String(q.ep || '').slice(0, 40), logo: String(q.logo || '').slice(0, 500), title: String(q.title || q.channel || 'Recording').slice(0, 200), channel: String(q.channel || '').slice(0, 200),
     start: scheduled ? +q.start : now, end: +q.end, status: 'scheduled', drive: q.drive ? String(q.drive) : '', bytes: 0, parts: [] };
   load().recs.push(r); save();
   if (!scheduled || r.start <= now) begin(r);
@@ -423,6 +433,8 @@ function handleHere(req, res, ALLOW) {
       else if (r.status === 'recording') { r.end = Date.now(); finish(r); }
       return send(res, ALLOW, 200, pub(r));
     }
+    // What TMDB knows about it (the app asks, with your token): poster, backdrop, plot, year, genre, rating.
+    if (p === '/record/meta') { r.meta = cleanMeta(q.meta); save(); return send(res, ALLOW, 200, pub(r)); }
     if (p === '/record/delete') {
       halt(r);
       (r.parts || []).forEach(function (f) { try { fs.unlinkSync(f); } catch (x) {} });

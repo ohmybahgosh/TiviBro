@@ -31,6 +31,28 @@ var Record = (function () {
     if (h && t && h !== t) return { url: wrap(ch, h), alt: wrap(ch, t) };
     return { url: urlFor(ch), alt: '' };
   }
+  function descOf(ch, p) { try { return p && typeof Epg !== 'undefined' && Epg.desc ? Epg.desc(ch, p) || '' : ''; } catch (e) { return ''; } }
+  /* What TMDB knows about each recording (with your token): the guide's own match when Movies on now already found
+     one, else a look by its title (a show when the guide gave it an episode, else a movie or show by title and
+     description).  Kept with the recording, so the Recordings screen shows its poster, backdrop and plot.
+     A miss is kept too, so it isn't asked again; a few at a time. */
+  var asked = {}, metaBusy = false;
+  function lite(m) { return { title: m.title, year: m.year, poster: m.poster, backdrop: m.backdrop, backdropHd: m.backdropHd || '', logo: m.logo || '', plot: String(m.plot || '').slice(0, 1200), genre: m.genre, runtime: m.runtime, rating: m.rating, kind: m.kind || '' }; }
+  function tmdbOn() { return typeof Media !== 'undefined' && Media.guideLookup && typeof MediaStore !== 'undefined' && MediaStore.tmdbToken && !!MediaStore.tmdbToken(); }
+  function enrich() {
+    if (metaBusy || !tmdbOn()) return;
+    var r = last.recs.filter(function (x) { return !x.meta && !asked[x.id] && x.status !== 'failed' && x.status !== 'cancelled'; })[0];
+    if (!r) return;
+    asked[r.id] = 1; metaBusy = true;
+    var t = String(r.title || '').replace(/\s*\(\d{4}\)\s*$/, ''), y = (/\((\d{4})\)\s*$/.exec(r.title || '') || [])[1] || '';
+    var ask = r.ep && Media.tvByName ? Media.tvByName(t, y, 'weak') : Media.guideLookup(t, y, 'weak', r.desc || '');
+    ask.then(function (res) {
+      var m = res && res.metadata;
+      return api('/record/meta', { id: r.id, meta: m ? lite(m) : { miss: true } }).then(function () { return list(); });
+    }, function () {}).then(function () { metaBusy = false; setTimeout(enrich, 1500); });
+  }
+  // The guide's match for this programme, if Movies on now has one already: no lookup needed.
+  function guideMeta(ch, p) { try { var m = typeof Movies !== 'undefined' && Movies.of ? Movies.of(ch, p) : null; return m ? lite(m) : null; } catch (e) { return null; } }
   function logo(ch) { try { return Views.logoOf(ch) || ''; } catch (e) { return ''; } }
   function sig(recs) { return recs.map(function (r) { return r.id + r.status + r.end; }).join(); }
   function list() {
@@ -40,6 +62,7 @@ var Record = (function () {
       // The guide marks what's recording, so it's redrawn when that changes.
       if (shown() !== had && typeof Views !== 'undefined' && Views.buildTabs) Views.buildTabs();
       if (sig(last.recs) !== was && typeof Guide !== 'undefined' && Guide.vis) try { Guide.draw(); } catch (e) {}
+      setTimeout(enrich, 500);
       return last.recs;
     });
   }
@@ -63,16 +86,18 @@ var Record = (function () {
   function now(ch, p) {
     var end = p && p.e > Date.now() ? p.e + PAD_AFTER : Date.now() + 60 * 60000;
     var u = recUrls(ch);
-    return api('/record/start', { url: u.url, alt: u.alt, key: ch.k, logo: logo(ch), title: p && p.t || L.name(ch), channel: L.name(ch), end: end }).then(function (r) {
+    return api('/record/start', { url: u.url, alt: u.alt, key: ch.k, logo: logo(ch), desc: descOf(ch, p), ep: p && p.ep || '', title: p && p.t || L.name(ch), channel: L.name(ch), end: end }).then(function (r) {
       U.toast(T('Recording "{x}" until {t}', { x: r.title, t: U.hhmm(end) }), 4000);
+      var gm = guideMeta(ch, p); if (gm) api('/record/meta', { id: r.id, meta: gm }).catch(function () {});
       Log.info('record', 'Recording ' + L.name(ch) + ' until ' + U.hhmm(end));
       return list();
     }, say);
   }
   function schedule(ch, p) {
     var u = recUrls(ch);
-    return api('/record/schedule', { url: u.url, alt: u.alt, key: ch.k, logo: logo(ch), title: p.t || L.name(ch), channel: L.name(ch), start: p.s - PAD_BEFORE, end: p.e + PAD_AFTER }).then(function (r) {
+    return api('/record/schedule', { url: u.url, alt: u.alt, key: ch.k, logo: logo(ch), desc: descOf(ch, p), ep: p.ep || '', title: p.t || L.name(ch), channel: L.name(ch), start: p.s - PAD_BEFORE, end: p.e + PAD_AFTER }).then(function (r) {
       U.toast(T('Will record "{x}" at {t}', { x: r.title, t: U.hhmm(p.s) }), 4000);
+      var gm = guideMeta(ch, p); if (gm) api('/record/meta', { id: r.id, meta: gm }).catch(function () {});
       return list();
     }, say);
   }
@@ -140,12 +165,14 @@ var Record = (function () {
   function savePos() { try { localStorage.setItem(POS_KEY, JSON.stringify(pos)); } catch (e) {} }
   function posOf(id) { return pos[id] || null; }
   var watching = null, posT = null;
+  // The channel a recording is of (its key, from the app), for yellow > Live while it still records.
+  function chOf(r) { var all = L.data && L.data.channels || []; for (var i = 0; i < all.length; i++) if (all[i].k === r.key) return all[i]; return null; }
   function watch(r, fromStart, onExit) {
     var url = base() + '/record/file/' + r.id + '/rec.' + (r.kind === 'mp4' ? 'mp4' : 'ts');
     var p0 = posOf(r.id), at = !fromStart && p0 && p0.t > 30 && (!r.dur || p0.t < r.dur - 60) ? p0.t : 0;
     if (at) U.toast(T('Resuming at {t}', { t: hms(at) }), 2500);
     watching = r.id;
-    Views.playVod({ id: 'rec:' + r.id, title: r.title, sub: r.channel + '  ·  ' + whenOf(r), dur: r.status === 'recording' ? 0 : r.dur, item: { recording: true } }, url, at, function () {
+    Views.playVod({ id: 'rec:' + r.id, title: r.title, sub: r.channel + '  ·  ' + whenOf(r), dur: r.status === 'recording' ? 0 : r.dur, item: { recording: true }, liveCh: r.status === 'recording' ? chOf(r) : null }, url, at, function () {
       note(); watching = null; clearInterval(posT);
       (onExit || open)();
     });
@@ -176,6 +203,6 @@ var Record = (function () {
   // The always-on rewind buffer: the USB drive only (it writes all the time).
   function canBuffer() { return !!base() && drive; }
 
-  return { now: now, schedule: schedule, tsStart: tsStart, tsPing: tsPing, tsStop: tsStop, canPause: canPause, canBuffer: canBuffer, base: base, stop: stop, remove: remove, list: list, drives: drives, open: open, shown: shown, watch: watch, posOf: posOf, forget: forget, hms: hms, sizeOf: sizeOf, whenOf: whenOf, get space() { return space; }, menuItem: menuItem, of: of, urlFor: urlFor,
+  return { now: now, schedule: schedule, tsStart: tsStart, tsPing: tsPing, tsStop: tsStop, canPause: canPause, canBuffer: canBuffer, enrich: enrich, base: base, stop: stop, remove: remove, list: list, drives: drives, open: open, shown: shown, watch: watch, posOf: posOf, forget: forget, hms: hms, sizeOf: sizeOf, whenOf: whenOf, get space() { return space; }, menuItem: menuItem, of: of, urlFor: urlFor,
     get recs() { return last.recs; } };
 })();

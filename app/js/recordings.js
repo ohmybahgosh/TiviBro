@@ -62,6 +62,7 @@ var Recordings = (function () {
     drive();
     var empty = !items.length, em = $('rcEmpty');
     em.classList.toggle('hidden', !empty);
+    $('rcSide').classList.toggle('hidden', empty);
     $('rcList').classList.toggle('hidden', empty);
     if (empty) {
       em.innerHTML = '';
@@ -116,7 +117,10 @@ var Recordings = (function () {
       var row = U.el('div', 'rc-row' + (i === sel ? ' focus' : '') + (it.inShow ? ' sub' : '') + (it.r ? ' st-' + it.r.status : ' show'));
       // Selecting: a box on what can be deleted (not one still recording, not a show's row).
       if (picking) row.appendChild(U.el('span', 'rc-tick' + (it.r && it.r.status !== 'recording' ? (picking[it.r.id] ? ' on' : '') : ' none')));
-      var ic = U.el('span', 'rc-ic'); ic.innerHTML = UI.icon(iconOf(it)); row.appendChild(ic);
+      // Its poster when TMDB knows it (record.js asks), else what it is.
+      var mt = metaOf(it);
+      if (mt && mt.poster) { var pw = U.el('span', 'rc-poster'), pim = U.el('img'); pim.src = mt.poster; pim.alt = ''; pim.decoding = 'async'; pim.onerror = function () { pw.innerHTML = UI.icon(iconOf(it)); pw.className = 'rc-ic'; }; pw.appendChild(pim); row.appendChild(pw); }
+      else { var ic = U.el('span', 'rc-ic'); ic.innerHTML = UI.icon(iconOf(it)); row.appendChild(ic); }
       var txt = U.el('div', 'rc-txt');
       if (it.show) {
         txt.appendChild(U.el('b', '', RAW(it.title)));
@@ -138,17 +142,25 @@ var Recordings = (function () {
     side();
     hints();
   }
+  function metaOf(it) { var r = it && (it.r || (it.list && it.list[0])); var m = r && r.meta; return m && !m.miss ? m : null; }
   function side() {
     var el = $('rcSide'), it = items[sel];
     el.innerHTML = '';
     if (!it || it.head) return;
-    var r = it.r || it.list[0];
-    if (r.logo) { var im = U.el('img', 'rc-logo'); im.src = r.logo; im.onerror = function () { this.remove(); }; el.appendChild(im); }
+    var r = it.r || it.list[0], mt = metaOf(it);
+    // TMDB's backdrop behind the top of the panel, and its poster; else the channel's logo.
+    var bd = mt && (mt.backdropHd || mt.backdrop);
+    if (bd) { var b = U.el('div', 'rc-bd'); b.style.backgroundImage = 'url("' + bd + '")'; el.appendChild(b); el.classList.add('has-bd'); } else el.classList.remove('has-bd');
+    if (mt && mt.poster) { var pi = U.el('img', 'rc-bigposter'); pi.src = mt.poster; pi.alt = ''; pi.onerror = function () { this.remove(); }; el.appendChild(pi); }
+    else if (r.logo) { var im = U.el('img', 'rc-logo'); im.src = r.logo; im.onerror = function () { this.remove(); }; el.appendChild(im); }
     el.appendChild(U.el('h2', '', RAW(it.show ? it.title : r.title)));
+    if (mt) { var f0 = [mt.year, mt.genre, mt.rating ? '★ ' + mt.rating : ''].filter(Boolean).join('   ·   '); if (f0) el.appendChild(U.el('div', 'rc-tmdb', f0)); }
+    if (r.ep && !it.show) el.appendChild(U.el('div', 'rc-ep', r.ep));
     if (r.channel && r.channel !== r.title) el.appendChild(U.el('div', 'rc-ch', RAW(r.channel)));
     if (it.show) {
       var total = 0, bytes = 0; it.list.forEach(function (x) { total += x.dur || 0; bytes += x.bytes || 0; });
       el.appendChild(U.el('div', 'rc-facts', T('{n} recordings', { n: it.list.length }) + '   ·   ' + len(total) + '   ·   ' + Record.sizeOf(bytes)));
+      if (mt && mt.plot) el.appendChild(U.el('p', 'rc-plot', RAW(mt.plot)));
       return;
     }
     var st = { recording: T('Recording now'), scheduled: T('Scheduled'), done: T('Recorded'), failed: T('Didn\'t record'), missed: T('Missed'), cancelled: T('Cancelled') }[r.status] || r.status;
@@ -164,6 +176,8 @@ var Recordings = (function () {
     if (r.gaps) facts.push(T('{n} short gaps (the provider dropped the connection)', { n: r.gaps }));
     if (facts.length) el.appendChild(U.el('div', 'rc-facts', facts.join('   ·   ')));
     if (r.error && r.status !== 'done') el.appendChild(U.el('div', 'rc-err', r.error));
+    var plot = mt && mt.plot || r.desc;
+    if (plot) el.appendChild(U.el('p', 'rc-plot', RAW(plot)));
     var p = Record.posOf(r.id), f = seen(r);
     if (r.status === 'done' && p && f > 0.02) {
       var w = U.el('div', 'rc-watched'), bar = U.el('i', 'rc-seen big'), fill = U.el('b'); fill.style.width = Math.round(f * 100) + '%'; bar.appendChild(fill);

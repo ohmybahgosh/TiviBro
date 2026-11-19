@@ -124,6 +124,16 @@ function call(method, url, body, headers) {
   r = (await call('GET', '/record/list')).j;
   ok('the list says the drive and its room', r.drive && r.drive.name === 'sda' && typeof r.drive.freeMB === 'number', JSON.stringify(r.drive));
 
+  // The guide's description and episode, and what TMDB knows (only https pictures, sizes capped).
+  r = await call('POST', '/record/schedule', { url: base + '/ts', title: 'Cunk on Earth', desc: 'Philomena Cunk asks big questions.', ep: 'S1 E2', start: Date.now() + 60000, end: Date.now() + 120000 });
+  const mid = r.j.id;
+  ok('description and episode kept', r.j.desc === 'Philomena Cunk asks big questions.' && r.j.ep === 'S1 E2', JSON.stringify(r.j));
+  r = await call('POST', '/record/meta', { id: mid, meta: { title: 'Cunk on Earth', year: 2022, poster: 'https://image.tmdb.org/p.jpg', backdrop: 'javascript:alert(1)', plot: 'x'.repeat(5000), rating: 8.1 } });
+  ok('TMDB details kept with it: https pictures only, the plot capped', r.j.meta && r.j.meta.poster === 'https://image.tmdb.org/p.jpg' && !r.j.meta.backdrop && r.j.meta.plot.length === 1200 && r.j.meta.year === '2022', JSON.stringify(r.j.meta).slice(0, 200));
+  r = await call('POST', '/record/meta', { id: mid, meta: { miss: true } });
+  ok('a miss is kept (not asked again)', r.j.meta && r.j.meta.miss === true);
+  await call('POST', '/record/stop', { id: mid });
+
   // Delete: the files too.
   const before = fs.readdirSync(path.join(drive, 'TiviBro Recordings')).length;
   r = await call('POST', '/record/delete', { id: tsId });

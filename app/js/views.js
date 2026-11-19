@@ -849,7 +849,8 @@ var Views = (function () {
       case 'chprev': if (full) zap(-1); else chansVL.move(-1); return;
       case 'last': if (!lastPlayed) { U.toast('No previous channel yet'); return; } if (full) lastChannel(); else startChannel(lastPlayed, false, goFull); return;
       case 'rewind':
-        if (playing && full && Store.settings.rewindLeft !== false && (playing.arch || Player.liveWindow())) rewindLive();
+        // Playing from the drive (live pause, the rewind buffer): ◀ always rewinds, never changes channel.
+        if (playing && full && (Player.tshift || (Store.settings.rewindLeft !== false && (playing.arch || Player.liveWindow())))) rewindLive();
         else if (full) lastChannel();
         return;
       case 'restart': if (c && c.arch) watchFromStart(c); else U.toast('No catch-up on this channel'); return;
@@ -1156,7 +1157,11 @@ var Views = (function () {
   function osdLegend() {
     var el = $('osdKeys'), items = [];
     function chip(key, label, color) { items.push([key, label, color]); }
-    if (mode === 'vod') { chip('ok', 'Pause'); chip('left', '◀ ▶  Skip ' + Store.settings.skip + 's'); if (typeof SeekPrev !== 'undefined' && SeekPrev.chapters.length > 1) { chip('down', '▼  Chapters'); chip('chup', 'CH  Next chapter'); } else chip('chup', 'CH  Skip 10 min'); chip('red', 'Options', 'red'); chip('back', 'Back  Stop'); }
+    if (mode === 'vod') { chip('ok', 'Pause'); chip('left', '◀ ▶  Skip ' + Store.settings.skip + 's'); if (typeof SeekPrev !== 'undefined' && SeekPrev.chapters.length > 1) { chip('down', '▼  Chapters'); chip('chup', 'CH  Next chapter'); } else chip('chup', 'CH  Skip 10 min'); chip('red', 'Options', 'red');
+      // A recording: Back goes back to Recordings, and one still recording has its channel, live, on yellow.
+      var recm = vod && vod.meta.item && vod.meta.item.recording;
+      if (recm && vod.meta.liveCh) chip('yellow', 'Live', 'yellow');
+      chip('back', recm ? 'Back  Recordings' : 'Back  Stop'); }
     else if (behindLive()) { chip('ok', 'OK  ' + (Player.paused ? 'Play' : 'Pause')); chip('left', '◀ ▶  Skip ' + Store.settings.skip + 's'); chip('back', 'Back  Live'); chip('red', 'Options', 'red'); }
     else if (mode === 'catchup') { chip('ok', 'Pause'); chip('left', '◀ ▶  Skip ' + Store.settings.skip + 's'); chip('up', '▲ ▼  Skip 5 min'); chip('yellow', 'Back to live', 'yellow'); chip('red', 'Options', 'red'); }
     else {
@@ -1274,6 +1279,8 @@ var Views = (function () {
       if (a === 'back') { if (vs.pending != null) { vodSeekCancel(); return true; } if (!hidden) { $('osd').classList.add('hidden'); return true; } exitFull(); }
       else if (a === 'left') vodSeek(-Store.settings.skip, true);
       else if (a === 'stop') exitFull();       // discussion #36: Stop on the remote stops the movie (where it got to is kept)
+      // A recording still recording: yellow goes to the channel, live.
+      else if (a === 'yellow' && vod && vod.meta.liveCh) { var lc = vod.meta.liveCh; vod.onExit = null; exitFull(); startChannel(lc, false, goFull); }
       else if (a === 'right') vodSeek(+Store.settings.skip, true);
       // CH+ CH−: the next or previous chapter in a file with chapters, else 10 minutes like ▲ ▼.
       else if ((a === 'chdown' || a === 'chup') && typeof SeekPrev !== 'undefined' && SeekPrev.chapters.length > 1) { var ct = SeekPrev.chapterStep(a === 'chup' ? 1 : -1, vs.pending != null ? vs.pending : Player.position); if (ct >= 0) vodSeek(ct - (vs.pending != null ? vs.pending : Player.position)); }
@@ -1546,6 +1553,7 @@ var Views = (function () {
   }
   function rewindLive() {
     if (lwSeek(-Store.settings.skip)) return;
+    if (Player.tshift) { U.toast(T('Nothing kept to go back to yet')); return; }
     var nn = Epg.nowNext(playing);
     var p = nn && nn.now ? nn.now : { s: Date.now() - 3600e3, e: Date.now() + 3600e3, t: L.name(playing) };
     var off = Math.max(0, (Date.now() - p.s) / 1000 - Store.settings.skip);

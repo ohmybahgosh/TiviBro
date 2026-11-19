@@ -52,6 +52,11 @@ function call(method, url, body) {
   ok('the recording gets the stream', list.bytes > 0, list.bytes);
   ok('the pause gets it too', fs.readdirSync(path.join(tmp, 'usb', 'sda', 'sda1', 'TiviBro Recordings', '.timeshift', t.j.id)).length >= 0 && Feed._feeds.ch1 && Feed._feeds.ch1.subs.length === 2, Feed._feeds.ch1 && Feed._feeds.ch1.subs.length);
 
+  // Joining: the last few seconds at once (a pause joining a recording doesn't wait for more to come).
+  let got = 0; const j = Feed.open('ch1', base + '/live/1.ts', '', { data: (c) => { got += c.length; } });
+  ok('joining gets what\'s already here at once', got > 0, got);
+  j.close();
+
   // Stopping the recording keeps the pause's connection; stopping the pause too closes it.
   await call('POST', '/record/stop', { id: recId });
   await wait(300);
