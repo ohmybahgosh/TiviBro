@@ -306,6 +306,19 @@ Teams.follow('ncaab:msu', false);
   Teams.dirty();
   const y = Teams.recheck(r);
   ok('reminders: nowhere in the guide any more: gone, with what the channel lists', y && y.gone && /Celtics/.test(y.now || ''), JSON.stringify(y));
+  // The game still listed there, but as a replay (the provider's previously-shown flag): not the game, so it goes.
+  progs[slot.k] = [{ s: t, e: t + 3 * H, t: g, rp: 1 }];
+  Teams.dirty();
+  const rp = Teams.recheck(r);
+  ok('reminders: listed there as a replay: gone', rp && rp.gone, JSON.stringify(rp));
+  // An event channel gone Offline: its guide read, and empty.
+  progs[slot.k] = [];
+  Teams.dirty();
+  const off = Teams.recheck(r);
+  ok('reminders: its channel\'s guide is read and empty: gone', off && off.gone, JSON.stringify(off));
+  // Its guide not read yet: left alone.
+  delete progs[slot.k];
+  ok('reminders: its channel\'s guide not read yet: left alone', Teams.recheck(r) === null);
   Teams.follow('nba:det', false);
   [slot, slot2].forEach(c => { delete progs[c.k]; });
   delete Epg.request;

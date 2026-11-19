@@ -307,7 +307,7 @@ var Search = (function () {
     if (!p || (p.s <= now && p.e > now)) { Views.startChannel(c, false, Views.goFull); return; }
     if (p.e <= now) { Views.playCatchup(c, p, 0); return; }
     var r = Store.edits.reminders, i = r.findIndex(function (x) { return x.k === c.k && x.s === p.s; });
-    if (i < 0) { r.push({ k: c.k, s: p.s, e: p.e, t: p.t }); U.toast('Reminder set for ' + U.day(p.s).toLowerCase() + ' ' + U.hhmm(p.s)); }
+    if (i < 0) { r.push({ k: c.k, s: p.s, e: p.e, t: p.t }); U.toast('Reminder set for ' + U.day(p.s).toLowerCase() + ' ' + U.hhmm(p.s)); Log.info('remind', 'Reminder set: ' + p.t + ' at ' + U.hhmm(p.s) + ' (Search)'); }
     else { r.splice(i, 1); U.toast('Reminder cancelled'); }
     Store.saveEdits();
     vl.refresh(); hints();

@@ -171,7 +171,7 @@ var OnNow = (function () {
   function remind(x) {
     var rem = Store.edits.reminders, i = rem.findIndex(function (r) { return r.k === x.c.k && r.s === x.p.s; });
     if (i >= 0) { rem.splice(i, 1); U.toast('Reminder cancelled'); }
-    else { rem.push({ k: x.c.k, s: x.p.s, e: x.p.e, t: x.p.t }); U.toast('Reminder set for ' + U.hhmm(x.p.s) + ' on ' + Library.name(x.c)); }
+    else { rem.push({ k: x.c.k, s: x.p.s, e: x.p.e, t: x.p.t }); U.toast('Reminder set for ' + U.hhmm(x.p.s) + ' on ' + Library.name(x.c)); Log.info('remind', 'Reminder set: ' + x.p.t + ' at ' + U.hhmm(x.p.s) + ' (Movies on now)'); }
     Store.saveEdits();
     if (typeof Remind !== 'undefined' && Remind.sync) Remind.sync(true);
   }

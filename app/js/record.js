@@ -84,27 +84,29 @@ var Record = (function () {
   }
   function say(e) { U.toast(T(explain(e)), 6000); if (typeof Log !== 'undefined') Log.warn('record', explain(e)); }
 
+  /* From the phone app (q): no toast on the TV, and a failure comes back as an error the phone shows. */
+  function fail(q, start) { return q ? function (e) { throw new Error(start ? explain(e) : e && e.code === 'nodrive' ? explain(e) : (e && e.message || 'No answer from the helper')); } : say; }
   /* Now, until the programme ends (with a few minutes after), or for an hour when the guide says nothing. */
-  function now(ch, p) {
+  function now(ch, p, q) {
     var end = p && p.e > Date.now() ? p.e + padA() : Date.now() + 60 * 60000;
     var u = recUrls(ch);
     return api('/record/start', { url: u.url, alt: u.alt, key: ch.k, logo: logo(ch), desc: descOf(ch, p), ep: p && p.ep || '', title: p && p.t || L.name(ch), channel: L.name(ch), end: end }).then(function (r) {
-      U.toast(T('Recording "{x}" until {t}', { x: r.title, t: U.hhmm(end) }), 4000);
+      if (!q) U.toast(T('Recording "{x}" until {t}', { x: r.title, t: U.hhmm(end) }), 4000);
       var gm = guideMeta(ch, p); if (gm) api('/record/meta', { id: r.id, meta: gm }).catch(function () {});
-      Log.info('record', 'Recording ' + L.name(ch) + ' until ' + U.hhmm(end));
+      Log.info('record', 'Recording ' + L.name(ch) + ' until ' + U.hhmm(end) + (q ? ' (from the phone app)' : ''));
       return list();
-    }, say);
+    }, fail(q, true));
   }
-  function schedule(ch, p) {
+  function schedule(ch, p, q) {
     var u = recUrls(ch);
     return api('/record/schedule', { url: u.url, alt: u.alt, key: ch.k, logo: logo(ch), desc: descOf(ch, p), ep: p.ep || '', title: p.t || L.name(ch), channel: L.name(ch), start: p.s - padB(), end: p.e + padA() }).then(function (r) {
-      U.toast(T('Will record "{x}" at {t}', { x: r.title, t: U.hhmm(p.s) }), 4000);
+      if (!q) U.toast(T('Will record "{x}" at {t}', { x: r.title, t: U.hhmm(p.s) }), 4000);
       var gm = guideMeta(ch, p); if (gm) api('/record/meta', { id: r.id, meta: gm }).catch(function () {});
       return list();
-    }, say);
+    }, fail(q, true));
   }
-  function stop(id) { return api('/record/stop', { id: id }).then(list, say); }
-  function remove(id) { forget(id); return api('/record/delete', { id: id }).then(list, say); }
+  function stop(id, q) { return api('/record/stop', { id: id }).then(list, fail(q)); }
+  function remove(id, q) { forget(id); return api('/record/delete', { id: id }).then(list, fail(q)); }
 
   // What the guide knows: is this programme being recorded or due to be?
   function of(ch, p) {

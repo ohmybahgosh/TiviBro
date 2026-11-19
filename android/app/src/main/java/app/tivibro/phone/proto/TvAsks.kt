@@ -84,3 +84,37 @@ private fun JSONObject.str(k: String): String = if (isNull(k)) "" else optString
     such as "gc" or "history").  Anything else leaves the address as it is (the editor's first page). */
 fun editorPageUrl(url: String, page: String): String =
     if (Regex("^\\w{1,30}$").matches(page) && Regex("#t=[0-9a-f]{48}$").containsMatchIn(url)) "$url/$page" else url
+
+/** A recording on the TV's USB drive (ask "recordings").  [status]: recording, scheduled, done, failed, missed or
+    cancelled.  [pos] is where it was left on the TV (seconds), [watched] past the TV's watched mark. */
+data class Recording(
+    val id: String, val title: String, val channel: String, val key: String, val status: String,
+    val start: Long, val end: Long, val startedAt: Long, val bytes: Long, val dur: Int,
+    val error: String, val ep: String, val desc: String, val logo: String, val poster: String,
+    val pos: Int, val watched: Boolean,
+) {
+    val recording get() = status == "recording"
+    val scheduled get() = status == "scheduled"
+    val done get() = status == "done"
+    /** When it started recording, or when it is due to. */
+    val at get() = if (startedAt > 0) startedAt else start
+}
+
+/** The TV's USB drive: [freeMB] and [totalMB] are -1 when not known yet; [low] when it's nearly full. */
+data class RecDrive(val name: String, val freeMB: Long, val totalMB: Long, val low: Boolean)
+
+/** What the Recordings screen gets back for every request: a line to show, the drive (null: none in the TV), the list. */
+data class RecList(val msg: String, val drive: RecDrive?, val items: List<Recording>) {
+    companion object {
+        fun from(j: JSONObject): RecList {
+            val d = j.optJSONObject("drive")?.let { RecDrive(it.str("name"), it.optLong("freeMB", -1), it.optLong("totalMB", -1), it.optBoolean("low")) }
+            val a = j.optJSONArray("items")
+            val items = if (a == null) emptyList() else (0 until a.length()).mapNotNull { a.optJSONObject(it) }.mapNotNull { r ->
+                val id = r.str("id").takeIf { it.isNotBlank() } ?: return@mapNotNull null
+                Recording(id, r.str("t"), r.str("ch"), r.str("k"), r.str("st"), r.optLong("s"), r.optLong("e"), r.optLong("at"), r.optLong("b"), r.optInt("dur"),
+                    r.str("err"), r.str("ep"), r.str("d"), r.str("logo"), r.str("poster"), r.optInt("pos"), r.optInt("w") == 1)
+            }
+            return RecList(j.str("msg"), d, items)
+        }
+    }
+}

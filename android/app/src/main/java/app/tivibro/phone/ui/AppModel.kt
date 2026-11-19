@@ -51,6 +51,7 @@ import app.tivibro.phone.proto.Lineup
 import app.tivibro.phone.proto.NowState
 import app.tivibro.phone.proto.Volume
 import app.tivibro.phone.proto.Reminder
+import app.tivibro.phone.proto.RecList
 import app.tivibro.phone.proto.RestorePoint
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.isActive
@@ -731,6 +732,18 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         if (op == "cancel") a.put("k", k).put("s", start)
         val r = ask(id, "reminders", a, timeoutMs = if (op == "list") 25_000 else 20_000, tries = if (op == "list") 2 else 1)
         return r.optString("msg") to Reminder.list(r)
+    }
+
+    /** Recordings on the TV's USB drive: [op] list, add (a programme: [k], [start]; on now it records from now, later it's
+        scheduled), now (channel [k] from now), stop or delete (a recording's [recId]), or watch ([recId]; [fromStart], else
+        where it was left).  Every op answers with the list after it and a line to show. */
+    suspend fun recordings(id: String, op: String = "list", recId: String = "", k: String = "", start: Long = 0, fromStart: Boolean = false): RecList {
+        val a = JSONObject().put("op", op)
+        if (recId.isNotBlank()) a.put("id", recId)
+        if (k.isNotBlank()) a.put("k", k)
+        if (start > 0) a.put("s", start)
+        if (fromStart) a.put("from", "start")
+        return RecList.from(ask(id, "recordings", a, timeoutMs = if (op == "list") 30_000 else 25_000, tries = if (op == "list") 2 else 1))
     }
 
     /** Restore points on the TV: [op] list, make (with a [name]), restore or delete (with the point's [pointId]). */

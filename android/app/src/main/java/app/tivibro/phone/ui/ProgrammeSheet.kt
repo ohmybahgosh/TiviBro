@@ -27,6 +27,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.FiberManualRecord
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -126,6 +127,9 @@ fun ProgrammeSheet(model: AppModel, id: String, key: String, start: Long, first:
     var d by remember { mutableStateOf<ProgDetail?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var reminder by remember { mutableStateOf<Boolean?>(null) }
+    // Recording it on the TV's USB drive: null until changed here, then "rec", "sched" or "" and the recording's id.
+    var rec by remember { mutableStateOf<Pair<String, String>?>(null) }
+    var recBusy by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val now = System.currentTimeMillis()
     LaunchedEffect(key, start) {
@@ -197,6 +201,27 @@ fun ProgrammeSheet(model: AppModel, id: String, key: String, start: Long, first:
                             catch (e: Exception) { model.say(e.message ?: "The TV didn't answer.") }
                         }
                     }) { Icon(if (set) Icons.Rounded.NotificationsActive else Icons.Rounded.Notifications, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text(if (set) "Cancel the reminder" else "Remind me") }
+                    // Record to the TV's USB drive (an older TiviBro says nothing about it, and the TV explains when there is no drive).
+                    if (p.end > now) {
+                        val (rs, rid) = rec ?: (p.rec to x.recId)
+                        OutlinedButton(enabled = !recBusy, onClick = {
+                            recBusy = true
+                            scope.launch {
+                                try {
+                                    val l = if (rs.isBlank()) model.recordings(id, "add", k = x.key, start = p.start) else model.recordings(id, "stop", recId = rid)
+                                    val mine = l.items.firstOrNull { (it.recording || it.scheduled) && it.key == x.key && it.end >= p.end && it.start <= p.start + 600_000 }
+                                    rec = if (mine == null) "" to "" else (if (mine.recording) "rec" else "sched") to mine.id
+                                    if (l.msg.isNotBlank()) model.say(l.msg)
+                                } catch (e: TbException) {
+                                    model.say(if ((e.message ?: "").contains("unknown question", true)) "Update TiviBro on the TV to record from here." else e.message ?: "The TV said no")
+                                } catch (e: Exception) { model.say("The TV didn't answer.") }
+                                recBusy = false
+                            }
+                        }) {
+                            Icon(Icons.Rounded.FiberManualRecord, null, Modifier.size(18.dp), tint = if (rs.isBlank()) Accent else Bad); Spacer(Modifier.width(6.dp))
+                            Text(when (rs) { "rec" -> "Stop recording"; "sched" -> "Cancel recording"; else -> "Record" })
+                        }
+                    }
                     if (onSchedule != null) TextButton(onClick = { onDismiss(); onSchedule() }) { Text("Channel schedule") }
                 }
                 if (x.more.isNotEmpty()) {

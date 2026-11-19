@@ -74,12 +74,30 @@ class TvAsksTest {
         val unknown = Shortcut.forTv(null)
         assertFalse(Shortcut.ON_NOW in unknown); assertFalse(Shortcut.MEDIA in unknown); assertTrue(Shortcut.VOD in unknown)
         assertEquals(listOf(Shortcut.REMOTE, Shortcut.GUIDE, Shortcut.VOD, Shortcut.REMINDERS, Shortcut.EDITOR, Shortcut.BACKUPS, Shortcut.SETTINGS), unknown)
-        val all = NowState(rev = 1, open = true, movies = true, series = true, media = true, onnow = true)
+        assertFalse(Shortcut.RECORDINGS in unknown)
+        assertTrue(Shortcut.RECORDINGS in Shortcut.forTv(NowState(rev = 1, open = true, rec = true)))
+        assertFalse(Shortcut.RECORDINGS in Shortcut.forTv(NowState(rev = 1, open = true, rec = false)))
+        val all = NowState(rev = 1, open = true, movies = true, series = true, media = true, onnow = true, rec = true)
         assertEquals(Shortcut.entries.toList(), Shortcut.forTv(all))
         val none = NowState(rev = 1, open = true, movies = false, series = false, media = false, onnow = false)
         assertFalse(Shortcut.VOD in Shortcut.forTv(none))
         assertEquals("Shows", Shortcut.tab(Shortcut.VOD, NowState(rev = 1, open = true, movies = false, series = true)))
         assertEquals("Movies", Shortcut.tab(Shortcut.VOD, null))
         assertNull(Shortcut.tab(Shortcut.BACKUPS, all))
+    }
+
+    @Test fun recordingsFromTheTv() {
+        val j = org.json.JSONObject("""{"msg":"Recording X until 9:00 PM.","drive":{"name":"SanDisk","freeMB":20480,"totalMB":61440,"low":false},
+            "items":[{"id":"a1","t":"X","ch":"ABC","k":"x1","st":"recording","s":1,"e":2,"at":1,"b":1048576,"dur":60},
+                     {"id":"b2","t":"Y","ch":"NBC","k":"x2","st":"scheduled","s":5,"e":9},
+                     {"id":"c3","t":"Z","ch":"CBS","k":"x3","st":"done","s":0,"e":1,"b":5,"dur":3600,"pos":1800,"w":0},
+                     {"id":"","t":"no id"}]}""")
+        val l = app.tivibro.phone.proto.RecList.from(j)
+        assertEquals("Recording X until 9:00 PM.", l.msg)
+        assertEquals(20480L, l.drive?.freeMB)
+        assertEquals(listOf("a1", "b2", "c3"), l.items.map { it.id })
+        assertTrue(l.items[0].recording); assertTrue(l.items[1].scheduled); assertTrue(l.items[2].done)
+        assertEquals(listOf("Recording now", "Scheduled", "Recorded"), app.tivibro.phone.ui.recGroups(l.items).map { it.first })
+        assertNull(app.tivibro.phone.proto.RecList.from(org.json.JSONObject("{}")).drive)
     }
 }

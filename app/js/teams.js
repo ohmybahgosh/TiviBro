@@ -561,8 +561,12 @@ var Teams = (function () {
     // An event channel: the game is its name.
     var ev = c && typeof Events !== 'undefined' ? Events.of(c) : null;
     if (ev && ev.title) cur = { s: ev.start, e: ev.end, t: ev.title };
-    if (!c || !cur) { if (c) return null; }
-    else if (matchup(cur.t, c.n) === was) return null;
+    /* Still the game where it was set: kept.  Its channel's guide not read yet: left alone.  Gone from there, or
+       there as a replay of a game already played (the provider's flag, read after the reminder was set, as with
+       NHL Network's afternoon encores), or an event channel gone Offline with nothing in its guide: looked for
+       elsewhere, and dropped when it's nowhere (issue: reminders for games that weren't on). */
+    if (c && !cur && !l) return null;
+    if (c && cur && !cur.rp && matchup(cur.t, c.n) === was) return null;
     // Elsewhere now: the same two teams within 12 hours of when it was set for.
     var far = Math.max(r.s - now, 0) + SAME_GAME, found = null;
     games(far, true).forEach(function (g) {

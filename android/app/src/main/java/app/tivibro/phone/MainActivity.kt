@@ -127,6 +127,7 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
     fun go(id: String, where: String, page: String = "") {
         when (where) {
             "reminders" -> nav.navigate("reminders/$id")
+            "recordings" -> nav.navigate("recordings/$id")
             "backups" -> nav.navigate("backups/$id")
             "editor" -> nav.navigate("editor/$id?page=${enc(page)}")
             "media" -> nav.navigate(tvAt(id, "Settings", "media"))
@@ -168,6 +169,7 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
                 onEditor = { id -> go(id, "editor") },
                 onTab = { id, tab -> nav.navigate(tvAt(id, tab)) },
                 onReminders = { id -> go(id, "reminders") },
+                onRecordings = { id -> go(id, "recordings") },
                 onOpen = { model.openTiviBro(it) },
                 onWake = { turnOn(it) },
                 onOff = { model.turnOff(it) },
@@ -185,6 +187,12 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
             val tv = model.tv(id)
             if (tv == null) { LaunchedEffect(Unit) { nav.popBackStack() }; return@composable }
             RemindersScreen(model, id, tv.name, snack, onBack = { nav.popBackStack() })
+        }
+        composable("recordings/{id}") { e ->
+            val id = e.arguments?.getString("id").orEmpty()
+            val tv = model.tv(id)
+            if (tv == null) { LaunchedEffect(Unit) { nav.popBackStack() }; return@composable }
+            RecordingsScreen(model, id, tv.name, snack, onBack = { nav.popBackStack() })
         }
         composable("share") {
             ShareScreen(model, shareText, tvs, onBack = { nav.popBackStack() }, onPair = { nav.navigate("add") })

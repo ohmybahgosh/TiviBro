@@ -1,4 +1,4 @@
-/* Long press on a channel (in the Guide and Channels tabs): watch it on the TV, its schedule, Favorites,
+/* Long press on a channel (in the Guide and Channels tabs): watch it on the TV, its schedule, Record now, Favorites,
    follow the team (a team's own channel, for My teams),
    your own groups (in or out, or a new group with it), rename it, or hide it on the TV.  The changes are
    made by TiviBro on the TV (ask "chan" in app/js/phone.js), the same as from the TV's own menus. */
@@ -23,6 +23,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Checklist
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.EmojiEvents
+import androidx.compose.material.icons.rounded.FiberManualRecord
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.StarOutline
@@ -103,6 +104,16 @@ fun ChannelSheet(
             }
             Option(Icons.Rounded.PlayArrow, if (playing) "On the TV now" else "Watch on TV") { onPlay(); onDismiss() }
             onSchedule?.let { s -> Option(Icons.Rounded.CalendarMonth, "Schedule and reminders") { onDismiss(); s() } }
+            // Record to the TV's USB drive: what's on now, to its end (an hour when the guide says nothing).
+            Option(Icons.Rounded.FiberManualRecord, "Record now", sub = c.now?.takeIf { val t = System.currentTimeMillis(); it.start <= t && it.end > t }?.let { "\"" + it.title + "\" until its end" } ?: "For an hour, to the TV's USB drive") {
+                busy = true
+                scope.launch {
+                    try { val l = model.recordings(id, "now", k = c.k); model.say(l.msg.ifBlank { "Recording on the TV" }); onDismiss() }
+                    catch (e: TbException) { model.say(if ((e.message ?: "").contains("unknown question", true)) "Update TiviBro on the TV to record from here." else e.message ?: "The TV said no") }
+                    catch (e: Exception) { model.say("The TV didn't answer.  Is it on, and on the same network?") }
+                    busy = false
+                }
+            }
             Option(if (fav) Icons.Rounded.Star else Icons.Rounded.StarOutline, if (fav) "Remove from Favorites" else "Add to Favorites") {
                 fav = !fav; model.favorite(id, c.k, fav)
             }

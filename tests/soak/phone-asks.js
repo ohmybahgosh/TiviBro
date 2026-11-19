@@ -1,5 +1,5 @@
 /* The phone app's questions for TiviBro (POST /v1/ask), with TiviBro in a browser and the reference
-   client as the phone: the guide, a channel's schedule, reminders, favorites, Movies and Shows, typing
+   client as the phone: the guide, a channel's schedule, reminders, recordings, favorites, Movies and Shows, typing
    into the TV, a backup, and adding a playlist from a shared link.
      node tests/soak/phone-asks.js      (mock provider on :8077, relay_dev on :47811, npm run serve) */
 'use strict';
@@ -86,6 +86,36 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   ok('and shows in the schedule', sch2.progs.find((p) => p.s === fut.s).r === 1);
   await ask('remind', { k, s: fut.s, on: false });
   ok('and comes off again', await ev((x) => !Store.edits.reminders.some((r) => r.k === x.k && r.s === x.s), { k, s: fut.s }));
+
+  // Recordings (the phone's Recordings screen, a programme's Record and a channel's Record now), to a USB drive
+  // stood in for by a folder (service/record.js looks in /tmp/usb/<disk>/<partition>).
+  require('fs').mkdirSync('/tmp/usb/sdz/PHONETEST', { recursive: true });
+  await ev(() => Record.drives());
+  let rl = await ask('recordings', { op: 'list' });
+  // Left over from an earlier run (the helper keeps its list): cleared first.
+  for (const r of rl.items) { if (r.st === 'recording' || r.st === 'scheduled') await ask('recordings', { op: 'stop', id: r.id }); await ask('recordings', { op: 'delete', id: r.id }).catch(() => {}); }
+  ok('the phone gets the recordings and the drive', rl && Array.isArray(rl.items) && rl.drive && rl.drive.name, JSON.stringify(rl).slice(0, 200));
+  rl = await ask('recordings', { op: 'add', k, s: fut.s });
+  const rsch = rl.items.find((r) => r.k === k && r.st === 'scheduled');
+  ok('Record on a programme still to come schedules it', !!rsch && /Will record/.test(rl.msg), JSON.stringify(rl).slice(0, 300));
+  const pd = await ask('prog', { k, s: fut.s });
+  ok('the programme says it is set to record, with the recording', pd.rec === 'sched' && pd.recId === (rsch && rsch.id), JSON.stringify({ rec: pd.rec, id: pd.recId }));
+  rl = await ask('recordings', { op: 'add', k, s: fut.s });
+  ok('asking again does not record it twice', rl.items.filter((r) => r.k === k && r.st === 'scheduled').length === 1 && /Already/.test(rl.msg), rl.msg);
+  rl = await ask('recordings', { op: 'stop', id: rsch.id });
+  ok('Cancel recording from the phone', rl.items.find((r) => r.id === rsch.id).st === 'cancelled' && /cancelled/.test(rl.msg), rl.msg);
+  rl = await ask('recordings', { op: 'delete', id: rsch.id });
+  ok('and deleting it', !rl.items.some((r) => r.id === rsch.id), rl.msg);
+  rl = await ask('recordings', { op: 'now', k });
+  const rlive = rl.items.find((r) => r.k === k && r.st === 'recording');
+  ok('Record now on a channel', !!rlive && /Recording/.test(rl.msg), JSON.stringify(rl).slice(0, 300));
+  const del0 = await C.ask(cred, 'recordings', { op: 'delete', id: rlive.id }).catch((e) => e);
+  ok('a recording still recording is not deleted', del0.code === 'tv' && /Stop the recording first/.test(del0.message), del0.message);
+  rl = await ask('recordings', { op: 'stop', id: rlive.id });
+  ok('Stop recording from the phone keeps what was recorded', rl.items.find((r) => r.id === rlive.id).st !== 'recording' && /stopped/.test(rl.msg), rl.msg);
+  await ask('recordings', { op: 'delete', id: rlive.id });
+  const st0 = await ev(() => JSON.stringify(Phone && typeof Record !== 'undefined' ? Record.shown() : null));
+  ok('the TV tells the phone it records', st0 === 'true', st0);
 
   // Favorites.
   const fk = g.rows[3].k;
@@ -290,7 +320,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const sa = (o) => ask('settings', o, { seal: true });
   await ev(() => { Store.settings.advView = true; });   // every row in place (Advanced view), as the checks below expect
   const secs = await sa({ op: 'sections' });
-  ok('the phone gets the TV\'s settings pages', secs.sections.some((x) => x.id === 'look' && x.title === 'Appearance') && secs.sections.length === 11, JSON.stringify(secs.sections));
+  ok('the phone gets the TV\'s settings pages', secs.sections.some((x) => x.id === 'look' && x.title === 'Appearance') && secs.sections.length === 12, JSON.stringify(secs.sections));
   let pg = await sa({ op: 'page', sec: 'look' });
   const clock = pg.rows.find((r) => r.label === 'Show clock'), nums = pg.rows.find((r) => r.label === 'Numbers');
   ok('a page comes as rows: toggles, choices with their options', clock && clock.kind === 'toggle' && nums && nums.kind === 'choice' && nums.options.length === 3, JSON.stringify(pg.rows.slice(0, 4)));

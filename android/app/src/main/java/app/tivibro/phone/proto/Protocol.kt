@@ -356,6 +356,10 @@ data class NowState(
     val onnow: Boolean = false,
     /** The newest channel list the TV has sent (it sends one again after channels are hidden, renamed or moved). */
     val lineupRev: Int = 0,
+    /** Whether the TV records (a USB drive in it, or recordings on one): the Recordings shortcut; null from an older TiviBro. */
+    val rec: Boolean? = null,
+    /** How many recordings are recording right now (a red dot on the Recordings shortcut). */
+    val recNow: Int = 0,
 ) {
     companion object {
         fun from(j: JSONObject): NowState {
@@ -374,6 +378,7 @@ data class NowState(
                 mediaLibraryVersion = s?.optJSONObject("vod2")?.optInt("mediaLibraryVersion") ?: 0,
                 onnow = s?.optJSONObject("vod2")?.optBoolean("onnow") == true,
                 lineupRev = j.optInt("lineupRev"),
+                rec = s?.optJSONObject("rec")?.optBoolean("on"), recNow = s?.optJSONObject("rec")?.optInt("now") ?: 0,
                 inputs = s?.optJSONArray("inputs")?.let { a -> (0 until a.length()).mapNotNull { TvInput.from(a.optJSONObject(it)) } }.orEmpty(),
             )
         }

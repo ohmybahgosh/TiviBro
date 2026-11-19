@@ -83,7 +83,7 @@ var Watch = (function () {
             x.k = r.c.k; x.s = r.p.s; x.e = r.p.e; x.t = r.p.t; mark(x);
           }
         });
-        if (!reminded(r.c, r.p, r.w)) { Store.edits.reminders.push(mark({ k: r.c.k, s: r.p.s, e: r.p.e, t: r.p.t, w: r.w })); pending[r.w] = (pending[r.w] || 0) + 1; }
+        if (!reminded(r.c, r.p, r.w)) { Store.edits.reminders.push(mark({ k: r.c.k, s: r.p.s, e: r.p.e, t: r.p.t, w: r.w })); pending[r.w] = (pending[r.w] || 0) + 1; Log.info('remind', 'Reminder set: ' + r.p.t + ' at ' + U.hhmm(r.p.s) + ' (' + (/^team:/.test(r.w) ? 'My teams' : 'watchlist: ' + r.w) + ')'); }
       } else if (found.length >= PER_WORD * 2) return;
       s[k] = r.p.e;
       found.push(r);

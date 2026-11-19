@@ -43,6 +43,7 @@ import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Movie
 import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.FiberManualRecord
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Theaters
 import androidx.compose.material.icons.rounded.VideoLibrary
@@ -133,6 +134,8 @@ fun HomeScreen(
     /** The last Bluetooth wake's log (ble/WakeLog.kt), and listening for a TV for 20 seconds into it. */
     bleLog: () -> String = { "" },
     onBleListen: (String) -> Unit = {},
+    /** The TV's recordings (RecordingsScreen.kt). */
+    onRecordings: (String) -> Unit = {},
 ) {
     var refreshing by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -217,7 +220,7 @@ fun HomeScreen(
                     // The App update tile goes on the first TV's card only (it is about this phone's app, not a TV).
                     val first = u.tv.id == tvs.first().tv.id
                     TvCard(u, isTile = tileTv == u.tv.id && tvs.size > 1, onEditor, onTab, onReminders, onOpen, onWake, onForget, onTile, onRepair, onBackups,
-                        bleLog = bleLog, onBleListen = onBleListen, onAddress = onAddress, onOff = onOff,
+                        bleLog = bleLog, onBleListen = onBleListen, onAddress = onAddress, onOff = onOff, onRecordings = onRecordings,
                         appUpdate = if (first && BuildConfig.SELF_UPDATE) AppUpdateTile(checking, rel != null && relHidden.not(), ::checkNow) else null)
                 }
             }
@@ -256,19 +259,21 @@ private fun iconOf(s: Shortcut): ImageVector = when (s) {
     Shortcut.VOD -> Icons.Rounded.Movie
     Shortcut.MEDIA -> Icons.Rounded.VideoLibrary
     Shortcut.REMINDERS -> Icons.Rounded.Notifications
+    Shortcut.RECORDINGS -> Icons.Rounded.FiberManualRecord
     Shortcut.EDITOR -> Icons.Rounded.Edit
     Shortcut.BACKUPS -> Icons.Rounded.Backup
     Shortcut.SETTINGS -> Icons.Rounded.Settings
 }
 
 @Composable
-private fun ShortcutTile(s: Shortcut, enabled: Boolean, modifier: Modifier, onClick: () -> Unit) {
+private fun ShortcutTile(s: Shortcut, enabled: Boolean, modifier: Modifier, live: Boolean = false, onClick: () -> Unit) {
     Column(
         modifier.height(76.dp).clip(MaterialTheme.shapes.small).background(Panel2)
             .clickable(enabled = enabled, onClickLabel = s.label, onClick = onClick).padding(6.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
     ) {
-        Icon(iconOf(s), null, tint = if (enabled) Accent else Muted, modifier = Modifier.size(24.dp))
+        // Recordings: red while something records on the TV.
+        Icon(iconOf(s), if (live) "Recording now" else null, tint = if (live) Bad else if (enabled) Accent else Muted, modifier = Modifier.size(24.dp))
         Spacer(Modifier.height(6.dp))
         Text(s.label, color = if (enabled) TextHi else Muted, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
     }
@@ -303,6 +308,7 @@ private fun TvCard(
     appUpdate: AppUpdateTile? = null,
     onAddress: (String, String) -> Unit = { _, _ -> },
     onOff: (String) -> Unit = {},
+    onRecordings: (String) -> Unit = {},
 ) {
     var addressing by remember { mutableStateOf<String?>(null) }
     val tv = u.tv
@@ -383,9 +389,10 @@ private fun TvCard(
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 row.forEach { sc ->
                                     if (sc == null) { if (appUpdate != null) UpdateTile(appUpdate, Modifier.weight(1f)); return@forEach }
-                                    ShortcutTile(sc, enabled = on || sc == Shortcut.BACKUPS, modifier = Modifier.weight(1f)) {
+                                    ShortcutTile(sc, enabled = on || sc == Shortcut.BACKUPS, modifier = Modifier.weight(1f), live = sc == Shortcut.RECORDINGS && (u.caps?.recNow ?: 0) > 0) {
                                         when (sc) {
                                             Shortcut.REMINDERS -> onReminders(tv.id)
+                                            Shortcut.RECORDINGS -> onRecordings(tv.id)
                                             Shortcut.EDITOR -> onEditor(tv.id)
                                             Shortcut.BACKUPS -> onBackups(tv.id)
                                             else -> onTab(tv.id, Shortcut.tab(sc, u.caps) ?: "Remote")

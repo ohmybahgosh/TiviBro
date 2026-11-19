@@ -3393,10 +3393,12 @@ var Guide = (function () {
     UI.menu(dayName(at(day, 12)), items, jumpMenu, { sub: past ? 'catch-up' : 'jump to a time' });
   }
 
-  function toggleReminder(c, p) {
+  function toggleReminder(c, p, how) {
     var r = Store.edits.reminders, i = r.findIndex(function (x) { return x.k === c.k && x.s === p.s; });
     if (i >= 0) { r.splice(i, 1); U.toast('Reminder removed'); }
     else { r.push({ k: c.k, s: p.s, e: p.e, t: p.t }); U.toast('Reminder set for ' + U.hhmm(p.s)); }
+    // Which press set or removed it, so a reminder nobody remembers setting can be traced in the log.
+    Log.info('remind', (i >= 0 ? 'Reminder removed: ' : 'Reminder set: ') + p.t + ' at ' + U.hhmm(p.s) + ' on ' + L.name(c) + ' (' + (how || 'guide menu') + ')');
     Store.saveEdits();
     draw();
   }
@@ -3415,7 +3417,7 @@ var Guide = (function () {
     var h = progAt(c, focusT), now = Date.now();
     if (!h.p || (h.p.s <= now && h.p.e > now)) return watch(c);
     if (h.p.e <= now) { if (c.arch) Views.playCatchup(c, h.p, 0); else U.toast('This channel has no catch-up'); return; }
-    toggleReminder(c, h.p);
+    toggleReminder(c, h.p, 'OK on it in the guide');
   }
 
   function menu() {

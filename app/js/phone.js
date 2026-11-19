@@ -3,7 +3,7 @@
    phone, see and remove paired phones, and name the TV.  While the connection is on, TiviBro checks
    the helper every few seconds: a phone that asked for the web editor gets it started here.  It also
    carries out the phone's remote presses and answers its questions (ASK: the guide, schedules,
-   reminders, favorites, Movies and Shows, typing into text boxes on screen, adding a shared playlist
+   reminders, recordings, favorites, Movies and Shows, typing into text boxes on screen, adding a shared playlist
    link, backups and restores).
    Plain ES5 for the old Chromium on webOS. */
 var Phone = (function () {
@@ -141,6 +141,8 @@ var Phone = (function () {
     var sh = typeof Series !== 'undefined' && Series.known ? Series.known(c, p) : null;
     return sh && sh.plot || '';
   }
+  // Recording or set to record (the phone's Record button on a programme): 'rec', 'sched' or ''.
+  function recOf(c, p) { try { var r = typeof Record !== 'undefined' && Record.of ? Record.of(c, p) : null; return r ? (r.status === 'recording' ? 'rec' : 'sched') : ''; } catch (e) { return ''; } }
   function hasReminder(k, s) { return (Store.edits.reminders || []).some(function (r) { return r.k === k && r.s === s; }); }
   function chan(k) {
     var c = Library.find(k);
@@ -185,6 +187,7 @@ var Phone = (function () {
       var x = prog(p, c), now = Date.now();
       x.k = c.k; x.ch = Library.name(c); x.arch = c.arch || 0;
       if (hasReminder(c.k, p.s)) x.r = 1;
+      var rc = recOf(c, p); if (rc) { x.rec = rc; x.recId = Record.of(c, p).id; }
       // Watch from the start: the channel keeps it (catch-up), and it has started.
       if (c.arch && p.s <= now && p.s > now - c.arch * 86400e3) x.cu = 1;
       var m = typeof Movies !== 'undefined' ? Movies.of(c, p) : null, sh = !m && typeof Series !== 'undefined' ? (Series.known(c, p) || null) : null;
@@ -232,7 +235,7 @@ var Phone = (function () {
       var seen = {}, list = l.filter(function (p) { if (!(p.e > from && p.s < to && p.e > p.s) || seen[p.s]) return false; seen[p.s] = 1; return true; }).slice(0, 700);
       if (list.length) Epg.desc(c, list[0]);
       return { k: c.k, arch: c.arch || 0, descPending: !!Epg.inHelper && list.some(function (p) { return p.d == null; }),
-        progs: list.map(function (p) { var x = prog(p, c); if (p.d) x.d = String(p.d).slice(0, 800); if (hasReminder(c.k, p.s)) x.r = 1; return x; }) };
+        progs: list.map(function (p) { var x = prog(p, c); if (p.d) x.d = String(p.d).slice(0, 800); if (hasReminder(c.k, p.s)) x.r = 1; var rc = p.e > now ? recOf(c, p) : ''; if (rc) x.rec = rc; return x; }) };
     },
     remind: function (a) {
       var c = chan(a.k), s = +a.s, l = Epg.request(c) || [], p = l.filter(function (x) { return x.s === s; })[0];
@@ -241,6 +244,7 @@ var Phone = (function () {
       if (on && i < 0) r.push({ k: c.k, s: p.s, e: p.e, t: p.t });
       if (!on && i >= 0) r.splice(i, 1);
       Store.saveEdits();
+      Log.info('remind', (on ? 'Reminder set: ' : 'Reminder removed: ') + p.t + ' at ' + U.hhmm(p.s) + ' on ' + Library.name(c) + ' (from the phone app)');
       if (typeof Remind !== 'undefined' && Remind.sync) Remind.sync(true);
       if (Views.tab === 'guide' && typeof Guide !== 'undefined') Guide.draw();
       U.toast(on ? 'Reminder set for ' + p.t + ', ' + U.hhmm(p.s) : 'Reminder removed');
@@ -419,6 +423,57 @@ var Phone = (function () {
       }
       throw new Error('Unknown My media request');
     },
+    /* Recordings on the TV's USB drive (the phone's Recordings screen, and Record on a programme or channel): op
+       'list' (the default), 'add' (a programme: k, s; on now records from now, later is scheduled), 'now' (a channel
+       from now: k), 'stop' (recording or scheduled: id), 'delete' (id), 'watch' (id, from: 'start' or resume).
+       Every op answers with the list, the drive and a line to show. */
+    recordings: function (a) {
+      if (typeof Record === 'undefined' || !Record.base()) throw new Error('TiviBro\'s helper isn\'t running on the TV, and it does the recording.');
+      var op = String(a.op || 'list'), id = String(a.id || '');
+      var one = function () { var r = Record.recs.filter(function (x) { return x.id === id; })[0]; if (!r) throw new Error('That recording isn\'t on the TV any more.'); return r; };
+      var watched = function (r) { var ps = Record.posOf(r.id); return !!(ps && r.dur > 0 && (U.isWatchedAt ? U.isWatchedAt(ps.t, r.dur) : ps.t >= r.dur * 0.9)); };
+      var out = function (msg) {
+        return Record.drives().catch(function () { return []; }).then(function (dv) {
+          var sp = Record.space;
+          return { msg: msg || '', drive: sp ? { name: sp.name || '', freeMB: sp.freeMB, totalMB: sp.totalMB, low: !!sp.low } : dv.length ? { name: dv[0].name || '', freeMB: -1, totalMB: -1 } : null,
+            items: Record.recs.map(function (r) {
+              var ps = Record.posOf(r.id), m = r.meta || {};
+              return { id: r.id, t: r.title || '', ch: r.channel || '', k: r.key || '', st: r.status, s: r.start, e: r.end, at: r.startedAt || 0, b: r.bytes || 0, dur: r.dur || 0,
+                err: r.status !== 'done' && r.error ? String(r.error).slice(0, 200) : '', ep: r.ep || '', d: String(r.desc || m.plot || '').slice(0, 600), logo: r.logo || '', poster: m.poster || '',
+                pos: ps && ps.t > 0 ? Math.round(ps.t) : 0, w: watched(r) ? 1 : 0 };
+            }) };
+        });
+      };
+      var then = function (msg) { return function () { return Record.list().then(function () { return out(msg); }); }; };
+      if (op === 'list') return Record.list().then(function () { return out(''); });
+      if (op === 'add') {
+        var c = chan(a.k), s = +a.s, l = Epg.request(c) || [], p = l.filter(function (x) { return x.s === s; })[0], t0 = Date.now();
+        if (!p) throw new Error('That programme is no longer in the guide.');
+        if (p.e <= t0) throw new Error('That programme has already ended.');
+        if (Record.of(c, p)) return out('Already ' + (Record.of(c, p).status === 'recording' ? 'recording.' : 'set to record.'));
+        if (p.s > t0) return Record.schedule(c, p, true).then(then('Will record ' + p.t + ' at ' + U.hhmm(p.s) + '.'));
+        return Record.now(c, p, true).then(then('Recording ' + p.t + ' until ' + U.hhmm(p.e) + '.'));
+      }
+      if (op === 'now') {
+        var c2 = chan(a.k), nn = Epg.nowNext ? Epg.nowNext(c2) : null, t1 = Date.now(), pn = nn && nn.now && nn.now.s <= t1 && nn.now.e > t1 ? nn.now : null, r0 = Record.of(c2, pn);
+        if (r0 && r0.status === 'recording') return out('Already recording ' + Library.name(c2) + '.');
+        return Record.now(c2, pn, true).then(then('Recording ' + (pn ? pn.t + ' until ' + U.hhmm(pn.e) : Library.name(c2) + ' for an hour') + '.'));
+      }
+      if (op === 'stop') { var r1 = one(); return Record.stop(r1.id, true).then(then(r1.status === 'scheduled' ? 'Recording cancelled.' : 'Recording stopped.  What was recorded is kept.')); }
+      if (op === 'delete') {
+        var r2 = one();
+        if (r2.status === 'recording') throw new Error('Stop the recording first.');
+        return Record.remove(r2.id, true).then(then('Deleted ' + r2.title + '.'));
+      }
+      if (op === 'watch') {
+        var r3 = one();
+        if (!(r3.bytes > 0)) throw new Error('Nothing recorded yet.');
+        if (UI.modalOpen) UI.close();
+        Record.watch(r3, a.from === 'start');
+        return out('Playing on the TV.');
+      }
+      throw new Error('Unknown recordings request');
+    },
     /* Reminders still to come (the phone's Reminders screen): the list, cancelling one, or all. */
     reminders: function (a) {
       var op = String(a.op || 'list');
@@ -519,6 +574,8 @@ var Phone = (function () {
     // Movies and Shows tabs on the phone only when the provider has them.
     var vk = Vod.offered();          // several playlists on: any of them
     out.vod2 = { mediaLibraryVersion:2, movies: vk.indexOf('movie') >= 0, series: vk.indexOf('series') >= 0, media: typeof MediaStore !== 'undefined' && MediaStore.sources().length > 0, onnow: typeof Movies !== 'undefined' && Movies.on() };
+    // Recordings on the phone's home screen: once the TV has a USB drive or recordings, and how many record now.
+    if (typeof Record !== 'undefined' && Record.base()) out.rec = { on: Record.shown(), now: Record.recs.filter(function (r) { return r.status === 'recording'; }).length };
     return out;
   }
   function pushState(soon) {
