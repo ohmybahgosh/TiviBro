@@ -398,6 +398,18 @@ From live TV, **From start** in the quick menu restarts the current programme.  
 </p>
 </details>
 
+### Recording, live pause and rewind
+
+On a rooted TV (the Homebrew Channel) with a USB drive in, TiviBro records to the drive, into a "TiviBro Recordings" folder.  webOS keeps USB drives away from apps installed in developer mode, so recording needs root.
+
+- **Record:** in the guide, Hold OK on a programme > **Record** (on now: until it ends; later: scheduled).  In fullscreen, the quick menu has Record.  The **● REC** button records too, on LG remotes that have one.  A programme being recorded has a red dot in the guide (a ring when it's scheduled).
+- **Recordings** (side menu): Recording now, Scheduled, Recorded (a show recorded more than once is one row that opens to its recordings) and Didn't record, with the drive's free space.  OK watches from where you left off; Hold OK or Red: watch from the start, stop, cancel, delete, or select several to delete.  With a TMDB token, recordings get their poster and plot.  Watching one that's still recording, yellow goes to the channel live and Back goes back to Recordings.
+- **Pause live TV:** Pause keeps the channel (on the USB drive up to 2 hours; without one, up to 10 minutes in the TV's own storage) and Play carries on from there.  ◀ ▶ move back and forth in what's kept, Back goes live, and the info bar says how far behind live you are.
+- **Rewind buffer** (off at first): keeps the channel you watch fullscreen on the drive the whole time, so ◀ goes back to something you just missed without pausing first.  Channels take a second or two longer to start.
+- Recording and pausing the same channel share one connection to your provider.
+- **If TiviBro closes or crashes:** recordings carry on (the recording helper runs on its own, as root), and it's started again within a minute if it stops while a recording is due.  A recording cut short by the TV turning off picks up again when it's back on, if its time isn't over, in a second part that plays on from the first.  A pause or rewind buffer ends with TiviBro: what it kept is deleted within 90 seconds, and anything left from a crash is cleared the next time.
+- Settings > Playback > **Recording and live pause** has the drive, how early to start and how long to keep going after, deleting watched recordings, and the pause settings.
+
 ### Movies and shows
 
 If your provider offers video on demand, **Movies** and **Shows** appear in the menu.  With an Xtream Codes login they come from the provider's movie and series lists.  With an M3U link they come from the list itself: its films (links to `/movie/` or to a video file) go to **Movies**, and its episodes (links to `/series/`, or named like "Show S01 E02") are gathered into shows in **Shows**, by season, instead of filling the channel list.  The list's groups become the categories.  The network helper keeps them on the TV, so a list with hundreds of thousands of titles still fits.
@@ -669,6 +681,7 @@ The phone app's **Settings** tab and the web editor's **Settings** page show the
 - **What's new** lists the changes in that version.
 - **Include test versions** also offers alpha and beta builds.  It is on when you are running one.
 - On TVs that aren't rooted, the page tells you the new version is out; install it from a computer as before.
+- **Go back to an earlier version** (rooted TVs): lists the releases before yours.  Pick one and TiviBro checks it like an update (its fingerprint and TiviBro's signature), saves everything it keeps on the TV first (settings, channel edits, favorites, reminders, plus a restore point), then installs it.  Recordings, your playlist and My media aren't touched.  Automatic update checks turn off so the newer version isn't offered straight back.  After you update again, **Settings saved before going back** puts back exactly what you had.  Releases from before signatures can't be checked, so they aren't offered; the releases page on GitHub has them.
 
 <p align="center">
   <a href="https://tivibro.app/view/#tv-set-updates"><img src="screenshots/tv-set-updates.png" width="60%" alt="System"></a>

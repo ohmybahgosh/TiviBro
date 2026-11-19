@@ -253,4 +253,6 @@ function post(p, q, folder, small) {
   return null;
 }
 
-module.exports = { setup: setup, route: route, post: post, _sessions: sessions, _stopAll: function () { Object.keys(sessions).forEach(function (k) { stop(sessions[k], 'test'); }); }, _playlist: playlist };
+// At start: whatever an earlier run left in a folder's .timeshift (nothing can resume it).
+function clearAll(folder) { var base = path.join(folder, '.timeshift'); if (fs.existsSync(base)) clearOld(base); }
+module.exports = { clearAll: clearAll, setup: setup, route: route, post: post, _sessions: sessions, _stopAll: function () { Object.keys(sessions).forEach(function (k) { stop(sessions[k], 'test'); }); }, _playlist: playlist };

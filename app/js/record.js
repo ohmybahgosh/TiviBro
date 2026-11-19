@@ -6,7 +6,9 @@
 var Record = (function () {
   'use strict';
   var L = Library;
-  var PAD_BEFORE = 2 * 60000, PAD_AFTER = 5 * 60000;
+  // Minutes before and after a programme (Settings > Playback > Recording and live pause), 2 and 5 at first.
+  function padB() { var v = Store.settings.recPadBefore; return (v == null ? 2 : +v) * 60000; }
+  function padA() { var v = Store.settings.recPadAfter; return (v == null ? 5 : +v) * 60000; }
   var last = { recs: [], at: 0 }, drive = false, space = null, pauseHere = false;
 
   function T(s, o) { var t = typeof I18n !== 'undefined' ? I18n.t(s) : s; return t.replace(/\{(\w+)\}/g, function (a, k) { return o && o[k] != null ? o[k] : a; }); }
@@ -84,7 +86,7 @@ var Record = (function () {
 
   /* Now, until the programme ends (with a few minutes after), or for an hour when the guide says nothing. */
   function now(ch, p) {
-    var end = p && p.e > Date.now() ? p.e + PAD_AFTER : Date.now() + 60 * 60000;
+    var end = p && p.e > Date.now() ? p.e + padA() : Date.now() + 60 * 60000;
     var u = recUrls(ch);
     return api('/record/start', { url: u.url, alt: u.alt, key: ch.k, logo: logo(ch), desc: descOf(ch, p), ep: p && p.ep || '', title: p && p.t || L.name(ch), channel: L.name(ch), end: end }).then(function (r) {
       U.toast(T('Recording "{x}" until {t}', { x: r.title, t: U.hhmm(end) }), 4000);
@@ -95,7 +97,7 @@ var Record = (function () {
   }
   function schedule(ch, p) {
     var u = recUrls(ch);
-    return api('/record/schedule', { url: u.url, alt: u.alt, key: ch.k, logo: logo(ch), desc: descOf(ch, p), ep: p.ep || '', title: p.t || L.name(ch), channel: L.name(ch), start: p.s - PAD_BEFORE, end: p.e + PAD_AFTER }).then(function (r) {
+    return api('/record/schedule', { url: u.url, alt: u.alt, key: ch.k, logo: logo(ch), desc: descOf(ch, p), ep: p.ep || '', title: p.t || L.name(ch), channel: L.name(ch), start: p.s - padB(), end: p.e + padA() }).then(function (r) {
       U.toast(T('Will record "{x}" at {t}', { x: r.title, t: U.hhmm(p.s) }), 4000);
       var gm = guideMeta(ch, p); if (gm) api('/record/meta', { id: r.id, meta: gm }).catch(function () {});
       return list();
@@ -114,7 +116,7 @@ var Record = (function () {
       if ((r.status !== 'recording' && r.status !== 'scheduled') || r.channel !== name) return false;
       if (!p) return true;
       if (r.end < p.e) return false;
-      return r.status === 'recording' ? r.start < p.e : r.start <= p.s + PAD_BEFORE + 1000;
+      return r.status === 'recording' ? r.start < p.e : r.start <= p.s + padB() + 1000;
     })[0] || null;
   }
   // For the guide's Hold OK menu: Record or Stop recording, for a programme on now or later.

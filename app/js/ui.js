@@ -48,6 +48,7 @@ var UI = (function () {
       case K.PLAYPAUSE: playKey = 'toggle'; return 'playpause';
       case K.STOP: return 'stop';
       case 412: return 'rew'; case 417: return 'ff';
+      case 416: return 'rec';                    // ● REC, on LG remotes that have it
       case K.INFO: seen('sawInfo'); return 'info';
       // Desktop keyboard equivalents, handy when testing in a browser.
       case 71: return 'green'; case 77: return 'red'; case 89: return 'yellow'; case 66: return 'blue'; case 73: return 'info';

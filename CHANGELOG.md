@@ -7,6 +7,10 @@
 - **Pause live TV** (Settings > Playback): Pause keeps the channel, and Play carries on from there, with ◀ ▶ to move back and forth in what's kept and Back to go live.  On a rooted TV with a USB drive it keeps up to 2 hours; on any TV without one, up to 10 minutes in the TV's own storage (when it has room: the oldest goes first, and 400 MB is always left).  One connection to your provider, as before.  The info bar says how far behind live you are.
 - **Rewind buffer** (Settings > Playback, off at first): keeps the channel you watch fullscreen on the drive the whole time, 30 minutes to 2 hours, so ◀ goes back to something you just missed without pausing first.  TiviMate doesn't have this.
 - **Recording and pausing the same channel share one connection** to your provider, so a plan with one connection can do both.
+- **Settings > Playback > Recording and live pause:** the drive and its room, how early a recording starts and how long it keeps going after (2 and 5 minutes at first), delete watched recordings, and the pause and rewind buffer settings.  **● REC** on LG remotes that have it records what's on (in the guide, the programme you're on), and any button can be set to Record or Recordings.
+- **Go back to an earlier version** (Settings > System, rooted TVs): an earlier release, checked and installed like an update, with your settings and edits saved first and put back with one press after you update again.
+- **The "not playing" mark now says "didn't play the last 2 times"**, and a provider that's down or refusing everyone (like a 418) no longer marks the channels tried during the outage.
+- Recording carries on if TiviBro closes or crashes, and the recording helper is started again within a minute if it stops while a recording is due.  Pause buffers left by a crash are cleared at the next start.
 - **Try again and Start over keep the player a channel plays on**: a channel that plays as HLS (its chosen format, or it played better that way) went back to MPEG-TS, and some providers hang up on that within a minute.
 
 ## 0.6.0 (alpha 167, 2026-11-18)

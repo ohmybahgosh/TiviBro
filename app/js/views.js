@@ -165,7 +165,7 @@ var Views = (function () {
       row._p.appendChild(row._pi);
       box.appendChild(row._n); box.appendChild(row._s); box.appendChild(row._p);
       row._t = U.el('span', 'tag'); row._q = U.el('span', 'qtag');
-      row._d = U.el('span', 'deadtag', 'not playing lately'); row._d.style.display = 'none';
+      row._d = U.el('span', 'deadtag', 'didn\'t play the last 2 times'); row._d.style.display = 'none';
       row.appendChild(row._num); row.appendChild(row._img); row.appendChild(box); row.appendChild(row._d); row.appendChild(row._q); row.appendChild(row._t);
       row.appendChild(U.el('span', 'vbox'));
     }
@@ -854,6 +854,9 @@ var Views = (function () {
         else if (full) lastChannel();
         return;
       case 'restart': if (c && c.arch) watchFromStart(c); else U.toast('No catch-up on this channel'); return;
+      // Recording (record.js): the channel's programme on now, or stop it; the Recordings screen.
+      case 'record': recordNow(ctx === 'player' ? playing : c); return;
+      case 'recordings': if (typeof Record !== 'undefined') { if (full) exitFull(true); Record.open(); } return;
       case 'playpause': playPause(); return;
       case 'guide': leaveTo('guide'); return;
       case 'search': leaveTo('search'); return;
@@ -1383,6 +1386,13 @@ var Views = (function () {
   }
   function closeOverlay() { overlay = false; $('overlay').classList.add('hidden'); }
 
+  function recordNow(c) {
+    if (!c || typeof Record === 'undefined') return;
+    if (!Record.base()) { U.toast(T('Recording needs TiviBro\'s helper, which isn\'t running')); return; }
+    var nn = Epg.nowNext(c), p = nn && nn.now && nn.now.s <= Date.now() && nn.now.e > Date.now() ? nn.now : null, r = Record.of(c, p);
+    if (r && r.status === 'recording') UI.confirm(T('Stop recording "{x}"?', { x: r.title }), 'Stop recording', function () { Record.stop(r.id).then(function () { U.toast(T('Recording stopped')); }); });
+    else Record.now(c, p);
+  }
   /* ---------- live pause (to a USB drive) ----------
      Pause on a live channel, fullscreen, with a USB drive in (Settings > Playback > Pause live TV): the recording
      agent starts keeping the channel on the drive (timeshift.js), the player lets go of its own connection (one
@@ -2453,7 +2463,7 @@ var Guide = (function () {
       ch.appendChild(U.el('span', 'num'));
       var img = U.el('img', 'logo'); img.decoding = 'async'; img.onerror = function () { Views.logoFailed(this, this._c); }; ch.appendChild(img);
       ch.appendChild(U.el('span', 'n'));
-      var chips = U.el('span', 'gchips'), cuEl = U.el('span', 'cu'), qEl = U.el('span', 'qtag'), dEl = U.el('span', 'deadtag', 'not playing');
+      var chips = U.el('span', 'gchips'), cuEl = U.el('span', 'cu'), qEl = U.el('span', 'qtag'), dEl = U.el('span', 'deadtag', 'didn\'t play the last 2 times');
       dEl.style.display = 'none';
       chips.appendChild(cuEl); chips.appendChild(qEl); chips.appendChild(dEl); ch.appendChild(chips);
       ch.appendChild(U.el('span', 'vbox'));
@@ -3495,6 +3505,8 @@ var Guide = (function () {
     else if (act === 'jump') jumpMenu();
     else if (act === 'details') details();
     else if (act === 'stopwin') { if (previewing()) { Views.stopAll(); draw(); hints(); } }
+    // ● REC on a programme: record it (on now) or schedule it (later); again: stop or cancel.
+    else if (act === 'record') { if (c && typeof Record !== 'undefined') { var rp = progAt(c, focusT).p, ri = Record.menuItem(c, rp); if (ri) { ri.action(); setTimeout(draw, 800); } else U.toast(T(Record.base() ? 'That programme is over' : 'Recording needs TiviBro\'s helper, which isn\'t running')); } }
     else if (act === 'favorites' || act === 'recents') { load(act === 'favorites' ? L.FAV : L.RECENT, null); setZone('grid'); draw(); }
     else if (act === 'fav') { if (c && L.toggleFav(c.k) != null) { U.toast(L.isFav(c.k) ? 'Added to Favorites' : 'Removed from Favorites'); draw(); } }
     else if (act !== 'none') Views.runAction(act, 'guide');

@@ -330,6 +330,87 @@ var Update = (function () {
     });
   }
 
+  /* ---------- going back to an earlier version ----------
+     The releases before this one (the newest 20), each installed the same way as an update: its manifest's
+     checksum, and the release build's signature checked by the helper first.  An older release without a
+     signature can't be checked, so it can't be installed from here (the releases page has it).
+     Before it's installed: everything TiviBro keeps in the TV's browser storage (settings, channel edits,
+     favorites, reminders, what played where) is saved to the helper's storage, and a restore point is made for
+     the channel edits.  Recordings, the playlist the helper keeps and My media aren't touched.  An earlier
+     version may not know newer settings: it ignores them, and once you update again, "Settings saved before
+     going back" puts back exactly what you had.  Automatic update checks are turned off, so the newer version
+     isn't offered straight back; turn them on again in Settings > System. */
+  var SNAP_KEY = 'tivibro.rollbackSnaps';
+  function snaps() { try { var a = JSON.parse(localStorage.getItem(SNAP_KEY) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+  function earlier() {
+    return U.getJSON(API, 15000, 'releases').then(function (list) {
+      if (!Array.isArray(list)) throw new Error(list && list.message ? 'GitHub said: ' + list.message : 'Unexpected answer from GitHub');
+      var cur = current(), out = [];
+      list.forEach(function (r) {
+        if (!r || r.draft || !parse(r.tag_name) || compare(r.tag_name, cur) >= 0) return;
+        if ((r.prerelease || isPre(r.tag_name)) && !wantPre() && !isPre(cur)) return;
+        var one = pick([r], true);
+        if (one) out.push(one);
+      });
+      out.sort(function (a, b) { return compare(b.version, a.version); });
+      return out;
+    });
+  }
+  // The release's checksum and signature, as for an update.
+  function prepare(r) {
+    return U.getJSON(r.manifest, 15000, 'release manifest').then(function (m) {
+      if (!m || !m.ipkHash || !m.ipkHash.sha256) throw new Error('That release has no checksum, so it can\'t be installed from here.');
+      var base = r.manifest.replace(/[^/]*$/, '');
+      r.ipkUrl = /^https?:/.test(m.ipkUrl) ? m.ipkUrl : base + (m.ipkUrl || r.ipkName);
+      if (r.ipkUrl.indexOf('https://github.com/' + REPO + '/releases/download/') !== 0) throw new Error('The release names a file somewhere else: not installing it');
+      r.sha256 = m.ipkHash.sha256; r.pkgVer = m.version || ''; r.sig = m.tivibroSig || '';
+      if (!r.sig) throw new Error((typeof I18n !== 'undefined' ? I18n.t : function (x, o) { return x.replace('{v}', o.v); })('TiviBro {v} came before releases were signed, so it can\'t be checked and isn\'t installed from here.  The releases page on GitHub has it.', { v: r.version }));
+      return r;
+    });
+  }
+  // Everything in the browser's storage that's TiviBro's, to the helper's storage (/kv/), and a note of it here.
+  function kvKey(v) { return 'rollback-' + String(v).replace(/[^A-Za-z0-9_-]/g, '_') + '-' + Date.now(); }
+  function snapshot(to) {
+    if (!(Net.active && Net.port)) return Promise.reject(new Error('Going back needs the network helper (to keep your settings safe), and it isn\'t running.  Restart TiviBro and try again.'));
+    try { Store.saveSettings(); if (Store.saveEdits) Store.saveEdits(); } catch (e) {}
+    var data = {};
+    for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf('tivibro.') === 0 && k !== SNAP_KEY) data[k] = localStorage.getItem(k); }
+    var key = kvKey(current()), body = JSON.stringify({ from: current(), to: to, at: Date.now(), data: data });
+    return Net.ctlFetch('http://127.0.0.1:' + Net.port + '/kv/put?k=' + encodeURIComponent(key), { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: body }).then(function (x) {
+      if (!x.ok) throw new Error('Your settings couldn\'t be saved first (HTTP ' + x.status + '), so nothing was changed.');
+      var list = snaps(); list.unshift({ key: key, from: current(), to: to, at: Date.now(), keys: Object.keys(data).length });
+      try { localStorage.setItem(SNAP_KEY, JSON.stringify(list.slice(0, 3))); } catch (e) {}
+      // A restore point for the channel edits too, where the web editor and Backups can see it.
+      try { if (window.WebEdit && WebEdit.runData) WebEdit.runData('makeSnap', { name: 'Before going back to ' + to }).catch(function () {}); } catch (e) {}
+      Log.info('update', 'Saved ' + Object.keys(data).length + ' settings before going back to ' + to);
+    });
+  }
+  function rollback(r) {
+    return installer().then(function (ok) {
+      if (!ok) throw new Error('Installing from the TV needs a rooted TV with the Homebrew Channel.');
+      return prepare(r);
+    }).then(function () { return signed(r); }).then(function () { return snapshot(r.version); }).then(function () {
+      Store.settings.updateAuto = false; Store.saveSettings();         // not offered the newer one straight back
+      set({ latest: r });
+      Log.info('update', 'Going back from ' + current() + ' to ' + r.version);
+      return install();
+    });
+  }
+  // Puts back the settings saved before going back (after updating again): everything as it was, then a restart.
+  function restore(snap) {
+    if (!(Net.active && Net.port)) return Promise.reject(new Error('This needs the network helper, which isn\'t running.'));
+    return Net.ctlFetch('http://127.0.0.1:' + Net.port + '/kv/get?k=' + encodeURIComponent(snap.key), { cache: 'no-store' }).then(function (x) {
+      if (!x.ok) throw new Error('Those saved settings are gone.');
+      return x.json();
+    }).then(function (j) {
+      if (!j || !j.data) throw new Error('Those saved settings are empty.');
+      if (Store.freeze) Store.freeze();                              // nothing saves over them before the restart
+      Object.keys(j.data).forEach(function (k) { try { localStorage.setItem(k, j.data[k]); } catch (e) {} });
+      Log.info('update', 'Put back the settings saved before going back to ' + j.to);
+      setTimeout(function () { location.reload(); }, 800);
+    });
+  }
+
   function describe() {
     var r = st.latest;
     switch (st.state) {
@@ -346,7 +427,7 @@ var Update = (function () {
   return {
     check: check, autoCheck: autoCheck, whatsNew: whatsNew, countMe: countMe, install: install, installer: installer, describe: describe,
     onChange: function (f) { listeners.push(f); }, get state() { return st; }, get current() { return current(); },
-    get wantPre() { return wantPre(); }, REPO: REPO, isPre: isPre,
-    _test: { signed: signed, parse: parse, compare: compare, pick: pick, notes: notes, isPre: isPre, notesBox: notesBox }
+    get wantPre() { return wantPre(); }, REPO: REPO, isPre: isPre, earlier: earlier, rollback: rollback, snaps: snaps, restore: restore,
+    _test: { prepare: prepare, snapshot: snapshot, signed: signed, parse: parse, compare: compare, pick: pick, notes: notes, isPre: isPre, notesBox: notesBox }
   };
 })();

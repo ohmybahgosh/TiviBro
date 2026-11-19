@@ -12,7 +12,7 @@ var Settings = (function () {
   var SECTIONS = [['language', 'Language'], ['playlists', 'Playlists and accounts'], ['guide', 'Guide'], ['channels', 'Channels and groups'], ['playback', 'Playback'],
     ['vod', 'Movies and shows'], ['media', 'My media'], ['reminders', 'Reminders and watchlist'], ['parental', 'Parental controls'], ['look', 'Appearance'], ['about', 'System']];
   var PAGES = { keys: ['playlists', 'API keys'], connect: ['playlists', 'Phone app and web editor'], names: ['channels', 'Channel and group names'], audio: ['playback', 'Audio and subtitles'],
-    remote: ['playback', 'Remote and buttons'], trakt: ['media', 'Trakt'], backups: ['about', 'Backups and restore points'] };
+    remote: ['playback', 'Remote and buttons'], trakt: ['media', 'Trakt'], backups: ['about', 'Backups and restore points'], recording: ['playback', 'Recording and live pause'] };
   // Old section ids (links in other screens, tests, older phone apps) still land somewhere sensible.
   var ALIAS = { lang: 'language', groups: 'channels', updates: 'about', diag: 'about', system: 'about', phone: 'connect', editor: 'connect', watchlist: 'reminders', apikeys: 'keys', tokens: 'keys', subtitles: 'audio',
     movies: 'vod', shows: 'vod', libraries: 'media', accounts: 'playlists', appearance: 'look' };
@@ -146,11 +146,6 @@ var Settings = (function () {
     out.push(choice('Skip step', 'For Left and Right while watching catch-up or a movie.', [10, 15, 30, 60, 120], ['10s', '15s', '30s', '1 min', '2 min'], function () { return +s.skip; }, function (v) { s.skip = v; save(); }));
     out.push(choice('Rewind / fast forward step', 'For the ◀◀ and ▶▶ buttons while watching catch-up or a movie.', [30, 60, 120, 300, 600], ['30s', '1 min', '2 min', '5 min', '10 min'], function () { return +s.ffStep || 120; }, function (v) { s.ffStep = v; save(); }));
     out.push(choice('◀ on a live channel with catch-up', 'Without catch-up, ◀ always goes to the last channel.', ['rewind', 'last'], ['Rewind', 'Last channel'], function () { return s.rewindLeft === false ? 'last' : 'rewind'; }, function (v) { s.rewindLeft = v === 'rewind'; save(); }));
-    // Live pause (views.js, timeshift.js): needs a USB drive and a rooted TV (the recording agent).
-    out.push(toggle('Pause live TV', 'Pause keeps the channel, and Play carries on from where you paused, with ◀ ▶ to go back and forth in it.  On a USB drive (a rooted TV) it keeps up to 2 hours; without one, up to 10 minutes in the TV\'s own storage.  Off: pause holds for as long as the player\'s buffer, then Play is live.',
-      function () { return s.livePause !== false; }, function (v) { s.livePause = v; save(); }));
-    out.push(choice('Rewind buffer', 'Keeps the channel you watch fullscreen on the USB drive the whole time, so ◀ goes back to something you just missed without pausing first (like a DVR).  Channels start a second or two slower, and the drive is written all the time.  Needs a USB drive in the TV and Pause live TV on.',
-      [0, 30, 60, 120], ['Off', '30 min', '1 hour', '2 hours'], function () { return +s.rewindBuffer || 0; }, function (v) { s.rewindBuffer = v; save(); }));
     // An idea from the GUI thread (discussion #36): the memory-safe mode set by hand, not only when TiviBro decides.
     out.push(choice('Memory-safe playback', 'Holds at most about 24 MB of video ahead (the full buffer profile on most channels, less on a heavy 4K one) so TiviBro doesn\'t close on TVs with 1 or 2 GB.  Automatic turns it on for TVs with 1 GB, and for a few days after TiviBro closed while playing.',
       ['auto', 'on', 'off'], ['Automatic', 'Always on', 'Off'], function () { return s.memSafe || 'auto'; }, function (v) { s.memSafe = v; save(); }));
@@ -1496,6 +1491,26 @@ var Settings = (function () {
     var k = st.state + '|' + st.installer;
     if (k !== lastUpd) { lastUpd = k; build(); } else paint();
   });
+  var olderCache = null, olderErr = '';
+  function rollbackPage() {
+    var out = [];
+    out.push(info('Pick a release to go back to.  It\'s checked like an update (its fingerprint and TiviBro\'s signature) and installed through the Homebrew Channel.  Before that, everything TiviBro keeps on this TV (settings, channel edits, favorites, reminders) is saved, and a restore point is made.  Recordings, your playlist and My media stay as they are.  Automatic update checks turn off, so the newer version isn\'t offered straight back.', ''));
+    if (Update.state.installer === '') { out.push(info('This TV can\'t install by itself', 'Going back needs a rooted TV with the Homebrew Channel.  The releases page on GitHub has every version.')); return out; }
+    if (olderCache === null) {
+      out.push(info('Looking for earlier releases…', ''));
+      Update.earlier().then(function (l) { olderCache = l; olderErr = ''; build(); }, function (e) { olderCache = []; olderErr = e.message; build(); });
+      return out;
+    }
+    if (olderErr) out.push(info('Couldn\'t list them', olderErr));
+    else if (!olderCache.length) out.push(info('No earlier releases to go back to', ''));
+    olderCache.slice(0, 15).forEach(function (r) {
+      out.push(action('TiviBro ' + r.version + (r.pre ? '  (test version)' : ''), (r.published ? when(Date.parse(r.published)) : '') + (r.notes && r.notes[0] ? '   ·   ' + r.notes[0] : ''), function () {
+        UI.confirm(T('Go back to TiviBro {v}?', { v: r.version }), 'Go back and restart', function () { U.toast(T('Saving your settings, then installing {v}…', { v: r.version }), 6000); Update.rollback(r).catch(function (e) { U.toast(e.message, 8000); }); });
+      }, function () { return '›'; }));
+    });
+    out.push(action('Look again', '', function () { olderCache = null; build(); }));
+    return out;
+  }
   function updates() {
     var s = S(), out = [], st = Update.state, r = st.latest, cur = Update.current;
     Update.installer();          // finds out once whether this TV can install by itself
@@ -1521,6 +1536,17 @@ var Settings = (function () {
     out.push(toggle('Count this TV in the install numbers', 'Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.', function () { return s.countMe !== false; }, function (v) { s.countMe = v; save(); }));
     out.push(toggle('Include test versions', 'Alpha and beta builds: new features first, and some rough edges.', function () { return Update.wantPre; }, function (v) { s.updatePre = v; save(); }));
     var how = info('Installing on this TV', ''); how.value = function () { var i = Update.state.installer; return i === 'hbchannel' ? 'Yes, through the Homebrew Channel' : i === '' ? 'From a computer only (not rooted)' : 'Checking…'; }; out.push(how);
+    // Going back (update.js): an earlier release, installed the same checked way, with your settings saved first.
+    if (st.state !== 'installing' && st.state !== 'installed') out.push(page('Go back to an earlier version', 'If an update caused trouble.  Your settings and edits are saved first; recordings and your playlist aren\'t touched.', 'Go back to an earlier version', rollbackPage));
+    var sv = Update.snaps();
+    if (sv.length) {
+      out.push(head('Settings saved before going back'));
+      sv.forEach(function (x) {
+        out.push(action(T('From {v}', { v: x.from }), when(x.at) + '   ·   ' + T('saved before going back to {v}', { v: x.to }), function () {
+          UI.confirm(T('Put back the settings you had in {v}?', { v: x.from }), 'Put back and restart', function () { Update.restore(x).catch(function (e) { U.toast(e.message, 6000); }); });
+        }, function () { return T('Put back') + ' ›'; }));
+      });
+    }
     out.push(head('About'));
     var credit = U.el('div', 'tmdb-credit'), logo = U.el('img');
     logo.src = 'img/tmdb.svg'; logo.alt = 'TMDB'; logo.width = 120;
@@ -1715,7 +1741,37 @@ var Settings = (function () {
   function playbackSection() {
     return playback().concat([head('Sound, subtitles and the remote'),
       page('Audio and subtitles', 'Audio language, surround, subtitles and captions, OpenSubtitles.', 'Audio and subtitles', audioSubs),
-      page('Remote and buttons', 'What each button does in the player, the guide and the lists.', 'Remote and buttons', remote)]);
+      page('Remote and buttons', 'What each button does in the player, the guide and the lists.', 'Remote and buttons', remote),
+      head('Recording'),
+      page('Recording and live pause', 'Recording to a USB drive, pausing and rewinding live TV, and the rewind buffer.', 'Recording and live pause', recordingPage, function () { return typeof Record !== 'undefined' && Record.space ? T('USB drive') + ' ›' : '›'; })]);
+  }
+  /* ---------- recording and live pause (record.js, recordings.js, service/record.js, timeshift.js) ---------- */
+  function recordingPage() {
+    var s = S(), out = [], R = typeof Record !== 'undefined' ? Record : null, sp = R && R.space;
+    var gb = function (mb) { return mb >= 1024 ? (mb / 1024).toFixed(1) + ' GB' : Math.max(0, mb) + ' MB'; };
+    out.push(info('Where', ''));
+    out[out.length - 1].value = function () { var x = R && R.space; return x ? T('USB drive, {x} free of {y}', { x: gb(x.freeMB), y: gb(x.totalMB) }) : R && R.canPause() ? T('No USB drive: pause uses the TV\'s own storage (10 minutes)') : T('No USB drive'); };
+    if (!sp) out.push(info('Recording needs a USB drive and a rooted TV', 'webOS keeps USB drives from apps installed in developer mode; on a rooted TV (the Homebrew Channel) TiviBro\'s helper reaches them.  Without one, live pause still works for up to 10 minutes in the TV\'s own storage.'));
+    if (R) out.push(action('Open Recordings', 'Watch, stop, cancel or delete recordings.', function () { Views.switchTab('recordings'); }, function () { var n = R.recs.length; return n ? n + ' ›' : '›'; }));
+    out.push(head('Recording'));
+    out.push(choice('Start early', 'Minutes before a scheduled programme\'s start, in case it starts early or the guide is off.', [0, 1, 2, 5, 10], ['On time', '1 min', '2 min', '5 min', '10 min'],
+      function () { return s.recPadBefore == null ? 2 : +s.recPadBefore; }, function (v) { s.recPadBefore = v; save(); }));
+    out.push(choice('Keep going after', 'Minutes after the programme\'s end, for a game or show that runs late.', [0, 2, 5, 10, 15, 30], ['On time', '2 min', '5 min', '10 min', '15 min', '30 min'],
+      function () { return s.recPadAfter == null ? 5 : +s.recPadAfter; }, function (v) { s.recPadAfter = v; save(); }));
+    if (R) out.push(action('Delete watched recordings', 'The ones you\'ve watched to the end.', function () {
+      var done = R.recs.filter(function (r) { var p = R.posOf(r.id); return r.status === 'done' && p && p.d && p.t / p.d > 0.95; });
+      if (!done.length) { U.toast(T('Nothing watched to the end yet')); return; }
+      UI.confirm(T('Delete {n} watched recordings?', { n: done.length }), 'Delete', function () { (function one(i) { if (i >= done.length) { U.toast(T('Deleted {n} recordings', { n: done.length })); return build(); } R.remove(done[i].id).then(function () { one(i + 1); }, function () { one(i + 1); }); })(0); });
+    }));
+    out.push(head('Live pause'));
+    out.push(toggle('Pause live TV', 'Pause keeps the channel, and Play carries on from where you paused, with ◀ ▶ to go back and forth in it.  On a USB drive (a rooted TV) it keeps up to 2 hours; without one, up to 10 minutes in the TV\'s own storage.  Off: pause holds for as long as the player\'s buffer, then Play is live.',
+      function () { return s.livePause !== false; }, function (v) { s.livePause = v; save(); }));
+    out.push(choice('Rewind buffer', 'Keeps the channel you watch fullscreen on the USB drive the whole time, so ◀ goes back to something you just missed without pausing first (like a DVR).  Channels start a second or two slower, and the drive is written all the time.  Needs a USB drive in the TV and Pause live TV on.',
+      [0, 30, 60, 120], ['Off', '30 min', '1 hour', '2 hours'], function () { return +s.rewindBuffer || 0; }, function (v) { s.rewindBuffer = v; save(); }));
+    out.push(head('Buttons'));
+    out.push(info('Record and Recordings on the remote', 'The ● REC button (on LG remotes that have one) records what\'s on, or stops it; in the guide, the programme you\'re on.  Any button can do Record or Recordings: Remote and buttons.'));
+    out.push(page('Remote and buttons', '', 'Remote and buttons', remote));
+    return out;
   }
   function systemSection() {
     // An update ready: first thing on the page, in the "go" colour, so it can't be missed (it was one row among many).
@@ -1729,7 +1785,7 @@ var Settings = (function () {
     return top.concat([page('Fix a problem', 'Channels freeze, no guide, no sound, TiviBro closed or is slow: what to try first.', 'Fix a problem', fixes)].concat(about(),
       [head('Backups'), page('Backups and restore points', 'Everything saved, to put back on this TV or another one.', 'Backups and restore points', backups)]));
   }
-  var BY_ID = { language: language, playlists: playlists, guide: guide, channels: groups, names: names, reminders: reminders, playback: playback, audio: audioSubs, vod: vodSettings, media: media, trakt: trakt, keys: apiKeys, remote: remote, look: look, parental: parental, backups: backups, connect: connect, about: about };
+  var BY_ID = { language: language, playlists: playlists, guide: guide, channels: groups, names: names, reminders: reminders, playback: playback, audio: audioSubs, vod: vodSettings, media: media, trakt: trakt, keys: apiKeys, remote: remote, recording: recordingPage, look: look, parental: parental, backups: backups, connect: connect, about: about };
   var SEC_FNS = { playlists: playlistsSection, channels: channelsSection, playback: playbackSection, about: systemSection };
   var FNS = SECTIONS.map(function (x) { return SEC_FNS[x[0]] || BY_ID[x[0]]; });
   // An old section that is now a page: its section, and the row's place in it (or -1).

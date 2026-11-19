@@ -71,7 +71,28 @@ function save() {
   saveTimer = setTimeout(function () {
     if (!listFile) return;
     fs.writeFile(listFile + '.tmp', JSON.stringify(state), function (e) { if (!e) fs.rename(listFile + '.tmp', listFile, function () {}); });
+    needed();
   }, 300);
+}
+/* The agent says until when it's needed (the end of the last recording scheduled or running), in a small file the
+   helper can read (TIVIBRO_REC_NEEDED, in the helper's storage): the helper starts it again if it stopped (a crash,
+   webOS ending it) while a recording is still due.  Readable by everyone, so root's file doesn't lock the helper out. */
+function needed() {
+  var f = process.env.TIVIBRO_REC_NEEDED; if (!AGENT || !f) return;
+  var until = 0; (state && state.recs || []).forEach(function (r) { if ((r.status === 'scheduled' || r.status === 'recording') && r.end > until) until = r.end; });
+  try { fs.writeFileSync(f, JSON.stringify({ until: until, at: Date.now() })); fs.chmodSync(f, 420); } catch (e) {}
+}
+function neededFile() { try { return path.join(require('./storage').sub('rec'), 'needed.json'); } catch (e) { return ''; } }
+// In the helper: once a minute, the agent is started again when a recording still needs it and it isn't answering.
+var watchT = null;
+function watchAgent() {
+  if (AGENT || !lcall || watchT) return;
+  watchT = setInterval(function () {
+    var n = null; try { n = JSON.parse(fs.readFileSync(neededFile(), 'utf8')); } catch (e) { return; }
+    if (!n || !(n.until > Date.now())) return;
+    agentUp(function (up) { if (!up) { note('warn', 'recording agent not answering with a recording due: starting it again'); ensureAgent(function () {}); } });
+  }, +(process.env.TIVIBRO_REC_WATCH_MS || 60000));
+  if (watchT.unref) watchT.unref();
 }
 function byId(id) { var hit = null; load().recs.forEach(function (r) { if (r.id === id) hit = r; }); return hit; }
 /* How long it is to watch: the time it was recording, less the time a dropped connection took to come back. */
@@ -273,6 +294,9 @@ function tick() {
 function start(opts) {
   logf = opts && opts.log || logf;
   load();
+  // Pause buffers an earlier run left (TiviBro or the agent stopped with one open): cleared, they can't be resumed.
+  try { drives().forEach(function (d) { TS.clearAll(path.join(d.dir, FOLDER)); }); if (!AGENT) TS.clearAll(require('./storage').sub('pause')); } catch (e) {}
+  watchAgent();
   if (!timer) { timer = setInterval(tick, TICK_MS); if (timer.unref) timer.unref(); }
   setTimeout(tick, 500);
 }
@@ -351,7 +375,7 @@ function ensureAgent(cb) {
     var done = function (ok) { var l = agentStarting || []; agentStarting = null; l.forEach(function (f) { f(ok); }); };
     // One with another secret (its key file was lost): stopped first.  Then ours, in the background.
     var pidf = '/media/developer/.tivibro-rec/agent.pid';
-    var cmd = (code === 403 ? 'kill $(cat ' + pidf + ') 2>/dev/null; sleep 1; ' : '') + 'TIVIBRO_REC_CTL=' + agentKey() + ' nohup /usr/bin/node ' + path.join(__dirname, 'record-agent.js') + ' >/dev/null 2>&1 &';
+    var cmd = (code === 403 ? 'kill $(cat ' + pidf + ') 2>/dev/null; sleep 1; ' : '') + 'TIVIBRO_REC_CTL=' + agentKey() + ' TIVIBRO_REC_NEEDED=' + neededFile() + ' nohup /usr/bin/node ' + path.join(__dirname, 'record-agent.js') + ' >/dev/null 2>&1 &';
     lcall('luna://org.webosbrew.hbchannel.service/exec', { command: cmd }, function (r) {
       var ok0 = r && r.returnValue !== false, tries = 0;
       if (!ok0) { agentNoUntil = Date.now() + 600000; var s0 = 'not possible: ' + (r && (r.errorText || r.stderrString) || 'no Homebrew Channel'); if (s0 !== agentSaid) { agentSaid = s0; note('warn', 'recording agent ' + s0); } return done(false); }

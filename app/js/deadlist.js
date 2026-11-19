@@ -37,9 +37,13 @@ var DeadList = (function () {
     if (was) changed(ch && ch.k || k);
   }
   // http: the provider's error code, or 0 when it answered but the TV could not play it.
+  /* Answers that are about the provider, not this channel (its server down or refusing everyone: 418 when Bob's
+     provider was down, too many requests, a login it won't take): no mark, or every channel tried during an
+     outage would carry one afterwards. */
+  function providerWide(http) { http = +http || 0; return http === 401 || http === 403 || http === 407 || http === 418 || http === 429 || http === 456 || http === 458 || http >= 500; }
   function failed(ch, url, http) {
     var id = plId(ch), s = forPl(id), k = keyOf(ch, url);
-    if (ch && k) streak(k, ch.n, id, ch.k);
+    if (ch && k && !providerWide(http)) streak(k, ch.n, id, ch.k);
     if (!http || s.ok[k]) return;
     s.fails[k] = +http;
     check(id);

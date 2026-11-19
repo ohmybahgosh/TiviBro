@@ -27,7 +27,7 @@ function sandbox(opts) {
         return Promise.reject(new Error('unexpected ' + url));
       }
     },
-    localStorage: { getItem: k => store[k] || null, setItem: (k, v) => { store[k] = String(v); } },
+    localStorage: { getItem: k => store[k] || null, setItem: (k, v) => { store[k] = String(v); }, get length() { return Object.keys(store).length; }, key: i => Object.keys(store)[i] },
     location: { reload: () => reloads.push(1), protocol: 'file:' },
     setTimeout: (fn, ms) => { if (opts.only ? opts.only.indexOf(ms) >= 0 : ms <= 3000 || opts.runAll || (opts.run || []).indexOf(ms) >= 0) fn(); return 1; }, clearTimeout() {}, setInterval: () => 1, clearInterval() {},
     UI: { get modalOpen() { return false; }, get lastInput() { return opts.lastInput || 0; }, panel: (title, body, buttons) => panels.push({ title, body, buttons }) },
@@ -225,6 +225,45 @@ const RELEASES = [rel('v0.7.0-alpha.1', { prerelease: true }), rel('v0.6.0'), re
   o.Update.whatsNew(); await tick();
   ok('not marked as seen before it shows', o.panels.length === 0 && o.store['tivibro.lastRun'] === '0.6.0-alpha.4', o.store['tivibro.lastRun']);
   ok('release notes: the heading and the changelog link are left out', JSON.stringify(o.Update._test.notes('**New in alpha 79**\n\n- One\n- Two\n\nEvery detail: [changelog](https://x)')) === '["One","Two"]', JSON.stringify(o.Update._test.notes('**New in alpha 79**\n\n- One\n\nEvery detail: [changelog](https://x)')));
+
+  // Going back to an earlier version: the releases before this one, checked like an update, settings saved first.
+  {
+    const kv = {}, seenFetch = [];
+    const fetchKv = (url, o) => {
+      seenFetch.push(url);
+      if (/\/update\/verify$/.test(url)) return Promise.resolve({ json: () => ({ ok: true }) });
+      const m = /\/kv\/(put|get)\?k=([^&]+)/.exec(url);
+      if (m && m[1] === 'put') { kv[decodeURIComponent(m[2])] = o.body; return Promise.resolve({ ok: true, status: 200 }); }
+      if (m && m[1] === 'get') { const v = kv[decodeURIComponent(m[2])]; return Promise.resolve({ ok: !!v, status: v ? 200 : 404, json: () => JSON.parse(v) }); }
+      return Promise.reject(new Error('no network'));
+    };
+    let o = sandbox({ version: '0.7.0-alpha.1', fetch: fetchKv, settings: { updateAuto: true, theme: 'ocean' }, store: { 'tivibro.settings': '{"theme":"ocean"}', 'tivibro.edits.p1': '{"fav":["a"]}', 'other.app': 'x' } });
+    o.sb.Net.ctlFetch = o.sb.fetch;
+    o.sb.Store.saveSettings = () => {};
+    const older = await o.Update.earlier();
+    ok('going back: only releases before this one, newest first, drafts and ones without an IPK left out', older.map(r => r.version).join(' ') === '0.6.0 0.6.0-alpha.3', older.map(r => r.version).join(' '));
+    await o.Update.rollback(older[0]); await tick();
+    const keys = Object.keys(kv);
+    ok('going back: TiviBro\'s settings are saved to the helper first (not other apps\')', keys.length === 1 && /"tivibro.settings"/.test(kv[keys[0]]) && /"tivibro.edits.p1"/.test(kv[keys[0]]) && !/other\.app/.test(kv[keys[0]]), keys.join());
+    ok('going back: installed through the Homebrew Channel, checked like an update', o.calls.some(c => /\/install /.test(c) && /0\.6\.0/.test(c)), o.calls.filter(c => /install/.test(c)).join(' | '));
+    ok('going back: automatic update checks turned off (the newer one isn\'t offered straight back)', o.sb.Store.settings.updateAuto === false);
+    const sv = o.Update.snaps();
+    ok('going back: the saved settings are listed', sv.length === 1 && sv[0].from === '0.7.0-alpha.1' && sv[0].to === '0.6.0', JSON.stringify(sv));
+    // Updated again, then "Put back": the saved settings return and TiviBro restarts.
+    o.store['tivibro.settings'] = '{"theme":"plum"}';
+    o.sb.Store.freeze = () => {};
+    await o.Update.restore(sv[0]); await tick();
+    ok('put back: the settings from before going back return, then a restart', o.store['tivibro.settings'] === '{"theme":"ocean"}' && o.reloads.length >= 1, o.store['tivibro.settings']);
+    // An older release without a signature can't be checked: not installed, nothing saved.
+    const o2 = sandbox({ version: '0.7.0-alpha.1', unsigned: true, fetch: fetchKv }); o2.sb.Net.ctlFetch = o2.sb.fetch; o2.sb.Store.saveSettings = () => {};
+    const before = Object.keys(kv).length, l2 = await o2.Update.earlier();
+    let err = ''; await o2.Update.rollback(l2[0]).catch(e => { err = e.message; });
+    ok('going back: a release from before signatures isn\'t installed, and nothing is changed', /before releases were signed/.test(err) && Object.keys(kv).length === before && !o2.calls.some(c => /\/install /.test(c)), err);
+    // No helper: refused before anything happens.
+    const o3 = sandbox({ version: '0.7.0-alpha.1', noHelper: true }); o3.sb.Net.ctlFetch = o3.sb.fetch;
+    let e3 = ''; const l3 = await o3.Update.earlier(); await o3.Update.rollback(l3[0]).catch(e => { e3 = e.message; });
+    ok('going back: without the helper nothing is installed', /network helper/.test(e3) && !o3.calls.some(c => /\/install /.test(c)), e3);
+  }
 
   console.log(fail ? fail + ' failures' : 'all update tests passed');
   process.exit(fail ? 1 : 0);

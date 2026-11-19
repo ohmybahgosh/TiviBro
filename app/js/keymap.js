@@ -9,7 +9,7 @@ var Keymap = (function () {
   var BUTTONS = [
     ['ok', 'OK'], ['up', 'Up'], ['down', 'Down'], ['left', 'Left'], ['right', 'Right'],
     ['chup', 'Channel +'], ['chdown', 'Channel −'], ['red', 'Red'], ['green', 'Green'], ['yellow', 'Yellow'], ['blue', 'Blue'],
-    ['playpause', 'Play / Pause'], ['stop', 'Stop'], ['rew', 'Rewind'], ['ff', 'Fast forward'], ['info', 'Info'], ['back', 'Back']
+    ['playpause', 'Play / Pause'], ['stop', 'Stop'], ['rew', 'Rewind'], ['ff', 'Fast forward'], ['rec', 'Record (●)'], ['info', 'Info'], ['back', 'Back']
   ];
   // Short presses that must stay put so you can always get around: Back in lists, arrows in lists.
   var FIXED = { list: { up: 1, down: 1, left: 1, right: 1, ok: 1, back: 1, chup: 1, chdown: 1 }, player: { back: 1 },
@@ -19,7 +19,7 @@ var Keymap = (function () {
     none: 'Nothing',
     panel: 'Quick menu (actions and recent channels)', list: 'Channel guide over the video', osd: 'Show info panel', menu: 'Options menu',
     chnext: 'Next channel', chprev: 'Previous channel', last: 'Last channel',
-    rewind: 'Rewind (catch-up), else last channel', restart: 'Watch from start', playpause: 'Play / pause',
+    rewind: 'Rewind (live pause or catch-up), else last channel', record: 'Record this programme, or stop recording it', recordings: 'Recordings', restart: 'Watch from start', playpause: 'Play / pause',
     guide: 'TV guide', search: 'Search', settings: 'Settings', editor: 'Edit on a phone or computer (QR code)', live: 'Channels screen', exit: 'Leave fullscreen',
     fav: 'Add or remove favorite', favorites: 'Open Favorites', recents: 'Open Recent channels',
     picture: 'Change the aspect', audio: 'Audio track', cc: 'Closed captions on or off', subs: 'Subtitles menu', sleep: 'Sleep timer',
@@ -29,27 +29,27 @@ var Keymap = (function () {
   // Short names for the on-screen button legend.
   var SHORT = {
     panel: 'Quick menu', list: 'Channel guide', osd: 'Info', menu: 'Options', chnext: 'Next channel', chprev: 'Previous channel', last: 'Last channel',
-    rewind: 'Rewind', restart: 'Watch from start', playpause: 'Pause', guide: 'Guide', search: 'Search', settings: 'Settings', editor: 'Phone editor',
+    rewind: 'Rewind', record: 'Record', recordings: 'Recordings', restart: 'Watch from start', playpause: 'Pause', guide: 'Guide', search: 'Search', settings: 'Settings', editor: 'Phone editor',
     live: 'Channels', exit: 'Exit fullscreen', fav: 'Favorite', favorites: 'Favorites', recents: 'Recent',
     picture: 'Aspect', audio: 'Audio track', cc: 'Captions', subs: 'Subtitles', sleep: 'Sleep timer', movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect', buffer: 'Buffer info', streaminfo: 'Stream info',
     full: 'Fullscreen', now: 'Now', jump: 'Jump to', details: 'Details', groups: 'Groups', stopwin: 'Stop window'
   };
   var CONTEXT_ACTIONS = {
-    player: ['none', 'panel', 'list', 'osd', 'menu', 'chnext', 'chprev', 'last', 'rewind', 'restart', 'playpause', 'guide', 'search', 'settings', 'editor', 'exit',
+    player: ['none', 'panel', 'list', 'osd', 'menu', 'chnext', 'chprev', 'last', 'rewind', 'restart', 'playpause', 'record', 'recordings', 'guide', 'search', 'settings', 'editor', 'exit',
       'fav', 'favorites', 'recents', 'picture', 'audio', 'cc', 'subs', 'sleep', 'reconnect', 'buffer', 'streaminfo'],
-    list: ['none', 'menu', 'last', 'guide', 'search', 'settings', 'editor', 'fav', 'favorites', 'recents', 'movies', 'shows', 'playpause'],
-    guide: ['none', 'full', 'menu', 'details', 'groups', 'now', 'jump', 'last', 'stopwin', 'live', 'search', 'settings', 'editor', 'fav', 'favorites', 'recents', 'movies', 'shows']
+    list: ['none', 'menu', 'last', 'guide', 'search', 'settings', 'editor', 'fav', 'favorites', 'recents', 'movies', 'shows', 'playpause', 'record', 'recordings'],
+    guide: ['none', 'full', 'menu', 'details', 'groups', 'now', 'jump', 'last', 'stopwin', 'live', 'search', 'settings', 'editor', 'fav', 'favorites', 'recents', 'movies', 'shows', 'record', 'recordings']
   };
 
   var DEFAULTS = {
     player: {
       ok: 'panel', 'long:ok': 'list', up: 'chprev', down: 'chnext', chup: 'chnext', chdown: 'chprev',
       left: 'rewind', right: 'osd', red: 'menu', green: 'guide', yellow: 'last', blue: 'audio',
-      playpause: 'playpause', stop: 'exit', rew: 'rewind', ff: 'none', info: 'osd', 'long:info': 'buffer'
+      playpause: 'playpause', stop: 'exit', rew: 'rewind', ff: 'none', info: 'osd', 'long:info': 'buffer', rec: 'record'
     },
-    list: { 'long:ok': 'menu', red: 'menu', green: 'guide', yellow: 'last', blue: 'settings', playpause: 'none', info: 'menu', stop: 'none', rew: 'none', ff: 'none' },
+    list: { 'long:ok': 'menu', red: 'menu', green: 'guide', yellow: 'last', blue: 'settings', playpause: 'none', info: 'menu', stop: 'none', rew: 'none', ff: 'none', rec: 'record' },
     // What the guide always did with these buttons, now changeable.
-    guide: { 'long:ok': 'menu', red: 'menu', info: 'details', green: 'live', blue: 'settings', yellow: 'groups', playpause: 'full', stop: 'stopwin' }
+    guide: { 'long:ok': 'menu', red: 'menu', info: 'details', green: 'live', blue: 'settings', yellow: 'groups', playpause: 'full', stop: 'stopwin', rec: 'record' }
   };
 
   var ctx = 'list';

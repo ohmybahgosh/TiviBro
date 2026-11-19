@@ -41,8 +41,12 @@ function load(pl) {
   ok('the other channel, which plays, is not', !D.marked(b));
   ok('the lists are told to draw that row again', seen.length === 1 && seen[0] === 'x:1', seen);
   ok('the log says which channel', logs.some(m => /Arena Sports/.test(m) && /not playing lately/.test(m)), logs);
-  D.failed(a, '', 503);
+  D.failed(a, '', 404);
   ok('a third failure keeps it marked, without telling the lists again', D.marked(a) && seen.length === 1, seen);
+  // The provider down or refusing everyone (418 when Bob's was down, 5xx, too many requests): not this channel's fault.
+  const o = { k: 'x:9', n: 'Outage' };
+  D.failed(o, '', 418); D.failed(o, '', 503); D.failed(o, '', 429);
+  ok('the provider down or refusing everyone: no mark', !D.marked(o));
 
   // TiviBro restarts: the mark is still there.
   const r = load();
@@ -92,7 +96,7 @@ function load(pl) {
   const src = fs.readFileSync(path.join(__dirname, '../../app/js/player.js'), 'utf8');
   ok('player.js counts every failed live try once', /cur\.live && !cur\.timeshift && !cur\.deadCounted && window\.DeadList/.test(src) && /DeadList\.failed\(cur\.ch, cur\.origUrl \|\| cur\.url, cur\.lastHttp \|\| 0\)/.test(src));
   const views = fs.readFileSync(path.join(__dirname, '../../app/js/views.js'), 'utf8');
-  ok('the channel lists and the guide draw the mark', /row\._d = U\.el\('span', 'deadtag', 'not playing lately'\)/.test(views) && /'deadtag', 'not playing'\)/.test(views));
+  ok('the channel lists and the guide draw the mark', (views.match(/'deadtag', 'didn\\'t play the last 2 times'\)/g) || []).length === 2);
   const phone = fs.readFileSync(path.join(__dirname, '../../app/js/phone.js'), 'utf8');
   ok('the phone app gets it in the channel list and the guide', /x\.dead = 1/.test(phone) && /row\.dead = 1/.test(phone));
 }
