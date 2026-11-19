@@ -1,10 +1,15 @@
 # Changelog
 
-## 0.6.0 (alpha 168, 2026-11-18)
+## 0.6.0 (alpha 169, 2026-11-19)
 
-Pre-release: expect rough edges, and keep a backup before installing.  Scheduled recordings need the TV on (or woken by its own timer).
+Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 168
+### New in alpha 169
+
+- **Stalker portals: shows open with their episodes on more portals (issue #118).**  TiviBro only knew seasons that came with a command and their episode numbers, so a portal that lists bare seasons (or a show's episodes straight away) showed "this show has no episodes".  Now a bare season's episodes are asked for, four seasons at a time, each episode plays from its own command, and a show with nothing under the shows module is looked for under the movies module.  When a show still has none, the problem report says what the portal answered.
+- **Stalker portals: no more asks for a new movie link every few seconds while it plays.**  Seek previews read the movie for their pictures, and each read asked the portal for a link.  They're now off for portal movies, so a busy portal isn't pushed into "too many requests".
+
+### In alpha 168
 
 - **Recording to a USB drive (first version, discussion #94).**  Hold OK on a programme in the guide > **Record**: one on now records from now until it ends, a later one is scheduled (two minutes before to five after).  In fullscreen, the quick menu has **Record** and **Stop recording**.  The guide marks a programme being recorded with a red dot (a ring when it's scheduled).  Recording needs a rooted TV: webOS keeps USB drives out of a developer-mode app's reach, and the Homebrew Channel lets TiviBro's helper in.  It runs in the background, without decoding, as long as the TV is on.  Recordings go in a "TiviBro Recordings" folder on the drive, split into 3.9 GB parts that play as one.  A channel is recorded as HLS when it has it (a missed piece is fetched again), and as MPEG-TS otherwise.  Encrypted HLS and DRM channels can't be recorded yet.
 - **Recordings screen**, in the side menu once a USB drive is in: Recording now, Scheduled, Recorded and Didn't record, with the drive's free space.  A show recorded more than once is one row that opens to its recordings.  OK watches from where you left off, with the length on the seek bar.  Hold OK or Red: watch from the start, stop, cancel, delete, or select several to delete at once.  With a TMDB token, a recording gets its poster, backdrop and plot (else the guide's description).  Watching one that's still recording, yellow goes to the channel live.

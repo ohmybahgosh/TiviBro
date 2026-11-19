@@ -59,6 +59,16 @@ function create(o) {
       if (/^\/media\/file_772\.mpg$/.test(String(q.cmd)) && !q.series) return js(res, { id: 1, cmd: 'ffmpeg http://127.0.0.1:1/ep/2.mp4' });
       return js(res, { id: 1, cmd: '', error: 'nothing_to_play' });
     }
+    /* o.seasonsBare (issue #118): seasons with no command and no episode numbers; a season's episodes, each with its own command. */
+    if (o.seasonsBare && q.type === 'series' && q.action === 'get_ordered_list' && q.movie_id && q.movie_id !== '0') {
+      if (q.season_id && q.season_id !== '0') { seen.seasonAsks = (seen.seasonAsks || 0) + 1; return js(res, { total_items: 2, data: [{ id: 's' + q.season_id + 'e1', series_number: 1, name: 'Pilot', cmd: 'ffmpeg http://cdn.example/ep/' + q.season_id + '-1.mp4' }, { id: 's' + q.season_id + 'e2', series_number: 2, name: 'Episode 2', cmd: 'ffmpeg http://cdn.example/ep/' + q.season_id + '-2.mp4' }] }); }
+      return js(res, { total_items: 2, data: [{ id: '41', name: 'Season 1', is_season: true }, { id: '42', name: 'Season 2', is_season: true }] });
+    }
+    /* o.epsDirect: the show's episodes straight away, under the movie module only. */
+    if (o.epsDirect && q.action === 'get_ordered_list' && q.movie_id && q.movie_id !== '0') {
+      if (q.type === 'series') return js(res, { total_items: 0, data: [] });
+      return js(res, { total_items: 3, data: [1, 2, 3].map(function (n) { return { id: 'd' + n, is_episode: 1, series_number: n, name: 'Episode ' + n, cmd: 'ffmpeg http://cdn.example/d/' + n + '.mp4' }; }) });
+    }
     if (o.series && q.type === 'series' && q.action === 'get_ordered_list' && q.movie_id && q.movie_id !== '0') return js(res, { total_items: 1, data: [{ id: q.movie_id + ':1', name: 'Season 1', series: [1, 2], cmd: 'c2Vhc29uMQ==' }] });
     /* o.genreStrict (issue #118): a category's shows only with genre=* (genre=<the category> finds none). */
     if (o.series && q.type === 'series' && q.action === 'get_ordered_list') { seen.seriesPages = (seen.seriesPages || 0) + 1; seen.seriesGenres = (seen.seriesGenres || []).concat([q.genre]); if (o.genreStrict && q.category !== '*' && q.genre !== '*') return page([], q.p, res); return page(shows.filter(function (x) { return q.category === '*' || !q.category || x.category_id === q.category; }), q.p, res); }

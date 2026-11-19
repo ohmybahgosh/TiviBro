@@ -33,6 +33,8 @@ var SeekPrev = (function () {
     if (c) { try { url = decodeURIComponent(c[1]); } catch (e) { return ''; } }
     if (typeof Net !== 'undefined' && Net.unwrap) url = Net.unwrap(url);
     if (!/^https?:\/\//i.test(url) || /\.m3u8(\?|$)/i.test(url)) return '';
+    // A Stalker portal's movie: each look at it asks the portal for a new link (issue #118: every few seconds while it played).
+    if (/\/stalker\/vod\//.test(url)) return '';
     return url;
   }
   function video() { return document.getElementById('video'); }

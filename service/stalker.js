@@ -372,26 +372,74 @@ function infoOf(x) {
   return { name: x.name, plot: x.plot, description: x.plot, movie_image: x.cover, cover_big: x.cover, cover: x.cover, rating: x.rating, releasedate: x.year, director: x.director, cast: x.cast,
     genre: x.genre, duration_secs: x.mins * 60, duration: x.mins ? Math.floor(x.mins / 60) + ':' + ('0' + x.mins % 60).slice(-2) + ':00' : '' };
 }
-// A show's seasons (get_ordered_list with its movie_id), as Xtream's get_series_info.
-function seasons(L, x, cb) {
-  act(L, { type: x.module === 'series' ? 'series' : 'vod', action: 'get_ordered_list', movie_id: x.id, season_id: 0, episode_id: 0, category: x.cat || '*', fav: 0, p: 1 }, function (e, js) {
-    if (e) return cb(e);
-    var list = js && Array.isArray(js.data) ? js.data : [], eps = {}, out = [];
-    list.forEach(function (sz, i) {
-      if (!sz || !sz.cmd) return;
-      var n = +((/(\d+)/.exec(String(sz.name || '')) || [])[1]) || i + 1, nums = Array.isArray(sz.series) ? sz.series : [];
-      out.push({ season_number: n, name: String(sz.name || 'Season ' + n), cover: x.cover });
-      // Where this season is, for an episode its command gives no link for (vodTry: by coordinates).
-      vodOf(L).seasonOf[String(sz.cmd)] = { type: x.module === 'series' ? 'series' : 'vod', video: String(sz.video_id || x.id), season: String(sz.id || '') };
-      eps[n] = nums.map(function (en) {
-        en = +en;
-        return { id: 'e' + en + 'x' + b64u(sz.cmd), episode_num: en, title: 'Episode ' + en, container_extension: extOf(sz.cmd), season: n, info: {} };
-      });
-    });
-    cb(null, { seasons: out, info: infoOf(x), episodes: eps });
+/* A show's seasons (get_ordered_list with its movie_id), as Xtream's get_series_info.
+   Portals differ (issue #118: "this show has no episodes" on a portal with 233,000 shows):
+   - a season with its command and its episode numbers (series: [1, 2, ...]): the usual;
+   - a season with no command, or no numbers: its episodes are asked for (season_id), each with its own command;
+   - the show's episodes straight away, no seasons: one season;
+   - nothing under the module guessed for a show not in memory: the other module, once.
+   An episode's id says how to play it: "e<n>x<season command>", "e<n>x#<type>:<show>:<season>" (by its
+   coordinates, survives the helper starting again) or "k<its own command>". */
+function seasonNo(sz, i) { return +sz.season_number || +((/(\d+)/.exec(String(sz.name || '')) || [])[1]) || i + 1; }
+function epNo(r, i) { return +r.series_number || +r.episode_number || +((/(\d+)\s*$/.exec(String(r.name || '')) || /(\d+)/.exec(String(r.name || '')) || [])[1]) || i + 1; }
+function epTitle(r, n) { var t = String(r && r.name || '').trim(); return t && !/^(episode|серия|ep\.?)?\s*\d+$/i.test(t) ? t : 'Episode ' + n; }
+function epRows(rows, season, where) {
+  return rows.filter(function (r) { return r && (r.cmd || r.id != null); }).map(function (r, i) {
+    var n = epNo(r, i);
+    var id = r.cmd ? 'k' + b64u(String(r.cmd)) : 'e' + n + 'x' + b64u('#' + where.type + ':' + where.video + ':' + where.season);
+    return { id: id, episode_num: n, title: epTitle(r, n), container_extension: extOf(r.cmd), season: season, info: { plot: r.description ? String(r.description).slice(0, 600) : '' } };
   });
 }
-function xc(L, q, res, ALLOW) {
+function seasons(L, x, cb, alt, log) {
+  var type = alt || (x.module === 'series' ? 'series' : 'vod');
+  act(L, { type: type, action: 'get_ordered_list', movie_id: x.id, season_id: 0, episode_id: 0, category: alt ? '*' : x.cat || '*', fav: 0, p: 1 }, function (e, js) {
+    if (e) return cb(e);
+    var list = (js && Array.isArray(js.data) ? js.data : []).filter(Boolean), eps = {}, out = [], need = [];
+    if (!list.length && !alt) return seasons(L, x, cb, type === 'series' ? 'vod' : 'series', log);
+    var isEp = function (r) { return r.is_episode || (r.series_number != null && !Array.isArray(r.series) && !r.is_season); };
+    if (list.length && list.every(isEp)) {
+      out.push({ season_number: 1, name: 'Season 1', cover: x.cover });
+      eps[1] = epRows(list, 1, { type: type, video: String(x.id), season: '' });
+      return done();
+    }
+    list.forEach(function (sz, i) {
+      var n = seasonNo(sz, i), nums = Array.isArray(sz.series) ? sz.series : [];
+      var where = { type: type, video: String(sz.video_id || x.id), season: String(sz.season_id || sz.id || '') };
+      if (!sz.cmd && !nums.length && !where.season) return;
+      out.push({ season_number: n, name: String(sz.name || 'Season ' + n), cover: x.cover });
+      // Where this season is, for an episode its command gives no link for (vodTry: by coordinates).
+      if (sz.cmd) vodOf(L).seasonOf[String(sz.cmd)] = where;
+      if (sz.cmd && nums.length) {
+        eps[n] = nums.map(function (en) {
+          en = +en;
+          return { id: 'e' + en + 'x' + b64u(sz.cmd), episode_num: en, title: 'Episode ' + en, container_extension: extOf(sz.cmd), season: n, info: {} };
+        });
+      } else need.push({ n: n, where: where, nums: nums });
+    });
+    // Seasons that need their episodes asked for: four at a time.
+    var k = 0, running = 0, left = need.length;
+    if (!left) return done();
+    (function more() {
+      while (running < 4 && k < need.length) (function (w) {
+        running++;
+        act(L, { type: w.where.type, action: 'get_ordered_list', movie_id: w.where.video, season_id: w.where.season, episode_id: 0, category: '*', fav: 0, p: 1 }, function (e2, j2) {
+          var rows = !e2 && j2 && Array.isArray(j2.data) ? j2.data : [];
+          eps[w.n] = epRows(rows, w.n, w.where);
+          // No list, but numbers: by coordinates when played.
+          if (!eps[w.n].length && w.nums.length) eps[w.n] = w.nums.map(function (en) { en = +en; return { id: 'e' + en + 'x' + b64u('#' + w.where.type + ':' + w.where.video + ':' + w.where.season), episode_num: en, title: 'Episode ' + en, container_extension: '', season: w.n, info: {} }; });
+          running--; left--;
+          if (!left) done(); else more();
+        });
+      })(need[k++]);
+    })();
+    function done() {
+      var n = 0; for (var s in eps) n += eps[s].length;
+      if (!n && log) log({ lv: 'warn', event: 'stalker show has no episodes', type: type, rows: list.length, total: js && js.total_items, got: list[0] ? shapeOf(list[0]) : shapeOf(js) });
+      cb(null, { seasons: out.filter(function (o) { return (eps[o.season_number] || []).length; }), info: infoOf(x), episodes: eps });
+    }
+  });
+}
+function xc(L, q, res, ALLOW, log) {
   var a = String(q.action || ''), cat = q.category_id ? String(q.category_id) : '*', max = Math.max(0, Math.min(50000, +q.max | 0));
   function fail(e) { send(res, ALLOW, e.auth ? 401 : 502, { error: e.message }); }
   if (a === 'get_vod_categories') return vodCats(L, function (e, c) { e ? fail(e) : send(res, ALLOW, 200, c); });
@@ -415,7 +463,7 @@ function xc(L, q, res, ALLOW) {
     var id = String(q.vod_id || q.series_id || ''), show = a === 'get_series_info', x = findItem(L, id, show);
     var answer = function (it) {
       if (a === 'get_vod_info') return send(res, ALLOW, 200, { info: infoOf(it), movie_data: { stream_id: it.id, name: it.name, container_extension: extOf(it.cmd), category_id: it.cat } });
-      seasons(L, it, function (e, d) { e ? fail(e) : send(res, ALLOW, 200, d); });
+      seasons(L, it, function (e, d) { e ? fail(e) : send(res, ALLOW, 200, d); }, '', log);
     };
     if (x) return answer(x);
     /* A show not in a list read since the helper started (webOS restarts it on a 1 GB TV; the app keeps its lists):
@@ -489,7 +537,15 @@ function vodLinkOf(js) {
 }
 function vodPlay(L, id, res, ALLOW, log, port, ext) {
   var em = /^e(\d+)x([A-Za-z0-9_-]+)$/.exec(id);
-  if (em) { var sc = unb64u(em[2]); return vodTry(L, [sc], em[1], res, ALLOW, log, port, '', ext, '', vodOf(L).seasonOf[sc]); }
+  if (em) {
+    var sc = unb64u(em[2]), at = /^#(series|vod):([^:]*):(.*)$/.exec(sc);
+    // A season with no command of its own: the episode by its coordinates (show, season, number).
+    if (at) return vodTry(L, [], em[1], res, ALLOW, log, port, '', ext, '', { type: at[1], video: at[2], season: at[3] });
+    return vodTry(L, [sc], em[1], res, ALLOW, log, port, '', ext, '', vodOf(L).seasonOf[sc]);
+  }
+  // An episode with its own command (its season listed it).
+  var ek = /^k([A-Za-z0-9_-]{4,})$/.exec(id);
+  if (ek) { var oc = unb64u(ek[1]); return vodTry(L, [oc], '', res, ALLOW, log, port, linkOf(oc), ext, ''); }
   cmdOf(L, id, function (own) {
     /* A title the portal says needs no temporary link (both flags there and off) plays from the address in its list,
        as the portal's own player and IPTVnator do: no create_link, one ask less of the portal.  Only on the first
@@ -675,7 +731,7 @@ function handle(req, res, ALLOW, log, port) {
   if (route === '/stalker/xc/player_api.php') {
     // A whole list can take minutes (issue #118): older Node closes a quiet connection after 2.
     if (req.socket && req.socket.setTimeout) req.socket.setTimeout(31 * 60000);
-    return xc(L2, u.query, res, ALLOW);
+    return xc(L2, u.query, res, ALLOW, log);
   }
   var vm = /^\/stalker\/vod\/([A-Za-z0-9_-]{1,1200})\.[a-z0-9]{2,5}$/.exec(route);
   if (vm) return vodPlay(L2, vm[1], res, ALLOW, log, port, (/\.([a-z0-9]{2,5})$/.exec(route) || [])[1]);

@@ -189,6 +189,26 @@ const req = (method, u, body, headers) => new Promise((res, rej) => {
     me.server.close();
   }
 
+  // Issue #118: seasons with no command (their episodes asked for), and a show listing its episodes straight away.
+  {
+    const mb = Mock.create({ stream: 'http://127.0.0.1:1/live/stream.ts', series: true, seasonsBare: true });
+    await new Promise((f) => mb.server.listen(0, '127.0.0.1', f));
+    const loginb = b64({ portal: 'http://127.0.0.1:' + mb.server.address().port + '/stalker_portal/c/', mac: '00:1a:79:00:00:01' });
+    const XB = (q) => req('GET', H + '/stalker/xc/player_api.php?stb=' + loginb + '&action=' + q).then((r) => ({ status: r.status, j: JSON.parse(r.body || 'null') }));
+    const info = await XB('get_series_info&series_id=910');
+    const e1 = info.j && info.j.episodes && info.j.episodes['1'] || [];
+    ok('issue #118: seasons with no command: their episodes are asked for', info.status === 200 && info.j.seasons.length === 2 && e1.length === 2 && (info.j.episodes['2'] || []).length === 2 && e1[0].title === 'Pilot' && mb.seen.seasonAsks === 2, info.status + ' ' + JSON.stringify(info.j).slice(0, 300));
+    const r = e1[0] ? await req('GET', H + '/stalker/vod/' + e1[0].id + '.mp4?stb=' + loginb) : { status: 0 };
+    ok('issue #118: such an episode plays from its own command', r.status === 302 && /ep%2F41-1\.mp4/.test(r.headers.location || ''), r.status + ' ' + (r.headers.location || r.body));
+    mb.server.close();
+    const md = Mock.create({ stream: 'http://127.0.0.1:1/live/stream.ts', series: true, epsDirect: true });
+    await new Promise((f) => md.server.listen(0, '127.0.0.1', f));
+    const logind = b64({ portal: 'http://127.0.0.1:' + md.server.address().port + '/stalker_portal/c/', mac: '00:1a:79:00:00:01' });
+    const d = await req('GET', H + '/stalker/xc/player_api.php?stb=' + logind + '&action=get_series_info&series_id=920').then((x) => JSON.parse(x.body || 'null'));
+    ok('issue #118: a show with nothing under the shows module and its episodes in the movie module: one season of them', d && d.seasons.length === 1 && (d.episodes['1'] || []).length === 3, JSON.stringify(d).slice(0, 300));
+    md.server.close();
+  }
+
   // Issue #118: a portal whose categories need genre=*, and whose movie links are HLS playlists.
   const m8 = Mock.create({ stream: 'http://127.0.0.1:1/live/stream.ts', series: true, genreStrict: true, vodHls: true });
   await new Promise((f) => m8.server.listen(0, '127.0.0.1', f));
