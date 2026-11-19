@@ -8,6 +8,8 @@ Pre-release: expect rough edges, and keep a backup before installing.
 
 - **The quick menu (OK in fullscreen) has the timeline too** while the channel is paused, buffered or recording: the bar shows what's kept and where you are, and ▲ from the top row moves the dot, as on the info bar.
 - **The info bar says "▲  Timeline" whenever ▲ goes to it.**  It said what ▲ is set to (like "Recent") while ▲ went to the timeline.
+- **◀ ▶ move back and forth whenever you're behind live,** whatever ▶ is set to (Info by default).  A Magic Remote has no ⏪ ⏩ buttons, and after carrying on from a pause ▶ still opened Info.
+- **Stalker portals: a category found empty leaves the list (issue #118).**  A big portal lists every category under both Movies and Shows, so Movies had "ENGLISH | SERIES" with 0 movies and Shows had the movie categories with 0 shows.
 - **A category's poster wall:** Back after opening a show from it lands on the same category again (it went to the top of the list), and the wall's hints say "Back  categories".
 
 ### In alpha 170

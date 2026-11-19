@@ -625,6 +625,9 @@ var Vod = (function () {
     if (Store.settings.vodCatSort === 'name') cats = d.cats.slice().sort(function (a, b) { return d.multi && (a.pl || '') !== (b.pl || '') ? 0 : String(labels[a.id] || a.name).localeCompare(String(labels[b.id] || b.name), undefined, { sensitivity: 'base', numeric: true }); });
     cats.forEach(function (c) {
       if ((!counts[c.id] && !d.browse) || hid[c.id]) return;
+      /* A big portal lists every category under both Movies and Shows (issue #118: "ENGLISH | SERIES" in Movies, with
+         0 movies, its shows in Shows only): one found empty leaves the list, unless it's the one you're on. */
+      if (d.browse && d.catItems[c.id] && !d.catItems[c.id].length && !(catsVL && catsVL.current() && catsVL.current().id === c.id)) return;
       var name = labels[c.id];
       // A big portal browsed by category: every category, its count once it's been opened.
       var n = d.browse ? (d.catItems[c.id] ? d.catItems[c.id].length : '') : counts[c.id];

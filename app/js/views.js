@@ -1326,7 +1326,9 @@ var Views = (function () {
     }
     // The info bar up on a channel with something to go back to: ▲ takes the timeline's dot (TiviMate does this).
     if (a === 'up' && mode === 'live' && !hidden && canScrub()) { scrubStart(); return true; }
-    if (lw && mode === 'live') {
+    /* Behind live (a rewind, a pause carried on, the timeline): ◀ ▶ move back and forth whatever they are set to, so
+       a Magic Remote (no ⏪ ⏩ buttons) can go forward again; at the live edge ▶ is what it's set to (Info). */
+    if ((lw || behindLive()) && mode === 'live') {
       var step = 0;
       if (a === 'left') step = -Store.settings.skip * seekAccel(-1);
       else if (a === 'right') step = +Store.settings.skip * seekAccel(1);
