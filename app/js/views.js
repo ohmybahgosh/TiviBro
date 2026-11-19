@@ -1056,7 +1056,7 @@ var Views = (function () {
       if (v && v.onExit) v.onExit();
       return;
     }
-    if (tsh && mode === 'live') { var tpc = tsh.c; tsEnd(); if (playing && playing.k === tpc.k) startChannel(tpc, true); }
+    if (tsh && mode === 'live') { var tpc = tsh.c; tsEnd(); if (playing && playing.k === tpc.k) { Player.stop(); afterTs(function () { if (playing && playing.k === tpc.k && !full) startChannel(tpc, true); }); } }
     // Back to Movies on now (or My media, after a movie on a live channel): no window for the picture, so the channel stops.
     if (fullFrom === 'onnow' || fullFrom === 'media') {
       mode = 'live'; cu = null; Player.stop();
@@ -1274,7 +1274,7 @@ var Views = (function () {
     // Paused to the USB drive (the picture let go): OK or Play carries on, Back or Stop is live again.
     if (tsh && !Player.tshift && mode === 'live') {
       if (a === 'ok' || a === 'playpause') { if (a === 'ok' || UI.playKey !== 'pause') tsResume(); return true; }
-      if (a === 'back' || a === 'stop' || a === 'yellow') { var tc = tsh.c; tsEnd(); startChannel(tc, false, function () { osd(true); }); return true; }
+      if (a === 'back' || a === 'stop' || a === 'yellow') { var tc = tsh.c; tsEnd(); afterTs(function () { startChannel(tc, false, function () { osd(true); }); }); return true; }
       if (a === 'chup' || a === 'chdown' || a === 'red' || a === 'hold' || a === 'info') tsEnd();
       else return true;
     }
@@ -1512,7 +1512,7 @@ var Views = (function () {
         if (tsh !== my) return;
         Record.tsPing(my.id).then(function (st) { if (tsh === my && st && st.error) { U.toast(T('Live pause stopped: {e}', { e: st.error }), 6000); backFromPause(); } },
           function (e) { if (tsh === my && e && e.gone) backFromPause(); });
-      }, 30000);
+      }, 10000);
       Player.play(c, { url: my.url, tshift: true, tsFrom: -1 });
       Log.info('player', 'Playing ' + L.name(c) + ' from the rewind buffer on the USB drive');
     }, function (e) {
@@ -1527,7 +1527,16 @@ var Views = (function () {
     var t = tsh; tsh = null;
     clearInterval(t.ping); clearTimeout(t.wait);
     tsCard(null);
-    if (t.id) Record.tsStop(t.id);
+    // The drive's copy lets go of its provider connection; what's started next waits for that (afterTs), so the
+    // provider never sees two at once for a channel going back to live.
+    tsStopping = t.id ? Record.tsStop(t.id) : null;
+  }
+  var tsStopping = null;
+  function afterTs(fn) {
+    var p = tsStopping; tsStopping = null;
+    if (!p) return fn();
+    var done = false, go = function () { if (!done) { done = true; fn(); } };
+    p.then(go, go); setTimeout(go, 1500);
   }
   function tsCard(c, text) {
     var el = $('tsCard');
@@ -1557,7 +1566,7 @@ var Views = (function () {
         if (!tsh) return;
         Record.tsPing(tsh.id).then(function (st) { if (tsh && st && st.error) { U.toast(T('Live pause stopped: {e}', { e: st.error }), 6000); backFromPause(); } },
           function (e) { if (tsh && e && e.gone) backFromPause(); });
-      }, 30000);
+      }, 10000);
       Log.info('player', 'Paused to the USB drive (' + L.name(c) + ')');
       if (tsh.resume) tsResume();
     }, function (e) {
@@ -1567,7 +1576,7 @@ var Views = (function () {
     });
     return true;
   }
-  function backFromPause() { var c = tsh && tsh.c; tsEnd(); if (c && playing && playing.k === c.k) startChannel(c, !full, function () { osd(true); }); }
+  function backFromPause() { var c = tsh && tsh.c; tsEnd(); Player.stop(); afterTs(function () { if (c && playing && playing.k === c.k) startChannel(c, !full, function () { osd(true); }); }); }
   function tsResume() {
     if (!tsh) return;
     if (!tsh.id) { tsh.resume = true; return; }

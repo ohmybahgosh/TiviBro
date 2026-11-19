@@ -8,7 +8,7 @@
      starting with the stream's PAT and PMT so it plays on its own; a piece's length is from its timestamps.
    - HLS from the provider: its pieces, kept as they come (fMP4 with its init segment).
    A dropped connection is asked for again; the playlist marks the join (#EXT-X-DISCONTINUITY).
-   A session nobody asked about for 90 s (the player gone, TiviBro closed) stops and its pieces are deleted.
+   A session nobody asked about for 30 s (the player gone, TiviBro closed) stops and its pieces are deleted.
    Pieces live in "<drive>/TiviBro Recordings/.timeshift/<id>/"; whatever an earlier run left there is cleared.
      POST /record/ts/start { url, max? }  -> { id, playlist }   (the same url again: the session running for it)
      POST /record/ts/ping  { id }         -> { id, sec, pieces, ready, error }
@@ -18,7 +18,7 @@
 'use strict';
 var fs = require('fs'), path = require('path');
 
-var PIECE = +(process.env.TIVIBRO_TS_PIECE || 4), MAX_SEC = 2 * 3600, IDLE_MS = +(process.env.TIVIBRO_TS_IDLE_MS || 90000);
+var PIECE = +(process.env.TIVIBRO_TS_PIECE || 4), MAX_SEC = 2 * 3600, IDLE_MS = +(process.env.TIVIBRO_TS_IDLE_MS || 30000);
 var MIN_FREE_MB = 1024, MAX_SESSIONS = 2, SMALL_SEC = 10 * 60, SMALL_FREE_MB = +(process.env.TIVIBRO_TS_SMALL_FREE_MB || 400);
 var WAIT_MS = +(process.env.TIVIBRO_TS_WAIT_MS || 10000);
 var sessions = {}, reaper = null, io = null, logf = function () {};
