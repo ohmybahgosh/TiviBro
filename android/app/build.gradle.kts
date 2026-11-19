@@ -100,6 +100,8 @@ dependencies {
     implementation("androidx.browser:browser:1.8.0")
     // QR codes: Google's code scanner (no camera permission; the scanning screen comes from Play services).
     implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
+    // The Google Play build: does Play have a newer version for this phone (update/PlayUpdate.kt)?
+    implementation("com.google.android.play:app-update:2.1.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     testImplementation("junit:junit:4.13.2")

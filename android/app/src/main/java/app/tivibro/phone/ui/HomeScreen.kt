@@ -14,6 +14,7 @@ import app.tivibro.phone.proto.AppUpdate
 import app.tivibro.phone.proto.AppRelease
 import app.tivibro.phone.update.UpdateStep
 import app.tivibro.phone.update.Updater
+import app.tivibro.phone.update.PlayUpdate
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -147,6 +148,12 @@ fun HomeScreen(
     val current = remember { runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull().orEmpty() }
     // The Play build leaves updates to Play (BuildConfig.SELF_UPDATE, app/build.gradle.kts).
     LaunchedEffect(Unit) { if (BuildConfig.SELF_UPDATE) rel = withContext(Dispatchers.IO) { AppUpdate.check(current) } }
+    /* The Play build: Play installs the updates, but a test's updates often don't show in the Play Store by
+       themselves.  Play is asked at start whether it has a newer one, and the card takes you to the listing.
+       playNote: the card's line ("" when Play itself said so). */
+    var playNew by remember { mutableStateOf(false) }
+    var playNote by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) { if (!BuildConfig.SELF_UPDATE && PlayUpdate.available(ctx) == true) { playNew = true; playNote = "" } }
     // The first start of a newer version (after Update now, or an APK installed by hand): what's new, once.
     var news by remember { mutableStateOf<Pair<String, List<String>>?>(null) }
     LaunchedEffect(Unit) {
@@ -191,6 +198,26 @@ fun HomeScreen(
             }
         }
     }
+    fun checkPlay() {
+        if (checking) return
+        checking = true
+        scope.launch {
+            val p = PlayUpdate.available(ctx)
+            // Play couldn't say: GitHub's newest release, which reaches Google Play at the same time (it can take a while to show there).
+            val gh = if (p == null) withContext(Dispatchers.IO) { AppUpdate.newest() } else null
+            checking = false
+            when {
+                p == true -> { playNew = true; playNote = ""; relHidden = false; list.animateScrollToItem(0) }
+                p == null && gh != null && AppUpdate.key(current) != null && AppUpdate.newer(gh.version, current) -> {
+                    playNew = true; relHidden = false
+                    playNote = "Version ${gh.version} is out.  Google Play can take a little while to offer it."
+                    list.animateScrollToItem(0)
+                }
+                p == false -> snack.showSnackbar("This is the newest TiviBro app on Google Play ($current).")
+                else -> PlayUpdate.open(ctx)
+            }
+        }
+    }
     Scaffold(
         containerColor = Ink,
         topBar = {
@@ -215,13 +242,17 @@ fun HomeScreen(
             modifier = Modifier.padding(pad).fillMaxSize(),
         ) {
             LazyColumn(state = list, contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 96.dp), verticalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.fillMaxSize()) {
-                item(key = "app-update") { rel?.takeIf { !relHidden }?.let { AppUpdateCard(it) { relHidden = true } } }
+                item(key = "app-update") {
+                    rel?.takeIf { !relHidden }?.let { AppUpdateCard(it) { relHidden = true } }
+                    if (playNew && !relHidden) PlayUpdateCard(playNote, onOpen = { PlayUpdate.open(ctx) }) { relHidden = true }
+                }
                 items(tvs, key = { it.tv.id }) { u ->
                     // The App update tile goes on the first TV's card only (it is about this phone's app, not a TV).
                     val first = u.tv.id == tvs.first().tv.id
                     TvCard(u, isTile = tileTv == u.tv.id && tvs.size > 1, onEditor, onTab, onReminders, onOpen, onWake, onForget, onTile, onRepair, onBackups,
                         bleLog = bleLog, onBleListen = onBleListen, onAddress = onAddress, onOff = onOff, onRecordings = onRecordings,
-                        appUpdate = if (first && BuildConfig.SELF_UPDATE) AppUpdateTile(checking, rel != null && relHidden.not(), ::checkNow) else null)
+                        appUpdate = if (!first) null else if (BuildConfig.SELF_UPDATE) AppUpdateTile(checking, rel != null && relHidden.not(), ::checkNow)
+                            else AppUpdateTile(checking, playNew && relHidden.not(), ::checkPlay))
                 }
             }
         }
@@ -471,6 +502,23 @@ private fun TvCard(
 /** "A new TiviBro app is out" (checked once per app start, and from the App update tile).  Update now downloads
  *  it with a progress bar and installs it over this one (update/Updater.kt).  Test builds, and anything that
  *  goes wrong, fall back to the APK link in the browser. */
+/** The Play build's update card: Google Play has a newer TiviBro app (or GitHub does, [note] says so). */
+@Composable
+private fun PlayUpdateCard(note: String, onOpen: () -> Unit, onLater: () -> Unit) {
+    ElevatedCard(colors = CardDefaults.elevatedCardColors(containerColor = Panel), modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp)) {
+            Text("A newer TiviBro app is out", style = MaterialTheme.typography.titleMedium)
+            Text(note.ifBlank { "Google Play has it.  Update there: TiviBro keeps your TVs and settings." }, color = Muted, style = MaterialTheme.typography.bodySmall)
+            Spacer(Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Button(onClick = onOpen) { Text("Update on Google Play") }
+                Spacer(Modifier.width(8.dp))
+                TextButton(onClick = onLater) { Text("Later") }
+            }
+        }
+    }
+}
+
 @Composable
 private fun AppUpdateCard(rel: AppRelease, onLater: () -> Unit) {
     val ctx = LocalContext.current
