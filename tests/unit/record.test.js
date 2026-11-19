@@ -31,7 +31,7 @@ function call(method, url, body, headers) {
   const srv = http.createServer((req, res) => {
     if (req.url === '/ts') {
       res.writeHead(200, { 'Content-Type': 'video/mp2t' });
-      const pkt = Buffer.alloc(188, 0x47);
+      const pkt = Buffer.alloc(188 * 4, 0x47);           // ~75 KB/s: past the 40 KB part size even on a slow CI runner
       const iv = setInterval(() => res.write(pkt), 10);
       const first = tsHangups === 0;
       setTimeout(() => { if (first) { tsHangups++; clearInterval(iv); res.destroy(); } }, 300);
