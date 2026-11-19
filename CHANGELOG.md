@@ -1,17 +1,17 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 173, 2026-11-19)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 173
 
 - **Watched at 90%, as Plex** (Settings > Movies and shows > Count as watched at: 85, 90, 95 or 98%).  A My media movie or episode counted as watched only in its last minute, so stopping in the credits left it in Continue watching; now movies and shows from your provider, My media and recordings all use the same mark, and Delete watched recordings too.
 - **Movie and show posters that fail are tried again (issue #126).**  A poster host that answers only some of many asks at once left most covers missing for good: each one is now tried through TiviBro's helper (with the playlist's User-Agent), then again 2 and 6 seconds later, on the lists and the Movies and Shows home.
 - **Link other versions of a channel yourself (discussion #60).**  Hold OK on a channel > Other versions > Link another version… (or Link another version… when it has none): type part of the other copy's name and pick it.  Linked both ways, shown in Other versions as "linked by you", used when TiviBro switches to a backup, and Unlink a version… takes it back out.
 - **Updates and your own guide links work on Connection: Direct (discussion #60).**  The network helper still runs on Direct, but checking for updates, going back to an earlier version and reading an XMLTV link only used it on Automatic or Always relay, so on Direct they failed.  They use it whenever it's running now.
 
-## 0.6.0 (alpha 172, 2026-11-19)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 172
+### In alpha 172
 
 - **The rewind buffer keeps playing when you leave fullscreen.**  Going to the guide (or Channels) stopped it and tuned the channel again from your provider every time, and fullscreen again started a new buffer.
 - **Stalker portals: a big portal's movies and shows aren't read again at every start (issue #118).**  Its categories, newest titles and the categories you opened are kept on the TV for as long as the playlist's refresh says (a day when it has none).
