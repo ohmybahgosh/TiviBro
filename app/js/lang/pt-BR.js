@@ -2459,5 +2459,12 @@ I18n.add('pt-BR', {
   "move back and forth": "voltar e avançar",
   "Nothing to go back to on this channel": "Não há para onde voltar neste canal",
   "Forward (live pause or catch-up)": "Avançar (pausa ao vivo ou catch-up)",
-  "Timeline: move back and forth in what's kept": "Linha do tempo: voltar e avançar no que foi guardado"
+  "Timeline: move back and forth in what's kept": "Linha do tempo: voltar e avançar no que foi guardado",
+  "Order categories": "Ordenar categorias",
+  "The provider's order, or by name from A to Z.  Continue watching, My list and the newest titles stay at the top.": "A ordem do provedor, ou por nome de A a Z.  Continuar assistindo, Minha lista e os títulos mais novos ficam no topo.",
+  "Open a category as": "Abrir uma categoria como",
+  "A list beside the categories, or a full-screen wall of posters (Back goes to the categories).": "Uma lista ao lado das categorias, ou uma parede de pôsteres em tela cheia (Voltar retorna às categorias).",
+  "List": "Lista",
+  "Posters, full screen": "Pôsteres, tela cheia",
+  "Back  categories": "Voltar  categorias"
 });

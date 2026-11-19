@@ -59,6 +59,11 @@ function create(o) {
       if (/^\/media\/file_772\.mpg$/.test(String(q.cmd)) && !q.series) return js(res, { id: 1, cmd: 'ffmpeg http://127.0.0.1:1/ep/2.mp4' });
       return js(res, { id: 1, cmd: '', error: 'nothing_to_play' });
     }
+    /* o.seasonsMany (issue #118): 17 seasons, 14 to a page, newest first. */
+    if (o.seasonsMany && q.type === 'series' && q.action === 'get_ordered_list' && q.movie_id && q.movie_id !== '0' && (!q.season_id || q.season_id === '0')) {
+      const all = []; for (let n = 17; n >= 1; n--) all.push({ id: q.movie_id + ':' + n, name: 'Season ' + n, series: [1, 2], cmd: 'c2Vhc29u' + n });
+      const p = +q.p || 1; return js(res, { total_items: 17, max_page_items: 14, data: all.slice((p - 1) * 14, p * 14) });
+    }
     /* o.seasonsBare (issue #118): seasons with no command and no episode numbers; a season's episodes, each with its own command. */
     if (o.seasonsBare && q.type === 'series' && q.action === 'get_ordered_list' && q.movie_id && q.movie_id !== '0') {
       if (q.season_id && q.season_id !== '0') { seen.seasonAsks = (seen.seasonAsks || 0) + 1; return js(res, { total_items: 2, data: [{ id: 's' + q.season_id + 'e1', series_number: 1, name: 'Pilot', cmd: 'ffmpeg http://cdn.example/ep/' + q.season_id + '-1.mp4' }, { id: 's' + q.season_id + 'e2', series_number: 2, name: 'Episode 2', cmd: 'ffmpeg http://cdn.example/ep/' + q.season_id + '-2.mp4' }] }); }

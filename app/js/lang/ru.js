@@ -1946,5 +1946,12 @@ I18n.add('ru', {
   "move back and forth": "назад и вперёд",
   "Nothing to go back to on this channel": "На этом канале некуда вернуться",
   "Forward (live pause or catch-up)": "Вперёд (пауза эфира или архив)",
-  "Timeline: move back and forth in what's kept": "Шкала: перемещение по сохранённому"
+  "Timeline: move back and forth in what's kept": "Шкала: перемещение по сохранённому",
+  "Order categories": "Порядок категорий",
+  "The provider's order, or by name from A to Z.  Continue watching, My list and the newest titles stay at the top.": "Порядок провайдера или по названию от А до Я.  «Продолжить просмотр», «Мой список» и новинки остаются сверху.",
+  "Open a category as": "Открывать категорию как",
+  "A list beside the categories, or a full-screen wall of posters (Back goes to the categories).": "Список рядом с категориями или стена постеров на весь экран (Назад возвращает к категориям).",
+  "List": "Список",
+  "Posters, full screen": "Постеры на весь экран",
+  "Back  categories": "Назад  категории"
 });

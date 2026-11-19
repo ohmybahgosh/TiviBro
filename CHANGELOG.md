@@ -1,10 +1,17 @@
 # Changelog
 
-## 0.6.0 (alpha 169, 2026-11-19)
+## 0.6.0 (alpha 170, 2026-11-19)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 169
+### New in alpha 170
+
+- **Stalker portals: every season of a long show (issue #118).**  A portal lists a show's seasons 14 to a page, and TiviBro read only the first, so a show with 17 seasons was missing seasons 1 to 3.  Every page is read now (up to 10), and the same for a season's episodes.
+- **Stalker portals: the right movie plays (issue #118).**  When a movie's own command gave no link, TiviBro tried "/media/file_<id>.mpg", which is a file by that number, and on some portals that file belongs to another movie.  It now asks the portal for the movie's own files instead.  An episode is no longer guessed by its place in the list when the portal numbers its episodes.
+- **Order categories by name** (Settings > Movies and shows > Order categories): A to Z, with Continue watching, My list and the newest titles still at the top.
+- **Open a category as a full-screen wall of posters** (Settings > Movies and shows > Open a category as).  Back goes to the categories.
+
+### In alpha 169
 
 - **Stalker portals: shows open with their episodes on more portals (issue #118).**  TiviBro only knew seasons that came with a command and their episode numbers, so a portal that lists bare seasons (or a show's episodes straight away) showed "this show has no episodes".  Now a bare season's episodes are asked for, four seasons at a time, each episode plays from its own command, and a show with nothing under the shows module is looked for under the movies module.  When a show still has none, the problem report says what the portal answered.
 - **Stalker portals: no more asks for a new movie link every few seconds while it plays.**  Seek previews read the movie for their pictures, and each read asked the portal for a link.  They're now off for portal movies, so a busy portal isn't pushed into "too many requests".

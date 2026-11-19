@@ -380,6 +380,22 @@ function infoOf(x) {
    - nothing under the module guessed for a show not in memory: the other module, once.
    An episode's id says how to play it: "e<n>x<season command>", "e<n>x#<type>:<show>:<season>" (by its
    coordinates, survives the helper starting again) or "k<its own command>". */
+/* Every page of a show's list (issue #118: a show with 17 seasons listed 14 to a page, so seasons 1 to 3 were
+   missing, and the same for a season's episodes).  Up to 10 pages, one after another. */
+function allPages(L, q, cb) {
+  var out = [], n = 1;
+  (function one() {
+    var p = {}; for (var k in q) p[k] = q[k]; p.p = n;
+    act(L, p, function (e, js) {
+      if (e) return n === 1 ? cb(e) : cb(null, out, js);
+      var d = js && Array.isArray(js.data) ? js.data : [];
+      out = out.concat(d);
+      var total = +(js && js.total_items) || 0, per = +(js && js.max_page_items) || d.length;
+      if (!d.length || !total || out.length >= total || !per || n >= Math.min(10, Math.ceil(total / per))) return cb(null, out, js);
+      n++; one();
+    });
+  })();
+}
 function seasonNo(sz, i) { return +sz.season_number || +((/(\d+)/.exec(String(sz.name || '')) || [])[1]) || i + 1; }
 function epNo(r, i) { return +r.series_number || +r.episode_number || +((/(\d+)\s*$/.exec(String(r.name || '')) || /(\d+)/.exec(String(r.name || '')) || [])[1]) || i + 1; }
 function epTitle(r, n) { var t = String(r && r.name || '').trim(); return t && !/^(episode|серия|ep\.?)?\s*\d+$/i.test(t) ? t : 'Episode ' + n; }
@@ -392,9 +408,9 @@ function epRows(rows, season, where) {
 }
 function seasons(L, x, cb, alt, log) {
   var type = alt || (x.module === 'series' ? 'series' : 'vod');
-  act(L, { type: type, action: 'get_ordered_list', movie_id: x.id, season_id: 0, episode_id: 0, category: alt ? '*' : x.cat || '*', fav: 0, p: 1 }, function (e, js) {
+  allPages(L, { type: type, action: 'get_ordered_list', movie_id: x.id, season_id: 0, episode_id: 0, category: alt ? '*' : x.cat || '*', fav: 0 }, function (e, rows, js) {
     if (e) return cb(e);
-    var list = (js && Array.isArray(js.data) ? js.data : []).filter(Boolean), eps = {}, out = [], need = [];
+    var list = rows.filter(Boolean), eps = {}, out = [], need = [];
     if (!list.length && !alt) return seasons(L, x, cb, type === 'series' ? 'vod' : 'series', log);
     var isEp = function (r) { return r.is_episode || (r.series_number != null && !Array.isArray(r.series) && !r.is_season); };
     if (list.length && list.every(isEp)) {
@@ -422,8 +438,8 @@ function seasons(L, x, cb, alt, log) {
     (function more() {
       while (running < 4 && k < need.length) (function (w) {
         running++;
-        act(L, { type: w.where.type, action: 'get_ordered_list', movie_id: w.where.video, season_id: w.where.season, episode_id: 0, category: '*', fav: 0, p: 1 }, function (e2, j2) {
-          var rows = !e2 && j2 && Array.isArray(j2.data) ? j2.data : [];
+        allPages(L, { type: w.where.type, action: 'get_ordered_list', movie_id: w.where.video, season_id: w.where.season, episode_id: 0, category: '*', fav: 0 }, function (e2, r2) {
+          var rows = !e2 && r2 ? r2 : [];
           eps[w.n] = epRows(rows, w.n, w.where);
           // No list, but numbers: by coordinates when played.
           if (!eps[w.n].length && w.nums.length) eps[w.n] = w.nums.map(function (en) { en = +en; return { id: 'e' + en + 'x' + b64u('#' + w.where.type + ':' + w.where.video + ':' + w.where.season), episode_num: en, title: 'Episode ' + en, container_extension: '', season: w.n, info: {} }; });
@@ -435,7 +451,7 @@ function seasons(L, x, cb, alt, log) {
     function done() {
       var n = 0; for (var s in eps) n += eps[s].length;
       if (!n && log) log({ lv: 'warn', event: 'stalker show has no episodes', type: type, rows: list.length, total: js && js.total_items, got: list[0] ? shapeOf(list[0]) : shapeOf(js) });
-      cb(null, { seasons: out.filter(function (o) { return (eps[o.season_number] || []).length; }), info: infoOf(x), episodes: eps });
+      cb(null, { seasons: out.filter(function (o) { return (eps[o.season_number] || []).length; }).sort(function (a, b) { return a.season_number - b.season_number; }), info: infoOf(x), episodes: eps });
     }
   });
 }
@@ -556,12 +572,13 @@ function vodPlay(L, id, res, ALLOW, log, port, ext) {
       if (log) log({ lv: 'info', event: 'stalker movie from its list address (no temporary link needed)' });
       return deliver(res, ALLOW, port, st, ext, log);
     }
-    /* Without its own command: "/media/<id>.mpg" is the movie by its id; "/media/file_<id>.mpg" is a FILE by that id
-       (stalker_portal's createLink), right only where the two ids match, as on portals built on other panels. */
-    var usual = '/media/file_' + id + '.mpg', byId = '/media/' + id + '.mpg', tries = [];
+    // Without its own command: "/media/<id>.mpg" is the movie by its id (stalker_portal's createLink).
+    var byId = '/media/' + id + '.mpg', tries = [];
     if (own) tries.push(own);
     if (!own && /^\d+$/.test(id)) tries.push(byId);
-    if (own !== usual) tries.push(usual);
+    /* "/media/file_<id>.mpg" only when it is the movie's own command: it is a FILE by that id, and on a portal whose
+       file ids aren't its movie ids it is another movie (issue #118: "a different video starts playing").  Its files
+       (get_ordered_list with its id, below) are the right way to the file. */
     // A portal built on an Xtream panel: its movies' commands are this, base64 (when the one from the list is gone).
     if (!own && /^\d+$/.test(id)) tries.push(b64('{"type":"movie","stream_id":"' + id + '","stream_source":null,"target_container":"[\\"' + (ext || 'mp4') + '\\"]"}'));
     vodTry(L, tries, '', res, ALLOW, log, port, linkOf(own), ext, /^\d+$/.test(id) ? id : '');
@@ -578,10 +595,11 @@ function deliver(res, ALLOW, port, to, asked, log) {
 }
 // One episode's file commands by its coordinates (show, season, episode), as IPTVnator does: the episode's own command, else its files.
 function episodeCmds(L, ctx, n, cb) {
-  act(L, { type: ctx.type, action: 'get_ordered_list', movie_id: ctx.video, season_id: ctx.season, episode_id: 0, category: '*', fav: 0, p: 1 }, function (e, js) {
-    var eps = !e && js && Array.isArray(js.data) ? js.data : [], ep = null, out = [];
+  allPages(L, { type: ctx.type, action: 'get_ordered_list', movie_id: ctx.video, season_id: ctx.season, episode_id: 0, category: '*', fav: 0 }, function (e, rows) {
+    var eps = !e && rows ? rows : [], ep = null, out = [];
     eps.forEach(function (x) { if (!ep && x && (+x.series_number === n || +((/(\d+)/.exec(String(x.name || '')) || [])[1]) === n)) ep = x; });
-    if (!ep && eps[n - 1]) ep = eps[n - 1];
+    // By position only when the portal numbers none of them (a wrong guess plays another episode).
+    if (!ep && eps[n - 1] && !eps.some(function (x) { return x && x.series_number != null; })) ep = eps[n - 1];
     if (!ep) return cb(out);
     if (ep.cmd) out.push(String(ep.cmd));
     if (ep.id == null) return cb(out);

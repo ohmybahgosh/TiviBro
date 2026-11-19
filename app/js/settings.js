@@ -1122,6 +1122,10 @@ var Settings = (function () {
       ['provider', 'added', 'name', 'year', 'rating'], ['The provider\'s order', 'Recently added first', 'Name (A–Z)', 'Release year (newest first)', 'Rating (highest first)'],
       function () { return s.vodSort || 'provider'; }, function (v) { s.vodSort = v; save(); if (typeof VodHome !== 'undefined') VodHome.changed(); }));
     out.push(toggle('Reverse the order', 'Turns the order round: Z to A, oldest, lowest or added longest ago first.', function () { return !!s.vodSortReverse; }, function (v) { s.vodSortReverse = v; save(); if (typeof VodHome !== 'undefined') VodHome.changed(); }));
+    out.push(choice('Order categories', 'The provider\'s order, or by name from A to Z.  Continue watching, My list and the newest titles stay at the top.',
+      ['provider', 'name'], ['The provider\'s order', 'Name (A–Z)'], function () { return s.vodCatSort === 'name' ? 'name' : 'provider'; }, function (v) { s.vodCatSort = v; save(); if (typeof Vod !== 'undefined' && Vod.recats) Vod.recats(); }));
+    out.push(choice('Open a category as', 'A list beside the categories, or a full-screen wall of posters (Back goes to the categories).',
+      ['list', 'wall'], ['List', 'Posters, full screen'], function () { return s.vodCatWall ? 'wall' : 'list'; }, function (v) { s.vodCatWall = v === 'wall'; save(); }));
     out.push(action('Arrange the Movies home', 'Move its shelves up or down, switch them off, and pin categories.  Red on the Movies home too.', function () { Vod.arrange('movie'); }));
     out.push(action('Arrange the Shows home', 'Move its shelves up or down, switch them off, and pin categories.  Red on the Shows home too.', function () { Vod.arrange('series'); }));
     out.push(autoNextRow());

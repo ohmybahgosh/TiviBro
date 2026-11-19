@@ -98,7 +98,7 @@ const req = (method, u, body, headers) => new Promise((res, rej) => {
   ok('after the helper started again: still its own command (read back), not "/media/file_512.mpg"', a.status === 302 && /\/512\.mp4/.test(a.headers.location || '') && !/media\/file/.test(m5.seen.vodLinks.slice(-1)[0]), a.status + ' ' + m5.seen.vodLinks.slice(-2));
   kept.forEach((n) => fs.unlinkSync(process.env.TIVIBRO_KV_DIR + '/kv/' + n)); S._reset();
   a = await req('GET', H + '/stalker/vod/514.mp4?stb=' + login5);
-  ok('with nothing kept: the usual command, then the Xtream panel\'s', a.status === 302 && /\/514\.mp4/.test(a.headers.location || '') && /^\/media\/file_514\.mpg/.test(m5.seen.vodLinks.slice(-2)[0]), a.status + ' ' + m5.seen.vodLinks.slice(-2));
+  ok('with nothing kept: the movie by its id, then the Xtream panel\'s, never "/media/file_<id>.mpg" (another movie on some portals, issue #118)', a.status === 302 && /\/514\.mp4/.test(a.headers.location || '') && /^\/media\/514\.mpg/.test(m5.seen.vodLinks.slice(-2)[0]) && !m5.seen.vodLinks.some((v) => /file_514/.test(v)), a.status + ' ' + m5.seen.vodLinks.slice(-2));
   a = await req('GET', H + '/stalker/vod/525.mp4?stb=' + login5);
   ok('a movie the portal has no link for: 404 with its reason (the player stops at once)', a.status === 404 && /nothing_to_play/.test(a.body), a.status + ' ' + a.body);
   a = await req('GET', H + '/stalker/vod/531.mp4?stb=' + login5);
@@ -201,6 +201,12 @@ const req = (method, u, body, headers) => new Promise((res, rej) => {
     const r = e1[0] ? await req('GET', H + '/stalker/vod/' + e1[0].id + '.mp4?stb=' + loginb) : { status: 0 };
     ok('issue #118: such an episode plays from its own command', r.status === 302 && /ep%2F41-1\.mp4/.test(r.headers.location || ''), r.status + ' ' + (r.headers.location || r.body));
     mb.server.close();
+    const mm = Mock.create({ stream: 'http://127.0.0.1:1/live/stream.ts', series: true, seasonsMany: true });
+    await new Promise((f) => mm.server.listen(0, '127.0.0.1', f));
+    const loginm = b64({ portal: 'http://127.0.0.1:' + mm.server.address().port + '/stalker_portal/c/', mac: '00:1a:79:00:00:01' });
+    const many = await req('GET', H + '/stalker/xc/player_api.php?stb=' + loginm + '&action=get_series_info&series_id=930').then((x) => JSON.parse(x.body || 'null'));
+    ok('issue #118: a show with more seasons than a page holds: every season (1 to 3 were missing)', many && many.seasons.length === 17 && many.episodes['1'] && many.episodes['3'], many && many.seasons.map((z) => z.season_number).join());
+    mm.server.close();
     const md = Mock.create({ stream: 'http://127.0.0.1:1/live/stream.ts', series: true, epsDirect: true });
     await new Promise((f) => md.server.listen(0, '127.0.0.1', f));
     const logind = b64({ portal: 'http://127.0.0.1:' + md.server.address().port + '/stalker_portal/c/', mac: '00:1a:79:00:00:01' });

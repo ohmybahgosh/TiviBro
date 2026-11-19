@@ -220,7 +220,18 @@ var VodHome = (function () {
     wall = { id: s.id, cat: s.cat, title: s.title, items: s.items.slice() }; wallAt = Math.max(0, pos[s.id] || 0); mode = 'wall';
     $('vodHome').classList.add('wall'); drawWall();
   }
-  function closeWall() { mode = 'home'; wall = null; $('vodHome').classList.remove('wall'); draw(); }
+  function closeWall() {
+    var back = wall && wall.back;
+    mode = 'home'; wall = null; $('vodHome').classList.remove('wall');
+    if (back) return back();                                  // a category opened as posters: back to the categories
+    draw();
+  }
+  // A category from the categories list as a full-screen wall of posters (Settings > Movies and shows > Open a category as).
+  function wallOf(k, api, c, items, back) {
+    show(k, api, false);
+    openWall({ id: 'catwall:' + c.id, cat: c.id, title: c.name, items: items });
+    wall.back = back;
+  }
   function drawWall() {
     var box = $('vodWall'), rows = Math.ceil(wall.items.length / WALL_COLS), r = Math.floor(wallAt / WALL_COLS);
     $('vodWallHead').innerHTML = '';
@@ -301,7 +312,7 @@ var VodHome = (function () {
   function ok() { var it = current(); if (it) A.open(it); }
   function hints() {
     if (!open_ || UI.modalOpen) return;
-    UI.hints([['', kind === 'series' ? 'OK  open' : 'OK  play'], ['', 'Hold OK  options', 'hold'], ['', mode === 'wall' ? 'Back  shelves' : 'Back  menu', 'back'], ['red', 'Order and shelves'], ['green', 'All categories'], ['yellow', 'Search'], ['blue', 'Settings']]);
+    UI.hints([['', kind === 'series' ? 'OK  open' : 'OK  play'], ['', 'Hold OK  options', 'hold'], ['', mode === 'wall' ? (wall && wall.back ? 'Back  categories' : 'Back  shelves') : 'Back  menu', 'back'], ['red', 'Order and shelves'], ['green', 'All categories'], ['yellow', 'Search'], ['blue', 'Settings']]);
   }
   function keys(a) {
     if (a === 'red') { options(); return true; }
@@ -371,5 +382,5 @@ var VodHome = (function () {
   // Settings > Movies and shows > Arrange the Movies (Shows) home.
   function arrange(k, api) { A = api; if (kind !== k) { kind = k; at = 0; pos = {}; } arrangeMenu(); }
 
-  return { show: show, hide: hide, arrange: arrange, on: on, changed: changed, restore: restore, pin: pin, get open() { return open_; }, _test: { norm: norm, matched: matched, build: build, set lists(v) { tmdb.lists = v; } } };
+  return { show: show, wallOf: wallOf, hide: hide, arrange: arrange, on: on, changed: changed, restore: restore, pin: pin, get open() { return open_; }, _test: { norm: norm, matched: matched, build: build, set lists(v) { tmdb.lists = v; } } };
 })();

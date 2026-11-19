@@ -620,8 +620,10 @@ var Vod = (function () {
     var later = [], section = null;
     /* The name rules take "HINDI | " off a category, which on a big provider leaves "UPCOMING MOVIES" four
        times, one per language (issue #118).  Names that would come out the same keep the provider's own. */
-    var labels = catLabels(d);
-    d.cats.forEach(function (c) {
+    var labels = catLabels(d), cats = d.cats;
+    // Settings > Movies and shows > Order categories: by name (each playlist's own, several playlists on).
+    if (Store.settings.vodCatSort === 'name') cats = d.cats.slice().sort(function (a, b) { return d.multi && (a.pl || '') !== (b.pl || '') ? 0 : String(labels[a.id] || a.name).localeCompare(String(labels[b.id] || b.name), undefined, { sensitivity: 'base', numeric: true }); });
+    cats.forEach(function (c) {
       if ((!counts[c.id] && !d.browse) || hid[c.id]) return;
       var name = labels[c.id];
       // A big portal browsed by category: every category, its count once it's been opened.
@@ -640,6 +642,22 @@ var Vod = (function () {
     var r = E().resume, out = [];
     d.items.forEach(function (it) { var x = r[key(it)]; if (x && x.pos > 60 && !finished(x.pos, x.dur)) out.push({ it: it, at: x.at }); });
     return out.sort(function (a, b) { return b.at - a.at; }).map(function (x) { return x.it; });
+  }
+  /* A category as a full-screen wall of posters (Hitesh, issue #118).  On a big portal a category not read yet is
+     read first (up to a minute); Back on the wall comes back here, on the same category. */
+  function asWall(c) {
+    var d = data[kind], k = kind, tries = 0;
+    (function when() {
+      var list = itemsFor(c.id);
+      if (!list.length && d && d.browse && d.catItems[c.id] === null && tries++ < 200 && data[k] === d) {
+        if (tries === 1) U.toast('Loading ' + c.name + '…');
+        return setTimeout(when, 300);
+      }
+      if (kind !== k || !catsVL || catsVL.current() !== c) return;
+      if (!list.length) { itemsVL.empty = 'Nothing here'; itemsVL.setItems([], 0); setZone('items'); return; }
+      homeMode = true; showFromHome = false;
+      VodHome.wallOf(k, homeApi, c, list, function () { homeMode = false; VodHome.hide(); UI.setHandler(keys); setZone('cats'); hints(); });
+    })();
   }
   function itemsFor(cid) {
     var d = data[kind];
@@ -976,7 +994,10 @@ var Vod = (function () {
       else if ((a === 'ok' || a === 'right') && catsVL.current() && catsVL.current().id === LANGS) { if (a === 'ok') langMenu(); }
       else if (a === 'right' || a === 'ok') {
         catDeb.cancel(); var c = catsVL.current();
-        var go = function () { if (c) { itemsVL.empty = 'Nothing here'; itemsVL.setItems(itemsFor(c.id), 0); onItem(); } setZone('items'); };
+        var go = function () {
+          if (c && Store.settings.vodCatWall && typeof VodHome !== 'undefined' && !c.head && [LANGS, CW].indexOf(c.id) < 0) return asWall(c);
+          if (c) { itemsVL.empty = 'Nothing here'; itemsVL.setItems(itemsFor(c.id), 0); onItem(); } setZone('items');
+        };
         if (c && c.adult && !adultOpen()) Parental.gate('channels', null, function () { adultUnlocked = true; go(); }); else go();
       }
       else if (a === 'red' || a === 'hold' || a === 'info') catMenu(catsVL.current());
@@ -1177,5 +1198,7 @@ var Vod = (function () {
   };
 
   function arrange(k) { U.toast('Loading ' + (k === 'series' ? 'shows' : 'movies') + '…'); load(k).then(function () { kind = k; VodHome.arrange(k, homeApi); }, function (e) { U.toast('Could not load the list: ' + (e && e.message || e), 5000); }); }
-  return { arrange: arrange, homeApi: function () { return homeApi; }, _test: { homeApi: function () { return homeApi; }, catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, lean: lean, findRemote: findRemote, titleCount: titleCount, get searchState() { return searchState(); }, offered: offered, reset: function (fresh) { if (fresh) freshAt = Date.now(); gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; seriesAsk++; spClose(); } };
+  // Settings > Movies and shows > Order categories changed: the list again, on the same category.
+  function recats() { if (!catsVL || !data[kind]) return; var c = catsVL.current(), cl = catList(); catsVL.setItems(cl, Math.max(0, cl.findIndex(function (x) { return c && x.id === c.id; }))); }
+  return { arrange: arrange, recats: recats, homeApi: function () { return homeApi; }, _test: { homeApi: function () { return homeApi; }, catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, lean: lean, findRemote: findRemote, titleCount: titleCount, get searchState() { return searchState(); }, offered: offered, reset: function (fresh) { if (fresh) freshAt = Date.now(); gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; seriesAsk++; spClose(); } };
 })();
