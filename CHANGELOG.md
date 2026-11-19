@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Watched at 90%, as Plex** (Settings > Movies and shows > Count as watched at: 85, 90, 95 or 98%).  A My media movie or episode counted as watched only in its last minute, so stopping in the credits left it in Continue watching; now movies and shows from your provider, My media and recordings all use the same mark, and Delete watched recordings too.
+
 ## 0.6.0 (alpha 172, 2026-11-19)
 
 Pre-release: expect rough edges, and keep a backup before installing.

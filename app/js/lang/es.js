@@ -1951,5 +1951,9 @@ I18n.add('es', {
   "List": "Lista",
   "Posters, full screen": "Pósteres, pantalla completa",
   "Back  categories": "Atrás  categorías",
-  "◀ ▶  move      ▲ ▼  switch row, ▲ at the top: timeline      OK  choose      Back  close": "◀ ▶  mover      ▲ ▼  cambiar de fila, ▲ arriba: línea de tiempo      OK  elegir      Atrás  cerrar"
+  "◀ ▶  move      ▲ ▼  switch row, ▲ at the top: timeline      OK  choose      Back  close": "◀ ▶  mover      ▲ ▼  cambiar de fila, ▲ arriba: línea de tiempo      OK  elegir      Atrás  cerrar",
+  "Count as watched at": "Marcar como visto al",
+  "A movie, an episode or a recording stopped this far in (or in its last minute) is marked watched and leaves Continue watching.  Plex uses 90%.": "Una película, un episodio o una grabación detenidos a esta altura (o en su último minuto) se marcan como vistos y salen de Seguir viendo.  Plex usa el 90%.",
+  "90% (as Plex)": "90% (como Plex)",
+  "The ones you've watched (Settings > Movies and shows > Count as watched at).": "Las que ya viste (Ajustes > Películas y series > Marcar como visto al)."
 });

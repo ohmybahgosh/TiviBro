@@ -181,7 +181,7 @@ var Recordings = (function () {
     var p = Record.posOf(r.id), f = seen(r);
     if (r.status === 'done' && p && f > 0.02) {
       var w = U.el('div', 'rc-watched'), bar = U.el('i', 'rc-seen big'), fill = U.el('b'); fill.style.width = Math.round(f * 100) + '%'; bar.appendChild(fill);
-      w.appendChild(bar); w.appendChild(U.el('span', '', f > 0.95 ? T('Watched') : T('Stopped at {t}', { t: Record.hms(p.t) })));
+      w.appendChild(bar); w.appendChild(U.el('span', '', f >= (U.watchedFrac ? U.watchedFrac() : 0.9) ? T('Watched') : T('Stopped at {t}', { t: Record.hms(p.t) })));
       el.appendChild(w);
     }
   }
@@ -190,7 +190,7 @@ var Recordings = (function () {
     if (picking) { var n = Object.keys(picking).length; return UI.hints([['', 'OK  tick or untick', 'ok'], ['red', n ? T('Delete {n}', { n: n }) : 'Delete'], ['', 'Back  done', 'back']]); }
     var it = items[sel];
     if (!it) return UI.hints([['', 'Back  menu', 'back']]);
-    var okSay = it.show ? (openShows[it.show] ? 'OK  close' : 'OK  open') : it.r.status === 'scheduled' ? 'OK  options' : it.r.bytes > 0 ? (Record.posOf(it.r.id) && seen(it.r) > 0.02 && seen(it.r) < 0.95 ? 'OK  resume' : 'OK  watch') : 'OK  options';
+    var okSay = it.show ? (openShows[it.show] ? 'OK  close' : 'OK  open') : it.r.status === 'scheduled' ? 'OK  options' : it.r.bytes > 0 ? (Record.posOf(it.r.id) && seen(it.r) > 0.02 && seen(it.r) < (U.watchedFrac ? U.watchedFrac() : 0.9) ? 'OK  resume' : 'OK  watch') : 'OK  options';
     UI.hints([['', okSay, 'ok'], ['', 'Hold OK  options', 'hold'], ['', 'Back  menu', 'back'], ['red', 'Options']]);
   }
 
@@ -215,7 +215,7 @@ var Recordings = (function () {
     } else {
       var r = it.r, p = Record.posOf(r.id);
       if (r.bytes > 0 && r.status === 'done') {
-        out.push({ label: p && seen(r) > 0.02 && seen(r) < 0.95 ? T('Resume from {t}', { t: Record.hms(p.t) }) : 'Watch', icon: 'play', action: function () { watch(r, false); } });
+        out.push({ label: p && seen(r) > 0.02 && seen(r) < (U.watchedFrac ? U.watchedFrac() : 0.9) ? T('Resume from {t}', { t: Record.hms(p.t) }) : 'Watch', icon: 'play', action: function () { watch(r, false); } });
         if (p && p.t > 30) out.push({ label: 'Watch from the start', icon: 'replay', action: function () { watch(r, true); } });
       }
       if (r.bytes > 0 && r.status === 'recording') out.push({ label: 'Watch from the start', icon: 'play', sub: T('while it records'), action: function () { watch(r, true); } });

@@ -161,7 +161,7 @@ var Vod = (function () {
   function isWatched(id) { return !!seen()[id]; }
   // Watched at 90% (Plex and Jellyfin's default, so a movie stopped at its credits counts), or in a short
   // clip's last minute.  The one rule for the ✓, Continue watching and where a show opens.
-  function finished(pos, dur) { return pos >= dur * 0.9 || pos > dur - 60; }
+  function finished(pos, dur) { return (U.isWatchedAt || function (p, d) { return d > 0 && (p >= d * 0.9 || p > d - 60); })(pos, dur); }
   // Where playback stopped: finished is watched, part-way is a place to resume, the first 30 s is nothing.
   function done(id, pos, dur) {
     if (!(dur > 60)) return;
@@ -916,7 +916,7 @@ var Vod = (function () {
   /* ---------- playback ---------- */
   function play(it, fromStart) {
     var id = idOf(it);
-    var r = resumeOf(id), startAt = !fromStart && r && r.pos > 30 && r.pos < r.dur - 60 ? r.pos - 5 : 0;
+    var r = resumeOf(id), startAt = !fromStart && r && r.pos > 30 && !(U.isWatchedAt || function (p, d) { return d > 0 && (p >= d * 0.9 || p > d - 60); })(r.pos, r.dur) ? r.pos - 5 : 0;
     var meta = { id: id, media: mediaOf(it), title: it.ep ? (series ? series.name : '') + '   ' + it.label : it.name, sub: it.ep ? '' : it.year || '', item: it, seriesKey: series ? pre(series) + 's' + series.id : null, p: it.pl || '' };
     // An M3U list's episodes carry their own link, and its movies' links are asked for (Source.movieLink).
     var link = it.ep ? Promise.resolve(it.url || Source.episodeUrl(it.id, it.ext, plOf(it))) : Source.movieLink(it.id, it.ext, plOf(it));

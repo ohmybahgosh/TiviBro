@@ -19,7 +19,7 @@ var MediaMoviePage = (function () {
   function md(m) { return (m && m.metadata) || {}; }
   function rt(min) { var n = parseInt(min, 10); return n > 0 ? (n >= 60 ? Math.floor(n / 60) + ' h ' : '') + (n % 60 ? n % 60 + ' min' : '') : ''; }
   function hm(sec) { sec = Math.max(0, Math.floor(sec)); var h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60); return h ? h + ':' + (m < 10 ? '0' : '') + m + ' h' : m + ' min'; }
-  function resumeOf(m) { var r = MediaStore.resume(m.resumeKey || m.id); return r && r.pos > 30 && r.pos < r.dur - 60 ? r : null; }
+  function resumeOf(m) { var r = MediaStore.resume(m.resumeKey || m.id); return r && r.pos > 30 && !(U.isWatchedAt || function (p, d) { return d > 0 && (p >= d * 0.9 || p > d - 60); })(r.pos, r.dur) ? r : null; }
   function tv() { return typeof PalmServiceBridge !== 'undefined'; }
 
   function buttons() {

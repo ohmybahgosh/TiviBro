@@ -1457,7 +1457,7 @@ var Media = (function () {
     clearInterval(progressTimer); progressTimer = null;if(typeof MediaSeries!=='undefined')MediaSeries.leave(); if (!playingMeta) return; checkpoint();
     var item = playingMeta.item, length = (item.endSec || Player.duration) - (item.startSec || 0);
     var position = Player.position - (item.startSec || 0);
-    if (item.kind === 'episode' && length > 0 && position >= length - Math.min(60,length * 0.1) && playingMeta.continuous >= Math.min(30,length * 0.1)) {
+    if (item.kind === 'episode' && length > 0 && ((U.isWatchedAt || function (p, d) { return d > 0 && (p >= d * 0.9 || p > d - 60); })(position, length) || position >= length - Math.min(60,length * 0.1)) && playingMeta.continuous >= Math.min(30,length * 0.1)) {
       if (typeof MediaSeries !== 'undefined') MediaSeries.recordCompletion(item);
     } else if (length > 0 && typeof Trakt !== 'undefined' && Trakt.paused) Trakt.paused(item, 100 * position / length);   // other apps can continue from here
     playingMeta = null;

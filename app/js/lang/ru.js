@@ -1954,5 +1954,9 @@ I18n.add('ru', {
   "List": "Список",
   "Posters, full screen": "Постеры на весь экран",
   "Back  categories": "Назад  категории",
-  "◀ ▶  move      ▲ ▼  switch row, ▲ at the top: timeline      OK  choose      Back  close": "◀ ▶  выбор      ▲ ▼  другой ряд, ▲ наверху: шкала времени      OK  выбрать      Назад  закрыть"
+  "◀ ▶  move      ▲ ▼  switch row, ▲ at the top: timeline      OK  choose      Back  close": "◀ ▶  выбор      ▲ ▼  другой ряд, ▲ наверху: шкала времени      OK  выбрать      Назад  закрыть",
+  "Count as watched at": "Считать просмотренным с",
+  "A movie, an episode or a recording stopped this far in (or in its last minute) is marked watched and leaves Continue watching.  Plex uses 90%.": "Фильм, серия или запись, остановленные на этой отметке (или в последнюю минуту), считаются просмотренными и уходят из «Продолжить просмотр».  В Plex это 90%.",
+  "90% (as Plex)": "90% (как в Plex)",
+  "The ones you've watched (Settings > Movies and shows > Count as watched at).": "Те, что вы посмотрели (Настройки > Фильмы и сериалы > Считать просмотренным с)."
 });

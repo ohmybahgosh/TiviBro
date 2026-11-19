@@ -1122,6 +1122,8 @@ var Settings = (function () {
       ['provider', 'added', 'name', 'year', 'rating'], ['The provider\'s order', 'Recently added first', 'Name (A–Z)', 'Release year (newest first)', 'Rating (highest first)'],
       function () { return s.vodSort || 'provider'; }, function (v) { s.vodSort = v; save(); if (typeof VodHome !== 'undefined') VodHome.changed(); }));
     out.push(toggle('Reverse the order', 'Turns the order round: Z to A, oldest, lowest or added longest ago first.', function () { return !!s.vodSortReverse; }, function (v) { s.vodSortReverse = v; save(); if (typeof VodHome !== 'undefined') VodHome.changed(); }));
+    out.push(choice('Count as watched at', 'A movie, an episode or a recording stopped this far in (or in its last minute) is marked watched and leaves Continue watching.  Plex uses 90%.',
+      ['85', '90', '95', '98'], ['85%', '90% (as Plex)', '95%', '98%'], function () { return String(+s.watchedAt || 90); }, function (v) { s.watchedAt = +v; save(); }));
     out.push(choice('Order categories', 'The provider\'s order, or by name from A to Z.  Continue watching, My list and the newest titles stay at the top.',
       ['provider', 'name'], ['The provider\'s order', 'Name (A–Z)'], function () { return s.vodCatSort === 'name' ? 'name' : 'provider'; }, function (v) { s.vodCatSort = v; save(); if (typeof Vod !== 'undefined' && Vod.recats) Vod.recats(); }));
     out.push(choice('Open a category as', 'A list beside the categories, or a full-screen wall of posters (Back goes to the categories).',
@@ -1762,8 +1764,8 @@ var Settings = (function () {
       function () { return s.recPadBefore == null ? 2 : +s.recPadBefore; }, function (v) { s.recPadBefore = v; save(); }));
     out.push(choice('Keep going after', 'Minutes after the programme\'s end, for a game or show that runs late.', [0, 2, 5, 10, 15, 30], ['On time', '2 min', '5 min', '10 min', '15 min', '30 min'],
       function () { return s.recPadAfter == null ? 5 : +s.recPadAfter; }, function (v) { s.recPadAfter = v; save(); }));
-    if (R) out.push(action('Delete watched recordings', 'The ones you\'ve watched to the end.', function () {
-      var done = R.recs.filter(function (r) { var p = R.posOf(r.id); return r.status === 'done' && p && p.d && p.t / p.d > 0.95; });
+    if (R) out.push(action('Delete watched recordings', 'The ones you\'ve watched (Settings > Movies and shows > Count as watched at).', function () {
+      var done = R.recs.filter(function (r) { var p = R.posOf(r.id); return r.status === 'done' && p && p.d && (U.isWatchedAt || function (p, d) { return d > 0 && (p >= d * 0.9 || p > d - 60); })(p.t, p.d); });
       if (!done.length) { U.toast(T('Nothing watched to the end yet')); return; }
       UI.confirm(T('Delete {n} watched recordings?', { n: done.length }), 'Delete', function () { (function one(i) { if (i >= done.length) { U.toast(T('Deleted {n} recordings', { n: done.length })); return build(); } R.remove(done[i].id).then(function () { one(i + 1); }, function () { one(i + 1); }); })(0); });
     }));

@@ -227,7 +227,7 @@ var MediaStore = (function () {
   // Same rule as Movies: short videos and the first seconds don't count, and the end clears it.
   function saveResume(id, pos, dur) {
     if (!(dur > 60)) return;
-    if (pos > dur - 60) { delete state.resume[id]; markWatched(id, true, true); }
+    if (((typeof U !== 'undefined' && U.isWatchedAt) || function (p, d) { return d > 0 && (p >= d * 0.9 || p > d - 60); })(pos, dur)) { delete state.resume[id]; markWatched(id, true, true); }
     else if (pos > 30) state.resume[id] = { pos: pos, dur: dur, at: Date.now() };
     else return;
     save();

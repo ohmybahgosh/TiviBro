@@ -272,7 +272,12 @@ var U = (function () {
       if (l) { var sp = document.createElement('span'); sp.textContent = l; el.appendChild(sp); }
     });
   }
+  /* Watched: played this far (Settings > Movies and shows > Count as watched at; 90% at first, as Plex), or into its
+     last minute.  Movies and shows from the provider, My media and recordings all use it. */
+  function watchedFrac() { var p = typeof Store !== 'undefined' && Store.settings ? +Store.settings.watchedAt : 0; return (p >= 50 && p <= 100 ? p : 90) / 100; }
+  function isWatchedAt(pos, dur) { return dur > 0 && (pos >= dur * watchedFrac() || pos > dur - 60); }
   return {
+    watchedFrac: watchedFrac, isWatchedAt: isWatchedAt,
     lines: lines, notice: notice, hsl: hsl, luminance: luminance, onColor: onColor, mix: mix,
     runtime: runtime, secretShape: secretShape, KEY: KEY, $: $, el: el, clamp: clamp, debounce: debounce, hhmm: hhmm, day: day, LANGS: LANGS, lang: lang, hash: hash,
     b64utf8: b64utf8, request: request, readJSON: readJSON, httpSays: httpSays, getJSON: getJSON, getText: getText, toast: toast, idle: idle, pad: pad, loc: loc };

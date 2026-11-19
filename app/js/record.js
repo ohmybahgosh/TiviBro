@@ -172,7 +172,7 @@ var Record = (function () {
   // fromAt: a point in it (the live timeline going back past what's kept), else resume or from the start.
   function watch(r, fromStart, onExit, fromAt) {
     var url = base() + '/record/file/' + r.id + '/rec.' + (r.kind === 'mp4' ? 'mp4' : 'ts');
-    var p0 = posOf(r.id), at = fromAt != null ? Math.max(0, fromAt) : !fromStart && p0 && p0.t > 30 && (!r.dur || p0.t < r.dur - 60) ? p0.t : 0;
+    var p0 = posOf(r.id), at = fromAt != null ? Math.max(0, fromAt) : !fromStart && p0 && p0.t > 30 && (!r.dur || !(U.isWatchedAt || function (p, d) { return d > 0 && (p >= d * 0.9 || p > d - 60); })(p0.t, r.dur)) ? p0.t : 0;
     if (at && fromAt == null) U.toast(T('Resuming at {t}', { t: hms(at) }), 2500);
     watching = r.id;
     Views.playVod({ id: 'rec:' + r.id, title: r.title, sub: r.channel + '  ·  ' + whenOf(r), dur: r.status === 'recording' ? 0 : r.dur, item: { recording: true }, liveCh: r.status === 'recording' ? chOf(r) : null }, url, at, function () {
