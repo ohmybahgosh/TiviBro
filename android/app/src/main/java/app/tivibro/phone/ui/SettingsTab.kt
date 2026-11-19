@@ -88,13 +88,15 @@ data class SetRow(
     val style: String = "",
     /** The note's first sentence, when it has more ([sub] is all of it). */
     val brief: String = "",
+    /** A row that opens another section (the TV's link()): its id.  The phone opens it here; older TVs send none. */
+    val go: String = "",
 ) {
     companion object {
         fun from(j: JSONObject) = SetRow(
             j.optInt("i"), j.optString("kind"), j.optString("label"), j.optString("sub"), j.optString("value"),
             j.optBoolean("on"), j.optJSONArray("options")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty(), j.optInt("cur", -1), j.optString("swatch"),
             j.optString("phone"), j.optString("sid"), j.optString("epage"), j.optInt("tv") == 1 || j.optBoolean("tv"), j.optString("ptype"),
-            j.optString("look"), j.optInt("attn") == 1, j.optString("style"), j.optString("brief"),
+            j.optString("look"), j.optInt("attn") == 1, j.optString("style"), j.optString("brief"), j.optString("go"),
         )
     }
 }
@@ -214,7 +216,7 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
                     onPick = { picking = r },
                     onCycle = { d -> change("cycle", r, JSONObject().put("dir", d)) },
                     onOpen = { path = path + r.i },
-                    onAction = { press(r) }) }
+                    onAction = { if (r.go.isNotBlank() && sections?.any { it.first == r.go } != false) { path = emptyList(); sec = r.go } else press(r) }) }
               }
             }
         }

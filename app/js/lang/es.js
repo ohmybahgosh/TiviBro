@@ -210,7 +210,7 @@ I18n.add('es', {
   "A channel that will never have a guide (a radio stream, a camera, an event slot): Hold OK > No guide for this channel.  It drops out of matching and stops saying \"No guide information\".  The web editor's Guide page does many at once (Ignore).": "Un canal que nunca tendrá guía (una radio, una cámara, un espacio de eventos): Mantén OK > Sin guía para este canal.  Sale de la coincidencia y deja de decir \"Sin información de guía\".  La página Guía del editor web marca muchos a la vez (Ignorar).",
   "A coloured bar on movies, sports, news and kids' programmes, from what your guide says each programme is, or its title or channel.  Anything else stays plain.": "Una barra de color en películas, deportes, noticias y programas infantiles, según lo que tu guía dice de cada programa, o su título o canal.  Lo demás queda sin color.",
   "A group of channels that are new in your playlist since it last loaded, newest first, with a NEW tag in the lists.": "Un grupo con los canales nuevos en tu lista desde la última carga, los más nuevos primero, marcados como nuevos en las listas.",
-  "A group of the movies on now, most left first, then the ones starting within the hour.  Needs a TMDB token (Settings > Playlists and accounts > API keys).": "Un grupo con las películas en emisión, las que tienen más por delante primero, y luego las que empiezan dentro de la hora.  Necesita un token de TMDB (Configuración > Listas y cuentas > Claves de API).",
+  "A group of the movies on now, most left first, then the ones starting within the hour.  Needs a TMDB token (Settings > API keys).": "Un grupo con las películas en emisión, las que tienen más por delante primero, y luego las que empiezan dentro de la hora.  Necesita un token de TMDB (Configuración > Claves de API).",
   "A group with every event channel that is on now or starts in the next two weeks, soonest first.": "Un grupo con cada canal de eventos en emisión o que empieza en las próximas dos semanas, los más próximos primero.",
   "A group with every event on now or in the next two weeks, soonest first.": "Un grupo con cada evento en emisión o en las próximas dos semanas, los más próximos primero.",
   "A group with your teams' own channels and every channel showing one of their games.  For now the NFL, NBA, NHL, MLB, WNBA and MLS only.": "Un grupo con los canales de tus equipos y cada canal que emite uno de sus partidos.  Por ahora solo NFL, NBA, NHL, MLB, WNBA y MLS.",
@@ -281,7 +281,7 @@ I18n.add('es', {
   "Bulgarian": "Búlgaro",
   "Buttons only appear when they apply, e.g. Audio needs two or more tracks.": "Los botones solo aparecen cuando aplican, p. ej. Audio necesita dos o más pistas.",
   "Cancel the reminder for": "Cancelar el recordatorio de",
-  "Carry on later from Settings > Playback > Audio and subtitles": "Continúa más tarde desde Configuración > Reproducción > Audio y subtítulos",
+  "Carry on later from Settings > Audio and subtitles": "Continúa más tarde desde Configuración > Audio y subtítulos",
   "Catalan": "Catalán",
   "Catch-up on": "Catch-up en",
   "Category and package prefixes": "Prefijos de categoría y paquete",
@@ -611,7 +611,7 @@ I18n.add('es', {
   "Panels over video": "Paneles sobre el video",
   "Password for": "Contraseña de",
   "Paste a comma separated list…": "Pega una lista separada por comas…",
-  "Paste these from the TiviBro phone app (Settings > Playlists and accounts > API keys): a phone keyboard and copy and paste make it quick.": "Pégalas desde la app TiviBro del teléfono (Configuración > Listas y cuentas > Claves API): con el teclado del teléfono y copiar y pegar es rápido.",
+  "Paste these from the TiviBro phone app (Settings > API keys): a phone keyboard and copy and paste make it quick.": "Pégalas desde la app TiviBro del teléfono (Configuración > Listas y cuentas > Claves API): con el teclado del teléfono y copiar y pegar es rápido.",
   "Pause scan": "Pausar escaneo",
   "Pay-per-view and league pass channels whose names carry the game and its time: read into the guide.": "Canales de pago por evento y de pase de liga cuyos nombres llevan el partido y su hora: se leen en la guía.",
   "Phone app connection": "Conexión con la app del teléfono",
@@ -875,7 +875,7 @@ I18n.add('es', {
   "Your hidden items and renames are kept.": "Tus elementos ocultos y nombres cambiados se conservan.",
   "Your internet speed and your provider's, and what that is enough for.  Stops playback while it runs.": "Tu velocidad de internet y la de tu proveedor, y para qué alcanza.  Detiene la reproducción mientras corre.",
   "Your local channels": "Tus canales locales",
-  "Your own prefixes and suffixes, TiviMate style, are under Settings > Channels and groups > Channel and group names.": "Tus propios prefijos y sufijos, estilo TiviMate, están en Configuración > Canales y grupos > Nombres de canales y grupos.",
+  "Your own prefixes and suffixes, TiviMate style, are under Settings > Channel and group names.": "Tus propios prefijos y sufijos, estilo TiviMate, están en Configuración > Nombres de canales y grupos.",
   "Your playlist is not changed.  Turn off to see the original names.": "Tu lista no cambia.  Desactívalo para ver los nombres originales.",
   "Your problem reports": "Tus reportes de problemas",
   "a day and time": "un día y hora",
@@ -1989,5 +1989,6 @@ I18n.add('es', {
   "Like 192.168.1.1, 2001:de4::101 or https://dns.example/dns-query": "Como 192.168.1.1, 2001:de4::101 o https://dns.example/dns-query",
   "Pair the TiviBro app to use your phone as a remote, or edit groups, names and the guide from a computer.": "Empareja la app TiviBro para usar tu teléfono como mando, o edita grupos, nombres y la guía desde un ordenador.",
   "Edit groups, names and the guide from a computer.": "Edita grupos, nombres y la guía desde un ordenador.",
-  "Paired": "Emparejado"
+  "Paired": "Emparejado",
+  "Which buttons show when you press OK in fullscreen.  Buttons only appear when they apply, e.g. Audio needs two or more tracks.": "Qué botones aparecen al presionar OK en pantalla completa.  Los botones solo aparecen cuando aplican, p. ej. Audio necesita dos o más pistas."
 });

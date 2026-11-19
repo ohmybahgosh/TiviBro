@@ -2,7 +2,7 @@
 
 *On the TV*
 
-With your own free TMDB token saved (Settings > Playlists and accounts > API keys), TiviBro finds the movies in your guide:
+With your own free TMDB token saved (Settings > API keys), TiviBro finds the movies in your guide:
 
 - **In the guide:** a movie's details show its poster, and a line with the year, runtime, genres and TMDB rating.  When the guide says little about it, TMDB's plot is shown instead.  Movies in the grid say **Movie** next to their time.
 - **The Movies on now group,** near the top of the guide: the movies on now, most time left first, then the ones starting within the hour.  With none, it says so.

@@ -224,7 +224,7 @@ var Views = (function () {
     // clicking the picture shows or hides it.
     stage.addEventListener('click', function () { if (!full) { if (pipFull()) return; if (playing && mode === 'live') goFull(); return; } var o = $('osd'); if (o.classList.contains('hidden')) osd(true); else o.classList.add('hidden'); });
     document.addEventListener('mousemove', U.debounce(function () { if (full && UI.pointer && !overlay) osd(true); }, 120));
-    // Subtitles on automatically when a stream brings them (Settings > Playback > Audio and subtitles), in the chosen language,
+    // Subtitles on automatically when a stream brings them (Settings > Audio and subtitles), in the chosen language,
     // until the viewer picks in the Subtitles menu: a reconnect's tracks then keep that choice, Off too.
     // Tracks read from MKV and MP4 files (_embedded) are turned on by their reader (embedsubs.js),
     // which also undoes the browser's own pick.
@@ -1175,7 +1175,7 @@ var Views = (function () {
       if (recm && vod.meta.liveCh) chip('yellow', 'Live', 'yellow');
       chip('back', recm ? 'Back  Recordings' : 'Back  Stop'); }
     else if (scrub) { chip('left', '◀ ▶  Move'); chip('ok', 'OK  Watch from here'); chip('back', 'Back  Cancel'); }
-    else if (behindLive()) { chip('up', '▲  Timeline'); chip('ok', 'OK  ' + (Player.paused ? 'Play' : 'Pause')); chip('left', '◀ ▶  Skip ' + Store.settings.skip + 's'); chip('back', 'Back  Live'); chip('red', 'Options', 'red'); }
+    else if (behindLive()) { chip('up', '▲  Timeline'); (function () { var ka = Keymap.get('player', 'ok'); if (ka && ka !== 'none') chip('ok', 'OK  ' + (ka === 'panel' ? 'Pause, record, more' : ka === 'playpause' ? (Player.paused ? 'Play' : 'Pause') : Keymap.SHORT[ka] || Keymap.ACTIONS[ka])); })(); chip('left', '◀ ▶  Skip ' + Store.settings.skip + 's'); chip('back', 'Back  Live'); chip('red', 'Options', 'red'); }
     else if (mode === 'catchup') { chip('ok', 'Pause'); chip('left', '◀ ▶  Skip ' + Store.settings.skip + 's'); chip('up', '▲ ▼  Skip 5 min'); chip('yellow', 'Back to live', 'yellow'); chip('red', 'Options', 'red'); }
     else {
       var g = function (b) { var a = Keymap.get('player', b); return a && a !== 'none' ? Keymap.SHORT[a] || Keymap.ACTIONS[a] : ''; };
@@ -1345,7 +1345,7 @@ var Views = (function () {
       else if (a === 'ff') step = (+Store.settings.ffStep || 120) * seekAccel(1);
       else if (a === 'back' && !hidden) { $('osd').classList.add('hidden'); return true; }
       else if (a === 'back' || a === 'yellow' || a === 'stop') { lwLive(); return true; }
-      else if (a === 'ok') { Player.togglePause(); osd(true); return true; }
+      // OK does what it's set to (Remote and buttons > In the player; the quick menu at first, Bob), not always Pause.
       if (step) { lwSeek(step); return true; }
     }
     if (mode === 'catchup') {
@@ -1459,9 +1459,12 @@ var Views = (function () {
     e.dot.style.left = pc(tl.at);
     e.ghost.style.display = scrub ? '' : 'none'; e.label.style.display = scrub ? '' : 'none';
     if (scrub) {
-      e.ghost.style.left = pc(scrub.t); e.label.style.left = pc(scrub.t);
+      e.ghost.style.left = pc(scrub.t);
       var behind = Math.round((tl.now - scrub.t) / 1000);
       e.label.textContent = behind < 8 ? T('Live') : U.hhmm(scrub.t) + '  ·  ' + T('{t} behind live', { t: fmtDur(behind) });
+      // Over the handle, but kept inside the bar at either end (it ran off the screen's edge near the start, Bob).
+      var bw = bar.clientWidth, lw = e.label.offsetWidth, x = U.clamp((scrub.t - tl.from) / span, 0, 1) * bw;
+      e.label.style.left = (bw && lw ? U.clamp(x, lw / 2, Math.max(lw / 2, bw - lw / 2)) + 'px' : pc(scrub.t));
     }
   }
   function canScrub() { return !!timeline(); }
@@ -2041,7 +2044,7 @@ var Views = (function () {
      Top: channel and what's on.  Row 1: quick actions.  Row 2: recent channels.
      ◀ ▶ move along a row, ▲ ▼ switch rows, OK picks, Back closes.  Clickable with the pointer. */
   var qp = null;                  // { row, col, rows: [[items]], timer }
-  // Quick menu buttons.  Each can be switched off in Settings > Playback > Remote and buttons > Quick menu buttons.
+  // Quick menu buttons.  Each can be switched off in Settings > Remote and buttons > Quick menu buttons.
   var QP_BUTTONS = [['pause', 'Pause and rewind'], ['rec', 'Record'], ['list', 'Channel guide'], ['start', 'Watch from start'], ['fav', 'Favorite'], ['guide', 'TV guide'], ['versions', 'Other versions'], ['audio', 'Audio track'],
     ['subs', 'Subtitles'], ['cc', 'Closed captions'], ['quality', 'Video quality'], ['picture', 'Aspect'], ['sleep', 'Sleep timer'],
     ['info', 'Stream info'], ['reconnect', 'Reconnect']];
@@ -2306,7 +2309,7 @@ var Views = (function () {
      Timing; Line up with another track), under a Settings heading, then what this video has under its
      own heading.  The settings stay at the top however many languages a file carries, and the menu
      opens on the subtitle that is on (or Off). */
-  /* Subtitle size, colour and background from the player (as in Settings > Playback > Audio and subtitles), the
+  /* Subtitle size, colour and background from the player (as in Settings > Audio and subtitles), the
      change shown on the picture at once.  For every video, like the setting it is. */
   var SUB_SIZE = [['s', 'Small'], ['m', 'Medium'], ['l', 'Large'], ['xl', 'Extra large']];
   var SUB_COLOR = [['white', 'White'], ['yellow', 'Yellow'], ['gold', 'Gold'], ['cyan', 'Light blue'], ['green', 'Light green']];
@@ -3644,7 +3647,7 @@ var Guide = (function () {
     else if (a === 'rew' || a === 'ff') { var tj = Date.now(); if (tj - jumpAt < 320) return true; jumpAt = tj; screenJump(a === 'ff' ? 1 : -1); }
     else if (a === 'ok') activate();
     else if (a !== 'back' && a.indexOf('num') !== 0) {
-      // Every other button does what Settings > Playback > Remote and buttons > In the guide says.
+      // Every other button does what Settings > Remote and buttons > In the guide says.
       var act = Keymap.get('guide', a === 'hold' ? 'long:ok' : a);
       if (act) mapped(act);
     }

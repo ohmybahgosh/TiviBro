@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Settings, flatter: nothing is more than one page down.**  Things that took two or three pages to reach (Playback > Recording and live pause > Remote and buttons > In the player) are now in reach at once.  Six pages became sections of their own in the menu: **Channel and group names**, **Audio and subtitles**, **Recording and live pause**, **Remote and buttons**, **API keys** and **Backups and restore points**.  Your guide sources and public fill-in, each screen's buttons, My media's display and Trakt, and every problem under Fix a problem are on their page instead of behind another row.  A page's advanced settings sit at its bottom under an **Advanced** heading, so the Advanced view switch is gone.  The TMDB token and the OpenSubtitles key live only under API keys; other places take you there.  The phone app and the web editor show the same sections, and a row that leads to another section opens it there.  No setting changed its value.
+- **OK behind live does what it's set to.**  Rewound or paused live TV ignored your OK button and always paused; now OK opens the quick menu (or whatever it's set to), which starts with Pause.
+- **The timeline's time label stays on screen** at the very start or end of what's kept, instead of running off the edge.
 - **The Google Play phone app tells you when there's an update.**  Play installs the updates, but a test's updates often don't show in the Play Store on their own.  The app now asks Play at start, shows a card when a newer version is waiting, and **Update on Google Play** opens its Play Store page.  The **App update** tile is back in the Play version and asks Play any time.
 - **The quick menu's Timeline button fits its card** (its "move back and forth" ran off the bottom): it shows ◀ ▶, and a button's second line never wraps out of its card.
 - **My teams says in the log when a reminder is dropped because its listing is a replay.**

@@ -37,12 +37,18 @@
 - [Settings: Phone app and web editor](Settings-Phone-app-and-web-editor)
 - [Settings: Guide](Settings-Guide)
 - [Settings: Channels and groups](Settings-Channels-and-groups)
+- [Settings: Channel and group names](Settings-Channel-and-group-names)
 - [Settings: Playback](Settings-Playback)
+- [Settings: Audio and subtitles](Settings-Audio-and-subtitles)
+- [Settings: Recording and live pause](Settings-Recording-and-live-pause)
+- [Settings: Remote and buttons](Settings-Remote-and-buttons)
 - [Settings: Movies and shows](Settings-Movies-and-shows)
 - [Settings: My media](Settings-My-media)
 - [Settings: Reminders and watchlist](Settings-Reminders-and-watchlist)
 - [Settings: Parental controls](Settings-Parental-controls)
 - [Settings: Appearance](Settings-Appearance)
+- [Settings: API keys](Settings-API-keys)
+- [Settings: Backups and restore points](Settings-Backups-and-restore-points)
 - [Settings: System](Settings-System)
 
 **Web editor**

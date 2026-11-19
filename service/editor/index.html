@@ -1804,7 +1804,10 @@ function setDraw(pg) {
     else if (r.kind === 'action') {
       if (r.attn && r.value) { var bd = document.createElement('span'); bd.className = 'badge'; bd.textContent = r.value; v.appendChild(bd); } else v.textContent = String(r.value || '').replace(/\s*›$/, '');
       d.classList.add('click');
-      d.onclick = function () { if (r.phone === 'editor' && r.epage && document.getElementById('p-' + r.epage)) show(r.epage); else setChange(r, 'action'); };
+      d.onclick = function () {
+        // A row that opens another section (the TV's link()): open it here.
+        if (r.go && ST.secs && ST.secs.some(function (x) { return x.id === r.go; })) { ST.sec = r.go; ST.path = []; drawSecs(); setLoad(); history.replaceState(null, '', '#settings/' + r.go); return; }
+        if (r.phone === 'editor' && r.epage && document.getElementById('p-' + r.epage)) show(r.epage); else setChange(r, 'action'); };
     }
     d.appendChild(v); box.appendChild(d);
   });
@@ -3042,7 +3045,7 @@ var HELP = [
   ['backup', 'Backups and restore points', '<p>A backup is one file with everything: settings, every playlist <b>with its login</b>, each playlist\'s groups, favorites, names and guide matches, and its restore points.  Channel lists and guides are not in it; they reload from your provider.  Restore points, on the same page, go back to an earlier setup of one playlist without a file (see <a href="#help/saving">Saving, undo and restore points</a>).</p>' +
     '<h3>Locked with your passphrase</h3><p>Because it holds logins, the backup is always locked.  You pick a passphrase when you download it (or press <b>Suggest one</b>).  The TV makes the backup and locks it with AES-256 before it leaves the TV, so the file that reaches your computer is unreadable without the passphrase.  Nobody can recover a forgotten passphrase, us included, so keep it in a password manager or with the file.</p>' +
     '<h3>Restoring, even on a brand-new TV</h3><ol><li>Install TiviBro and open it.  On the first screen choose <b>Set up or restore from a phone or computer</b>.  (On a TV already set up: Settings > Phone app and web editor.)</li><li>Scan the code with your phone, or open the address shown on the TV in a browser and type the password shown there.</li><li>Choose <b>Restore a backup</b>, drop the file, type its passphrase and press <b>Unlock</b>.  The editor lists the playlists inside so you know it is the right file.</li><li>Press <b>Restore to the TV</b>.  TiviBro restarts with all your playlists, logins and settings, and this page reconnects by itself.</li></ol>' +
-    '<p>In the phone app, backups and restore points have a screen of their own (Settings > System > Backups and restore points).  Older backups made before locking existed still restore; download a new locked one afterwards and delete the old file.</p>'],
+    '<p>In the phone app, backups and restore points have a screen of their own (Settings > Backups and restore points).  Older backups made before locking existed still restore; download a new locked one afterwards and delete the old file.</p>'],
   ['keys', 'Keyboard shortcuts', '<ul><li><kbd>Ctrl</kbd>+<kbd>Z</kbd> undo, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> or <kbd>Ctrl</kbd>+<kbd>Y</kbd> redo</li><li><kbd>Ctrl</kbd>+<kbd>S</kbd> send to TV</li><li><kbd>/</kbd> jump to the search box</li><li><kbd>Esc</kbd> close a window or list</li><li>In lists: <kbd>↑</kbd> <kbd>↓</kbd> and <kbd>Enter</kbd>, or type to filter</li></ul><p>On a Mac use <kbd>⌘</kbd> instead of <kbd>Ctrl</kbd>.</p>'],
   ['trouble', 'Troubleshooting', '<ul><li><b>"Can\'t reach TiviBro on the TV"</b>: TiviBro was closed, or the TV went to sleep.  Open TiviBro; the editor reconnects by itself.  Your drafts are safe in this browser.</li>' +
     '<li><b>Changes don\'t show on the TV</b>: check the bar at the bottom.  If it still counts changes, press Send to TV.</li>' +

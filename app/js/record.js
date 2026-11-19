@@ -6,7 +6,7 @@
 var Record = (function () {
   'use strict';
   var L = Library;
-  // Minutes before and after a programme (Settings > Playback > Recording and live pause), 2 and 5 at first.
+  // Minutes before and after a programme (Settings > Recording and live pause), 2 and 5 at first.
   function padB() { var v = Store.settings.recPadBefore; return (v == null ? 2 : +v) * 60000; }
   function padA() { var v = Store.settings.recPadAfter; return (v == null ? 5 : +v) * 60000; }
   var last = { recs: [], at: 0 }, drive = false, space = null, pauseHere = false;

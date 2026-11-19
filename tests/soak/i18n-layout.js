@@ -95,7 +95,7 @@ const STEPS = [
   ['fullscreen', async (ev) => ev(() => { UI.close(); Views.switchTab('guide'); Views.switchTab('live'); const c = Library.channels(Library.ALL)[0]; Views.startChannel(c); Views.goFull(); })],
   ['set-up tour', async (ev) => ev(() => { if (Views.full) UI.press('back'); UI.close(); Tour.open({}); })]
 ];
-const SECTIONS = ['language', 'playlists', 'guide', 'channels', 'names', 'reminders', 'playback', 'media', 'keys', 'remote', 'look', 'parental', 'backups', 'connect', 'about'];
+const SECTIONS = ['language', 'playlists', 'guide', 'channels', 'names', 'reminders', 'playback', 'audio', 'recording', 'media', 'keys', 'remote', 'look', 'parental', 'backups', 'connect', 'about'];
 
 (async () => {
   const b = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });

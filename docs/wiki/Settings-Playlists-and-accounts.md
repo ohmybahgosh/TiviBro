@@ -2,7 +2,7 @@
 
 *Every setting*
 
-Your playlists and how often their channel lists reload.  **OK** on a playlist opens its page.  The guide, names and channels of the first playlist have their own sections: [Guide](Settings-Guide), [Channel and group names](Settings-Channels-and-groups#settings-channel-and-group-names) and [Channels and groups](Settings-Channels-and-groups).
+Your playlists and how often their channel lists reload.  **OK** on a playlist opens its page.  The guide, names and channels of the first playlist have their own sections: [Guide](Settings-Guide), [Channel and group names](Settings-Channel-and-group-names) and [Channels and groups](Settings-Channels-and-groups).
 
 **Several playlists at once.**  Every playlist that is on is used at the same time, like TiviMate.  In the group column of the Channels screen and the guide, each playlist gets its own section: a heading with the playlist's name, and its groups under it.  Favorites, All channels, Recent, My teams and your own groups stay at the top and can hold channels from any playlist.  **Up** and **Down** step over the headings.  With one playlist on, nothing changes.
 
@@ -47,20 +47,9 @@ On a playlist's page:
 | **Last reloaded**, **Subscription expires**, **Connections allowed** | (information) | From your provider, when it reports them. |
 | **Guide ›** | | This playlist's guide: the same rows as **Guide for** your playlist in [Settings: Guide](Settings-Guide). |
 | **Set-up tour** *(playlist in use, on the TV)* | | Runs the [set-up tour](The-set-up-tour) again: countries, names, East or West, your city, event channels, clutter, logos and look.  Shows when you last applied it. |
-| **Channel and group names ›** | | This playlist's name rules: the same page as [Settings: Channel and group names](Settings-Channels-and-groups#settings-channel-and-group-names). |
+| **Channel and group names ›** | | This playlist's name rules: the same page as [Settings: Channel and group names](Settings-Channel-and-group-names). |
 | **Event channels ›** | | This playlist's [event channels](Event-channels-pay-per-view-and-sports-passes) (see [Settings: Channels and groups](Settings-Channels-and-groups)). |
 | **Delete this playlist** | | Removes the playlist with its groups, favorites, hidden items and cached data.  **Playlist on** (off) keeps them instead.  Your only playlist can be deleted too (an expired one, say): TiviBro then starts again on the screen that adds a playlist. |
-
-#### Settings: API keys
-
-Every key you paste, in one place.  Typing them from the TiviBro phone app (Settings > Playlists and accounts > API keys) is easiest: a phone keyboard and copy and paste.
-
-| Setting | Choices | What it does |
-|---|---|---|
-| **Add TMDB API token** | | Your free key or Read Access Token from themoviedb.org/settings/api, for movie and show details and posters (My media, Movies on now).  Then **Test TMDB token** and **Remove TMDB token**. |
-| **Set up OpenSubtitles (step by step)** | | The free key for Find subtitles, step by step (an account, the key and what to tick, paste it, checked straight away).  Once set up: **OpenSubtitles API key saved** to replace it, **Test OpenSubtitles key** (the key, and your sign-in if any), **Sign in** for more downloads, and **Remove OpenSubtitles key**. |
-
-The keys stay on this TV, out of backups.
 
 ---
 

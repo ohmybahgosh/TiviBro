@@ -221,7 +221,7 @@ var Movies = (function () {
     }, function () {});
   }
   function emptyText() {
-    if (!on()) return 'Save a TMDB token in Settings > Playlists and accounts > API keys to find the movies in your guide.';
+    if (!on()) return 'Save a TMDB token in Settings > API keys to find the movies in your guide.';
     return queue.length || busy ? 'Looking through the guide for movies…' : 'No movies on now or starting within the hour.';
   }
 

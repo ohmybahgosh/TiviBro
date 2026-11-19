@@ -597,7 +597,7 @@ I18n.add('pt-BR', {
   "A channel that will never have a guide (a radio stream, a camera, an event slot): Hold OK > No guide for this channel.  It drops out of matching and stops saying \"No guide information\".  The web editor's Guide page does many at once (Ignore).": "Um canal que nunca terá guia (uma rádio, uma câmera, um espaço de eventos): Segure OK > Sem guia para este canal.  Ele sai da correspondência e deixa de dizer \"Sem informações de guia\".  A página Guia do editor web marca vários de uma vez (Ignorar).",
   "A coloured bar on movies, sports, news and kids' programmes, from what your guide says each programme is, or its title or channel.  Anything else stays plain.": "Uma barra colorida em filmes, esportes, notícias e programas infantis, conforme o que seu guia diz de cada programa, ou pelo título ou canal.  O resto fica sem cor.",
   "A group of channels that are new in your playlist since it last loaded, newest first, with a NEW tag in the lists.": "Um grupo com os canais novos na sua lista desde o último carregamento, os mais novos primeiro, marcados como novos nas listas.",
-  "A group of the movies on now, most left first, then the ones starting within the hour.  Needs a TMDB token (Settings > Playlists and accounts > API keys).": "Um grupo com os filmes passando agora, os que têm mais pela frente primeiro, e depois os que começam dentro de uma hora.  Precisa de um token do TMDB (Configurações > Listas e contas > Chaves de API).",
+  "A group of the movies on now, most left first, then the ones starting within the hour.  Needs a TMDB token (Settings > API keys).": "Um grupo com os filmes passando agora, os que têm mais pela frente primeiro, e depois os que começam dentro de uma hora.  Precisa de um token do TMDB (Configurações > Chaves de API).",
   "A group with every event channel that is on now or starts in the next two weeks, soonest first.": "Um grupo com cada canal de eventos passando ou começando nas próximas duas semanas, os mais próximos primeiro.",
   "A group with every event on now or in the next two weeks, soonest first.": "Um grupo com cada evento passando ou nas próximas duas semanas, os mais próximos primeiro.",
   "A group with your teams' own channels and every channel showing one of their games.  For now the NFL, NBA, NHL, MLB, WNBA and MLS only.": "Um grupo com os canais dos seus times e cada canal que passa um dos jogos deles.  Por enquanto só NFL, NBA, NHL, MLB, WNBA e MLS.",
@@ -668,7 +668,7 @@ I18n.add('pt-BR', {
   "Bulgarian": "Búlgaro",
   "Buttons only appear when they apply, e.g. Audio needs two or more tracks.": "Os botões só aparecem quando fazem sentido, por exemplo Áudio precisa de duas ou mais faixas.",
   "Cancel the reminder for": "Cancelar o lembrete de",
-  "Carry on later from Settings > Playback > Audio and subtitles": "Continue mais tarde em Configurações > Reprodução > Áudio e legendas",
+  "Carry on later from Settings > Audio and subtitles": "Continue mais tarde em Configurações > Áudio e legendas",
   "Catalan": "Catalão",
   "Catch-up on": "Catch-up em",
   "Category and package prefixes": "Prefixos de categoria e pacote",
@@ -998,7 +998,7 @@ I18n.add('pt-BR', {
   "Panels over video": "Painéis sobre o vídeo",
   "Password for": "Senha de",
   "Paste a comma separated list…": "Cole uma lista separada por vírgulas…",
-  "Paste these from the TiviBro phone app (Settings > Playlists and accounts > API keys): a phone keyboard and copy and paste make it quick.": "Cole pelo app TiviBro do celular (Configurações > Listas e contas > Chaves de API): com o teclado do celular e copiar e colar é rápido.",
+  "Paste these from the TiviBro phone app (Settings > API keys): a phone keyboard and copy and paste make it quick.": "Cole pelo app TiviBro do celular (Configurações > Chaves de API): com o teclado do celular e copiar e colar é rápido.",
   "Pause scan": "Pausar escaneamento",
   "Pay-per-view and league pass channels whose names carry the game and its time: read into the guide.": "Canais de pay-per-view e de passe de liga cujos nomes trazem o jogo e o horário: são lidos no guia.",
   "Phone app connection": "Conexão com o app do celular",
@@ -1262,7 +1262,7 @@ I18n.add('pt-BR', {
   "Your hidden items and renames are kept.": "Seus itens ocultos e nomes alterados são mantidos.",
   "Your internet speed and your provider's, and what that is enough for.  Stops playback while it runs.": "Sua velocidade de internet e a do seu provedor, e para o que ela dá.  Para a reprodução enquanto roda.",
   "Your local channels": "Seus canais locais",
-  "Your own prefixes and suffixes, TiviMate style, are under Settings > Channels and groups > Channel and group names.": "Seus próprios prefixos e sufixos, estilo TiviMate, estão em Configurações > Canais e grupos > Nomes de canais e grupos.",
+  "Your own prefixes and suffixes, TiviMate style, are under Settings > Channel and group names.": "Seus próprios prefixos e sufixos, estilo TiviMate, estão em Configurações > Nomes de canais e grupos.",
   "Your playlist is not changed.  Turn off to see the original names.": "Sua lista não muda.  Desative para ver os nomes originais.",
   "Your problem reports": "Seus relatórios de problemas",
   "a day and time": "um dia e horário",
@@ -2505,5 +2505,6 @@ I18n.add('pt-BR', {
   "Like 192.168.1.1, 2001:de4::101 or https://dns.example/dns-query": "Como 192.168.1.1, 2001:de4::101 ou https://dns.example/dns-query",
   "Pair the TiviBro app to use your phone as a remote, or edit groups, names and the guide from a computer.": "Pareie o app TiviBro para usar o celular como controle, ou edite grupos, nomes e o guia pelo computador.",
   "Edit groups, names and the guide from a computer.": "Edite grupos, nomes e o guia pelo computador.",
-  "Paired": "Pareado"
+  "Paired": "Pareado",
+  "Which buttons show when you press OK in fullscreen.  Buttons only appear when they apply, e.g. Audio needs two or more tracks.": "Quais botões aparecem ao apertar OK em tela cheia.  Os botões só aparecem quando fazem sentido, por exemplo Áudio precisa de duas ou mais faixas."
 });

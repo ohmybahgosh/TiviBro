@@ -194,10 +194,10 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   ok('no sources yet', JSON.stringify((await mm('sources')).sources) === '[]');
   const setp = await ask('settings', { op: 'page', sec: 'media', path: [] }, { seal: true });
   const tagged = setp.rows.filter((r) => r.phone).map((r) => r.phone + (r.sid ? ':s' : '')).join();
-  ok('Settings > My media: Add media is done on the phone, and the TMDB token is a way to API keys', /media-add/.test(tagged) && setp.rows.some((r) => r.kind === 'page' && r.label === 'TMDB API token'), tagged);
-  const dispAt = setp.rows.findIndex((r) => r.label === 'Display and shelves');
-  const disp = await ask('settings', { op: 'page', sec: 'media', path: [setp.rows[dispAt].i] }, { seal: true });
-  ok('and Sort TV shows by is there, under Display and shelves', disp.rows.some((r) => r.label === 'Sort TV shows by' && r.kind === 'choice' && r.options.length === 4), disp.rows.map((r) => r.label).join(' | '));
+  ok('Settings > My media: Add media is done on the phone, and the TMDB token is a way to API keys', /media-add/.test(tagged) && setp.rows.some((r) => r.go === 'keys' && r.label === 'TMDB API token'), tagged);
+  // Display and shelves is a heading on the page now (the second Settings overhaul), not a page of its own.
+  const dispAt = setp.rows.findIndex((r) => r.kind === 'head' && r.label === 'Display and shelves');
+  ok('and Sort TV shows by is there, under Display and shelves', dispAt >= 0 && setp.rows.slice(dispAt).some((r) => r.label === 'Sort TV shows by' && r.kind === 'choice' && r.options.length === 4), setp.rows.map((r) => r.label).join(' | '));
   ok('a WebDAV address must be a web address', /https?:\/\//.test((await mm('addwebdav', { address: 'nas.local/movies' })).err || ''));
   ok('a server needs looking for first', /again/.test((await mm('adddlna', { i: 0 })).err || ''));
   await ev(() => {
@@ -320,7 +320,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const sa = (o) => ask('settings', o, { seal: true });
   await ev(() => { Store.settings.advView = true; });   // every row in place (Advanced view), as the checks below expect
   const secs = await sa({ op: 'sections' });
-  ok('the phone gets the TV\'s settings pages', secs.sections.some((x) => x.id === 'look' && x.title === 'Appearance') && secs.sections.length === 12, JSON.stringify(secs.sections));
+  ok('the phone gets the TV\'s settings pages', secs.sections.some((x) => x.id === 'look' && x.title === 'Appearance') && secs.sections.length === 18, JSON.stringify(secs.sections));
   let pg = await sa({ op: 'page', sec: 'look' });
   const clock = pg.rows.find((r) => r.label === 'Show clock'), nums = pg.rows.find((r) => r.label === 'Numbers');
   ok('a page comes as rows: toggles, choices with their options', clock && clock.kind === 'toggle' && nums && nums.kind === 'choice' && nums.options.length === 3, JSON.stringify(pg.rows.slice(0, 4)));

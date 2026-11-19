@@ -30,7 +30,7 @@ A few things work the way you would guess from other TV apps:
 - In a confirmation ("Delete this playlist?"), **Cancel** is selected first, so a stray **OK** never deletes anything.
 - With the Magic Remote, clicking outside a pop-up closes it, clicking the progress bar in a movie or catch-up jumps there, and on Settings rows you can click the **‹ ›** arrows to change a value.
 
-Buttons can be remapped under **Settings > Playback > Remote and buttons**, including keys TiviBro does not know yet (**Learn a button**).  **Button tester** shows what the TV sends for each key.  Every button, its default and the actions you can give it are listed in [Settings: Remote and buttons](Settings-Playback#settings-remote-and-buttons).
+Buttons can be remapped under **Settings > Remote and buttons**, including keys TiviBro does not know yet (**Learn a button**).  **Button tester** shows what the TV sends for each key.  Every button, its default and the actions you can give it are listed in [Settings: Remote and buttons](Settings-Remote-and-buttons).
 
 <p align="center">
   <a href="https://tivibro.app/view/#tv-set-remote-player"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-remote-player.png" width="49%" alt="Buttons in the player"></a>

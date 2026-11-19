@@ -172,7 +172,7 @@ var Tour = (function () {
     }
     out.push(head('Your channels, before and after'));
     out.push(custom(preview()));
-    out.push(info('Your own prefixes and suffixes, TiviMate style, are under Settings > Channels and groups > Channel and group names.', ''));
+    out.push(info('Your own prefixes and suffixes, TiviMate style, are under Settings > Channel and group names.', ''));
     return out;
   }
 

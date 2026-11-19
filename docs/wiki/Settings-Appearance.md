@@ -12,7 +12,6 @@ Which screen TiviBro opens on, where the lists start, colours, sizes and what's 
 
 | Setting | Choices | What it does |
 |---|---|---|
-| **Advanced view** | On · **Off** | Off keeps each page short: the settings most people set once, or only to troubleshoot, wait behind an **Advanced** row at the bottom of the page.  On shows every setting in place.  Search finds them either way. |
 | **Burn-in protection** | **Pixel shift and dimming** · Pixel shift only · Off | For OLED TVs left on the guide or a menu: every 90 seconds the screen moves a few pixels (4 at most), and after 10 minutes without a key press it dims until you press one (that key only wakes it).  Fullscreen video is left alone. |
 | **Start screen** | **Guide** · Channels screen | Under **Start and navigation**.  What TiviBro opens on, and where **Back** from other screens leads. |
 | **Lists open on** | **Where I left off** · The first group · A group I pick | Where the selection is when TiviBro opens.  Where I left off is the group and channel you were on last; the other two start at the top of that group (unless a channel is already playing).  With **A group I pick**, **Group to open on** chooses it: any group, Favorites and All channels too. |
@@ -41,4 +40,4 @@ Which screen TiviBro opens on, where the lists start, colours, sizes and what's 
 
 ---
 
-← [Settings: Parental controls](Settings-Parental-controls)  ·  [Home](Home)  ·  [Settings: System](Settings-System) →
+← [Settings: Parental controls](Settings-Parental-controls)  ·  [Home](Home)  ·  [Settings: API keys](Settings-API-keys) →

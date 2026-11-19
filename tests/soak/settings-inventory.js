@@ -16,9 +16,15 @@ const APP = process.env.APP || 'http://127.0.0.1:8078/index.html';
 const RELAY = 'http://127.0.0.1:47811';
 const FILE = path.join(__dirname, '../settings-inventory.json');
 // old label -> new label, for settings renamed in plain words.
-const RENAMED = { 'Settings shown': 'Advanced view', 'Play next episode automatically': 'Play the next one automatically' };
+const RENAMED = { 'Play next episode automatically': 'Play the next one automatically' };
 // old label -> why it is no longer a row (it must still be reachable another way).
-const GONE = {};
+const GONE = {
+  // The second Settings overhaul: pages that are headings on their section now, their rows in place.
+  'Display and shelves': 'a heading on My media', 'Trakt': 'a heading on My media', 'In the player': 'a heading on Remote and buttons',
+  'In the guide': 'a heading on Remote and buttons', 'On the Channels screen': 'a heading on Remote and buttons', 'Quick menu buttons': 'a heading on Remote and buttons',
+  // Advanced settings are always in place now, under an Advanced heading, so the switch for them went.
+  'Settings shown': 'advanced settings are always shown, under an Advanced heading'
+};
 let fails = 0;
 const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undefined && !c ? '  ' + String(x).slice(0, 1500) : '')); if (!c) fails++; };
 const ctl = (u, body) => fetch(RELAY + u, { method: body ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined }).then((r) => r.json());

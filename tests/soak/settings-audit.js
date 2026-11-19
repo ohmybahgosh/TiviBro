@@ -16,11 +16,14 @@ let fails = 0;
 const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undefined && !c ? '  ' + String(x).slice(0, 400) : '')); if (!c) fails++; };
 const ctl = (u, body) => fetch(RELAY + u, { method: body ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined }).then((r) => r.json());
 
-const WANT = [['language', 'Language'], ['playlists', 'Playlists and accounts'], ['connect', 'Phone app and web editor'], ['guide', 'Guide'], ['channels', 'Channels and groups'], ['playback', 'Playback'],
-  ['vod', 'Movies and shows'], ['media', 'My media'], ['reminders', 'Reminders and watchlist'], ['parental', 'Parental controls'], ['look', 'Appearance'], ['about', 'System']];
+const WANT = [['language', 'Language'], ['playlists', 'Playlists and accounts'], ['connect', 'Phone app and web editor'], ['guide', 'Guide'], ['channels', 'Channels and groups'],
+  ['names', 'Channel and group names'], ['playback', 'Playback'], ['audio', 'Audio and subtitles'], ['recording', 'Recording and live pause'], ['remote', 'Remote and buttons'],
+  ['vod', 'Movies and shows'], ['media', 'My media'], ['reminders', 'Reminders and watchlist'], ['parental', 'Parental controls'], ['look', 'Appearance'], ['keys', 'API keys'],
+  ['backups', 'Backups and restore points'], ['about', 'System']];
 // Page names that are gone: nothing may still send people there.
 const OLD = [/Groups, sorting, hidden/, /Guide, start screen, reminders/, /Playlists and guide/, /Channel name editor/, /Settings > Channel names\b/, /Settings > Diagnostics/,
-  /Changes and restore points/, /Playback and buffering/, /Settings > Remote control/, /Updates and about/, /movies only for now/, /> Network (set )?to Automatic/];
+  /Changes and restore points/, /Playback and buffering/, /Settings > Remote control/, /Updates and about/, /movies only for now/, /> Network (set )?to Automatic/,
+  /Playback > (Audio and subtitles|Remote and buttons|Recording and live pause)/, /Playlists and accounts > (API keys|Phone app)/, /System > Backups/, /Channels and groups > Channel and group names/, /Advanced view/];
 
 (async () => {
   let s = await ctl('/companion/status');
@@ -43,13 +46,13 @@ const OLD = [/Groups, sorting, hidden/, /Guide, start screen, reminders/, /Playl
 
   // 1. The sections, in order, on the TV and the phone.
   const nav = await ev(() => [].map.call(document.querySelectorAll('#setNav > div:not(.nav-find)'), (d) => d.innerText.trim()));
-  ok('the TV shows the 12 sections in order', nav.join('|') === WANT.map((w) => w[1]).join('|'), nav.join(' | '));
+  ok('the TV shows the 18 sections in order', nav.join('|') === WANT.map((w) => w[1]).join('|'), nav.join(' | '));
   const secs = await sa({ op: 'sections' });
-  ok('the phone gets the same 12, with their ids', JSON.stringify(secs.sections.map((x) => [x.id, x.title])) === JSON.stringify(WANT), JSON.stringify(secs.sections));
+  ok('the phone gets the same 18, with their ids', JSON.stringify(secs.sections.map((x) => [x.id, x.title])) === JSON.stringify(WANT), JSON.stringify(secs.sections));
   ok('old section ids still lead somewhere', await ev(() => ['groups', 'updates', 'diag', 'phone', 'editor', 'keys', 'audio', 'remote', 'names', 'backups', 'trakt', 'connect'].every((id) => Settings.section(id))));
 
   // 2. Every page and the pages inside them, on the phone (the same code builds them for the TV).
-  let pages = 0; const bad = [], stale = [], all = [];
+  let pages = 0; const bad = [], stale = [], all = [], deep = [];
   async function walk(sec, pathTo, trail) {
     const pg = await sa({ op: 'page', sec, path: pathTo }).catch((x) => { bad.push(trail + ': ' + x.message); return null; });
     if (!pg) return;
@@ -59,12 +62,16 @@ const OLD = [/Groups, sorting, hidden/, /Guide, start screen, reminders/, /Playl
       const txt = r.label + ' ' + r.sub + ' ' + (r.value || '');
       OLD.forEach((re) => { if (re.test(txt)) stale.push(trail + ' > ' + r.label + ': ' + re); });
       if (/  —|—/.test(txt)) stale.push(trail + ' > ' + r.label + ': an em dash');
+      // Nothing more than one page down (the second Settings overhaul), except inside one playlist's own page.
+      if (r.kind === 'page' && pathTo.length >= 1 && sec !== 'playlists') deep.push(trail + ' > ' + r.label);
       if (r.kind === 'page' && pathTo.length < 2) await walk(sec, pathTo.concat([r.i]), trail + ' > ' + r.label);
     }
   }
   for (const w of WANT) await walk(w[0], [], w[1]);
   ok('every page and the pages inside them open (' + pages + ')', !bad.length && pages > 25, bad.join(' | '));
   ok('no row names a page that is gone, and no em dashes', !stale.length, stale.join(' | '));
+  ok('nothing is more than one page down', !deep.length, deep.join(' | '));
+  ok('no Advanced rows: advanced settings sit under an Advanced heading', !all.some((r) => r.style === 'adv-row') && all.some((r) => r.kind === 'head' && r.label === 'Advanced'));
   const tagged = (name) => all.filter((r) => r.phone === name).map((r) => r.where + ' > ' + r.label);
   ok('the phone does My media, the token, the log, backups and reports itself', tagged('media-add').length && tagged('tmdb-token').length && tagged('log').length && tagged('backups').length && all.some((r) => r.phone === 'editor' && r.epage === 'report'),
     JSON.stringify(all.filter((r) => r.phone).map((r) => r.phone + ':' + r.label)));

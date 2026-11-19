@@ -126,12 +126,12 @@ const server = http.createServer((q, s) => {
 
     await ev(() => { Player.stop(); clearInterval(window.__tick); });
 
-    // 6. Settings > Playback > Audio and subtitles shows the switch and the converter.
+    // 6. Settings > Audio and subtitles shows the switch and the converter.
     await ev(() => { if (UI.modalOpen) UI.close(); Store.settings.advView = true; Views.switchTab('settings'); Settings.open(); Settings.section('audio'); });
     await page.waitForTimeout(1500);
     const rows = await ev(() => [].map.call(document.querySelectorAll('#setBody .opt'), function (d) { return d.textContent; }).join('\n'));
-    ok('Settings > Playback > Audio and subtitles: Convert audio the TV can\'t play, with Automatic as a choice', /Convert audio the TV can't play/.test(rows) && (await ev(() => { const r = Settings.phone.page('audio', []).rows.filter((x) => /^Convert audio/.test(x.label))[0]; return !!r && JSON.stringify(r).indexOf('Automatic') >= 0; })), rows.slice(0, 200));
-    ok('Settings > Playback > Audio and subtitles: the converter\'s status, size and where', /Audio converter[\s\S]*Ready, [\d.]+ MB, set by TIVIBRO_FFMPEG/.test(rows), (rows.match(/Audio converter[^\n]*\n?[^\n]*/) || [''])[0]);
+    ok('Settings > Audio and subtitles: Convert audio the TV can\'t play, with Automatic as a choice', /Convert audio the TV can't play/.test(rows) && (await ev(() => { const r = Settings.phone.page('audio', []).rows.filter((x) => /^Convert audio/.test(x.label))[0]; return !!r && JSON.stringify(r).indexOf('Automatic') >= 0; })), rows.slice(0, 200));
+    ok('Settings > Audio and subtitles: the converter\'s status, size and where', /Audio converter[\s\S]*Ready, [\d.]+ MB, set by TIVIBRO_FFMPEG/.test(rows), (rows.match(/Audio converter[^\n]*\n?[^\n]*/) || [''])[0]);
     ok('no page errors', !errs.length, errs);
   } catch (e) { ok('no exception', false, e.stack); }
   await b.close();

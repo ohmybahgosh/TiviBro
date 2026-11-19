@@ -216,7 +216,7 @@ I18n.add('ru', {
   "A channel that will never have a guide (a radio stream, a camera, an event slot): Hold OK > No guide for this channel.  It drops out of matching and stops saying \"No guide information\".  The web editor's Guide page does many at once (Ignore).": "Для канала, у которого телегида не будет (радио, камера, слот события): удерживайте OK > Без телегида для канала.  Он исключается из сопоставления и не пишет «Нет данных телегида».  Страница Телегид в веб-редакторе делает это сразу для многих (Игнорировать).",
   "A coloured bar on movies, sports, news and kids' programmes, from what your guide says each programme is, or its title or channel.  Anything else stays plain.": "Цветная полоса у фильмов, спорта, новостей и детских передач: по данным телегида, названию или каналу.  Остальное без отметки.",
   "A group of channels that are new in your playlist since it last loaded, newest first, with a NEW tag in the lists.": "Группа каналов, появившихся в плейлисте с последней загрузки, сначала новые, с меткой NEW в списках.",
-  "A group of the movies on now, most left first, then the ones starting within the hour.  Needs a TMDB token (Settings > Playlists and accounts > API keys).": "Группа фильмов, идущих сейчас (сначала те, где осталось больше), затем начинающихся в течение часа.  Нужен токен TMDB (Настройки > Плейлисты и аккаунты > Ключи API).",
+  "A group of the movies on now, most left first, then the ones starting within the hour.  Needs a TMDB token (Settings > API keys).": "Группа фильмов, идущих сейчас (сначала те, где осталось больше), затем начинающихся в течение часа.  Нужен токен TMDB (Настройки > Ключи API).",
   "A group with every event channel that is on now or starts in the next two weeks, soonest first.": "Группа со всеми каналами событий, которые идут сейчас или начнутся в ближайшие две недели, сначала ближайшие.",
   "A group with every event on now or in the next two weeks, soonest first.": "Группа со всеми событиями сейчас или в ближайшие две недели, сначала ближайшие.",
   "A group with your teams' own channels and every channel showing one of their games.  For now the NFL, NBA, NHL, MLB, WNBA and MLS only.": "Группа с каналами ваших команд и всеми каналами, где идут их игры.  Пока только NFL, NBA, NHL, MLB, WNBA и MLS.",
@@ -287,7 +287,7 @@ I18n.add('ru', {
   "Bulgarian": "Болгарский",
   "Buttons only appear when they apply, e.g. Audio needs two or more tracks.": "Кнопки появляются, только когда нужны: например, «Аудио»: при двух и более дорожках.",
   "Cancel the reminder for": "Отменить напоминание для",
-  "Carry on later from Settings > Playback > Audio and subtitles": "Продолжить позже: Настройки > Воспроизведение > Звук и субтитры",
+  "Carry on later from Settings > Audio and subtitles": "Продолжить позже: Настройки > Звук и субтитры",
   "Catalan": "Каталанский",
   "Catch-up on": "Архив канала",
   "Category and package prefixes": "Префиксы категорий и пакетов",
@@ -619,7 +619,7 @@ I18n.add('ru', {
   "Panels over video": "Панели поверх видео",
   "Password for": "Пароль для",
   "Paste a comma separated list…": "Вставьте список через запятую…",
-  "Paste these from the TiviBro phone app (Settings > Playlists and accounts > API keys): a phone keyboard and copy and paste make it quick.": "Вставьте их из приложения TiviBro для телефона (Настройки > Плейлисты и аккаунты > Ключи API): с клавиатурой телефона и копированием это быстро.",
+  "Paste these from the TiviBro phone app (Settings > API keys): a phone keyboard and copy and paste make it quick.": "Вставьте их из приложения TiviBro для телефона (Настройки > Ключи API): с клавиатурой телефона и копированием это быстро.",
   "Pause scan": "Приостановить сканирование",
   "Pay-per-view and league pass channels whose names carry the game and its time: read into the guide.": "Каналы pay-per-view и league pass, в названиях которых есть игра и время: переносятся в телегид.",
   "Phone app connection": "Связь с приложением для телефона",
@@ -886,7 +886,7 @@ I18n.add('ru', {
   "Your hidden items and renames are kept.": "Скрытое и переименования сохраняются.",
   "Your internet speed and your provider's, and what that is enough for.  Stops playback while it runs.": "Скорость вашего интернета и провайдера и для чего её хватает.  Во время теста воспроизведение останавливается.",
   "Your local channels": "Ваши местные каналы",
-  "Your own prefixes and suffixes, TiviMate style, are under Settings > Channels and groups > Channel and group names.": "Ваши префиксы и суффиксы в стиле TiviMate находятся в Настройки > Каналы и группы > Названия каналов и групп.",
+  "Your own prefixes and suffixes, TiviMate style, are under Settings > Channel and group names.": "Ваши префиксы и суффиксы в стиле TiviMate находятся в Настройки > Названия каналов и групп.",
   "Your playlist is not changed.  Turn off to see the original names.": "Плейлист не меняется.  Выключите, чтобы видеть исходные названия.",
   "Your problem reports": "Ваши сообщения о проблемах",
   "a day and time": "день и время",
@@ -1992,5 +1992,6 @@ I18n.add('ru', {
   "Like 192.168.1.1, 2001:de4::101 or https://dns.example/dns-query": "Например 192.168.1.1, 2001:de4::101 или https://dns.example/dns-query",
   "Pair the TiviBro app to use your phone as a remote, or edit groups, names and the guide from a computer.": "Свяжите приложение TiviBro, чтобы использовать телефон как пульт, или редактируйте группы, названия и телепрограмму с компьютера.",
   "Edit groups, names and the guide from a computer.": "Редактируйте группы, названия и телепрограмму с компьютера.",
-  "Paired": "Связан"
+  "Paired": "Связан",
+  "Which buttons show when you press OK in fullscreen.  Buttons only appear when they apply, e.g. Audio needs two or more tracks.": "Какие кнопки показываются при нажатии OK на весь экран.  Кнопки появляются, только когда нужны: например, «Аудио»: при двух и более дорожках."
 });

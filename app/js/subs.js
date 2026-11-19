@@ -71,7 +71,7 @@ var Subs = (function () {
     if (step === 1) return UI.menu('Set up OpenSubtitles, step 1 of 3: a free account', [
       { label: 'On your phone or computer, open opensubtitles.com', sub: 'The .com site (not the old .org one).  Press Sign up, and confirm the email they send.', action: again },
       { label: 'I have an account', sub: 'Next: make a key for TiviBro', action: go(2) },
-      { label: 'Not now', sub: 'Carry on later from Settings > Playback > Audio and subtitles' }
+      { label: 'Not now', sub: 'Carry on later from Settings > Audio and subtitles' }
     ]);
     if (step === 2) return UI.menu('Set up OpenSubtitles, step 2 of 3: a key for TiviBro', [
       { label: 'Signed in, open opensubtitles.com/consumers', sub: 'It is also in your profile, under API consumers.  Press New consumer.', action: again },
@@ -90,7 +90,7 @@ var Subs = (function () {
         Log.warn('subs', 'Could not check the key: ' + e.message);
         setup(4, after);                                  // no answer just now: keep it, it's checked on the first search
       });
-    }, 'The long code under "API key" on that page.  Typing it from the TiviBro phone app is easiest: Settings > Playlists and accounts > API keys.', true, 'Save');
+    }, 'The long code under "API key" on that page.  Typing it from the TiviBro phone app is easiest: Settings > API keys.', true, 'Save');
     guideStep = 1; guideAt = 0;
     UI.menu('OpenSubtitles is set up', [
       { label: 'Sign in for more downloads (optional)', sub: 'Without signing in: 5 a day (100 with "Under dev" ticked).  Signed in with your free account: 20.', action: function () {
@@ -188,7 +188,7 @@ var Subs = (function () {
   /* Subtitle files beside a My media video (service/sidecar.js; St Denis Medical's .srt that Plex showed and
      TiviBro didn't): q { source, path } for a movie or { source, handle } for an episode.  Each comes in as a
      track named for its language (and Forced or SDH), in the Subtitles menu, and one turns on as embedded
-     tracks do (Settings > Playback > Audio and subtitles, or what you chose for this title or show last time). */
+     tracks do (Settings > Audio and subtitles, or what you chose for this title or show last time). */
   var sideToken = 0;
   function post(route, body, ms) {
     if (!Net.port) return Promise.reject(new Error('no helper'));
@@ -237,7 +237,7 @@ var Subs = (function () {
   /* ---------- downloads kept for a while (discussion #19) ----------
      A movie stopped on a work night and finished at the weekend gets its subtitles back without another
      download (they count against OpenSubtitles' daily limit).  Downloads are kept per movie or episode,
-     with the timing that was set, for Settings > Playback > Audio and subtitles > Keep downloaded subtitles (a week unless
+     with the timing that was set, for Settings > Audio and subtitles > Keep downloaded subtitles (a week unless
      changed; Off keeps none).  At most 3 per title and about 1.5 MB in all, the oldest go first. */
   var KEPT = 'tivibro.subsKept', KEPT_CHARS = 1500000, subject = '';
   function keepDays() { var d = Store.settings.keepSubs; return d === 0 ? 0 : +d > 0 ? +d : 7; }
@@ -624,7 +624,7 @@ var Subs = (function () {
     var map = t && lined[trackKey(t)];
     return { scale: (map ? map.scale : 1) * rate, off: (map ? map.off : 0) * rate, delay: delay };
   }
-  // Whether a track that just appeared turns on by itself (Settings > Playback > Audio and subtitles): not once the viewer
+  // Whether a track that just appeared turns on by itself (Settings > Audio and subtitles): not once the viewer
   // chose in the Subtitles menu during this playback (Off included), and never a forced track.
   function autoOn(t, v) {
     var want = Store.settings.subsLang || '', memo = v && v._subsMemo;
