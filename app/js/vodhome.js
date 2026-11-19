@@ -122,7 +122,7 @@ var VodHome = (function () {
       (function (job) {
         var done = false;
         function fin(bad) { if (done) return; done = true; imgBusy--; job.img.onload = job.img.onerror = null; if (bad && job.img.parentNode) job.img.parentNode.removeChild(job.img); pump(); }
-        job.img.onload = function () { fin(false); }; job.img.onerror = function () { fin(true); };
+        job.img.onload = function () { fin(false); }; job.img.onerror = function () { var im = job.img; if (Net.retryImage(im, true)) { fin(false); im.onload = null; im.onerror = function () { if (!Net.retryImage(im, true) && im.parentNode) im.parentNode.removeChild(im); }; } else fin(true); };
         job.img.src = job.url;
       })(q);
     }

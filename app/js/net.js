@@ -197,12 +197,24 @@ var Net = (function () {
   // (2018 to 2020 models without recent updates) don't trust today's Let's Encrypt certificates,
   // which many providers' image hosts use; the helper doesn't depend on the TV's certificate list.
   // The relayed address is plain http on localhost, so this can't loop.
-  function retryImage(img) {
+  /* later (movie and show posters, issue #126): a poster host that answers only some of many asks at once (most
+     covers missing, "a few random ones loaded", never tried again) gets two more tries, 2 and 6 seconds on, a
+     few at a time.  Channel logos don't: a dead logo stays dead, and there can be thousands. */
+  var laterBusy = 0;
+  function retryImage(img, later) {
     var s = img && img.src;
-    if (!s || !/^https:/i.test(s)) return false;
-    var w = wrap(s);
-    if (w === s) return false;
-    img.src = w;
+    if (!s) return false;
+    // Through the helper first (https everywhere; http too for posters: some hosts want the playlist's User-Agent).
+    if (/^https:/i.test(s) || (later && /^http:/i.test(s))) { var w = wrap(s); if (w !== s) { img.src = w; return true; } }
+    if (!later) return false;
+    var n = img._tries = (img._tries || 0) + 1;
+    if (n > 2 || laterBusy >= 40) return false;
+    laterBusy++;
+    setTimeout(function () {
+      laterBusy--;
+      if (!img.parentNode && !img._keep) return;
+      var u = img.src; img.removeAttribute('src'); img.src = u;
+    }, n === 1 ? 2000 : 6000);
     return true;
   }
   function wrap(url, opts) {

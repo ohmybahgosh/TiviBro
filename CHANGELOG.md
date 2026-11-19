@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **Watched at 90%, as Plex** (Settings > Movies and shows > Count as watched at: 85, 90, 95 or 98%).  A My media movie or episode counted as watched only in its last minute, so stopping in the credits left it in Continue watching; now movies and shows from your provider, My media and recordings all use the same mark, and Delete watched recordings too.
+- **Movie and show posters that fail are tried again (issue #126).**  A poster host that answers only some of many asks at once left most covers missing for good: each one is now tried through TiviBro's helper (with the playlist's User-Agent), then again 2 and 6 seconds later, on the lists and the Movies and Shows home.
 
 ## 0.6.0 (alpha 172, 2026-11-19)
 
