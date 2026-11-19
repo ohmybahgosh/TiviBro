@@ -1,17 +1,17 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 172, 2026-11-19)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 172
 
 - **The rewind buffer keeps playing when you leave fullscreen.**  Going to the guide (or Channels) stopped it and tuned the channel again from your provider every time, and fullscreen again started a new buffer.
 - **Stalker portals: a big portal's movies and shows aren't read again at every start (issue #118).**  Its categories, newest titles and the categories you opened are kept on the TV for as long as the playlist's refresh says (a day when it has none).
 - **TiviBro looks for an update when it comes back to the front** and the last look is over an hour old.  An Android phone or TV keeps it in the background for days, so alpha 171 showed only after a force stop.
 - **A movie, an episode, a recording or My media says "Loading" while it starts**, not "Tuning".
 
-## 0.6.0 (alpha 171, 2026-11-19)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 171
+### In alpha 171
 
 - **The quick menu (OK in fullscreen) has the timeline too** while the channel is paused, buffered or recording: the bar shows what's kept and where you are, and ▲ from the top row moves the dot, as on the info bar.
 - **The info bar says "▲  Timeline" whenever ▲ goes to it.**  It said what ▲ is set to (like "Recent") while ▲ went to the timeline.
