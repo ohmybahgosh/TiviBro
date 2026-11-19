@@ -1977,5 +1977,10 @@ I18n.add('ru', {
   "What made the difference, if you know": "Что помогло, если знаете",
   "Anything to add?": "Хотите что-то добавить?",
   "A sentence is plenty.": "Достаточно одного предложения.",
-  "Read it again, or press Fixed now or Still happening later, in Settings > System > Your problem reports": "Прочитать снова или нажать «Исправлено» или «Всё ещё происходит» позже можно в Настройки > Система > Ваши сообщения о проблемах"
+  "Read it again, or press Fixed now or Still happening later, in Settings > System > Your problem reports": "Прочитать снова или нажать «Исправлено» или «Всё ещё происходит» позже можно в Настройки > Система > Ваши сообщения о проблемах",
+  "Next channel (the one below in the list)": "Следующий канал (ниже в списке)",
+  "Previous channel (the one above in the list)": "Предыдущий канал (выше в списке)",
+  "Last channel (the one you watched before)": "Последний канал (тот, что смотрели до этого)",
+  "Channel below": "Канал ниже",
+  "Channel above": "Канал выше"
 });

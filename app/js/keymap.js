@@ -18,7 +18,7 @@ var Keymap = (function () {
   var ACTIONS = {
     none: 'Nothing',
     panel: 'Quick menu (actions and recent channels)', list: 'Channel guide over the video', osd: 'Show info panel', menu: 'Options menu',
-    chnext: 'Next channel', chprev: 'Previous channel', last: 'Last channel',
+    chnext: 'Next channel (the one below in the list)', chprev: 'Previous channel (the one above in the list)', last: 'Last channel (the one you watched before)',
     rewind: 'Rewind (live pause or catch-up), else last channel', record: 'Record this programme, or stop recording it', recordings: 'Recordings', forward: 'Forward (live pause or catch-up)', timeline: 'Timeline: move back and forth in what\'s kept', restart: 'Watch from start', playpause: 'Play / pause',
     guide: 'TV guide', search: 'Search', settings: 'Settings', editor: 'Edit on a phone or computer (QR code)', live: 'Channels screen', exit: 'Leave fullscreen',
     fav: 'Add or remove favorite', favorites: 'Open Favorites', recents: 'Open Recent channels',
@@ -28,7 +28,7 @@ var Keymap = (function () {
   };
   // Short names for the on-screen button legend.
   var SHORT = {
-    panel: 'Quick menu', list: 'Channel guide', osd: 'Info', menu: 'Options', chnext: 'Next channel', chprev: 'Previous channel', last: 'Last channel',
+    panel: 'Quick menu', list: 'Channel guide', osd: 'Info', menu: 'Options', chnext: 'Channel below', chprev: 'Channel above', last: 'Last channel',
     rewind: 'Rewind', forward: 'Forward', timeline: 'Timeline', record: 'Record', recordings: 'Recordings', restart: 'Watch from start', playpause: 'Pause', guide: 'Guide', search: 'Search', settings: 'Settings', editor: 'Phone editor',
     live: 'Channels', exit: 'Exit fullscreen', fav: 'Favorite', favorites: 'Favorites', recents: 'Recent',
     picture: 'Aspect', audio: 'Audio track', cc: 'Captions', subs: 'Subtitles', sleep: 'Sleep timer', movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect', buffer: 'Buffer info', streaminfo: 'Stream info',

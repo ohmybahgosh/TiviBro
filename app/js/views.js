@@ -629,7 +629,7 @@ var Views = (function () {
       if (vlz && vlz.items.length > vlz.visible) h.push(['', 'CH +/−  page', 'chup']);
       ['red', 'green', 'yellow', 'blue'].forEach(function (b) {
         var act = Keymap.get('list', b);
-        if (act && act !== 'none') h.push([b, Keymap.ACTIONS[act]]);
+        if (act && act !== 'none') h.push([b, /^(chnext|chprev|last)$/.test(act) ? Keymap.SHORT[act] : Keymap.ACTIONS[act]]);
       });
       UI.hints(h);
     }
@@ -1183,10 +1183,11 @@ var Views = (function () {
       // (The legend is drawn before the bar shows, so this can't wait for it: Bob saw "▲  Recent" with the dot there.)
       var tlUp = canScrub();
       if (tlUp) chip('up', '▲  Timeline');
-      if (!tlUp && g('up') === 'Previous channel' && g('down') === 'Next channel') chip('down', '▲ ▼  Change channel');
+      if (!tlUp && Keymap.get('player', 'up') === 'chprev' && Keymap.get('player', 'down') === 'chnext') chip('down', '▲ ▼  Change channel');
       else { if (g('up') && !tlUp) chip('up', '▲  ' + g('up')); if (g('down')) chip('down', '▼  ' + g('down')); }
       // ◀ rewinds what's kept (live pause, the rewind buffer, a DASH window) or catch-up, else it's the last channel.
-      var canBack = Player.tshift || !!Player.liveWindow() || (playing && playing.arch);
+      // (Settings > Playback > ◀ on a live channel with catch-up: Last channel, issue #128: the hint still said Rewind.)
+      var canBack = Player.tshift || (Store.settings.rewindLeft !== false && (!!Player.liveWindow() || (playing && playing.arch)));
       if (g('left')) chip('left', '◀  ' + (Keymap.get('player', 'left') === 'rewind' && !canBack ? 'Last channel' : g('left')));
       if (g('right')) chip('right', '▶  ' + g('right'));
       ['red', 'green', 'yellow', 'blue'].forEach(function (b) { if (g(b)) chip(b, g(b), b); });

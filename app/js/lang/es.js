@@ -1974,5 +1974,10 @@ I18n.add('es', {
   "What made the difference, if you know": "Qué lo arregló, si lo sabes",
   "Anything to add?": "¿Algo que añadir?",
   "A sentence is plenty.": "Basta con una frase.",
-  "Read it again, or press Fixed now or Still happening later, in Settings > System > Your problem reports": "Vuelve a leerlo, o pulsa Ya está arreglado o Sigue pasando más tarde, en Ajustes > Sistema > Tus reportes de problemas"
+  "Read it again, or press Fixed now or Still happening later, in Settings > System > Your problem reports": "Vuelve a leerlo, o pulsa Ya está arreglado o Sigue pasando más tarde, en Ajustes > Sistema > Tus reportes de problemas",
+  "Next channel (the one below in the list)": "Canal siguiente (el de abajo en la lista)",
+  "Previous channel (the one above in the list)": "Canal anterior (el de arriba en la lista)",
+  "Last channel (the one you watched before)": "Último canal (el que veías antes)",
+  "Channel below": "Canal de abajo",
+  "Channel above": "Canal de arriba"
 });

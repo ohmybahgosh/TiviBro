@@ -1,14 +1,16 @@
 # Changelog
 
-## Unreleased
-
-- **Fixed now, for your problem reports (discussion #121).**  A report sent from the TV now has **Fixed now** next to Still happening (on the report's note and in Settings > System > Your problem reports): it tells the developer it works on your version, with a note if you like, and closes the report.  Still happening opens it again if it comes back.
-
-## 0.6.0 (alpha 173, 2026-11-19)
+## 0.6.0 (alpha 174, 2026-11-19)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 173
+### New in alpha 174
+
+- **Fixed now, for your problem reports (discussion #121).**  A report sent from the TV now has **Fixed now** next to Still happening (on the report's note and in Settings > System > Your problem reports): it tells the developer it works on your version, with a note if you like, and closes the report.  Still happening opens it again if it comes back.
+- **◀ set to Last channel now says so on the info bar (issue #128).**  With Settings > Playback > ◀ on a live channel with catch-up set to Last channel, the hint still read "◀  Rewind" on catch-up channels.
+- **"Previous channel" and "Last channel" can't be mixed up any more (issue #128).**  In the remote settings they now read "Previous channel (the one above in the list)", "Next channel (the one below in the list)" and "Last channel (the one you watched before)", and the info bar's hints say "Channel above" and "Channel below".
+
+### In alpha 173
 
 - **Watched at 90%, as Plex** (Settings > Movies and shows > Count as watched at: 85, 90, 95 or 98%).  A My media movie or episode counted as watched only in its last minute, so stopping in the credits left it in Continue watching; now movies and shows from your provider, My media and recordings all use the same mark, and Delete watched recordings too.
 - **Movie and show posters that fail are tried again (issue #126).**  A poster host that answers only some of many asks at once left most covers missing for good: each one is now tried through TiviBro's helper (with the playlist's User-Agent), then again 2 and 6 seconds later, on the lists and the Movies and Shows home.

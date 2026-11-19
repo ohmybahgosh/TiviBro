@@ -2490,5 +2490,10 @@ I18n.add('pt-BR', {
   "What made the difference, if you know": "O que resolveu, se você souber",
   "Anything to add?": "Algo a acrescentar?",
   "A sentence is plenty.": "Uma frase basta.",
-  "Read it again, or press Fixed now or Still happening later, in Settings > System > Your problem reports": "Leia de novo, ou pressione Já está resolvido ou Continua acontecendo depois, em Configurações > Sistema > Seus relatórios de problemas"
+  "Read it again, or press Fixed now or Still happening later, in Settings > System > Your problem reports": "Leia de novo, ou pressione Já está resolvido ou Continua acontecendo depois, em Configurações > Sistema > Seus relatórios de problemas",
+  "Next channel (the one below in the list)": "Próximo canal (o de baixo na lista)",
+  "Previous channel (the one above in the list)": "Canal anterior (o de cima na lista)",
+  "Last channel (the one you watched before)": "Último canal (o que você assistia antes)",
+  "Channel below": "Canal de baixo",
+  "Channel above": "Canal de cima"
 });
