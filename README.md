@@ -610,7 +610,7 @@ TiviBro checks for a new release every time it starts and every 6 hours while it
 <p align="center"><img src="docs/screenshots/app-my-media.png" width="30%" alt="My media in the phone app"> <img src="docs/screenshots/app-my-media-movie.png" width="30%" alt="Resume on TV"></p>
 
 1. [Download the newest APK](https://tivibro.app/apk/) on your phone and open it to install.  Android asks to allow installs from your browser the first time, and Google Play Protect checks the app each time you update it.
-2. On the TV, open **Settings > Playlists and accounts > Phone app and web editor**, turn on **Phone app connection** and choose **Pair the TiviBro app…**.
+2. On the TV, open **Settings > Phone app and web editor**, and choose **Pair the TiviBro app…** (it turns on **Phone app connection** for you).
 3. In the app, scan the QR code on the TV (or pick the TV from the list and type the code).
 
 **Rather get it from Google Play?**  The app is in a test there, and Google needs testers to keep it installed for 14 days before it can be published for everyone.  [Join the Play test](https://tivibro.app/android-test/) in three steps.  Already using the APK?  Google Play only updates its own copy, so uninstall the APK first, install from Play, and pair your TV again.  The APK on GitHub isn't going anywhere.

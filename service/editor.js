@@ -146,7 +146,7 @@ function create(log) {
           all.n++; if (all.n >= 30) { all.until = Date.now() + 300000; all.n = 0; all.at = Date.now(); }
           st.fails[who] = fl;
           log({ lv: 'warn', event: 'editor login failed', from: who });
-          return send(res, 401, { error: 'Wrong password.  It is shown on the TV under Settings, Edit on a phone or computer.' });
+          return send(res, 401, { error: 'Wrong password.  It is shown on the TV under Settings, Phone app and web editor.' });
         }
         delete st.fails[who];
         var token = crypto.randomBytes(24).toString('hex');
@@ -268,7 +268,7 @@ function create(log) {
       log({ lv: 'error', event: 'editor listen failed', port: port, e: e.code || e.message });
       if (st.server === srv) st.server = null;
       try { srv.close(); } catch (x) {}
-      settled(new Error(e.code === 'EADDRINUSE' ? 'Port ' + port + ' is already in use by another app on the TV.  Pick another port in Settings > Playlists and accounts > Phone app and web editor.' : e.message));
+      settled(new Error(e.code === 'EADDRINUSE' ? 'Port ' + port + ' is already in use by another app on the TV.  Pick another port in Settings > Phone app and web editor.' : e.message));
     });
     srv.listen(port, '0.0.0.0', function () {
       st.server = srv; st.port = port;

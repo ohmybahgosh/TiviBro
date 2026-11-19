@@ -1,5 +1,5 @@
 /* The TiviBro phone app, from the TV's side (the helper's service/companion.js does the work).
-   Settings, Phone app: switch the connection on, pair a phone with a QR code or a code typed on the
+   Settings, Phone app and web editor: switch the connection on, pair a phone with a QR code or a code typed on the
    phone, see and remove paired phones, and name the TV.  While the connection is on, TiviBro checks
    the helper every few seconds: a phone that asked for the web editor gets it started here.  It also
    carries out the phone's remote presses and answers its questions (ASK: the guide, schedules,

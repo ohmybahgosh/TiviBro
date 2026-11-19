@@ -950,7 +950,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
 
     fun pairWithLink(text: String?) {
         val l = PairLink.parse(text)
-        if (l == null) { say("That isn't a TiviBro pairing code.  On the TV: Settings, Phone app and web editor, Pair a phone."); return }
+        if (l == null) { say("That isn't a TiviBro pairing code.  On the TV: Settings, Phone app and web editor, Pair the TiviBro app."); return }
         pair(l.host, l.port, l.code, l.id)
     }
 

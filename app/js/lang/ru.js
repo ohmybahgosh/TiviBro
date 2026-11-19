@@ -1989,5 +1989,8 @@ I18n.add('ru', {
   "A DNS server I type (IPv4, IPv6 or over HTTPS)": "DNS-сервер вручную (IPv4, IPv6 или через HTTPS)",
   "One or two addresses, IPv4 or IPv6 (192.168.1.1, 2001:de4::101), or a DNS-over-HTTPS link (https://dns.example/dns-query).": "Один или два адреса, IPv4 или IPv6 (192.168.1.1, 2001:de4::101), или ссылка DNS через HTTPS (https://dns.example/dns-query).",
   "That isn't a DNS address (192.168.1.1, 2001:de4::101) or an https:// link": "Это не DNS-адрес (192.168.1.1, 2001:de4::101) и не ссылка https://",
-  "Like 192.168.1.1, 2001:de4::101 or https://dns.example/dns-query": "Например 192.168.1.1, 2001:de4::101 или https://dns.example/dns-query"
+  "Like 192.168.1.1, 2001:de4::101 or https://dns.example/dns-query": "Например 192.168.1.1, 2001:de4::101 или https://dns.example/dns-query",
+  "Pair the TiviBro app to use your phone as a remote, or edit groups, names and the guide from a computer.": "Свяжите приложение TiviBro, чтобы использовать телефон как пульт, или редактируйте группы, названия и телепрограмму с компьютера.",
+  "Edit groups, names and the guide from a computer.": "Редактируйте группы, названия и телепрограмму с компьютера.",
+  "Paired": "Связан"
 });

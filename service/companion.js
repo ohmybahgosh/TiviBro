@@ -2,7 +2,7 @@
    Lets the TiviBro phone app find this TV on the network, pair with it once, and then wake TiviBro,
    open the web editor full screen and (later) act as a remote, even while TiviBro is closed.
 
-   Off until the user switches it on in TiviBro (Settings, Phone app).  While on, the helper keeps
+   Off until the user switches it on in TiviBro (Settings, Phone app and web editor).  While on, the helper keeps
    running in the background with a small LAN server on port 47810 (TCP) and answers discovery on
    47810 (UDP).
 
@@ -203,7 +203,7 @@ function create(opts) {
     var j = parse(buf);
     if (!j || typeof j.nonce !== 'string' || !/^[A-Za-z0-9+/=_-]{16,64}$/.test(j.nonce) || typeof j.proof !== 'string' || !j.phone || typeof j.phone !== 'object') return send(res, 400, { error: 'bad request', code: 'bad' });
     var pr = pairing;
-    if (!pr || pr.paired || pr.until <= Date.now()) return send(res, 403, { error: 'Pairing is not open on this TV.  In TiviBro on the TV: Settings, Phone app, Pair a phone.', code: 'closed' });
+    if (!pr || pr.paired || pr.until <= Date.now()) return send(res, 403, { error: 'Pairing is not open on this TV.  In TiviBro on the TV: Settings, Phone app and web editor, Pair the TiviBro app.', code: 'closed' });
     var name = cleanText(j.phone.name, 40) || 'Phone', model = cleanText(j.phone.model, 40), platform = cleanText(j.phone.platform, 20) || 'android';
     pairKey(pr.code, st.id, function (err, kp) {
       if (err) return send(res, 500, { error: 'server error', code: 'error' });

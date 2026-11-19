@@ -36,11 +36,11 @@ const ctl = (u, body) => fetch(RELAY + u, { method: body ? 'POST' : 'GET', heade
 
   ok('TiviBro tells the helper its version', (await ctl('/companion/status')).ownName === '' && (await (await fetch(RELAY + '/companion/status')).json()).on === false);
   await ev(() => { if (UI.modalOpen) UI.close(); Views.switchTab('settings'); Settings.open(); }); await page.waitForTimeout(600);
-  const navRel = await ev(() => Settings.phone.page('playlists', []).rows.map((r) => r.label));
+  const navRel = await ev(() => Settings.phone.sections().map((r) => r.title));
   ok('a release build has no phone app part yet: the page is the web editor', navRel.indexOf('Web editor') >= 0 && !navRel.some((x) => /Phone app/.test(x)) && !(await ev(() => Settings.section('phone'))), navRel.join(', '));
   await ev(() => { TIVIBRO_VERSION = '0.6.0-alpha.99'; Settings.open(); Settings.section('phone'); }); await page.waitForTimeout(800);
-  const navTest = await ev(() => Settings.phone.page('playlists', []).rows.map((r) => r.label));
-  ok('test builds have it, with the web editor on one page', navTest.indexOf('Phone app and web editor') >= 0, navTest.join(', '));
+  const navTest = await ev(() => Settings.phone.sections().map((r) => r.title));
+  ok('test builds have it as its own section, with the web editor', navTest.indexOf('Phone app and web editor') >= 0, navTest.join(', '));
   // The connection switch, as the phone and the web editor see it (on the TV it is a switch).
   const conn = () => ev(() => { const r = Settings.phone.page('connect', []).rows.filter((x) => x.label === 'Phone app connection')[0]; return r ? { on: r.on, sub: r.sub } : null; });
   let t = await text();

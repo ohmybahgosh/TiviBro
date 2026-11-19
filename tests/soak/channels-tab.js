@@ -40,7 +40,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const t = await ev(() => document.querySelector('.set-scroll').innerText);
   const nav = await ev(() => [].map.call(document.querySelectorAll('#setNav > div'), (d) => d.innerText.trim()));
   const pl = await ev(() => Settings.phone.page('playlists', []).rows.map((r) => r.label));
-  ok('one page for the phone app and the web editor, in Playlists and accounts', pl.indexOf('Phone app and web editor') >= 0 && !nav.some((x) => /^Edit on a phone/.test(x) || x === 'Phone app'), pl.join(', '));
+  ok('the phone app and the web editor have their own section, not a page in Playlists and accounts', nav.some((x) => /^Phone app and web editor/.test(x)) && pl.indexOf('Phone app and web editor') < 0 && !nav.some((x) => /^Edit on a phone/.test(x) || x === 'Phone app'), nav.join(', '));
   ok('it says the two are different and work without each other', /Each works without the other/.test(t) && /TiviBro phone app/i.test(t) && /Web editor/i.test(t) && (await ev(() => Settings.phone.page('connect', []).rows.some((r) => /does not pair the TiviBro app/.test(r.sub || '')))), t.slice(0, 600));
   ok('the old section names still lead there', await ev(() => Settings.section('editor') && Settings.section('phone')));
   await page.screenshot({ path: path.join(__dirname, '..', '.shots', 'settings-phone-and-editor.png') });

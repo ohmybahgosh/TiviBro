@@ -101,7 +101,7 @@ fun AddScreen(
     LaunchedEffect(Unit) { onSearch() }
     Scaffold(containerColor = Ink, topBar = { Bar("Add a TV", onBack) }, snackbarHost = { SnackbarHost(snack) }) { pad ->
         Column(Modifier.padding(pad).fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp).imePadding()) {
-            Text("On the TV, open TiviBro: Settings, Phone app and web editor, Pair a phone.", color = Muted, style = MaterialTheme.typography.bodyLarge)
+            Text("On the TV, open TiviBro: Settings, Phone app and web editor, Pair the TiviBro app.", color = Muted, style = MaterialTheme.typography.bodyLarge)
             Spacer(Modifier.height(20.dp))
             Button(onClick = onScan, modifier = Modifier.fillMaxWidth().height(56.dp)) {
                 Icon(Icons.Rounded.QrCodeScanner, null); Spacer(Modifier.width(10.dp)); Text("Scan the code on the TV")
@@ -169,7 +169,7 @@ fun CodeScreen(name: String, busy: Boolean, error: String?, onBack: () -> Unit, 
     val code = Crypto.normCode(v.text)
     Scaffold(containerColor = Ink, topBar = { Bar("Pair with $name", onBack) }) { pad ->
         Column(Modifier.padding(pad).fillMaxSize().padding(24.dp).imePadding(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Type the code shown on the TV.  It is under Settings, Phone app and web editor, Pair a phone.", color = Muted, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
+            Text("Type the code shown on the TV.  It is under Settings, Phone app and web editor, Pair the TiviBro app.", color = Muted, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
             Spacer(Modifier.height(28.dp))
             OutlinedTextField(
                 value = v,

@@ -382,7 +382,7 @@ module.exports = [
     '<ol class="steps-list">',
     '<li id="step-1"><b>Join the tester group.</b>  With the Google account your phone uses, open <a href="https://groups.google.com/g/tivibro-testers">TiviBro Android testers</a> and choose <b>Join group</b>.  If you\'re signed in to more than one Google account, check the picture at the top right is the right one first.  Nobody else in the group sees your address, and the group sends no mail.</li>',
     '<li id="step-2"><b>Opt in on Google Play.</b>  Open <a href="https://play.google.com/apps/testing/app.tivibro.phone">the TiviBro test page on Google Play</a> and choose <b>Become a tester</b>, signed in with that same account.  It can take a few minutes after joining the group before this works.</li>',
-    '<li id="step-3"><b>Install TiviBro.</b>  From <a href="https://play.google.com/store/apps/details?id=app.tivibro.phone">TiviBro on Google Play</a>, on your Android phone.  Then pair it with the TV: on the TV, open TiviBro, <b>Settings &gt; Phone app and web editor &gt; Pair a phone</b>, and scan the code.</li>',
+    '<li id="step-3"><b>Install TiviBro.</b>  From <a href="https://play.google.com/store/apps/details?id=app.tivibro.phone">TiviBro on Google Play</a>, on your Android phone.  Then pair it with the TV: on the TV, open TiviBro, <b>Settings &gt; Phone app and web editor &gt; Pair the TiviBro app</b>, and scan the code.</li>',
     '</ol>',
     '<h2>What to know</h2><ul>',
     '<li><b>Keep it installed for 14 days.</b>  That\'s what Google counts.  You don\'t have to use it at all, so it\'s an easy favor to ask: please share this page with friends and family who have an Android phone.</li>',

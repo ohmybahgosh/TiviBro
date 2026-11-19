@@ -2,7 +2,7 @@ How the TiviBro phone app talks to TiviBro on the TV.  For anyone building or ch
 
 ## Where it runs
 
-- Off until the user switches it on in TiviBro: **Settings > Phone app > Phone app connection**.
+- Off until the user switches it on in TiviBro: **Settings > Phone app and web editor > Phone app connection**.
 - While on, TiviBro's helper keeps running in the background, also when TiviBro is closed.  It listens on **TCP 47810** (the API, plain HTTP on the home network) and **UDP 47810** (discovery).  If 47810 is taken it uses 47816, 47817 or 47818, and says so in discovery.
 - After the TV restarts, or if webOS stops it, the helper is back within 5 minutes (a persistent webOS activity calls it).  An install removes the package's own activity, so `install.sh` starts the helper again and adds a second 5-minute activity (`tivibro-keepalive`) that isn't part of the package; the helper ends either one when the connection is turned off.  `TIVIBRO_NO_KEEPALIVE=1` skips the second.
 
@@ -18,7 +18,7 @@ Send the text `tivibro-discover-v1` as a UDP broadcast to port 47810.  Each TV a
 
 ## Pairing
 
-On the TV: **Settings > Phone app > Pair a phone**.  The TV shows a 12-character code (`XXXX-XXXX-XXXX`, letters and digits without 0, O, 1, I and L) and a QR code for 10 minutes.  The QR code is a link:
+On the TV: **Settings > Phone app and web editor > Pair the TiviBro app**.  The TV shows a 12-character code (`XXXX-XXXX-XXXX`, letters and digits without 0, O, 1, I and L) and a QR code for 10 minutes.  The QR code is a link:
 
 ```
 https://tivibro.app/pair#v=1&h=<ip>:<port>&id=<tv id>&c=<code>&n=<tv name>

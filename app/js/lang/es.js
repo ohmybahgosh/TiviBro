@@ -1986,5 +1986,8 @@ I18n.add('es', {
   "A DNS server I type (IPv4, IPv6 or over HTTPS)": "Un servidor DNS que escribo (IPv4, IPv6 o por HTTPS)",
   "One or two addresses, IPv4 or IPv6 (192.168.1.1, 2001:de4::101), or a DNS-over-HTTPS link (https://dns.example/dns-query).": "Una o dos direcciones, IPv4 o IPv6 (192.168.1.1, 2001:de4::101), o un enlace DNS por HTTPS (https://dns.example/dns-query).",
   "That isn't a DNS address (192.168.1.1, 2001:de4::101) or an https:// link": "Eso no es una dirección DNS (192.168.1.1, 2001:de4::101) ni un enlace https://",
-  "Like 192.168.1.1, 2001:de4::101 or https://dns.example/dns-query": "Como 192.168.1.1, 2001:de4::101 o https://dns.example/dns-query"
+  "Like 192.168.1.1, 2001:de4::101 or https://dns.example/dns-query": "Como 192.168.1.1, 2001:de4::101 o https://dns.example/dns-query",
+  "Pair the TiviBro app to use your phone as a remote, or edit groups, names and the guide from a computer.": "Empareja la app TiviBro para usar tu teléfono como mando, o edita grupos, nombres y la guía desde un ordenador.",
+  "Edit groups, names and the guide from a computer.": "Edita grupos, nombres y la guía desde un ordenador.",
+  "Paired": "Emparejado"
 });

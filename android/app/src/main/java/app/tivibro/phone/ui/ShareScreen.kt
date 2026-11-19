@@ -86,7 +86,7 @@ fun ShareScreen(model: AppModel, text: String, tvs: List<TvUi>, onBack: () -> Un
             }
             if (link == null || link.bare) { Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("Close") }; return@Column }
             if (tvs.isEmpty()) {
-                Text("Pair your TV first: on the TV, open TiviBro, Settings, Phone app and web editor, Pair a phone.", color = Muted)
+                Text("Pair your TV first: on the TV, open TiviBro, Settings, Phone app and web editor, Pair the TiviBro app.", color = Muted)
                 Button(onClick = onPair, modifier = Modifier.fillMaxWidth()) { Text("Add a TV") }
                 return@Column
             }

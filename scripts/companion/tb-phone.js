@@ -131,7 +131,7 @@ if (require.main === module) {
   const load = () => { try { return JSON.parse(fs.readFileSync(FILE, 'utf8')); } catch (e) { throw new Error('Not paired yet: run  pair <tv address> <code>'); } };
   const [cmd, a, b] = process.argv.slice(2);
   (async () => {
-    if (cmd === 'discover') { const l = await discover(2000); if (!l.length) console.log('No TiviBro TVs answered.  Is Settings, Phone app, Phone app connection on?'); l.forEach((t) => console.log(t.name + '  ' + t.host + ':' + t.port + '  TiviBro ' + t.version + '  id ' + t.id)); return; }
+    if (cmd === 'discover') { const l = await discover(2000); if (!l.length) console.log('No TiviBro TVs answered.  Is Settings, Phone app and web editor, Phone app connection on?'); l.forEach((t) => console.log(t.name + '  ' + t.host + ':' + t.port + '  TiviBro ' + t.version + '  id ' + t.id)); return; }
     if (cmd === 'pair') { const c = await pair(hostPort(a), b, {}); fs.writeFileSync(FILE, JSON.stringify(c, null, 2), { mode: 0o600 }); console.log('Paired with ' + c.tv.name + ' (' + c.host + ':' + c.port + ').  Saved in ' + FILE); return; }
     const cred = load();
     if (cmd === 'info') return console.log(JSON.stringify(await call(cred, 'GET', '/v1/info'), null, 2));

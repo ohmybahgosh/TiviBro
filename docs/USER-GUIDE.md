@@ -650,7 +650,8 @@ The sections, with the pages inside them.  Every option is explained, with its d
 | Section | What's in it |
 |---|---|
 | [**Language**](#settings-language) | TiviBro's language |
-| [**Playlists and accounts**](#settings-playlists-and-accounts) | Add and switch playlists, connection and User-Agent, reloads, subscription expiry and connections, the set-up tour, each playlist's own guide, names and event channels, DNS.  Pages: [**API keys**](#settings-api-keys) (TMDB, OpenSubtitles) and [**Phone app and web editor**](#settings-phone-app-and-web-editor) |
+| [**Playlists and accounts**](#settings-playlists-and-accounts) | Add and switch playlists, connection and User-Agent, reloads, subscription expiry and connections, the set-up tour, each playlist's own guide, names and event channels, DNS.  Page: [**API keys**](#settings-api-keys) (TMDB, OpenSubtitles) |
+| [**Phone app and web editor**](#settings-phone-app-and-web-editor) | Pair the TiviBro phone app, the phone app connection and paired phones, and the web editor (QR code, address, password, port).  In release builds it's called **Web editor** |
 | [**Guide**](#settings-guide) | How your guide is built, provider guide mode and offset, your own guide sources, reloads, public fill-in, guide coverage, assigning a guide, and how the guide looks |
 | [**Channels and groups**](#settings-channels-and-groups) | Manage groups, sorting, which special groups show, My teams, event channels, your own groups, hidden groups and channels, tidy-up.  Page: [**Channel and group names**](#settings-channel-and-group-names) |
 | [**Playback**](#settings-playback) | Buffer, aspect, catch-up steps, switching channels and what happens when one stops working, memory-safe playback; advanced: player engine, stream format, connection, HDR.  Pages: [**Audio and subtitles**](#settings-audio-and-subtitles) and [**Remote and buttons**](#settings-remote-and-buttons) |
@@ -784,7 +785,9 @@ Every key you paste, in one place.  Typing them from the TiviBro phone app (Sett
 
 The keys stay on this TV, out of backups.
 
-#### Settings: Phone app and web editor
+### Settings: Phone app and web editor
+
+Its own section in Settings, right under Playlists and accounts.  The TiviBro phone app is a big part of TiviBro, so it isn't tucked inside another page.
 
 Two different ways to use a phone with TiviBro, on one page.  Each works without the other: the phone app doesn't need the web editor switched on.
 
@@ -1305,7 +1308,7 @@ Cleaning up hundreds of groups with a TV remote is painful.  The web editor does
 
 ### Turning on the web editor
 
-1. On the TV, open **Edit on phone** in the side menu (◀ from the groups).  It turns the editor on and shows a QR code, the address and the password.  The same panel is under hold OK on any group (**Edit on a phone or computer…**), in **Settings > Playlists and accounts > Phone app and web editor**, and on any remote button you like (Settings > Playback > Remote and buttons).  (On a brand-new TV: the first screen already shows the code.)
+1. On the TV, open **Edit on phone** in the side menu (◀ from the groups).  It turns the editor on and shows a QR code, the address and the password.  The same panel is under hold OK on any group (**Edit on a phone or computer…**), in **Settings > Phone app and web editor**, and on any remote button you like (Settings > Playback > Remote and buttons).  (On a brand-new TV: the first screen already shows the code.)
 2. On a phone, scan the code with the camera: the editor opens signed in.  On a computer, open the address, like `http://192.168.1.20:8787`, and type the password.  Dashes and capitals don't matter, and neither do look-alikes: 5 or S, 0 or O, 8 or B all work.  New passwords leave out characters that are easy to misread.
 3. **Done** closes the panel and leaves the editor running; **Turn the editor off** stops it.
 
@@ -1495,7 +1498,7 @@ One page for both safety nets, and for your unsent changes (**Your changes in th
 
 **Restoring, even on a brand-new TV:**
 
-1. Install TiviBro and open it.  Choose **Set up or restore from a computer**.  (On a TV already set up: **Settings > Playlists and accounts > Phone app and web editor**.)
+1. Install TiviBro and open it.  Choose **Set up or restore from a computer**.  (On a TV already set up: **Settings > Phone app and web editor**.)
 2. Open the address shown on the TV and type the password.
 3. **Restore a backup**, drop the file, type the passphrase and press **Unlock**.  The editor lists the playlists inside so you know it's the right file.
 4. **Restore to the TV.**  TiviBro restarts with everything back, and the editor reconnects by itself.
@@ -1535,7 +1538,7 @@ You'll see it in three places: **Connection** on the first screen and in **Setti
 | The guide seems stuck loading | Big XMLTV files take minutes on a TV; watch the progress bar.  If it stays at 0, **Test** the address. |
 | The web editor says it can't reach the TV | TiviBro was closed or the TV went to sleep.  Open TiviBro; the editor reconnects and your drafts are safe. |
 | Changes don't show on the TV | Check the bar at the bottom of the editor.  If it still counts changes, press **Send to TV**. |
-| Wrong editor password | It's on the TV under **Settings > Playlists and accounts > Phone app and web editor**.  After five wrong tries, wait a minute. |
+| Wrong editor password | It's on the TV under **Settings > Phone app and web editor**.  After five wrong tries, wait a minute. |
 | HDR looks grey or washed out | **Settings > Playback > HDR and Dolby Vision > TV player for all HDR**. |
 | A movie plays with no sound | It may only have DTS, Dolby TrueHD or FLAC surround sound, which the TV can't play.  Check that **Settings > Playback > Audio and subtitles > Convert audio the TV can't play** is *Automatic* and that **Audio converter** says *Ready* (**Get the converter now** if not).  See [Sound the TV can't play](#sound-the-tv-cant-play). |
 | Dolby Vision shows odd green or purple colours | Make sure **HDR and Dolby Vision** isn't set to *Built-in player*. |

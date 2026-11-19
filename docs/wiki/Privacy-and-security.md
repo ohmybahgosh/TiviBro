@@ -6,7 +6,7 @@
 
 ## The web editor
 
-- Off every time TiviBro starts.  You switch it on under **Settings > Edit on a computer** (or the first-run screen).
+- Off every time TiviBro starts.  You switch it on under **Settings > Phone app and web editor** (or the first-run screen).
 - Reachable only on your home network, protected by a random password shown on the TV.
 - Locks for a minute after five wrong passwords.
 - Every request needs the session it got from the password; nothing is open without it.
@@ -15,10 +15,10 @@
 
 ## The phone app
 
-- Off until you switch it on under **Settings > Phone app**.
+- Off until you switch it on under **Settings > Phone app and web editor**.
 - A phone pairs only with the code shown on the TV, for 10 minutes.  The code never crosses the network, and five wrong codes end it.
 - Each phone gets its own key.  Everything it sends is signed with it, can't be replayed, and the TV signs its answers back.
-- Remove a phone in **Settings > Phone app** and its key stops working at once.
+- Remove a phone in **Settings > Phone app and web editor** and its key stops working at once.
 - The Android app only talks to your TVs on your home network.  It sends nothing to us or anyone else, and has no analytics.
 - Logins (a shared provider link, a password typed on the phone) and backups travel between the phone and the TV encrypted with the phone's key, not just signed.
 - Backups made by the app stay on the phone, encrypted with a key in Android's secure key storage, and are left out of Android's own cloud backups.  A copy you save as a file is encrypted with the passphrase you pick.

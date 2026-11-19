@@ -9,9 +9,9 @@ var Settings = (function () {
      belongs to (API keys in Playlists and accounts, Audio and subtitles in Playback...).  PAGES: those old
      sections, by id, with the section and the row that opens them, so links, older phone apps and tests still
      land on them. */
-  var SECTIONS = [['language', 'Language'], ['playlists', 'Playlists and accounts'], ['guide', 'Guide'], ['channels', 'Channels and groups'], ['playback', 'Playback'],
+  var SECTIONS = [['language', 'Language'], ['playlists', 'Playlists and accounts'], ['connect', 'Phone app and web editor'], ['guide', 'Guide'], ['channels', 'Channels and groups'], ['playback', 'Playback'],
     ['vod', 'Movies and shows'], ['media', 'My media'], ['reminders', 'Reminders and watchlist'], ['parental', 'Parental controls'], ['look', 'Appearance'], ['about', 'System']];
-  var PAGES = { keys: ['playlists', 'API keys'], connect: ['playlists', 'Phone app and web editor'], names: ['channels', 'Channel and group names'], audio: ['playback', 'Audio and subtitles'],
+  var PAGES = { keys: ['playlists', 'API keys'], names: ['channels', 'Channel and group names'], audio: ['playback', 'Audio and subtitles'],
     remote: ['playback', 'Remote and buttons'], trakt: ['media', 'Trakt'], backups: ['about', 'Backups and restore points'], recording: ['playback', 'Recording and live pause'] };
   // Old section ids (links in other screens, tests, older phone apps) still land somewhere sensible.
   var ALIAS = { lang: 'language', groups: 'channels', updates: 'about', diag: 'about', system: 'about', phone: 'connect', editor: 'connect', watchlist: 'reminders', apikeys: 'keys', tokens: 'keys', subtitles: 'audio',
@@ -53,7 +53,7 @@ var Settings = (function () {
     (list || []).filter(Boolean).forEach(function (it) { if (it.head) hd = it; else if (advanced(it)) { if (hd) { out.push(hd); hd = null; } out.push(it); } });
     return out;
   }
-  function title(sct) { return sct[0] === 'about' && typeof Update !== 'undefined' && Update.state && Update.state.state === 'available' ? sct[1] + '  ·  update ready' : sct[1]; }
+  function title(sct) { if (sct[0] === 'connect' && !phoneOK()) return 'Web editor'; return sct[0] === 'about' && typeof Update !== 'undefined' && Update.state && Update.state.state === 'available' ? sct[1] + '  ·  update ready' : sct[1]; }
   /* In the menu: the section's name in the language, and Language always says "Language" in English too,
      so whoever can't read the language TiviBro is in can still find it. */
   function navTitle(s) {
@@ -1742,11 +1742,10 @@ var Settings = (function () {
         jump('Preview on the Channels screen', 'Off for the snappiest list on slow TVs.'), jump('Report a problem', 'Sends this TV\'s details and log, logins taken out.')]; })
     ];
   }
-  /* The eleven sections, from the pages they hold (see SECTIONS and PAGES). */
+  /* The twelve sections, from the pages they hold (see SECTIONS and PAGES). */
   function playlistsSection() {
     return playlists().concat([head('Accounts and keys'),
-      page('API keys', 'TMDB for movie and show details and posters, OpenSubtitles for subtitles.', 'API keys', apiKeys, function () { return (MediaStore.tmdbToken() ? 'TMDB' : '') + (typeof Subs !== 'undefined' && Subs.configured ? (MediaStore.tmdbToken() ? ', ' : '') + 'OpenSubtitles' : '') + '  ›'; }),
-      page(phoneOK() ? 'Phone app and web editor' : 'Web editor', 'Use your phone as a remote, or edit groups, names and the guide from a computer.', phoneOK() ? 'Phone app and web editor' : 'Web editor', connect)]);
+      page('API keys', 'TMDB for movie and show details and posters, OpenSubtitles for subtitles.', 'API keys', apiKeys, function () { return (MediaStore.tmdbToken() ? 'TMDB' : '') + (typeof Subs !== 'undefined' && Subs.configured ? (MediaStore.tmdbToken() ? ', ' : '') + 'OpenSubtitles' : '') + '  ›'; })]);
   }
   function channelsSection() {
     return groups().concat([head('Names'), page('Channel and group names', 'Tidy how names read: "USA | ESPN HD" becomes "ESPN".  Your playlist isn\'t changed.', 'Channel and group names', names)]);
@@ -1807,7 +1806,7 @@ var Settings = (function () {
     var i = -1; for (var x = 0; x < SECTIONS.length; x++) if (SECTIONS[x][0] === p[0]) i = x;
     if (i < 0) return null;
     var list = shape(FNS[i], SECTIONS[i][1]), n = -1;
-    for (var k = 0; k < list.length; k++) if (list[k] && list[k].page && (list[k].label === p[1] || (p[1] === 'Phone app and web editor' && list[k].label === 'Web editor'))) { n = k; break; }
+    for (var k = 0; k < list.length; k++) if (list[k] && list[k].page && list[k].label === p[1]) { n = k; break; }
     return { i: i, n: n, it: list[n] };
   }
   function build() {

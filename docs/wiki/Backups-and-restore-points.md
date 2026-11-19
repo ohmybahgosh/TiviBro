@@ -10,7 +10,7 @@ One page for both safety nets, and for your unsent changes (**Your changes in th
 
 **Restoring, even on a brand-new TV:**
 
-1. Install TiviBro and open it.  Choose **Set up or restore from a computer**.  (On a TV already set up: **Settings > Playlists and accounts > Phone app and web editor**.)
+1. Install TiviBro and open it.  Choose **Set up or restore from a computer**.  (On a TV already set up: **Settings > Phone app and web editor**.)
 2. Open the address shown on the TV and type the password.
 3. **Restore a backup**, drop the file, type the passphrase and press **Unlock**.  The editor lists the playlists inside so you know it's the right file.
 4. **Restore to the TV.**  TiviBro restarts with everything back, and the editor reconnects by itself.

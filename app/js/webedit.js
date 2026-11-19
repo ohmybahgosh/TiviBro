@@ -856,7 +856,7 @@ var WebEdit = (function () {
       var body = U.el('div', 'edit-join'), qr = U.el('div', 'join-qr'), txt = U.el('div', 'join-txt'), wasOn = on;
       body.appendChild(qr); body.appendChild(txt);
       txt.appendChild(U.el('div', 'remote-s', 'Starting the editor…'));
-      var lead = U.el('p', 'edit-join-lead', opts.lead || ('Scan the code with your phone\'s camera, or open the address on a computer on the same network.  Rename, hide, sort and clean up with a real keyboard; changes show up here as you send them.' + (/alpha|beta/i.test(TIVIBRO_VERSION) ? '  Pairing the TiviBro app is different: Settings > Playlists and accounts > Phone app and web editor > Pair the TiviBro app.' : '')));
+      var lead = U.el('p', 'edit-join-lead', opts.lead || ('Scan the code with your phone\'s camera, or open the address on a computer on the same network.  Rename, hide, sort and clean up with a real keyboard; changes show up here as you send them.' + (/alpha|beta/i.test(TIVIBRO_VERSION) ? '  Pairing the TiviBro app is different: Settings > Phone app and web editor > Pair the TiviBro app.' : '')));
       var wrap = U.el('div'); wrap.appendChild(lead); wrap.appendChild(body);
       function show(s) { if (!wrap.parentNode) return; drawJoin(qr, txt, page || '', s, 'Waiting for a phone or computer…', 'Connected.  The editor keeps running until you turn it off or close TiviBro.'); }
       // keepOn: the screen underneath needs the editor (the first screen's own QR code), so no Turn off.

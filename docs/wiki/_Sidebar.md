@@ -34,6 +34,7 @@
 **Every setting**
 - [Settings: Language](Settings-Language)
 - [Settings: Playlists and accounts](Settings-Playlists-and-accounts)
+- [Settings: Phone app and web editor](Settings-Phone-app-and-web-editor)
 - [Settings: Guide](Settings-Guide)
 - [Settings: Channels and groups](Settings-Channels-and-groups)
 - [Settings: Playback](Settings-Playback)

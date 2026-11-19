@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **DNS: type an IPv6 server or a DNS-over-HTTPS link, and Quad101 (discussion #60).**  Settings > Playlists and accounts > DNS > A DNS server I type now takes one or two IPv4 or IPv6 addresses ("101.101.101.101, 2001:de4::101") or an https:// DoH link, and Quad101 (Taiwan) is in the list.  A provider name with only an IPv6 address is found too.
+- **Phone app and web editor is its own section in Settings.**  It sits in the menu right under Playlists and accounts, instead of being a page at the bottom of it, so **Pair the TiviBro app** is easy to find.  It shows Paired once a phone is.  The phone app, the user guide, tivibro.app and ohmybahgosh.dev give the new path.
 
 ## 0.6.0 (alpha 174, 2026-11-19)
 

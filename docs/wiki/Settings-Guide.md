@@ -45,4 +45,4 @@ With public guides on, if the provider guide fails, the guide status says it is 
 
 ---
 
-← [Settings: Playlists and accounts](Settings-Playlists-and-accounts)  ·  [Home](Home)  ·  [Settings: Channels and groups](Settings-Channels-and-groups) →
+← [Settings: Phone app and web editor](Settings-Phone-app-and-web-editor)  ·  [Home](Home)  ·  [Settings: Channels and groups](Settings-Channels-and-groups) →
