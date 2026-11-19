@@ -24,7 +24,11 @@
 - Custom User-Agent per playlist, sent by the network helper (no longer needs a proxy upstream).
 
 ## Not possible in a webOS web app
-Recording to the TV, auto frame rate, Android-only player options, multiview (an app plays one video at a time; removed in alpha 24).  Dispatcharr or another proxy covers recording upstream.
+Auto frame rate, Android-only player options, multiview (an app plays one video at a time; removed in alpha 24).  Recording to the TV's own storage (about 1 GB free); recording to a USB drive works on rooted TVs (alpha 168).
+
+## Next for recording
+- Waking the TV for a scheduled recording (LG's Power On Timer and screen-off standby).
+- Series rules (record every episode, keep the last few), cloud targets (Dropbox, Google Drive, WebDAV).
 
 ## Deferred
 - Stalker portal.

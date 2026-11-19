@@ -72,7 +72,7 @@ var Update = (function () {
       if (stop || out.length >= 14) return;
       var t = l.replace(/^\s*[-*]\s+/, '').replace(/\*\*|__|`/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/^#+\s*/, '').trim();
       // The title already says which version; the full-changelog link can't be followed on a TV.
-      if (!t || /^>/.test(t) || /^SHA-256/i.test(t) || /^(New )?in (alpha|beta|rc) \d+$/i.test(t) || /^New in \d/i.test(t) || /^Every detail/i.test(t)) return;
+      if (!t || /^>/.test(t) || /^These updates are in preparation/i.test(t) || /^SHA-256/i.test(t) || /^(New )?in (alpha|beta|rc) \d+$/i.test(t) || /^New in \d/i.test(t) || /^Every detail/i.test(t)) return;
       out.push(t.length > 220 ? t.slice(0, 217) + '…' : t);
     });
     return out;
@@ -341,6 +341,8 @@ var Update = (function () {
      going back" puts back exactly what you had.  Automatic update checks are turned off, so the newer version
      isn't offered straight back; turn them on again in Settings > System. */
   var SNAP_KEY = 'tivibro.rollbackSnaps';
+  // Alphas 164 and 165 didn't open the playlist ("numLen is not defined"): not something to go back to.
+  var BAD = { '0.6.0-alpha.164': 1, '0.6.0-alpha.165': 1 };
   function snaps() { try { var a = JSON.parse(localStorage.getItem(SNAP_KEY) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
   function earlier() {
     return U.getJSON(API, 15000, 'releases').then(function (list) {
@@ -348,6 +350,7 @@ var Update = (function () {
       var cur = current(), out = [];
       list.forEach(function (r) {
         if (!r || r.draft || !parse(r.tag_name) || compare(r.tag_name, cur) >= 0) return;
+        if (BAD[r.tag_name.replace(/^v/, '')]) return;            // releases known to be broken aren't offered
         if ((r.prerelease || isPre(r.tag_name)) && !wantPre() && !isPre(cur)) return;
         var one = pick([r], true);
         if (one) out.push(one);

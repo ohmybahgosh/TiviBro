@@ -169,10 +169,11 @@ var Record = (function () {
   var watching = null, posT = null;
   // The channel a recording is of (its key, from the app), for yellow > Live while it still records.
   function chOf(r) { var all = L.data && L.data.channels || []; for (var i = 0; i < all.length; i++) if (all[i].k === r.key) return all[i]; return null; }
-  function watch(r, fromStart, onExit) {
+  // fromAt: a point in it (the live timeline going back past what's kept), else resume or from the start.
+  function watch(r, fromStart, onExit, fromAt) {
     var url = base() + '/record/file/' + r.id + '/rec.' + (r.kind === 'mp4' ? 'mp4' : 'ts');
-    var p0 = posOf(r.id), at = !fromStart && p0 && p0.t > 30 && (!r.dur || p0.t < r.dur - 60) ? p0.t : 0;
-    if (at) U.toast(T('Resuming at {t}', { t: hms(at) }), 2500);
+    var p0 = posOf(r.id), at = fromAt != null ? Math.max(0, fromAt) : !fromStart && p0 && p0.t > 30 && (!r.dur || p0.t < r.dur - 60) ? p0.t : 0;
+    if (at && fromAt == null) U.toast(T('Resuming at {t}', { t: hms(at) }), 2500);
     watching = r.id;
     Views.playVod({ id: 'rec:' + r.id, title: r.title, sub: r.channel + '  ·  ' + whenOf(r), dur: r.status === 'recording' ? 0 : r.dur, item: { recording: true }, liveCh: r.status === 'recording' ? chOf(r) : null }, url, at, function () {
       note(); watching = null; clearInterval(posT);

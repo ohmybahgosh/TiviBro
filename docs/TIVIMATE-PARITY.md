@@ -112,6 +112,7 @@ Legend: **Have** = already in TiviBro.  **Added** = added in this pass.  **Later
 | "All playlists" category | Later |
 | Stalker Portal | Later (deferred) |
 | UDP proxy, SMB, local playlist files | No |
-| Recording | No: a TV web app can't write large files.  A server-side DVR covers it |
+| Recording | Yes, to a USB drive on a rooted TV (the helper writes it, not the web app), with a Recordings screen.  Not yet: waking the TV for a scheduled recording, series rules |
+| Pause and rewind live TV | Yes, on any channel: a USB drive (up to 2 hours, and an optional always-on rewind buffer) or the TV's own storage (10 minutes).  TiviMate only rewinds channels with catch-up |
 | Auto start on boot / wake | No |
 | Parental controls: PIN, scope, stay unlocked | Have |

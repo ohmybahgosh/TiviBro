@@ -1928,5 +1928,20 @@ I18n.add('es', {
   "Those saved settings are empty.": "Esos ajustes guardados están vacíos.",
   "This needs the network helper, which isn't running.": "Esto necesita el servicio de red, que no está en marcha.",
   "That release has no checksum, so it can't be installed from here.": "Esa versión no tiene suma de comprobación, así que no se puede instalar desde aquí.",
-  "TiviBro {v} came before releases were signed, so it can't be checked and isn't installed from here.  The releases page on GitHub has it.": "TiviBro {v} es anterior a las versiones firmadas, así que no se puede comprobar ni instalar desde aquí.  Está en la página de versiones de GitHub."
+  "TiviBro {v} came before releases were signed, so it can't be checked and isn't installed from here.  The releases page on GitHub has it.": "TiviBro {v} es anterior a las versiones firmadas, así que no se puede comprobar ni instalar desde aquí.  Está en la página de versiones de GitHub.",
+  "Recording needs a USB drive and a rooted TV.  webOS keeps USB drives from apps installed in developer mode; on a rooted TV (the Homebrew Channel) TiviBro's helper reaches them.  Without one, live pause still works for up to 10 minutes in the TV's own storage.": "Grabar necesita una memoria USB y una TV con root.  webOS no deja que las apps instaladas en modo desarrollador usen memorias USB; en una TV con root (Homebrew Channel) el servicio de TiviBro llega a ellas.  Sin una, la pausa en vivo funciona hasta 10 minutos en el almacenamiento de la TV.",
+  "Pause and rewind": "Pausa y retroceso",
+  "Pause, record, more": "Pausa, grabar, más",
+  "carry on later": "seguir después",
+  "A Magic Remote has no Pause or REC button: in fullscreen, OK opens the quick menu, which starts with Pause, Rewind and Record, and in the guide Hold OK has Record.  On a remote with \u25cf REC, it records what's on (in the guide, the programme you're on).  Any button can be set to Record or Recordings: Remote and buttons.": "El Magic Remote no tiene botones de Pausa ni REC: a pantalla completa, OK abre el menú rápido, que empieza con Pausa, Retroceder y Grabar, y en la guía mantener OK tiene Grabar.  En un mando con ● REC, graba lo que se emite (en la guía, el programa en el que estás).  Cualquier botón puede hacer Grabar o Grabaciones: Mando y botones.",
+  "\u25c0 \u25b6  Move": "◀ ▶  Mover",
+  "Move": "Mover",
+  "Watch from here": "Ver desde aquí",
+  "\u25b2  Timeline": "▲  Línea de tiempo",
+  "Timeline": "Línea de tiempo",
+  "Forward": "Adelantar",
+  "move back and forth": "moverse atrás y adelante",
+  "Nothing to go back to on this channel": "No hay nada a lo que volver en este canal",
+  "Forward (live pause or catch-up)": "Adelantar (pausa en vivo o catch-up)",
+  "Timeline: move back and forth in what's kept": "Línea de tiempo: moverse por lo guardado"
 });

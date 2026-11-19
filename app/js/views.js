@@ -856,6 +856,8 @@ var Views = (function () {
       case 'restart': if (c && c.arch) watchFromStart(c); else U.toast('No catch-up on this channel'); return;
       // Recording (record.js): the channel's programme on now, or stop it; the Recordings screen.
       case 'record': recordNow(ctx === 'player' ? playing : c); return;
+      case 'forward': forward(); return;
+      case 'timeline': if (full && !scrubStart()) U.toast(T('Nothing to go back to on this channel')); return;
       case 'recordings': if (typeof Record !== 'undefined') { if (full) exitFull(true); Record.open(); } return;
       case 'playpause': playPause(); return;
       case 'guide': leaveTo('guide'); return;
@@ -1138,11 +1140,10 @@ var Views = (function () {
       $('osdNext').textContent = nn && nn.next ? T('Next') + '  ' + U.hhmm(nn.next.s) + '  ' + nn.next.t : '';
       // Behind live (live pause's copy on the drive, or a channel's own window): how far, and where in what's kept.
       var win = behindLive();
-      if (win) {
-        $('osdNow').textContent = T('{t} behind live', { t: fmtDur(win.behind) }) + (Player.paused ? '   ·   ' + T('paused') : '') + (nn && nn.now ? '   ·   ' + nn.now.t : '');
-        $('osdBar').style.width = Math.round(100 * U.clamp((win.at - win.start) / Math.max(1, win.end - win.start), 0, 1)) + '%';
-      }
+      if (win) $('osdNow').textContent = T('{t} behind live', { t: fmtDur(win.behind) }) + (Player.paused ? '   ·   ' + T('paused') : '') + (nn && nn.now ? '   ·   ' + nn.now.t : '');
+      drawTimeline(c === playing ? timeline() : null);
     }
+    if (mode !== 'live') drawTimeline(null);
     osdLegend();
     if (show) {
       if (o.classList.contains('hidden')) o.classList.remove('more');     // shown afresh: the short panel first
@@ -1150,7 +1151,7 @@ var Views = (function () {
       clearTimeout(osdT);
       // The full details stay up longer (there's a summary to read); they go with the panel.
       if (ch && ch !== playing) o.classList.remove('more');
-      osdT = setTimeout(function () { o.classList.add('hidden'); o.classList.remove('more'); }, (+Store.settings.osdTimeout || 5) * (o.classList.contains('more') ? 3 : 1) * 1000);
+      osdT = setTimeout(function () { if (scrub) { scrubEnd(); } o.classList.add('hidden'); o.classList.remove('more'); }, scrub ? 12000 : (+Store.settings.osdTimeout || 5) * (o.classList.contains('more') ? 3 : 1) * 1000);
     }
   }
 
@@ -1165,14 +1166,19 @@ var Views = (function () {
       var recm = vod && vod.meta.item && vod.meta.item.recording;
       if (recm && vod.meta.liveCh) chip('yellow', 'Live', 'yellow');
       chip('back', recm ? 'Back  Recordings' : 'Back  Stop'); }
-    else if (behindLive()) { chip('ok', 'OK  ' + (Player.paused ? 'Play' : 'Pause')); chip('left', '◀ ▶  Skip ' + Store.settings.skip + 's'); chip('back', 'Back  Live'); chip('red', 'Options', 'red'); }
+    else if (scrub) { chip('left', '◀ ▶  Move'); chip('ok', 'OK  Watch from here'); chip('back', 'Back  Cancel'); }
+    else if (behindLive()) { chip('up', '▲  Timeline'); chip('ok', 'OK  ' + (Player.paused ? 'Play' : 'Pause')); chip('left', '◀ ▶  Skip ' + Store.settings.skip + 's'); chip('back', 'Back  Live'); chip('red', 'Options', 'red'); }
     else if (mode === 'catchup') { chip('ok', 'Pause'); chip('left', '◀ ▶  Skip ' + Store.settings.skip + 's'); chip('up', '▲ ▼  Skip 5 min'); chip('yellow', 'Back to live', 'yellow'); chip('red', 'Options', 'red'); }
     else {
       var g = function (b) { var a = Keymap.get('player', b); return a && a !== 'none' ? Keymap.SHORT[a] || Keymap.ACTIONS[a] : ''; };
-      if (g('ok')) chip('ok', 'OK  ' + g('ok'));
+      // The quick menu starts with Pause, Rewind and Record: said here, as a Magic Remote has no buttons for them.
+      if (g('ok')) chip('ok', 'OK  ' + (Keymap.get('player', 'ok') === 'panel' ? 'Pause, record, more' : g('ok')));
+      if (canScrub() && !$('osd').classList.contains('hidden')) chip('up', '▲  Timeline');
       if (g('up') === 'Previous channel' && g('down') === 'Next channel') chip('down', '▲ ▼  Change channel');
       else { if (g('up')) chip('up', '▲  ' + g('up')); if (g('down')) chip('down', '▼  ' + g('down')); }
-      if (g('left')) chip('left', '◀  ' + (Keymap.get('player', 'left') === 'rewind' && !(playing && playing.arch) ? 'Last channel' : g('left')));
+      // ◀ rewinds what's kept (live pause, the rewind buffer, a DASH window) or catch-up, else it's the last channel.
+      var canBack = Player.tshift || !!Player.liveWindow() || (playing && playing.arch);
+      if (g('left')) chip('left', '◀  ' + (Keymap.get('player', 'left') === 'rewind' && !canBack ? 'Last channel' : g('left')));
       if (g('right')) chip('right', '▶  ' + g('right'));
       ['red', 'green', 'yellow', 'blue'].forEach(function (b) { if (g(b)) chip(b, g(b), b); });
       chip('back', 'Back  ' + (fullFrom === 'live' ? 'Channels' : fullFrom === 'onnow' ? 'Movies on now' : fullFrom === 'media' ? 'My media' : 'Guide'));
@@ -1306,6 +1312,17 @@ var Views = (function () {
       else if (Keymap.get('player', a) === 'streaminfo') streamInfo();
       return true;
     }
+    if (scrub && mode === 'live') {
+      if (a === 'left') scrubMove(-Store.settings.skip * seekAccel(-1));
+      else if (a === 'right') scrubMove(+Store.settings.skip * seekAccel(1));
+      else if (a === 'rew') scrubMove(-(+Store.settings.ffStep || 120) * seekAccel(-1));
+      else if (a === 'ff') scrubMove((+Store.settings.ffStep || 120) * seekAccel(1));
+      else if (a === 'ok' || a === 'playpause') scrubGo();
+      else if (a === 'back' || a === 'down' || a === 'up') { scrubEnd(); osd(true); }
+      return true;
+    }
+    // The info bar up on a channel with something to go back to: ▲ takes the timeline's dot (TiviMate does this).
+    if (a === 'up' && mode === 'live' && !hidden && canScrub()) { scrubStart(); return true; }
     if (lw && mode === 'live') {
       var step = 0;
       if (a === 'left') step = -Store.settings.skip * seekAccel(-1);
@@ -1386,6 +1403,85 @@ var Views = (function () {
   }
   function closeOverlay() { overlay = false; $('overlay').classList.add('hidden'); }
 
+  /* ---------- the live timeline (TiviMate's seek dot) ----------
+     On a live channel with something to go back to (live pause or the rewind buffer kept on the drive, a DASH
+     window, a recording of it running, or the provider's catch-up), the info bar shows the programme as a line:
+     what's aired, what's kept (brighter), what's recorded (red underneath), and a dot where you're watching.  With
+     the bar up, ▲ takes the dot: ◀ ▶ move it (30 s, faster held; ◀◀ ▶▶ by the bigger step), OK watches from there,
+     Back or ▼ leave it.  Past the end is live.  Before what's kept, a recording of the channel plays from there,
+     else the provider's catch-up. */
+  var scrub = null;
+  function recOfPlaying() { var r = typeof Record !== 'undefined' && playing ? Record.of(playing, null) : null; return r && r.status === 'recording' && r.startedAt ? r : null; }
+  function timeline() {
+    if (mode !== 'live' || !playing) return null;
+    var now = Date.now(), w = Player.liveWindow(), rec = recOfPlaying(), arch = playing.arch;
+    if (!w && !rec && !arch) return null;
+    var lag = w ? Math.max(0, w.behind) * 1000 : 0;
+    var keptFrom = w ? now - (w.end - w.start) * 1000 : now, at = w ? now - lag : now;
+    var nn = Epg.nowNext(playing), p = nn && nn.now && nn.now.s <= now && nn.now.e > now ? nn.now : null;
+    var from = p ? p.s : Math.min(keptFrom, rec ? rec.startedAt : now, now - 30 * 60000), to = p ? p.e : now + 5 * 60000;
+    // How far back the dot can go: the kept window, a recording's start, or the programme's start with catch-up.
+    var floor = Math.min(keptFrom, rec ? rec.startedAt : keptFrom, arch ? from : keptFrom);
+    return { from: Math.min(from, floor), to: Math.max(to, now + 60000), now: now, keptFrom: keptFrom, at: at, rec: rec, floor: floor, p: p, w: w };
+  }
+  function tlEls() {
+    var bar = $('osdBar').parentNode;
+    if (!bar._tl) {
+      bar._tl = { kept: U.el('i', 'tl-kept'), recd: U.el('i', 'tl-rec'), dot: U.el('b', 'tl-dot'), ghost: U.el('b', 'tl-ghost'), label: U.el('span', 'tl-label') };
+      ['kept', 'recd', 'dot', 'ghost', 'label'].forEach(function (k) { bar.appendChild(bar._tl[k]); });
+    }
+    return bar._tl;
+  }
+  function drawTimeline(tl) {
+    var o = $('osd'), bar = $('osdBar').parentNode, e = tlEls();
+    o.classList.toggle('tl', !!tl); o.classList.toggle('scrub', !!(tl && scrub));
+    if (!tl) return;
+    var span = Math.max(1, tl.to - tl.from), pc = function (t) { return U.clamp((t - tl.from) / span, 0, 1) * 100 + '%'; };
+    $('osdBar').style.width = pc(tl.now);
+    e.kept.style.left = pc(tl.keptFrom); e.kept.style.width = 'calc(' + pc(tl.now) + ' - ' + pc(tl.keptFrom) + ')';
+    e.kept.style.display = tl.w ? '' : 'none';
+    e.recd.style.display = tl.rec ? '' : 'none';
+    if (tl.rec) { e.recd.style.left = pc(Math.max(tl.from, tl.rec.startedAt)); e.recd.style.width = 'calc(' + pc(tl.now) + ' - ' + pc(Math.max(tl.from, tl.rec.startedAt)) + ')'; }
+    e.dot.style.left = pc(tl.at);
+    e.ghost.style.display = scrub ? '' : 'none'; e.label.style.display = scrub ? '' : 'none';
+    if (scrub) {
+      e.ghost.style.left = pc(scrub.t); e.label.style.left = pc(scrub.t);
+      var behind = Math.round((tl.now - scrub.t) / 1000);
+      e.label.textContent = behind < 8 ? T('Live') : U.hhmm(scrub.t) + '  ·  ' + T('{t} behind live', { t: fmtDur(behind) });
+    }
+  }
+  function canScrub() { return !!timeline(); }
+  function scrubStart() { var tl = timeline(); if (!tl) return false; scrub = { t: tl.at }; osd(true); return true; }
+  function scrubEnd() { scrub = null; drawTimeline(timeline()); }
+  function scrubMove(sec) {
+    var tl = timeline(); if (!tl || !scrub) return;
+    scrub.t = U.clamp(scrub.t + sec * 1000, tl.floor, tl.now);
+    osd(true);
+  }
+  function scrubGo() {
+    var tl = timeline(), t = scrub && scrub.t; scrub = null;
+    if (!tl || t == null) return osd(true);
+    if (tl.now - t < 8000) { if (Player.tshift || lw) lwLive(); else U.toast(T('Live')); return osd(true); }
+    // In what's kept on the drive (or a DASH window): move there.
+    if (tl.w && t >= tl.keptFrom - 2000) { lw = true; Player.liveSeek((t - tl.at) / 1000); osd(true); return; }
+    // Before it: the recording of this channel, from that point.
+    if (tl.rec && t >= tl.rec.startedAt) { Record.watch(tl.rec, false, null, (t - tl.rec.startedAt) / 1000); return; }
+    // Else the provider's catch-up, in the programme that was on then.
+    if (playing.arch) {
+      var list = Epg.request(playing) || [], q = null;
+      for (var i = 0; i < list.length; i++) if (list[i].s <= t && list[i].e > t) { q = list[i]; break; }
+      q = q || tl.p || { s: t, e: t + 3600e3, t: L.name(playing) };
+      playCatchup(playing, q, (t - q.s) / 1000); return;
+    }
+    if (tl.w) { lw = true; Player.liveSeek(-1e6); }
+    osd(true);
+  }
+  // ▶▶ / Forward: ahead in what's kept; at the end, live.
+  function forward() {
+    if (cu) { cuSeek(+(Store.settings.skip || 30)); return; }
+    if (lwSeek(+(Store.settings.skip || 30))) return;
+    U.toast(T('Live'));
+  }
   function recordNow(c) {
     if (!c || typeof Record === 'undefined') return;
     if (!Record.base()) { U.toast(T('Recording needs TiviBro\'s helper, which isn\'t running')); return; }
@@ -1905,13 +2001,14 @@ var Views = (function () {
      ◀ ▶ move along a row, ▲ ▼ switch rows, OK picks, Back closes.  Clickable with the pointer. */
   var qp = null;                  // { row, col, rows: [[items]], timer }
   // Quick menu buttons.  Each can be switched off in Settings > Playback > Remote and buttons > Quick menu buttons.
-  var QP_BUTTONS = [['list', 'Channel guide'], ['start', 'Watch from start'], ['fav', 'Favorite'], ['guide', 'TV guide'], ['versions', 'Other versions'], ['audio', 'Audio track'],
-    ['subs', 'Subtitles'], ['cc', 'Closed captions'], ['quality', 'Video quality'], ['picture', 'Aspect'], ['rec', 'Record'], ['sleep', 'Sleep timer'],
+  var QP_BUTTONS = [['pause', 'Pause and rewind'], ['rec', 'Record'], ['list', 'Channel guide'], ['start', 'Watch from start'], ['fav', 'Favorite'], ['guide', 'TV guide'], ['versions', 'Other versions'], ['audio', 'Audio track'],
+    ['subs', 'Subtitles'], ['cc', 'Closed captions'], ['quality', 'Video quality'], ['picture', 'Aspect'], ['sleep', 'Sleep timer'],
     ['info', 'Stream info'], ['reconnect', 'Reconnect']];
   // Line icons for the quick actions, drawn like the side menu's (24 x 24, stroked).
   var QP_ICONS = {
     list: '<path d="M4 6h16M4 12h16M4 18h16"/>',
     rec: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4" fill="currentColor"/>',
+    pause: '<path d="M8 5v14M16 5v14"/>', play: '<path d="M7 5l12 7-12 7z"/>', back10: '<path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v5h5"/>', fwd10: '<path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v5h-5"/>',
     start: '<path d="M6 5v14M19 5l-9 7 9 7z"/>',
     fav: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8L3.5 9.7l5.9-.9z"/>',
     faved: '<path class="fill" d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8L3.5 9.7l5.9-.9z"/>',
@@ -1929,6 +2026,20 @@ var Views = (function () {
   function qpActions() {
     var c = playing, a = [], nn = c && Epg.nowNext(c), now = Date.now(), off = Store.settings.qpHidden || {};
     function add(id, it) { if (!off[id]) { it.id = id; a.push(it); } }
+    /* First: Pause (live pause keeps the channel when it's on), Rewind when there's something kept to go back
+       to, and Record.  A Magic Remote has no Pause, ◀◀ or REC button, so OK > these is how it gets to them. */
+    if (c && mode === 'live') {
+      var pz = Player.paused || (tsh && !Player.tshift);
+      add('pause', { label: pz ? 'Play' : 'Pause', icon: pz ? 'play' : 'pause', v: pz ? '' : tsOn() ? 'carry on later' : '', run: function () { closePanel(); if (pz) { if (tsh && !Player.tshift) tsResume(); else Player.setPaused(false); } else if (!livePause()) Player.setPaused(true); osd(true); } });
+      if (Player.tshift || Player.liveWindow() || c.arch) add('pause', { label: 'Rewind', icon: 'back10', v: Store.settings.skip + 's', run: function () { closePanel(); rewindLive(); } });
+      if (behindLive()) add('pause', { label: 'Forward', icon: 'fwd10', v: Store.settings.skip + 's', run: function () { closePanel(); forward(); } });
+      if (canScrub()) add('pause', { label: 'Timeline', icon: 'list', v: T('move back and forth'), run: function () { closePanel(); scrubStart(); } });
+    }
+    if (c && mode !== 'vod' && typeof Record !== 'undefined' && Record.base()) {
+      var rn = Record.of(c, nn && nn.now), pnow = nn && nn.now && nn.now.s <= now && nn.now.e > now ? nn.now : null;
+      add('rec', rn && rn.status === 'recording' ? { label: 'Stop recording', icon: 'rec', v: 'since ' + U.hhmm(rn.startedAt || rn.start), run: function () { closePanel(); Record.stop(rn.id); } }
+        : { label: 'Record', icon: 'rec', v: pnow ? 'until ' + U.hhmm(pnow.e) : 'an hour', run: function () { closePanel(); Record.now(c, pnow); } });
+    }
     add('list', { label: 'Channel guide', icon: 'list', run: function () { closePanel(); openOverlay(); } });
     if (c && c.arch && nn && nn.now && nn.now.s <= now) add('start', { label: 'From start', icon: 'start', v: 'catch-up', run: function () { closePanel(); watchFromStart(c); } });
     if (c) add('fav', { label: L.isFav(c.k) ? 'Favorite' : 'Add favorite', icon: L.isFav(c.k) ? 'faved' : 'fav', run: function () { var on = L.toggleFav(c.k); if (on == null) return; U.toast(on ? 'Added to Favorites' : 'Removed from Favorites'); refreshLists(true); renderPanel(); } });
@@ -1942,11 +2053,6 @@ var Views = (function () {
     if (mode !== 'vod') add('cc', { label: 'Captions', icon: 'cc', v: ccLabel(), run: function () { ccToggle(); renderPanel(); } });
     if (Player.qualities().length > 1) add('quality', { label: 'Quality', icon: 'quality', v: qualityLabel(), run: function () { closePanel(); qualityMenu(); } });
     add('picture', { label: 'Aspect', icon: 'picture', v: Player.aspectName(Player.displayFor(aspectTarget())), run: function () { closePanel(); pictureMenu(); } });
-    if (c && mode !== 'vod' && typeof Record !== 'undefined') {
-      var rn = Record.of(c, nn && nn.now), pnow = nn && nn.now && nn.now.s <= now && nn.now.e > now ? nn.now : null;
-      add('rec', rn && rn.status === 'recording' ? { label: 'Stop recording', icon: 'rec', v: 'since ' + U.hhmm(rn.startedAt || rn.start), run: function () { closePanel(); Record.stop(rn.id); } }
-        : { label: 'Record', icon: 'rec', v: pnow ? 'until ' + U.hhmm(pnow.e) : 'an hour', run: function () { closePanel(); Record.now(c, pnow); } });
-    }
     add('sleep', { label: 'Sleep timer', icon: 'sleep', v: sleepAt ? U.hhmm(sleepAt) : 'off', run: function () { closePanel(); sleepMenu(); } });
     add('info', { label: 'Stream info', icon: 'info', run: function () { closePanel(); streamInfo(); } });
     add('reconnect', { label: 'Reconnect', icon: 'reconnect', run: function () { closePanel(); Player.retryNow(); U.toast('Reconnecting'); } });

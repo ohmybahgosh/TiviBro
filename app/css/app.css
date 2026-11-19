@@ -146,7 +146,7 @@ body.full .vid-error{left:50%;right:auto;bottom:auto;top:40%;transform:translate
 .osd.more .osd-more{display:block}
 .osd-more .om-meta{font-size:22px;color:var(--accent);margin-bottom:6px}
 .osd-more .om-desc{font-size:24px;line-height:1.4;color:var(--text);opacity:.9;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:5;overflow:hidden}
-.osd .bar{height:6px;background:rgba(255,255,255,.18);border-radius:3px;margin-top:12px;width:900px;overflow:hidden}
+.osd .bar{height:6px;background:rgba(255,255,255,.18);border-radius:3px;margin-top:12px;width:auto;overflow:hidden}
 .osd .bar i{display:block;height:100%;background:var(--accent2)}
 .osd.vod .bar{width:auto;height:8px;border-radius:4px}
 .osd-poster{float:left;width:96px;height:144px;object-fit:cover;border-radius:10px;margin:0 26px 0 0}
@@ -1360,3 +1360,16 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .recs .rc-side .rc-tmdb{font-size:22px;color:var(--muted);margin:-4px 0 14px}
 .recs .rc-side .rc-ep{font-size:22px;color:var(--accent2);margin:-4px 0 14px}
 .recs .rc-side .rc-plot{font-size:22px;line-height:1.5;color:var(--text);opacity:.85;margin:6px 0 16px;max-height:200px;overflow:hidden}
+
+/* The live timeline (views.js): what's aired, what's kept (brighter), what's recorded (red), the dot, and the dot you
+   move with ▲ then ◀ ▶. */
+.osd.tl .bar{position:relative;overflow:visible;height:8px;border-radius:4px}
+.osd.tl .bar #osdBar{background:rgba(255,255,255,.32);border-radius:4px}
+.osd.tl .bar .tl-kept{position:absolute;top:0;bottom:0;background:var(--accent2);border-radius:4px}
+.osd.tl .bar .tl-rec{position:absolute;bottom:-7px;height:4px;background:var(--air);border-radius:2px}
+.osd .bar .tl-kept,.osd .bar .tl-rec,.osd .bar .tl-dot,.osd .bar .tl-ghost,.osd .bar .tl-label{display:none}
+.osd.tl .bar .tl-kept,.osd.tl .bar .tl-dot{display:block}
+.osd.tl .bar .tl-dot{position:absolute;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px rgba(0,0,0,.35)}
+.osd.tl.scrub .bar .tl-dot{opacity:.45}
+.osd.tl.scrub .bar .tl-ghost{display:block;position:absolute;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(255,255,255,.85)}
+.osd.tl.scrub .bar .tl-label{display:block;position:absolute;bottom:22px;transform:translateX(-50%);white-space:nowrap;font-size:24px;background:rgba(11,14,26,.92);padding:6px 14px;border-radius:8px;border:2px solid var(--accent)}

@@ -1931,5 +1931,20 @@ I18n.add('ru', {
   "Those saved settings are empty.": "Эти сохранённые настройки пусты.",
   "This needs the network helper, which isn't running.": "Для этого нужна сетевая служба, а она не запущена.",
   "That release has no checksum, so it can't be installed from here.": "У этой версии нет контрольной суммы, поэтому её нельзя установить отсюда.",
-  "TiviBro {v} came before releases were signed, so it can't be checked and isn't installed from here.  The releases page on GitHub has it.": "TiviBro {v} вышел до появления подписей, поэтому его нельзя проверить и установить отсюда.  Он есть на странице релизов на GitHub."
+  "TiviBro {v} came before releases were signed, so it can't be checked and isn't installed from here.  The releases page on GitHub has it.": "TiviBro {v} вышел до появления подписей, поэтому его нельзя проверить и установить отсюда.  Он есть на странице релизов на GitHub.",
+  "Recording needs a USB drive and a rooted TV.  webOS keeps USB drives from apps installed in developer mode; on a rooted TV (the Homebrew Channel) TiviBro's helper reaches them.  Without one, live pause still works for up to 10 minutes in the TV's own storage.": "Для записи нужен USB-накопитель и телевизор с root.  webOS не даёт приложениям в режиме разработчика доступ к USB; на телевизоре с root (Homebrew Channel) служба TiviBro до них добирается.  Без накопителя пауза эфира работает до 10 минут в памяти телевизора.",
+  "Pause and rewind": "Пауза и перемотка",
+  "Pause, record, more": "Пауза, запись, ещё",
+  "carry on later": "продолжить позже",
+  "A Magic Remote has no Pause or REC button: in fullscreen, OK opens the quick menu, which starts with Pause, Rewind and Record, and in the guide Hold OK has Record.  On a remote with \u25cf REC, it records what's on (in the guide, the programme you're on).  Any button can be set to Record or Recordings: Remote and buttons.": "На Magic Remote нет кнопок Пауза и REC: на весь экран OK открывает быстрое меню, где первыми идут Пауза, Назад и Записать, а в телегиде удержание OK даёт Записать.  На пульте с ● REC она записывает текущую передачу (в телегиде — выбранную).  Любую кнопку можно назначить на Запись или Записи: Пульт и кнопки.",
+  "\u25c0 \u25b6  Move": "◀ ▶  Двигать",
+  "Move": "Двигать",
+  "Watch from here": "Смотреть отсюда",
+  "\u25b2  Timeline": "▲  Шкала",
+  "Timeline": "Шкала",
+  "Forward": "Вперёд",
+  "move back and forth": "назад и вперёд",
+  "Nothing to go back to on this channel": "На этом канале некуда вернуться",
+  "Forward (live pause or catch-up)": "Вперёд (пауза эфира или архив)",
+  "Timeline: move back and forth in what's kept": "Шкала: перемещение по сохранённому"
 });

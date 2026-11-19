@@ -3,7 +3,7 @@ var Settings = (function () {
   'use strict';
   var $ = U.$, S = function () { return Store.settings; }, L = Library;
   // Shown in the language chosen (app/js/i18n.js); the rows themselves are written in English.
-  function T(x) { return x && typeof x === 'string' && typeof I18n !== 'undefined' ? I18n.t(x) : x; }
+  function T(x, v) { return x && typeof x === 'string' && typeof I18n !== 'undefined' ? I18n.t(x, v) : x; }
   var nav = $('setNav'), body = $('setBody');
   /* Eleven sections (the Settings overhaul): what used to be a section of its own is a page inside the one it
      belongs to (API keys in Playlists and accounts, Audio and subtitles in Playback...).  PAGES: those old
@@ -1751,7 +1751,7 @@ var Settings = (function () {
     var gb = function (mb) { return mb >= 1024 ? (mb / 1024).toFixed(1) + ' GB' : Math.max(0, mb) + ' MB'; };
     out.push(info('Where', ''));
     out[out.length - 1].value = function () { var x = R && R.space; return x ? T('USB drive, {x} free of {y}', { x: gb(x.freeMB), y: gb(x.totalMB) }) : R && R.canPause() ? T('No USB drive: pause uses the TV\'s own storage (10 minutes)') : T('No USB drive'); };
-    if (!sp) out.push(info('Recording needs a USB drive and a rooted TV', 'webOS keeps USB drives from apps installed in developer mode; on a rooted TV (the Homebrew Channel) TiviBro\'s helper reaches them.  Without one, live pause still works for up to 10 minutes in the TV\'s own storage.'));
+    if (!sp) out.push(info('Recording needs a USB drive and a rooted TV.  webOS keeps USB drives from apps installed in developer mode; on a rooted TV (the Homebrew Channel) TiviBro\'s helper reaches them.  Without one, live pause still works for up to 10 minutes in the TV\'s own storage.', ''));
     if (R) out.push(action('Open Recordings', 'Watch, stop, cancel or delete recordings.', function () { Views.switchTab('recordings'); }, function () { var n = R.recs.length; return n ? n + ' ›' : '›'; }));
     out.push(head('Recording'));
     out.push(choice('Start early', 'Minutes before a scheduled programme\'s start, in case it starts early or the guide is off.', [0, 1, 2, 5, 10], ['On time', '1 min', '2 min', '5 min', '10 min'],
@@ -1769,7 +1769,7 @@ var Settings = (function () {
     out.push(choice('Rewind buffer', 'Keeps the channel you watch fullscreen on the USB drive the whole time, so ◀ goes back to something you just missed without pausing first (like a DVR).  Channels start a second or two slower, and the drive is written all the time.  Needs a USB drive in the TV and Pause live TV on.',
       [0, 30, 60, 120], ['Off', '30 min', '1 hour', '2 hours'], function () { return +s.rewindBuffer || 0; }, function (v) { s.rewindBuffer = v; save(); }));
     out.push(head('Buttons'));
-    out.push(info('Record and Recordings on the remote', 'The ● REC button (on LG remotes that have one) records what\'s on, or stops it; in the guide, the programme you\'re on.  Any button can do Record or Recordings: Remote and buttons.'));
+    out.push(info('A Magic Remote has no Pause or REC button: in fullscreen, OK opens the quick menu, which starts with Pause, Rewind and Record, and in the guide Hold OK has Record.  On a remote with ● REC, it records what\'s on (in the guide, the programme you\'re on).  Any button can be set to Record or Recordings: Remote and buttons.', ''));
     out.push(page('Remote and buttons', '', 'Remote and buttons', remote));
     return out;
   }

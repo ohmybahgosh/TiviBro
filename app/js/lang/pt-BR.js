@@ -2444,5 +2444,20 @@ I18n.add('pt-BR', {
   "Those saved settings are empty.": "Essas configurações salvas estão vazias.",
   "This needs the network helper, which isn't running.": "Isso precisa do serviço de rede, que não está rodando.",
   "That release has no checksum, so it can't be installed from here.": "Essa versão não tem soma de verificação, então não pode ser instalada daqui.",
-  "TiviBro {v} came before releases were signed, so it can't be checked and isn't installed from here.  The releases page on GitHub has it.": "O TiviBro {v} é anterior às versões assinadas, então não pode ser verificado nem instalado daqui.  Ele está na página de versões do GitHub."
+  "TiviBro {v} came before releases were signed, so it can't be checked and isn't installed from here.  The releases page on GitHub has it.": "O TiviBro {v} é anterior às versões assinadas, então não pode ser verificado nem instalado daqui.  Ele está na página de versões do GitHub.",
+  "Recording needs a USB drive and a rooted TV.  webOS keeps USB drives from apps installed in developer mode; on a rooted TV (the Homebrew Channel) TiviBro's helper reaches them.  Without one, live pause still works for up to 10 minutes in the TV's own storage.": "Gravar precisa de um pendrive e uma TV com root.  O webOS não deixa apps instalados em modo desenvolvedor usar pendrives; numa TV com root (Homebrew Channel) o serviço do TiviBro chega a eles.  Sem um, a pausa ao vivo funciona por até 10 minutos no armazenamento da TV.",
+  "Pause and rewind": "Pausa e voltar",
+  "Pause, record, more": "Pausa, gravar, mais",
+  "carry on later": "continuar depois",
+  "A Magic Remote has no Pause or REC button: in fullscreen, OK opens the quick menu, which starts with Pause, Rewind and Record, and in the guide Hold OK has Record.  On a remote with \u25cf REC, it records what's on (in the guide, the programme you're on).  Any button can be set to Record or Recordings: Remote and buttons.": "O Magic Remote não tem botões de Pausa nem REC: em tela cheia, OK abre o menu rápido, que começa com Pausa, Voltar e Gravar, e no guia segurar OK tem Gravar.  Num controle com ● REC, ele grava o que está passando (no guia, o programa em que você está).  Qualquer botão pode fazer Gravar ou Gravações: Controle e botões.",
+  "\u25c0 \u25b6  Move": "◀ ▶  Mover",
+  "Move": "Mover",
+  "Watch from here": "Assistir daqui",
+  "\u25b2  Timeline": "▲  Linha do tempo",
+  "Timeline": "Linha do tempo",
+  "Forward": "Avançar",
+  "move back and forth": "voltar e avançar",
+  "Nothing to go back to on this channel": "Não há para onde voltar neste canal",
+  "Forward (live pause or catch-up)": "Avançar (pausa ao vivo ou catch-up)",
+  "Timeline: move back and forth in what's kept": "Linha do tempo: voltar e avançar no que foi guardado"
 });

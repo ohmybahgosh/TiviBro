@@ -56,6 +56,8 @@
 
 ### ✨ New lately
 
+- **Recording, live pause and rewind.**  Record from the guide to a USB drive on a rooted TV, with a **Recordings** screen (posters from TMDB, resume, delete several at once).  **Pause any live channel** and carry on from there, even without catch-up, and an optional **rewind buffer** lets ◀ go back to something you just missed.  Without a USB drive, pause still works for 10 minutes on any TV.
+- **Go back to an earlier version** from Settings > System if an update causes trouble, with your settings saved first.
 - **My teams** gathers your teams' games at the top of the guide, now with college basketball.  Games on now are tinted in the theme's colour, and one game reads the same on every channel.
 - **Sixteen themes**, from Tokyo Night and Dracula to a green-phosphor Terminal, and the guide's category colours follow the theme.
 - **Settings keep the channel playing** in the corner, and **Search settings** (Yellow) finds any setting by a word.
@@ -122,6 +124,7 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | 🏟️ **Reads sports and PPV listings from channel names** | When a provider writes the event into the name instead of the guide, TiviBro turns it into a short channel name, a guide entry at the real time in your time zone, and an **Events by time** list across all your passes.  Dozens of naming styles, tested on 1,250 real event channels. |
 | 🖥️ **A full editor on your computer** | Clean up 10,000 channels with a keyboard and mouse instead of a remote: hide, sort, rename, copy and move, then **Send to TV**.  Unsent work is autosaved on the TV within seconds, with a version history, so a refresh never costs you an hour. |
 | 🏈 **Your teams, wherever they're playing** | Follow your NFL, NBA, NHL, MLB, WNBA and MLS teams, college football and college basketball, and **My teams** gathers their games near the top of the guide, tinted while they're on: on now first, then the ones starting soon, from league passes, event channels, your local station (even when the teams are only in the guide's description) and the team's own channel.  Optional reminders. |
+| ⏸️ **Pause and rewind any live channel** | TiviMate can only rewind channels your provider keeps catch-up for.  TiviBro keeps the channel itself, on a USB drive or, for a short pause, in the TV's own storage: pause, carry on, move back and forth, and with the rewind buffer on, ◀ goes back to what you just missed.  Recording and pausing the same channel share one connection to your provider. |
 | 🎬 **Movies on now** | With your own free TMDB token, the movies in your guide get posters, years, genres and ratings.  The **Movies on now** screen shows them as big posters: on now, starting soon, then a shelf for each genre. |
 | 🔁 **Switches to a working copy by itself** | Same channel in FHD, HD and SD?  When one dies, TiviBro moves to the next version on its own and tells you. |
 | 🧹 **Clean-up that already knows IPTV** | Pick your city once and every local group (ABC, CBS, NBC, FOX, CW, PBS…) keeps only your stations.  Keep East or West feeds in one click.  Name rules preloaded for about 250 country codes, quality tags, symbols and emoji (no typing prefix lists by hand), countries read from any naming style, duplicates in different qualities, and **Smart match** for channels without a guide. |
@@ -582,7 +585,7 @@ If `scp` fails, pipe the file instead: `cat app.tivibro.tv_0.6.0_all.ipk | ssh r
 
 ### Updating
 
-TiviBro checks for a new release every time it starts and every 6 hours while it is open (**Settings > System**).  A new version found at start is offered right away with what's new in it: on a rooted TV with the Homebrew Channel, **Install and restart** downloads it, checks it and installs it, and TiviBro restarts on the new version with all your settings, then shows what changed.  On other TVs it shows the new version; install it the same way you installed TiviBro.
+TiviBro checks for a new release every time it starts and every 6 hours while it is open (**Settings > System**).  A new version found at start is offered right away with what's new in it: on a rooted TV with the Homebrew Channel, **Install and restart** downloads it, checks it and installs it, and TiviBro restarts on the new version with all your settings, then shows what changed.  On other TVs it shows the new version; install it the same way you installed TiviBro.  An update that causes trouble can be undone: **Settings > System > Go back to an earlier version** installs an earlier release the same checked way, with your settings saved first and put back after you update again.
 
 ### The phone app
 
