@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **The Google Play phone app tells you when there's an update.**  Play installs the updates, but a test's updates often don't show in the Play Store on their own.  The app now asks Play at start, shows a card when a newer version is waiting, and **Update on Google Play** opens its Play Store page.  The **App update** tile is back in the Play version and asks Play any time.
+- **The quick menu's Timeline button fits its card** (its "move back and forth" ran off the bottom): it shows ◀ ▶, and a button's second line never wraps out of its card.
 - **My teams says in the log when a reminder is dropped because its listing is a replay.**
 
 ## 0.6.0 (alpha 175, 2026-11-19)

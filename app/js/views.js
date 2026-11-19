@@ -2074,7 +2074,7 @@ var Views = (function () {
       add('pause', { label: pz ? 'Play' : 'Pause', icon: pz ? 'play' : 'pause', v: pz ? '' : tsOn() ? 'carry on later' : '', run: function () { closePanel(); if (pz) { if (tsh && !Player.tshift) tsResume(); else Player.setPaused(false); } else if (!livePause()) Player.setPaused(true); osd(true); } });
       if (Player.tshift || Player.liveWindow() || c.arch) add('pause', { label: 'Rewind', icon: 'back10', v: Store.settings.skip + 's', run: function () { closePanel(); rewindLive(); } });
       if (behindLive()) add('pause', { label: 'Forward', icon: 'fwd10', v: Store.settings.skip + 's', run: function () { closePanel(); forward(); } });
-      if (canScrub()) add('pause', { label: 'Timeline', icon: 'list', v: T('move back and forth'), run: function () { closePanel(); scrubStart(); } });
+      if (canScrub()) add('pause', { label: 'Timeline', icon: 'list', v: '◀  ▶', run: function () { closePanel(); scrubStart(); } });
     }
     if (c && mode !== 'vod' && typeof Record !== 'undefined' && Record.base()) {
       var rn = Record.of(c, nn && nn.now), pnow = nn && nn.now && nn.now.s <= now && nn.now.e > now ? nn.now : null;
