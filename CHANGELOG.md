@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 175, 2026-11-19)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 175
 
 - **Recordings in the phone app.**  A new **Recordings** tile on the TV's card (red while something records) lists what's on the TV's USB drive, as the TV's Recordings screen does: the drive's room, Recording now, Scheduled, Recorded and Didn't record.  Watch one on the TV (where you left off, or from the start), stop or cancel one, or delete it.  Record from the phone too: **Record** on a programme in the Guide (on now records to its end, later is scheduled), and **Record now** when you press and hold a channel.  Needs this TiviBro on the TV and the new phone app.
 - **My teams no longer keeps reminders for games that aren't on.**  A reminder whose listing turned out to be a replay (NHL Network's afternoon encore of a game) or whose event channel went Offline with nothing in its guide is dropped, unless the game is found on another channel.
@@ -9,11 +13,7 @@
 - **DNS: type an IPv6 server or a DNS-over-HTTPS link, and Quad101 (discussion #60).**  Settings > Playlists and accounts > DNS > A DNS server I type now takes one or two IPv4 or IPv6 addresses ("101.101.101.101, 2001:de4::101") or an https:// DoH link, and Quad101 (Taiwan) is in the list.  A provider name with only an IPv6 address is found too.
 - **Phone app and web editor is its own section in Settings.**  It sits in the menu right under Playlists and accounts, instead of being a page at the bottom of it, so **Pair the TiviBro app** is easy to find.  It shows Paired once a phone is.  The phone app, the user guide, tivibro.app and ohmybahgosh.dev give the new path.
 
-## 0.6.0 (alpha 174, 2026-11-19)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 174
+### In alpha 174
 
 - **The Movies and Shows home names each title's category** beside the shelf's name on Recently added, Continue watching, My list and the other mixed shelves, and on their poster walls (discussion #60).
 - **Your problem reports list the open ones first**, with the closed ones under their own heading (discussion #101).
