@@ -19,7 +19,7 @@
 var fs = require('fs'), path = require('path');
 
 var PIECE = +(process.env.TIVIBRO_TS_PIECE || 4), MAX_SEC = 2 * 3600, IDLE_MS = +(process.env.TIVIBRO_TS_IDLE_MS || 90000);
-var MIN_FREE_MB = 1024, MAX_SESSIONS = 2, SMALL_SEC = 10 * 60, SMALL_FREE_MB = +(process.env.TIVIBRO_TS_SMALL_FREE_MB || 600);
+var MIN_FREE_MB = 1024, MAX_SESSIONS = 2, SMALL_SEC = 10 * 60, SMALL_FREE_MB = +(process.env.TIVIBRO_TS_SMALL_FREE_MB || 400);
 var WAIT_MS = +(process.env.TIVIBRO_TS_WAIT_MS || 10000);
 var sessions = {}, reaper = null, io = null, logf = function () {};
 

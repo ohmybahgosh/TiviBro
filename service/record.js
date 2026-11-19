@@ -101,8 +101,8 @@ function space(dir) {
 var LOW_MB = 500;
 /* No USB drive: live pause can still use a little of the TV's own storage (a 10-minute pause at most, and only
    while it has room to spare: webOS needs it, and the always-on rewind buffer never goes there, to spare the flash).
-   The helper's own folder (or the agent's, as root), and only with 1.5 GB free. */
-var TV_ROOM_MB = +(process.env.TIVIBRO_TS_TV_ROOM_MB || 1500);
+   The helper's own folder (or the agent's, as root), with 700 MB free at least (a C2 has about 1 GB); 400 MB is always left. */
+var TV_ROOM_MB = +(process.env.TIVIBRO_TS_TV_ROOM_MB || 700);
 function tvRoom() {
   var d = '';
   try { d = AGENT ? path.join('/media/developer/.tivibro-rec', 'pause') : require('./storage').sub('pause'); if (AGENT) { try { fs.mkdirSync(d); } catch (e) {} } } catch (e) { return ''; }
