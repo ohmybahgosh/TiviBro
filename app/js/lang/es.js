@@ -1955,5 +1955,17 @@ I18n.add('es', {
   "Count as watched at": "Marcar como visto al",
   "A movie, an episode or a recording stopped this far in (or in its last minute) is marked watched and leaves Continue watching.  Plex uses 90%.": "Una película, un episodio o una grabación detenidos a esta altura (o en su último minuto) se marcan como vistos y salen de Seguir viendo.  Plex usa el 90%.",
   "90% (as Plex)": "90% (como Plex)",
-  "The ones you've watched (Settings > Movies and shows > Count as watched at).": "Las que ya viste (Ajustes > Películas y series > Marcar como visto al)."
+  "The ones you've watched (Settings > Movies and shows > Count as watched at).": "Las que ya viste (Ajustes > Películas y series > Marcar como visto al).",
+  "linked by you": "vinculada por ti",
+  "Link another version…": "Vincular otra versión…",
+  "one TiviBro didn't find by its name": "una que TiviBro no encontró por el nombre",
+  "Unlink a version…": "Desvincular una versión…",
+  "Unlink a version": "Desvincular una versión",
+  "Unlinked": "Desvinculada",
+  "Pick the other version": "Elige la otra versión",
+  "Part of its name is enough": "Basta con parte del nombre",
+  "No channel named like that": "Ningún canal se llama así",
+  "{x} is another version now": "{x} ahora es otra versión",
+  "a copy of this channel TiviBro didn't find": "una copia de este canal que TiviBro no encontró",
+  "Find": "Buscar"
 });

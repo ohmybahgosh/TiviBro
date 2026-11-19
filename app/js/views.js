@@ -1790,10 +1790,26 @@ var Views = (function () {
     return q.filter(function (x, i) { return q.indexOf(x) === i; }).join(', ');
   }
   function versionsMenu(c) {
-    var v = L.versions(c);
+    var v = L.versions(c), mine = v.filter(function (x) { return L.linkedVersion(c.k, x.k); });
     UI.menu('Other versions of ' + L.name(c), v.map(function (x) {
-      return { label: RAW(L.name(x)), sub: versionSub(x), action: function () { startChannel(x, false, function () { if (!full) goFull(); else osd(true); }); } };
-    }));
+      return { label: RAW(L.name(x)), sub: versionSub(x) + (L.linkedVersion(c.k, x.k) ? '  ·  ' + T('linked by you') : ''), action: function () { startChannel(x, false, function () { if (!full) goFull(); else osd(true); }); } };
+    }).concat([{ label: 'Link another version…', sub: 'one TiviBro didn\'t find by its name', action: function () { linkVersionMenu(c); } }],
+      mine.length ? [{ label: 'Unlink a version…', action: function () {
+        UI.menu('Unlink a version', mine.map(function (x) { return { label: RAW(L.name(x)), sub: versionSub(x), action: function () { L.linkVersion(c.k, x.k, false); U.toast(T('Unlinked')); refreshLists(true); } }; }));
+      } }] : []));
+  }
+  /* Other versions linked by hand (discussion #60: "some can't be found by other version even though they exist"):
+     type part of its name, pick it.  Linked both ways; the backup switch (failover) uses them too. */
+  function linkVersionMenu(c) {
+    var guess = L.name(c).replace(/\b(UHD|FHD|HD|SD|4K|HEVC|H\.?265|RAW|BACKUP|\d{3,4}p)\b/gi, ' ').replace(/^[A-Z]{2,3}\s*[:|-]\s*/, '').replace(/\s+/g, ' ').trim();
+    UI.prompt('Link another version of ' + L.name(c), guess, function (q) {
+      var not = {}; not[c.k] = 1; L.versions(c).forEach(function (x) { not[x.k] = 1; });
+      var found = L.findChannels(q, not);
+      if (!found.length) { U.toast(T('No channel named like that')); return; }
+      UI.menu('Pick the other version', found.map(function (x) {
+        return { label: RAW(L.name(x)), sub: versionSub(x), action: function () { L.linkVersion(c.k, x.k, true); U.toast(T('{x} is another version now', { x: L.name(x) })); refreshLists(true); } };
+      }));
+    }, 'Part of its name is enough', false, 'Find');
   }
 
   /* ---------- player feedback ---------- */
@@ -1951,7 +1967,7 @@ var Views = (function () {
       } },
       L.canGroup(c) && { label: 'Copy to group…', action: function () { copyMenu([c.k], L.name(c)); } },
       !full && tab === 'live' && { label: 'Select multiple…', sub: 'copy, favorite or hide several', action: function () { startPick(c.k); } },
-      L.versions(c).length && { label: 'Other versions…', sub: versionsSummary(c), action: function () { versionsMenu(c); } },
+      L.versions(c).length ? { label: 'Other versions…', sub: versionsSummary(c), action: function () { versionsMenu(c); } } : { label: 'Link another version…', sub: 'a copy of this channel TiviBro didn\'t find', action: function () { linkVersionMenu(c); } },
       Player.canSwitchFormat(c) && { label: 'Stream format…', sub: FORMAT_NAMES[Player.streamFormat(c)], action: function () { formatMenu(c); } },
       c.arch && { label: 'Watch from start', action: function () { watchFromStart(c); } },
       c.arch && { label: 'Catch-up…', sub: c.arch + ' days', action: function () { catchupList(c); } },

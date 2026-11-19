@@ -114,6 +114,7 @@ var Store = (function () {
     watchlist: [],           // [{ q, at }] words and names to look for in the guide (watch.js)
     toolSkip: {},            // Smart clean-up steps skipped in the web editor
     guideSkip: {},           // "Clean up your guide" steps skipped in the web editor
+    versionLinks: {},        // chanKey -> [chanKeys] linked by hand as other versions of it (both ways; discussion #60)
     noGuide: {},             // chanKey -> 1: no guide wanted (left out of guide matching, no "No guide information")
     watchSeen: {},           // 'title|start' -> end, programmes the watchlist already reminded about
     lastPlUpdate: 0, lastEpgUpdate: 0

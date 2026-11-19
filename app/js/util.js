@@ -111,7 +111,8 @@ var U = (function () {
   function request(url, opts) {
     opts = opts || {};
     var id = ++reqId, t0 = Date.now();
-    var real = typeof Net !== 'undefined' ? Net.wrap(url) : url;
+    // always: through the helper whenever it runs, even on Connection: Direct (updates, discussion #60).
+    var real = typeof Net !== 'undefined' ? Net.wrap(url, opts.always ? { always: true } : undefined) : url;
     var via = real !== url ? 'helper' : 'direct';
     var tag = '#' + id + ' ' + (opts.label || 'GET');
     var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
@@ -193,7 +194,7 @@ var U = (function () {
       }
     });
   }
-  function getJSON(url, timeout, label) { return request(url, { timeout: timeout, label: label }).promise; }
+  function getJSON(url, timeout, label, always) { return request(url, { timeout: timeout, label: label, always: !!always }).promise; }
   function getText(url, timeout, label) { return request(url, { timeout: timeout, text: true, label: label }).promise; }
 
   var toastT = 0;

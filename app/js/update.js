@@ -89,12 +89,12 @@ var Update = (function () {
   function check(quiet) {
     if (st.state === 'checking' || st.state === 'installing') return Promise.resolve(st);
     set({ state: 'checking', error: '' });
-    return U.getJSON(API, 15000, 'releases').then(function (list) {
+    return U.getJSON(API, 15000, 'releases', true).then(function (list) {
       if (!Array.isArray(list)) throw new Error(list && list.message ? 'GitHub said: ' + list.message : 'Unexpected answer from GitHub');
       var r = pick(list, wantPre());
       if (!r || compare(r.version, current()) <= 0) { set({ state: 'current', latest: r, checked: Date.now() }); keep({ checked: Date.now(), latest: r }); return st; }
       // The manifest holds the IPK's file name and SHA-256 for this exact build.
-      return U.getJSON(r.manifest, 15000, 'release manifest').then(function (m) {
+      return U.getJSON(r.manifest, 15000, 'release manifest', true).then(function (m) {
         if (!m || !m.ipkHash || !m.ipkHash.sha256) throw new Error('The release has no checksum');
         var base = r.manifest.replace(/[^/]*$/, '');
         r.ipkUrl = /^https?:/.test(m.ipkUrl) ? m.ipkUrl : base + (m.ipkUrl || r.ipkName);
@@ -240,7 +240,7 @@ var Update = (function () {
     if (!last || compare(cur, last) <= 0) return seen();
     var saved = (load() || {}).pending;
     var got = saved && saved.version === cur && saved.notes && saved.notes.length ? Promise.resolve(saved.notes)
-      : U.getJSON('https://api.github.com/repos/' + REPO + '/releases/tags/v' + cur, 15000, 'release notes').then(function (r) { return notes(r && r.body); }, function () { return []; });
+      : U.getJSON('https://api.github.com/repos/' + REPO + '/releases/tags/v' + cur, 15000, 'release notes', true).then(function (r) { return notes(r && r.body); }, function () { return []; });
     var t0 = Date.now();
     got.then(function (lines) {
       setTimeout(function () {
@@ -282,7 +282,7 @@ var Update = (function () {
   function signed(r) {
     var bad = new Error('This update could not be checked as one of TiviBro\'s own (no valid signature), so it isn\'t installed.  Install it from the releases page on GitHub instead.');
     if (!r.sig) return Promise.reject(bad);
-    if (!(Net.active && Net.port)) return Promise.reject(new Error('Checking an update needs the network helper, which isn\'t running.  Restart TiviBro and try again.'));
+    if (!Net.port) return Promise.reject(new Error('Checking an update needs the network helper, which isn\'t running.  Restart TiviBro and try again.'));
     return fetch('http://127.0.0.1:' + Net.port + '/update/verify', { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ version: r.pkgVer, ipkUrl: r.ipkUrl, sha256: r.sha256, sig: r.sig }) })
       .then(function (x) { return x.json(); }).then(function (j) {
@@ -354,7 +354,7 @@ var Update = (function () {
   var BAD = { '0.6.0-alpha.164': 1, '0.6.0-alpha.165': 1 };
   function snaps() { try { var a = JSON.parse(localStorage.getItem(SNAP_KEY) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
   function earlier() {
-    return U.getJSON(API, 15000, 'releases').then(function (list) {
+    return U.getJSON(API, 15000, 'releases', true).then(function (list) {
       if (!Array.isArray(list)) throw new Error(list && list.message ? 'GitHub said: ' + list.message : 'Unexpected answer from GitHub');
       var cur = current(), out = [];
       list.forEach(function (r) {
@@ -370,7 +370,7 @@ var Update = (function () {
   }
   // The release's checksum and signature, as for an update.
   function prepare(r) {
-    return U.getJSON(r.manifest, 15000, 'release manifest').then(function (m) {
+    return U.getJSON(r.manifest, 15000, 'release manifest', true).then(function (m) {
       if (!m || !m.ipkHash || !m.ipkHash.sha256) throw new Error('That release has no checksum, so it can\'t be installed from here.');
       var base = r.manifest.replace(/[^/]*$/, '');
       r.ipkUrl = /^https?:/.test(m.ipkUrl) ? m.ipkUrl : base + (m.ipkUrl || r.ipkName);
@@ -383,7 +383,7 @@ var Update = (function () {
   // Everything in the browser's storage that's TiviBro's, to the helper's storage (/kv/), and a note of it here.
   function kvKey(v) { return 'rollback-' + String(v).replace(/[^A-Za-z0-9_-]/g, '_') + '-' + Date.now(); }
   function snapshot(to) {
-    if (!(Net.active && Net.port)) return Promise.reject(new Error('Going back needs the network helper (to keep your settings safe), and it isn\'t running.  Restart TiviBro and try again.'));
+    if (!Net.port) return Promise.reject(new Error('Going back needs the network helper (to keep your settings safe), and it isn\'t running.  Restart TiviBro and try again.'));
     try { Store.saveSettings(); if (Store.saveEdits) Store.saveEdits(); } catch (e) {}
     var data = {};
     for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf('tivibro.') === 0 && k !== SNAP_KEY) data[k] = localStorage.getItem(k); }
@@ -410,7 +410,7 @@ var Update = (function () {
   }
   // Puts back the settings saved before going back (after updating again): everything as it was, then a restart.
   function restore(snap) {
-    if (!(Net.active && Net.port)) return Promise.reject(new Error('This needs the network helper, which isn\'t running.'));
+    if (!Net.port) return Promise.reject(new Error('This needs the network helper, which isn\'t running.'));
     return Net.ctlFetch('http://127.0.0.1:' + Net.port + '/kv/get?k=' + encodeURIComponent(snap.key), { cache: 'no-store' }).then(function (x) {
       if (!x.ok) throw new Error('Those saved settings are gone.');
       return x.json();

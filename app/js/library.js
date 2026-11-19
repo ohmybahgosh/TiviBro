@@ -265,11 +265,39 @@ var Library = (function () {
       }
     }
     var list = versionIndex.get(versionKey(c)) || [], e = E();
+    // Linked by hand (hold OK > Link another version…, discussion #60): names the matching misses.
+    var man = (e.versionLinks && e.versionLinks[c.k] || []).map(function (k) { return byKey.get(k); }).filter(Boolean);
+    if (man.length) { var have = {}; list.forEach(function (x) { have[x.k] = 1; }); list = list.concat(man.filter(function (x) { return !have[x.k]; })); }
     return list.filter(function (x) { return x.k !== c.k && !e.blockedChannels[x.k] && !e.blockedGroups[x.g]; })
       .sort(function (a, b) {
         return (Q_ORDER[quality(b.n)] - Q_ORDER[quality(a.n)]) || ((a.g === c.g ? 0 : 1) - (b.g === c.g ? 0 : 1)) ||
           ((e.hiddenChannels[a.k] ? 1 : 0) - (e.hiddenChannels[b.k] ? 1 : 0)) || ((+a.num || 0) - (+b.num || 0));
       });
+  }
+  /* Other versions linked by hand: both ways, and to the ones already linked (a set). */
+  function linkVersion(a, b, on) {
+    var e = E(), m = e.versionLinks || (e.versionLinks = {});
+    if (on) {
+      var set = {}; [a, b].forEach(function (k) { set[k] = 1; (m[k] || []).forEach(function (x) { set[x] = 1; }); });
+      var all = Object.keys(set);
+      all.forEach(function (k) { m[k] = all.filter(function (x) { return x !== k; }); });
+    } else {
+      [[a, b], [b, a]].forEach(function (p) { if (m[p[0]]) { m[p[0]] = m[p[0]].filter(function (x) { return x !== p[1]; }); if (!m[p[0]].length) delete m[p[0]]; } });
+    }
+    Store.saveEdits();
+  }
+  function linkedVersion(a, b) { var l = E().versionLinks && E().versionLinks[a]; return !!(l && l.indexOf(b) >= 0); }
+  // Channels to link: names with every word of q, best first (same playlist and group), at most 60.
+  function findChannels(q, not) {
+    var words = String(q || '').toLowerCase().replace(/[\s|:;,.()\[\]_\/\\-]+/g, ' ').trim().split(' ').filter(Boolean);
+    if (!words.length) return [];
+    var out = [];
+    for (var i = 0; i < data.channels.length && out.length < 400; i++) {
+      var x = data.channels[i]; if (not && not[x.k]) continue;
+      var n = (name(x) + ' ' + x.n).toLowerCase();
+      if (words.every(function (w) { return n.indexOf(w) >= 0; })) out.push(x);
+    }
+    return out.slice(0, 60);
   }
   function qualityLabel(c) { return { 4: '4K', 3: 'FHD', 2: 'HD', 1: 'SD' }[quality(c.n)] || ''; }
   // The quality tag lists show next to a name, only where the same channel is there more than once.
@@ -676,6 +704,6 @@ var Library = (function () {
     copyTo: copyTo, removeFrom: removeFrom, moveInGroup: moveInGroup, moveGroup: moveGroup,
     dataOf: dataOf, setOther: setOther, MIX: MIX, mixed: mixed, mixList: mixList, mixChanged: mixChanged, canGroup: canGroup, get mixRev() { return mixRev; }, dropOther: dropOther, clearOthers: clearOthers, partOf: partOf, get main() { return main; }, get multi() { return multi(); }, plName: plName,
     otherIds: function () { return others.map(function (x) { return x.id; }); },
-    hiddenItems: hiddenItems, allGroups: allGroups, mergedInto: mergedInto, mergedFrom: mergedFrom, mergeGroups: mergeGroups, splitGroup: splitGroup, homeOf: homeOf, versions: versions, versionKey: versionKey, numberCanGrow: numberCanGrow, qualityLabel: qualityLabel, versionTag: versionTag, hideGroups: hideGroups, get epgUrl() { return data.epgUrl; }, get type() { return Store.playlist.type; }
+    hiddenItems: hiddenItems, allGroups: allGroups, mergedInto: mergedInto, mergedFrom: mergedFrom, mergeGroups: mergeGroups, splitGroup: splitGroup, homeOf: homeOf, versions: versions, versionKey: versionKey, linkVersion: linkVersion, linkedVersion: linkedVersion, findChannels: findChannels, numberCanGrow: numberCanGrow, qualityLabel: qualityLabel, versionTag: versionTag, hideGroups: hideGroups, get epgUrl() { return data.epgUrl; }, get type() { return Store.playlist.type; }
   };
 })();

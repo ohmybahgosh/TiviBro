@@ -1958,5 +1958,17 @@ I18n.add('ru', {
   "Count as watched at": "Считать просмотренным с",
   "A movie, an episode or a recording stopped this far in (or in its last minute) is marked watched and leaves Continue watching.  Plex uses 90%.": "Фильм, серия или запись, остановленные на этой отметке (или в последнюю минуту), считаются просмотренными и уходят из «Продолжить просмотр».  В Plex это 90%.",
   "90% (as Plex)": "90% (как в Plex)",
-  "The ones you've watched (Settings > Movies and shows > Count as watched at).": "Те, что вы посмотрели (Настройки > Фильмы и сериалы > Считать просмотренным с)."
+  "The ones you've watched (Settings > Movies and shows > Count as watched at).": "Те, что вы посмотрели (Настройки > Фильмы и сериалы > Считать просмотренным с).",
+  "linked by you": "связана вами",
+  "Link another version…": "Связать другую версию…",
+  "one TiviBro didn't find by its name": "ту, что TiviBro не нашёл по названию",
+  "Unlink a version…": "Отвязать версию…",
+  "Unlink a version": "Отвязать версию",
+  "Unlinked": "Отвязано",
+  "Pick the other version": "Выберите другую версию",
+  "Part of its name is enough": "Достаточно части названия",
+  "No channel named like that": "Нет канала с таким названием",
+  "{x} is another version now": "{x} теперь другая версия",
+  "a copy of this channel TiviBro didn't find": "копия этого канала, которую TiviBro не нашёл",
+  "Find": "Найти"
 });

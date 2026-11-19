@@ -691,7 +691,9 @@ var Epg = (function () {
   // pid: another playlist's stored guide (several playlists on); the first playlist's by default.
   function hUrl(what, kind, pid) { return 'http://127.0.0.1:' + Net.port + '/guide/' + what + '?pl=' + encodeURIComponent(pid || P().id) + '&kind=' + kind; }
   function useHelper() {
-    if (!Net.active || !Net.port || (Store.settings && Store.settings.guideInApp)) return Promise.resolve(false);
+    // The helper's guide store works whatever Connection says: on Direct the app can't read most XMLTV links itself
+    // (no CORS), but the helper is still running (discussion #60: "external EPG only works with the helper").
+    if (!Net.port || (Store.settings && Store.settings.guideInApp)) return Promise.resolve(false);
     if (hOk !== null) return Promise.resolve(hOk);
     return fetch('http://127.0.0.1:' + Net.port + '/ping', { cache: 'no-store' }).then(function (r) { return r.json(); })
       .then(function (j) { hOk = !!(j && j.guide); return hOk; }, function () { return false; });
