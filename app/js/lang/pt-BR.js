@@ -2497,5 +2497,10 @@ I18n.add('pt-BR', {
   "Channel below": "Canal de baixo",
   "Channel above": "Canal de cima",
   "No open reports": "Nenhum relatório aberto",
-  "Closed": "Fechados"
+  "Closed": "Fechados",
+  "Quad101, Taiwan (101.101.101.101)": "Quad101, Taiwan (101.101.101.101)",
+  "A DNS server I type (IPv4, IPv6 or over HTTPS)": "Um servidor DNS que eu digito (IPv4, IPv6 ou via HTTPS)",
+  "One or two addresses, IPv4 or IPv6 (192.168.1.1, 2001:de4::101), or a DNS-over-HTTPS link (https://dns.example/dns-query).": "Um ou dois endereços, IPv4 ou IPv6 (192.168.1.1, 2001:de4::101), ou um link de DNS via HTTPS (https://dns.example/dns-query).",
+  "That isn't a DNS address (192.168.1.1, 2001:de4::101) or an https:// link": "Isso não é um endereço DNS (192.168.1.1, 2001:de4::101) nem um link https://",
+  "Like 192.168.1.1, 2001:de4::101 or https://dns.example/dns-query": "Como 192.168.1.1, 2001:de4::101 ou https://dns.example/dns-query"
 });

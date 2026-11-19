@@ -549,23 +549,27 @@ var Settings = (function () {
       DNS_IDS, DNS_NAMES,
       function () { return s.dns || 'tv'; },
       function (v) { if (v === 'custom' && !s.dnsServer) return askDns(); s.dns = v; save(); Net.setDns(); build(); }));
-    if (s.dns === 'custom') out.push(action('DNS server', 'Its address, like 192.168.1.1 (your router) or a public one.', askDns, function () { return s.dnsServer || 'Not set'; }));
+    if (s.dns === 'custom') out.push(action('DNS server', 'One or two addresses, IPv4 or IPv6 (192.168.1.1, 2001:de4::101), or a DNS-over-HTTPS link (https://dns.example/dns-query).', askDns, function () { return s.dnsServer || 'Not set'; }));
     out.push(info(s.playlists.length > 1 ? 'Every playlist that is on is used at once: each has its own section in the group list, under its name.  The first playlist comes first, and your Favorites, your groups and reminders belong to it.  The guide, names and channels of the first playlist are under Guide, Channel and group names, and Channels and groups.'
       : 'The guide, names and channels of the playlist in use are under Guide, Channel and group names, and Channels and groups.', ''));
     return out;
   }
 
   /* The DNS choices (Settings > Playlists and accounts > DNS, and the first setup screen, discussion #60). */
-  var DNS_IDS = ['tv', 'cloudflare', 'google', 'quad9', 'controld', 'controld-uncensored', 'doh-cloudflare', 'doh-google', 'doh-controld', 'doh-controld-uncensored', 'custom'];
-  var DNS_NAMES = ['The TV\'s own', 'Cloudflare (1.1.1.1, 1.0.0.1)', 'Google (8.8.8.8)', 'Quad9 (9.9.9.9)', 'ControlD Unfiltered (76.76.2.0)', 'ControlD Uncensored (76.76.2.5)', 'Cloudflare over HTTPS', 'Google over HTTPS', 'ControlD Unfiltered over HTTPS', 'ControlD Uncensored over HTTPS', 'A DNS server I type'];
+  var DNS_IDS = ['tv', 'cloudflare', 'google', 'quad9', 'quad101', 'controld', 'controld-uncensored', 'doh-cloudflare', 'doh-google', 'doh-controld', 'doh-controld-uncensored', 'custom'];
+  var DNS_NAMES = ['The TV\'s own', 'Cloudflare (1.1.1.1, 1.0.0.1)', 'Google (8.8.8.8)', 'Quad9 (9.9.9.9)', 'Quad101, Taiwan (101.101.101.101)', 'ControlD Unfiltered (76.76.2.0)', 'ControlD Uncensored (76.76.2.5)', 'Cloudflare over HTTPS', 'Google over HTTPS', 'ControlD Unfiltered over HTTPS', 'ControlD Uncensored over HTTPS', 'A DNS server I type (IPv4, IPv6 or over HTTPS)'];
   // after: what to redraw once it is saved (the settings page, or the setup screen).
   function askDns(after) {
     var s = S(); if (typeof after !== 'function') after = build;
     UI.prompt('DNS server', s.dnsServer || '', function (v) {
       v = String(v || '').trim();
-      if (!/^\d{1,3}(?:\.\d{1,3}){3}$/.test(v) || v.split('.').some(function (n) { return +n > 255; })) { U.toast('That isn\'t an address like 192.168.1.1', 5000); return; }
-      s.dnsServer = v; s.dns = 'custom'; save(); Net.setDns(); after();
-    }, 'Like 192.168.1.1');
+      // One or two IPv4 or IPv6 addresses, or a DNS-over-HTTPS link (discussion #60).
+      var v4 = function (x) { return /^\d{1,3}(?:\.\d{1,3}){3}$/.test(x) && x.split('.').every(function (n) { return +n <= 255; }); };
+      var v6 = function (x) { return /^[0-9a-f:.]*:[0-9a-f:.]*$/i.test(x); };
+      var doh = /^https:\/\/[^\s\/?#]+(\/\S*)?$/i.test(v), parts = v.split(/[\s,;]+/).filter(Boolean);
+      if (!doh && !(parts.length && parts.length <= 3 && parts.every(function (x) { return v4(x) || v6(x); }))) { U.toast('That isn\'t a DNS address (192.168.1.1, 2001:de4::101) or an https:// link', 6000); return; }
+      s.dnsServer = doh ? v : parts.join(', '); s.dns = 'custom'; save(); Net.setDns(); after();
+    }, 'Like 192.168.1.1, 2001:de4::101 or https://dns.example/dns-query');
   }
   function persist(p, reloadGuide) {
     Store.upsertPlaylist(p);

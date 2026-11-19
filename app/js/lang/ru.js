@@ -1984,5 +1984,10 @@ I18n.add('ru', {
   "Channel below": "Канал ниже",
   "Channel above": "Канал выше",
   "No open reports": "Нет открытых сообщений",
-  "Closed": "Закрытые"
+  "Closed": "Закрытые",
+  "Quad101, Taiwan (101.101.101.101)": "Quad101, Тайвань (101.101.101.101)",
+  "A DNS server I type (IPv4, IPv6 or over HTTPS)": "DNS-сервер вручную (IPv4, IPv6 или через HTTPS)",
+  "One or two addresses, IPv4 or IPv6 (192.168.1.1, 2001:de4::101), or a DNS-over-HTTPS link (https://dns.example/dns-query).": "Один или два адреса, IPv4 или IPv6 (192.168.1.1, 2001:de4::101), или ссылка DNS через HTTPS (https://dns.example/dns-query).",
+  "That isn't a DNS address (192.168.1.1, 2001:de4::101) or an https:// link": "Это не DNS-адрес (192.168.1.1, 2001:de4::101) и не ссылка https://",
+  "Like 192.168.1.1, 2001:de4::101 or https://dns.example/dns-query": "Например 192.168.1.1, 2001:de4::101 или https://dns.example/dns-query"
 });

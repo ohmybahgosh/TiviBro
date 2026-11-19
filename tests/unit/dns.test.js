@@ -92,6 +92,16 @@ function server() {
     ok('a DoH service at a name doesn\'t look itself up', !!r && (r.a !== undefined || r.e !== undefined), r);
     D._doh(null); D.set('tv'); hs.close();
   }
+  // Discussion #60: Quad101, IPv6 servers and a typed DoH link.
+  ok('Quad101 can be picked', D.set('quad101').mode === 'quad101');
+  let c = D.set('custom', '101.101.101.101, 2001:de4::101');
+  ok('a typed server can be IPv6, two at once', c.mode === 'custom' && c.server === '101.101.101.101, 2001:de4::101', JSON.stringify(c));
+  c = D.set('custom', 'https://dns.example/dns-query');
+  ok('a typed DNS-over-HTTPS link', c.mode === 'custom' && c.server === 'https://dns.example/dns-query', JSON.stringify(c));
+  ok('nonsense falls back to the TV\'s DNS', D.set('custom', '999.1.1.1 hello').mode === 'tv');
+  const aaaa = Buffer.from([0, 0, 0x81, 0x80, 0, 1, 0, 1, 0, 0, 0, 0, 1, 97, 0, 0, 28, 0, 1, 0xc0, 12, 0, 28, 0, 1, 0, 0, 0, 60, 0, 16, 0x20, 0x01, 0x0d, 0xe4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x01, 0x01]);
+  const a6 = D._answer(aaaa);
+  ok('an IPv6 (AAAA) answer is read', a6 && a6.family === 6 && a6.ip === '2001:de4:0:0:0:0:0:101', JSON.stringify(a6));
   ok('ControlD can be picked', ['controld', 'controld-uncensored', 'doh-controld', 'doh-controld-uncensored'].every((m) => D.set(m).mode === m));
   D.set('tv');
   console.log(fail ? fail + ' failures' : 'all DNS checks passed');
