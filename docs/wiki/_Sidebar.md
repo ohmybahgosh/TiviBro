@@ -18,6 +18,7 @@
 - [Event channels: pay-per-view and sports passes](Event-channels-pay-per-view-and-sports-passes)
 - [My teams](My-teams)
 - [Catch-up](Catch-up)
+- [Recording, live pause and rewind](Recording-live-pause-and-rewind)
 - [Movies and shows](Movies-and-shows)
 - [Movies on now](Movies-on-now)
 - [TV series from TMDB](TV-series-from-TMDB)

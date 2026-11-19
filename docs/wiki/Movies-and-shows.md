@@ -29,4 +29,4 @@ If your provider offers video on demand, **Movies** and **Shows** appear in the 
 
 ---
 
-← [Catch-up](Catch-up)  ·  [Home](Home)  ·  [Movies on now](Movies-on-now) →
+← [Recording, live pause and rewind](Recording-live-pause-and-rewind)  ·  [Home](Home)  ·  [Movies on now](Movies-on-now) →
