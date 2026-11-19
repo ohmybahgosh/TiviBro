@@ -577,7 +577,7 @@ var Teams = (function () {
     // and "NCAAB: College Basketball: Michigan State at Tennessee"): nothing moved.  It was "moved" there again
     // every 10 minutes, with a line in the log each time.
     if (found && c && found.c.k === c.k && found.p.s === r.s) return null;
-    return found ? { c: found.c, p: { s: found.p.s, e: found.p.e, t: found.p.t } } : { gone: true, now: cur && cur.t };
+    return found ? { c: found.c, p: { s: found.p.s, e: found.p.e, t: found.p.t } } : { gone: true, now: cur && cur.t, replay: !!(cur && cur.rp && matchup(cur.t, c ? c.n : '') === was) };
   }
   // Mid-August to the end of the year: the season, conference championships and most bowls.
   function footballSeason(t) { var d = new Date(t || Date.now()), m = d.getMonth(); return m >= 8 || m === 7 && d.getDate() >= 15; }

@@ -310,7 +310,7 @@ Teams.follow('ncaab:msu', false);
   progs[slot.k] = [{ s: t, e: t + 3 * H, t: g, rp: 1 }];
   Teams.dirty();
   const rp = Teams.recheck(r);
-  ok('reminders: listed there as a replay: gone', rp && rp.gone, JSON.stringify(rp));
+  ok('reminders: listed there as a replay: gone, and says so', rp && rp.gone && rp.replay, JSON.stringify(rp));
   // An event channel gone Offline: its guide read, and empty.
   progs[slot.k] = [];
   Teams.dirty();

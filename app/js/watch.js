@@ -55,7 +55,7 @@ var Watch = (function () {
       try { x = Teams.recheck(r, now); } catch (e) {}
       if (!x) continue;
       if (x.c) { Log.info('watch', 'Reminder for "' + r.t + '" moved to ' + L.name(x.c) + ' at ' + U.hhmm(x.p.s) + ': its channel lists ' + (x.now || 'something else') + ' now'); r.k = x.c.k; r.s = x.p.s; r.e = x.p.e; r.t = x.p.t; mark(r); changed = true; }
-      else if (x.gone) { Log.info('watch', 'Dropped the reminder for "' + r.t + '": no longer in the guide' + (x.now ? ' (its channel lists ' + x.now + ')' : '')); rem.splice(i, 1); changed = true; }
+      else if (x.gone) { Log.info('watch', 'Dropped the reminder for "' + r.t + '": ' + (x.replay ? 'the guide lists it as a replay, not the game' : 'no longer in the guide' + (x.now ? ' (its channel lists ' + x.now + ')' : ''))); rem.splice(i, 1); changed = true; }
     }
     if (changed) { Store.saveEdits(); if (typeof Remind !== 'undefined') Remind.sync(true); }
   }
