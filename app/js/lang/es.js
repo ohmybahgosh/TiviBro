@@ -1967,5 +1967,12 @@ I18n.add('es', {
   "No channel named like that": "Ningún canal se llama así",
   "{x} is another version now": "{x} ahora es otra versión",
   "a copy of this channel TiviBro didn't find": "una copia de este canal que TiviBro no encontró",
-  "Find": "Buscar"
+  "Find": "Buscar",
+  "Fixed now": "Ya está arreglado",
+  "Tell the developer it works now?": "¿Decirle al desarrollador que ya funciona?",
+  "Yes, it's fixed": "Sí, está arreglado",
+  "What made the difference, if you know": "Qué lo arregló, si lo sabes",
+  "Anything to add?": "¿Algo que añadir?",
+  "A sentence is plenty.": "Basta con una frase.",
+  "Read it again, or press Fixed now or Still happening later, in Settings > System > Your problem reports": "Vuelve a leerlo, o pulsa Ya está arreglado o Sigue pasando más tarde, en Ajustes > Sistema > Tus reportes de problemas"
 });

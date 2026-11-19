@@ -76,6 +76,19 @@ for (let i = 0; i < 6; i++) r = await post('/followup', { n: 7, key, what: 'x', 
 ok('follow-ups share the hourly limit', r.status === 429);
 ok('no token or key leaks into answers', !JSON.stringify(await get('/status?n=7')).includes('ghp_test'));
 
+// 5b. Fixed now: a note, no log, and the report closed; the key is needed.
+issues[7].state = 'open'; delete issues[7].state_reason;
+r = await post('/fixed', { n: 7, key: 'e'.repeat(32), what: 'works', version: '0.6.0-alpha.173' }, '4.4.4.4');
+ok('Fixed now with a wrong key is refused', r.status === 403);
+r = await post('/fixed', { n: 8, key, what: 'works', version: '0.6.0-alpha.173' }, '4.4.4.4');
+ok('Fixed now: one report\'s key does not close another', r.status === 403);
+r = await (await post('/fixed', { n: 7, key, what: 'Plays fine now, thanks @someone', version: '0.6.0-alpha.173', tv: 'OLED' }, '4.4.4.4')).json();
+const fx = comments[7][comments[7].length - 1];
+ok('Fixed now adds a short comment and closes the report as completed', r.ok && r.closed && /### Fixed now/.test(fx.body) && /0\.6\.0-alpha\.173 on OLED/.test(fx.body) && !/# TiviBro problem report/.test(fx.body) && issues[7].state === 'closed' && issues[7].state_reason === 'completed', JSON.stringify(r) + ' ' + fx.body.slice(0, 200));
+ok('Fixed now: no @mentions from outside', /@​someone/.test(fx.body));
+s = await get('/status?n=7');
+ok('the Fixed now comment is not "a reply from the developer"', s.issues[0].reply.id === 2, JSON.stringify(s.issues[0].reply));
+
 // 6. GitHub turning a long report down with 500 (issue #53): asked again with less of the log, it goes through.
 globalThis.GH_MAX = 35000; calls = [];
 const big = LOG + '\n' + Array.from({ length: 3000 }, (_, i) => '10:0' + (i % 10) + ':00  WARN  player  line ' + i + ' of a long log').join('\n');

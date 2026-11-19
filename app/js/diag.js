@@ -103,6 +103,16 @@ var Diag = (function () {
     });
   }
 
+  // Fixed now: a short note on the report (no log), and the relay closes it.
+  function fixedNow(n, key, what) {
+    var cfgUrl = (Store.settings && Store.settings.relayConfig) || RELAY_CONFIG, scrub = scrubber();
+    var tv = '';
+    return report().then(function (r) { tv = r.tv || ''; return fetch(Net.wrap(cfgUrl), { cache: 'no-store' }); }).then(function (x) { if (!x.ok) throw new Error('report service not found'); return U.readJSON(x, 'The report service'); }).then(function (c) {
+      if (!c || !c.url) throw new Error('report service not available');
+      return fetch(String(c.url).replace(/\/report$/, '/fixed'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ n: n, key: key, what: scrub(what || ''), version: TIVIBRO_VERSION, tv: tv }) });
+    }).then(function (x) { return x.json().catch(function () { return {}; }).then(function (j) { if (!x.ok || !j.ok) throw new Error(j.error || U.httpSays(x.status, 'report')); Log.info('diag', 'Told report #' + n + ' it is fixed'); return j; }); });
+  }
+
   /* ---------- problem report ----------
      What "Report a problem" (in the web editor) shares: versions, the TV, a few settings, and the
      app and helper logs.  Never logins: the log already masks them, and here every provider and
@@ -523,5 +533,5 @@ var Diag = (function () {
     });
   }
 
-  return { report: report, openReport: openReport, sendNow: sendNow, followup: followup, run: run, speedTest: speedTest, showLog: showLog, showHelperLog: showHelperLog, close: close, get open() { return box && !box.classList.contains('hidden'); } };
+  return { report: report, openReport: openReport, sendNow: sendNow, followup: followup, fixedNow: fixedNow, run: run, speedTest: speedTest, showLog: showLog, showHelperLog: showHelperLog, close: close, get open() { return box && !box.classList.contains('hidden'); } };
 })();

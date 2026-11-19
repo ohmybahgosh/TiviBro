@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Fixed now, for your problem reports (discussion #121).**  A report sent from the TV now has **Fixed now** next to Still happening (on the report's note and in Settings > System > Your problem reports): it tells the developer it works on your version, with a note if you like, and closes the report.  Still happening opens it again if it comes back.
+
 ## 0.6.0 (alpha 173, 2026-11-19)
 
 Pre-release: expect rough edges, and keep a backup before installing.

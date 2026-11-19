@@ -2483,5 +2483,12 @@ I18n.add('pt-BR', {
   "No channel named like that": "Nenhum canal com esse nome",
   "{x} is another version now": "{x} agora é outra versão",
   "a copy of this channel TiviBro didn't find": "uma cópia deste canal que o TiviBro não encontrou",
-  "Find": "Buscar"
+  "Find": "Buscar",
+  "Fixed now": "Já está resolvido",
+  "Tell the developer it works now?": "Avisar o desenvolvedor que já funciona?",
+  "Yes, it's fixed": "Sim, está resolvido",
+  "What made the difference, if you know": "O que resolveu, se você souber",
+  "Anything to add?": "Algo a acrescentar?",
+  "A sentence is plenty.": "Uma frase basta.",
+  "Read it again, or press Fixed now or Still happening later, in Settings > System > Your problem reports": "Leia de novo, ou pressione Já está resolvido ou Continua acontecendo depois, em Configurações > Sistema > Seus relatórios de problemas"
 });

@@ -1970,5 +1970,12 @@ I18n.add('ru', {
   "No channel named like that": "Нет канала с таким названием",
   "{x} is another version now": "{x} теперь другая версия",
   "a copy of this channel TiviBro didn't find": "копия этого канала, которую TiviBro не нашёл",
-  "Find": "Найти"
+  "Find": "Найти",
+  "Fixed now": "Исправлено",
+  "Tell the developer it works now?": "Сообщить разработчику, что всё работает?",
+  "Yes, it's fixed": "Да, исправлено",
+  "What made the difference, if you know": "Что помогло, если знаете",
+  "Anything to add?": "Хотите что-то добавить?",
+  "A sentence is plenty.": "Достаточно одного предложения.",
+  "Read it again, or press Fixed now or Still happening later, in Settings > System > Your problem reports": "Прочитать снова или нажать «Исправлено» или «Всё ещё происходит» позже можно в Настройки > Система > Ваши сообщения о проблемах"
 });

@@ -103,12 +103,13 @@ var Reports = (function () {
     }
     var buttons = [];
     if (behind) buttons.push({ label: 'Update to ' + r.fixed, action: function () { showing = false; update(); } });
+    if (r.state !== 'closed' && r.key) buttons.push({ label: 'Fixed now', action: function () { showing = false; fixedNow(r); } });
     buttons.push({ label: 'Still happening', action: function () { showing = false; still(r); } });
     buttons.push({ label: 'OK', action: function () { showing = false; setTimeout(next, 1500); } });
     // Where to find it again, to read it or say it still happens later (discussion #36).
     var again = U.el('div', 'rep-again'), hint = U.el('b', '', '▲▼ scroll   ·   ');
     hint.style.display = 'none'; again.appendChild(hint);
-    again.appendChild(document.createTextNode('Read it again, or press Still happening later, in Settings > System > Your problem reports'));
+    again.appendChild(document.createTextNode('Read it again, or press Fixed now or Still happening later, in Settings > System > Your problem reports'));
     txt.appendChild(again);
     setTimeout(function () { var p = txt.querySelector('.pscroll'); if (p && p.scrollHeight > p.clientHeight + 2) hint.style.display = ''; }, 0);
     UI.panel('Your problem report #' + r.n, body, buttons, function () { showing = false; setTimeout(next, 1500); });
@@ -141,6 +142,25 @@ var Reports = (function () {
     Diag.followup(r.n, r.key, note || 'It still happens on ' + TIVIBRO_VERSION + '.').then(function (j) {
       r.followed = Date.now(); if (j.reopened) r.state = 'open'; save();
       U.toast('Sent, thank you.  The developer sees it on report #' + r.n + (j.reopened ? ', which is open again' : '') + '.', 7000);
+    }, function (e) { U.toast('It could not be sent (' + ((e && e.message) || 'no connection') + ').  Scan the code on the report to answer on GitHub.', 9000); });
+  }
+
+  /* Fixed now (discussion #121: "is there a my-problem-is-fixed on the TV?"): a short note to the developer, and the
+     report is closed.  Still happening opens it again if it comes back. */
+  function fixedNow(r) {
+    UI.menu('Tell the developer it works now?', [
+      { label: 'Yes, it\'s fixed', sub: 'Report #' + r.n + ' is closed.  Still happening opens it again if it comes back.', action: function () { sendFixed(r, ''); } },
+      { label: 'Add a note first', sub: 'What made the difference, if you know', action: function () {
+        UI.prompt('Anything to add?', '', function (v) { sendFixed(r, v); }, 'A sentence is plenty.', false, 'Send');
+      } },
+      { label: 'Cancel', current: true }
+    ]);
+  }
+  function sendFixed(r, note) {
+    U.toast('Sending…', 3000);
+    Diag.fixedNow(r.n, r.key, note || 'It works now on ' + TIVIBRO_VERSION + '.').then(function (j) {
+      r.state = 'closed'; r.closedAt = Date.now(); r.seen = { reply: r.reply ? r.reply.id : (r.seen && r.seen.reply), state: 'closed' }; save();
+      U.toast('Thank you.  Report #' + r.n + ' is closed' + (j.closed ? '' : ' (GitHub will catch up)') + '.', 7000);
     }, function (e) { U.toast('It could not be sent (' + ((e && e.message) || 'no connection') + ').  Scan the code on the report to answer on GitHub.', 9000); });
   }
 

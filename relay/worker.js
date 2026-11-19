@@ -14,6 +14,9 @@
      POST /followup JSON { n, key, what, version, tv, log }  -> { ok, url }
        "Still happening": a comment on that issue, with a fresh log, and the issue reopened if it was
        closed.  Needs the issue's key, so nobody can comment on reports that are not theirs.
+     POST /fixed JSON { n, key, what, version, tv }  -> { ok, url, closed }
+       "Fixed now" (discussion #121: "is there a my-problem-is-fixed on the TV?"): a short comment saying it
+       works on that version, and the issue closed as completed.  The same key; no log.
 
    Settings (Workers > tivibro-report > Settings > Variables and secrets, and Bindings):
      GITHUB_TOKEN  secret: fine-grained token for the repo, Issues read and write, nothing else
@@ -217,6 +220,30 @@ async function followup(request, env) {
   return json({ ok: true, url: made.html_url, reopened: issue.state === 'closed' });
 }
 
+async function fixed(request, env) {
+  if (!env.GITHUB_TOKEN || !env.REPO) return json({ error: 'The report relay is not set up yet.' }, 503);
+  let j;
+  try { const t = await request.text(); if (t.length > 20000) return json({ error: 'That is too big.' }, 413); j = JSON.parse(t); } catch (e) { return json({ error: 'That could not be read.' }, 400); }
+  const n = /^\d{1,7}$/.test(String(j.n)) ? +j.n : 0;
+  if (!n || !same(j.key, await reportKey(env, n))) return json({ error: 'That report is not from this TV.' }, 403);
+  const r = { what: field(j.what, 2000), version: field(j.version, 40), tv: field(j.tv, 120) };
+  if (!VER.test(r.version)) return json({ error: 'That does not look like TiviBro.' }, 400);
+  const why = await limited(env, request.headers.get('cf-connecting-ip') || 'unknown');
+  if (why) return json({ error: why }, 429);
+  const st = await gh(env, '/issues/' + n);
+  if (!st.ok) return json({ error: 'GitHub could not find that report (' + st.status + ').' }, 502);
+  const issue = await st.json();
+  if (!(issue.labels || []).some(l => (l.name || l) === 'from-tv')) return json({ error: 'That report is not from a TV.' }, 403);
+  const body = [FOLLOW_MARK, '### Fixed now', '', quiet(r.what) || '_No note_', '', 'TiviBro ' + r.version + (r.tv ? ' on ' + r.tv : '') + '.', '',
+    '<sub>Sent from the TV with Fixed now, through the TiviBro report relay.  The report was closed with it; Still happening on the TV opens it again.</sub>'].join('\n');
+  const c = await gh(env, '/issues/' + n + '/comments', { method: 'POST', body: JSON.stringify({ body }) });
+  if (!c.ok) { console.log('GitHub ' + c.status + ': ' + (await c.text()).slice(0, 300)); return json({ error: 'GitHub did not take it (' + c.status + ').' }, 502); }
+  const made = await c.json();
+  let closed = issue.state === 'closed';
+  if (!closed) { const p = await gh(env, '/issues/' + n, { method: 'PATCH', body: JSON.stringify({ state: 'closed', state_reason: 'completed' }) }); closed = p.ok; }
+  return json({ ok: true, url: made.html_url, closed });
+}
+
 /* ---------- install numbers ---------- */
 const KINDS = ['install', 'update', 'active'];
 const VER = /^\d+\.\d+\.\d+(-[a-z]+\.\d+)?$/;
@@ -283,6 +310,9 @@ export default {
     }
     if (request.method === 'POST' && url.pathname === '/followup') {
       try { return await followup(request, env); } catch (e) { console.log('followup error: ' + (e && e.stack || e)); return json({ error: 'The report relay had a problem.' }, 500); }
+    }
+    if (request.method === 'POST' && url.pathname === '/fixed') {
+      try { return await fixed(request, env); } catch (e) { console.log('fixed error: ' + (e && e.stack || e)); return json({ error: 'The report relay had a problem.' }, 500); }
     }
     if (request.method === 'POST' && url.pathname === '/report') {
       try { return await report(request, env); } catch (e) { console.log('relay error: ' + (e && e.stack || e)); return json({ error: 'The report relay had a problem.  Please use the GitHub form.' }, 500); }
