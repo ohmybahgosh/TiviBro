@@ -84,15 +84,19 @@ function tile(req, res, ALLOW, log, port, q) {
     t.frames++; t.bytes += jpg.length;
     if (t.frames === 1 && log) log({ lv: 'info', event: 'multiview tile first picture', id: t.id, ms: Date.now() - t.t0, w: w });
     var now = Date.now(); if (lastOut) { gaps.push(now - lastOut); if (gaps.length > 200) gaps.shift(); } lastOut = now;
-    busy = !res.write('--' + BOUNDARY + '\r\nContent-Type: image/jpeg\r\nContent-Length: ' + jpg.length + '\r\n\r\n');
-    busy = !res.write(jpg) || busy;
-    busy = !res.write('\r\n') || busy;
+    res.write('--' + BOUNDARY + '\r\nContent-Type: image/jpeg\r\nContent-Length: ' + jpg.length + '\r\n\r\n');
+    res.write(jpg);
+    res.write('\r\n');
   }
+  // The app is behind when what's written and not yet taken passes a few pictures (a write saying "wait" only
+  // means one picture is bigger than Node's buffer, which every one is).
+  function behind() { var so = res.socket || res.connection; return !!(so && so.bufferSize > 300 * 1024); }
   function tick() {
     timer = null;
     if (t.closed) return;
     if (!pend.length) { next = 0; if (t.done) t.end(); return; }    // nothing waiting: start again when there is
-    if (busy) t.dropped++, pend.shift();                           // the app hasn't taken the last one: skip this
+    busy = behind();
+    if (busy) t.dropped++, pend.shift();                           // the app hasn't taken the last ones: skip this
     else send(pend.shift());
     next += step * (pend.length > 5 ? 0.85 : pend.length < 2 ? 1.15 : 1);
     var now = Date.now();
