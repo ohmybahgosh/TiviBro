@@ -172,12 +172,20 @@ var Search = (function () {
      still shows the channel first. */
   var TYPE = { now: 0, vod: 1, channel: 2, later: 3, inname: 4, replay: 5 };
   var remoteVod = { q: null, items: [] }, vodTimer = null;
+  /* One search through the helper at a time (issue #132): the first one can take a minute while the helper
+     downloads a big list, and asking again with every letter only piled up.  The newest words wait their turn. */
+  var vodBusy = false, vodNext = null;
   function askVod(q) {
     clearTimeout(vodTimer);
     vodTimer = setTimeout(function () {
+      if (vodBusy) { vodNext = q; return; }
+      vodBusy = true;
       Vod.findRemote(q).then(function (items) {
+        vodBusy = false;
         remoteVod = { q: q, items: items };
         if (input.value.trim().toLowerCase() === q) run();
+        var next = vodNext; vodNext = null;
+        if (next && next !== q && input.value.trim().toLowerCase() === next) askVod(next);
       });
     }, 350);
   }

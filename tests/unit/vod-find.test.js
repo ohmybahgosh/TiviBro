@@ -35,4 +35,23 @@ function ask(body) {
   r = await ask({ words: ['lord'], u: 'http://example.com/x' });
   assert.equal(r.code, 400, 'only this helper\'s own relay addresses');
   console.log('PASS vod find: words, accents, max, relay addresses only');
+  // Two searches at once with nothing kept (issue #132): one download, and both get their answer.
+  const http = require('http');
+  let hits = 0;
+  const srv = http.createServer((req, res) => {
+    const cats = /get_vod_categories/.test(req.url);
+    if (!cats) hits++;
+    setTimeout(() => { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(cats ? [{ category_id: '1', category_name: 'Movies' }] : [{ stream_id: 1, name: 'Lord of War', category_id: '1' }, { stream_id: 2, name: 'War Horse', category_id: '1' }])); }, 300);
+  });
+  await new Promise((ok) => srv.listen(0, '127.0.0.1', ok));
+  const sp = srv.address().port, su = 'http://127.0.0.1:' + sp + '/x/http/provider/player_api.php?action=get_vod_streams';
+  const two = (words) => new Promise((resolve) => {
+    const res = { writeHead(code) { this.code = code; }, end(b) { resolve({ code: this.code, body: JSON.parse(b) }); } };
+    Vod.find({ pl: 'p2', sig: 's2', kind: 'movie', u: su, uc: su.replace('get_vod_streams', 'get_vod_categories'), maxAge: 0, words }, res, {}, null, sp);
+  });
+  const both = await Promise.all([two(['lord']), two(['war'])]);
+  srv.close();
+  assert.equal(hits, 1, 'one download for two searches at once');
+  assert.deepEqual(both.map((x) => x.body.total), [1, 2], 'each search gets its own answer');
+  console.log('PASS vod find: two searches at once share one download');
 })().catch((e) => { console.error(e); process.exitCode = 1; });

@@ -37,6 +37,12 @@ function norm(s) {
     .replace(/\b(hd|fhd|uhd|4k|sd|hevc|h265|raw|east|west|backup|us|usa|uk|ca)\b/g, ' ')
     .replace(/[^a-z0-9]+/g, '');
 }
+// Same as unprefixed in app/js/epg.js: a name without its provider's prefix, the second key (issue #131).
+function unprefixed(s) {
+  var m = /^\s*[A-Z0-9][A-Z0-9+&._-]{0,7}\s*[:|]\s*(\S.*)$/.exec(String(s || ''));       // a short capitals tag, not "Mr. Bean: The Show"
+  // "NBA: Game 1" and "NHL: Game 1" are not the same channel: an event's number alone is no name.
+  return m && !/^(event|game|ppv|match|live|channel|ch|stream|feed)\W*\d*\W*$/i.test(m[1]) ? m[1] : '';
+}
 function ts(s) {
   var m = /^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)?\s*([+-]\d{4})?/.exec(s || '');
   if (!m) return 0;
@@ -223,8 +229,13 @@ function start(body, log) {
           if (wantP[id] && !icons[pid]) { var pi = /<icon[^>]*src="([^"]+)"/.exec(c[2]); if (pi) icons[pid] = unesc(pi[1]); }
           continue;
         }
-        var nk = norm(name);
-        if (!want[id] && nk && names[nk] != null && !matches[nk]) { matches[nk] = id; want[id] = 1; if (!(id in past) || past[id] < names[nk]) past[id] = names[nk]; }
+        var nk = norm(name), un = unprefixed(name), nks = [nk];
+        if (un) { un = '~' + norm(un); if (un.length > 2 && un !== '~' + nk) nks.push(un); }
+        for (var w = 0; w < nks.length; w++) {
+          var kx = nks[w];
+          if (!kx || names[kx] == null || matches[kx]) continue;
+          matches[kx] = id; want[id] = 1; if (!(id in past) || past[id] < names[kx]) past[id] = names[kx];
+        }
         if (want[id] && !icons[id]) { var ic = /<icon[^>]*src="([^"]*)"/.exec(c[2]); if (ic) icons[id] = unesc(ic[1]); }
       }
       RE.lastIndex = 0;
@@ -557,4 +568,4 @@ function handle(req, res, allow, log) {
   send(res, 404, { ok: false, error: 'unknown guide request' }, null, allow);
 }
 
-module.exports = { movieFlag: movieFlag, withSub: withSub, handle: handle, norm: norm, start: start, status: status, keyOf: keyOf, root: root, find: find, descs: descs };
+module.exports = { movieFlag: movieFlag, withSub: withSub, handle: handle, norm: norm, unprefixed: unprefixed, start: start, status: status, keyOf: keyOf, root: root, find: find, descs: descs };

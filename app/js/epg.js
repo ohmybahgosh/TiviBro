@@ -114,6 +114,25 @@ var Epg = (function () {
       .replace(/[^a-z0-9]+/g, '');
   }
 
+  /* A name without its provider's prefix ("PRIME: ZDFINFO", "DE| 3SAT", "PLAY+: ZDF INFO"): a second key for
+     matching by name, tried only when the whole name finds nothing (issue #131).  A guide made for another
+     playlist names the same channel with its own prefix. */
+  function unprefixed(s) {
+    var m = /^\s*[A-Z0-9][A-Z0-9+&._-]{0,7}\s*[:|]\s*(\S.*)$/.exec(String(s || ''));       // a short capitals tag, not "Mr. Bean: The Show"
+    // "NBA: Game 1" and "NHL: Game 1" are not the same channel: an event's number alone is no name.
+    return m && !/^(event|game|ppv|match|live|channel|ch|stream|feed)\W*\d*\W*$/i.test(m[1]) ? m[1] : '';
+  }
+  function nameKeys(s) {
+    var a = norm(s), u = unprefixed(s), b = u ? norm(u) : '';
+    return b.length > 1 && b !== a ? [a, '~' + b] : [a];
+  }
+  function byName(map, ch) {
+    var ks = nameKeys(Library.name(ch)).concat(nameKeys(ch.n));
+    for (var i = 0; i < ks.length; i++) if (ks[i][0] !== '~' && map[ks[i]]) return map[ks[i]];
+    for (i = 0; i < ks.length; i++) if (map[ks[i]]) return map[ks[i]];
+    return '';
+  }
+
   function P() { return Store.playlist; }
   // The playlist a channel belongs to (several playlists on), else the first.
   function PL(ch) { return Store.plOf ? Store.plOf(ch) : P(); }
@@ -411,8 +430,13 @@ var Epg = (function () {
               if (wantP[id] && !icons[pid]) { var pi = /<icon[^>]*src="([^"]+)"/.exec(c[2]); if (pi) icons[pid] = unesc(pi[1]); }
               continue;
             }
-            var nk = self.norm(name);
-            if (!want[id] && nk && names[nk] != null && !matches[nk]) { matches[nk] = id; want[id] = 1; if (!(id in past) || past[id] < names[nk]) past[id] = names[nk]; }
+            var nk = self.norm(name), un = self.unprefixed(name), nks = [nk];
+            if (un) { un = '~' + self.norm(un); if (un.length > 2 && un !== '~' + nk) nks.push(un); }
+            for (var w = 0; w < nks.length; w++) {
+              var kx = nks[w];
+              if (!kx || names[kx] == null || matches[kx]) continue;
+              matches[kx] = id; want[id] = 1; if (!(id in past) || past[id] < names[kx]) past[id] = names[kx];
+            }
             if (want[id] && !icons[id]) { var ic = /<icon[^>]*src="([^"]*)"/.exec(c[2]); if (ic) icons[id] = unesc(ic[1]); }
           }
           RE.lastIndex = 0;
@@ -590,7 +614,7 @@ var Epg = (function () {
       statusOf[other] = { at: c.at || 0, sources: c.report || [] };
       if (c.matches && pl.nameMatch) Library.data.channels.forEach(function (ch) {
         if (ch.p !== other || (ch.epg && cache.has(ch.epg))) return;
-        var mid = c.matches[norm(Library.name(ch))] || c.matches[norm(ch.n)];
+        var mid = byName(c.matches, ch);
         if (mid) matched[ch.k] = mid;
       });
       return;
@@ -606,7 +630,7 @@ var Epg = (function () {
       Library.data.channels.forEach(function (ch) {
         if (ch.p) return;                                       // another playlist's: its own guide matches it
         if (ch.epg && cache.has(ch.epg)) return;
-        var id = c.matches[norm(Library.name(ch))] || c.matches[norm(ch.n)];
+        var id = byName(c.matches, ch);
         if (id) matched[ch.k] = id;
       });
     }
@@ -867,7 +891,7 @@ var Epg = (function () {
       var m = Store.edits.epgMap[c.k];
       if (m) keep(ids, m, c);
       if (c.epg) keep(ids, c.epg, c);
-      if (pl.nameMatch) { keep(names, norm(Library.name(c)), c); keep(names, norm(c.n), c); }
+      if (pl.nameMatch) nameKeys(Library.name(c)).concat(nameKeys(c.n)).forEach(function (k) { keep(names, k, c); });
     });
     delete names[''];
     return { ids: ids, names: names };
@@ -985,7 +1009,7 @@ var Epg = (function () {
     if (pub) { msg.pub = true; msg.pk = pub.pk; msg.pubWant = pub.want; }
     var keysFn = typeof PubEpg !== 'undefined' ? PubEpg.keys : function () { return { keys: [], country: '' }; };
     var alikeFn = typeof PubEpg !== 'undefined' && PubEpg.alike ? PubEpg.alike : function () { return false; };
-    var code = 'self.norm = ' + norm.toString() + ';\nself.alike = ' + alikeFn.toString() + ';\nself.pubKeys = ' + keysFn.toString() + ';\nself.progFlag = ' + progFlag.toString() + ';\nself.readFlag = ' + readFlag.toString() + ';\n(' + workerMain.toString() + ')();';
+    var code = 'self.norm = ' + norm.toString() + ';\nself.unprefixed = ' + unprefixed.toString() + ';\nself.alike = ' + alikeFn.toString() + ';\nself.pubKeys = ' + keysFn.toString() + ';\nself.progFlag = ' + progFlag.toString() + ';\nself.readFlag = ' + readFlag.toString() + ';\n(' + workerMain.toString() + ')();';
     var started = Date.now();
     function keyAt(p) { var x = msg.sources[(p.src || 1) - 1]; return x ? x.key : ''; }
     function onProg(p) { p.active = true; p.phase = 'download'; p.started = started; if (g) g.host(p.host, keyAt(p)); setProgress(p); }

@@ -1,15 +1,17 @@
 # Changelog
 
-## Unreleased
-
-- **New screenshots and clips everywhere** for the 18-section Settings, the phone app's Recordings page and the rest of this month's changes: README, user guide, wiki, tivibro.app and the demo clips.
-- **Hidden channel and group notes say where to find them again**: Settings, Channels and groups, Hidden channels/groups.
-
-## 0.6.0 (alpha 177, 2026-11-19)
+## 0.6.0 (alpha 178, 2026-11-19)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 177
+### New in alpha 178
+
+- **Guides made for another playlist match more channels by name** (issue #131).  "PRIME: ZDFINFO" now finds "DE: ZDFINFO HD" or "PLAY+: ZDF INFO" in a guide source: when the whole name finds nothing, the name without its short capitals tag in front is tried.  A guide channel another channel already uses can be matched by name too.  Event channels ("NBA: Game 1") are left alone.
+- **Search no longer closes TiviBro on a TV with a very big movie list** (issue #132).  With 160,000 movies, each letter typed in Search asked the network helper for the whole list again, so two or three downloads of it ran at once, the helper stopped answering, and a 1 GB TV closed TiviBro.  Now one download serves every search waiting on it, and Search asks the helper one search at a time.
+- **New screenshots and clips everywhere** for the 18-section Settings, the phone app's Recordings page and the rest of this month's changes: README, user guide, wiki, tivibro.app and the demo clips.
+- **Hidden channel and group notes say where to find them again**: Settings, Channels and groups, Hidden channels/groups.
+
+### In alpha 177
 
 - **Every "Settings > ..." hint follows the new Settings layout**: in TiviBro's own notes, the web editor, the phone app, the user guide, the wiki, tivibro.app and its privacy page (a few still named sections from before the first overhaul, like Playlists and guide, Updates and about, or Diagnostics).
 - **The phone app reaches the TV after an update without opening TiviBro first.**  Installing a new TiviBro stopped its helper, and nothing started it again until TiviBro was opened, so the phone said "TiviBro's connection starting" for good.  On a rooted TV the recording agent (which keeps running as root) now starts the helper within a minute when the phone app connection is on, and a newer TiviBro replaces an older agent once it isn't recording.

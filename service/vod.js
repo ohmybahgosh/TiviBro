@@ -192,6 +192,20 @@ function list(q, res, ALLOW, log, port) {
   // An empty copy is never fresh: one saved during a provider's outage was kept for good (issue #110).
   var fresh = d && d.rows && d.rows.length && !q.refresh && (maxAge <= 0 || Date.now() - d.at < maxAge);
   if (fresh) return send(res, ALLOW, 200, shown(kind, d, q));
+  /* One download per list at a time (issue #132): Search asks again with each letter typed (/vod/find), and a
+     provider with 160,000 movies took 45 to 85 s a time, so "ab" and "abc" fetched and parsed it twice at once,
+     the helper stopped answering, and a 1 GB TV closed TiviBro.  A second ask waits for the first one's list. */
+  var key = pl + '|' + kind + '|' + sig;
+  if (fetching[key]) return fetching[key].push(answer);
+  fetching[key] = [answer];
+  fetchList(function (e, nd) { var ws = fetching[key] || []; delete fetching[key]; ws.forEach(function (w) { w(e, nd); }); });
+  function answer(e, nd) {
+    if (!e) return send(res, ALLOW, 200, shown(kind, nd, q));
+    // The copy kept here, however old, unless it is empty: then the reason shows instead of "Nothing to show yet" (issue #110).
+    if (d && d.rows && d.rows.length) return send(res, ALLOW, 200, shown(kind, d, q));
+    send(res, ALLOW, 502, { error: e.message });
+  }
+  function fetchList(done) {
   var t0 = Date.now();
   /* A Stalker portal sends a dozen titles a page: 34,000 movies took several minutes (issue #118), and the app
      shows how far it has come (stalker.js /stalker/progress), so wait for it.  Its silent connection is the
@@ -202,14 +216,12 @@ function list(q, res, ALLOW, log, port) {
       if (e || !Array.isArray(j)) {
         var why = e ? e.message : 'the provider did not send a list';
         if (log) log({ lv: 'warn', event: 'vod list failed', kind: kind, e: why });
-        // The copy kept here, however old, unless it is empty: then the reason shows instead of "Nothing to show yet" (issue #110).
-        if (d && d.rows && d.rows.length) return send(res, ALLOW, 200, shown(kind, d, q));
-        return send(res, ALLOW, 502, { error: why });
+        return done(new Error(why));
       }
       // An empty answer (a provider mid-outage) never replaces a list that had something: the next load tries again.
       if (!j.length && d && d.rows && d.rows.length) {
         if (log) log({ lv: 'warn', event: 'vod list empty, kept the last one', kind: kind, n: d.rows.length });
-        return send(res, ALLOW, 200, shown(kind, d, q));
+        return done(null, d);
       }
       var nd = { v: 2, at: Date.now(), sig: sig, rows: slim(kind, j),
         cats: (Array.isArray(cats) ? cats : []).map(function (x) { return { id: str(x && x.category_id), name: str(x && x.category_name) || 'Other' }; }) };
@@ -218,11 +230,13 @@ function list(q, res, ALLOW, log, port) {
       if (log) log({ lv: 'info', event: 'vod list', kind: kind, n: nd.rows.length, ms: Date.now() - t0 });
       writeList(pl, kind, { v: 2, at: nd.at, sig: sig, rows: nd.rows, cats: nd.cats }, function (we) { if (we && log) log({ lv: 'warn', event: 'vod list not saved', kind: kind, e: we.message }); });
       keep(pl, kind, nd);
-      send(res, ALLOW, 200, shown(kind, nd, q));
+      done(null, nd);
     }, slow);
   }, slow);
   }
+  }
 }
+var fetching = {};
 
 /* POST /vod/find { the same as /vod/list, plus words: ['lord', 'rings'], max }  ->  { v: 2, kind, total, rows }
    Search on a TV short of memory (issue #116): the helper looks through the list it keeps (fetching it first

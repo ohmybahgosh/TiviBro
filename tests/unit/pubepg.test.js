@@ -75,6 +75,19 @@ t('the helper\'s guide reader normalises names exactly like the app (service/gui
   const G = require('../../service/guide.js');
   ['CNN HD', 'US: A&E (East) FHD', 'BBC One [UK]', 'ESPN 2 4K', 'Télé-Québec', ''].forEach(x => assert.strictEqual(G.norm(x), appNorm(x), x));
 });
+t('a name without its prefix is the second key, the same in the helper and the app (issue #131)', () => {
+  const src = require('fs').readFileSync(require('path').join(__dirname, '../../app/js/epg.js'), 'utf8');
+  const m = /function unprefixed\(s\) \{[\s\S]*?\n  \}/.exec(src);
+  const appUn = new Function('return ' + m[0].replace(/\n  /g, '\n'))();
+  const G = require('../../service/guide.js');
+  const key = (n) => G.norm(G.unprefixed(n));
+  assert.strictEqual(key('PRIME: ZDFINFO ᴿᴬᵂ'), key('DE: ZDFINFO HD'));
+  assert.strictEqual(key('JOYN: BR FERNSEHEN SÜD ᴿᴬᵂ'), key('DE: BR FERNSEHEN HD SÜD'));
+  assert.strictEqual(key('PLAY+: ZDF INFO ᴿᴬᵂ'), 'zdfinfo');
+  assert.strictEqual(G.unprefixed('Mr. Bean: The Show'), '', 'only a short capitals tag is a prefix');
+  assert.strictEqual(G.unprefixed('NBA: Game 1'), '', 'an event\'s number alone is no name');
+  ['PRIME: ZDFINFO ᴿᴬᵂ', 'DE| 3SAT', 'Mr. Bean: The Show', 'NBA: Game 1', 'CNN', ''].forEach(x => assert.strictEqual(G.unprefixed(x), appUn(x), x));
+});
 t('Pluto channels match Pluto\'s own guide by id', () => {
   assert.strictEqual(P.appId('US_5ca525b650be2571e3943c63'), '5ca525b650be2571e3943c63');
   assert.strictEqual(P.appId('CNN.us'), '');
