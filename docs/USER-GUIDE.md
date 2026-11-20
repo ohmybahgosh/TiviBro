@@ -296,6 +296,8 @@ Watch two channels at once, like two games.  In fullscreen, open the quick menu 
 - **Red** changes the box's channel, and **Yellow** takes it out.
 - **Blue**, **Play**, **Back**, or OK on the box with sound go fullscreen on that channel.  Multiview in the quick menu brings the same two channels back.
 
+<p align="center"><img src="screenshots/tv-multiview.png" width="70%" alt="Multiview: two channels side by side"></p>
+
 Good to know:
 
 - Each box uses one of your provider's connections, as watching a channel does.  A login that allows one connection can't show a second channel.  Settings > Playlists and accounts shows how many yours allows.

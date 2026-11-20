@@ -13,4 +13,4 @@ When a protected channel won't play, TiviBro says so ("This channel is protected
 
 ---
 
-← [Watching fullscreen](Watching-fullscreen)  ·  [Home](Home)  ·  [Sound the TV can't play](Sound-the-TV-cant-play) →
+← [Multiview: two channels side by side](Multiview-two-channels-side-by-side)  ·  [Home](Home)  ·  [Sound the TV can't play](Sound-the-TV-cant-play) →

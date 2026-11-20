@@ -12,6 +12,7 @@
 - [The guide](The-guide)
 - [Groups and the menu](Groups-and-the-menu)
 - [Watching fullscreen](Watching-fullscreen)
+- [Multiview: two channels side by side](Multiview-two-channels-side-by-side)
 - [DASH channels and protected channels](DASH-channels-and-protected-channels)
 - [Sound the TV can't play](Sound-the-TV-cant-play)
 - [Other versions of a channel](Other-versions-of-a-channel)

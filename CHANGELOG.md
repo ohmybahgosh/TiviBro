@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 180, 2026-11-20)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 180
 
 - **Multiview: two channels side by side**, a first for a webOS IPTV app.  Quick menu > Multiview in fullscreen, or hold OK > Watch in Multiview.  The box with sound plays as normal video; the other is live video without sound, up to 30 frames a second at an even pace, made by the network helper on the TV, since webOS gives an app one video at a time.  OK on a box gives it the sound, OK on an empty one picks a channel from your groups, Blue goes fullscreen.  Each box uses a provider connection.  It uses the 64-bit ffmpeg where the TV can run it (a C2 and newer), about twice as fast.
 - **The converter is now built for speed and reads HLS** (ffmpeg-7.1-tb5), for Multiview's pictures of .m3u8 channels.
@@ -8,11 +12,7 @@
 - **A Stalker portal's subscription end shows with the playlist** (discussion #134), like an Xtream login's: in Settings, Playlists and accounts, from what the portal says (its billing date, or the date many portals put in the account's "phone" line).
 - **A playlist's page says how many movies and shows it has**, once they've loaded (discussion #134).
 
-## 0.6.0 (alpha 179, 2026-11-20)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 179
+### In alpha 179
 
 - **Updating to alpha 178 no longer reads the whole guide again at the first start** (issue #133).  Its new names without a prefix (issue #131) counted as thousands of "new" guide names, so a big playlist's guide loaded again right away; on a 1 GB TV with 57,000 channels that closed TiviBro.  They are now asked for with the next guide load instead, and a channel whose two names give the same key asks once.
 - **Matching a guide by name without the tag in front is stricter** (issue #131).  A channel tagged with a country ("AR: TNT") now only matches a guide channel of that country ("AR: TNT", not "US: TNT").  A service tag ("PRIME:", "JOYN:") still finds a country's channel ("DE: ZDFINFO HD").

@@ -66,6 +66,7 @@
 
 ### ✨ New lately
 
+- **Multiview: two channels at once, the first on a webOS IPTV app.**  Two games side by side: the one you hear plays as normal video, the other as smooth live video beside it, up to 30 frames a second.  OK swaps the sound, Blue goes fullscreen, and channels are picked from your groups as in the guide.  webOS lets an app play only one video, so the second picture is made by TiviBro's helper on the TV.  On any webOS TV, rooted or not.  [How it works](docs/USER-GUIDE.md#multiview-two-channels-side-by-side)
 - **Recording, live pause and rewind.**  Record from the guide to a USB drive on a rooted TV, with a **Recordings** screen (posters from TMDB, resume, delete several at once).  **Pause any live channel** and carry on from there, even without catch-up, and an optional **rewind buffer** lets ◀ go back to something you just missed.  Without a USB drive, pause still works for 10 minutes on any TV.
 - **A timeline in the player, like TiviMate's.**  ▲ puts a dot on the progress bar showing what's kept and what's recorded; move it and press OK to watch from there.  It's in the quick menu too, and ◀ ▶ move back and forth whenever you're behind live, so a Magic Remote with no ⏪ ⏩ buttons works.
 - **Stalker portals, much better:** every season of long shows, the right movie every time, empty categories hidden, big portals kept between starts, and categories A to Z or as a full-screen poster wall.
@@ -138,6 +139,7 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | 🏟️ **Reads sports and PPV listings from channel names** | When a provider writes the event into the name instead of the guide, TiviBro turns it into a short channel name, a guide entry at the real time in your time zone, and an **Events by time** list across all your passes.  Dozens of naming styles, tested on 1,250 real event channels. |
 | 🖥️ **A full editor on your computer** | Clean up 10,000 channels with a keyboard and mouse instead of a remote: hide, sort, rename, copy and move, then **Send to TV**.  Unsent work is autosaved on the TV within seconds, with a version history, so a refresh never costs you an hour. |
 | 🏈 **Your teams, wherever they're playing** | Follow your NFL, NBA, NHL, MLB, WNBA and MLS teams, college football and college basketball, and **My teams** gathers their games near the top of the guide, tinted while they're on: on now first, then the ones starting soon, from league passes, event channels, your local station (even when the teams are only in the guide's description) and the team's own channel.  Optional reminders. |
+| 📺📺 **Multiview on an LG TV** | webOS lets an app play one video at a time, which is why no IPTV app for LG TVs could show two channels.  TiviBro plays the channel you hear as normal video and makes the second one itself, on the TV, as smooth live video beside it (up to 30 frames a second).  Two games at once, OK to swap the sound, no extra box. |
 | ⏸️ **Pause and rewind any live channel** | TiviMate can only rewind channels your provider keeps catch-up for.  TiviBro keeps the channel itself, on a USB drive or, for a short pause, in the TV's own storage: pause, carry on, move back and forth, and with the rewind buffer on, ◀ goes back to what you just missed.  Recording and pausing the same channel share one connection to your provider. |
 | 🎬 **Movies on now** | With your own free TMDB token, the movies in your guide get posters, years, genres and ratings.  The **Movies on now** screen shows them as big posters: on now, starting soon, then a shelf for each genre. |
 | 🔁 **Switches to a working copy by itself** | Same channel in FHD, HD and SD?  When one dies, TiviBro moves to the next version on its own and tells you. |
@@ -166,6 +168,7 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | Set up by scanning a QR code with your phone | ✅ From the first screen | ❌ Type it with the remote |
 | Fills in missing channel logos | ✅ Two open logo libraries, two styles | ❌ |
 | Recording | ✅ Free, to a USB drive (rooted TVs) | ✅ Premium |
+| Two channels at once (Multiview) | ✅ Free, on LG webOS | ✅ Premium, on Android TV |
 | Pause and rewind any live channel, not only catch-up | ✅ With a timeline and a rewind buffer | ❌ |
 | Link a channel's other copies yourself | ✅ | ❌ |
 
@@ -348,6 +351,12 @@ TV series get the same in the guide: a poster, when the show started, its networ
 </p>
 
 <p align="center"><a href="https://tivibro.app/view/#tv-onnow-genre"><img src="docs/screenshots/tv-onnow-genre.png" width="80%" alt="Movies on now, a genre shelf"></a></p>
+
+### Two games at once
+
+**Multiview** puts two channels side by side.  The one with the sound icon plays as normal video; the other is live video beside it, up to 30 frames a second, made on the TV.  OK on the other box gives it the sound, OK on an empty box picks a channel from your groups, and Blue goes fullscreen.  In fullscreen: quick menu > **Multiview**, or hold OK on a channel > **Watch in Multiview**.  Each box uses one of your provider's connections.
+
+<p align="center"><a href="https://tivibro.app/view/#tv-multiview"><img src="docs/screenshots/tv-multiview.png" width="70%" alt="Multiview: two channels side by side"></a></p>
 
 ### My teams
 

@@ -67,4 +67,4 @@ It tries hard never to just stop:
 
 ---
 
-← [Groups and the menu](Groups-and-the-menu)  ·  [Home](Home)  ·  [DASH channels and protected channels](DASH-channels-and-protected-channels) →
+← [Groups and the menu](Groups-and-the-menu)  ·  [Home](Home)  ·  [Multiview: two channels side by side](Multiview-two-channels-side-by-side) →
