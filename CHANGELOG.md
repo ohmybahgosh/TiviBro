@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Updating to alpha 178 no longer reads the whole guide again at the first start** (issue #133).  Its new names without a prefix (issue #131) counted as thousands of "new" guide names, so a big playlist's guide loaded again right away; on a 1 GB TV with 57,000 channels that closed TiviBro.  They are now asked for with the next guide load instead, and a channel whose two names give the same key asks once.
+
 ## 0.6.0 (alpha 178, 2026-11-19)
 
 Pre-release: expect rough edges, and keep a backup before installing.

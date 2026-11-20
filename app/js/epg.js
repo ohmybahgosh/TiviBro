@@ -891,12 +891,20 @@ var Epg = (function () {
       var m = Store.edits.epgMap[c.k];
       if (m) keep(ids, m, c);
       if (c.epg) keep(ids, c.epg, c);
-      if (pl.nameMatch) nameKeys(Library.name(c)).concat(nameKeys(c.n)).forEach(function (k) { keep(names, k, c); });
+      if (pl.nameMatch) {
+        var ks = nameKeys(Library.name(c)), kn = c.n !== Library.name(c) ? nameKeys(c.n) : [];
+        for (var i = 0; i < ks.length; i++) keep(names, ks[i], c);
+        for (i = 0; i < kn.length; i++) if (ks.indexOf(kn[i]) < 0) keep(names, kn[i], c);
+      }
     });
     delete names[''];
     return { ids: ids, names: names };
   }
-  function askedOf(w) { return Object.keys(w.ids).concat(Object.keys(w.names).map(function (n) { return 'n:' + n; })).map(U.hash); }
+  /* What a guide was asked for, to see what is new since.  Not the names without their prefix ("~", issue #131):
+     alpha 178 added one for most channels, and counting them as new read a 57,000-channel playlist's whole guide
+     again on the first start, on a 1 GB TV already short of memory (issue #133).  They are asked for with the
+     next guide load anyway. */
+  function askedOf(w) { return Object.keys(w.ids).concat(Object.keys(w.names).filter(function (n) { return n.charAt(0) !== '~'; }).map(function (n) { return 'n:' + n; })).map(U.hash); }
   function addedSince(a, now) {
     var had = {}, n = 0;
     a.forEach(function (h) { had[h] = 1; });
