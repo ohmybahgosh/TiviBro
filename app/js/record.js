@@ -197,7 +197,7 @@ var Record = (function () {
     var p0 = posOf(r.id), at = fromAt != null ? Math.max(0, fromAt) : !fromStart && p0 && p0.t > 30 && (!r.dur || !(U.isWatchedAt || function (p, d) { return d > 0 && (p >= d * 0.9 || p > d - 60); })(p0.t, r.dur)) ? p0.t : 0;
     if (at && fromAt == null) U.toast(T('Resuming at {t}', { t: hms(at) }), 2500);
     watching = r.id;
-    Views.playVod({ id: 'rec:' + r.id, title: r.title, sub: r.channel + '  ·  ' + whenOf(r), dur: r.status === 'recording' ? 0 : r.dur, item: { recording: true }, liveCh: r.status === 'recording' ? chOf(r) : null }, url, at, function () {
+    Views.playVod({ id: 'rec:' + r.id, title: r.title, sub: r.channel + '  ·  ' + whenOf(r), dur: r.status === 'recording' ? 0 : r.dur, item: { recording: true, growing: r.status === 'recording' }, liveCh: r.status === 'recording' ? chOf(r) : null }, url, at, function () {
       note(); watching = null; clearInterval(posT);
       (onExit || open)();
     });

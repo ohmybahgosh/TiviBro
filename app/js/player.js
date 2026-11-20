@@ -144,6 +144,10 @@ var Player = (function () {
     var isHls = /\.m3u8(\?|$)/i.test(url);
     // Files (movies, episodes) belong to the TV's own player: it seeks and handles MKV/MP4 natively.
     if (cur && !cur.live && !cur.timeshift && !isHls && !/\.ts(\?|$)/i.test(url)) return 'native';
+    /* A finished recording too, though it's MPEG-TS: some channels' sound and picture carry clocks a day apart
+       (CBS News 24/7 on a real provider: audio 88,000 s ahead), which the MPEG-TS player can't line up, and it sat
+       buffering; the TV's player plays it, and seeks in it.  One still recording keeps the MPEG-TS player (it grows). */
+    if (cur && !cur.live && !cur.timeshift && !isHls && cur.meta && cur.meta.item && cur.meta.item.recording && !cur.meta.item.growing && s !== 'mse') return 'native';
     if (isDash(url)) return mse() && s !== 'native' ? 'dash' : 'native';
     if (s === 'native' || !mse() || fallbackHosts[hostOf(url)] === 'native') return 'native';
     if (isHls) return window.Hls && Hls.isSupported() ? 'hls' : 'native';
