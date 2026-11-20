@@ -1,15 +1,18 @@
-/* Multiview: two to four channels on screen at once (quick menu > Multiview, or hold OK > Watch in Multiview).
-   webOS gives an app one video decoder, and a second <video> stops the first (multiview-research in the project
-   notes).  So the channel you picked plays as video, with its sound, in its own box; the others are live pictures
-   the network helper makes (service/multiview.js: ffmpeg on the TV, without their B-frames, as JPEGs an <img>
-   shows one after the other).  OK on another box swaps: it becomes the video with sound, and the one before
-   becomes pictures.  Each box uses a connection to the provider, so a login allowing one connection can't.
+/* Multiview: two channels side by side (quick menu > Multiview, or hold OK > Watch in Multiview), for two games at
+   once.  webOS gives an app one video decoder, and a second <video> stops the first (multiview-research in the
+   project notes).  So the channel with sound plays as video in its box, and the other one is live video without
+   sound that the network helper makes (service/multiview.js: ffmpeg on the TV, every frame, up to 30 a second, as
+   JPEGs), drawn at an even pace (Pic).  OK on the other box swaps them.  Each box uses a connection to the
+   provider, so a login allowing one connection can't.  Two boxes only (Bob: a solid two rather than a choppy four;
+   the helper and the layout could do four).
 
-   Keys: arrows move between boxes, OK plays that box's sound (or picks a channel for an empty box), Red changes
-   the box's channel, Yellow takes it out, Back (or Play on the box with sound) goes fullscreen on that channel. */
+   Keys: ◀ ▶ move between boxes, OK gives that box the sound (or picks a channel for an empty box: your groups,
+   then their channels, as in the guide), Red changes the box's channel, Yellow takes it out, and Blue, Play, Back
+   or OK on the box with sound go fullscreen on that channel.  Multiview in the quick menu comes back to the same
+   two channels. */
 var Multiview = (function () {
   var T = function (s, v) { return typeof I18n !== 'undefined' ? I18n.t(s, v) : s; };
-  var open = false, boxes = [], sel = 0, main = -1, root = null, key = '', layout = 2, statT = 0;
+  var last = [], open = false, boxes = [], sel = 0, main = -1, root = null, key = '', layout = 2, statT = 0;
   var GAP = 16, TOP = 60, HINTS = 56;
 
   function base() { return typeof Net !== 'undefined' && Net.port && Net.active ? 'http://127.0.0.1:' + Net.port : ''; }
@@ -54,7 +57,7 @@ var Multiview = (function () {
       root.appendChild(el);
     });
     var hints = U.el('div', 'mv-hints');
-    [['', 'OK  sound from this box'], ['red', 'Change channel'], ['yellow', 'Take it out'], layout === 2 ? ['green', 'Four boxes'] : null, ['', 'Back  fullscreen']].forEach(function (h) {
+    [['', 'OK  sound from this box'], ['red', 'Change channel'], ['yellow', 'Take it out'], ['blue', 'Fullscreen']].forEach(function (h) {
       if (!h) return;
       var sp = U.el('span', h[0] ? 'mv-k ' + h[0] : 'mv-k', T(h[1])); hints.appendChild(sp);
     });
@@ -65,7 +68,7 @@ var Multiview = (function () {
 
   // A box: the video (main: the stage sits in it), pictures, or "Add a channel".
   function paint(b, i) {
-    if (b.img && (i === main || !b.c)) { b.img.src = ''; b.img.remove(); b.img = null; }
+    if (b.img && (i === main || !b.c)) { stopPic(b); }
     b.el.classList.toggle('main', i === main);
     b.el.classList.toggle('on', i === sel);
     b.el.classList.toggle('empty', !b.c);
@@ -74,11 +77,83 @@ var Multiview = (function () {
     b.label.textContent = name;
     if (i === main) b.label.insertAdjacentHTML('afterbegin', '<svg class="mv-snd" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none"/></svg>');
     if (b.c && i !== main && !b.img) {
-      var img = new Image(); img.className = 'mv-pic';
-      img.onerror = function () { if (b.img === img) { b.el.classList.add('failed'); b.label.textContent = name + '   ' + T('no picture'); } };
-      img.src = tileUrl(b.c, filled() <= 2 ? 640 : 480);
-      b.el.insertBefore(img, b.label); b.img = img;
+      var two = filled() <= 2, pic = Pic(tileUrl(b.c, two ? 800 : 480), b.r[2], b.r[3], two ? 30 : 20, function () {
+        if (b.img === pic) { b.el.classList.add('failed'); b.label.textContent = name + '   ' + T('no picture'); }
+      });
+      b.el.insertBefore(pic.el, b.label); b.img = pic;
     }
+  }
+
+  function stopPic(b) { if (b.img) { b.img.stop(); b.img = null; } }
+
+  /* A box's moving pictures.  An <img> shows each JPEG the moment it arrives, so a late one and the next together
+     look choppy even at 30 a second.  Where the TV's browser can read the stream itself (fetch with a reader,
+     createImageBitmap), the pictures go into a short queue and onto a canvas at an even pace instead: about a
+     tenth of a second later than they came, but every one held for the same time (Bob: "a bit choppy" in two
+     boxes).  Older browsers: the <img>. */
+  function Pic(url, w, h, fps, onFail) {
+    var ok = typeof fetch === 'function' && typeof createImageBitmap === 'function' && typeof ReadableStream !== 'undefined' && typeof AbortController !== 'undefined';
+    if (!ok) {
+      var img = new Image(); img.className = 'mv-pic'; img.onerror = onFail; img.src = url;
+      return { el: img, stop: function () { img.onerror = null; img.src = ''; img.remove(); } };
+    }
+    var cv = document.createElement('canvas'); cv.className = 'mv-pic'; cv.width = w; cv.height = h;
+    var ctx = cv.getContext('2d'), ac = new AbortController(), q = [], stopped = false, raf = 0, due = 0, decoding = Promise.resolve();
+    var step = 1000 / fps, shown = 0, gaps = [], lastDraw = 0;
+    function draw(bm) {
+      var s = Math.min(w / bm.width, h / bm.height), dw = bm.width * s, dh = bm.height * s;
+      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(bm, (w - dw) / 2, (h - dh) / 2, dw, dh);
+      if (bm.close) bm.close();
+      shown++;
+      var t = performance.now(); if (lastDraw) { gaps.push(t - lastDraw); if (gaps.length > 300) gaps.shift(); } lastDraw = t;
+    }
+    function tick(now) {
+      if (stopped) return;
+      raf = requestAnimationFrame(tick);
+      if (!q.length) { due = 0; return; }                     // waiting for pictures: the last one stays
+      if (!due) { if (q.length < 3 && shown) return; due = now; }   // build a little cushion first (after the first picture)
+      if (now < due) return;
+      while (q.length > 8) { var old = q.shift(); if (old.close) old.close(); }   // far behind: catch up
+      draw(q.shift());
+      // A little faster when the queue grows, a little slower when it runs low: even, and never far behind.
+      due += step * (q.length > 5 ? 0.85 : q.length < 2 ? 1.15 : 1);
+      if (now - due > step * 3) due = now;
+    }
+    raf = requestAnimationFrame(tick);
+    fetch(url, { signal: ac.signal, cache: 'no-store' }).then(function (r) {
+      if (!r.ok || !r.body) throw new Error('HTTP ' + r.status);
+      var reader = r.body.getReader(), buf = new Uint8Array(0);
+      function find(a, b0, b1, from) { for (var i = from; i + 1 < a.length; i++) if (a[i] === b0 && a[i + 1] === b1) return i; return -1; }
+      function pump() {
+        return reader.read().then(function (x) {
+          if (x.done || stopped) { if (!stopped) onFail(); return; }
+          var n = new Uint8Array(buf.length + x.value.length); n.set(buf); n.set(x.value, buf.length); buf = n;
+          for (;;) {
+            var s = find(buf, 0xFF, 0xD8, 0); if (s < 0) { buf = buf.subarray(buf.length - 1); break; }
+            var e = find(buf, 0xFF, 0xD9, s + 2); if (e < 0) { buf = buf.subarray(s); break; }
+            var jpg = buf.slice(s, e + 2); buf = buf.subarray(e + 2);
+            (function (j) {
+              decoding = decoding.then(function () {
+                if (stopped) return;
+                return createImageBitmap(new Blob([j], { type: 'image/jpeg' })).then(function (bm) { if (stopped) { if (bm.close) bm.close(); } else q.push(bm); }, function () {});
+              });
+            })(jpg);
+          }
+          return pump();
+        });
+      }
+      return pump();
+    }).catch(function () { if (!stopped) onFail(); });
+    return { el: cv, pace: function () {
+      // How even the pictures are: the gaps between them (ms), for the log and tests.
+      if (!gaps.length) return null;
+      var m = gaps.reduce(function (a, b) { return a + b; }, 0) / gaps.length, sd = Math.sqrt(gaps.reduce(function (a, b) { return a + (b - m) * (b - m); }, 0) / gaps.length);
+      return { fps: Math.round(10000 / m) / 10, jitterMs: Math.round(sd), queued: q.length };
+    }, stop: function () {
+      stopped = true; cancelAnimationFrame(raf); try { ac.abort(); } catch (e) {}
+      q.forEach(function (bm) { if (bm.close) bm.close(); }); q = []; cv.remove();
+    } };
   }
 
   function placeStage() {
@@ -94,14 +169,30 @@ var Multiview = (function () {
     if (!b || !b.c || i === main) return;
     var was = main;
     main = i;
-    if (b.img) { b.img.src = ''; b.img.remove(); b.img = null; }
+    if (b.img) { stopPic(b); }
     placeStage();
     Views.startChannel(b.c, true);
     Log.info('multiview', 'Sound from ' + Library.name(b.c) + (was >= 0 && boxes[was] && boxes[was].c ? ', pictures for ' + Library.name(boxes[was].c) : ''));
     setTimeout(function () { boxes.forEach(paint); }, was >= 0 ? 400 : 0);   // the old one's pictures after the video let go of its connection
   }
 
+  /* A channel for a box: your groups as the guide has them (Favorites, Recent and your groups first), then the
+     group's channels with what's on now.  Search by name is there too, first. */
   function pick(i) {
+    var gs = Library.groups().filter(function (g) { return !g.head && !g.hidden && !g.blocked; });
+    UI.menu(T('A channel for this box'), [{ label: T('Search by name…'), action: function () { search(i); } }].concat(gs.map(function (g) {
+      return { label: I18n.raw(g.name), sub: g.count ? String(g.count) : '', action: function () { setTimeout(function () { channels(i, g); }, 0); } };
+    })));
+  }
+  function channels(i, g) {
+    var list = Library.channels(g.id).slice(0, 600), shown = {};
+    boxes.forEach(function (b) { if (b.c) shown[b.c.k] = 1; });
+    UI.menu(I18n.raw(g.name), list.map(function (c) {
+      var nn = Epg.nowNext ? Epg.nowNext(c) : null, now = nn && nn.now;
+      return { label: I18n.raw((c.num ? c.num + '  ' : '') + Library.name(c)), sub: shown[c.k] ? T('on screen') : now ? I18n.raw(now.t) : '', action: function () { setBox(i, c); } };
+    }), function () { setTimeout(function () { pick(i); }, 0); });
+  }
+  function search(i) {
     UI.prompt(T('A channel for this box'), '', function (q) {
       var found = Library.findChannels(q, {});
       if (!found.length) { U.toast(T('No channel named like that')); return; }
@@ -114,12 +205,12 @@ var Multiview = (function () {
   function filled() { return boxes.filter(function (b) { return b.c; }).length; }
   function regear(before) {
     if ((before <= 2) === (filled() <= 2)) return;
-    boxes.forEach(function (b, i) { if (b.img && i !== main) { b.img.src = ''; b.img.remove(); b.img = null; } });
+    boxes.forEach(function (b, i) { if (b.img && i !== main) stopPic(b); });
     boxes.forEach(paint);
   }
   function setBox(i, c) {
     var b = boxes[i], before = filled();
-    if (b.img) { b.img.src = ''; b.img.remove(); b.img = null; }
+    if (b.img) { stopPic(b); }
     b.c = c; b.el.classList.remove('failed');
     if (i === main) { Views.startChannel(c, true); }
     paint(b, i);
@@ -129,7 +220,7 @@ var Multiview = (function () {
   function remove(i) {
     var b = boxes[i], before = filled();
     if (!b.c) return;
-    if (b.img) { b.img.src = ''; b.img.remove(); b.img = null; }
+    if (b.img) { stopPic(b); }
     b.c = null;
     if (i === main) {
       main = -1; Player.stop();
@@ -147,8 +238,8 @@ var Multiview = (function () {
     else if (a === 'ok') { if (!boxes[sel].c) pick(sel); else if (sel !== main) makeMain(sel); else return close(true); }
     else if (a === 'red') pick(sel);
     else if (a === 'yellow') remove(sel);
-    else if (a === 'green' && n === 2) { layout = 4; boxes.push({ c: null }, { c: null }); build(); placeStage(); }
-    else if (a === 'back' || a === 'playpause' || a === 'play') return close(true);
+    else if (a === 'blue' || a === 'play' || a === 'playpause') return close(true);
+    else if (a === 'back') return close(true);
     else return true;
     boxes.forEach(paint);
     return true;
@@ -159,8 +250,8 @@ var Multiview = (function () {
     if (!can()) { U.toast(T('Multiview needs the network helper, which isn\'t running.  Restart TiviBro.'), 6000); return; }
     Convert.ensureKey().then(function (k) {
       key = k; open = true;
-      var list = [first].concat((others || []).filter(function (c) { return c && c.k !== first.k; })).slice(0, 4);
-      layout = list.length > 2 ? 4 : 2;
+      var list = [first].concat((others || []).filter(function (c) { return c && c.k !== first.k; })).slice(0, 2);
+      layout = 2;
       boxes = []; for (var i = 0; i < layout; i++) boxes.push({ c: list[i] || null });
       sel = boxes.length > 1 && !boxes[1].c ? 1 : 0; main = -1;
       document.body.classList.add('mv-open');
@@ -179,6 +270,7 @@ var Multiview = (function () {
     if (!open) return;
     fetch(base() + '/mv/' + key + '/status', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
       (j.tiles || []).forEach(function (t) { Log.info('multiview', 'Box ' + t.id + ': ' + t.fps + ' pictures a second, ' + t.kbps + ' kb/s, ' + t.dropped + ' dropped'); });
+      boxes.forEach(function (b) { var p = b.img && b.img.pace && b.img.pace(); if (p) Log.info('multiview', 'On screen: ' + p.fps + ' a second, evenness ±' + p.jitterMs + ' ms'); });
     }, function () {});
   }
 
@@ -186,7 +278,10 @@ var Multiview = (function () {
   function close(full) {
     if (!open) return true;
     open = false; clearInterval(statT);
-    boxes.forEach(function (b) { if (b.img) { b.img.src = ''; b.img.remove(); b.img = null; } });
+    // Kept for the quick menu's Multiview: back to these boxes, with the channel playing now in the sound box.
+    last = boxes.map(function (b, i) { return i === main ? null : b.c; }).filter(Boolean);
+    if (main >= 0 && boxes[main] && boxes[main].c) last.unshift(boxes[main].c);
+    boxes.forEach(function (b) { if (b.img) { stopPic(b); } });
     if (root) { root.remove(); root = null; }
     document.body.classList.remove('mv-open');
     var s = stage(); s.classList.remove('mv');
@@ -195,16 +290,25 @@ var Multiview = (function () {
     return true;
   }
 
-  // Another channel into the first empty box (two boxes full: four boxes).
+  // Another channel into the empty box, or in place of the one without sound.
   function add(c) {
     if (!open || !c) return false;
     if (boxes.some(function (b) { return b.c && b.c.k === c.k; })) return true;
     var i = boxes.findIndex(function (b) { return !b.c; });
-    if (i < 0 && layout === 2) { layout = 4; boxes.push({ c: null }, { c: null }); build(); placeStage(); i = 2; }
-    if (i < 0) { U.toast(T('Four boxes are full.  Yellow takes one out.')); return false; }
+    if (i < 0) i = main === 0 ? 1 : 0;
     setBox(i, c);
     return true;
   }
 
-  return { start: start, close: close, add: add, get open() { return open; }, _rects: rects };
+  /* The quick menu's Multiview: the boxes you had (the channel playing now takes the sound box), or this channel
+     and the one before. */
+  function again(c, before) {
+    var others = last.filter(function (x) { return x && c && x.k !== c.k; });
+    if (!others.length && before) others = [before];
+    start(c, others.slice(0, 1));
+  }
+
+  function pace() { return boxes.map(function (b) { return b.img && b.img.pace ? b.img.pace() : null; }); }
+
+  return { start: start, again: again, pace: pace, close: close, add: add, get open() { return open; }, _rects: rects };
 })();

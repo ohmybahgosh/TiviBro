@@ -1396,3 +1396,4 @@ body.mv-open #osd,body.mv-open #clock,body.mv-open .qpanel{display:none!importan
 .mv-hints .mv-k.red::before{background:#d6453d}.mv-hints .mv-k.yellow::before{background:#e0b630}.mv-hints .mv-k.green::before{background:#3fa85f}
 .mv-label{white-space:pre}
 .mv-snd{width:26px;height:26px;margin-right:10px;vertical-align:-5px;fill:#fff;stroke:#fff;stroke-width:2;stroke-linecap:round}
+.mv-hints .mv-k.blue::before{content:'';display:inline-block;width:16px;height:16px;border-radius:50%;margin-right:10px;vertical-align:-1px;background:#3d79d6}

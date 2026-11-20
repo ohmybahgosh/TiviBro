@@ -346,6 +346,8 @@ I18n.add('ru', {
   "Watch in Multiview": "Смотреть в мультиэкране",
   "with other channels": "с другими каналами",
   "more channels": "больше каналов",
+  "Search by name…": "Найти по названию…",
+  "on screen": "на экране",
   "Connections allowed": "Разрешённые подключения",
   "Convert audio the TV can't play": "Конвертировать звук, который ТВ не воспроизводит",
   "Could not load": "Не удалось загрузить",

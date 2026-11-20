@@ -2091,7 +2091,7 @@ var Views = (function () {
     if (c) add('fav', { label: L.isFav(c.k) ? 'Favorite' : 'Add favorite', icon: L.isFav(c.k) ? 'faved' : 'fav', run: function () { var on = L.toggleFav(c.k); if (on == null) return; U.toast(on ? 'Added to Favorites' : 'Removed from Favorites'); refreshLists(true); renderPanel(); } });
     add('guide', { label: 'TV guide', icon: 'guide', run: function () { closePanel(); leaveTo('guide'); } });
     if (c && L.versions(c).length) add('versions', { label: 'Other versions', icon: 'versions', v: versionsSummary(c), run: function () { closePanel(); versionsMenu(c); } });
-    if (c && mode === 'live' && typeof Multiview !== 'undefined') add('multi', { label: 'Multiview', icon: 'multi', v: 'more channels', run: function () { closePanel(); Multiview.start(c, lastPlayed ? [lastPlayed] : []); } });
+    if (c && mode === 'live' && typeof Multiview !== 'undefined') add('multi', { label: 'Multiview', icon: 'multi', v: 'more channels', run: function () { closePanel(); Multiview.again(c, lastPlayed); } });
     var tracks = Player.audioTracks();
     if (tracks.length > 1) add('audio', { label: 'Audio', icon: 'audio', v: (tracks.filter(function (t) { return t.on; })[0] || {}).label || '', run: function () { closePanel(); audioMenu(); } });
     // Live captions (CEA-608) have their own switch; Subtitles is for real subtitle tracks.

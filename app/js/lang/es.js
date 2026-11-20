@@ -340,6 +340,8 @@ I18n.add('es', {
   "Watch in Multiview": "Ver en Multivista",
   "with other channels": "con otros canales",
   "more channels": "más canales",
+  "Search by name…": "Buscar por nombre…",
+  "on screen": "en pantalla",
   "Connections allowed": "Conexiones permitidas",
   "Convert audio the TV can't play": "Convertir audio que la TV no reproduce",
   "Could not load": "No se pudo cargar",

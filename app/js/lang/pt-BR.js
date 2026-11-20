@@ -727,6 +727,8 @@ I18n.add('pt-BR', {
   "Watch in Multiview": "Ver na Multivisão",
   "with other channels": "com outros canais",
   "more channels": "mais canais",
+  "Search by name…": "Buscar pelo nome…",
+  "on screen": "na tela",
   "Connections allowed": "Conexões permitidas",
   "Convert audio the TV can't play": "Converter áudio que a TV não reproduz",
   "Could not load": "Não foi possível carregar",

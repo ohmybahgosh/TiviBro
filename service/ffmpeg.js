@@ -28,13 +28,13 @@ var crypto = require('crypto'), zlib = require('zlib'), cp = require('child_proc
 var Storage = require('./storage');
 
 /* ---------- the release (the lead fills in the hashes after running the build) ---------- */
-var TAG = 'ffmpeg-7.1-tb4';   // tb4: no L5 letterbox for a cropped remux; tb3: dovi_rpu with p81 (Dolby Vision 7 as 8.1, convert.js); tb2: video decoders and JPEG for seek previews
+var TAG = 'ffmpeg-7.1-tb5';   // tb5: built for speed (-O3, not --enable-small) and with HLS, for Multiview; tb4: no L5 letterbox for a cropped remux; tb3: dovi_rpu with p81 (Dolby Vision 7 as 8.1, convert.js); tb2: video decoders and JPEG for seek previews
 var BASE = 'https://github.com/ohmybahgosh/TiviBro/releases/download/' + TAG + '/';
 var SHA256 = {
-  armv7: '677b29d978d0d25d974e9cbbb2c27d2bc85ec8cd5bdcddc8f8ab07431badd064',
-  aarch64: '3f15380d3db16f8b7307c0b9a333ab09a381fa25e4a18fec3304bdcb8de3025b'
+  armv7: '228570c04b3212e918c2f1d0a965f5c6a90afc14f813568e848f22b7814d335e',
+  aarch64: 'a4718b42e15f611feb290a1d09c365853aa1347c0b2544f8a53c5aa6e359a000'
 };
-var MAX_BYTES = 16 * 1024 * 1024;           // the .gz is about 1.6 MB; anything far bigger is not it
+var MAX_BYTES = 16 * 1024 * 1024;           // the .gz is about 3 MB; anything far bigger is not it
 
 var st = { state: 'none', percent: 0, error: '' }, busy = false, cbs = [];
 var BUNDLE = path.join(__dirname, 'ffmpeg-bundle');
@@ -268,6 +268,8 @@ function fastBinary(cb) {
   var d; try { d = dir(); } catch (e) { return end('', e.message); }
   var final = path.join(d, fastName()), gz = final + '.gz.part', tmp = final + '.part';
   var check = function (file, done) { version(file, function (e, v) { done(e ? null : v); }); };
+  // An older version's fast build: gone.
+  try { fs.readdirSync(d).forEach(function (n) { if (/^fast-ffmpeg-/.test(n) && n !== fastName()) rm(path.join(d, n)); }); } catch (e) {}
   check(final, function (v0) {
     if (v0) return end(final);
     var want = String(cfg.sums.aarch64 || '').toLowerCase();
