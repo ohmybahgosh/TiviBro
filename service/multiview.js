@@ -1,8 +1,9 @@
 /* Multiview: more than one channel on screen at once.
    A webOS app gets one hardware video decoder: a second <video> stops the first.  So only the channel you
    picked plays as video (with its sound); the others are live pictures made here.  ffmpeg reads each one through
-   the relay, decodes it in software (only the frames other frames don't need: an IPTV channel's B-frames are
-   skipped, which leaves 8 to 25 pictures a second for about a third of the work), makes it small and sends it on
+   the relay, decodes it in software (the frames no other frame needs are skipped: about 15 to 20 pictures a
+   second for a little over half the work; skipping every B-frame was lighter still, but broke up the picture on
+   channels whose B-frames other frames use), makes it small and sends it on
    as JPEGs, one after the other (multipart/x-mixed-replace), which an <img> shows as moving pictures.
 
      GET /mv/<key>/tile.mjpg?u=<channel link>&w=<width>&f=<pictures a second>[&s=1][&ua=<User-Agent>][&id=<tile>]
@@ -32,7 +33,7 @@ function query(url) {
 function args(input, w, f, smooth) {
   return ['-hide_banner', '-nostdin', '-loglevel', 'error', '-protocol_whitelist', 'http,tcp',
     '-fflags', 'nobuffer', '-probesize', '1500000', '-analyzeduration', '1500000',
-  ].concat(smooth ? [] : ['-skip_frame', 'bidir', '-skip_loop_filter', 'bidir']).concat([
+  ].concat(smooth ? [] : ['-skip_frame', 'noref', '-skip_loop_filter', 'noref']).concat([
     '-i', input, '-an', '-sn', '-dn',
     '-vf', 'scale=' + w + ':-2', '-pix_fmt', 'yuvj420p',
     '-c:v', 'mjpeg', '-q:v', '7', '-r', String(f),

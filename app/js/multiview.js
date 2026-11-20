@@ -33,9 +33,11 @@ var Multiview = (function () {
     var u = Source.streamUrl(c, 'ts');
     if (typeof Net !== 'undefined' && Net.unwrap) u = Net.unwrap(u);
     var ua = Store.plOf && Store.plOf(c) && Store.plOf(c).ua || '';
-    // One box of pictures beside the video: every frame, 25 a second.  Three: lighter, without B-frames (about 15 to 20).
+    /* Up to 25 pictures a second for one box beside the video, 15 for three.  Without B-frames either way: on a C2,
+       every frame of a 1080p60 channel took more than a whole core (s=1), without them about half of one, for about
+       20 pictures a second. */
     var one = boxes.filter(function (b) { return b.c; }).length <= 2;
-    return base() + '/mv/' + key + '/tile.mjpg?id=' + encodeURIComponent(c.k).slice(0, 20) + '&w=' + w + '&f=' + (one ? '25&s=1' : '20') + '&u=' + encodeURIComponent(u) + (ua ? '&ua=' + encodeURIComponent(ua) : '');
+    return base() + '/mv/' + key + '/tile.mjpg?id=' + encodeURIComponent(c.k).slice(0, 20) + '&w=' + w + '&f=' + (one ? '25' : '15') + '&u=' + encodeURIComponent(u) + (ua ? '&ua=' + encodeURIComponent(ua) : '');
   }
 
   function build() {
@@ -69,7 +71,8 @@ var Multiview = (function () {
     b.el.classList.toggle('empty', !b.c);
     var tag = b.c && Library.versionTag ? Library.versionTag(b.c) : '';
     var name = b.c ? Library.name(b.c) + (tag ? '  ' + tag : '') : T('Add a channel');
-    b.label.textContent = (i === main ? '🔊  ' : '') + name;
+    b.label.textContent = name;
+    if (i === main) b.label.insertAdjacentHTML('afterbegin', '<svg class="mv-snd" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none"/></svg>');
     if (b.c && i !== main && !b.img) {
       var img = new Image(); img.className = 'mv-pic';
       img.onerror = function () { if (b.img === img) { b.el.classList.add('failed'); b.label.textContent = name + '   ' + T('no picture'); } };
