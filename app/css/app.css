@@ -944,7 +944,7 @@ body.full .activity,body.mgr-open .activity{display:none}
 .media-collage.n1 .media-cover{width:100%;height:100%}
 .media-collage.n2 .media-cover{height:100%}
 .media-collage.n3 .media-cover:nth-child(3){width:100%}
-.media-seeall{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(8,10,18,.62);color:#fff;font-size:26px;font-weight:600}
+.media-seeall{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(8,10,18,.7);color:#fff;font-size:26px;font-weight:600}
 .media-seeall svg{width:64px;height:64px;margin-bottom:12px;fill:none;stroke:currentColor;stroke-width:1.6}
 .media-monogram{display:block;text-align:center;line-height:340px;font-size:84px;color:var(--dim);font-weight:700}
 .media-tile.sel{z-index:2}
