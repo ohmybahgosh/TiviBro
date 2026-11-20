@@ -2,7 +2,7 @@
    once.  webOS gives an app one video decoder, and a second <video> stops the first (multiview-research in the
    project notes).  So the channel with sound plays as video in its box, and the other one is live video without
    sound that the network helper makes (service/multiview.js: ffmpeg on the TV, every frame, up to 30 a second, as
-   JPEGs), drawn at an even pace (Pic).  OK on the other box swaps them.  Each box uses a connection to the
+   JPEGs, sent at an even pace).  OK on the other box swaps them.  Each box uses a connection to the
    provider, so a login allowing one connection can't.  Two boxes only (Bob: a solid two rather than a choppy four;
    the helper and the layout could do four).
 
@@ -77,7 +77,7 @@ var Multiview = (function () {
     b.label.textContent = name;
     if (i === main) b.label.insertAdjacentHTML('afterbegin', '<svg class="mv-snd" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none"/></svg>');
     if (b.c && i !== main && !b.img) {
-      var two = filled() <= 2, pic = Pic(tileUrl(b.c, two ? 800 : 480), b.r[2], b.r[3], two ? 30 : 20, function () {
+      var pic = Pic(tileUrl(b.c, 640), function () {
         if (b.img === pic) { b.el.classList.add('failed'); b.label.textContent = name + '   ' + T('no picture'); }
       });
       b.el.insertBefore(pic.el, b.label); b.img = pic;
@@ -86,73 +86,13 @@ var Multiview = (function () {
 
   function stopPic(b) { if (b.img) { b.img.stop(); b.img = null; } }
 
-  /* A box's moving pictures.  An <img> shows each JPEG the moment it arrives, so a late one and the next together
-     look choppy even at 30 a second (Bob: "a bit choppy" in two boxes).  Where the browser can, a worker reads the
-     stream (each picture by its Content-Length), decodes it (createImageBitmap) and hands it over without a copy;
-     the pictures wait in a short queue and go onto the canvas at an even pace (bitmaprenderer: no drawing, the
-     picture itself is shown), about a tenth of a second behind.  A first try that drew on a 2D canvas from the
-     page took more than a core on a C2.  Older browsers: the <img>. */
-  var workerUrl = '';
-  function picWorker() {
-    if (workerUrl) return workerUrl;
-    var src = 'var ac=null;onmessage=function(m){if(m.data.stop){if(ac)ac.abort();close();return;}ac=new AbortController();' +
-      'fetch(m.data.url,{signal:ac.signal,cache:"no-store"}).then(function(r){if(!r.ok||!r.body)throw new Error("HTTP "+r.status);' +
-      'var rd=r.body.getReader(),buf=new Uint8Array(0),busy=0;' +
-      'function more(){return rd.read().then(function(x){if(x.done){postMessage({end:1});return;}' +
-      'var n=new Uint8Array(buf.length+x.value.length);n.set(buf);n.set(x.value,buf.length);buf=n;' +
-      'for(;;){var h=-1;for(var i=0;i+3<buf.length;i++)if(buf[i]===13&&buf[i+1]===10&&buf[i+2]===13&&buf[i+3]===10){h=i;break;}' +
-      'if(h<0)break;var head=String.fromCharCode.apply(null,buf.subarray(0,h)),L=/Content-Length: *([0-9]+)/i.exec(head);' +
-      'if(!L){buf=buf.subarray(h+4);continue;}var len=+L[1];if(buf.length<h+4+len)break;' +
-      'var jpg=buf.slice(h+4,h+4+len);buf=buf.subarray(h+4+len);' +
-      'if(busy>3)continue;busy++;createImageBitmap(new Blob([jpg],{type:"image/jpeg"})).then(function(bm){busy--;postMessage({bm:bm},[bm]);},function(){busy--;});}' +
-      'return more();});}return more();}).catch(function(e){if(e&&e.name==="AbortError")return;postMessage({end:1});});};';
-    workerUrl = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
-    return workerUrl;
-  }
-  function Pic(url, w, h, fps, onFail) {
-    var cv = document.createElement('canvas'), br = null;
-    try { br = typeof Worker === 'function' && typeof createImageBitmap === 'function' && typeof AbortController === 'function' ? cv.getContext('bitmaprenderer') : null; } catch (e) { br = null; }
-    if (!br) {
-      var img = new Image(); img.className = 'mv-pic'; img.onerror = onFail; img.src = url;
-      return { el: img, stop: function () { img.onerror = null; img.src = ''; img.remove(); } };
-    }
-    cv.className = 'mv-pic';
-    var wk = new Worker(picWorker()), q = [], stopped = false, raf = 0, due = 0, step = 1000 / fps, shown = 0, gaps = [], lastDraw = 0;
-    wk.onmessage = function (m) {
-      if (stopped) { if (m.data.bm && m.data.bm.close) m.data.bm.close(); return; }
-      if (m.data.end) return onFail();
-      q.push(m.data.bm);
-    };
-    wk.postMessage({ url: url });
-    function show(bm) {
-      if (cv.width !== bm.width || cv.height !== bm.height) { cv.width = bm.width; cv.height = bm.height; }
-      br.transferFromImageBitmap(bm);
-      shown++;
-      var t = performance.now(); if (lastDraw) { gaps.push(t - lastDraw); if (gaps.length > 300) gaps.shift(); } lastDraw = t;
-    }
-    function tick(now) {
-      if (stopped) return;
-      raf = requestAnimationFrame(tick);
-      if (!q.length) { due = 0; return; }                     // waiting for pictures: the last one stays
-      if (!due) { if (q.length < 3 && shown) return; due = now; }   // a little cushion first (after the first picture)
-      if (now < due - 4) return;
-      while (q.length > 8) { var old = q.shift(); if (old.close) old.close(); }   // far behind: catch up
-      show(q.shift());
-      // A little faster when the queue grows, a little slower when it runs low: even, and never far behind.
-      due += step * (q.length > 5 ? 0.9 : q.length < 2 ? 1.1 : 1);
-      if (now - due > step * 3) due = now;
-    }
-    raf = requestAnimationFrame(tick);
-    return { el: cv, pace: function () {
-      // How even the pictures are: the gaps between them (ms), for the log and tests.
-      if (!gaps.length) return null;
-      var m = gaps.reduce(function (a, b) { return a + b; }, 0) / gaps.length, sd = Math.sqrt(gaps.reduce(function (a, b) { return a + (b - m) * (b - m); }, 0) / gaps.length);
-      return { fps: Math.round(10000 / m) / 10, jitterMs: Math.round(sd), queued: q.length };
-    }, stop: function () {
-      stopped = true; cancelAnimationFrame(raf); try { wk.postMessage({ stop: 1 }); } catch (e) {}
-      setTimeout(function () { try { wk.terminate(); } catch (e) {} }, 500);
-      q.forEach(function (bm) { if (bm.close) bm.close(); }); q = []; cv.remove();
-    } };
+  /* A box's moving pictures: an <img> showing the helper's JPEGs one after another.  The helper sends them at an
+     even pace (service/multiview.js), since an <img> shows each one the moment it comes.  A worker decoding them
+     onto a canvas, paced here instead, took more than a core more on a C2 than the <img> (the TV's own JPEG
+     decoding is far cheaper), and left the pictures less even, not more. */
+  function Pic(url, onFail) {
+    var img = new Image(); img.className = 'mv-pic'; img.onerror = onFail; img.src = url;
+    return { el: img, stop: function () { img.onerror = null; img.src = ''; img.remove(); } };
   }
 
   function placeStage() {
@@ -270,7 +210,6 @@ var Multiview = (function () {
     if (!open) return;
     fetch(base() + '/mv/' + key + '/status', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
       (j.tiles || []).forEach(function (t) { Log.info('multiview', 'Box ' + t.id + ': ' + t.fps + ' pictures a second, ' + t.kbps + ' kb/s, ' + t.dropped + ' dropped'); });
-      boxes.forEach(function (b) { var p = b.img && b.img.pace && b.img.pace(); if (p) Log.info('multiview', 'On screen: ' + p.fps + ' a second, evenness ±' + p.jitterMs + ' ms'); });
     }, function () {});
   }
 
@@ -308,7 +247,5 @@ var Multiview = (function () {
     start(c, others.slice(0, 1));
   }
 
-  function pace() { return boxes.map(function (b) { return b.img && b.img.pace ? b.img.pace() : null; }); }
-
-  return { _wurl: picWorker, start: start, again: again, pace: pace, close: close, add: add, get open() { return open; }, _rects: rects };
+  return { start: start, again: again, close: close, add: add, get open() { return open; }, _rects: rects };
 })();

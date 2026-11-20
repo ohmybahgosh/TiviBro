@@ -74,29 +74,55 @@ function tile(req, res, ALLOW, log, port, q) {
   res.writeHead(200, h);
   try { t.p = cp.spawn('nice', ['-n', '10', bin].concat(args(input, w, f, smooth)), { stdio: ['ignore', 'pipe', 'pipe'] }); }
   catch (e) { try { t.p = cp.spawn(bin, args(input, w, f, smooth), { stdio: ['ignore', 'pipe', 'pipe'] }); } catch (e2) { return res.end(); } }
-  var err = '', busy = false;
+  var err = '', busy = false, pend = [], step = 1000 / f, next = 0, timer = null, gaps = [], lastOut = 0;
   t.p.stderr.on('data', function (d) { if (err.length < 2000) err += d; });
-  t.p.stdout.on('data', splitter(function (jpg) {
-    if (t.closed) return;
-    if (busy) { t.dropped++; return; }
+  /* An even pace: ffmpeg hands pictures over in bursts (a channel's data comes in pieces), and an <img> shows each
+     the moment it comes, which looks choppy even at 30 a second.  So they wait in a short queue and go out one per
+     1/f of a second: a little faster while the queue grows, a little slower when it runs low (it starts with three,
+     about a tenth of a second behind). */
+  function send(jpg) {
     t.frames++; t.bytes += jpg.length;
     if (t.frames === 1 && log) log({ lv: 'info', event: 'multiview tile first picture', id: t.id, ms: Date.now() - t.t0, w: w });
+    var now = Date.now(); if (lastOut) { gaps.push(now - lastOut); if (gaps.length > 200) gaps.shift(); } lastOut = now;
     busy = !res.write('--' + BOUNDARY + '\r\nContent-Type: image/jpeg\r\nContent-Length: ' + jpg.length + '\r\n\r\n');
     busy = !res.write(jpg) || busy;
     busy = !res.write('\r\n') || busy;
+  }
+  function tick() {
+    timer = null;
+    if (t.closed) return;
+    if (!pend.length) { next = 0; if (t.done) t.end(); return; }    // nothing waiting: start again when there is
+    if (busy) t.dropped++, pend.shift();                           // the app hasn't taken the last one: skip this
+    else send(pend.shift());
+    next += step * (pend.length > 5 ? 0.85 : pend.length < 2 ? 1.15 : 1);
+    var now = Date.now();
+    if (next < now - step * 3) next = now;                       // far behind (a stall): from now
+    timer = setTimeout(tick, Math.max(0, next - now));
+  }
+  t.p.stdout.on('data', splitter(function (jpg) {
+    if (t.closed) return;
+    pend.push(jpg);
+    while (pend.length > 8) { pend.shift(); t.dropped++; }             // far behind: catch up
+    if (!timer && (next || pend.length >= 3 || !t.frames)) { if (!next) next = Date.now(); timer = setTimeout(tick, 0); }
   }));
+  t.pace = function () {
+    if (!gaps.length) return null;
+    var m = gaps.reduce(function (a, b) { return a + b; }, 0) / gaps.length;
+    return { gap: Math.round(m), jitter: Math.round(Math.sqrt(gaps.reduce(function (a, b) { return a + (b - m) * (b - m); }, 0) / gaps.length)) };
+  };
   res.on('drain', function () { busy = false; stuck = 0; });
   // Nothing taken for 10 seconds: the app is gone without closing (a box replaced before its first picture), so stop.
   var stuck = 0, watch = setInterval(function () { if (!busy) { stuck = 0; return; } if (++stuck >= 5) { if (log) log({ lv: 'info', event: 'multiview tile not read, stopped', id: t.id }); t.end(); } }, 2000);
   t.end = function () {
-    if (t.closed) return; t.closed = true; clearInterval(watch);
+    if (t.closed) return; t.closed = true; clearInterval(watch); clearTimeout(timer);
     var i = tiles.indexOf(t); if (i >= 0) tiles.splice(i, 1);
     if (t.p) stopProc(t.p);
     try { res.end(); } catch (e) {}
   };
   t.p.on('close', function (code) {
     if (!t.closed && log) log({ lv: code ? 'warn' : 'info', event: 'multiview tile ended', id: t.id, code: code, frames: t.frames, e: err.trim().split('\n').pop().slice(0, 200) });
-    t.end();
+    t.done = true;
+    if (!pend.length || t.closed) t.end(); else if (!timer) timer = setTimeout(tick, 0);   // the pictures still waiting go out first
   });
   t.p.on('error', function () { t.end(); });
   req.on('close', function () { t.end(); });
@@ -115,7 +141,8 @@ function handle(req, res, ALLOW, log, port) {
     res.writeHead(200, h);
     return res.end(JSON.stringify({ ok: !!Ffmpeg.binary(), max: MAX, tiles: tiles.map(function (t) {
       var secs = Math.max(1, (Date.now() - t.t0) / 1000);
-      return { id: t.id, w: t.w, f: t.f, frames: t.frames, dropped: t.dropped, fps: Math.round(t.frames / secs * 10) / 10, kbps: Math.round(t.bytes * 8 / secs / 1000), secs: Math.round(secs) };
+      var pc = t.pace ? t.pace() : null;
+      return { id: t.id, w: t.w, f: t.f, frames: t.frames, dropped: t.dropped, fps: Math.round(t.frames / secs * 10) / 10, kbps: Math.round(t.bytes * 8 / secs / 1000), secs: Math.round(secs), gapMs: pc && pc.gap, jitterMs: pc && pc.jitter };
     }) }));
   }
   tile(req, res, ALLOW, log, port, query(req.url));
