@@ -137,7 +137,7 @@ function session(L, fresh, cb0) {
         auth_second_step: 1, hw_version: '1.7-BD-00', not_valid_token: 0, api_signature: 262, timestamp: Math.floor(Date.now() / 1000) }, function (e2, prof) {
         if (e2 && e2.auth) return cb(e2);
         if (prof && (prof.status === 2 || /block|disabled|expired/i.test(String(prof.msg || '')))) return cb(err('the portal says this box is not allowed' + (prof.msg ? ': ' + String(prof.msg).slice(0, 120) : ''), true));
-        t.prof = prof && typeof prof === 'object' ? { exp: prof.expire_billing_date || prof.end_date || '' } : null;
+        t.prof = prof && typeof prof === 'object' ? { exp: findDate(prof) } : null;
         sessions[k] = t;
         cb(null, t);
       });
@@ -710,21 +710,38 @@ function dateOf(v) {
   var t = String(v == null ? '' : v).trim(), m, y, mo, d;
   if (/^\d{9,10}$/.test(t)) { d = new Date(+t * 1000); y = d.getUTCFullYear(); mo = d.getUTCMonth() + 1; d = d.getUTCDate(); }
   else if ((m = /(\d{4})-(\d{1,2})-(\d{1,2})/.exec(t))) { y = +m[1]; mo = +m[2]; d = +m[3]; }
-  else if ((m = /(\d{1,2})[.\/](\d{1,2})[.\/](\d{4})/.exec(t))) { y = +m[3]; mo = +m[2]; d = +m[1]; }
+  else if ((m = /(\d{1,2})[.\/\-](\d{1,2})[.\/\-](\d{4})/.exec(t))) { y = +m[3]; mo = +m[2]; d = +m[1]; if (mo > 12 && d <= 12) { mo = +m[1]; d = +m[2]; } }   // 30.11.2026, 30-11-2026; 11-30-2026 when the second can't be a month
   else if ((m = /([A-Za-z]{3,9})\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})/.exec(t)) && MONTHS.indexOf(m[1].slice(0, 3).toLowerCase()) >= 0) { y = +m[3]; mo = MONTHS.indexOf(m[1].slice(0, 3).toLowerCase()) + 1; d = +m[2]; }
   else if ((m = /(\d{1,2})\s+([A-Za-z]{3,9})\.?,?\s+(\d{4})/.exec(t)) && MONTHS.indexOf(m[2].slice(0, 3).toLowerCase()) >= 0) { y = +m[3]; mo = MONTHS.indexOf(m[2].slice(0, 3).toLowerCase()) + 1; d = +m[1]; }
   else return 0;
   if (!(y > 2015 && y < 2100 && mo >= 1 && mo <= 12 && d >= 1 && d <= 31)) return 0;
   return Date.UTC(y, mo - 1, d);
 }
-function expiry(L, cb) {
+/* The subscription's end in what a portal answered.  Portals put it under many names (end_date,
+   expire_billing_date, tariff_expired_date, exp_date, expires...), and resellers often write it into "phone" or
+   another free text field ("Expires 25-12-2026").  The named ones first, then any field whose name speaks of an end,
+   then any short text holding a date.  Returns the raw value; dateOf reads it. */
+var EXP_KEYS = ['end_date', 'expire_billing_date', 'tariff_expired_date', 'exp_date', 'expire_date', 'expiry_date', 'expires', 'expire', 'valid_until', 'phone'];
+function findDate(o) {
+  if (!o || typeof o !== 'object') return '';
+  var i, k, keys = Object.keys(o);
+  for (i = 0; i < EXP_KEYS.length; i++) if (dateOf(o[EXP_KEYS[i]])) return String(o[EXP_KEYS[i]]);
+  for (i = 0; i < keys.length; i++) { k = keys[i]; if (/end|exp|valid|till|until/i.test(k) && dateOf(o[k])) return String(o[k]); }
+  for (i = 0; i < keys.length; i++) { k = keys[i]; var v = o[k]; if (typeof v === 'string' && v.length < 80 && !/^(mac|login|stb_|serial|ip|created|last|added|registered|update)/i.test(k) && /exp|end|valid|till|until|bis|до/i.test(v) && dateOf(v)) return v; }
+  return '';
+}
+var expSaid = {};
+function expiry(L, cb, log) {
   var s = sessions[keyOf(L)], fromProfile = s && s.prof ? dateOf(s.prof.exp) : 0;
   if (fromProfile) return cb(fromProfile);
   var done = false, timer = setTimeout(function () { if (!done) { done = true; cb(0); } }, 8000);
   act(L, { type: 'account_info', action: 'get_main_info' }, function (e, js) {
     if (done) return; done = true; clearTimeout(timer);
     js = !e && js && typeof js === 'object' ? js : {};
-    cb(dateOf(js.end_date) || dateOf(js.expire_billing_date) || dateOf(js.phone) || 0);
+    var exp = dateOf(findDate(js));
+    // None found: which fields the portal gave (names only, once), so a problem report shows where else to look.
+    if (!exp && log && !expSaid[keyOf(L)]) { expSaid[keyOf(L)] = 1; log({ lv: 'info', event: 'stalker: no subscription end found', mainInfo: e ? 'failed: ' + e.message : Object.keys(js).slice(0, 30).join(','), profile: s && s.prof ? 'no date' : 'none' }); }
+    cb(exp || 0);
   });
 }
 
@@ -744,7 +761,7 @@ function handle(req, res, ALLOW, log, port) {
         if (log) log({ lv: 'info', event: 'stalker list', n: d.channels.length, groups: d.groups.length, ms: Date.now() - t0 });
         expiry(L, function (exp) {
           send(res, ALLOW, 200, { groups: d.groups, channels: d.channels, portal: (sessions[keyOf(L)] || {}).api ? 'found' : '', exp: exp });
-        });
+        }, log);
       });
     });
     return;
@@ -803,4 +820,4 @@ function handle(req, res, ALLOW, log, port) {
   send(res, ALLOW, 404, { error: 'unknown stalker route' });
 }
 
-module.exports = { _dateOf: dateOf, _wait: function (ms) { return ms; }, handle: handle, _login: login, _apis: apis, _linkOf: linkOf, _fillStream: fillStream, _archDays: archDays, _isHlsLink: isHlsLink, _vodLinkOf: vodLinkOf, _shapeOf: shapeOf, _reset: function () { vodMem = {}; progress = {}; } };
+module.exports = { _dateOf: dateOf, _findDate: findDate, _wait: function (ms) { return ms; }, handle: handle, _login: login, _apis: apis, _linkOf: linkOf, _fillStream: fillStream, _archDays: archDays, _isHlsLink: isHlsLink, _vodLinkOf: vodLinkOf, _shapeOf: shapeOf, _reset: function () { vodMem = {}; progress = {}; } };
