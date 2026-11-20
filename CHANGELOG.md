@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 181, 2026-11-20)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 181
 
 - **Settings' sections sit centred in their highlight again** (discussion #36).  With 18 sections the list was taller than the screen, so each row was squeezed from the bottom and its label sat low, worst on 720p TVs.  The rows are sized to fit now.
 - **Changing a guide setting reloads the guide once, after you move on** (discussion #36), not on every press: stepping Keep past days from 1 to 7 started six guide downloads.
@@ -8,11 +12,7 @@
 - **The connection test and speed test pick channels you can see** (discussion #36).  They used the provider's first channel (or movie), sometimes an adult one you had hidden.  Now they pick at random from what your guide shows, never hidden, blocked or adult, and test three live channels with each one's result and the average.
 - **TiviBro opens more lightly right after an update on a 1 GB TV** (issue #137, issue #135).  The video converter used to unpack itself five seconds after the start, while the channel list and guide were loading, which was too much at once for some TVs with big playlists.  On a TV with less memory it now waits a minute and a half.
 
-## 0.6.0 (alpha 180, 2026-11-20)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 180
+### In alpha 180
 
 - **Multiview: two channels side by side**, a first for a webOS IPTV app.  Quick menu > Multiview in fullscreen, or hold OK > Watch in Multiview.  The box with sound plays as normal video; the other is live video without sound, up to 30 frames a second at an even pace, made by the network helper on the TV, since webOS gives an app one video at a time.  OK on a box gives it the sound, OK on an empty one picks a channel from your groups, Blue goes fullscreen.  Each box uses a provider connection.  It uses the 64-bit ffmpeg where the TV can run it (a C2 and newer), about twice as fast.
 - **The converter is now built for speed and reads HLS** (ffmpeg-7.1-tb5), for Multiview's pictures of .m3u8 channels.
