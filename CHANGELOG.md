@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **Settings' sections sit centred in their highlight again** (discussion #36).  With 18 sections the list was taller than the screen, so each row was squeezed from the bottom and its label sat low, worst on 720p TVs.  The rows are sized to fit now.
+- **Changing a guide setting reloads the guide once, after you move on** (discussion #36), not on every press: stepping Keep past days from 1 to 7 started six guide downloads.
 - **A menu's grey line under its title scrolls by when it's too long** (discussion #36), like a long title in the guide, instead of being cut off.
 - **The connection test and speed test pick channels you can see** (discussion #36).  They used the provider's first channel (or movie), sometimes an adult one you had hidden.  Now they pick at random from what your guide shows, never hidden, blocked or adult, and test three live channels with each one's result and the average.
 

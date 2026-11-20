@@ -566,9 +566,22 @@ var Settings = (function () {
       s.dnsServer = doh ? v : parts.join(', '); s.dns = 'custom'; save(); Net.setDns(); after();
     }, 'Like 192.168.1.1, 2001:de4::101 or https://dns.example/dns-query');
   }
+  /* A setting that changes the guide reloads it, but not on every press (discussion #36: stepping Keep past days
+     from 1 to 7 started six guide downloads).  It waits until you've moved off that row (or left Settings) and a
+     couple of seconds have passed, or 20 seconds at most. */
+  var guidePending = null;
   function persist(p, reloadGuide) {
     Store.upsertPlaylist(p);
-    if ((p.id === S().active || L.otherIds().indexOf(p.id) >= 0) && reloadGuide) Epg.refresh(L, true);
+    if (!((p.id === S().active || L.otherIds().indexOf(p.id) >= 0) && reloadGuide)) return;
+    var row = items[sel] && items[sel].label;
+    if (guidePending) { guidePending.at = Date.now(); guidePending.row = row; return; }
+    guidePending = { at: Date.now(), first: Date.now(), row: row, t: setInterval(function () {
+      var g = guidePending, now = Date.now(), here = typeof Views !== 'undefined' && Views.tab === 'settings', cur = items[sel] && items[sel].label;
+      if (!g || now - g.at < 2000) return;
+      if (here && cur === g.row && now - g.first < 20000) return;
+      clearInterval(g.t); guidePending = null;
+      Epg.refresh(L, true);
+    }, 1000) };
   }
 
   /* ---------- mixing playlists (library.js mixList) ---------- */
