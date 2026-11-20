@@ -227,7 +227,7 @@ var Recordings = (function () {
       if (r.status === 'recording') out.push({ label: 'Stop recording', icon: 'stop', sub: T('keeps what\'s recorded'), action: function () { Record.stop(r.id).then(render); } });
       if (r.status === 'scheduled') out.push({ label: 'Cancel recording', icon: 'stop', sub: U.hhmm(r.start), action: function () { Record.stop(r.id).then(render); } });
       if (r.status === 'done' && r.bytes > 0 && r.conv && r.conv.running) out.push({ label: T('Converting to MP4: {n}%', { n: r.conv.pct || 0 }), icon: 'history', sub: T('it carries on in the background') });
-      else if (Record.canConvert(r)) out.push({ label: 'Convert to MP4', icon: 'film', sub: T('one file with its title, plot and poster, for Plex and Apple TV'), action: function () { Record.convert(r.id).then(render); } });
+      else if (Record.canConvert(r)) out.push({ label: 'Convert to MP4', icon: 'film', sub: T('one file with its details inside, for Plex and Apple TV'), action: function () { Record.convert(r.id).then(render); } });
       if (r.status !== 'recording') out.push({ label: 'Delete', icon: 'trash', sub: r.bytes ? T('{x} freed', { x: Record.sizeOf(r.bytes) }) : '', action: function () { ask([r]); } });
       if (p && r.status === 'done') out.push({ label: 'Mark as not watched', icon: 'eye', action: function () { Record.forget(r.id); render(); } });
     }

@@ -2015,7 +2015,7 @@ I18n.add('ru', {
   "Hidden.  Restore it in Settings, Channels and groups, Hidden channels.": "Скрыто.  Вернуть: Настройки, Каналы и группы, Скрытые каналы.",
   "Hidden.  Restore it in Settings, Channels and groups, Hidden groups.": "Скрыто.  Вернуть: Настройки, Каналы и группы, Скрытые группы.",
   "Convert to MP4": "Преобразовать в MP4",
-  "one file with its title, plot and poster, for Plex and Apple TV": "один файл с названием, описанием и постером, для Plex и Apple TV",
+  "one file with its details inside, for Plex and Apple TV": "один файл со всеми сведениями внутри, для Plex и Apple TV",
   "Converting to MP4: {n}%": "Преобразование в MP4: {n}%",
   "converting {n}%": "преобразование {n}%",
   "it carries on in the background": "продолжается в фоне",

@@ -167,7 +167,7 @@ var Record = (function () {
     if (r.bytes > 0) items.push({ label: r.status === 'recording' ? 'Watch from the start' : 'Watch', icon: 'play', action: function () { watch(r); } });
     if (r.status === 'recording') items.push({ label: 'Stop recording', icon: 'stop', action: function () { stop(r.id).then(open); } });
     if (r.status === 'scheduled') items.push({ label: 'Cancel recording', icon: 'stop', action: function () { stop(r.id).then(open); } });
-    if (canConvert(r)) items.push({ label: 'Convert to MP4', icon: 'film', sub: T('one file with its title, plot and poster, for Plex and Apple TV'), action: function () { convert(r.id).then(open); } });
+    if (canConvert(r)) items.push({ label: 'Convert to MP4', icon: 'film', sub: T('one file with its details inside, for Plex and Apple TV'), action: function () { convert(r.id).then(open); } });
     if (r.status !== 'recording') items.push({ label: 'Delete', icon: 'trash', sub: r.bytes ? sizeOf(r.bytes) + ' freed' : '', action: function () {
       UI.confirm(T('Delete "{x}"?', { x: r.title }), 'Delete', function () { remove(r.id).then(open); });
     } });

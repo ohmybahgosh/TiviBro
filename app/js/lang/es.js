@@ -2012,7 +2012,7 @@ I18n.add('es', {
   "Hidden.  Restore it in Settings, Channels and groups, Hidden channels.": "Oculto.  Restáuralo en Configuración, Canales y grupos, Canales ocultos.",
   "Hidden.  Restore it in Settings, Channels and groups, Hidden groups.": "Oculto.  Restáuralo en Configuración, Canales y grupos, Grupos ocultos.",
   "Convert to MP4": "Convertir a MP4",
-  "one file with its title, plot and poster, for Plex and Apple TV": "un solo archivo con su título, sinopsis y póster, para Plex y Apple TV",
+  "one file with its details inside, for Plex and Apple TV": "un solo archivo con sus datos dentro, para Plex y Apple TV",
   "Converting to MP4: {n}%": "Convirtiendo a MP4: {n}%",
   "converting {n}%": "convirtiendo {n}%",
   "it carries on in the background": "sigue en segundo plano",
