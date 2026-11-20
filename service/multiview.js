@@ -78,8 +78,8 @@ function tile(req, res, ALLOW, log, port, q) {
   t.p.stderr.on('data', function (d) { if (err.length < 2000) err += d; });
   /* An even pace: ffmpeg hands pictures over in bursts (a channel's data comes in pieces), and an <img> shows each
      the moment it comes, which looks choppy even at 30 a second.  So they wait in a short queue and go out one per
-     1/f of a second: a little faster while the queue grows, a little slower when it runs low (it starts with three,
-     about a tenth of a second behind). */
+     1/f of a second: a little faster while the queue grows, a little slower when it runs low (it starts with eight,
+     about a quarter of a second behind, enough for the bursts seen on a C2). */
   function send(jpg) {
     t.frames++; t.bytes += jpg.length;
     if (t.frames === 1 && log) log({ lv: 'info', event: 'multiview tile first picture', id: t.id, ms: Date.now() - t.t0, w: w });
@@ -96,9 +96,9 @@ function tile(req, res, ALLOW, log, port, q) {
     if (t.closed) return;
     if (!pend.length) { next = 0; if (t.done) t.end(); return; }    // nothing waiting: start again when there is
     busy = behind();
-    if (busy) t.dropped++, pend.shift();                           // the app hasn't taken the last ones: skip this
+    if (busy) t.dropped++, t.behind = (t.behind || 0) + 1, pend.shift();   // the app hasn't taken the last ones: skip this
     else send(pend.shift());
-    next += step * (pend.length > 5 ? 0.85 : pend.length < 2 ? 1.15 : 1);
+    next += step * (pend.length > 20 ? 0.8 : pend.length > 12 ? 0.92 : pend.length < 3 ? 1.1 : 1);
     var now = Date.now();
     if (next < now - step * 3) next = now;                       // far behind (a stall): from now
     timer = setTimeout(tick, Math.max(0, next - now));
@@ -106,9 +106,10 @@ function tile(req, res, ALLOW, log, port, q) {
   t.p.stdout.on('data', splitter(function (jpg) {
     if (t.closed) return;
     pend.push(jpg);
-    while (pend.length > 8) { pend.shift(); t.dropped++; }             // far behind: catch up
-    if (!timer && (next || pend.length >= 3 || !t.frames)) { if (!next) next = Date.now(); timer = setTimeout(tick, 0); }
+    while (pend.length > 45) { pend.shift(); t.dropped++; }            // more than a second and a half behind: catch up
+    if (!timer && (next || pend.length >= 8 || !t.frames)) { if (!next) next = Date.now(); timer = setTimeout(tick, 0); }
   }));
+  t.queued = function () { return pend.length; };
   t.pace = function () {
     if (!gaps.length) return null;
     var m = gaps.reduce(function (a, b) { return a + b; }, 0) / gaps.length;
@@ -146,7 +147,7 @@ function handle(req, res, ALLOW, log, port) {
     return res.end(JSON.stringify({ ok: !!Ffmpeg.binary(), max: MAX, tiles: tiles.map(function (t) {
       var secs = Math.max(1, (Date.now() - t.t0) / 1000);
       var pc = t.pace ? t.pace() : null;
-      return { id: t.id, w: t.w, f: t.f, frames: t.frames, dropped: t.dropped, fps: Math.round(t.frames / secs * 10) / 10, kbps: Math.round(t.bytes * 8 / secs / 1000), secs: Math.round(secs), gapMs: pc && pc.gap, jitterMs: pc && pc.jitter };
+      return { id: t.id, w: t.w, f: t.f, frames: t.frames, dropped: t.dropped, fps: Math.round(t.frames / secs * 10) / 10, behind: t.behind || 0, queued: t.queued ? t.queued() : 0, kbps: Math.round(t.bytes * 8 / secs / 1000), secs: Math.round(secs), gapMs: pc && pc.gap, jitterMs: pc && pc.jitter };
     }) }));
   }
   tile(req, res, ALLOW, log, port, query(req.url));
