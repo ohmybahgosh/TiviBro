@@ -246,6 +246,52 @@ function remove(cb) {
   status(function (s) { cb(null, s); });
 }
 
+/* ---------- the 64-bit build, for video ----------
+   Some TVs run a 64-bit kernel under 32-bit programs (a C2: uname says aarch64, its Node is 32-bit), so the
+   helper runs the 32-bit converter.  A static 64-bit ffmpeg runs there too, and decodes video about twice as fast
+   (a 1080p H.264 channel: 0.8 of a core instead of 1.5, on a C2).  Multiview's pictures (multiview.js) use it
+   when TiviBro carries it: unpacked next to the converter as fast-ffmpeg-..., checked against its published
+   checksum and run once.  Anything else, or anything failing: the converter as it is. */
+var fast = { path: '', no: false, cbs: [] };
+function fastName() { return 'fast-' + nameFor('aarch64'); }
+function fastBinary(cb) {
+  var plain = binary();
+  if (override()) return cb(plain);
+  if (fast.path) return cb(fast.path);
+  if (fast.no || thisArch() !== 'armv7' || !/^aarch64/i.test(unameM()) || !bundled('aarch64')) return cb(plain);
+  fast.cbs.push(cb);
+  if (fast.cbs.length > 1) return;
+  function end(file, why) {
+    if (file) fast.path = file; else { fast.no = true; if (why) log({ lv: 'warn', event: 'fast converter not used', e: why }); }
+    var l = fast.cbs; fast.cbs = []; l.forEach(function (f) { f(fast.path || binary()); });
+  }
+  var d; try { d = dir(); } catch (e) { return end('', e.message); }
+  var final = path.join(d, fastName()), gz = final + '.gz.part', tmp = final + '.part';
+  var check = function (file, done) { version(file, function (e, v) { done(e ? null : v); }); };
+  check(final, function (v0) {
+    if (v0) return end(final);
+    var want = String(cfg.sums.aarch64 || '').toLowerCase();
+    if (!/^[0-9a-f]{64}$/.test(want)) return end('', 'no checksum for the 64-bit build');
+    copyFile(bundled('aarch64'), gz, function (e) {
+      if (e) { rm(gz); return end('', e.message); }
+      sha256(gz, function (e2, hex) {
+        if (e2 || hex !== want) { rm(gz); return end('', e2 ? e2.message : 'checksum mismatch'); }
+        gunzip(gz, tmp, function (e3) {
+          rm(gz);
+          if (e3) { rm(tmp); return end('', e3.message); }
+          try { fs.chmodSync(tmp, parseInt('700', 8)); } catch (e4) { rm(tmp); return end('', e4.message); }
+          check(tmp, function (v) {
+            if (!v) { rm(tmp); return end('', 'it does not run on this TV'); }
+            try { fs.renameSync(tmp, final); } catch (e5) { rm(tmp); return end('', e5.message); }
+            log({ lv: 'info', event: 'fast converter ready', version: v });
+            end(final);
+          });
+        });
+      });
+    });
+  });
+}
+
 /* ---------- routes ---------- */
 function send(res, ALLOW, code, obj) {
   var h = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' };
@@ -269,6 +315,6 @@ function handle(req, res, ALLOW) {
 }
 
 module.exports = {
-  setLog: function (f) { logFn = f; }, TAG: TAG, BASE: BASE, SHA256: SHA256, arch: arch, binary: binary, status: status, get: get, remove: remove, handle: handle, prepare: prepare, bundled: bundled,
-  _config: function (o) { if (o.base) cfg.base = o.base; if (o.sums) cfg.sums = o.sums; if (o.bundle !== undefined) cfg.bundle = o.bundle; if (o.arch !== undefined) cfg.arch = o.arch; if (o.reset) { cfg = { base: BASE, sums: SHA256, bundle: BUNDLE }; st = { state: 'none', percent: 0, error: '' }; verCache = {}; } }
+  setLog: function (f) { logFn = f; }, TAG: TAG, BASE: BASE, SHA256: SHA256, arch: arch, binary: binary, fastBinary: fastBinary, status: status, get: get, remove: remove, handle: handle, prepare: prepare, bundled: bundled,
+  _config: function (o) { if (o.base) cfg.base = o.base; if (o.sums) cfg.sums = o.sums; if (o.bundle !== undefined) cfg.bundle = o.bundle; if (o.arch !== undefined) cfg.arch = o.arch; if (o.reset) { cfg = { base: BASE, sums: SHA256, bundle: BUNDLE }; fast = { path: '', no: false, cbs: [] }; st = { state: 'none', percent: 0, error: '' }; verCache = {}; } }
 };

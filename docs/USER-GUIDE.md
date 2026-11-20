@@ -291,7 +291,7 @@ It tries hard never to just stop:
 Watch two to four channels side by side, for a Sunday of games or the news while a game plays.  In fullscreen, open the quick menu and choose **Multiview**, or hold OK on a channel and choose **Watch in Multiview**.
 
 - The box with the sound icon is the channel you hear.  It plays as normal video, as smooth as fullscreen.
-- The other boxes are live pictures without sound, about 15 to 25 a second, made by the network helper on the TV.
+- The other boxes are live video without sound, made by the network helper on the TV: as smooth as the channel (up to 30 frames a second) with two boxes, up to 20 with four.
 - **Arrows** move between boxes.  **OK** on another box gives it the sound (and makes it the smooth one).  OK on an empty box picks a channel for it.
 - **Red** changes the box's channel, **Yellow** takes it out, and **Green** goes from two boxes to four.
 - **Back**, or OK on the box with sound, goes fullscreen on that channel.

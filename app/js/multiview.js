@@ -33,11 +33,11 @@ var Multiview = (function () {
     var u = Source.streamUrl(c, 'ts');
     if (typeof Net !== 'undefined' && Net.unwrap) u = Net.unwrap(u);
     var ua = Store.plOf && Store.plOf(c) && Store.plOf(c).ua || '';
-    /* Up to 25 pictures a second for one box beside the video, 15 for three.  Without B-frames either way: on a C2,
-       every frame of a 1080p60 channel took more than a whole core (s=1), without them about half of one, for about
-       20 pictures a second. */
+    /* Two boxes (one of pictures beside the video): every frame, up to 30 a second, as smooth as the channel allows
+       for a game beside a game (Bob).  Four: lighter, without the frames nothing needs, up to 20 a second each.
+       On a C2 with the 64-bit ffmpeg: a 1080p channel's every frame takes about 0.8 of a core. */
     var one = boxes.filter(function (b) { return b.c; }).length <= 2;
-    return base() + '/mv/' + key + '/tile.mjpg?id=' + encodeURIComponent(c.k).slice(0, 20) + '&w=' + w + '&f=' + (one ? '25' : '15') + '&u=' + encodeURIComponent(u) + (ua ? '&ua=' + encodeURIComponent(ua) : '');
+    return base() + '/mv/' + key + '/tile.mjpg?id=' + encodeURIComponent(c.k).slice(0, 20) + '&w=' + w + '&f=' + (one ? '30&s=1' : '20') + '&u=' + encodeURIComponent(u) + (ua ? '&ua=' + encodeURIComponent(ua) : '');
   }
 
   function build() {

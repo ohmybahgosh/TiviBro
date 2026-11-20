@@ -59,9 +59,14 @@ function splitter(onFrame) {
 
 function tile(req, res, ALLOW, log, port, q) {
   var w = Math.max(160, Math.min(960, (+q.w | 0) || 640)) & ~1, f = Math.max(1, Math.min(30, +q.f || 12)), smooth = q.s === '1';
-  var input = Convert.inputFor(q.u, q.ua || '', port), bin = Ffmpeg.binary();
+  var input = Convert.inputFor(q.u, q.ua || '', port);
   if (!input) { res.writeHead(400, ALLOW); return res.end('not a web address'); }
-  if (!bin) { res.writeHead(503, ALLOW); return res.end('no converter on this TV yet'); }
+  // The 64-bit build where the TV can run it: twice the pictures for the same work (ffmpeg.js fastBinary).
+  Ffmpeg.fastBinary(function (bin) {
+    if (!bin) { res.writeHead(503, ALLOW); return res.end('no converter on this TV yet'); }
+    run(bin);
+  });
+  function run(bin) {
   while (tiles.length >= MAX) { var old = tiles.shift(); if (log) log({ lv: 'info', event: 'multiview tile stopped for a newer one', id: old.id }); old.end(); }
   var t = { id: String(q.id || ++seq).slice(0, 20), w: w, f: f, frames: 0, dropped: 0, bytes: 0, t0: Date.now(), p: null, closed: false };
   var h = { 'Content-Type': 'multipart/x-mixed-replace; boundary=' + BOUNDARY, 'Cache-Control': 'no-store', 'Connection': 'close' };
@@ -95,6 +100,8 @@ function tile(req, res, ALLOW, log, port, q) {
   req.on('close', function () { t.end(); });
   res.on('close', function () { t.end(); });
   tiles.push(t);
+  if (log) log({ lv: 'info', event: 'multiview tile', id: t.id, w: w, f: f, smooth: smooth, fast: /fast-/.test(bin) });
+  }
 }
 
 function isRoute(url) { return /^\/mv\//.test(url); }
