@@ -286,21 +286,21 @@ It tries hard never to just stop:
 - **DTS, Dolby TrueHD and FLAC surround:** some sound the TV can't play at all.  TiviBro converts it for you, see [Sound the TV can't play](#sound-the-tv-cant-play).
 - **Settings > System > What this TV can play** lists every format and which player handles it on your TV.
 
-### Multiview: up to four channels at once
+### Multiview: two channels side by side
 
-Watch two to four channels side by side, for a Sunday of games or the news while a game plays.  In fullscreen, open the quick menu and choose **Multiview**, or hold OK on a channel and choose **Watch in Multiview**.
+Watch two channels at once, like two games.  In fullscreen, open the quick menu and choose **Multiview**, or hold OK on a channel and choose **Watch in Multiview**.
 
 - The box with the sound icon is the channel you hear.  It plays as normal video, as smooth as fullscreen.
-- The other boxes are live video without sound, made by the network helper on the TV: as smooth as the channel (up to 30 frames a second) with two boxes, up to 20 with four.
-- **Arrows** move between boxes.  **OK** on another box gives it the sound (and makes it the smooth one).  OK on an empty box picks a channel for it.
-- **Red** changes the box's channel, **Yellow** takes it out, and **Green** goes from two boxes to four.
-- **Back**, or OK on the box with sound, goes fullscreen on that channel.
+- The other box is live video without sound, up to 30 frames a second, made by the network helper on the TV.
+- **◀ ▶** move between the boxes.  **OK** on the other box gives it the sound.  OK on an empty box picks a channel for it: your groups first (Favorites, Recent and the rest, as in the guide), then that group's channels with what's on now.  **Search by name** is at the top of the list.
+- **Red** changes the box's channel, and **Yellow** takes it out.
+- **Blue**, **Play**, **Back**, or OK on the box with sound go fullscreen on that channel.  Multiview in the quick menu brings the same two channels back.
 
 Good to know:
 
 - Each box uses one of your provider's connections, as watching a channel does.  A login that allows one connection can't show a second channel.  Settings > Playlists and accounts shows how many yours allows.
-- webOS lets an app play one video at a time, so only the box with sound is real video.  The pictures are made on the TV's processor, so four boxes keep a TV busy.  Two boxes look best.
-- It needs the network helper and the converter TiviBro uses for sound the TV can't play (it comes with TiviBro).  It works on any webOS TV, rooted or not.
+- webOS lets an app play one video at a time, so only the box with sound is real video.  The other is made on the TV's processor, a little behind (about a third of a second).
+- It needs the network helper and the converter TiviBro uses for sound the TV can't play (it comes with TiviBro).  It works on any webOS TV, rooted or not; newer TVs (a 2022 C2 and later) make the smoothest pictures.
 
 ### DASH channels and protected channels
 

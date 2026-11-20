@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-- **Multiview: up to four channels on screen at once**, a first for a webOS IPTV app.  Quick menu > Multiview in fullscreen, or hold OK > Watch in Multiview.  The box with sound plays as normal video; the others are live video without sound (up to 30 frames a second with two boxes, 20 with four) the network helper makes on the TV, since webOS gives an app one video at a time.  On TVs that can run it (a C2 and newer), it uses the 64-bit ffmpeg, about twice as fast.  OK on a box gives it the sound.  Each box uses a provider connection.
+- **Multiview: two channels side by side**, a first for a webOS IPTV app.  Quick menu > Multiview in fullscreen, or hold OK > Watch in Multiview.  The box with sound plays as normal video; the other is live video without sound, up to 30 frames a second at an even pace, made by the network helper on the TV, since webOS gives an app one video at a time.  OK on a box gives it the sound, OK on an empty one picks a channel from your groups, Blue goes fullscreen.  Each box uses a provider connection.  It uses the 64-bit ffmpeg where the TV can run it (a C2 and newer), about twice as fast.
+- **The converter is now built for speed and reads HLS** (ffmpeg-7.1-tb5), for Multiview's pictures of .m3u8 channels.
+- **Seek previews and converted sound keep working after the network helper starts again** (its key is asked for again).
 - **A Stalker portal's subscription end shows with the playlist** (discussion #134), like an Xtream login's: in Settings, Playlists and accounts, from what the portal says (its billing date, or the date many portals put in the account's "phone" line).
 - **A playlist's page says how many movies and shows it has**, once they've loaded (discussion #134).
 
