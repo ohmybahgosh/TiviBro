@@ -91,7 +91,10 @@ var Convert = (function () {
   }
 
   /* ---------- links ---------- */
-  function ensureKey() {
+  // The key is new each time the helper starts: a helper started again (the app's watchdog, or webOS) needs it asked again.
+  if (typeof Net !== 'undefined' && Net.onRestart) Net.onRestart(function () { key = ''; });
+  function ensureKey(fresh) {
+    if (fresh) key = '';
     if (key) return Promise.resolve(key);
     return ask('/convert/key').then(function (j) { key = j.key || ''; if (!key) throw new Error('no key'); return key; });
   }

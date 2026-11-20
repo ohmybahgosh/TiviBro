@@ -78,7 +78,14 @@ var Multiview = (function () {
     if (i === main) b.label.insertAdjacentHTML('afterbegin', '<svg class="mv-snd" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none"/></svg>');
     if (b.c && i !== main && !b.img) {
       var pic = Pic(tileUrl(b.c, 640), function () {
-        if (b.img === pic) { b.el.classList.add('failed'); b.label.textContent = name + '   ' + T('no picture'); }
+        if (b.img !== pic) return;
+        // Once: the helper may have started again since (a new key), or the channel stopped for a moment.
+        if (!b.retried) {
+          b.retried = true;
+          Convert.ensureKey(true).then(function (k) { key = k; if (b.img === pic && open) { stopPic(b); paint(b, boxes.indexOf(b)); } });
+          return;
+        }
+        b.el.classList.add('failed'); b.label.textContent = name + '   ' + T('no picture');
       });
       b.el.insertBefore(pic.el, b.label); b.img = pic;
     }
@@ -150,7 +157,7 @@ var Multiview = (function () {
   function setBox(i, c) {
     var b = boxes[i], before = filled();
     if (b.img) { stopPic(b); }
-    b.c = c; b.el.classList.remove('failed');
+    b.c = c; b.retried = false; b.el.classList.remove('failed');
     if (i === main) { Views.startChannel(c, true); }
     paint(b, i);
     if (main < 0) makeMain(i);
