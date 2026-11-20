@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Moving along a shelf of posters is smooth** (My media, Movies and Shows).  The next poster now slides in from the edge with the rest, already loaded, instead of popping in at the end once the others had moved, and a poster that is still loading fades in over its letter.
+- **See all shows the shelf's posters**, four to a card under a See all mark, instead of a lone "S".
+
 ## 0.6.0 (alpha 183, 2026-11-20)
 
 Pre-release: expect rough edges, and keep a backup before installing.

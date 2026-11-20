@@ -40,7 +40,9 @@ var Media = (function () {
   // Opening My media focuses the first item on screen; shelves that fill in later (shows and episodes come
   // from the helper) still move it there, until the viewer presses a key.
   var followTop = true;
-  var TILE_STEP = 272, TILE_POOL = 7, ROW_H = 492;   // posters drawn only on the focused shelf and the ones next to it
+  /* Posters drawn only on the focused shelf and the ones next to it: the 7 on screen and one more off each side,
+     so moving along a shelf slides the next poster in from the edge (already loaded) instead of popping it in. */
+  var TILE_STEP = 272, TILE_VIS = 7, TILE_POOL = TILE_VIS + 2, ROW_H = 492;
   var itemsVL = { current: function () { var s = shelves[shelfAt]; return s && s.movies[shelfPos[s.id] || 0]; }, refresh: function () { refresh(); } };
   function label(m) { return (m.title || m.label || '') + (m.year ? ' (' + m.year + ')' : ''); }
   function nameOf(m) { return m.metadata && m.metadata.title || m.title || m.label || ''; }
@@ -144,7 +146,7 @@ var Media = (function () {
     var poster = movie.metadata && movie.metadata.poster || '';
     // On Home (movies and shows together) a tile says which it is.
     var kindTag = split && section === 'home' && movie.kind !== 'live' && movie.kind !== 'section' ? (isShow(movie) ? 'TV' : 'Movie') : '';
-    var key = movie.id + '|' + kindTag + '|' + (movie.kind === 'live' ? (movie.live.live ? 1 : 0) + '|' : '') + poster + '|' + nameOf(movie) + '|' + (movie.year || movie.metadata && movie.metadata.year || '') + '|' + (line || '');
+    var key = movie.id + '|' + kindTag + '|' + (movie.kind === 'live' ? (movie.live.live ? 1 : 0) + '|' : '') + poster + '|' + (movie.collage ? movie.collage.join(',') + '|' : '') + nameOf(movie) + '|' + (movie.year || movie.metadata && movie.metadata.year || '') + '|' + (line || '');
     if (slot.key === key) return;
     slot.key = key; slot.art.innerHTML = ''; slot.art.appendChild(slot.bar); slot.art.appendChild(slot.tag); slot.art.appendChild(slot.mark);
     if (movie.libArt) {
@@ -155,9 +157,19 @@ var Media = (function () {
       la.appendChild(U.el('div', 'media-libart-name', typeof I18n !== 'undefined' ? I18n.t(nameOf(movie)) : nameOf(movie)));   // capitals by CSS, so the words translate
       la.appendChild(U.el('div', 'media-libart-sub', String(movie.year || '')));
       slot.art.appendChild(la);
+    } else if (movie.collage && movie.collage.length) {
+      // See all: the shelf's first posters, four to a card, under a "see them all" mark (not a lone letter).
+      var col = U.el('div', 'media-collage n' + Math.min(4, movie.collage.length));
+      movie.collage.slice(0, 4).forEach(function (u) {
+        var q = U.el('img', 'media-cover wait'); q.alt = ''; q.addEventListener('load', function () { this.classList.remove('wait'); });
+        col.appendChild(q); posterQueue.push({ img: q, url: u });
+      });
+      var over = U.el('div', 'media-seeall'); over.innerHTML = UI.icon('grid'); over.appendChild(U.el('span', '', typeof I18n !== 'undefined' ? I18n.t('See all') : 'See all'));
+      slot.art.appendChild(col); slot.art.appendChild(over);
     } else slot.art.appendChild(U.el('span', 'media-monogram', String(nameOf(movie)).slice(0, 1).toUpperCase()));
     if (poster) {
-      var img = U.el('img', 'media-cover'); img.alt = ''; img.width = 240; img.height = 360;
+      var img = U.el('img', 'media-cover wait'); img.alt = ''; img.width = 240; img.height = 360;
+      img.addEventListener('load', function () { this.classList.remove('wait'); });   // fades in over the letter instead of popping
       slot.art.appendChild(img); posterQueue.push({ img: img, url: poster });
     }
     slot.title.textContent = nameOf(movie);
@@ -758,8 +770,8 @@ var Media = (function () {
       view.empty.textContent = MediaStore.sources().length ? 'Nothing here yet.  Green rescans your sources.' : 'Add your first server in Settings › My media.';
       view.empty.classList.toggle('hidden', s.movies.length > 0);
       var near = Math.abs(row - shelfAt) <= 1;
-      var start = Math.max(0, Math.min(at - 1, s.movies.length - (TILE_POOL - 1))), used = {};
-      for (var i = start; near && i < Math.min(s.movies.length, start + TILE_POOL); i++) {
+      var start = Math.max(0, Math.min(at - 1, s.movies.length - (TILE_VIS - 1))), used = {};
+      for (var i = Math.max(0, start - 1); near && i < Math.min(s.movies.length, start + TILE_VIS + 1); i++) {
         var slot = view.pool[i % TILE_POOL], m = s.movies[i]; used[i % TILE_POOL] = true;
         // A tile reused for another title (it went off one end and comes back at the other) jumps there; only a
         // tile keeping its title slides.  Otherwise it flew across the row behind the others when scrolling right.
@@ -793,7 +805,8 @@ var Media = (function () {
     // See all, at the end of a long shelf: the whole list as a poster grid (media-grid.js).
     if (!query) shelves = shelves.map(function (sh) {
       if (sh.movies.length < 12 || /^(browse|library)/.test(sh.id)) return sh;
-      var c = { id: 'seeall:' + sh.id, kind: 'section', grid: { type: 'shelf', id: sh.id }, title: 'See all', year: count(sh.movies.length, '1 title', '{n} titles'), metadata: { title: 'See all', poster: '' } };
+      var c = { id: 'seeall:' + sh.id, kind: 'section', grid: { type: 'shelf', id: sh.id }, title: 'See all', year: count(sh.movies.length, '1 title', '{n} titles'), metadata: { title: 'See all', poster: '' },
+        collage: sh.movies.map(function (m) { return m.metadata && m.metadata.poster || ''; }).filter(Boolean).slice(0, 4) };
       var copy = {}; Object.keys(sh).forEach(function (k) { copy[k] = sh[k]; }); copy.movies = sh.movies.concat([c]); return copy;
     });
     if (!shelves.length) shelves = [{ id: 'all', title: 'Movies', movies: [] }];

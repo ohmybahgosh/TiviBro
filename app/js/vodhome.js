@@ -11,7 +11,7 @@ var VodHome = (function () {
   var RAW = function (s) { return typeof I18n !== 'undefined' ? I18n.raw(s) : s; };
   var $ = function (id) { return document.getElementById(id); };
   var built = false, open_ = false, kind = 'movie', A = null, shelves = [], at = 0, pos = {}, views = [], bdImg = null, mode = 'home', wall = null, wallAt = 0, imgs = [], imgBusy = 0;
-  var TILE_STEP = 272, POOL = 7, ROW_H = 492, WALL_COLS = 6, WALL_ROW = 470;
+  var TILE_STEP = 272, VIS = 7, POOL = VIS + 2, ROW_H = 492, WALL_COLS = 6, WALL_ROW = 470;
   function S() { return Store.settings; }
   function save() { if (Store.saveSettings) Store.saveSettings(); }
   function count(n, one, many) { return n === 1 ? one : many.replace('{n}', n); }
@@ -138,7 +138,7 @@ var VodHome = (function () {
     if (t.key !== k) {
       t.key = k; t.art.innerHTML = ''; t.art.appendChild(t.bar); t.art.appendChild(t.tag);
       t.art.appendChild(U.el('span', 'media-monogram', String(it.name || '?').slice(0, 1).toUpperCase()));
-      if (it.cover) { var img = U.el('img', 'media-cover'); img.alt = ''; img.decoding = 'async'; t.art.appendChild(img); imgs.push({ img: img, url: it.cover }); }
+      if (it.cover) { var img = U.el('img', 'media-cover wait'); img.alt = ''; img.decoding = 'async'; img.addEventListener('load', function () { this.classList.remove('wait'); }); t.art.appendChild(img); imgs.push({ img: img, url: it.cover }); }
       t.name.textContent = it.name;
     }
     var p = A.progress(it);
@@ -173,10 +173,15 @@ var VodHome = (function () {
       if (row === at) focusY = y;
       v.el.style.transform = 'translateY(' + y + 'px)'; v.el.classList.toggle('active', row === at);
       v.h.textContent = s.title; v.sub.textContent = s.sub || String(s.items.length);
-      var near = Math.abs(row - at) <= 1, start = Math.max(0, Math.min(i0 - 1, s.items.length - (POOL - 1))), used = {};
-      for (var i = start; near && i < Math.min(s.items.length, start + POOL); i++) {
+      // The 7 on screen and one more off each side, so the next poster slides in from the edge, loaded (media.js).
+      var near = Math.abs(row - at) <= 1, start = Math.max(0, Math.min(i0 - 1, s.items.length - (VIS - 1))), used = {};
+      for (var i = Math.max(0, start - 1); near && i < Math.min(s.items.length, start + VIS + 1); i++) {
         var t = v.pool[i % POOL]; used[i % POOL] = 1;
+        // A tile reused for another title jumps there; only one keeping its title slides.
+        var jump = t._at !== i || t._row !== row || t.el.style.display === 'none';
+        if (jump) t.el.style.transition = 'none';
         t.el.style.display = ''; t.el.style.transform = 'translateX(' + (i - start) * TILE_STEP + 'px)'; t._row = row; t._at = i;
+        if (jump) { void t.el.offsetWidth; t.el.style.transition = ''; }
         fillTile(t, s.items[i]); t.el.classList.toggle('sel', row === at && i === i0);
       }
       v.pool.forEach(function (t, n) { if (!used[n]) { t.el.style.display = 'none'; t.art.innerHTML = ''; t.key = ''; } });
