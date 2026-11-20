@@ -1,16 +1,16 @@
 # Changelog
 
-## Unreleased
-
-- **Convert to MP4 puts the poster inside as cover art**, for Apple TV apps, once TiviBro's video converter can read JPEG pictures (the next converter build; until then the poster stays beside the file as poster.jpg, which Plex and Infuse use).  Checked on an LG C2: a recording converted to MKV keeps its poster inside as before.
-- **Convert to MP4 from the phone app** too (Recordings: tap one), with how far it is and where the recording is on the drive.
-- **A Dolby TrueHD Atmos movie plays its Dolby Digital Plus Atmos track** when it has one in your language, so a soundbar or receiver still gets Atmos.  No LG TV plays TrueHD, and converting it can't keep Atmos (only Dolby's own encoder can make it), so that track wins over converting.  Between otherwise alike tracks, Atmos comes first, then Dolby Digital Plus over Dolby Digital, then more channels.
-
-## 0.6.0 (alpha 184, 2026-11-20)
+## 0.6.0 (alpha 185, 2026-11-20)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 184
+### New in alpha 185
+
+- **A Dolby TrueHD Atmos movie plays its Dolby Digital Plus Atmos track** when it has one in your language, so a soundbar or receiver still gets Atmos.  No LG TV plays TrueHD, and converting it can't keep Atmos (only Dolby's own encoder can make it), so that track wins over converting.  Between otherwise alike tracks, Atmos comes first, then Dolby Digital Plus over Dolby Digital, then more channels.
+- **Convert to MP4 from the phone app** too (Recordings: tap one), with how far it is and where the recording is on the drive.
+- **Convert to MP4 puts the poster inside as cover art**, for Apple TV apps, once TiviBro's video converter can read JPEG pictures (the next converter build; until then the poster stays beside the file as poster.jpg, which Plex and Infuse use).  Checked on an LG C2: a recording converted to MKV keeps its poster inside as before.
+
+### In alpha 184
 
 - **Regional versions of a channel share its guide** (issue #131).  NDR Fernsehen HH, MV and SH, MDR Sachsen and Thüringen, BR Süd, the WDR, SWR and rbb regions, ORF 2's nine and BBC One's and Two's regions now get their broadcaster's guide when the guide has only one of them.  It's the last thing tried, after the whole name and the name without its prefix.
 - **Moving along a shelf of posters is smooth** (My media, Movies and Shows).  The next poster now slides in from the edge with the rest, already loaded, instead of popping in at the end once the others had moved, and a poster that is still loading fades in over its letter.
