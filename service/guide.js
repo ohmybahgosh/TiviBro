@@ -48,6 +48,19 @@ function tagCountry(s) {
   var m = /^\s*([A-Z]{2})\s*[:|]/.exec(String(s || ''));
   return m ? m[1].toLowerCase() : '';
 }
+// Same as regional in app/js/epg.js.
+/* A regional version's broadcaster ("NDR Fernsehen HH", "MDR Sachsen", "ORF 2 Wien", "BBC One Scotland"), as a
+   third key: they share most of their programmes, so a guide with only one of them fills the others, tried only
+   when the whole name and the name without its prefix find nothing (issue #131). */
+function regional(s) {
+  var u = String(unprefixed(s) || s || '');
+  if (typeof u.normalize === 'function') u = u.normalize('NFD').replace(/[̀-ͯ]/g, '');
+  var n = norm(u.replace(/ß/g, 'ss')), m = /^(ndr|mdr|br|swr|wdr|rbb|orf2|bbcone|bbctwo|bbc1|bbc2)(fernsehen|tv|television)?([a-z0-9]*)$/.exec(n);
+  if (!m) return '';
+  var b = m[1] === 'bbc1' ? 'bbcone' : m[1] === 'bbc2' ? 'bbctwo' : m[1], r = m[3];
+  if (r && b.indexOf('bbc') !== 0 && !/^(hh|hamburg|mv|mecklenburgvorpommern|sh|schleswigholstein|nds|ni|niedersachsen|sachsen|sachsenanhalt|sa|thuringen|thueringen|th|nord|sud|sued|nordbayern|sudbayern|suedbayern|bw|badenwurttemberg|badenwuerttemberg|rp|rlp|rheinlandpfalz|koln|koeln|aachen|bielefeld|dortmund|duisburg|dusseldorf|duesseldorf|essen|munster|muenster|siegen|wuppertal|bonn|berlin|brandenburg|w|wien|n|noe|niederosterreich|niederoesterreich|b|burgenland|o|oo|oberosterreich|oberoesterreich|s|salzburg|t|tirol|v|vorarlberg|k|karnten|kaernten|st|stmk|steiermark)$/.test(r)) return '';
+  return '^' + b;
+}
 function ts(s) {
   var m = /^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)?\s*([+-]\d{4})?/.exec(s || '');
   if (!m) return 0;
@@ -236,6 +249,7 @@ function start(body, log) {
         }
         var nk = norm(name), un = unprefixed(name), nks = [nk];
         if (un) { un = norm(un); if (un.length > 1 && un !== nk) { nks.push('~' + un); var gc = tagCountry(name); if (gc) nks.push('~' + gc + ':' + un); } }
+        var rgk = regional(name); if (rgk) nks.push(rgk);
         for (var w = 0; w < nks.length; w++) {
           var kx = nks[w];
           if (!kx || names[kx] == null || matches[kx]) continue;
@@ -573,4 +587,4 @@ function handle(req, res, allow, log) {
   send(res, 404, { ok: false, error: 'unknown guide request' }, null, allow);
 }
 
-module.exports = { movieFlag: movieFlag, withSub: withSub, handle: handle, norm: norm, unprefixed: unprefixed, tagCountry: tagCountry, start: start, status: status, keyOf: keyOf, root: root, find: find, descs: descs };
+module.exports = { movieFlag: movieFlag, withSub: withSub, handle: handle, norm: norm, unprefixed: unprefixed, tagCountry: tagCountry, regional: regional, start: start, status: status, keyOf: keyOf, root: root, find: find, descs: descs };

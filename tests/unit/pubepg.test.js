@@ -75,6 +75,17 @@ t('the helper\'s guide reader normalises names exactly like the app (service/gui
   const G = require('../../service/guide.js');
   ['CNN HD', 'US: A&E (East) FHD', 'BBC One [UK]', 'ESPN 2 4K', 'Télé-Québec', ''].forEach(x => assert.strictEqual(G.norm(x), appNorm(x), x));
 });
+t('regional versions share their broadcaster\'s guide as a last key, the same in the helper and the app (issue #131)', () => {
+  const src = require('fs').readFileSync(require('path').join(__dirname, '../../app/js/epg.js'), 'utf8');
+  const G = require('../../service/guide.js');
+  const m = /function regional\(s\) \{[\s\S]*?\n  \}/.exec(src);
+  const appRg = new Function('norm', 'unprefixed', 'return ' + m[0].replace(/\n  /g, '\n'))(G.norm, G.unprefixed);
+  const names = ['NDR Fernsehen HH', 'DE: NDR FERNSEHEN MV', 'NDR SH', 'NDR Fernsehen', 'MDR Thüringen', 'BR Fernsehen Süd', 'WDR Köln', 'ORF 2 Wien', 'UK: BBC 1 London', 'BBC One Scotland HD', 'NDR Info', 'BR24', 'Sky Sport 1', 'Brazil TV', ''];
+  names.forEach((x) => assert.strictEqual(G.regional(x), appRg(x), x));
+  ['NDR Fernsehen HH', 'DE: NDR FERNSEHEN MV', 'NDR SH'].forEach((x) => assert.strictEqual(G.regional(x), G.regional('NDR Fernsehen'), x));
+  assert.strictEqual(G.regional('UK: BBC 1 London'), G.regional('BBC One Scotland HD'));
+  ['NDR Info', 'BR24', 'Sky Sport 1', 'Brazil TV'].forEach((x) => assert.strictEqual(G.regional(x), '', x + ' is no regional version'));
+});
 t('a name without its prefix is the second key, the same in the helper and the app (issue #131)', () => {
   const src = require('fs').readFileSync(require('path').join(__dirname, '../../app/js/epg.js'), 'utf8');
   const m = /function unprefixed\(s\) \{[\s\S]*?\n  \}/.exec(src);

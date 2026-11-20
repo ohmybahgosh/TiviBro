@@ -108,7 +108,7 @@ check('worker: the provider\'s guide first; a source takes a channel only where 
     } catch (e) { reject(e); } } };
     const ctx = { self: self, fetch: fetch, TextDecoder: TextDecoder, TransformStream: TransformStream, Promise: Promise, Date: Date, Math: Math };
     vm.createContext(ctx);
-    vm.runInContext('(function(){ ' + fn('progFlag') + fn('readFlag') + fn('norm') + fn('unprefixed') + fn('tagCountry') + ' self.norm = norm; self.unprefixed = unprefixed; self.tagCountry = tagCountry; self.progFlag = progFlag; self.readFlag = readFlag; self.pubKeys = function () { return { keys: [], country: "" }; }; })();', ctx);
+    vm.runInContext('(function(){ ' + fn('progFlag') + fn('readFlag') + fn('norm') + fn('unprefixed') + fn('tagCountry') + fn('regional') + ' self.norm = norm; self.unprefixed = unprefixed; self.tagCountry = tagCountry; self.regional = regional; self.progFlag = progFlag; self.readFlag = readFlag; self.pubKeys = function () { return { keys: [], country: "" }; }; })();', ctx);
     ctx.self.alike = PubEpg.alike;
     vm.runInContext('(' + fn('workerMain') + ')();', ctx);
     self.onmessage({ data: { sources: [{ url: base + '/prov.xml', label: 'provider guide', provider: true }, { url: base + '/extra.xml', label: 'extra', key: 'x' }],

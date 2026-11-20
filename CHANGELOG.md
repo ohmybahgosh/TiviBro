@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Regional versions of a channel share its guide** (issue #131).  NDR Fernsehen HH, MV and SH, MDR Sachsen and Thüringen, BR Süd, the WDR, SWR and rbb regions, ORF 2's nine and BBC One's and Two's regions now get their broadcaster's guide when the guide has only one of them.  It's the last thing tried, after the whole name and the name without its prefix.
 - **Moving along a shelf of posters is smooth** (My media, Movies and Shows).  The next poster now slides in from the edge with the rest, already loaded, instead of popping in at the end once the others had moved, and a poster that is still loading fades in over its letter.
 - **See all shows the shelf's posters**, four to a card under a See all mark, instead of a lone "S".
 

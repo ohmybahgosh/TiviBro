@@ -128,13 +128,28 @@ var Epg = (function () {
     var m = /^\s*([A-Z]{2})\s*[:|]/.exec(String(s || ''));
     return m ? m[1].toLowerCase() : '';
   }
+  /* A regional version's broadcaster ("NDR Fernsehen HH", "MDR Sachsen", "ORF 2 Wien", "BBC One Scotland"), as a
+     third key: they share most of their programmes, so a guide with only one of them fills the others, tried only
+     when the whole name and the name without its prefix find nothing (issue #131). */
+  function regional(s) {
+    var u = String(unprefixed(s) || s || '');
+    if (typeof u.normalize === 'function') u = u.normalize('NFD').replace(/[̀-ͯ]/g, '');
+    var n = norm(u.replace(/ß/g, 'ss')), m = /^(ndr|mdr|br|swr|wdr|rbb|orf2|bbcone|bbctwo|bbc1|bbc2)(fernsehen|tv|television)?([a-z0-9]*)$/.exec(n);
+    if (!m) return '';
+    var b = m[1] === 'bbc1' ? 'bbcone' : m[1] === 'bbc2' ? 'bbctwo' : m[1], r = m[3];
+    if (r && b.indexOf('bbc') !== 0 && !/^(hh|hamburg|mv|mecklenburgvorpommern|sh|schleswigholstein|nds|ni|niedersachsen|sachsen|sachsenanhalt|sa|thuringen|thueringen|th|nord|sud|sued|nordbayern|sudbayern|suedbayern|bw|badenwurttemberg|badenwuerttemberg|rp|rlp|rheinlandpfalz|koln|koeln|aachen|bielefeld|dortmund|duisburg|dusseldorf|duesseldorf|essen|munster|muenster|siegen|wuppertal|bonn|berlin|brandenburg|w|wien|n|noe|niederosterreich|niederoesterreich|b|burgenland|o|oo|oberosterreich|oberoesterreich|s|salzburg|t|tirol|v|vorarlberg|k|karnten|kaernten|st|stmk|steiermark)$/.test(r)) return '';
+    return '^' + b;
+  }
   function nameKeys(s) {
-    var a = norm(s), u = unprefixed(s), b = u ? norm(u) : '', cc = tagCountry(s);
-    return b.length > 1 && b !== a ? [a, '~' + (cc ? cc + ':' : '') + b] : [a];
+    var a = norm(s), u = unprefixed(s), b = u ? norm(u) : '', cc = tagCountry(s), rg = regional(s);
+    var out = b.length > 1 && b !== a ? [a, '~' + (cc ? cc + ':' : '') + b] : [a];
+    if (rg) out.push(rg);
+    return out;
   }
   function byName(map, ch) {
     var ks = nameKeys(Library.name(ch)).concat(nameKeys(ch.n));
-    for (var i = 0; i < ks.length; i++) if (ks[i][0] !== '~' && map[ks[i]]) return map[ks[i]];
+    for (var i = 0; i < ks.length; i++) if (ks[i][0] !== '~' && ks[i][0] !== '^' && map[ks[i]]) return map[ks[i]];
+    for (i = 0; i < ks.length; i++) if (ks[i][0] === '~' && map[ks[i]]) return map[ks[i]];
     for (i = 0; i < ks.length; i++) if (map[ks[i]]) return map[ks[i]];
     return '';
   }
@@ -438,6 +453,7 @@ var Epg = (function () {
             }
             var nk = self.norm(name), un = self.unprefixed(name), nks = [nk];
             if (un) { un = self.norm(un); if (un.length > 1 && un !== nk) { nks.push('~' + un); var gc = self.tagCountry(name); if (gc) nks.push('~' + gc + ':' + un); } }
+            var rgk = self.regional(name); if (rgk) nks.push(rgk);
             for (var w = 0; w < nks.length; w++) {
               var kx = nks[w];
               if (!kx || names[kx] == null || matches[kx]) continue;
@@ -910,7 +926,7 @@ var Epg = (function () {
      alpha 178 added one for most channels, and counting them as new read a 57,000-channel playlist's whole guide
      again on the first start, on a 1 GB TV already short of memory (issue #133).  They are asked for with the
      next guide load anyway. */
-  function askedOf(w) { return Object.keys(w.ids).concat(Object.keys(w.names).filter(function (n) { return n.charAt(0) !== '~'; }).map(function (n) { return 'n:' + n; })).map(U.hash); }
+  function askedOf(w) { return Object.keys(w.ids).concat(Object.keys(w.names).filter(function (n) { return n.charAt(0) !== '~' && n.charAt(0) !== '^'; }).map(function (n) { return 'n:' + n; })).map(U.hash); }
   function addedSince(a, now) {
     var had = {}, n = 0;
     a.forEach(function (h) { had[h] = 1; });
@@ -1023,7 +1039,7 @@ var Epg = (function () {
     if (pub) { msg.pub = true; msg.pk = pub.pk; msg.pubWant = pub.want; }
     var keysFn = typeof PubEpg !== 'undefined' ? PubEpg.keys : function () { return { keys: [], country: '' }; };
     var alikeFn = typeof PubEpg !== 'undefined' && PubEpg.alike ? PubEpg.alike : function () { return false; };
-    var code = 'self.norm = ' + norm.toString() + ';\nself.unprefixed = ' + unprefixed.toString() + ';\nself.tagCountry = ' + tagCountry.toString() + ';\nself.alike = ' + alikeFn.toString() + ';\nself.pubKeys = ' + keysFn.toString() + ';\nself.progFlag = ' + progFlag.toString() + ';\nself.readFlag = ' + readFlag.toString() + ';\n(' + workerMain.toString() + ')();';
+    var code = 'self.norm = ' + norm.toString() + ';\nself.unprefixed = ' + unprefixed.toString() + ';\nself.tagCountry = ' + tagCountry.toString() + ';\nvar norm = self.norm, unprefixed = self.unprefixed;\nself.regional = ' + regional.toString() + ';\nself.alike = ' + alikeFn.toString() + ';\nself.pubKeys = ' + keysFn.toString() + ';\nself.progFlag = ' + progFlag.toString() + ';\nself.readFlag = ' + readFlag.toString() + ';\n(' + workerMain.toString() + ')();';
     var started = Date.now();
     function keyAt(p) { var x = msg.sources[(p.src || 1) - 1]; return x ? x.key : ''; }
     function onProg(p) { p.active = true; p.phase = 'download'; p.started = started; if (g) g.host(p.host, keyAt(p)); setProgress(p); }
