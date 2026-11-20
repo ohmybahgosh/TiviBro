@@ -302,6 +302,45 @@ var UI = (function () {
     };
   }
 
+  /* A choice by poster (Fix match: several films of one name, told apart by their poster and year): a row of
+     posters, ◀ ▶ to move, OK to pick.  items: { label, sub, poster, note, action }.  Under the row: the focused one's
+     name, its year and votes, and the start of its summary. */
+  function posters(title, items, onBack, opts) {
+    var list = items.filter(Boolean), at = 0, VIS = 5;
+    if (!list.length) return menu(title, [], onBack, opts);
+    heading(title, opts && opts.sub);
+    mBox.classList.remove('panel'); mBox.classList.add('wide');
+    mBody.innerHTML = '';
+    var row = U.el('div', 'pick-row'), info = U.el('div', 'pick-info');
+    mBody.appendChild(row); mBody.appendChild(info);
+    function draw() {
+      row.innerHTML = '';
+      var from = Math.max(0, Math.min(at - 2, list.length - VIS));
+      for (var i = from; i < Math.min(list.length, from + VIS); i++) (function (x, i) {
+        var c = U.el('div', 'pick-card' + (i === at ? ' sel' : '')), art = U.el('div', 'pick-art');
+        if (x.poster) { var im = U.el('img'); im.decoding = 'async'; im.onerror = function () { if (!(typeof Net !== 'undefined' && Net.retryImage && Net.retryImage(this))) { this.remove(); art.appendChild(U.el('span', 'pick-none', x.label)); } }; im.src = x.poster; art.appendChild(im); }
+        else art.appendChild(U.el('span', 'pick-none', x.label));
+        c.appendChild(art);
+        c.appendChild(U.el('div', 'pick-name', x.label));
+        if (x.sub) c.appendChild(U.el('div', 'pick-sub', x.sub));
+        c.addEventListener('click', function () { close(); if (x.action) x.action(); });
+        row.appendChild(c);
+      })(list[i], i);
+      var f = list[at]; info.innerHTML = '';
+      info.appendChild(U.el('b', '', f.label + (f.sub ? '   ·   ' + f.sub : '')));
+      if (f.note) info.appendChild(U.el('p', '', f.note));
+      info.appendChild(U.el('small', '', (at + 1) + ' / ' + list.length));
+    }
+    modal.classList.remove('hidden'); draw();
+    modalH = function (a) {
+      if (a === 'left' && at > 0) { at--; draw(); }
+      else if (a === 'right' && at < list.length - 1) { at++; draw(); }
+      else if (a === 'ok') { var it = list[at]; close(); if (it.action) it.action(); }
+      else if (a === 'back') { close(); if (onBack) onBack(); }
+      return true;
+    };
+  }
+
   /* typing(value, setHint): called as you type (My media's search shows results behind the box as you go). */
   function prompt(title, value, done, hint, secret, okLabel, typing) {
     heading(title);
@@ -487,6 +526,7 @@ var UI = (function () {
     // Still held: down, and not for so long without a repeat that its keyup must have been lost.
     isDown: function (a) { var t = downs[a]; return !!t && Date.now() - t < 1500; },
     marquee: marquee,
+    posters: posters,
     setHandler: function (fn) { handler = fn; },
     get handler() { return handler; },
     getHandler: function () { return handler; },

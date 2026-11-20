@@ -1,10 +1,18 @@
 # Changelog
 
-## 0.6.0 (alpha 186, 2026-11-20)
+## 0.6.0 (alpha 187, 2026-11-20)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 186
+### New in alpha 187
+
+- **Fix match shows posters.**  Changing a movie's or show's details on My media now lists TMDB's results as posters with their year and how many votes they have, and the focused one's summary underneath, so the right one of several films of the same name is easy to pick.
+- **A show's page has its logo**, as the home hero does: in place of its name on the seasons, and small above the season's name on its episodes.  Its name in words when it has none.
+- **Season posters show what you've watched**, like Plex: ✓ once the whole season is watched, else how many episodes are left once you've started it.  Marking a season watched updates it at once.
+- **The next shelf's name isn't cut off** at the bottom of My media and Movies and Shows: the shelves sit a little higher, so it shows whole above the hints.
+- **Trakt's sign-in is under Settings > API keys** too, with the TMDB and OpenSubtitles keys.  Its history and lists settings stay on My media.
+
+### In alpha 186
 
 - **Record to a network share, on any TV** (discussion #130).  TVs that aren't rooted can't reach a USB drive, so now they can record to a WebDAV share instead: Synology, QNAP, TrueNAS, Unraid and Nextcloud all offer one.  Add it as a library in My media, then choose it in Settings > Recording and live pause > Network share; TiviBro checks it can write there first.  Recordings go up as they're recorded, in 10-minute parts (a dropped connection costs seconds, not the recording), are filed in TV and Movies folders with their details like on a USB drive, and play back from the share.  With both a USB drive and a share, Record to picks which.  Plain Windows (SMB) shares aren't possible: webOS won't let an app mount them.
 - **Recordings of some channels play again.**  A few channels send sound and picture with clocks a day apart (CBS News 24/7 on a real provider), which the built-in MPEG-TS player couldn't line up, so the recording sat on Buffering 0%.  A finished recording now plays in the TV's own player, which copes and seeks in it; one still recording keeps the built-in player.

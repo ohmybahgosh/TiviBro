@@ -260,7 +260,9 @@ var Settings = (function () {
   function apiKeys() {
     return [info('Paste these from the TiviBro phone app (Settings > API keys): a phone keyboard and copy and paste make it quick.', '')]
       .concat([head('TMDB: movie and show details and posters')]).concat(tmdbRows().filter(Boolean))
-      .concat([head('OpenSubtitles: subtitles for movies and shows')]).concat(osRows());
+      .concat([head('OpenSubtitles: subtitles for movies and shows')]).concat(osRows())
+      // Trakt has no key to paste (a code on trakt.tv/activate), but its sign-in belongs with the others.  Its history and lists settings stay on My media.
+      .concat(typeof Trakt === 'undefined' ? [] : [head('Trakt: watch history and lists')].concat(traktAccount(), [link('Trakt history and lists', 'What goes to Trakt and comes back, and its lists as shelves: on My media.', 'media')]));
   }
   /* Your TMDB token: in Settings > API keys, linked from My media and Movies and shows (Movies on now uses it too). */
   function tmdbRows() {
@@ -378,11 +380,9 @@ var Settings = (function () {
   /* ---------- Trakt: watch history both ways, and its lists as My media shelves ---------- */
   var KIND_V = ['both', 'movies', 'shows'], KIND_L = ['Movies and TV shows (Home)', 'Movies (Movies tab)', 'TV shows (TV shows tab)'];
   function traktErr(e) { if (e && e.message !== 'Stopped.') U.toast(e.message || 'Trakt did not answer.', 7000); }
-  function trakt() {
-    if (typeof Trakt === 'undefined') return [info('Trakt is not available in this version.', '')];
-    var out = [info('Trakt keeps what you\'ve watched in step across TiviBro, your phone and other apps, and its lists (your watchlist, your own lists, anyone\'s public list, trending and popular) become shelves on My media that show only what you can watch.  Your Trakt sign-in stays on this TV.  TiviBro uses Trakt but is not endorsed or certified by Trakt.', '')];
-    var code = Trakt.pendingCode();
-    out.push(head('Account'));
+  /* Trakt's sign-in (connect with a code, sync, disconnect): on My media's Trakt rows and under API keys. */
+  function traktAccount() {
+    var out = [], code = Trakt.pendingCode();
     if (code) {
       var go = action('1.  On a phone or computer, open', 'Then sign in to Trakt.  In the phone app, select this to open it.', function () { U.toast('Open ' + code.url.replace(/^https?:\/\//, '') + ' and enter ' + code.user, 8000); }, function () { return code.url.replace(/^https?:\/\//, ''); });
       var link = code.url.replace(/\/+$/, '') + '/' + encodeURIComponent(code.user);   // Trakt fills the code in from this
@@ -406,6 +406,13 @@ var Settings = (function () {
         action('Sync now', 'Sends what you\'ve watched and brings in what you watched elsewhere.', function () { U.toast('Syncing with Trakt…'); Trakt.syncNow(true).then(function () { U.toast('Synced with Trakt', 4000); paint(); }, traktErr); }, function () { return Trakt.describe().replace(/^Connected as [^·]*·?\s*/, ''); }),
         action('Disconnect Trakt', 'Signs this TV out of Trakt.  Your lists stay on My media without your private ones.', function () { UI.confirm('Disconnect Trakt from this TV?', 'Disconnect', function () { Trakt.disconnect(); build(); }); }));
     }
+    return out;
+  }
+  function trakt() {
+    if (typeof Trakt === 'undefined') return [info('Trakt is not available in this version.', '')];
+    var out = [info('Trakt keeps what you\'ve watched in step across TiviBro, your phone and other apps, and its lists (your watchlist, your own lists, anyone\'s public list, trending and popular) become shelves on My media that show only what you can watch.  Your Trakt sign-in stays on this TV.  TiviBro uses Trakt but is not endorsed or certified by Trakt.', '')];
+    out.push(head('Account'));
+    out = out.concat(traktAccount());
     out.push(head('Watch history'),
       toggle('Mark as watched on Trakt', 'When you finish a movie or episode on My media, it goes on your Trakt history (kept and sent later if Trakt can\'t be reached).  Where you stop partway goes to Trakt too, so other apps can continue from there.', function () { return Trakt.settings().watchedOut; }, function (v) { Trakt.setSettings({ watchedOut: v }); paint(); }),
       toggle('Bring my Trakt history in', 'What you watched on other apps shows as watched here, so Next up and Not watched yet follow along, and what you paused elsewhere is in Continue watching.', function () { return Trakt.settings().historyIn; }, function (v) { Trakt.setSettings({ historyIn: v }); paint(); }));

@@ -666,14 +666,16 @@ Catalog.prototype.detail = function (q, cb) {
         if (gone(show)) return done(missing);
         return self.readShard(show.id, function (err, shard) {
           if (err) return done(err);
-          var result = project(show), buckets = {};
+          var result = project(show), buckets = {}, seen = {};
           result.revision = self.revision;
           shard.episodes.forEach(function (r) {
             if (r.orphaned) return;
             var bucket = show.displayOrder && show.displayOrder !== 'aired' ? 'Episodes' : r.order === 'date' ? String(r.airDate).slice(0, 4) : r.order === 'absolute' ? 'Episodes' : String(r.season);
             buckets[bucket] = (buckets[bucket] || 0) + 1;
+            // How many are watched, for the season poster's corner (✓ or how many to go, as Plex shows it).
+            if (r.watchState === 'watched') seen[bucket] = (seen[bucket] || 0) + 1;
           });
-          result.buckets = Object.keys(buckets).sort(function (a, b) { return (+a - +b) || (a < b ? -1 : a > b ? 1 : 0); }).map(function (k) { var m = shard.seasonMetadata && shard.seasonMetadata[k] || {}; return { key: k, count: buckets[k], title: m.title || null, plot: m.plot || null, poster: m.poster || null }; });
+          result.buckets = Object.keys(buckets).sort(function (a, b) { return (+a - +b) || (a < b ? -1 : a > b ? 1 : 0); }).map(function (k) { var m = shard.seasonMetadata && shard.seasonMetadata[k] || {}; return { key: k, count: buckets[k], watched: seen[k] || 0, title: m.title || null, plot: m.plot || null, poster: m.poster || null }; });
           done(null, result);
         });
       }

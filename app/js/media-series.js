@@ -131,7 +131,7 @@ var MediaSeries = (function () {
         Media.request('metadata',{kind:'tv',title:title,credential:token,language:MediaStore.preferences().language},30000).then(function (r) {
           if(lookupVersion!==generation)return;
           if (r.error) return U.toast(r.message,6000);
-          UI.menu('Choose matching show',(r.matches || []).map(function (candidate) { return {label:candidate.title+' '+candidate.year,action:function () {
+          UI.posters('Choose matching show',(r.matches || []).map(function (candidate) { return {label:candidate.title,sub:[candidate.year,candidate.votes ? candidate.votes + ' votes' : ''].filter(Boolean).join('  ·  '),poster:candidate.poster,note:candidate.plot || '',action:function () {
             var detailVersion=++generation;
             Media.request('metadata',{id:candidate.id,credential:token,language:MediaStore.preferences().language},30000).then(function (details) {
               if(detailVersion!==generation)return;

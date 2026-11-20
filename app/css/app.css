@@ -791,6 +791,20 @@ body.noguidenames .gch,body.noguidenames .guide-group{width:260px}
 
 /* Edit on a phone or computer, from anywhere */
 .modal-box.wide{width:1180px}
+/* UI.posters: Fix match's results as posters */
+.pick-row{display:flex;gap:22px;padding:14px 12px 6px}
+.pick-card{flex:none;width:196px;opacity:.75}
+.pick-card.sel{opacity:1}
+.pick-art{position:relative;width:196px;height:294px;border-radius:12px;overflow:hidden;background:var(--raised);border:4px solid transparent;display:flex;align-items:center;justify-content:center}
+.pick-card.sel .pick-art{border-color:var(--text);transform:scale(1.04)}
+.pick-art img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover}
+.pick-none{font-size:22px;font-weight:600;color:var(--muted);text-align:center;padding:10px}
+.pick-name{font-size:21px;margin-top:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pick-sub{font-size:18px;color:var(--dim)}
+.pick-info{padding:14px 12px 0;font-size:21px;color:var(--muted)}
+.pick-info b{display:block;color:var(--text);font-size:24px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pick-info p{margin:6px 0 0;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.pick-info small{display:block;margin-top:6px;color:var(--dim);font-size:18px}
 .edit-join-lead{font-size:24px;color:var(--muted);margin:0 0 26px;line-height:1.4}
 .edit-join{display:flex;align-items:center}
 .edit-join .join-qr{flex:none;margin-right:48px}
@@ -888,7 +902,8 @@ video.mkv-captions-active::cue,video.subs-drawn::cue{color:transparent;backgroun
 .media-summary{font-size:24px;line-height:1.38;opacity:.92;margin-top:10px;max-width:740px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
 .media-caption{font-size:23px;color:var(--accent-text);margin-top:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .media-language-note{display:block;font-size:18px;color:var(--dim);margin-top:6px}
-.media-shelves{position:absolute;left:152px;right:0;top:490px;bottom:0;overflow:hidden}
+/* top + one row (ROW_H 492) + the next shelf's title (~40px) stays above the hint bar (view ends at 1016), so the next shelf's name shows whole */
+.media-shelves{position:absolute;left:152px;right:0;top:476px;bottom:0;overflow:hidden}
 /* Home, Movies, TV shows, Favorites (media.js SECTIONS): only with both movies and shows */
 .media-tabs{position:absolute;left:152px;top:26px;z-index:3;display:flex;gap:10px}
 .media-tab{font-size:24px;font-weight:600;color:var(--muted);padding:9px 24px;border-radius:30px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08);white-space:nowrap;cursor:pointer;transition:transform 140ms ease,background 140ms ease,color 140ms ease}
@@ -897,9 +912,9 @@ video.mkv-captions-active::cue,video.subs-drawn::cue{color:transparent;backgroun
 .media-tab .mt-ico{width:24px;height:24px;vertical-align:-5px;margin-right:10px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round}
 .media-tab.on b{color:inherit;opacity:.6}
 .media-tabs.focus .media-tab.on{background:#fff;color:#0b0e14;border-color:#fff;transform:scale(1.05);box-shadow:0 10px 28px rgba(0,0,0,.45)}
-#viewMedia.split .media-hero{top:100px;height:390px}
+#viewMedia.split .media-hero{top:100px;height:376px}
 #viewMedia.split .media-title{font-size:56px}
-#viewMedia.split .media-shelves{top:500px}
+#viewMedia.split .media-shelves{top:476px}
 .media-section-card .media-tile-year{color:var(--accent-text)}
 /* Library's own tiles (All movies, Collections, All shows): not a movie's poster (media.js cover) */
 .media-libart{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;background:linear-gradient(160deg,#3a4f8f,#1d2547)}
@@ -1224,6 +1239,8 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .mshp-season.sel{opacity:1}
 .mshp-poster{position:relative;width:210px;height:315px;border-radius:14px;overflow:hidden;background:var(--raised);border:4px solid transparent;display:flex;align-items:center;justify-content:center}
 .mshp-season.sel .mshp-poster{border-color:var(--text);transform:scale(1.04)}
+.shp-logo{display:block;max-width:620px;max-height:150px;object-fit:contain;object-position:left bottom;margin:6px 0 16px}
+.shp-logo.small{max-width:360px;max-height:72px;margin:0 0 10px}
 .mshp-noart{font-size:28px;font-weight:700;color:var(--muted);text-align:center;padding:12px}
 /* My media: a movie's own page (media-moviepage.js), like a show's. */
 #viewMedia.mmp-on .mmp{display:block;z-index:29}

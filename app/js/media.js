@@ -1100,7 +1100,7 @@ var Media = (function () {
         U.toast('Looking for movie details…');
         metadataRequest({ title: title }).then(function (r) {
           if (!r.matches || !r.matches.length) return U.toast('No matching movies found.  Try a different title.', 5000);
-          UI.menu('Choose the matching movie', r.matches.map(function (x) { return { label: RAW(x.title + (x.year ? ' (' + x.year + ')' : '')), action: function () {
+          UI.posters('Choose the matching movie', r.matches.map(function (x) { return { label: RAW(x.title), sub: [x.year, x.votes ? x.votes + ' votes' : ''].filter(Boolean).join('  ·  '), poster: x.poster, note: RAW(x.plot || (x.original && x.original !== x.title ? x.original : '')), action: function () {
             metadataRequest({ id: x.id }).then(function (r) { return MediaStore.setMetadata(m.id, r.metadata); }).then(function () { refresh(); U.toast('Movie details saved'); }, function (e) { U.toast(why(e), 6000); });
           } }; }));
         }, function (e) { U.toast(why(e), 6000); });

@@ -182,7 +182,7 @@ function create(opts) {
     });
     function shapeMatches(r) {
       return (r && Array.isArray(r.results) ? r.results : []).filter(function (m) { return m && /^[1-9][0-9]*$/.test(String(m.id)); }).slice(0, 20).map(function (m) {
-        return { id: 'tmdb:' + m.id, title: str(m.title || m.original_title, 200), original: str(m.original_title, 200), year: str(m.release_date, 4), votes: +m.vote_count || 0 };
+        return { id: 'tmdb:' + m.id, title: str(m.title || m.original_title, 200), original: str(m.original_title, 200), year: str(m.release_date, 4), votes: +m.vote_count || 0, poster: image(m.poster_path, 'w185'), plot: str(m.overview, 300) };
       });
     }
     /* Matching on its own (q.auto): every name the movie goes by (q.title and q.alts: a Radarr or Plex folder
@@ -273,7 +273,7 @@ function create(opts) {
       if (!query) return cb(new Error('Enter a show title.'));
       return request('/search/tv?query='+encodeURIComponent(query)+'&language='+locale+(q.year && !q._noYear ? '&first_air_date_year='+encodeURIComponent(q.year) : ''),function (e,r) {
         if (e) return cb(e);
-        var matches = (r && Array.isArray(r.results) ? r.results : []).filter(function (m) { return m && /^[1-9][0-9]*$/.test(String(m.id)); }).slice(0,20).map(function (m) { return {id:'tmdb:tv:'+m.id,title:str(m.name || m.original_name,200),original:str(m.original_name,200),year:str(m.first_air_date,4),poster:image(m.poster_path,'w185')}; });
+        var matches = (r && Array.isArray(r.results) ? r.results : []).filter(function (m) { return m && /^[1-9][0-9]*$/.test(String(m.id)); }).slice(0,20).map(function (m) { return {id:'tmdb:tv:'+m.id,title:str(m.name || m.original_name,200),original:str(m.original_name,200),year:str(m.first_air_date,4),poster:image(m.poster_path,'w185'),plot:str(m.overview,300),votes:+m.vote_count || 0}; });
         var votes = {}, ccs = {}; (r && Array.isArray(r.results) ? r.results : []).forEach(function (m) { if (m) { votes['tmdb:tv:' + m.id] = +m.vote_count || 0; ccs['tmdb:tv:' + m.id] = Array.isArray(m.origin_country) ? m.origin_country : []; } });
         // Plural or not ("The Tylenol Murder" is TMDB's "The Tylenol Murders"): only when it's the one show so named.
         var plain = function (v) { return normal(str(v, 200).replace(/&/g, ' and ').replace(/^\s*the\s+/i, '').replace(/s\b/ig, '')); };

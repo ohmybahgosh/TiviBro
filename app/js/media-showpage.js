@@ -74,6 +74,26 @@ var MediaShowPage = (function () {
   function niceDate(d) { var t = Date.parse(String(d || '') + 'T12:00:00'); return t ? new Date(t).toLocaleDateString(U.loc ? U.loc() : undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : ''; }
   function img(src, cls) { var i = tel('img', cls); i.decoding = 'async'; i.src = src; i.onerror = function () { if (!(typeof Net !== 'undefined' && Net.retryImage && Net.retryImage(this))) this.remove(); }; return i; }
 
+  function logo(m, name, cls) {
+    if (!m.logo) return null;
+    var lg = tel('img', cls); lg.alt = name; lg.decoding = 'async';
+    lg.onerror = function () {
+      if (typeof Net !== 'undefined' && Net.retryImage && Net.retryImage(this)) return;
+      if (lg.parentNode) lg.parentNode.replaceChild(tel('div', /small/.test(cls) ? 'media-kicker' : 'media-title', name), lg);
+    };
+    lg.src = m.logo; return lg;
+  }
+  // The show again (after marking a season watched): the season posters' corners follow.
+  function refresh(state) {
+    MediaSeries.showDetail(state.show.handle, function (r) {
+      if (pg !== state || !r || !r.buckets) return;
+      var key = pg.seasons[pg.at] && pg.seasons[pg.at].key;
+      pg.show = r; pg.seasons = r.buckets.slice().sort(function (a, b) { return (a.key === '0') - (b.key === '0'); });
+      var k = pg.seasons.map(function (b) { return b.key; }).indexOf(key); if (k >= 0) pg.at = k;
+      if (pg.level === 'seasons') draw();
+    });
+  }
+
   function draw() {
     if (!pg) return;
     var b = box(), s = pg.show || pg.card, m = md(s), cm = md(pg.card);
@@ -82,8 +102,12 @@ var MediaShowPage = (function () {
     if (bd) { var bg = tel('div', 'shp-bd'); bg.style.backgroundImage = 'url("' + String(bd).replace(/"/g, '%22') + '")'; b.appendChild(bg); }
     b.appendChild(tel('div', 'shp-fade'));
     var info = tel('div', 'shp-info'), cur = pg.level === 'eps' ? pg.seasons[pg.at] : null;
-    info.appendChild(tel('div', 'media-kicker', cur ? RAW(m.title || s.title || '') : 'TV show'));
-    info.appendChild(tel('div', 'media-title', cur ? RAW(seasonName(s, cur)) : RAW(m.title || s.title || '')));
+    /* The show's logo (fanart.tv / TMDB), as on the home hero: in place of its name on the seasons, and smaller above
+       the season's name on its episodes.  Its name in words when there's none or it doesn't load. */
+    var name = RAW(m.title || s.title || '');
+    if (cur) info.appendChild(logo(m, name, 'shp-logo small') || tel('div', 'media-kicker', name));
+    else { info.appendChild(tel('div', 'media-kicker', 'TV show')); info.appendChild(logo(m, name, 'shp-logo') || tel('div', 'media-title', name)); }
+    if (cur) info.appendChild(tel('div', 'media-title', RAW(seasonName(s, cur))));
     var n = pg.seasons.filter(function (x) { return x.key !== '0'; }).length;
     var facts = cur ? [seasonOwn(s, cur), cur.count + (cur.count === 1 ? ' episode' : ' episodes')]
       : [m.year, n ? n + (n === 1 ? ' season' : ' seasons') : '', m.genre, m.rating ? '★ ' + m.rating : ''];
@@ -110,6 +134,8 @@ var MediaShowPage = (function () {
       var c = tel('div', 'mshp-season' + (i === pg.at ? ' sel' : '')), art = tel('div', 'mshp-poster'), pic = x.poster || m.poster;
       if (pic) art.appendChild(img(pic, 'shp-pic'));
       else art.appendChild(tel('span', 'mshp-noart', seasonName(s, x)));
+      // Plex's corner: ✓ once the whole season's watched, else how many episodes are left (once one's watched).
+      if (x.watched != null && x.count) { var left = x.count - x.watched; if (!left) art.appendChild(tel('span', 'media-mark', '✓')); else if (x.watched) art.appendChild(tel('span', 'media-mark', String(left))); }
       c.appendChild(art);
       c.appendChild(tel('div', 'shp-name', RAW(seasonName(s, x))));
       c.appendChild(tel('div', 'shp-sub', RAW((seasonOwn(s, x) ? seasonOwn(s, x) + '  ·  ' : '') + x.count + (x.count === 1 ? ' episode' : ' episodes'))));
@@ -161,14 +187,14 @@ var MediaShowPage = (function () {
     MediaSeries.episodes({ kind: 'episode', show: sh.handle, bucket: b.key, limit: 200 }, function (r) {
       if (pg !== state) return;
       var items = r.items || [], w = items.filter(function (x) { return x.watchState === 'watched'; }).length;
-      var menu = MediaSeries.markItems(sh, b.key, { watched: w, unwatched: items.length - w }).map(function (o) { return { label: o.label, action: function () { o.action(function () { reopen(state)(); }); } }; });
+      var menu = MediaSeries.markItems(sh, b.key, { watched: w, unwatched: items.length - w }).map(function (o) { return { label: o.label, action: function () { o.action(function () { reopen(state)(); refresh(state); }); } }; });
       menu.push({ label: 'Show options', sub: 'Favorite, details, episode order and more', action: function () { MediaSeries.showItem({ handle: sh.handle }, reopen(state)); } });
       UI.menu(seasonName(sh, b), menu, reopen(state));
     });
   }
   function keys(a) {
     if (!pg) return false;
-    if (a === 'back') { if (pg.level === 'eps' && pg.seasons.length > 1) { pg.level = 'seasons'; pg.loading = false; draw(); } else close(); return true; }
+    if (a === 'back') { if (pg.level === 'eps' && pg.seasons.length > 1) { pg.level = 'seasons'; pg.loading = false; draw(); refresh(pg); } else close(); return true; }
     if (a === 'red' || a === 'hold' || a === 'info') { options(); return true; }
     if (pg.loading) return true;
     if (pg.level === 'seasons') {
@@ -180,7 +206,7 @@ var MediaShowPage = (function () {
       if (a === 'left' && pg.sel > 0) pg.sel--;
       else if (a === 'right' && pg.sel < n - 1) pg.sel++;
       else if (a === 'chup' || a === 'chdown') pg.sel = Math.max(0, Math.min(n - 1, pg.sel + (a === 'chup' ? -5 : 5)));
-      else if (a === 'up' && pg.seasons.length > 1) { pg.level = 'seasons'; }
+      else if (a === 'up' && pg.seasons.length > 1) { pg.level = 'seasons'; refresh(pg); }
       else if (a === 'ok' || a === 'playpause') { play(); return true; }
     }
     // ▶ on a season: its first episode not watched, played.
