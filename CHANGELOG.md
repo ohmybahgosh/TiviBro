@@ -1,16 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 184, 2026-11-20)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 184
 
 - **Regional versions of a channel share its guide** (issue #131).  NDR Fernsehen HH, MV and SH, MDR Sachsen and Thüringen, BR Süd, the WDR, SWR and rbb regions, ORF 2's nine and BBC One's and Two's regions now get their broadcaster's guide when the guide has only one of them.  It's the last thing tried, after the whole name and the name without its prefix.
 - **Moving along a shelf of posters is smooth** (My media, Movies and Shows).  The next poster now slides in from the edge with the rest, already loaded, instead of popping in at the end once the others had moved, and a poster that is still loading fades in over its letter.
 - **See all shows the shelf's posters**, four to a card under a See all mark, instead of a lone "S".
 
-## 0.6.0 (alpha 183, 2026-11-20)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 183
+### In alpha 183
 
 - **A Stalker portal's subscription end is found in more places** (discussion #134).  Portals name it differently (tariff_expired_date, exp_date, valid_until and more), and resellers often write it into a text field such as the phone number ("Expiration: 2026 Dec 10").  TiviBro now looks through all of them, reads that way of writing it and day-month-year with dashes too, and when it still finds none, the log says which fields the portal sent.
 
