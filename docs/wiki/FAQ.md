@@ -40,8 +40,8 @@ See [The programme guide](The-programme-guide).  Smart match in the web editor u
 **Can my backup be read by someone else?**
 Not without your passphrase.  See [Backup and restore](Backup-and-restore) and [Privacy and security](Privacy-and-security).
 
-**Why is there no multiview?**
-webOS lets an app play only one video at a time, so a second channel always stops the first.  An earlier test build tried it and it didn't work on real TVs, so it was taken out.
+**Can I watch two channels at once?**
+Yes, with Multiview: in fullscreen, quick menu > **Multiview**, or hold OK on a channel > **Watch in Multiview**.  webOS lets an app play only one video at a time, so the channel you hear plays as normal video and the network helper on the TV makes the second one itself, as live video beside it at up to 30 frames a second.  It works on any webOS TV, rooted or not, and each box uses one of your provider's connections.  See [Multiview: two channels side by side](Multiview-two-channels-side-by-side).
 
 **Something else?**
 Try [Troubleshooting](Troubleshooting), or open an [issue](https://github.com/ohmybahgosh/TiviBro/issues) with a copy of **Settings > System > View app log** (it hides usernames and passwords).
