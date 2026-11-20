@@ -10,7 +10,7 @@ on:
       tag:
         description: Release tag to create or update
         required: true
-        default: ffmpeg-7.1-tb4
+        default: ffmpeg-7.1-tb5
 
 permissions:
   contents: write
@@ -63,8 +63,8 @@ jobs:
           BIN="$RUNNER_TEMP/out/tivibro-ffmpeg-${{ matrix.arch }}"
           SIZE="$(stat -c %s "$BIN")"
           echo "### tivibro-ffmpeg-${{ matrix.arch }}: $SIZE bytes" >> "$GITHUB_STEP_SUMMARY"
-          if [ "$SIZE" -gt $((6 * 1024 * 1024)) ]; then
-            echo "::warning::tivibro-ffmpeg-${{ matrix.arch }} is $SIZE bytes, over the 6 MB target"
+          if [ "$SIZE" -gt $((9 * 1024 * 1024)) ]; then
+            echo "::warning::tivibro-ffmpeg-${{ matrix.arch }} is $SIZE bytes, over the 9 MB target"
           fi
 
       - uses: actions/upload-artifact@v7

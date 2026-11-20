@@ -198,8 +198,9 @@ build_mbedtls() {
 # ---------------------------------------------------------------- ffmpeg
 # Only what the helper needs.  Everything else stays disabled.
 FF_COMPONENTS=(
-  --enable-protocol=file,pipe,tcp,http
-  --enable-demuxer=matroska,mov,mpegts,avi,flv,hevc
+  --enable-protocol=file,pipe,tcp,http,hls,crypto
+  # hls: Multiview's pictures of a channel whose link is a playlist (.m3u8), crypto for its AES-128 segments.
+  --enable-demuxer=matroska,mov,mpegts,avi,flv,hevc,hls
   --enable-decoder=dca,truehd,mlp,flac,ac3,eac3,aac,mp3,mp3float,mp2,mp2float,opus,vorbis,'pcm_*'
   # Seek previews (service/seekprev.js): one keyframe decoded in software, made small, out as a JPEG.
   --enable-decoder=h264,hevc,mpeg2video,mpeg4
@@ -221,7 +222,8 @@ FF_BASE=(
   --enable-avcodec --enable-avformat --enable-avfilter --enable-swresample
   --enable-network
   --disable-iconv --disable-zlib --disable-bzlib --disable-lzma
-  --enable-small
+  # Built for speed (-O3, ffmpeg's default), not size (--enable-small, -Os, before tb5): Multiview decodes
+  # live channels in software, and every frame counts there.  About 2 MB more.
 )
 
 build_ffmpeg() {
@@ -405,7 +407,8 @@ smoke_test() {
   grep -qE "^ V[^ ]* +mjpeg " <<<"$encs" || { echo "  FAIL: encoder mjpeg missing" >&2; fail=1; }
   # Dolby Vision profile 7 as 8.1 (convert.js): the dovi_rpu filter with TiviBro's p81 option.
   "$q" "$bin" -hide_banner -h bsf=dovi_rpu 2>/dev/null | grep -q "p81" || { echo "  FAIL: dovi_rpu p81 missing" >&2; fail=1; }
-  local want_protos=(http pipe tcp file)
+  grep -qE "^ D[^ ]* +hls " <<<"$("$q" "$bin" -hide_banner -demuxers 2>/dev/null)" || { echo "  FAIL: demuxer hls missing" >&2; fail=1; }
+  local want_protos=(http pipe tcp file hls crypto)
   [ "$ENABLE_TLS" = 1 ] && want_protos+=(https)
   for need in "${want_protos[@]}"; do
     grep -qx "  $need" <<<"$protos" || { echo "  FAIL: protocol $need missing" >&2; fail=1; }
@@ -452,6 +455,19 @@ PY
     -f mp4 -movflags frag_keyframe+empty_moov+delay_moov pipe:1 > "$t/ac3.mp4" || fail=1
   kill "$srv" 2>/dev/null || true
   check_output "$t/ac3.mp4" ac3 "$(probe "$fx/dts51.mkv" v:0 codec_name)" || fail=1
+
+  log "[$arch] Multiview: an HLS channel over HTTP -> JPEGs, frames nothing needs skipped"
+  mkdir -p "$fx/hls"
+  [ -s "$fx/hls/live.m3u8" ] || ffmpeg -hide_banner -loglevel error -y -f lavfi -i testsrc2=size=1280x720:rate=30 -t 4 \
+    -c:v libx264 -g 30 -bf 2 -f hls -hls_time 1 -hls_list_size 0 "$fx/hls/live.m3u8" || fail=1
+  port=$(( 20000 + RANDOM % 20000 ))
+  python3 -I -m http.server "$port" --bind 127.0.0.1 --directory "$fx/hls" >/dev/null 2>&1 &
+  srv=$!
+  sleep 1
+  "${ff[@]}" -skip_frame noref -i "http://127.0.0.1:$port/live.m3u8" -an -vf scale=320:-2 -pix_fmt yuvj420p -c:v mjpeg -q:v 7 -r 15 -f mjpeg pipe:1 > "$t/mv.mjpeg" || fail=1
+  kill "$srv" 2>/dev/null || true
+  local jpgs; jpgs="$(python3 -c "import sys; print(open(sys.argv[1],'rb').read().count(b'\xff\xd8\xff'))" "$t/mv.mjpeg")"
+  [ "${jpgs:-0}" -ge 30 ] && echo "  ok: $jpgs pictures" || { echo "  FAIL: only ${jpgs:-0} pictures from the HLS channel" >&2; fail=1; }
 
   if [ -s "$fx/truehd51.mkv" ]; then
     log "[$arch] TrueHD 5.1 MKV -> E-AC-3 MKV"
