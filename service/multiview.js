@@ -31,9 +31,12 @@ function query(url) {
   return q;
 }
 function args(input, w, f, smooth) {
-  return ['-hide_banner', '-nostdin', '-loglevel', 'error', '-protocol_whitelist', 'http,tcp',
+  return ['-hide_banner', '-nostdin', '-loglevel', 'error', '-protocol_whitelist', 'http,tcp,crypto',
     '-fflags', 'nobuffer', '-probesize', '1500000', '-analyzeduration', '1500000',
-  ].concat(smooth ? [] : ['-skip_frame', 'noref', '-skip_loop_filter', 'noref']).concat([
+  ].concat(smooth ? [] : ['-skip_frame', 'noref', '-skip_loop_filter', 'noref'])
+    // A playlist (.m3u8) hands over whole segments at once: read at the channel's own pace, or the pictures come in
+    // bursts of several seconds (Pluto TV on a C2: 44 waiting, a second and a half behind).
+    .concat(/\.m3u8(\?|$)/i.test(input) ? ['-re'] : []).concat([
     '-i', input, '-an', '-sn', '-dn',
     '-vf', 'scale=' + w + ':-2', '-pix_fmt', 'yuvj420p',
     '-c:v', 'mjpeg', '-q:v', '7', '-r', String(f),
