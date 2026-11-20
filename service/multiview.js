@@ -85,9 +85,11 @@ function tile(req, res, ALLOW, log, port, q) {
     busy = !res.write(jpg) || busy;
     busy = !res.write('\r\n') || busy;
   }));
-  res.on('drain', function () { busy = false; });
+  res.on('drain', function () { busy = false; stuck = 0; });
+  // Nothing taken for 10 seconds: the app is gone without closing (a box replaced before its first picture), so stop.
+  var stuck = 0, watch = setInterval(function () { if (!busy) { stuck = 0; return; } if (++stuck >= 5) { if (log) log({ lv: 'info', event: 'multiview tile not read, stopped', id: t.id }); t.end(); } }, 2000);
   t.end = function () {
-    if (t.closed) return; t.closed = true;
+    if (t.closed) return; t.closed = true; clearInterval(watch);
     var i = tiles.indexOf(t); if (i >= 0) tiles.splice(i, 1);
     if (t.p) stopProc(t.p);
     try { res.end(); } catch (e) {}

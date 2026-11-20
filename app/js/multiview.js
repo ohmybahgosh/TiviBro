@@ -87,24 +87,46 @@ var Multiview = (function () {
   function stopPic(b) { if (b.img) { b.img.stop(); b.img = null; } }
 
   /* A box's moving pictures.  An <img> shows each JPEG the moment it arrives, so a late one and the next together
-     look choppy even at 30 a second.  Where the TV's browser can read the stream itself (fetch with a reader,
-     createImageBitmap), the pictures go into a short queue and onto a canvas at an even pace instead: about a
-     tenth of a second later than they came, but every one held for the same time (Bob: "a bit choppy" in two
-     boxes).  Older browsers: the <img>. */
+     look choppy even at 30 a second (Bob: "a bit choppy" in two boxes).  Where the browser can, a worker reads the
+     stream (each picture by its Content-Length), decodes it (createImageBitmap) and hands it over without a copy;
+     the pictures wait in a short queue and go onto the canvas at an even pace (bitmaprenderer: no drawing, the
+     picture itself is shown), about a tenth of a second behind.  A first try that drew on a 2D canvas from the
+     page took more than a core on a C2.  Older browsers: the <img>. */
+  var workerUrl = '';
+  function picWorker() {
+    if (workerUrl) return workerUrl;
+    var src = 'var ac=null;onmessage=function(m){if(m.data.stop){if(ac)ac.abort();close();return;}ac=new AbortController();' +
+      'fetch(m.data.url,{signal:ac.signal,cache:"no-store"}).then(function(r){if(!r.ok||!r.body)throw new Error("HTTP "+r.status);' +
+      'var rd=r.body.getReader(),buf=new Uint8Array(0),busy=0;' +
+      'function more(){return rd.read().then(function(x){if(x.done){postMessage({end:1});return;}' +
+      'var n=new Uint8Array(buf.length+x.value.length);n.set(buf);n.set(x.value,buf.length);buf=n;' +
+      'for(;;){var h=-1;for(var i=0;i+3<buf.length;i++)if(buf[i]===13&&buf[i+1]===10&&buf[i+2]===13&&buf[i+3]===10){h=i;break;}' +
+      'if(h<0)break;var head=String.fromCharCode.apply(null,buf.subarray(0,h)),L=/Content-Length: *([0-9]+)/i.exec(head);' +
+      'if(!L){buf=buf.subarray(h+4);continue;}var len=+L[1];if(buf.length<h+4+len)break;' +
+      'var jpg=buf.slice(h+4,h+4+len);buf=buf.subarray(h+4+len);' +
+      'if(busy>3)continue;busy++;createImageBitmap(new Blob([jpg],{type:"image/jpeg"})).then(function(bm){busy--;postMessage({bm:bm},[bm]);},function(){busy--;});}' +
+      'return more();});}return more();}).catch(function(e){if(e&&e.name==="AbortError")return;postMessage({end:1});});};';
+    workerUrl = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
+    return workerUrl;
+  }
   function Pic(url, w, h, fps, onFail) {
-    var ok = typeof fetch === 'function' && typeof createImageBitmap === 'function' && typeof ReadableStream !== 'undefined' && typeof AbortController !== 'undefined';
-    if (!ok) {
+    var cv = document.createElement('canvas'), br = null;
+    try { br = typeof Worker === 'function' && typeof createImageBitmap === 'function' && typeof AbortController === 'function' ? cv.getContext('bitmaprenderer') : null; } catch (e) { br = null; }
+    if (!br) {
       var img = new Image(); img.className = 'mv-pic'; img.onerror = onFail; img.src = url;
       return { el: img, stop: function () { img.onerror = null; img.src = ''; img.remove(); } };
     }
-    var cv = document.createElement('canvas'); cv.className = 'mv-pic'; cv.width = w; cv.height = h;
-    var ctx = cv.getContext('2d'), ac = new AbortController(), q = [], stopped = false, raf = 0, due = 0, decoding = Promise.resolve();
-    var step = 1000 / fps, shown = 0, gaps = [], lastDraw = 0;
-    function draw(bm) {
-      var s = Math.min(w / bm.width, h / bm.height), dw = bm.width * s, dh = bm.height * s;
-      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
-      ctx.drawImage(bm, (w - dw) / 2, (h - dh) / 2, dw, dh);
-      if (bm.close) bm.close();
+    cv.className = 'mv-pic';
+    var wk = new Worker(picWorker()), q = [], stopped = false, raf = 0, due = 0, step = 1000 / fps, shown = 0, gaps = [], lastDraw = 0;
+    wk.onmessage = function (m) {
+      if (stopped) { if (m.data.bm && m.data.bm.close) m.data.bm.close(); return; }
+      if (m.data.end) return onFail();
+      q.push(m.data.bm);
+    };
+    wk.postMessage({ url: url });
+    function show(bm) {
+      if (cv.width !== bm.width || cv.height !== bm.height) { cv.width = bm.width; cv.height = bm.height; }
+      br.transferFromImageBitmap(bm);
       shown++;
       var t = performance.now(); if (lastDraw) { gaps.push(t - lastDraw); if (gaps.length > 300) gaps.shift(); } lastDraw = t;
     }
@@ -112,46 +134,23 @@ var Multiview = (function () {
       if (stopped) return;
       raf = requestAnimationFrame(tick);
       if (!q.length) { due = 0; return; }                     // waiting for pictures: the last one stays
-      if (!due) { if (q.length < 3 && shown) return; due = now; }   // build a little cushion first (after the first picture)
-      if (now < due) return;
+      if (!due) { if (q.length < 3 && shown) return; due = now; }   // a little cushion first (after the first picture)
+      if (now < due - 4) return;
       while (q.length > 8) { var old = q.shift(); if (old.close) old.close(); }   // far behind: catch up
-      draw(q.shift());
+      show(q.shift());
       // A little faster when the queue grows, a little slower when it runs low: even, and never far behind.
-      due += step * (q.length > 5 ? 0.85 : q.length < 2 ? 1.15 : 1);
+      due += step * (q.length > 5 ? 0.9 : q.length < 2 ? 1.1 : 1);
       if (now - due > step * 3) due = now;
     }
     raf = requestAnimationFrame(tick);
-    fetch(url, { signal: ac.signal, cache: 'no-store' }).then(function (r) {
-      if (!r.ok || !r.body) throw new Error('HTTP ' + r.status);
-      var reader = r.body.getReader(), buf = new Uint8Array(0);
-      function find(a, b0, b1, from) { for (var i = from; i + 1 < a.length; i++) if (a[i] === b0 && a[i + 1] === b1) return i; return -1; }
-      function pump() {
-        return reader.read().then(function (x) {
-          if (x.done || stopped) { if (!stopped) onFail(); return; }
-          var n = new Uint8Array(buf.length + x.value.length); n.set(buf); n.set(x.value, buf.length); buf = n;
-          for (;;) {
-            var s = find(buf, 0xFF, 0xD8, 0); if (s < 0) { buf = buf.subarray(buf.length - 1); break; }
-            var e = find(buf, 0xFF, 0xD9, s + 2); if (e < 0) { buf = buf.subarray(s); break; }
-            var jpg = buf.slice(s, e + 2); buf = buf.subarray(e + 2);
-            (function (j) {
-              decoding = decoding.then(function () {
-                if (stopped) return;
-                return createImageBitmap(new Blob([j], { type: 'image/jpeg' })).then(function (bm) { if (stopped) { if (bm.close) bm.close(); } else q.push(bm); }, function () {});
-              });
-            })(jpg);
-          }
-          return pump();
-        });
-      }
-      return pump();
-    }).catch(function () { if (!stopped) onFail(); });
     return { el: cv, pace: function () {
       // How even the pictures are: the gaps between them (ms), for the log and tests.
       if (!gaps.length) return null;
       var m = gaps.reduce(function (a, b) { return a + b; }, 0) / gaps.length, sd = Math.sqrt(gaps.reduce(function (a, b) { return a + (b - m) * (b - m); }, 0) / gaps.length);
       return { fps: Math.round(10000 / m) / 10, jitterMs: Math.round(sd), queued: q.length };
     }, stop: function () {
-      stopped = true; cancelAnimationFrame(raf); try { ac.abort(); } catch (e) {}
+      stopped = true; cancelAnimationFrame(raf); try { wk.postMessage({ stop: 1 }); } catch (e) {}
+      setTimeout(function () { try { wk.terminate(); } catch (e) {} }, 500);
       q.forEach(function (bm) { if (bm.close) bm.close(); }); q = []; cv.remove();
     } };
   }
@@ -255,9 +254,10 @@ var Multiview = (function () {
       boxes = []; for (var i = 0; i < layout; i++) boxes.push({ c: list[i] || null });
       sel = boxes.length > 1 && !boxes[1].c ? 1 : 0; main = -1;
       document.body.classList.add('mv-open');
-      build();
       // The channel playing now stays the video with sound, in the first box (not tuned again).
-      main = 0; placeStage();
+      main = 0;
+      build();
+      placeStage();
       if (!Views.playing || Views.playing.k !== first.k) Views.startChannel(first, true);
       boxes.forEach(paint);
       UI.setHandler(keys);
@@ -310,5 +310,5 @@ var Multiview = (function () {
 
   function pace() { return boxes.map(function (b) { return b.img && b.img.pace ? b.img.pace() : null; }); }
 
-  return { start: start, again: again, pace: pace, close: close, add: add, get open() { return open; }, _rects: rects };
+  return { _wurl: picWorker, start: start, again: again, pace: pace, close: close, add: add, get open() { return open; }, _rects: rects };
 })();

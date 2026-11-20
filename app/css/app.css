@@ -1388,6 +1388,7 @@ body.mv-open #osd,body.mv-open #clock,body.mv-open .qpanel{display:none!importan
 .mv-box.empty{background:#11141f}
 .mv-box.empty .mv-label{top:50%;bottom:auto;transform:translateY(-50%);text-align:center;background:none;color:#9aa3b5;font-size:30px}
 .mv-pic{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:contain;background:#000}
+canvas.mv-pic{object-fit:contain}
 .mv-label{position:absolute;left:0;right:0;bottom:0;padding:12px 18px;font-size:24px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.78));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mv-box.failed .mv-label{color:#ffb4a8}
 .mv-hints{position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:22px;color:#cfd3dc;text-shadow:0 2px 6px #000}
