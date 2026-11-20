@@ -1,14 +1,15 @@
 # Changelog
 
-## Unreleased
-
-- **Updating to alpha 178 no longer reads the whole guide again at the first start** (issue #133).  Its new names without a prefix (issue #131) counted as thousands of "new" guide names, so a big playlist's guide loaded again right away; on a 1 GB TV with 57,000 channels that closed TiviBro.  They are now asked for with the next guide load instead, and a channel whose two names give the same key asks once.
-
-## 0.6.0 (alpha 178, 2026-11-19)
+## 0.6.0 (alpha 179, 2026-11-20)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 178
+### New in alpha 179
+
+- **Updating to alpha 178 no longer reads the whole guide again at the first start** (issue #133).  Its new names without a prefix (issue #131) counted as thousands of "new" guide names, so a big playlist's guide loaded again right away; on a 1 GB TV with 57,000 channels that closed TiviBro.  They are now asked for with the next guide load instead, and a channel whose two names give the same key asks once.
+- **Matching a guide by name without the tag in front is stricter** (issue #131).  A channel tagged with a country ("AR: TNT") now only matches a guide channel of that country ("AR: TNT", not "US: TNT").  A service tag ("PRIME:", "JOYN:") still finds a country's channel ("DE: ZDFINFO HD").
+
+### In alpha 178
 
 - **Guides made for another playlist match more channels by name** (issue #131).  "PRIME: ZDFINFO" now finds "DE: ZDFINFO HD" or "PLAY+: ZDF INFO" in a guide source: when the whole name finds nothing, the name without its short capitals tag in front is tried.  A guide channel another channel already uses can be matched by name too.  Event channels ("NBA: Game 1") are left alone.
 - **Search no longer closes TiviBro on a TV with a very big movie list** (issue #132).  With 160,000 movies, each letter typed in Search asked the network helper for the whole list again, so two or three downloads of it ran at once, the helper stopped answering, and a 1 GB TV closed TiviBro.  Now one download serves every search waiting on it, and Search asks the helper one search at a time.

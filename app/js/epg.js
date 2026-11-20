@@ -122,9 +122,15 @@ var Epg = (function () {
     // "NBA: Game 1" and "NHL: Game 1" are not the same channel: an event's number alone is no name.
     return m && !/^(event|game|ppv|match|live|channel|ch|stream|feed)\W*\d*\W*$/i.test(m[1]) ? m[1] : '';
   }
+  /* The country in front of a name ("DE: ...", "AR| ..."), lowercase, or ''.  A channel tagged with a country
+     only matches a guide channel of that country by its name without the tag: "AR: TNT" is not "US: TNT". */
+  function tagCountry(s) {
+    var m = /^\s*([A-Z]{2})\s*[:|]/.exec(String(s || ''));
+    return m ? m[1].toLowerCase() : '';
+  }
   function nameKeys(s) {
-    var a = norm(s), u = unprefixed(s), b = u ? norm(u) : '';
-    return b.length > 1 && b !== a ? [a, '~' + b] : [a];
+    var a = norm(s), u = unprefixed(s), b = u ? norm(u) : '', cc = tagCountry(s);
+    return b.length > 1 && b !== a ? [a, '~' + (cc ? cc + ':' : '') + b] : [a];
   }
   function byName(map, ch) {
     var ks = nameKeys(Library.name(ch)).concat(nameKeys(ch.n));
@@ -431,7 +437,7 @@ var Epg = (function () {
               continue;
             }
             var nk = self.norm(name), un = self.unprefixed(name), nks = [nk];
-            if (un) { un = '~' + self.norm(un); if (un.length > 2 && un !== '~' + nk) nks.push(un); }
+            if (un) { un = self.norm(un); if (un.length > 1 && un !== nk) { nks.push('~' + un); var gc = self.tagCountry(name); if (gc) nks.push('~' + gc + ':' + un); } }
             for (var w = 0; w < nks.length; w++) {
               var kx = nks[w];
               if (!kx || names[kx] == null || matches[kx]) continue;
@@ -1017,7 +1023,7 @@ var Epg = (function () {
     if (pub) { msg.pub = true; msg.pk = pub.pk; msg.pubWant = pub.want; }
     var keysFn = typeof PubEpg !== 'undefined' ? PubEpg.keys : function () { return { keys: [], country: '' }; };
     var alikeFn = typeof PubEpg !== 'undefined' && PubEpg.alike ? PubEpg.alike : function () { return false; };
-    var code = 'self.norm = ' + norm.toString() + ';\nself.unprefixed = ' + unprefixed.toString() + ';\nself.alike = ' + alikeFn.toString() + ';\nself.pubKeys = ' + keysFn.toString() + ';\nself.progFlag = ' + progFlag.toString() + ';\nself.readFlag = ' + readFlag.toString() + ';\n(' + workerMain.toString() + ')();';
+    var code = 'self.norm = ' + norm.toString() + ';\nself.unprefixed = ' + unprefixed.toString() + ';\nself.tagCountry = ' + tagCountry.toString() + ';\nself.alike = ' + alikeFn.toString() + ';\nself.pubKeys = ' + keysFn.toString() + ';\nself.progFlag = ' + progFlag.toString() + ';\nself.readFlag = ' + readFlag.toString() + ';\n(' + workerMain.toString() + ')();';
     var started = Date.now();
     function keyAt(p) { var x = msg.sources[(p.src || 1) - 1]; return x ? x.key : ''; }
     function onProg(p) { p.active = true; p.phase = 'download'; p.started = started; if (g) g.host(p.host, keyAt(p)); setProgress(p); }

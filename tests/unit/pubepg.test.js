@@ -87,6 +87,16 @@ t('a name without its prefix is the second key, the same in the helper and the a
   assert.strictEqual(G.unprefixed('Mr. Bean: The Show'), '', 'only a short capitals tag is a prefix');
   assert.strictEqual(G.unprefixed('NBA: Game 1'), '', 'an event\'s number alone is no name');
   ['PRIME: ZDFINFO ᴿᴬᵂ', 'DE| 3SAT', 'Mr. Bean: The Show', 'NBA: Game 1', 'CNN', ''].forEach(x => assert.strictEqual(G.unprefixed(x), appUn(x), x));
+  const t = /function tagCountry\(s\) \{[\s\S]*?\n  \}/.exec(src);
+  const appCc = new Function('return ' + t[0].replace(/\n  /g, '\n'))();
+  // A channel tagged with a country asks for "~cc:name"; a guide channel gives "~name", and "~cc:name" when it has a country too.
+  const chKey = (n) => '~' + (G.tagCountry(n) ? G.tagCountry(n) + ':' : '') + key(n);
+  const guideKeys = (n) => ['~' + key(n)].concat(G.tagCountry(n) ? ['~' + G.tagCountry(n) + ':' + key(n)] : []);
+  assert.ok(guideKeys('DE: ZDFINFO HD').includes(chKey('PRIME: ZDFINFO ᴿᴬᵂ')), 'a service tag finds a country\'s channel');
+  assert.ok(guideKeys('DE: 3SAT HD').includes(chKey('DE| 3SAT')), 'the same country finds it');
+  assert.ok(!guideKeys('US: TNT HD').includes(chKey('AR: TNT')), 'another country\'s channel is not it');
+  assert.ok(!guideKeys('PLAY+: 3SAT').includes(chKey('AT| 3SAT')), 'a country\'s channel needs a guide channel of that country');
+  ['DE: X', 'AR| TNT', 'PRIME: X', 'CNN', ''].forEach(x => assert.strictEqual(G.tagCountry(x), appCc(x), x));
 });
 t('Pluto channels match Pluto\'s own guide by id', () => {
   assert.strictEqual(P.appId('US_5ca525b650be2571e3943c63'), '5ca525b650be2571e3943c63');
