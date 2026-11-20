@@ -5,7 +5,8 @@
    skipped, which leaves 8 to 25 pictures a second for about a third of the work), makes it small and sends it on
    as JPEGs, one after the other (multipart/x-mixed-replace), which an <img> shows as moving pictures.
 
-     GET /mv/<key>/tile.mjpg?u=<channel link>&w=<width>&f=<pictures a second>[&ua=<User-Agent>][&id=<tile>]
+     GET /mv/<key>/tile.mjpg?u=<channel link>&w=<width>&f=<pictures a second>[&s=1][&ua=<User-Agent>][&id=<tile>]
+         s=1: every frame decoded (smooth, about twice the work), for one box of pictures beside the video.
          the pictures, until the app closes the connection.  A new picture is dropped, not queued, while the
          last one is still on its way (the TV keeps up or skips, it never falls behind).
      GET /mv/<key>/status    { ok, tiles: [{ id, w, f, frames, dropped, kbps, secs }] }
@@ -28,14 +29,14 @@ function query(url) {
   s.split('&').forEach(function (kv) { if (!kv) return; var i = kv.indexOf('='), k = i < 0 ? kv : kv.slice(0, i); try { q[k] = decodeURIComponent((i < 0 ? '' : kv.slice(i + 1)).replace(/\+/g, ' ')); } catch (e) {} });
   return q;
 }
-function args(input, w, f) {
+function args(input, w, f, smooth) {
   return ['-hide_banner', '-nostdin', '-loglevel', 'error', '-protocol_whitelist', 'http,tcp',
     '-fflags', 'nobuffer', '-probesize', '1500000', '-analyzeduration', '1500000',
-    '-skip_frame', 'bidir', '-skip_loop_filter', 'bidir',
+  ].concat(smooth ? [] : ['-skip_frame', 'bidir', '-skip_loop_filter', 'bidir']).concat([
     '-i', input, '-an', '-sn', '-dn',
     '-vf', 'scale=' + w + ':-2', '-pix_fmt', 'yuvj420p',
     '-c:v', 'mjpeg', '-q:v', '7', '-r', String(f),
-    '-f', 'mjpeg', 'pipe:1'];
+    '-f', 'mjpeg', 'pipe:1']);
 }
 
 // The JPEGs in ffmpeg's output: each from FF D8 to FF D9 (an encoded picture never has FF D9 inside: 0xFF is stuffed).
@@ -56,7 +57,7 @@ function splitter(onFrame) {
 }
 
 function tile(req, res, ALLOW, log, port, q) {
-  var w = Math.max(160, Math.min(960, (+q.w | 0) || 640)) & ~1, f = Math.max(1, Math.min(25, +q.f || 12));
+  var w = Math.max(160, Math.min(960, (+q.w | 0) || 640)) & ~1, f = Math.max(1, Math.min(30, +q.f || 12)), smooth = q.s === '1';
   var input = Convert.inputFor(q.u, q.ua || '', port), bin = Ffmpeg.binary();
   if (!input) { res.writeHead(400, ALLOW); return res.end('not a web address'); }
   if (!bin) { res.writeHead(503, ALLOW); return res.end('no converter on this TV yet'); }
@@ -65,8 +66,8 @@ function tile(req, res, ALLOW, log, port, q) {
   var h = { 'Content-Type': 'multipart/x-mixed-replace; boundary=' + BOUNDARY, 'Cache-Control': 'no-store', 'Connection': 'close' };
   for (var k in ALLOW) h[k] = ALLOW[k];
   res.writeHead(200, h);
-  try { t.p = cp.spawn('nice', ['-n', '10', bin].concat(args(input, w, f)), { stdio: ['ignore', 'pipe', 'pipe'] }); }
-  catch (e) { try { t.p = cp.spawn(bin, args(input, w, f), { stdio: ['ignore', 'pipe', 'pipe'] }); } catch (e2) { return res.end(); } }
+  try { t.p = cp.spawn('nice', ['-n', '10', bin].concat(args(input, w, f, smooth)), { stdio: ['ignore', 'pipe', 'pipe'] }); }
+  catch (e) { try { t.p = cp.spawn(bin, args(input, w, f, smooth), { stdio: ['ignore', 'pipe', 'pipe'] }); } catch (e2) { return res.end(); } }
   var err = '', busy = false;
   t.p.stderr.on('data', function (d) { if (err.length < 2000) err += d; });
   t.p.stdout.on('data', splitter(function (jpg) {

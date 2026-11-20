@@ -33,7 +33,9 @@ var Multiview = (function () {
     var u = Source.streamUrl(c, 'ts');
     if (typeof Net !== 'undefined' && Net.unwrap) u = Net.unwrap(u);
     var ua = Store.plOf && Store.plOf(c) && Store.plOf(c).ua || '';
-    return base() + '/mv/' + key + '/tile.mjpg?id=' + encodeURIComponent(c.k).slice(0, 20) + '&w=' + w + '&f=12&u=' + encodeURIComponent(u) + (ua ? '&ua=' + encodeURIComponent(ua) : '');
+    // One box of pictures beside the video: every frame, 25 a second.  Three: lighter, without B-frames (about 15 to 20).
+    var one = boxes.filter(function (b) { return b.c; }).length <= 2;
+    return base() + '/mv/' + key + '/tile.mjpg?id=' + encodeURIComponent(c.k).slice(0, 20) + '&w=' + w + '&f=' + (one ? '25&s=1' : '20') + '&u=' + encodeURIComponent(u) + (ua ? '&ua=' + encodeURIComponent(ua) : '');
   }
 
   function build() {
@@ -71,7 +73,7 @@ var Multiview = (function () {
     if (b.c && i !== main && !b.img) {
       var img = new Image(); img.className = 'mv-pic';
       img.onerror = function () { if (b.img === img) { b.el.classList.add('failed'); b.label.textContent = name + '   ' + T('no picture'); } };
-      img.src = tileUrl(b.c, b.r[2] > 900 ? 640 : 480);
+      img.src = tileUrl(b.c, 640);
       b.el.insertBefore(img, b.label); b.img = img;
     }
   }
@@ -105,16 +107,24 @@ var Multiview = (function () {
       }));
     }, T('Part of its name is enough'), false, T('Find'));
   }
+  // Two boxes or more of pictures: the smooth one goes lighter (and back), so the TV keeps up.
+  function filled() { return boxes.filter(function (b) { return b.c; }).length; }
+  function regear(before) {
+    if ((before <= 2) === (filled() <= 2)) return;
+    boxes.forEach(function (b, i) { if (b.img && i !== main) { b.img.src = ''; b.img.remove(); b.img = null; } });
+    boxes.forEach(paint);
+  }
   function setBox(i, c) {
-    var b = boxes[i];
+    var b = boxes[i], before = filled();
     if (b.img) { b.img.src = ''; b.img.remove(); b.img = null; }
     b.c = c; b.el.classList.remove('failed');
     if (i === main) { Views.startChannel(c, true); }
     paint(b, i);
     if (main < 0) makeMain(i);
+    regear(before);
   }
   function remove(i) {
-    var b = boxes[i];
+    var b = boxes[i], before = filled();
     if (!b.c) return;
     if (b.img) { b.img.src = ''; b.img.remove(); b.img = null; }
     b.c = null;
@@ -124,6 +134,7 @@ var Multiview = (function () {
       if (next >= 0) makeMain(next);
     }
     boxes.forEach(paint);
+    regear(before);
   }
 
   function keys(a) {
@@ -181,5 +192,16 @@ var Multiview = (function () {
     return true;
   }
 
-  return { start: start, close: close, get open() { return open; }, _rects: rects };
+  // Another channel into the first empty box (two boxes full: four boxes).
+  function add(c) {
+    if (!open || !c) return false;
+    if (boxes.some(function (b) { return b.c && b.c.k === c.k; })) return true;
+    var i = boxes.findIndex(function (b) { return !b.c; });
+    if (i < 0 && layout === 2) { layout = 4; boxes.push({ c: null }, { c: null }); build(); placeStage(); i = 2; }
+    if (i < 0) { U.toast(T('Four boxes are full.  Yellow takes one out.')); return false; }
+    setBox(i, c);
+    return true;
+  }
+
+  return { start: start, close: close, add: add, get open() { return open; }, _rects: rects };
 })();
