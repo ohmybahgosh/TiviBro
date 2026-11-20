@@ -97,6 +97,7 @@ var Recordings = (function () {
     if (r.status === 'scheduled') bits.push(U.hhmm(r.start) + ' – ' + U.hhmm(r.end));
     else if (r.dur) bits.push(len(r.dur));
     if (r.bytes) bits.push(Record.sizeOf(r.bytes));
+    if (r.conv && r.conv.running) bits.push(T('converting {n}%', { n: r.conv.pct || 0 }));
     if (r.status !== 'done' && r.status !== 'recording' && r.error) bits.push(r.error);
     return bits.filter(Boolean).join('   ·   ');
   }
@@ -176,6 +177,10 @@ var Recordings = (function () {
     if (r.gaps) facts.push(T('{n} short gaps (the provider dropped the connection)', { n: r.gaps }));
     if (facts.length) el.appendChild(U.el('div', 'rc-facts', facts.join('   ·   ')));
     if (r.error && r.status !== 'done') el.appendChild(U.el('div', 'rc-err', r.error));
+    if (r.conv && r.conv.running) el.appendChild(U.el('div', 'rc-facts', T('Converting to MP4: {n}%', { n: r.conv.pct || 0 })));
+    else if (r.conv && r.conv.error) el.appendChild(U.el('div', 'rc-err', T('Couldn\'t convert: {x}', { x: r.conv.error })));
+    // Where it is on the drive, for adding it to Plex, Jellyfin or Kodi (a TV and a Movies library).
+    if (r.status === 'done' && r.folder) el.appendChild(U.el('div', 'rc-facts', T('On the drive: {x}', { x: 'TiviBro Recordings/' + r.folder }) + (r.kind === 'mp4' || r.kind === 'mkv' ? '   ·   ' + r.kind.toUpperCase() : '')));
     var plot = mt && mt.plot || r.desc;
     if (plot) el.appendChild(U.el('p', 'rc-plot', RAW(plot)));
     var p = Record.posOf(r.id), f = seen(r);
@@ -221,6 +226,8 @@ var Recordings = (function () {
       if (r.bytes > 0 && r.status === 'recording') out.push({ label: 'Watch from the start', icon: 'play', sub: T('while it records'), action: function () { watch(r, true); } });
       if (r.status === 'recording') out.push({ label: 'Stop recording', icon: 'stop', sub: T('keeps what\'s recorded'), action: function () { Record.stop(r.id).then(render); } });
       if (r.status === 'scheduled') out.push({ label: 'Cancel recording', icon: 'stop', sub: U.hhmm(r.start), action: function () { Record.stop(r.id).then(render); } });
+      if (r.status === 'done' && r.bytes > 0 && r.conv && r.conv.running) out.push({ label: T('Converting to MP4: {n}%', { n: r.conv.pct || 0 }), icon: 'history', sub: T('it carries on in the background') });
+      else if (Record.canConvert(r)) out.push({ label: 'Convert to MP4', icon: 'film', sub: T('one file with its title, plot and poster, for Plex and Apple TV'), action: function () { Record.convert(r.id).then(render); } });
       if (r.status !== 'recording') out.push({ label: 'Delete', icon: 'trash', sub: r.bytes ? T('{x} freed', { x: Record.sizeOf(r.bytes) }) : '', action: function () { ask([r]); } });
       if (p && r.status === 'done') out.push({ label: 'Mark as not watched', icon: 'eye', action: function () { Record.forget(r.id); render(); } });
     }
@@ -267,7 +274,12 @@ var Recordings = (function () {
     refresh();
     clearInterval(timer);
     // Sizes and lengths grow while something records.
-    timer = setInterval(function () { if (open_ && Views.tab === 'recordings' && !Views.full && !UI.modalOpen) refresh(); }, 10000);
+    // Every 3 s while one converts, to show how far it is.
+    var tick = 0;
+    timer = setInterval(function () {
+      var busy = Record.recs.some(function (x) { return x.conv && x.conv.running; });
+      if (++tick % (busy ? 1 : 3) === 0 && open_ && Views.tab === 'recordings' && !Views.full && !UI.modalOpen) refresh();
+    }, 3333);
   }
   function leave() { open_ = false; picking = null; clearInterval(timer); }
 

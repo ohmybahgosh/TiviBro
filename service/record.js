@@ -25,11 +25,12 @@
      POST /record/schedule { url, title, channel, start, end, drive? } -> { id }
      POST /record/stop     { id }    (a scheduled one is cancelled)
      POST /record/delete   { id }    (its files too)
+     POST /record/convert  { id }    (to one .mp4, or .mkv, with the details inside; progress in its conv)
      GET  /record/file/<id>[?part=n]  the recording, with Range, for the player
      /record/ts/...                           live pause (timeshift.js)
    Plain ES5 and callbacks for Node 0.12 (webOS 4). */
 'use strict';
-var http = require('http'), fs = require('fs'), path = require('path'), URL_ = require('url'), TS = require('./timeshift'), Feed = require('./feed');
+var http = require('http'), cp = require('child_process'), fs = require('fs'), path = require('path'), URL_ = require('url'), TS = require('./timeshift'), Feed = require('./feed');
 
 var ROOTS = process.env.TIVIBRO_USB_DIR ? [process.env.TIVIBRO_USB_DIR] : ['/tmp/usb'];
 var AGENT = process.env.TIVIBRO_REC_AGENT === '1', AGENT_PORT = +(process.env.TIVIBRO_REC_AGENT_PORT || 47820);
@@ -62,7 +63,11 @@ function load() {
   else { try { listFile = path.join(require('./storage').sub('rec'), 'recordings.json'); } catch (e) { listFile = ''; } }
   try { var j = JSON.parse(fs.readFileSync(listFile, 'utf8')); if (j && Array.isArray(j.recs)) state = j; } catch (e) {}
   // Recording when the helper stopped (webOS closed it, the TV turned off): carries on if its time isn't over.
-  state.recs.forEach(function (r) { if (r.status === 'recording') r.status = r.end > Date.now() ? 'scheduled' : 'done'; });
+  state.recs.forEach(function (r) {
+    if (r.status === 'recording') r.status = r.end > Date.now() ? 'scheduled' : 'done';
+    // Converting when it stopped: the half-made file goes, the recording is as it was.
+    if (r.conv && r.conv.running) { try { if (r.conv.tmp) fs.unlinkSync(r.conv.tmp); } catch (e) {} r.conv = { error: 'stopped before it finished (the TV turned off?)', at: Date.now() }; }
+  });
   return state;
 }
 var saveTimer = null;
@@ -104,7 +109,8 @@ function lengthOf(r) {
 }
 function pub(r) {
   return { id: r.id, title: r.title, channel: r.channel, start: r.start, end: r.end, status: r.status, bytes: r.bytes || 0, parts: (r.parts || []).length,
-    kind: r.kind || '', error: r.error || '', drive: r.driveName || '', startedAt: r.startedAt || 0, gaps: r.gaps || 0, dur: lengthOf(r), endedAt: r.endedAt || 0, logo: r.logo || '', key: r.key || '', desc: r.desc || '', ep: r.ep || '', meta: r.meta || null };
+    kind: r.kind || '', error: r.error || '', drive: r.driveName || '', startedAt: r.startedAt || 0, gaps: r.gaps || 0, dur: lengthOf(r), endedAt: r.endedAt || 0, logo: r.logo || '', key: r.key || '', desc: r.desc || '', ep: r.ep || '', meta: r.meta || null,
+    conv: r.conv ? { running: !!r.conv.running, pct: r.conv.pct || 0, done: r.conv.done || '', error: r.conv.error || '' } : null, folder: r.parts && r.parts[0] ? path.dirname(r.parts[0]).split(FOLDER).pop().replace(/^\//, '') : '' };
 }
 /* The drive's room (df), looked at every 30 s at most: free and total MB. */
 var spaceAt = 0, spaceWas = null;
@@ -271,14 +277,206 @@ function finish(r) {
   r.status = r.bytes > 0 ? 'done' : 'failed';
   if (!r.bytes && !r.error) r.error = 'nothing arrived from the provider';
   note('info', 'recording ' + r.status, { title: r.title, mb: Math.round((r.bytes || 0) / 1048576), gaps: r.gaps || 0 });
-  save();
+  save(); tidy(r);
 }
 function fail(r, why) {
   if (!r.endedAt && r.startedAt) r.endedAt = Date.now();
   halt(r);
   r.status = r.bytes > 0 ? 'done' : 'failed'; r.error = why;
   note('warn', 'recording failed', { title: r.title, e: why });
-  save();
+  save(); tidy(r);
+}
+
+/* ---------- for Plex, Jellyfin, Kodi and Infuse (discussion #94) ---------- */
+/* A finished recording is moved where a media server finds it, under names it reads, with what TMDB knows beside it:
+     TiviBro Recordings/TV/<Show>/<Show> - s01e02.ts          (the guide's episode number)
+     TiviBro Recordings/TV/<Show>/<Show> - 2026-11-20 10.00.ts (no number: Plex's date-based episodes)
+     TiviBro Recordings/Movies/<Title> (Year)/<Title> (Year).ts (TMDB says it's a movie)
+   A recording in parts gets " - pt1", " - pt2" (Plex plays them as one).  Beside it: a .nfo with the title, plot,
+   year, genre, rating and channel (Jellyfin, Emby, Kodi, Infuse; Plex with an agent), and the poster as poster.jpg
+   in its folder (all of them, Plex too).  Done when it finishes and again when TMDB's details arrive.  So a "TV" and a
+   "Movies" library on the drive's folder is all a media server needs. */
+function clean(s) { return String(s || '').replace(/[\\\/:*?"<>|\x00-\x1f]+/g, ' ').replace(/\s+/g, ' ').replace(/^[. ]+|[. ]+$/g, '').slice(0, 80); }
+function metaOf(r) { return r.meta && !r.meta.miss ? r.meta : null; }
+function epOf(r) { var m = /S(\d{1,3})\s*E(\d{1,4})/i.exec(r.ep || ''); return m ? { s: +m[1], e: +m[2] } : null; }
+// TMDB's answer is a movie unless it says show (its shows carry kind "show"; movies none).
+function isMovie(r) { var m = metaOf(r); return !!m && !r.ep && !/show|season|episode|tv/i.test(m.kind || ''); }
+function pad2(x) { return (x < 10 ? '0' : '') + x; }
+function libPlace(r) {
+  var m = metaOf(r), d = new Date(r.startedAt || r.start || Date.now());
+  var date = d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  if (isMovie(r)) {
+    var t = clean(m.title || r.title) || 'Recording', y = /^\d{4}$/.test(String(m.year || '')) ? ' (' + m.year + ')' : '';
+    return { dir: ['Movies', t + y], base: t + y, movie: true };
+  }
+  var show = clean(r.title) || clean(r.channel) || 'Recording', ep = epOf(r);
+  return { dir: ['TV', show], show: show, base: show + ' - ' + (ep ? 's' + pad2(ep.s) + 'e' + pad2(ep.e) : date + ' ' + pad2(d.getHours()) + '.' + pad2(d.getMinutes())), ep: ep };
+}
+function mkdirp(d) { if (fs.existsSync(d)) return; mkdirp(path.dirname(d)); fs.mkdirSync(d); }
+// The recordings folder a part sits in: what's above "TiviBro Recordings".
+function rootOf(f) { var i = f.lastIndexOf(path.sep + FOLDER + path.sep); return i < 0 ? '' : f.slice(0, i + FOLDER.length + 1); }
+// Empty folders a move or delete left (TV/<Show>, Movies/<Title>), never the recordings folder itself.
+function prune(dir, root) {
+  while (root && dir.length > root.length && dir.indexOf(root) === 0) {
+    try { var left = fs.readdirSync(dir).filter(function (n) { return n !== '.DS_Store'; }); if (left.length) return; fs.rmdirSync(dir); } catch (e) { return; }
+    dir = path.dirname(dir);
+  }
+}
+function xml(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function nfo(r, pl) {
+  var m = metaOf(r) || {}, d = new Date(r.startedAt || r.start || Date.now());
+  var aired = d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()), plot = m.plot || r.desc || '';
+  var tag = function (k, v) { return v || v === 0 ? '  <' + k + '>' + xml(v) + '</' + k + '>\n' : ''; };
+  var body = pl.movie
+    ? tag('title', m.title || r.title) + tag('year', m.year) + tag('plot', plot) + tag('genre', m.genre) + tag('rating', m.rating) + tag('runtime', m.runtime) + tag('studio', r.channel) + tag('dateadded', aired)
+    : tag('title', pl.ep ? r.title + ' ' + (r.ep || '') : r.title + ' ' + aired) + tag('showtitle', r.title) + (pl.ep ? tag('season', pl.ep.s) + tag('episode', pl.ep.e) : '') + tag('plot', r.desc || plot) + tag('aired', aired) + tag('genre', m.genre) + tag('studio', r.channel);
+  var root = pl.movie ? 'movie' : 'episodedetails';
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<!-- Recorded by TiviBro from ' + xml(r.channel) + ' -->\n<' + root + '>\n' + body + '</' + root + '>\n';
+}
+function fetchTo(u, file, cb) {
+  var done = false, end = function (e) { if (done) return; done = true; if (e) { try { fs.unlinkSync(file + '.tmp'); } catch (x) {} } cb(e); };
+  var req = require('https').get(u, function (res) {
+    if (res.statusCode !== 200) { res.resume(); return end(new Error('HTTP ' + res.statusCode)); }
+    var out = fs.createWriteStream(file + '.tmp'), n = 0;
+    res.on('data', function (c) { n += c.length; if (n > 4 * 1024 * 1024) { req.abort(); out.end(); end(new Error('too big')); } });
+    res.pipe(out);
+    out.on('finish', function () { if (done) return; fs.rename(file + '.tmp', file, end); });
+    out.on('error', end);
+  });
+  req.on('error', end); req.setTimeout(20000, function () { req.abort(); end(new Error('timeout')); });
+}
+function sides(r) { return (r.side || []).slice(); }
+// Moves the parts (and anything beside them) and writes the details.  Only for a finished one, not while it converts.
+function tidy(r) {
+  if (r.status !== 'done' || !(r.parts || []).length || (r.conv && r.conv.running) || process.env.TIVIBRO_REC_TIDY === '0') return;
+  var pl = libPlace(r), m = metaOf(r), key = JSON.stringify([pl.dir, pl.base, m && m.poster, m && m.plot, (r.parts || []).length]);
+  if (r.tidied === key) return;
+  var root = rootOf(r.parts[0]); if (!root) return;
+  var dir = path.join.apply(path, [root].concat(pl.dir)), many = r.parts.length > 1, ext = path.extname(r.parts[0]) || '.ts';
+  try { mkdirp(dir); } catch (e) { return note('warn', 'recording: could not make its folder', { title: r.title, e: e.code || e.message }); }
+  var olds = r.parts.map(function (f) { return path.dirname(f); }).concat(sides(r).map(function (f) { return path.dirname(f); }));
+  // Its files beside it before: gone (written again below).
+  sides(r).forEach(function (f) { try { fs.unlinkSync(f); } catch (e) {} });
+  r.side = [];
+  // A name taken by another recording (the same film twice): " (2)".
+  var base = pl.base, n = 2, taken = function (b) { return r.parts.some(function (f, i) { var t = path.join(dir, b + (many ? ' - pt' + (i + 1) : '') + ext); return t !== f && fs.existsSync(t); }); };
+  while (taken(base) && n < 50) base = pl.base + ' (' + n++ + ')';
+  r.parts = r.parts.map(function (f, i) {
+    var to = path.join(dir, base + (many ? ' - pt' + (i + 1) : '') + ext);
+    if (to === f) return f;
+    try { fs.renameSync(f, to); return to; } catch (e) { note('warn', 'recording: could not move it', { title: r.title, e: e.code || e.message }); return f; }
+  });
+  olds.forEach(function (d) { if (d !== dir) prune(d, root); });
+  var nf = path.join(dir, base + '.nfo');
+  try { fs.writeFileSync(nf, nfo(r, pl)); r.side.push(nf); } catch (e) {}
+  r.tidied = key; save();
+  // The poster, larger than the list's (w500): the folder's poster.jpg, kept if one is there (a show's earlier episode).
+  if (m && m.poster) {
+    var pf = path.join(dir, 'poster.jpg');
+    if (fs.existsSync(pf)) { if (pl.movie) r.side.push(pf); return; }
+    fetchTo(String(m.poster).replace(/\/t\/p\/w\d+\//, '/t/p/w500/'), pf, function (e) {
+      if (e) return note('warn', 'recording: poster not saved', { title: r.title, e: e.message });
+      if (pl.movie) { r.side.push(pf); save(); }
+    });
+  }
+}
+
+/* ---------- Convert to MP4 (or MKV) ---------- */
+/* On a finished recording, from the Recordings screen: ffmpeg copies it (no re-encoding: a few minutes of disk work,
+   little CPU) into one .mp4 with TMDB's details inside (title, plot, year, genre, show, season and episode, channel),
+   which Plex, Infuse and Apple TV apps read.  When MP4 can't hold the channel's sound or picture, MKV instead, with
+   the poster inside too.  The new file replaces the parts only once it's whole, and plays in TiviBro like before.
+   Needs as much free room as the recording on the drive while it runs. */
+var conv = {}, watched = {};
+// Watched now, or in the last half minute (a player asks for the next piece every few seconds).
+function inUse(id) { var w = watched[id]; return !!w && (w.n > 0 || Date.now() - w.at < +(process.env.TIVIBRO_REC_INUSE_MS || 30000)); }
+function tagsFor(r, mkv) {
+  var m = metaOf(r) || {}, pl = libPlace(r), d = new Date(r.startedAt || r.start || Date.now()), t = [];
+  var add = function (k, v) { if (v || v === 0) t.push('-metadata', k + '=' + String(v).slice(0, 1000)); };
+  add('title', pl.movie ? (m.title || r.title) : pl.ep ? r.title + ' ' + r.ep : r.title + ' ' + d.toDateString());
+  add('date', m.year || d.getFullYear()); add('genre', m.genre); add('comment', 'Recorded by TiviBro from ' + r.channel);
+  add('description', String(m.plot || r.desc || '').slice(0, 250)); add('synopsis', m.plot || r.desc);
+  if (!pl.movie) { add('show', r.title); add('network', r.channel); if (pl.ep) { add('season_number', pl.ep.s); add('episode_sort', pl.ep.e); add('episode_id', r.ep); } }
+  if (!mkv) add('media_type', pl.movie ? 9 : 10);
+  return t;
+}
+function convArgs(r, tmp, mkv, poster, hevc, fromFile) {
+  var a = ['-hide_banner', '-nostdin', '-loglevel', 'error', '-fflags', '+genpts+discardcorrupt'];
+  a = a.concat(fromFile ? ['-i', fromFile] : ['-f', 'mpegts', '-i', 'pipe:0']);
+  a = a.concat(['-map', '0:v?', '-map', '0:a?', '-c', 'copy', '-sn', '-dn', '-avoid_negative_ts', 'make_zero']).concat(tagsFor(r, mkv));
+  if (mkv) { if (poster) a = a.concat(['-attach', poster, '-metadata:s:t', 'mimetype=image/jpeg', '-metadata:s:t', 'filename=cover.jpg']); a.push('-f', 'matroska'); }
+  else { if (hevc) a.push('-tag:v', 'hvc1'); a.push('-movflags', '+faststart', '-f', 'mp4'); }
+  return a.concat(['-y', tmp]);
+}
+function convert(r) {
+  if (r.status !== 'done' || !(r.parts || []).length) return 'only a finished recording';
+  if (r.conv && r.conv.running) return '';
+  if (r.kind === 'mkv' || (r.kind === 'mp4' && r.conv && r.conv.done)) return 'it\'s converted already';
+  if (r.kind === 'mp4' && r.parts.length > 1) return 'a recording in parts from an MP4 channel can\'t be joined';
+  var Ff = require('./ffmpeg'), bin = Ff.binary();
+  if (!bin) return 'TiviBro\'s converter isn\'t on this TV yet (it unpacks a minute after the start)';
+  var dir = path.dirname(r.parts[0]), sp = space(dir);
+  if (sp.freeMB >= 0 && sp.freeMB < (r.bytes || 0) / 1048576 + LOW_MB) return 'not enough room on the drive: it needs ' + Math.ceil((r.bytes || 0) / 1073741824 * 10) / 10 + ' GB free while it converts';
+  var pl = libPlace(r), base = path.basename(r.parts[0], path.extname(r.parts[0])).replace(/ - pt1$/, '');
+  var poster = path.join(dir, 'poster.jpg'); if (!fs.existsSync(poster)) poster = '';
+  r.conv = { running: true, pct: 0, at: Date.now() }; save();
+  note('info', 'recording: converting', { title: r.title, mb: Math.round((r.bytes || 0) / 1048576) });
+  // Is the picture HEVC?  Apple's players want it marked hvc1 in an MP4.
+  var probe = cp.spawn(bin, ['-hide_banner', '-nostdin', '-i', r.parts[0]], { stdio: ['ignore', 'ignore', 'pipe'] }), info = '';
+  var pt = setTimeout(function () { try { probe.kill(); } catch (e) {} }, 20000);
+  probe.stderr.on('data', function (d) { if (info.length < 20000) info += d; });
+  probe.on('error', function () {});
+  probe.on('close', function () { clearTimeout(pt); attempt(false, /Video: hevc/.test(info)); });
+  function attempt(mkv, hevc) {
+    if (!byId(r.id)) return;
+    var ext = mkv ? '.mkv' : '.mp4', tmp = path.join(dir, '.' + base + ext + '.part'), err = '';
+    r.conv.tmp = tmp; r.conv.as = mkv ? 'mkv' : 'mp4';
+    var fromFile = r.kind === 'mp4' ? r.parts[0] : '';
+    var p; try { p = cp.spawn('nice', ['-n', '10', bin].concat(convArgs(r, tmp, mkv, poster, hevc, fromFile)), { stdio: [fromFile ? 'ignore' : 'pipe', 'ignore', 'pipe'] }); }
+    catch (e) { return end('the converter didn\'t start: ' + e.message); }
+    conv[r.id] = p;
+    p.stderr.on('data', function (d) { if (err.length < 4000) err += d; });
+    p.on('error', function (e) { err += e.message; });
+    var total = r.bytes || 1, sent = 0;
+    if (!fromFile) {
+      var files = r.parts.slice();
+      p.stdin.on('error', function () {});
+      (function next() {
+        var f = files.shift(); if (!f) return p.stdin.end();
+        var rs = fs.createReadStream(f);
+        rs.on('data', function (c) { sent += c.length; var pc = Math.min(99, Math.floor(sent * 100 / total)); if (pc !== r.conv.pct) { r.conv.pct = pc; } });
+        rs.on('error', function () { p.stdin.end(); });
+        rs.on('end', next);
+        rs.pipe(p.stdin, { end: false });
+      })();
+    }
+    p.on('close', function (code) {
+      delete conv[r.id];
+      if (!byId(r.id) || r.conv.cancelled) { try { fs.unlinkSync(tmp); } catch (e) {} return; }
+      var size = 0; try { size = fs.statSync(tmp).size; } catch (e) {}
+      if (code !== 0 || size < 1024) {
+        try { fs.unlinkSync(tmp); } catch (e) {}
+        var why = err.trim().split('\n').pop().slice(0, 200) || 'ffmpeg stopped (' + code + ')';
+        if (!mkv) { note('info', 'recording: MP4 didn\'t take it, MKV instead', { title: r.title, e: why }); return attempt(true, hevc); }
+        return end('it couldn\'t be converted: ' + why);
+      }
+      // Someone is watching it: the swap waits until they stop (the TV's player would get the new file mid-way).
+      if (inUse(r.id)) { r.conv.pct = 99; r.conv.waiting = true; return setTimeout(function () { p.emit('close', 0); }, 5000); }
+      var final = path.join(dir, base + ext), n = 2;
+      while (fs.existsSync(final) && r.parts.indexOf(final) < 0 && n < 50) final = path.join(dir, base + ' (' + n++ + ')' + ext);
+      var olds = r.parts.slice();
+      // The new file first, then the old parts: a failure in between leaves both, never neither.
+      try { if (olds.indexOf(final) >= 0) fs.unlinkSync(final); fs.renameSync(tmp, final); } catch (e) { try { fs.unlinkSync(tmp); } catch (x) {} return end('the new file couldn\'t be put in place: ' + (e.code || e.message)); }
+      olds.forEach(function (f) { if (f !== final) { try { fs.unlinkSync(f); } catch (e) {} } });
+      r.parts = [final]; r.kind = mkv ? 'mkv' : 'mp4'; r.bytes = size;
+      r.conv = { done: r.kind, at: Date.now() };
+      // tidy's names follow the new extension.
+      r.tidied = ''; save(); tidy(r);
+      note('info', 'recording converted', { title: r.title, as: r.kind, mb: Math.round(size / 1048576) });
+    });
+  }
+  function end(why) { r.conv = { error: why, at: Date.now() }; save(); note('warn', 'recording: convert failed', { title: r.title, e: why }); }
+  return '';
 }
 
 /* ---------- the clock: scheduled ones start, recording ones end ---------- */
@@ -338,7 +536,12 @@ function serveFile(req, res, ALLOW, r, part) {
   var m = /bytes=(\d*)-(\d*)/.exec(req.headers.range || ''), s = 0, en = size - 1, code = 200;
   if (m) { s = m[1] ? +m[1] : Math.max(0, size - +m[2]); en = m[1] && m[2] ? Math.min(+m[2], size - 1) : size - 1; code = 206; }
   if (s > en || s >= size) { res.writeHead(416, { 'Content-Range': 'bytes */' + size }); return res.end(); }
-  var h = { 'Content-Type': r.kind === 'mp4' ? 'video/mp4' : 'video/mp2t', 'Accept-Ranges': 'bytes', 'Content-Length': en - s + 1 };
+  var h = { 'Content-Type': r.kind === 'mp4' ? 'video/mp4' : r.kind === 'mkv' ? 'video/x-matroska' : 'video/mp2t', 'Accept-Ranges': 'bytes', 'Content-Length': en - s + 1 };
+  // Being watched: a finished conversion waits until it isn't (convert, below), so the player never gets the new file
+  // in the middle of the old one.
+  var w = watched[r.id] = watched[r.id] || { n: 0, at: 0 }; w.n++; w.at = Date.now();
+  var left = false; function gone() { if (left) return; left = true; w.n--; w.at = Date.now(); }
+  res.on('close', gone); res.on('finish', gone);
   if (code === 206) h['Content-Range'] = 'bytes ' + s + '-' + en + '/' + size;
   for (var k in ALLOW) h[k] = ALLOW[k];
   res.writeHead(code, h);
@@ -361,8 +564,8 @@ function serveFile(req, res, ALLOW, r, part) {
 }
 /* ---------- the agent (rooted TVs) ---------- */
 /* Raised whenever record-agent.js or what it runs changes in a way an old agent would miss (2: it keeps the helper up
-   for the phone app).  The version can't tell: every alpha is 0.6.0 to the helper. */
-var AGENT_REV = 2;
+   for the phone app; 3: recordings filed for media servers, Convert to MP4).  The version can't tell: every alpha is 0.6.0 to the helper. */
+var AGENT_REV = 3;
 function agentUp(cb) {
   var r = http.get({ hostname: '127.0.0.1', port: AGENT_PORT, path: '/record/ping', headers: { 'X-TiviBro-Ctl': agentKey() } }, function (res) {
     var b = ''; res.on('data', function (d) { b += d; });
@@ -470,10 +673,16 @@ function handleHere(req, res, ALLOW) {
       return send(res, ALLOW, 200, pub(r));
     }
     // What TMDB knows about it (the app asks, with your token): poster, backdrop, plot, year, genre, rating.
-    if (p === '/record/meta') { r.meta = cleanMeta(q.meta); save(); return send(res, ALLOW, 200, pub(r)); }
+    if (p === '/record/meta') { r.meta = cleanMeta(q.meta); save(); tidy(r); return send(res, ALLOW, 200, pub(r)); }
+    if (p === '/record/convert') { var cw = convert(r); return cw ? send(res, ALLOW, 409, { error: cw }) : send(res, ALLOW, 200, pub(r)); }
     if (p === '/record/delete') {
       halt(r);
-      (r.parts || []).forEach(function (f) { try { fs.unlinkSync(f); } catch (x) {} });
+      if (conv[r.id]) { r.conv.cancelled = true; try { conv[r.id].kill('SIGKILL'); } catch (x) {} }
+      if (r.conv && r.conv.tmp) { try { fs.unlinkSync(r.conv.tmp); } catch (x) {} }
+      var droot = r.parts && r.parts[0] ? rootOf(r.parts[0]) : '', ddirs = {};
+      (r.parts || []).concat(sides(r)).forEach(function (f) { ddirs[path.dirname(f)] = 1; try { fs.unlinkSync(f); } catch (x) {} });
+      // The folder's poster.jpg goes with the last recording in it.
+      Object.keys(ddirs).forEach(function (d) { try { var l = fs.readdirSync(d); if (l.length === 1 && l[0] === 'poster.jpg') fs.unlinkSync(path.join(d, 'poster.jpg')); } catch (x) {} prune(d, droot); });
       state.recs = state.recs.filter(function (x) { return x !== r; }); save();
       return send(res, ALLOW, 200, { ok: true });
     }
@@ -481,4 +690,4 @@ function handleHere(req, res, ALLOW) {
   });
 }
 
-module.exports = { handle: handle, start: start, drives: drives, setCall: setCall, _tick: tick, _reset: function () { TS._stopAll(); Object.keys(run).forEach(function (k) { halt(byId(k) || { id: k }); }); state = null; }, _nameFor: nameFor };
+module.exports = { handle: handle, start: start, drives: drives, setCall: setCall, _tick: tick, _reset: function () { TS._stopAll(); Object.keys(run).forEach(function (k) { halt(byId(k) || { id: k }); }); state = null; }, _nameFor: nameFor, _libPlace: libPlace, _tidy: tidy, _convArgs: convArgs };

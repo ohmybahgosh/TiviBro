@@ -74,8 +74,14 @@ function call(method, url, body, headers) {
   ok('it ends at its end time, done', rec.status === 'done', JSON.stringify(rec));
   ok('the dropped connection was a gap, not the end', rec.gaps >= 1 && rec.bytes > 40 * 1024, rec.gaps + ' gaps, ' + rec.bytes + ' bytes');
   ok('split into parts at the size limit', rec.parts >= 2, rec.parts);
-  const files = fs.readdirSync(path.join(drive, 'TiviBro Recordings'));
-  ok('in "TiviBro Recordings", named for the title and time, without characters a drive refuses', files.some((f) => /^Hockey Night \d{4}-\d\d-\d\d \d\d\.\d\d\.ts$/.test(f)) && files.some((f) => / part 2\.ts$/.test(f)), files.join(' | '));
+  const showDir = path.join(drive, 'TiviBro Recordings', 'TV', 'Hockey Night');
+  const files = fs.existsSync(showDir) ? fs.readdirSync(showDir) : [];
+  ok('once done, in "TiviBro Recordings/TV/<show>", named as Plex reads them (date-based, " - pt1", " - pt2"), without characters a drive refuses',
+    files.some((f) => /^Hockey Night - \d{4}-\d\d-\d\d \d\d\.\d\d - pt1\.ts$/.test(f)) && files.some((f) => / - pt2\.ts$/.test(f)), files.join(' | '));
+  const nf = files.filter((f) => /\.nfo$/.test(f))[0];
+  const nfoTxt = nf ? fs.readFileSync(path.join(showDir, nf), 'utf8') : '';
+  ok('a .nfo beside it: episode details with the show and channel', /<episodedetails>/.test(nfoTxt) && /<showtitle>Hockey: Night\?<\/showtitle>/.test(nfoTxt) && /<studio>CBC<\/studio>/.test(nfoTxt), nfoTxt.slice(0, 300));
+  ok('nothing left in the top folder but the TV folder', fs.readdirSync(path.join(drive, 'TiviBro Recordings')).every((f) => f === 'TV'), fs.readdirSync(path.join(drive, 'TiviBro Recordings')).join(' | '));
   // The file, with Range.
   r = await call('GET', '/record/file/' + tsId, null, { range: 'bytes=0-187' });
   ok('the file is served with Range', r.code === 206 && r.body.length === 188 && /^bytes 0-187\//.test(r.hdr['Content-Range']), r.code + ' ' + r.body.length);
@@ -90,8 +96,9 @@ function call(method, url, body, headers) {
   await wait(3200);
   r = await call('GET', '/record/list');
   rec = r.j.recs.filter((x) => x.id === hlsId)[0];
-  const hf = fs.readdirSync(path.join(drive, 'TiviBro Recordings')).filter((f) => /^News /.test(f))[0];
-  const txt = hf ? fs.readFileSync(path.join(drive, 'TiviBro Recordings', hf), 'utf8') : '';
+  const newsDir = path.join(drive, 'TiviBro Recordings', 'TV', 'News');
+  const hf = (fs.existsSync(newsDir) ? fs.readdirSync(newsDir) : []).filter((f) => /^News - .*\.ts$/.test(f))[0];
+  const txt = hf ? fs.readFileSync(path.join(newsDir, hf), 'utf8') : '';
   const nums = (txt.match(/\[(\d+)\]/g) || []).map((x) => +x.slice(1, -1));
   ok('HLS: pieces in order, none twice', nums.length >= 3 && nums.every((n, i) => i === 0 || n === nums[i - 1] + 1), txt);
   ok('HLS: done, as .ts', rec.status === 'done' && rec.kind === 'ts' && /\.ts$/.test(hf), JSON.stringify(rec));
@@ -135,10 +142,8 @@ function call(method, url, body, headers) {
   await call('POST', '/record/stop', { id: mid });
 
   // Delete: the files too.
-  const before = fs.readdirSync(path.join(drive, 'TiviBro Recordings')).length;
   r = await call('POST', '/record/delete', { id: tsId });
-  const after = fs.readdirSync(path.join(drive, 'TiviBro Recordings')).length;
-  ok('delete removes it and its files', r.j.ok && after < before && !(await call('GET', '/record/list')).j.recs.some((x) => x.id === tsId), before + ' -> ' + after);
+  ok('delete removes it, its files and its now empty show folder', r.j.ok && !fs.existsSync(showDir) && fs.existsSync(newsDir) && !(await call('GET', '/record/list')).j.recs.some((x) => x.id === tsId), fs.readdirSync(path.join(drive, 'TiviBro Recordings', 'TV')).join(' | '));
 
   // Kept across a helper restart: recording ones carry on when their time isn't over.
   await wait(500);

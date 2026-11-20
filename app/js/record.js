@@ -106,6 +106,15 @@ var Record = (function () {
     }, fail(q, true));
   }
   function stop(id, q) { return api('/record/stop', { id: id }).then(list, fail(q)); }
+  /* Convert to MP4 (service/record.js): one file with TMDB's details inside, for Plex and Apple TV; MKV when MP4
+     can't hold the channel's sound or picture.  Runs on the TV in the background. */
+  function canConvert(r) { return r.status === 'done' && r.bytes > 0 && !(r.conv && (r.conv.running || r.conv.done)) && (r.kind === 'ts' || r.kind === '' || (r.kind === 'mp4' && r.parts === 1)); }
+  function convert(id, q) {
+    return api('/record/convert', { id: id }).then(function () {
+      if (!q) U.toast(T('Converting to MP4.  It carries on in the background; the recording plays as it was meanwhile.'), 5000);
+      return list();
+    }, function (e) { if (q) throw e; U.toast(T('Couldn\'t convert: {x}', { x: e && e.message || '' }), 6000); return list(); });
+  }
   function remove(id, q) { forget(id); return api('/record/delete', { id: id }).then(list, fail(q)); }
 
   // What the guide knows: is this programme being recorded or due to be?
@@ -158,6 +167,7 @@ var Record = (function () {
     if (r.bytes > 0) items.push({ label: r.status === 'recording' ? 'Watch from the start' : 'Watch', icon: 'play', action: function () { watch(r); } });
     if (r.status === 'recording') items.push({ label: 'Stop recording', icon: 'stop', action: function () { stop(r.id).then(open); } });
     if (r.status === 'scheduled') items.push({ label: 'Cancel recording', icon: 'stop', action: function () { stop(r.id).then(open); } });
+    if (canConvert(r)) items.push({ label: 'Convert to MP4', icon: 'film', sub: T('one file with its title, plot and poster, for Plex and Apple TV'), action: function () { convert(r.id).then(open); } });
     if (r.status !== 'recording') items.push({ label: 'Delete', icon: 'trash', sub: r.bytes ? sizeOf(r.bytes) + ' freed' : '', action: function () {
       UI.confirm(T('Delete "{x}"?', { x: r.title }), 'Delete', function () { remove(r.id).then(open); });
     } });
@@ -173,7 +183,7 @@ var Record = (function () {
   function chOf(r) { var all = L.data && L.data.channels || []; for (var i = 0; i < all.length; i++) if (all[i].k === r.key) return all[i]; return null; }
   // fromAt: a point in it (the live timeline going back past what's kept), else resume or from the start.
   function watch(r, fromStart, onExit, fromAt) {
-    var url = base() + '/record/file/' + r.id + '/rec.' + (r.kind === 'mp4' ? 'mp4' : 'ts');
+    var url = base() + '/record/file/' + r.id + '/rec.' + (r.kind === 'mp4' || r.kind === 'mkv' ? r.kind : 'ts');
     var p0 = posOf(r.id), at = fromAt != null ? Math.max(0, fromAt) : !fromStart && p0 && p0.t > 30 && (!r.dur || !(U.isWatchedAt || function (p, d) { return d > 0 && (p >= d * 0.9 || p > d - 60); })(p0.t, r.dur)) ? p0.t : 0;
     if (at && fromAt == null) U.toast(T('Resuming at {t}', { t: hms(at) }), 2500);
     watching = r.id;
@@ -208,6 +218,6 @@ var Record = (function () {
   // The always-on rewind buffer: the USB drive only (it writes all the time).
   function canBuffer() { return !!base() && drive; }
 
-  return { now: now, schedule: schedule, tsStart: tsStart, tsPing: tsPing, tsStop: tsStop, canPause: canPause, canBuffer: canBuffer, enrich: enrich, base: base, stop: stop, remove: remove, list: list, drives: drives, open: open, shown: shown, watch: watch, posOf: posOf, forget: forget, hms: hms, sizeOf: sizeOf, whenOf: whenOf, get space() { return space; }, menuItem: menuItem, of: of, urlFor: urlFor,
+  return { now: now, schedule: schedule, convert: convert, canConvert: canConvert, tsStart: tsStart, tsPing: tsPing, tsStop: tsStop, canPause: canPause, canBuffer: canBuffer, enrich: enrich, base: base, stop: stop, remove: remove, list: list, drives: drives, open: open, shown: shown, watch: watch, posOf: posOf, forget: forget, hms: hms, sizeOf: sizeOf, whenOf: whenOf, get space() { return space; }, menuItem: menuItem, of: of, urlFor: urlFor,
     get recs() { return last.recs; } };
 })();

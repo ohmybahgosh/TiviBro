@@ -2013,5 +2013,13 @@ I18n.add('ru', {
   "Paired": "Связан",
   "Which buttons show when you press OK in fullscreen.  Buttons only appear when they apply, e.g. Audio needs two or more tracks.": "Какие кнопки показываются при нажатии OK на весь экран.  Кнопки появляются, только когда нужны: например, «Аудио»: при двух и более дорожках.",
   "Hidden.  Restore it in Settings, Channels and groups, Hidden channels.": "Скрыто.  Вернуть: Настройки, Каналы и группы, Скрытые каналы.",
-  "Hidden.  Restore it in Settings, Channels and groups, Hidden groups.": "Скрыто.  Вернуть: Настройки, Каналы и группы, Скрытые группы."
+  "Hidden.  Restore it in Settings, Channels and groups, Hidden groups.": "Скрыто.  Вернуть: Настройки, Каналы и группы, Скрытые группы.",
+  "Convert to MP4": "Преобразовать в MP4",
+  "one file with its title, plot and poster, for Plex and Apple TV": "один файл с названием, описанием и постером, для Plex и Apple TV",
+  "Converting to MP4: {n}%": "Преобразование в MP4: {n}%",
+  "converting {n}%": "преобразование {n}%",
+  "it carries on in the background": "продолжается в фоне",
+  "Couldn't convert: {x}": "Не удалось преобразовать: {x}",
+  "On the drive: {x}": "На накопителе: {x}",
+  "Converting to MP4.  It carries on in the background; the recording plays as it was meanwhile.": "Преобразование в MP4.  Оно идёт в фоне; пока что запись воспроизводится как раньше."
 });

@@ -2010,5 +2010,13 @@ I18n.add('es', {
   "Paired": "Emparejado",
   "Which buttons show when you press OK in fullscreen.  Buttons only appear when they apply, e.g. Audio needs two or more tracks.": "Qué botones aparecen al presionar OK en pantalla completa.  Los botones solo aparecen cuando aplican, p. ej. Audio necesita dos o más pistas.",
   "Hidden.  Restore it in Settings, Channels and groups, Hidden channels.": "Oculto.  Restáuralo en Configuración, Canales y grupos, Canales ocultos.",
-  "Hidden.  Restore it in Settings, Channels and groups, Hidden groups.": "Oculto.  Restáuralo en Configuración, Canales y grupos, Grupos ocultos."
+  "Hidden.  Restore it in Settings, Channels and groups, Hidden groups.": "Oculto.  Restáuralo en Configuración, Canales y grupos, Grupos ocultos.",
+  "Convert to MP4": "Convertir a MP4",
+  "one file with its title, plot and poster, for Plex and Apple TV": "un solo archivo con su título, sinopsis y póster, para Plex y Apple TV",
+  "Converting to MP4: {n}%": "Convirtiendo a MP4: {n}%",
+  "converting {n}%": "convirtiendo {n}%",
+  "it carries on in the background": "sigue en segundo plano",
+  "Couldn't convert: {x}": "No se pudo convertir: {x}",
+  "On the drive: {x}": "En la unidad: {x}",
+  "Converting to MP4.  It carries on in the background; the recording plays as it was meanwhile.": "Convirtiendo a MP4.  Sigue en segundo plano; mientras tanto la grabación se reproduce como estaba."
 });
