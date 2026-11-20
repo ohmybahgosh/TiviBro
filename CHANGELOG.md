@@ -6,6 +6,7 @@
 - **Changing a guide setting reloads the guide once, after you move on** (discussion #36), not on every press: stepping Keep past days from 1 to 7 started six guide downloads.
 - **A menu's grey line under its title scrolls by when it's too long** (discussion #36), like a long title in the guide, instead of being cut off.
 - **The connection test and speed test pick channels you can see** (discussion #36).  They used the provider's first channel (or movie), sometimes an adult one you had hidden.  Now they pick at random from what your guide shows, never hidden, blocked or adult, and test three live channels with each one's result and the average.
+- **TiviBro opens more lightly right after an update on a 1 GB TV** (issue #137, issue #135).  The video converter used to unpack itself five seconds after the start, while the channel list and guide were loading, which was too much at once for some TVs with big playlists.  On a TV with less memory it now waits a minute and a half.
 
 ## 0.6.0 (alpha 180, 2026-11-20)
 

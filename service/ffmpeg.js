@@ -232,7 +232,10 @@ function copyFile(a, b, cb) {
 // The helper just started: unpack the bundled converter if it isn't on the TV's storage yet.
 function prepare(delayMs) {
   if (override() || !bundled()) return;
-  var t = setTimeout(function () { if (!binary() && !busy) get(function (e) { if (e) log({ lv: 'warn', event: 'converter unpack failed', e: e.message }); }); }, delayMs == null ? 5000 : delayMs);
+  /* On a TV with 1 GB (or less), not in the first minute and a half: TiviBro is opening its channel list, logos
+     and guide then, and unpacking 6 MB on top of that closed it on a 1 GB TV after an update (issue #137). */
+  if (delayMs == null) { var mem = 0; try { mem = require('os').totalmem(); } catch (e) {} delayMs = mem && mem < 1.6e9 ? 90000 : 5000; }
+  var t = setTimeout(function () { if (!binary() && !busy) get(function (e) { if (e) log({ lv: 'warn', event: 'converter unpack failed', e: e.message }); }); }, delayMs);
   if (t && t.unref) t.unref();
 }
 
