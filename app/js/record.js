@@ -9,7 +9,7 @@ var Record = (function () {
   // Minutes before and after a programme (Settings > Recording and live pause), 2 and 5 at first.
   function padB() { var v = Store.settings.recPadBefore; return (v == null ? 2 : +v) * 60000; }
   function padA() { var v = Store.settings.recPadAfter; return (v == null ? 5 : +v) * 60000; }
-  var last = { recs: [], at: 0 }, drive = false, space = null, pauseHere = false;
+  var last = { recs: [], at: 0 }, drive = false, space = null, pauseHere = false, share = null;
 
   function T(s, o) { var t = typeof I18n !== 'undefined' ? I18n.t(s) : s; return t.replace(/\{(\w+)\}/g, function (a, k) { return o && o[k] != null ? o[k] : a; }); }
   function base() { return Net.port ? 'http://127.0.0.1:' + Net.port : ''; }
@@ -32,6 +32,14 @@ var Record = (function () {
     var h = Source.streamUrl(ch, 'm3u8'), t = Source.streamUrl(ch, 'ts');
     if (h && t && h !== t) return { url: wrap(ch, h), alt: wrap(ch, t) };
     return { url: urlFor(ch), alt: '' };
+  }
+  // Settings > Recording > Record to: the network share even with a USB drive in ('share'), else the drive first.
+  function dest() { return Store.settings.recTo === 'share' ? 'share' : ''; }
+  /* The network share to record to (a WebDAV library from My media, or none): checked by writing a small file
+     there, then kept by the helper with its login (service/record.js), so scheduled recordings work without TiviBro. */
+  function setShare(src) {
+    var body = src ? { type: 'webdav', address: src.address, user: src.user || '', pass: src.pass || '', name: src.name || '', check: true } : { type: '' };
+    return api('/record/target', body).then(function () { return list(); });
   }
   function descOf(ch, p) { try { return p && typeof Epg !== 'undefined' && Epg.desc ? Epg.desc(ch, p) || '' : ''; } catch (e) { return ''; } }
   /* What TMDB knows about each recording (with your token): the guide's own match when Movies on now already found
@@ -60,7 +68,7 @@ var Record = (function () {
   function list() {
     return api('/record/list').then(function (j) {
       var was = sig(last.recs), had = shown();
-      last = { recs: j.recs || [], at: Date.now() }; space = j.drive || null; drive = !!space; pauseHere = !!j.pauseHere;
+      last = { recs: j.recs || [], at: Date.now() }; space = j.drive || null; drive = !!space; pauseHere = !!j.pauseHere; share = j.target || null;
       // The guide marks what's recording, so it's redrawn when that changes.
       if (shown() !== had && typeof Views !== 'undefined' && Views.buildTabs) Views.buildTabs();
       if (sig(last.recs) !== was && typeof Guide !== 'undefined' && Guide.vis) try { Guide.draw(); } catch (e) {}
@@ -77,9 +85,9 @@ var Record = (function () {
     });
   }
   // In the side menu once there's a drive to record to, or recordings to watch.
-  function shown() { return drive || last.recs.length > 0; }
+  function shown() { return drive || !!share || last.recs.length > 0; }
   function explain(e) {
-    if (e && e.code === 'nodrive') return 'Plug a USB drive into the TV to record to.  TiviBro keeps recordings in a "TiviBro Recordings" folder on it.';
+    if (e && e.code === 'nodrive') return 'Plug a USB drive into the TV to record to, or choose a network share in Settings > Recording and live pause.  TiviBro keeps recordings in a "TiviBro Recordings" folder.';
     return 'Recording didn\'t start: ' + (e && e.message || 'no answer from the helper');
   }
   function say(e) { U.toast(T(explain(e)), 6000); if (typeof Log !== 'undefined') Log.warn('record', explain(e)); }
@@ -90,7 +98,7 @@ var Record = (function () {
   function now(ch, p, q) {
     var end = p && p.e > Date.now() ? p.e + padA() : Date.now() + 60 * 60000;
     var u = recUrls(ch);
-    return api('/record/start', { url: u.url, alt: u.alt, key: ch.k, logo: logo(ch), desc: descOf(ch, p), ep: p && p.ep || '', title: p && p.t || L.name(ch), channel: L.name(ch), end: end }).then(function (r) {
+    return api('/record/start', { dest: dest(), url: u.url, alt: u.alt, key: ch.k, logo: logo(ch), desc: descOf(ch, p), ep: p && p.ep || '', title: p && p.t || L.name(ch), channel: L.name(ch), end: end }).then(function (r) {
       if (!q) U.toast(T('Recording "{x}" until {t}', { x: r.title, t: U.hhmm(end) }), 4000);
       var gm = guideMeta(ch, p); if (gm) api('/record/meta', { id: r.id, meta: gm }).catch(function () {});
       Log.info('record', 'Recording ' + L.name(ch) + ' until ' + U.hhmm(end) + (q ? ' (from the phone app)' : ''));
@@ -99,7 +107,7 @@ var Record = (function () {
   }
   function schedule(ch, p, q) {
     var u = recUrls(ch);
-    return api('/record/schedule', { url: u.url, alt: u.alt, key: ch.k, logo: logo(ch), desc: descOf(ch, p), ep: p.ep || '', title: p.t || L.name(ch), channel: L.name(ch), start: p.s - padB(), end: p.e + padA() }).then(function (r) {
+    return api('/record/schedule', { dest: dest(), url: u.url, alt: u.alt, key: ch.k, logo: logo(ch), desc: descOf(ch, p), ep: p.ep || '', title: p.t || L.name(ch), channel: L.name(ch), start: p.s - padB(), end: p.e + padA() }).then(function (r) {
       if (!q) U.toast(T('Will record "{x}" at {t}', { x: r.title, t: U.hhmm(p.s) }), 4000);
       var gm = guideMeta(ch, p); if (gm) api('/record/meta', { id: r.id, meta: gm }).catch(function () {});
       return list();
@@ -218,6 +226,6 @@ var Record = (function () {
   // The always-on rewind buffer: the USB drive only (it writes all the time).
   function canBuffer() { return !!base() && drive; }
 
-  return { now: now, schedule: schedule, convert: convert, canConvert: canConvert, tsStart: tsStart, tsPing: tsPing, tsStop: tsStop, canPause: canPause, canBuffer: canBuffer, enrich: enrich, base: base, stop: stop, remove: remove, list: list, drives: drives, open: open, shown: shown, watch: watch, posOf: posOf, forget: forget, hms: hms, sizeOf: sizeOf, whenOf: whenOf, get space() { return space; }, menuItem: menuItem, of: of, urlFor: urlFor,
+  return { setShare: setShare, get share() { return share; }, now: now, schedule: schedule, convert: convert, canConvert: canConvert, tsStart: tsStart, tsPing: tsPing, tsStop: tsStop, canPause: canPause, canBuffer: canBuffer, enrich: enrich, base: base, stop: stop, remove: remove, list: list, drives: drives, open: open, shown: shown, watch: watch, posOf: posOf, forget: forget, hms: hms, sizeOf: sizeOf, whenOf: whenOf, get space() { return space; }, menuItem: menuItem, of: of, urlFor: urlFor,
     get recs() { return last.recs; } };
 })();

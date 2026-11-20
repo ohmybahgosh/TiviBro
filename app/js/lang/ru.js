@@ -2021,5 +2021,14 @@ I18n.add('ru', {
   "it carries on in the background": "продолжается в фоне",
   "Couldn't convert: {x}": "Не удалось преобразовать: {x}",
   "On the drive: {x}": "На накопителе: {x}",
-  "Converting to MP4.  It carries on in the background; the recording plays as it was meanwhile.": "Преобразование в MP4.  Оно идёт в фоне; пока что запись воспроизводится как раньше."
+  "Converting to MP4.  It carries on in the background; the recording plays as it was meanwhile.": "Преобразование в MP4.  Оно идёт в фоне; пока что запись воспроизводится как раньше.",
+  "Network share": "Сетевая папка",
+  "Network share: {x}": "Сетевая папка: {x}",
+  "Record to": "Записывать в",
+  "Stop recording to a share": "Не записывать в сетевую папку",
+  "No WebDAV library yet": "Пока нет библиотеки WebDAV",
+  "Checking that TiviBro can write there…": "Проверяем, может ли TiviBro туда записывать…",
+  "Recording to {x}": "Запись в {x}",
+  "With both a USB drive and a network share, where new recordings go.": "Если есть и USB-накопитель, и сетевая папка: куда идут новые записи.",
+  "Record to a WebDAV share on your network (a NAS, Nextcloud): no USB drive or root needed.  Choose one of your My media WebDAV libraries.": "Запись в папку WebDAV в вашей сети (NAS, Nextcloud): без USB-накопителя и root.  Выберите одну из библиотек WebDAV в «Моих медиа»."
 });

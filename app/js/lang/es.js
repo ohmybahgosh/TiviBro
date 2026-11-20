@@ -2018,5 +2018,14 @@ I18n.add('es', {
   "it carries on in the background": "sigue en segundo plano",
   "Couldn't convert: {x}": "No se pudo convertir: {x}",
   "On the drive: {x}": "En la unidad: {x}",
-  "Converting to MP4.  It carries on in the background; the recording plays as it was meanwhile.": "Convirtiendo a MP4.  Sigue en segundo plano; mientras tanto la grabación se reproduce como estaba."
+  "Converting to MP4.  It carries on in the background; the recording plays as it was meanwhile.": "Convirtiendo a MP4.  Sigue en segundo plano; mientras tanto la grabación se reproduce como estaba.",
+  "Network share": "Recurso de red",
+  "Network share: {x}": "Recurso de red: {x}",
+  "Record to": "Grabar en",
+  "Stop recording to a share": "Dejar de grabar en un recurso de red",
+  "No WebDAV library yet": "Aún no hay biblioteca WebDAV",
+  "Checking that TiviBro can write there…": "Comprobando que TiviBro puede escribir ahí…",
+  "Recording to {x}": "Grabando en {x}",
+  "With both a USB drive and a network share, where new recordings go.": "Con una unidad USB y un recurso de red, dónde van las grabaciones nuevas.",
+  "Record to a WebDAV share on your network (a NAS, Nextcloud): no USB drive or root needed.  Choose one of your My media WebDAV libraries.": "Graba en un recurso WebDAV de tu red (un NAS, Nextcloud): sin unidad USB ni root.  Elige una de tus bibliotecas WebDAV de Mis medios."
 });

@@ -30,6 +30,7 @@
      /record/ts/...                           live pause (timeshift.js)
    Plain ES5 and callbacks for Node 0.12 (webOS 4). */
 'use strict';
+var Dav = require('./recdav');
 var http = require('http'), cp = require('child_process'), fs = require('fs'), path = require('path'), URL_ = require('url'), TS = require('./timeshift'), Feed = require('./feed');
 
 var ROOTS = process.env.TIVIBRO_USB_DIR ? [process.env.TIVIBRO_USB_DIR] : ['/tmp/usb'];
@@ -45,6 +46,8 @@ function agentKey() {
 }
 var FOLDER = 'TiviBro Recordings', PART_MAX = +(process.env.TIVIBRO_REC_PART_MAX || 3900 * 1024 * 1024);
 var TICK_MS = +(process.env.TIVIBRO_REC_TICK_MS || 15000), BODY_MAX = 64 * 1024;
+// On a WebDAV share a part is one upload: a new one every 10 minutes, so a dropped connection loses little.
+var DAV_PART_MS = +(process.env.TIVIBRO_REC_DAV_PART_MS || 600000);
 
 var state = null, run = {}, logf = function () {}, timer = null, listFile = '';
 
@@ -65,6 +68,7 @@ function load() {
   // Recording when the helper stopped (webOS closed it, the TV turned off): carries on if its time isn't over.
   state.recs.forEach(function (r) {
     if (r.status === 'recording') r.status = r.end > Date.now() ? 'scheduled' : 'done';
+    r.uploading = false; r.tidying = false;
     // Converting when it stopped: the half-made file goes, the recording is as it was.
     if (r.conv && r.conv.running) { try { if (r.conv.tmp) fs.unlinkSync(r.conv.tmp); } catch (e) {} r.conv = { error: 'stopped before it finished (the TV turned off?)', at: Date.now() }; }
   });
@@ -75,7 +79,8 @@ function save() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(function () {
     if (!listFile) return;
-    fs.writeFile(listFile + '.tmp', JSON.stringify(state), function (e) { if (!e) fs.rename(listFile + '.tmp', listFile, function () {}); });
+    // 0600: a share's login is in it.
+    fs.writeFile(listFile + '.tmp', JSON.stringify(state), { mode: 384 }, function (e) { if (!e) { try { fs.chmodSync(listFile + '.tmp', 384); } catch (x) {} fs.rename(listFile + '.tmp', listFile, function () {}); } });
     needed();
   }, 300);
 }
@@ -99,6 +104,14 @@ function watchAgent() {
   }, +(process.env.TIVIBRO_REC_WATCH_MS || 60000));
   if (watchT.unref) watchT.unref();
 }
+/* ---------- the WebDAV share (recdav.js) ---------- */
+// A part on the share is "dav:<path under the share's address>"; a USB part is a file path.
+function isDavPath(f) { return String(f || '').indexOf('dav:') === 0; }
+function isDav(r) { return !!(r && r.parts && r.parts.length ? isDavPath(r.parts[0]) : r && r.davAddr); }
+function relOf(f) { return String(f).slice(4); }
+function target() { var t = load().target; return t && t.type === 'webdav' && t.address ? t : null; }
+// The share a recording is on: today's login when it's the same address, else the address alone.
+function davFor(r) { var t = target(); return t && t.address === r.davAddr ? t : { type: 'webdav', address: r.davAddr }; }
 function byId(id) { var hit = null; load().recs.forEach(function (r) { if (r.id === id) hit = r; }); return hit; }
 /* How long it is to watch: the time it was recording, less the time a dropped connection took to come back. */
 function lengthOf(r) {
@@ -110,7 +123,7 @@ function lengthOf(r) {
 function pub(r) {
   return { id: r.id, title: r.title, channel: r.channel, start: r.start, end: r.end, status: r.status, bytes: r.bytes || 0, parts: (r.parts || []).length,
     kind: r.kind || '', error: r.error || '', drive: r.driveName || '', startedAt: r.startedAt || 0, gaps: r.gaps || 0, dur: lengthOf(r), endedAt: r.endedAt || 0, logo: r.logo || '', key: r.key || '', desc: r.desc || '', ep: r.ep || '', meta: r.meta || null,
-    conv: r.conv ? { running: !!r.conv.running, pct: r.conv.pct || 0, done: r.conv.done || '', error: r.conv.error || '' } : null, folder: r.parts && r.parts[0] ? path.dirname(r.parts[0]).split(FOLDER).pop().replace(/^\//, '') : '' };
+    where: isDav(r) ? 'share' : r.parts && r.parts.length ? 'usb' : '', conv: r.conv ? { running: !!r.conv.running, pct: r.conv.pct || 0, done: r.conv.done || '', error: r.conv.error || '' } : null, folder: r.parts && r.parts[0] ? path.dirname(r.parts[0]).split(FOLDER).pop().replace(/^\//, '') : '' };
 }
 /* The drive's room (df), looked at every 30 s at most: free and total MB. */
 var spaceAt = 0, spaceWas = null;
@@ -203,6 +216,7 @@ Feed.setup({ get: get, getText: getText, fetchAll: function (u, cb) { fetchAll(u
 
 /* ---------- writing ---------- */
 function openPart(r, R) {
+  if (R.dav) return openDavPart(r, R);
   if (R.out) { try { R.out.end(); } catch (e) {} }
   var n = (r.parts || []).length + 1, file = path.join(R.dir, nameFor(r, r.kind === 'mp4' ? 'mp4' : 'ts', n));
   r.parts = (r.parts || []).concat([file]);
@@ -211,7 +225,30 @@ function openPart(r, R) {
   if (R.init) { R.out.write(R.init); R.partBytes += R.init.length; }
   save();
 }
+function openDavPart(r, R) {
+  if (R.out) { var old = R.out; old.end(function (e) { if (e) note('warn', 'recording: a part on the share didn\'t finish', { title: r.title, e: e.message }); }); }
+  var n = (r.parts || []).length + 1, rel = FOLDER + '/' + nameFor(r, r.kind === 'mp4' ? 'mp4' : 'ts', n), at = r.parts.length;
+  r.parts = (r.parts || []).concat(['dav:' + rel]); r.psize = (r.psize || []).concat([0]);
+  var w = Dav.upload(R.dav, rel, function (e) {
+    // The connection to the share dropped: a gap, and the next data starts a new part.
+    if (R.out === w) R.out = null;
+    if (R.stopped) return;
+    r.gaps = (r.gaps || 0) + 1;
+    note('warn', 'recording: the share stopped taking it, a new part', { title: r.title, e: e.message, part: at + 1 });
+    // What the share kept of it (what was on its way when it dropped is lost): the size the player is told.
+    setTimeout(function () { Dav.size(R.dav, rel, function (n) { if (n >= 0 && r.psize && n < r.psize[at]) { r.bytes -= r.psize[at] - n; r.psize[at] = n; save(); } }); }, 2000);
+  });
+  R.out = w; R.partBytes = 0; R.partAt = Date.now();
+  if (R.init) { w.write(R.init); R.partBytes += R.init.length; r.psize[at] += R.init.length; }
+  save();
+}
 function write(r, R, buf) {
+  if (R.dav) {
+    if (R.stopped) return true;
+    if (!R.out || (Date.now() - R.partAt > DAV_PART_MS && R.partBytes > 0)) openPart(r, R);
+    R.partBytes += buf.length; r.bytes = (r.bytes || 0) + buf.length; r.psize[r.psize.length - 1] += buf.length;
+    return R.out.write(buf);
+  }
   if (!R.out || R.stopped) return true;
   if (R.partBytes + buf.length > PART_MAX && R.partBytes > 0) openPart(r, R);
   R.partBytes += buf.length; r.bytes = (r.bytes || 0) + buf.length; R.fails = 0;
@@ -223,8 +260,10 @@ function write(r, R, buf) {
    of the same channel), written as it comes. */
 function begin(r) {
   if (run[r.id]) return;
-  var drive = r.drive, all = drives();
+  var drive = r.drive, all = drives(), tg = target();
   if (!drive || !all.some(function (d) { return d.dir === drive; })) drive = all.length ? all[0].dir : '';
+  // To the share: when it's asked for (Settings > Recording > Record to), or when there's no USB drive.
+  if (tg && (r.dest === 'share' || !drive) && !(r.parts || []).length || r.davAddr && tg && tg.address === r.davAddr) return beginDav(r, tg);
   if (!drive) return fail(r, 'no USB drive TiviBro can write to');
   var sp = space(drive);
   if (sp.freeMB >= 0 && sp.freeMB < LOW_MB) return fail(r, 'the USB drive is full');
@@ -232,7 +271,13 @@ function begin(r) {
   var R = run[r.id] = { dir: fdir, out: null, stopped: false, init: null };
   r.driveName = path.basename(drive); r.status = 'recording'; r.startedAt = r.startedAt || Date.now();
   note('info', 'recording started', { title: r.title, drive: r.driveName });
-  R.feed = Feed.open(r.key || r.url, r.url, r.alt, {
+  R.feed = Feed.open(r.key || r.url, r.url, r.alt, feedOf(r, R));
+  if (R.feed.shared) note('info', 'recording: sharing the channel\'s connection', { title: r.title });
+  R.endT = setTimeout(function () { if (run[r.id] === R) finish(r); }, Math.max(0, r.end - Date.now()));
+  save();
+}
+function feedOf(r, R) {
+  return {
     kind: function (k) { if (!r.bytes) r.kind = k; },
     init: function (b) { R.init = b; },
     data: function (c) { if (R.stopped) return; if (!R.out) openPart(r, R); write(r, R, c); },
@@ -245,9 +290,18 @@ function begin(r) {
     up: function () { back(r, R); },
     fatal: function (why) { fail(r, why); },
     ended: function () { finish(r); }
+  };
+}
+function beginDav(r, tg) {
+  var R = run[r.id] = { dav: tg, dir: FOLDER, out: null, stopped: false, init: null };
+  r.davAddr = tg.address; r.driveName = tg.name || 'network share'; r.status = 'recording'; r.startedAt = r.startedAt || Date.now();
+  note('info', 'recording started', { title: r.title, to: 'share' });
+  Dav.mkdirs(tg, FOLDER, function (e) {
+    if (e) note('warn', 'recording: the share\'s folder', { e: e.message });
+    if (R.stopped) return;
+    R.feed = Feed.open(r.key || r.url, r.url, r.alt, feedOf(r, R));
+    R.endT = setTimeout(function () { if (run[r.id] === R) finish(r); }, Math.max(0, r.end - Date.now()));
   });
-  if (R.feed.shared) note('info', 'recording: sharing the channel\'s connection', { title: r.title });
-  R.endT = setTimeout(function () { if (run[r.id] === R) finish(r); }, Math.max(0, r.end - Date.now()));
   save();
 }
 // Connected again: the time it was down doesn't count in its length.
@@ -267,7 +321,9 @@ function halt(r) {
   var R = run[r.id]; if (!R) return;
   R.stopped = true; clearTimeout(R.endT);
   try { if (R.feed) R.feed.close(); } catch (e) {}
-  try { if (R.out) R.out.end(); } catch (e) {}
+  // On the share, the last part's upload finishes first; filing it waits for that (tidy).
+  if (R.dav && R.out) { r.uploading = true; try { R.out.end(function () { r.uploading = false; save(); tidy(r); }); } catch (e) { r.uploading = false; } }
+  else { try { if (R.out) R.out.end(); } catch (e) {} }
   delete run[r.id];
 }
 function finish(r) {
@@ -349,6 +405,7 @@ function sides(r) { return (r.side || []).slice(); }
 // Moves the parts (and anything beside them) and writes the details.  Only for a finished one, not while it converts.
 function tidy(r) {
   if (r.status !== 'done' || !(r.parts || []).length || (r.conv && r.conv.running) || process.env.TIVIBRO_REC_TIDY === '0') return;
+  if (isDav(r)) return tidyDav(r);
   var pl = libPlace(r), m = metaOf(r), key = JSON.stringify([pl.dir, pl.base, m && m.poster, m && m.plot, (r.parts || []).length]);
   if (r.tidied === key) return;
   var root = rootOf(r.parts[0]); if (!root) return;
@@ -379,6 +436,56 @@ function tidy(r) {
       if (pl.movie) { r.side.push(pf); save(); }
     });
   }
+}
+
+/* The same on the share: folders made (MKCOL), the parts moved (MOVE), the .nfo and the poster put beside them.
+   One at a time per recording; a step that fails leaves it where it is, and it's tried again next time. */
+// A folder on the share left with nothing (or only its poster.jpg) goes, and its parent the same way, up to the recordings folder.
+function davPrune(t, d) {
+  if (!d || d === FOLDER || d.indexOf(FOLDER + '/') !== 0) return;
+  Dav.names(t, d, function (l) {
+    if (!l) return;
+    var gone = function () { Dav.del(t, d, function (e) { if (!e) davPrune(t, path.dirname(d)); }); };
+    if (!l.length) return gone();
+    if (l.length === 1 && l[0] === 'poster.jpg') Dav.del(t, d + '/poster.jpg', function (e) { if (!e) gone(); });
+  });
+}
+function tidyDav(r) {
+  if (r.tidying || r.uploading) return;
+  var pl = libPlace(r), m = metaOf(r), key = JSON.stringify([pl.dir, pl.base, m && m.poster, m && m.plot, r.parts.length]);
+  if (r.tidied === key) return;
+  var t = davFor(r), dir = FOLDER + '/' + pl.dir.join('/'), many = r.parts.length > 1, ext = path.extname(relOf(r.parts[0])) || '.ts';
+  r.tidying = true;
+  var stop = function (e) { r.tidying = false; if (e) note('warn', 'recording: filing on the share', { title: r.title, e: e.message }); save(); };
+  Dav.mkdirs(t, dir, function (e) {
+    if (e) return stop(e);
+    var olds = r.parts.map(function (f) { return path.dirname(relOf(f)); }), i = 0;
+    (function each() {
+      if (i >= r.parts.length) return after();
+      var from = relOf(r.parts[i]), to = dir + '/' + pl.base + (many ? ' - pt' + (i + 1) : '') + ext, at = i++;
+      if (from === to) return each();
+      Dav.move(t, from, to, function (e2) { if (e2) return stop(e2); r.parts[at] = 'dav:' + to; each(); });
+    })();
+    function after() {
+      (r.side || []).forEach(function (f) { if (isDavPath(f)) Dav.del(t, relOf(f), function () {}); });
+      r.side = [];
+      var nf = dir + '/' + pl.base + '.nfo';
+      Dav.put(t, nf, nfo(r, pl), 'text/xml', function (e3) {
+        if (!e3) r.side.push('dav:' + nf);
+        // The folder it left (the top one, or another show's), when it's empty now: gone.
+        olds.forEach(function (d) { if (d !== dir) davPrune(t, d); });
+        r.tidied = key;
+        if (!(m && m.poster)) return stop();
+        var tmp = path.join(require('os').tmpdir(), 'tivibro-poster-' + r.id + '.jpg');
+        fetchTo(String(m.poster).replace(/\/t\/p\/w\d+\//, '/t/p/w500/'), tmp, function (e4) {
+          if (e4) { try { fs.unlinkSync(tmp); } catch (x) {} return stop(); }
+          var buf = null; try { buf = fs.readFileSync(tmp); } catch (x) {} try { fs.unlinkSync(tmp); } catch (x) {}
+          if (!buf) return stop();
+          Dav.put(t, dir + '/poster.jpg', buf, 'image/jpeg', function (e5) { if (!e5 && pl.movie) r.side.push('dav:' + dir + '/poster.jpg'); stop(); });
+        });
+      });
+    }
+  });
 }
 
 /* ---------- Convert to MP4 (or MKV) ---------- */
@@ -427,6 +534,7 @@ function canCover(bin) {
 function coverArgs(src, poster, out) { return ['-hide_banner', '-nostdin', '-loglevel', 'error', '-i', src, '-t', '0.1', '-map', '0:a:0', '-c', 'copy', '-attach', poster, '-metadata:s:t', 'mimetype=image/jpeg', '-metadata:s:t', 'filename=cover.jpg', '-f', 'matroska', '-y', out]; }
 function convert(r) {
   if (r.status !== 'done' || !(r.parts || []).length) return 'only a finished recording';
+  if (isDav(r)) return 'a recording on a network share can\'t be converted on the TV (it would have to come down and go back up)';
   if (r.conv && r.conv.running) return '';
   if (r.kind === 'mkv' || (r.kind === 'mp4' && r.conv && r.conv.done)) return 'it\'s converted already';
   if (r.kind === 'mp4' && r.parts.length > 1) return 'a recording in parts from an MP4 channel can\'t be joined';
@@ -554,7 +662,7 @@ function newId() { return 'r' + Date.now().toString(36) + Math.random().toString
 function okUrl(u) { return /^http:\/\/127\.0\.0\.1:\d+\//.test(String(u || '')); }     // the relay only: no recording of arbitrary addresses
 function add(q, scheduled) {
   var now = Date.now(), r = { id: newId(), url: String(q.url), alt: okUrl(q.alt) && q.alt !== q.url ? String(q.alt) : '', key: String(q.key || '').slice(0, 200), desc: String(q.desc || '').slice(0, 1500), ep: String(q.ep || '').slice(0, 40), logo: String(q.logo || '').slice(0, 500), title: String(q.title || q.channel || 'Recording').slice(0, 200), channel: String(q.channel || '').slice(0, 200),
-    start: scheduled ? +q.start : now, end: +q.end, status: 'scheduled', drive: q.drive ? String(q.drive) : '', bytes: 0, parts: [] };
+    start: scheduled ? +q.start : now, end: +q.end, status: 'scheduled', drive: q.drive ? String(q.drive) : '', dest: q.dest === 'share' ? 'share' : '', bytes: 0, parts: [] };
   load().recs.push(r); save();
   if (!scheduled || r.start <= now) begin(r);
   return r;
@@ -565,9 +673,13 @@ function serveFile(req, res, ALLOW, r, part) {
   var files = part != null && !isNaN(part) ? [(r.parts || [])[part]].filter(Boolean) : (r.parts || []).slice();
   if (!files.length) return send(res, ALLOW, 404, { error: 'no such part' });
   var sizes = [], size = 0;
+  var onShare = isDavPath(files[0]), base0 = part != null && !isNaN(part) ? +part : 0;
   for (var i = 0; i < files.length; i++) {
+    // On the share: the sizes counted while it was sent (the part being sent now is still growing).
+    if (onShare) { var ps = +(r.psize || [])[base0 + i] || 0; sizes.push(ps); size += ps; continue; }
     try { var sz = fs.statSync(files[i]).size; sizes.push(sz); size += sz; } catch (e) { return send(res, ALLOW, 404, { error: 'a file is gone (the drive unplugged?)' }); }
   }
+  if (!size) return send(res, ALLOW, 404, { error: 'nothing recorded yet' });
   var m = /bytes=(\d*)-(\d*)/.exec(req.headers.range || ''), s = 0, en = size - 1, code = 200;
   if (m) { s = m[1] ? +m[1] : Math.max(0, size - +m[2]); en = m[1] && m[2] ? Math.min(+m[2], size - 1) : size - 1; code = 206; }
   if (s > en || s >= size) { res.writeHead(416, { 'Content-Range': 'bytes */' + size }); return res.end(); }
@@ -591,6 +703,16 @@ function serveFile(req, res, ALLOW, r, part) {
   (function next() {
     var jb = jobs.shift();
     if (!jb) return res.end();
+    if (isDavPath(jb.f)) {
+      var gr = Dav.get(davFor(r), relOf(jb.f), jb.start, jb.end, function (e, sr) {
+        if (e || !sr || sr.statusCode >= 300) { if (sr) sr.resume(); return res.end(); }
+        sr.on('error', function () { res.end(); });
+        sr.on('end', next);
+        sr.pipe(res, { end: false });
+      });
+      res.on('close', function () { try { gr.abort(); } catch (e) {} });
+      return;
+    }
     var rs = fs.createReadStream(jb.f, { start: jb.start, end: jb.end });
     rs.on('error', function () { res.end(); });
     rs.on('end', next);
@@ -599,8 +721,8 @@ function serveFile(req, res, ALLOW, r, part) {
 }
 /* ---------- the agent (rooted TVs) ---------- */
 /* Raised whenever record-agent.js or what it runs changes in a way an old agent would miss (2: it keeps the helper up
-   for the phone app; 3: recordings filed for media servers, Convert to MP4).  The version can't tell: every alpha is 0.6.0 to the helper. */
-var AGENT_REV = 3;
+   for the phone app; 3: recordings filed for media servers, Convert to MP4; 4: recording to a WebDAV share).  The version can't tell: every alpha is 0.6.0 to the helper. */
+var AGENT_REV = 4;
 function agentUp(cb) {
   var r = http.get({ hostname: '127.0.0.1', port: AGENT_PORT, path: '/record/ping', headers: { 'X-TiviBro-Ctl': agentKey() } }, function (res) {
     var b = ''; res.on('data', function (d) { b += d; });
@@ -671,7 +793,8 @@ function handleHere(req, res, ALLOW) {
   if (req.method === 'GET' && p === '/record/list') {
     tick();
     var dl = drives(), sp0 = dl.length ? space(dl[0].dir) : null;
-    return send(res, ALLOW, 200, { recs: load().recs.map(pub), drive: sp0 ? { name: dl[0].name, freeMB: sp0.freeMB, totalMB: sp0.totalMB, low: sp0.freeMB >= 0 && sp0.freeMB < LOW_MB } : null,
+    var tg0 = target();
+    return send(res, ALLOW, 200, { target: tg0 ? { type: tg0.type, name: tg0.name || '', host: (Dav.base(tg0) || { u: {} }).u.hostname || '' } : null, recs: load().recs.map(pub), drive: sp0 ? { name: dl[0].name, freeMB: sp0.freeMB, totalMB: sp0.totalMB, low: sp0.freeMB >= 0 && sp0.freeMB < LOW_MB } : null,
       pauseHere: !dl.length && !!tvRoom() });
   }
   var fm = /^\/record\/file\/([A-Za-z0-9]+)(?:\/[^\/]*)?$/.exec(p);       // "/rec.ts" after the id tells the player what it is
@@ -693,11 +816,21 @@ function handleHere(req, res, ALLOW) {
       var tr = TS.post(p, q);
       return tr ? send(res, ALLOW, tr.gone ? 404 : 200, tr) : send(res, ALLOW, 404, { error: 'no such route' });
     }
+    /* Where to record without a USB drive (Settings > Recording > Record to): a WebDAV share, its login kept here
+       (the list file is 0600).  { type: 'webdav', address, user, pass, name, check } or { type: '' } to stop. */
+    if (p === '/record/target') {
+      if (!q.type) { load().target = null; save(); return send(res, ALLOW, 200, { ok: true, target: null }); }
+      if (q.type !== 'webdav' || !Dav.base(q)) return send(res, ALLOW, 400, { error: 'Enter the share\'s WebDAV address (http:// or https://).' });
+      var tg = { type: 'webdav', address: String(q.address).slice(0, 500), user: String(q.user || '').slice(0, 200), pass: String(q.pass || '').slice(0, 200), name: String(q.name || '').slice(0, 80) };
+      var keep = function () { load().target = tg; save(); send(res, ALLOW, 200, { ok: true, target: { type: tg.type, name: tg.name } }); };
+      if (!q.check) return keep();
+      return Dav.check(tg, FOLDER, function (e) { if (e) return send(res, ALLOW, 502, { error: 'Couldn\'t write to the share: ' + e.message }); note('info', 'recording: network share set', { name: tg.name }); keep(); });
+    }
     if (p === '/record/start' || p === '/record/schedule') {
       if (!okUrl(q.url)) return send(res, ALLOW, 400, { error: 'not a relayed address' });
       if (!(+q.end > Date.now())) return send(res, ALLOW, 400, { error: 'it ends in the past' });
       if (p === '/record/schedule' && !(+q.start > 0)) return send(res, ALLOW, 400, { error: 'no start time' });
-      if (!drives().length) return send(res, ALLOW, 409, { error: 'Plug in a USB drive to record to.', code: 'nodrive' });
+      if (!drives().length && !target()) return send(res, ALLOW, 409, { error: 'Plug in a USB drive, or choose a network share in Settings > Recording, to record to.', code: 'nodrive' });
       return send(res, ALLOW, 200, pub(add(q, p === '/record/schedule')));
     }
     var r = byId(String(q.id || ''));
@@ -710,6 +843,15 @@ function handleHere(req, res, ALLOW) {
     // What TMDB knows about it (the app asks, with your token): poster, backdrop, plot, year, genre, rating.
     if (p === '/record/meta') { r.meta = cleanMeta(q.meta); save(); tidy(r); return send(res, ALLOW, 200, pub(r)); }
     if (p === '/record/convert') { var cw = convert(r); return cw ? send(res, ALLOW, 409, { error: cw }) : send(res, ALLOW, 200, pub(r)); }
+    if (p === '/record/delete' && isDav(r)) {
+      halt(r);
+      var dt = davFor(r), ddir = {};
+      (r.parts || []).concat(sides(r)).forEach(function (f) { if (!isDavPath(f)) return; ddir[path.dirname(relOf(f))] = 1; Dav.del(dt, relOf(f), function () {}); });
+      // The folder goes too when nothing else is in it (a show's poster.jpg alone counts as nothing).
+      setTimeout(function () { Object.keys(ddir).forEach(function (d) { davPrune(dt, d); }); }, 1500);
+      state.recs = state.recs.filter(function (x) { return x !== r; }); save();
+      return send(res, ALLOW, 200, { ok: true });
+    }
     if (p === '/record/delete') {
       halt(r);
       if (conv[r.id]) { r.conv.cancelled = true; try { conv[r.id].kill('SIGKILL'); } catch (x) {} }

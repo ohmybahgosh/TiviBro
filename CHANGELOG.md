@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Record to a network share, on any TV** (discussion #130).  TVs that aren't rooted can't reach a USB drive, so now they can record to a WebDAV share instead: Synology, QNAP, TrueNAS, Unraid and Nextcloud all offer one.  Add it as a library in My media, then choose it in Settings > Recording and live pause > Network share; TiviBro checks it can write there first.  Recordings go up as they're recorded, in 10-minute parts (a dropped connection costs seconds, not the recording), are filed in TV and Movies folders with their details like on a USB drive, and play back from the share.  With both a USB drive and a share, Record to picks which.  Plain Windows (SMB) shares aren't possible: webOS won't let an app mount them.
+
 ## 0.6.0 (alpha 185, 2026-11-20)
 
 Pre-release: expect rough edges, and keep a backup before installing.

@@ -1775,8 +1775,21 @@ var Settings = (function () {
     var s = S(), out = [], R = typeof Record !== 'undefined' ? Record : null, sp = R && R.space;
     var gb = function (mb) { return mb >= 1024 ? (mb / 1024).toFixed(1) + ' GB' : Math.max(0, mb) + ' MB'; };
     out.push(info('Where', ''));
-    out[out.length - 1].value = function () { var x = R && R.space; return x ? T('USB drive, {x} free of {y}', { x: gb(x.freeMB), y: gb(x.totalMB) }) : R && R.canPause() ? T('No USB drive: pause uses the TV\'s own storage (10 minutes)') : T('No USB drive'); };
-    if (!sp) out.push(info('Recording needs a USB drive and a rooted TV.  webOS keeps USB drives from apps installed in developer mode; on a rooted TV (the Homebrew Channel) TiviBro\'s helper reaches them.  Without one, live pause still works for up to 10 minutes in the TV\'s own storage.', ''));
+    out[out.length - 1].value = function () { var x = R && R.space, sh = R && R.share; return x ? T('USB drive, {x} free of {y}', { x: gb(x.freeMB), y: gb(x.totalMB) }) + (sh ? '  ·  ' + T('Network share: {x}', { x: sh.name || sh.host }) : '') : sh ? T('Network share: {x}', { x: sh.name || sh.host }) : R && R.canPause() ? T('No USB drive: pause uses the TV\'s own storage (10 minutes)') : T('No USB drive'); };
+    if (!sp && !(R && R.share)) out.push(info('Record to a USB drive on a rooted TV, or to a network share on any TV.  webOS keeps USB drives from apps installed in developer mode; on a rooted TV (the Homebrew Channel) TiviBro\'s helper reaches them.  A network share (WebDAV, which Synology, QNAP, TrueNAS, Unraid and Nextcloud offer) works without root: add it as a library in My media, then choose it below.  Live pause works without either, for up to 10 minutes in the TV\'s own storage.', ''));
+    // A network share: a WebDAV library from My media (its address and login).
+    if (R) out.push(action('Network share', 'Record to a WebDAV share on your network (a NAS, Nextcloud): no USB drive or root needed.  Choose one of your My media WebDAV libraries.', function () {
+      var libs = typeof MediaStore !== 'undefined' ? MediaStore.sources().filter(function (x) { return x.type === 'webdav'; }) : [];
+      var items = libs.map(function (x) { return { label: x.name || x.address, sub: x.address, action: function () {
+        U.toast(T('Checking that TiviBro can write there…'), 3000);
+        R.setShare(MediaStore.source(x.id)).then(function () { U.toast(T('Recording to {x}', { x: x.name || x.address }), 4000); build(); }, function (e) { U.toast(e && e.message || 'No answer from the helper', 7000); });
+      } }; });
+      if (!libs.length) items.push({ label: 'No WebDAV library yet', sub: 'Settings > My media > Add a library > WebDAV, then come back here.' });
+      if (R.share) items.push({ label: 'Stop recording to a share', icon: 'stop', action: function () { R.setShare(null).then(build, function () {}); } });
+      UI.menu('Network share', items);
+    }, function () { var sh = R.share; return sh ? (sh.name || sh.host) + ' ›' : T('None') + ' ›'; }));
+    if (R && R.share && sp) out.push(choice('Record to', 'With both a USB drive and a network share, where new recordings go.', ['', 'share'], ['USB drive', 'Network share'],
+      function () { return s.recTo === 'share' ? 'share' : ''; }, function (v) { s.recTo = v; save(); }));
     if (R) out.push(action('Open Recordings', 'Watch, stop, cancel or delete recordings.', function () { Views.switchTab('recordings'); }, function () { var n = R.recs.length; return n ? n + ' ›' : '›'; }));
     out.push(head('Recording'));
     out.push(choice('Start early', 'Minutes before a scheduled programme\'s start, in case it starts early or the guide is off.', [0, 1, 2, 5, 10], ['On time', '1 min', '2 min', '5 min', '10 min'],

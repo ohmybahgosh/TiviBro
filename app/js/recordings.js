@@ -79,6 +79,8 @@ var Recordings = (function () {
   function drive() {
     var el = $('rcDrive'), sp = Record.space;
     el.innerHTML = '';
+    var sh = Record.share;
+    if (!sp && sh) { el.appendChild(U.el('span', 'rc-dname', T('Network share: {x}', { x: sh.name || sh.host || 'WebDAV' }))); return; }
     if (!sp) { el.appendChild(U.el('span', 'rc-nodrive', loaded ? T('No USB drive') : '')); return; }
     var gb = function (mb) { return mb >= 1024 ? (mb / 1024).toFixed(1) + ' GB' : Math.max(0, mb) + ' MB'; };
     el.appendChild(U.el('span', 'rc-dname', T('USB drive')));
