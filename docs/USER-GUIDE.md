@@ -286,6 +286,22 @@ It tries hard never to just stop:
 - **DTS, Dolby TrueHD and FLAC surround:** some sound the TV can't play at all.  TiviBro converts it for you, see [Sound the TV can't play](#sound-the-tv-cant-play).
 - **Settings > System > What this TV can play** lists every format and which player handles it on your TV.
 
+### Multiview: up to four channels at once
+
+Watch two to four channels side by side, for a Sunday of games or the news while a game plays.  In fullscreen, open the quick menu and choose **Multiview**, or hold OK on a channel and choose **Watch in Multiview**.
+
+- The box with the sound icon is the channel you hear.  It plays as normal video, as smooth as fullscreen.
+- The other boxes are live pictures without sound, about 15 to 25 a second, made by the network helper on the TV.
+- **Arrows** move between boxes.  **OK** on another box gives it the sound (and makes it the smooth one).  OK on an empty box picks a channel for it.
+- **Red** changes the box's channel, **Yellow** takes it out, and **Green** goes from two boxes to four.
+- **Back**, or OK on the box with sound, goes fullscreen on that channel.
+
+Good to know:
+
+- Each box uses one of your provider's connections, as watching a channel does.  A login that allows one connection can't show a second channel.  Settings > Playlists and accounts shows how many yours allows.
+- webOS lets an app play one video at a time, so only the box with sound is real video.  The pictures are made on the TV's processor, so four boxes keep a TV busy.  Two boxes look best.
+- It needs the network helper and the converter TiviBro uses for sound the TV can't play (it comes with TiviBro).  It works on any webOS TV, rooted or not.
+
 ### DASH channels and protected channels
 
 Some M3U playlists, the ones made for Kodi or TiviMate, have MPEG-DASH channels: an address ending in `.mpd`, or `#KODIPROP` lines saying `manifest_type=mpd`.  TiviBro plays them with its DASH player, which it loads the first time such a channel plays, and falls back to the TV player.

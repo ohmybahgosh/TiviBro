@@ -76,7 +76,7 @@ var Multiview = (function () {
     if (b.c && i !== main && !b.img) {
       var img = new Image(); img.className = 'mv-pic';
       img.onerror = function () { if (b.img === img) { b.el.classList.add('failed'); b.label.textContent = name + '   ' + T('no picture'); } };
-      img.src = tileUrl(b.c, 640);
+      img.src = tileUrl(b.c, filled() <= 2 ? 640 : 480);
       b.el.insertBefore(img, b.label); b.img = img;
     }
   }

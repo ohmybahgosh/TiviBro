@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Multiview: up to four channels on screen at once**, a first for a webOS IPTV app.  Quick menu > Multiview in fullscreen, or hold OK > Watch in Multiview.  The box with sound plays as normal video; the others are live pictures (about 15 to 25 a second) the network helper makes on the TV, since webOS gives an app one video at a time.  OK on a box gives it the sound.  Each box uses a provider connection.
 - **A Stalker portal's subscription end shows with the playlist** (discussion #134), like an Xtream login's: in Settings, Playlists and accounts, from what the portal says (its billing date, or the date many portals put in the account's "phone" line).
 - **A playlist's page says how many movies and shows it has**, once they've loaded (discussion #134).
 
