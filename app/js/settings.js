@@ -645,12 +645,20 @@ var Settings = (function () {
       out.push(info('Last reloaded', when(L.data.at)));
       if (L.data.exp) out.push(info('Subscription expires', new Date(L.data.exp).toLocaleDateString() + (Store.expiry(p) ? '  (' + Store.expiry(p).replace(/^Expire[sd] /, '') + ')' : '')));
       if (L.data.maxConn) out.push(info('Connections allowed', String(L.data.maxConn)));
+      vodCount(p);
     } else if (part) {
       if (App.reloading) out.push(action('Stop reloading', 'The channels from the last load stay.', function () { App.stopReload(); }));
       else out.push(action('Reload channels now', 'Your hidden items and renames are kept.', heavy(function () { App.refresh(true, p.id); })));
       out.push(info('Last reloaded', when(part.at)));
       if (part.exp) out.push(info('Subscription expires', new Date(part.exp).toLocaleDateString() + (Store.expiry(p) ? '  (' + Store.expiry(p).replace(/^Expire[sd] /, '') + ')' : '')));
       if (part.maxConn) out.push(info('Connections allowed', String(part.maxConn)));
+      vodCount(p);
+    }
+    // Its movies and shows, once they've loaded (discussion #134).
+    function vodCount(p) {
+      var n = typeof Vod !== 'undefined' && Vod.countsFor ? Vod.countsFor(p.id) : null, fmt = function (x) { return Number(x).toLocaleString(); };
+      if (!n || (n.movie == null && n.series == null)) return;
+      out.push(info('Movies and shows', [n.movie != null ? I18n.t('{x} movies', { x: fmt(n.movie) }) : '', n.series != null ? I18n.t('{x} shows', { x: fmt(n.series) }) : ''].filter(Boolean).join('   ')));
     }
     // Another playlist that is on: where its channels show up besides its own groups (mixRows).
     if (!active && !p.off && mixable().some(function (x) { return x.id === p.id; })) {

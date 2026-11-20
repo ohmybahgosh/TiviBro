@@ -711,6 +711,8 @@ I18n.add('pt-BR', {
   "Closed captions on.  This channel plays with the TV player, which can't show them.  Other channels will.": "Legendas ocultas ativadas.  Este canal usa o player da TV, que não consegue mostrá-las.  Outros canais sim.",
   "Coloured cell, shade and bar": "Célula colorida, sombra e barra",
   "Comma separated, like PPV, 24/7, Radio, Adult.": "Separadas por vírgulas, como PPV, 24/7, Radio, Adult.",
+  "{x} movies": "{x} filmes",
+  "{x} shows": "{x} séries",
   "Connections allowed": "Conexões permitidas",
   "Convert audio the TV can't play": "Converter áudio que a TV não reproduz",
   "Could not load": "Não foi possível carregar",

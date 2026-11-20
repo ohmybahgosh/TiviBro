@@ -438,6 +438,16 @@ var Vod = (function () {
      title (30,000 movies and 11,000 shows closed a 1 GB TV).  Lists already loaded are searched here. */
   // How many titles each list has (Memwatch: lists big for the TV's memory), whether loaded here or only searched.
   var sizes = {};
+  /* How many movies and shows a playlist has, as far as TiviBro knows (discussion #134): the list it has, or what
+     the helper said when it searched it.  null for a kind not loaded yet. */
+  function countsFor(pid) {
+    var out = {};
+    ['movie', 'series'].forEach(function (k) {
+      var d = sets[k] && sets[k][pid];
+      out[k] = d ? (+d.total || d.items.length) : (sizes[k + ':' + pid] != null ? sizes[k + ':' + pid] : null);
+    });
+    return out;
+  }
   function titleCount() {
     var n = 0;
     ['movie', 'series'].forEach(function (k) { if (data[k]) n += data[k].items.length; else Object.keys(sizes).forEach(function (x) { if (x.indexOf(k + ':') === 0) n += sizes[x]; }); });
@@ -1240,5 +1250,5 @@ var Vod = (function () {
   function arrange(k) { U.toast('Loading ' + (k === 'series' ? 'shows' : 'movies') + '…'); load(k).then(function () { kind = k; VodHome.arrange(k, homeApi); }, function (e) { U.toast('Could not load the list: ' + (e && e.message || e), 5000); }); }
   // Settings > Movies and shows > Order categories changed: the list again, on the same category.
   function recats() { if (!catsVL || !data[kind]) return; var c = catsVL.current(), cl = catList(); catsVL.setItems(cl, Math.max(0, cl.findIndex(function (x) { return c && x.id === c.id; }))); }
-  return { arrange: arrange, recats: recats, homeApi: function () { return homeApi; }, _test: { homeApi: function () { return homeApi; }, catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, lean: lean, findRemote: findRemote, titleCount: titleCount, get searchState() { return searchState(); }, offered: offered, reset: function (fresh) { if (fresh) freshAt = Date.now(); gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; seriesAsk++; spClose(); } };
+  return { arrange: arrange, recats: recats, homeApi: function () { return homeApi; }, _test: { homeApi: function () { return homeApi; }, catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, lean: lean, findRemote: findRemote, titleCount: titleCount, countsFor: countsFor, get searchState() { return searchState(); }, offered: offered, reset: function (fresh) { if (fresh) freshAt = Date.now(); gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; seriesAsk++; spClose(); } };
 })();

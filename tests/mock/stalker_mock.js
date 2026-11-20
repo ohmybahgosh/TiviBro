@@ -44,6 +44,7 @@ function create(o) {
     if (q.action === 'handshake') { seen.handshakes = (seen.handshakes || 0) + 1; if (o.oneToken) TOKEN = 'TOK' + (++n); return js(res, { token: TOKEN, random: 'x' }); }
     if (req.headers.authorization !== 'Bearer ' + TOKEN) { seen.refused++; res.writeHead(200, { 'Content-Type': 'text/html' }); return res.end('Authorization failed.'); }
     if (q.action === 'get_profile') { seen.profile = true; return js(res, { id: 1, status: 0, name: 'box' }); }
+    if (q.type === 'account_info' && q.action === 'get_main_info') return js(res, { mac: q.mac || '', phone: 'November 30, 2026, 11:59 pm' });
     if (q.action === 'get_genres') return js(res, [{ id: '*', title: 'All' }, { id: '1', title: 'News' }, { id: '2', title: 'Sports' }]);
     if (q.action === 'get_all_channels') return js(res, { total_items: chans.length, data: chans });
     if (q.type === 'vod' && q.action === 'get_categories') return js(res, [{ id: '*', title: 'All' }, { id: '10', title: 'Films' }, { id: '11', title: 'More films' }]);

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **A Stalker portal's subscription end shows with the playlist** (discussion #134), like an Xtream login's: in Settings, Playlists and accounts, from what the portal says (its billing date, or the date many portals put in the account's "phone" line).
+- **A playlist's page says how many movies and shows it has**, once they've loaded (discussion #134).
+
 ## 0.6.0 (alpha 179, 2026-11-20)
 
 Pre-release: expect rough edges, and keep a backup before installing.

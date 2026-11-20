@@ -36,6 +36,9 @@ const req = (method, u, body, headers) => new Promise((res, rej) => {
   const d = JSON.parse(a.body || '{}');
   ok('the portal\'s channels, in its genres', a.status === 200 && d.channels.length === 3 && d.groups.map((g) => g.name).join(',') === 'News,Sports', a.body);
   ok('each channel keeps the box command and the portal\'s id', d.channels[0].url === 'stalker:ffmpeg http://localhost/ch/101' && d.channels[0].sid === '101' && d.channels[0].epg === 'news.portal' && d.channels[0].num === 1);
+  ok('the subscription\'s end, from the portal\'s account info (discussion #134)', d.exp === Date.UTC(2026, 10, 30), d.exp);
+  const D = require('../../service/stalker.js')._dateOf;
+  ok('dates as portals write them', D('2026-12-01 00:00:00') === Date.UTC(2026, 11, 1) && D('30.11.2026') === Date.UTC(2026, 10, 30) && D('1 Dec 2026') === Date.UTC(2026, 11, 1) && !D('0000-00-00 00:00:00') && !D('Unlimited') && !D('+44 123 456'));
   ok('it logged in as a MAG box: handshake, then get_profile', m.seen.actions[0] === 'handshake' && m.seen.profile && /MAG200/.test(m.seen.ua) && /MAG250/.test(m.seen.xua), JSON.stringify(m.seen));
 
   a = await req('GET', H + '/stalker/play/101.ts?stb=' + login + '&cmd=' + encodeURIComponent('ffmpeg http://localhost/ch/101'));

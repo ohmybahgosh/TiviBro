@@ -324,6 +324,8 @@ I18n.add('es', {
   "Closed captions on.  This channel plays with the TV player, which can't show them.  Other channels will.": "Subtítulos ocultos activados.  Este canal usa el reproductor de la TV, que no puede mostrarlos.  Otros canales sí.",
   "Coloured cell, shade and bar": "Celda de color, sombra y barra",
   "Comma separated, like PPV, 24/7, Radio, Adult.": "Separadas por comas, como PPV, 24/7, Radio, Adult.",
+  "{x} movies": "{x} películas",
+  "{x} shows": "{x} series",
   "Connections allowed": "Conexiones permitidas",
   "Convert audio the TV can't play": "Convertir audio que la TV no reproduce",
   "Could not load": "No se pudo cargar",

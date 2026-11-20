@@ -281,7 +281,8 @@ var Source = (function () {
       if (j._status !== 200 || !Array.isArray(j.channels)) throw Object.assign(new Error(j.error ? 'The portal: ' + j.error : U.httpSays(j._status)), { kind: 'http' });
       Log.info('stalker', 'The helper loaded ' + j.channels.length + ' channels in ' + j.groups.length + ' groups in ' + (Date.now() - t0) + 'ms');
       if (!j.channels.length) throw Object.assign(new Error('The portal answered but has no channels for this MAC address.'), { kind: 'parse' });
-      return { groups: j.groups, channels: j.channels, epgUrl: '', _live: '' };
+      if (j.exp) Log.info('stalker', 'Subscription ends ' + new Date(j.exp).toISOString().slice(0, 10));
+      return { groups: j.groups, channels: j.channels, epgUrl: '', _live: '', exp: +j.exp || 0 };
     });
   }
 

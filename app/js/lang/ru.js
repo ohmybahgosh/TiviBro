@@ -330,6 +330,8 @@ I18n.add('ru', {
   "Closed captions on.  This channel plays with the TV player, which can't show them.  Other channels will.": "Субтитры включены.  Этот канал идёт через плеер ТВ, который их не показывает.  На других каналах они будут.",
   "Coloured cell, shade and bar": "Цветная ячейка, тень и полоса",
   "Comma separated, like PPV, 24/7, Radio, Adult.": "Через запятую, например PPV, 24/7, Radio, Adult.",
+  "{x} movies": "Фильмов: {x}",
+  "{x} shows": "Сериалов: {x}",
   "Connections allowed": "Разрешённые подключения",
   "Convert audio the TV can't play": "Конвертировать звук, который ТВ не воспроизводит",
   "Could not load": "Не удалось загрузить",
