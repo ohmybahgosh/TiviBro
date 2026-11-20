@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Convert to MP4 puts the poster inside as cover art**, for Apple TV apps, once TiviBro's video converter can read JPEG pictures (the next converter build; until then the poster stays beside the file as poster.jpg, which Plex and Infuse use).  Checked on an LG C2: a recording converted to MKV keeps its poster inside as before.
 - **Convert to MP4 from the phone app** too (Recordings: tap one), with how far it is and where the recording is on the drive.
 - **A Dolby TrueHD Atmos movie plays its Dolby Digital Plus Atmos track** when it has one in your language, so a soundbar or receiver still gets Atmos.  No LG TV plays TrueHD, and converting it can't keep Atmos (only Dolby's own encoder can make it), so that track wins over converting.  Between otherwise alike tracks, Atmos comes first, then Dolby Digital Plus over Dolby Digital, then more channels.
 

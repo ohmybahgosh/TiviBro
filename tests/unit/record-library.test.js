@@ -35,7 +35,7 @@ ok('a show with the guide\'s episode: TV/<show>, "<show> - s01e02"', JSON.string
 ok('no episode number: Plex\'s date-based name', lp({ title: 'NHL: Wings at Leafs', startedAt: d0 }).base === 'NHL Wings at Leafs - 2026-11-20 21.05');
 ok('TMDB says movie: Movies/<title (year)>', JSON.stringify(lp({ title: 'Heat', startedAt: d0, meta: { title: 'Heat', year: '1995' } })) === JSON.stringify({ dir: ['Movies', 'Heat (1995)'], base: 'Heat (1995)', movie: true }));
 ok('TMDB says show: stays a show', !lp({ title: 'Bluey', startedAt: d0, meta: { title: 'Bluey', kind: 'show' } }).movie);
-ok('MKV gets the poster inside, MP4 is marked hvc1 for HEVC', R._convArgs({ title: 'X', channel: 'C' }, 'o', true, '/p.jpg').join(' ').indexOf('-attach /p.jpg') > 0 && R._convArgs({ title: 'X', channel: 'C' }, 'o', false, '', true).join(' ').indexOf('-tag:v hvc1') > 0);
+ok('MKV gets the poster inside, MP4 is marked hvc1 for HEVC', R._convArgs({ title: 'X', channel: 'C' }, 'o', true, '/p.jpg').join(' ').indexOf('-attach /p.jpg') > 0 && R._convArgs({ title: 'X', channel: 'C' }, 'o', false, '', true).join(' ').indexOf('-tag:v:0 hvc1') > 0);
 
 (async () => {
   if (!ff) { console.log('SKIP no ffmpeg: converting not tested'); return done(); }
@@ -67,6 +67,8 @@ ok('MKV gets the poster inside, MP4 is marked hvc1 for HEVC', R._convArgs({ titl
   r = await call('GET', '/record/file/' + id, null, { range: 'bytes=0-187' });
   ok('still plays after the move', r.code === 206 && r.body[0] === 0x47, r.code);
 
+  // A poster in its folder (as tidy saves TMDB's): it becomes the MP4's cover.
+  cp.execFileSync(ff, ['-hide_banner', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=red:s=200x300', '-frames:v', '1', '-y', path.join(mdir, 'poster.jpg')]);
   // Watched while it converts: the new file waits until the player has stopped asking.
   const watching = setInterval(() => call('GET', '/record/file/' + id, null, { range: 'bytes=0-187' }), 300);
   r = await call('POST', '/record/convert', { id });
@@ -80,9 +82,10 @@ ok('MKV gets the poster inside, MP4 is marked hvc1 for HEVC', R._convArgs({ titl
   for (let i = 0; i < 60; i++) { await wait(250); rec = (await call('GET', '/record/list')).j.recs.filter((x) => x.id === id)[0]; if (!rec.conv.running) break; }
   ok('converted to MP4', rec.conv.done === 'mp4' && rec.kind === 'mp4' && rec.parts === 1, JSON.stringify(rec.conv));
   const after = fs.readdirSync(mdir).sort();
-  ok('one .mp4 replaces the parts, the .nfo follows it', JSON.stringify(after) === JSON.stringify(['Test Film (2001).mp4', 'Test Film (2001).nfo']), after.join(' | '));
+  ok('one .mp4 replaces the parts, the .nfo follows it', JSON.stringify(after) === JSON.stringify(['Test Film (2001).mp4', 'Test Film (2001).nfo', 'poster.jpg']), after.join(' | '));
   const probe = cp.spawnSync(ff, ['-hide_banner', '-i', path.join(mdir, 'Test Film (2001).mp4')], { encoding: 'utf8' }).stderr;
   ok('the details are inside: title, plot, year, genre, marked a movie', /title\s*: Test Film/.test(probe) && /A film about test cards/.test(probe) && /date\s*: 2001/.test(probe) && /genre\s*: Drama/.test(probe), probe.slice(0, 900));
+  ok('the poster is its cover art (inside the MP4), and no cover file is left behind', /Video: mjpeg[^\n]*\(attached pic\)/.test(probe) && !after.some((f) => /cover\.mkv/.test(f)), probe.slice(0, 1400));
   ok('all of it: picture and sound, a few seconds', /Video: h264/.test(probe) && /Audio: aac/.test(probe) && /Duration: 00:00:0[1-4]/.test(probe), probe.slice(0, 900));
   r = await call('GET', '/record/file/' + id, null, { range: 'bytes=0-15' });
   ok('the player gets it as MP4', r.code === 206 && r.hdr['Content-Type'] === 'video/mp4' && r.body.slice(4, 8).toString() === 'ftyp', r.hdr['Content-Type']);

@@ -203,7 +203,8 @@ FF_COMPONENTS=(
   --enable-demuxer=matroska,mov,mpegts,avi,flv,hevc,hls
   --enable-decoder=dca,truehd,mlp,flac,ac3,eac3,aac,mp3,mp3float,mp2,mp2float,opus,vorbis,'pcm_*'
   # Seek previews (service/seekprev.js): one keyframe decoded in software, made small, out as a JPEG.
-  --enable-decoder=h264,hevc,mpeg2video,mpeg4
+  # mjpeg: reading a recording's poster for its MP4 cover art (service/record.js canCover); from the next build on.
+  --enable-decoder=h264,hevc,mpeg2video,mpeg4,mjpeg
   --enable-encoder=ac3,eac3,aac,mjpeg
   --enable-parser=h264,hevc,av1,mpeg4video,mpegvideo,vp9,aac,aac_latm,ac3,dca,flac,mlp,mpegaudio,opus,vorbis
   # dovi_rpu with TiviBro's p81 (patches/dovi-rpu-p81.patch): Dolby Vision profile 7 played as profile 8.1.

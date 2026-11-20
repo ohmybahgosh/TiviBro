@@ -400,14 +400,31 @@ function tagsFor(r, mkv) {
   if (!mkv) add('media_type', pl.movie ? 9 : 10);
   return t;
 }
-function convArgs(r, tmp, mkv, poster, hevc, fromFile) {
+/* cover: for an MP4, a small MKV holding the poster (coverMkv), whose picture becomes the MP4's cover art (Apple's
+   apps and Plex show it); nv: how many pictures the recording has, so the cover is the one after them. */
+function convArgs(r, tmp, mkv, poster, hevc, fromFile, cover, nv) {
   var a = ['-hide_banner', '-nostdin', '-loglevel', 'error', '-fflags', '+genpts+discardcorrupt'];
   a = a.concat(fromFile ? ['-i', fromFile] : ['-f', 'mpegts', '-i', 'pipe:0']);
-  a = a.concat(['-map', '0:v?', '-map', '0:a?', '-c', 'copy', '-sn', '-dn', '-avoid_negative_ts', 'make_zero']).concat(tagsFor(r, mkv));
+  if (!mkv && cover) a = a.concat(['-i', cover]);
+  a = a.concat(['-map', '0:v?', '-map', '0:a?']);
+  if (!mkv && cover) a = a.concat(['-map', '1:v:0']);
+  a = a.concat(['-c', 'copy', '-sn', '-dn', '-avoid_negative_ts', 'make_zero']).concat(tagsFor(r, mkv));
   if (mkv) { if (poster) a = a.concat(['-attach', poster, '-metadata:s:t', 'mimetype=image/jpeg', '-metadata:s:t', 'filename=cover.jpg']); a.push('-f', 'matroska'); }
-  else { if (hevc) a.push('-tag:v', 'hvc1'); a.push('-movflags', '+faststart', '-f', 'mp4'); }
+  else {
+    if (hevc) a.push('-tag:v:0', 'hvc1');
+    if (cover) a.push('-disposition:v:' + (nv || 0), 'attached_pic');
+    a.push('-movflags', '+faststart', '-f', 'mp4');
+  }
   return a.concat(['-y', tmp]);
 }
+var coverOk = {};
+function canCover(bin) {
+  if (bin in coverOk) return coverOk[bin];
+  var out = ''; try { out = String(cp.execFileSync(bin, ['-hide_banner', '-decoders'], { timeout: 10000, stdio: ['ignore', 'pipe', 'ignore'] })); } catch (e) {}
+  return (coverOk[bin] = /\smjpeg\s/.test(out));
+}
+// The poster in a small MKV (an attachment, which ffmpeg reads back as a cover picture: no image reader needed in our build).
+function coverArgs(src, poster, out) { return ['-hide_banner', '-nostdin', '-loglevel', 'error', '-i', src, '-t', '0.1', '-map', '0:a:0', '-c', 'copy', '-attach', poster, '-metadata:s:t', 'mimetype=image/jpeg', '-metadata:s:t', 'filename=cover.jpg', '-f', 'matroska', '-y', out]; }
 function convert(r) {
   if (r.status !== 'done' || !(r.parts || []).length) return 'only a finished recording';
   if (r.conv && r.conv.running) return '';
@@ -426,13 +443,27 @@ function convert(r) {
   var pt = setTimeout(function () { try { probe.kill(); } catch (e) {} }, 20000);
   probe.stderr.on('data', function (d) { if (info.length < 20000) info += d; });
   probe.on('error', function () {});
-  probe.on('close', function () { clearTimeout(pt); attempt(false, /Video: hevc/.test(info)); });
+  var cover = '', nv = 0;
+  probe.on('close', function () {
+    clearTimeout(pt);
+    nv = (info.match(/Stream #0:\d+[^\n]*: Video: (?![^\n]*attached pic)/g) || []).length;
+    var hevc = /Video: hevc/.test(info);
+    if (!poster) return attempt(false, hevc);
+    // The cover needs ffmpeg to read the JPEG's size (its mjpeg decoder): our TV builds up to tb5 don't have it.
+    if (!canCover(bin)) return attempt(false, hevc);
+    var cv = path.join(dir, '.' + base + '.cover.mkv'), cpp;
+    try { cpp = cp.spawn(bin, coverArgs(r.parts[0], poster, cv), { stdio: ['ignore', 'ignore', 'ignore'] }); } catch (e) { return attempt(false, hevc); }
+    var ct = setTimeout(function () { try { cpp.kill(); } catch (e) {} }, 20000);
+    cpp.on('error', function () {});
+    cpp.on('close', function (code) { clearTimeout(ct); if (code === 0 && fs.existsSync(cv)) cover = cv; attempt(false, hevc); });
+  });
+  function dropCover() { if (cover) { try { fs.unlinkSync(cover); } catch (e) {} cover = ''; } }
   function attempt(mkv, hevc) {
-    if (!byId(r.id)) return;
-    var ext = mkv ? '.mkv' : '.mp4', tmp = path.join(dir, '.' + base + ext + '.part'), err = '';
+    if (!byId(r.id)) return dropCover();
+    var ext = mkv ? '.mkv' : '.mp4', tmp = path.join(dir, '.' + base + ext + '.part'), err = '', withCover = !mkv && !!cover;
     r.conv.tmp = tmp; r.conv.as = mkv ? 'mkv' : 'mp4';
     var fromFile = r.kind === 'mp4' ? r.parts[0] : '';
-    var p; try { p = cp.spawn('nice', ['-n', '10', bin].concat(convArgs(r, tmp, mkv, poster, hevc, fromFile)), { stdio: [fromFile ? 'ignore' : 'pipe', 'ignore', 'pipe'] }); }
+    var p; try { p = cp.spawn('nice', ['-n', '10', bin].concat(convArgs(r, tmp, mkv, poster, hevc, fromFile, withCover ? cover : '', nv)), { stdio: [fromFile ? 'ignore' : 'pipe', 'ignore', 'pipe'] }); }
     catch (e) { return end('the converter didn\'t start: ' + e.message); }
     conv[r.id] = p;
     p.stderr.on('data', function (d) { if (err.length < 4000) err += d; });
@@ -452,16 +483,20 @@ function convert(r) {
     }
     p.on('close', function (code) {
       delete conv[r.id];
-      if (!byId(r.id) || r.conv.cancelled) { try { fs.unlinkSync(tmp); } catch (e) {} return; }
+      if (!byId(r.id) || r.conv.cancelled) { try { fs.unlinkSync(tmp); } catch (e) {} return dropCover(); }
       var size = 0; try { size = fs.statSync(tmp).size; } catch (e) {}
       if (code !== 0 || size < 1024) {
         try { fs.unlinkSync(tmp); } catch (e) {}
         var why = err.trim().split('\n').pop().slice(0, 200) || 'ffmpeg stopped (' + code + ')';
+        // The cover may be what it refused: MP4 again without it, then MKV.
+        if (withCover) { note('info', 'recording: MP4 with its cover didn\'t work, without it', { title: r.title, e: why }); dropCover(); return attempt(false, hevc); }
         if (!mkv) { note('info', 'recording: MP4 didn\'t take it, MKV instead', { title: r.title, e: why }); return attempt(true, hevc); }
+        dropCover();
         return end('it couldn\'t be converted: ' + why);
       }
       // Someone is watching it: the swap waits until they stop (the TV's player would get the new file mid-way).
       if (inUse(r.id)) { r.conv.pct = 99; r.conv.waiting = true; return setTimeout(function () { p.emit('close', 0); }, 5000); }
+      dropCover();
       var final = path.join(dir, base + ext), n = 2;
       while (fs.existsSync(final) && r.parts.indexOf(final) < 0 && n < 50) final = path.join(dir, base + ' (' + n++ + ')' + ext);
       var olds = r.parts.slice();
