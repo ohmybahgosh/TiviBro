@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Movie
 import androidx.compose.material.icons.rounded.FiberManualRecord
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Refresh
@@ -127,6 +128,9 @@ fun RecordingsScreen(model: AppModel, id: String, name: String, snack: SnackbarH
     // While something records, its size and length grow: look again now and then.
     val live = got?.items?.any { it.recording } == true
     LaunchedEffect(live) { while (live) { delay(15_000); run("list", quiet = true) } }
+    // While one converts, how far it is: every few seconds.
+    val converting = got?.items?.any { it.converting } == true
+    LaunchedEffect(converting) { while (converting) { delay(3_000); run("list", quiet = true) } }
 
     Scaffold(
         containerColor = Ink, snackbarHost = { SnackbarHost(snack) },
@@ -190,6 +194,10 @@ fun RecordingsScreen(model: AppModel, id: String, name: String, snack: SnackbarH
                         }
                         if (resume) ActionRow(Icons.Rounded.Replay, "Watch from the start") { picked = null; run("watch", r, fromStart = true) }
                     }
+                    if (r.converting) Text("Converting to MP4: " + r.conv.removePrefix("running ").trim() + "%", color = Muted, style = MaterialTheme.typography.bodySmall)
+                    else if (r.conv.startsWith("error")) Text("Couldn't convert: " + r.conv.removePrefix("error: "), color = Bad, style = MaterialTheme.typography.bodySmall)
+                    if (r.folder.isNotBlank()) Text("On the drive: TiviBro Recordings/" + r.folder + (if (r.conv == "mp4" || r.conv == "mkv") "  ·  " + r.conv.uppercase() else ""), color = Muted, style = MaterialTheme.typography.bodySmall)
+                    if (r.canConvert) ActionRow(Icons.Rounded.Movie, "Convert to MP4") { picked = null; run("convert", r) }
                     if (r.recording) ActionRow(Icons.Rounded.Stop, "Stop recording", Bad) { picked = null; run("stop", r) }
                     if (r.scheduled) ActionRow(Icons.Rounded.Stop, "Cancel recording", Bad) { picked = null; run("stop", r) }
                     if (!r.recording) ActionRow(Icons.Rounded.Delete, "Delete" + (if (r.bytes > 0) "  ·  " + recSize(r.bytes) else ""), Bad) { picked = null; deleting = r }

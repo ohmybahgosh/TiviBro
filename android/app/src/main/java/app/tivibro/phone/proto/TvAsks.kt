@@ -92,7 +92,10 @@ data class Recording(
     val start: Long, val end: Long, val startedAt: Long, val bytes: Long, val dur: Int,
     val error: String, val ep: String, val desc: String, val logo: String, val poster: String,
     val pos: Int, val watched: Boolean,
+    /** Convert to MP4 offered (the TV says it can be); conv: "running 40", "mp4", "mkv", "error: ..." or ""; folder on the drive. */
+    val canConvert: Boolean = false, val conv: String = "", val folder: String = "",
 ) {
+    val converting get() = conv.startsWith("running")
     val recording get() = status == "recording"
     val scheduled get() = status == "scheduled"
     val done get() = status == "done"
@@ -112,7 +115,8 @@ data class RecList(val msg: String, val drive: RecDrive?, val items: List<Record
             val items = if (a == null) emptyList() else (0 until a.length()).mapNotNull { a.optJSONObject(it) }.mapNotNull { r ->
                 val id = r.str("id").takeIf { it.isNotBlank() } ?: return@mapNotNull null
                 Recording(id, r.str("t"), r.str("ch"), r.str("k"), r.str("st"), r.optLong("s"), r.optLong("e"), r.optLong("at"), r.optLong("b"), r.optInt("dur"),
-                    r.str("err"), r.str("ep"), r.str("d"), r.str("logo"), r.str("poster"), r.optInt("pos"), r.optInt("w") == 1)
+                    r.str("err"), r.str("ep"), r.str("d"), r.str("logo"), r.str("poster"), r.optInt("pos"), r.optInt("w") == 1,
+                    r.optInt("cv") == 1, r.str("conv"), r.str("folder"))
             }
             return RecList(j.str("msg"), d, items)
         }

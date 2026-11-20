@@ -425,7 +425,7 @@ var Phone = (function () {
     },
     /* Recordings on the TV's USB drive (the phone's Recordings screen, and Record on a programme or channel): op
        'list' (the default), 'add' (a programme: k, s; on now records from now, later is scheduled), 'now' (a channel
-       from now: k), 'stop' (recording or scheduled: id), 'delete' (id), 'watch' (id, from: 'start' or resume).
+       from now: k), 'stop' (recording or scheduled: id), 'delete' (id), 'convert' (id: to one MP4 with its details), 'watch' (id, from: 'start' or resume).
        Every op answers with the list, the drive and a line to show. */
     recordings: function (a) {
       if (typeof Record === 'undefined' || !Record.base()) throw new Error('TiviBro\'s helper isn\'t running on the TV, and it does the recording.');
@@ -440,7 +440,9 @@ var Phone = (function () {
               var ps = Record.posOf(r.id), m = r.meta || {};
               return { id: r.id, t: r.title || '', ch: r.channel || '', k: r.key || '', st: r.status, s: r.start, e: r.end, at: r.startedAt || 0, b: r.bytes || 0, dur: r.dur || 0,
                 err: r.status !== 'done' && r.error ? String(r.error).slice(0, 200) : '', ep: r.ep || '', d: String(r.desc || m.plot || '').slice(0, 600), logo: r.logo || '', poster: m.poster || '',
-                pos: ps && ps.t > 0 ? Math.round(ps.t) : 0, w: watched(r) ? 1 : 0 };
+                pos: ps && ps.t > 0 ? Math.round(ps.t) : 0, w: watched(r) ? 1 : 0,
+                // Convert to MP4: cv 1 when it can be, conv: 'running 40', 'mp4', 'mkv' or the reason it failed; folder: where it is on the drive.
+                cv: Record.canConvert && Record.canConvert(r) ? 1 : 0, conv: r.conv ? (r.conv.running ? 'running ' + (r.conv.pct || 0) : r.conv.done || (r.conv.error ? 'error: ' + String(r.conv.error).slice(0, 160) : '')) : '', folder: r.folder || '' };
             }) };
         });
       };
@@ -460,6 +462,7 @@ var Phone = (function () {
         return Record.now(c2, pn, true).then(then('Recording ' + (pn ? pn.t + ' until ' + U.hhmm(pn.e) : Library.name(c2) + ' for an hour') + '.'));
       }
       if (op === 'stop') { var r1 = one(); return Record.stop(r1.id, true).then(then(r1.status === 'scheduled' ? 'Recording cancelled.' : 'Recording stopped.  What was recorded is kept.')); }
+      if (op === 'convert') { var r4 = one(); return Record.convert(r4.id, true).then(then('Converting ' + r4.title + ' to MP4 on the TV.  It carries on in the background.')); }
       if (op === 'delete') {
         var r2 = one();
         if (r2.status === 'recording') throw new Error('Stop the recording first.');
