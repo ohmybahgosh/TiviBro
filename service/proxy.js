@@ -28,6 +28,7 @@ var Stalker = require('./stalker');
 var Media = require('./media');
 var Convert = require('./convert');
 var SeekPrev = require('./seekprev');
+var Multiview = require('./multiview');
 var Ffmpeg = require('./ffmpeg');
 var Pace = require('./pace');
 
@@ -273,6 +274,7 @@ function create(opts) {
     if (Convert.isStream(req.url)) return Convert.stream(req, res, ALLOW, log, ownPort(), redact);
     // Seek previews (seekprev.js): pictures of the movie playing, with the converter's key in the link like its stream.
     if (SeekPrev.isRoute(req.url)) return SeekPrev.handle(req, res, ALLOW, log, ownPort());
+    if (Multiview.isRoute(req.url)) return Multiview.handle(req, res, ALLOW, log, ownPort());
     /* A movie's trailer inside TiviBro (media-moviepage.js): YouTube's player refuses a page without an address
        (TiviBro's own is a file on the TV, "Error 153"), so the helper hands over this small page that holds
        it.  Only an 11-character YouTube id goes in; nothing else is fetched here. */

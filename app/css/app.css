@@ -1377,3 +1377,21 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .osd.tl.scrub .bar .tl-dot{opacity:.45}
 .osd.tl.scrub .bar .tl-ghost{display:block;position:absolute;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(255,255,255,.85)}
 .osd.tl.scrub .bar .tl-label{display:block;position:absolute;bottom:22px;transform:translateX(-50%);white-space:nowrap;font-size:24px;background:rgba(11,14,26,.92);padding:6px 14px;border-radius:8px;border:2px solid var(--accent)}
+/* Multiview (multiview.js): the box with sound is the video (the stage, moved into it); the others are pictures. */
+#mv{position:absolute;top:0;left:0;width:1920px;height:1080px;z-index:6;pointer-events:none}
+body.mv-open #osd,body.mv-open #clock,body.mv-open .qpanel{display:none!important}
+.stage.mv{z-index:5;border-radius:10px}
+.mv-title{position:absolute;left:48px;top:12px;font-size:30px;font-weight:700;color:#fff;text-shadow:0 2px 8px #000}
+.mv-box{position:absolute;border-radius:10px;background:#000;overflow:hidden;box-shadow:0 0 0 2px rgba(255,255,255,.14)}
+.mv-box.main{background:transparent}
+.mv-box.on{box-shadow:0 0 0 6px var(--accent,#3ea6ff)}
+.mv-box.empty{background:#11141f}
+.mv-box.empty .mv-label{top:50%;bottom:auto;transform:translateY(-50%);text-align:center;background:none;color:#9aa3b5;font-size:30px}
+.mv-pic{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:contain;background:#000}
+.mv-label{position:absolute;left:0;right:0;bottom:0;padding:12px 18px;font-size:24px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.78));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mv-box.failed .mv-label{color:#ffb4a8}
+.mv-hints{position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:22px;color:#cfd3dc;text-shadow:0 2px 6px #000}
+.mv-hints .mv-k{display:inline-block;margin:0 22px;white-space:pre}
+.mv-hints .mv-k.red::before,.mv-hints .mv-k.yellow::before,.mv-hints .mv-k.green::before{content:'';display:inline-block;width:16px;height:16px;border-radius:50%;margin-right:10px;vertical-align:-1px}
+.mv-hints .mv-k.red::before{background:#d6453d}.mv-hints .mv-k.yellow::before{background:#e0b630}.mv-hints .mv-k.green::before{background:#3fa85f}
+.mv-label{white-space:pre}

@@ -1977,6 +1977,7 @@ var Views = (function () {
       !full && tab === 'live' && { label: 'Select multiple…', sub: 'copy, favorite or hide several', action: function () { startPick(c.k); } },
       L.versions(c).length ? { label: 'Other versions…', sub: versionsSummary(c), action: function () { versionsMenu(c); } } : { label: 'Link another version…', sub: 'a copy of this channel TiviBro didn\'t find', action: function () { linkVersionMenu(c); } },
       Player.canSwitchFormat(c) && { label: 'Stream format…', sub: FORMAT_NAMES[Player.streamFormat(c)], action: function () { formatMenu(c); } },
+      typeof Multiview !== 'undefined' && { label: 'Watch in Multiview', sub: playing && playing.k !== c.k ? 'with ' + L.name(playing) : 'with other channels', action: function () { var with_ = playing && playing.k !== c.k ? playing : null; if (with_) Multiview.start(with_, [c]); else Multiview.start(c, lastPlayed ? [lastPlayed] : []); } },
       c.arch && { label: 'Watch from start', action: function () { watchFromStart(c); } },
       c.arch && { label: 'Catch-up…', sub: c.arch + ' days', action: function () { catchupList(c); } },
       inCustom && gid !== L.FAV && { label: 'Remove from ' + L.groupName(gid), action: function () { L.removeFrom(gid, c.k); refreshLists(true); } },
@@ -2045,7 +2046,7 @@ var Views = (function () {
      ◀ ▶ move along a row, ▲ ▼ switch rows, OK picks, Back closes.  Clickable with the pointer. */
   var qp = null;                  // { row, col, rows: [[items]], timer }
   // Quick menu buttons.  Each can be switched off in Settings > Remote and buttons > Quick menu buttons.
-  var QP_BUTTONS = [['pause', 'Pause and rewind'], ['rec', 'Record'], ['list', 'Channel guide'], ['start', 'Watch from start'], ['fav', 'Favorite'], ['guide', 'TV guide'], ['versions', 'Other versions'], ['audio', 'Audio track'],
+  var QP_BUTTONS = [['pause', 'Pause and rewind'], ['rec', 'Record'], ['list', 'Channel guide'], ['start', 'Watch from start'], ['fav', 'Favorite'], ['guide', 'TV guide'], ['versions', 'Other versions'], ['multi', 'Multiview'], ['audio', 'Audio track'],
     ['subs', 'Subtitles'], ['cc', 'Closed captions'], ['quality', 'Video quality'], ['picture', 'Aspect'], ['sleep', 'Sleep timer'],
     ['info', 'Stream info'], ['reconnect', 'Reconnect']];
   // Line icons for the quick actions, drawn like the side menu's (24 x 24, stroked).
@@ -2063,6 +2064,7 @@ var Views = (function () {
     cc: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10.5 9.6a2.6 2.6 0 1 0 0 4.8M17 9.6a2.6 2.6 0 1 0 0 4.8"/>',
     quality: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9v6M11 9v6M7 12h4M14 9h2a3 3 0 0 1 0 6h-2z"/>',
     picture: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 9H6v2M16 9h2v2M8 15H6v-2M16 15h2v-2"/>',
+    multi: '<rect x="3" y="4" width="8" height="7" rx="1.5"/><rect x="13" y="4" width="8" height="7" rx="1.5"/><rect x="3" y="13" width="8" height="7" rx="1.5"/><rect x="13" y="13" width="8" height="7" rx="1.5"/>',
     sleep: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
     reconnect: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>'
@@ -2089,6 +2091,7 @@ var Views = (function () {
     if (c) add('fav', { label: L.isFav(c.k) ? 'Favorite' : 'Add favorite', icon: L.isFav(c.k) ? 'faved' : 'fav', run: function () { var on = L.toggleFav(c.k); if (on == null) return; U.toast(on ? 'Added to Favorites' : 'Removed from Favorites'); refreshLists(true); renderPanel(); } });
     add('guide', { label: 'TV guide', icon: 'guide', run: function () { closePanel(); leaveTo('guide'); } });
     if (c && L.versions(c).length) add('versions', { label: 'Other versions', icon: 'versions', v: versionsSummary(c), run: function () { closePanel(); versionsMenu(c); } });
+    if (c && mode === 'live' && typeof Multiview !== 'undefined') add('multi', { label: 'Multiview', icon: 'multi', v: 'more channels', run: function () { closePanel(); Multiview.start(c, lastPlayed ? [lastPlayed] : []); } });
     var tracks = Player.audioTracks();
     if (tracks.length > 1) add('audio', { label: 'Audio', icon: 'audio', v: (tracks.filter(function (t) { return t.on; })[0] || {}).label || '', run: function () { closePanel(); audioMenu(); } });
     // Live captions (CEA-608) have their own switch; Subtitles is for real subtitle tracks.
