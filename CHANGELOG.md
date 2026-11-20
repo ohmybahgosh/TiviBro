@@ -1,14 +1,14 @@
 # Changelog
 
-## Unreleased
-
-- **A Stalker portal's subscription end is found in more places** (discussion #134).  Portals name it differently (tariff_expired_date, exp_date, valid_until and more), and resellers often write it into a text field such as the phone number ("Expires 25-12-2026").  TiviBro now looks through all of them, reads day-month-year with dashes too, and when it still finds none, the log says which fields the portal sent.
-
-## 0.6.0 (alpha 182, 2026-11-20)
+## 0.6.0 (alpha 183, 2026-11-20)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 182
+### New in alpha 183
+
+- **A Stalker portal's subscription end is found in more places** (discussion #134).  Portals name it differently (tariff_expired_date, exp_date, valid_until and more), and resellers often write it into a text field such as the phone number ("Expires 25-12-2026").  TiviBro now looks through all of them, reads day-month-year with dashes too, and when it still finds none, the log says which fields the portal sent.
+
+### In alpha 182
 
 - **Recordings are filed for Plex, Jellyfin, Kodi and Infuse** (discussion #94).  A finished recording moves to "TiviBro Recordings/TV/<show>" or "TiviBro Recordings/Movies/<title (year)>" on the drive, named the way media servers read them ("Show - s01e02", or by date when the guide gives no episode number), with a .nfo of its title, plot, year, genre and channel beside it and TMDB's poster as poster.jpg.  Add the TV and Movies folders to your media server and they show up with their details.
 - **Convert to MP4** on a recording (Hold OK or Red on it in Recordings): one file with its title, plot, year, genre, show, season and episode inside, which Plex, Infuse and Apple TV apps read (discussion #94).  No re-encoding, so it takes a few minutes of disk work and little else, in the background.  A recording in parts becomes one file.  When MP4 can't hold a channel's sound or picture, it's MKV instead, with the poster inside too.  It needs as much free room on the drive as the recording while it runs, and it still plays in TiviBro afterwards; if you're watching it, the swap waits until you stop.
