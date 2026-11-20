@@ -89,6 +89,10 @@ const ch = http.createServer((req, res) => {
   r = await call('POST', '/record/start', { url: 'http://127.0.0.1:' + ch.address().port + '/x.ts', title: 'Hockey Night', channel: 'CBC', end: Date.now() + 2600 });
   const id = r.j.id;
   ok('it records to the share', r.code === 200 && r.j.status === 'recording', JSON.stringify(r.j));
+  await wait(1700);
+  let live = await call('GET', '/record/file/' + id);
+  const upNow = [...files.values()].reduce((n, b) => n + b.length, 0);
+  ok('while it records: the parts already up play, not the one still going up', live.code === 200 && live.body.length > 0 && live.body.length <= upNow, live.code + ' ' + live.body.length + ' of ' + upNow);
   await wait(3800);
   let rec = (await call('GET', '/record/list')).j.recs.filter((x) => x.id === id)[0];
   ok('done, in parts (a new upload every part, and one more after a dropped upload)', rec.status === 'done' && rec.parts >= 4 && rec.gaps >= 1 && rec.where === 'share', JSON.stringify(rec));

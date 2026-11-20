@@ -225,7 +225,7 @@ var Recordings = (function () {
         out.push({ label: p && seen(r) > 0.02 && seen(r) < (U.watchedFrac ? U.watchedFrac() : 0.9) ? T('Resume from {t}', { t: Record.hms(p.t) }) : 'Watch', icon: 'play', action: function () { watch(r, false); } });
         if (p && p.t > 30) out.push({ label: 'Watch from the start', icon: 'replay', action: function () { watch(r, true); } });
       }
-      if (r.bytes > 0 && r.status === 'recording') out.push({ label: 'Watch from the start', icon: 'play', sub: T('while it records'), action: function () { watch(r, true); } });
+      if (r.bytes > 0 && r.status === 'recording') out.push({ label: 'Watch from the start', icon: 'play', sub: r.where === 'share' ? T('while it records, up to 10 minutes behind') : T('while it records'), action: function () { watch(r, true); } });
       if (r.status === 'recording') out.push({ label: 'Stop recording', icon: 'stop', sub: T('keeps what\'s recorded'), action: function () { Record.stop(r.id).then(render); } });
       if (r.status === 'scheduled') out.push({ label: 'Cancel recording', icon: 'stop', sub: U.hhmm(r.start), action: function () { Record.stop(r.id).then(render); } });
       if (r.status === 'done' && r.bytes > 0 && r.conv && r.conv.running) out.push({ label: T('Converting to MP4: {n}%', { n: r.conv.pct || 0 }), icon: 'history', sub: T('it carries on in the background') });

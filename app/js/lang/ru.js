@@ -2030,5 +2030,7 @@ I18n.add('ru', {
   "Checking that TiviBro can write there…": "Проверяем, может ли TiviBro туда записывать…",
   "Recording to {x}": "Запись в {x}",
   "With both a USB drive and a network share, where new recordings go.": "Если есть и USB-накопитель, и сетевая папка: куда идут новые записи.",
-  "Record to a WebDAV share on your network (a NAS, Nextcloud): no USB drive or root needed.  Choose one of your My media WebDAV libraries.": "Запись в папку WebDAV в вашей сети (NAS, Nextcloud): без USB-накопителя и root.  Выберите одну из библиотек WebDAV в «Моих медиа»."
+  "Record to a WebDAV share on your network (a NAS, Nextcloud): no USB drive or root needed.  Choose one of your My media WebDAV libraries.": "Запись в папку WebDAV в вашей сети (NAS, Nextcloud): без USB-накопителя и root.  Выберите одну из библиотек WebDAV в «Моих медиа».",
+  "On a network share, a recording can be watched once its first 10 minutes are up there.  Yellow goes to the channel live.": "В сетевой папке запись можно смотреть, когда там будут первые 10 минут.  Жёлтая кнопка открывает канал в прямом эфире.",
+  "while it records, up to 10 minutes behind": "во время записи, с отставанием до 10 минут"
 });

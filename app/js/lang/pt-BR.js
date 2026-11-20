@@ -2543,5 +2543,7 @@ I18n.add('pt-BR', {
   "Checking that TiviBro can write there…": "Verificando se o TiviBro consegue gravar lá…",
   "Recording to {x}": "Gravando em {x}",
   "With both a USB drive and a network share, where new recordings go.": "Com pendrive e compartilhamento de rede, para onde vão as gravações novas.",
-  "Record to a WebDAV share on your network (a NAS, Nextcloud): no USB drive or root needed.  Choose one of your My media WebDAV libraries.": "Grave num compartilhamento WebDAV da sua rede (um NAS, Nextcloud): sem pendrive nem root.  Escolha uma das suas bibliotecas WebDAV de Minha mídia."
+  "Record to a WebDAV share on your network (a NAS, Nextcloud): no USB drive or root needed.  Choose one of your My media WebDAV libraries.": "Grave num compartilhamento WebDAV da sua rede (um NAS, Nextcloud): sem pendrive nem root.  Escolha uma das suas bibliotecas WebDAV de Minha mídia.",
+  "On a network share, a recording can be watched once its first 10 minutes are up there.  Yellow goes to the channel live.": "Num compartilhamento de rede, a gravação pode ser vista quando os primeiros 10 minutos já estiverem lá.  Amarelo vai para o canal ao vivo.",
+  "while it records, up to 10 minutes behind": "enquanto grava, até 10 minutos atrás"
 });

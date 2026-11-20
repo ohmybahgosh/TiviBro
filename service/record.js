@@ -670,7 +670,11 @@ function add(q, scheduled) {
 /* The recording as one file, its parts end to end (a recording split at 3.9 GB plays through), with Range.
    ?part=n serves one part alone. */
 function serveFile(req, res, ALLOW, r, part) {
-  var files = part != null && !isNaN(part) ? [(r.parts || [])[part]].filter(Boolean) : (r.parts || []).slice();
+  var all = (r.parts || []).slice();
+  /* On a share, the part being sent now can't be read back yet (servers keep an upload aside until it's whole):
+     while it records, what's there is the parts already up, up to one part (10 minutes) behind. */
+  if (r.status === 'recording' && run[r.id] && run[r.id].dav) all = all.slice(0, -1);
+  var files = part != null && !isNaN(part) ? [all[part]].filter(Boolean) : all;
   if (!files.length) return send(res, ALLOW, 404, { error: 'no such part' });
   var sizes = [], size = 0;
   var onShare = isDavPath(files[0]), base0 = part != null && !isNaN(part) ? +part : 0;

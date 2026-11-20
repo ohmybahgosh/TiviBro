@@ -1780,7 +1780,7 @@ var Settings = (function () {
     // A network share: a WebDAV library from My media (its address and login).
     if (R) out.push(action('Network share', 'Record to a WebDAV share on your network (a NAS, Nextcloud): no USB drive or root needed.  Choose one of your My media WebDAV libraries.', function () {
       var libs = typeof MediaStore !== 'undefined' ? MediaStore.sources().filter(function (x) { return x.type === 'webdav'; }) : [];
-      var items = libs.map(function (x) { return { label: x.name || x.address, sub: x.address, action: function () {
+      var items = libs.map(function (x) { return { label: x.name || x.address, icon: 'folder', sub: x.address, action: function () {
         U.toast(T('Checking that TiviBro can write there…'), 3000);
         R.setShare(MediaStore.source(x.id)).then(function () { U.toast(T('Recording to {x}', { x: x.name || x.address }), 4000); build(); }, function (e) { U.toast(e && e.message || 'No answer from the helper', 7000); });
       } }; });
