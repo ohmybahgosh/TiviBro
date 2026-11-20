@@ -78,7 +78,11 @@ var Convert = (function () {
     if (!bad[def]) return { action: 'play', a: def, bad: bad };
     var want = prefs.lang || '', defLang = tracks[def].lang || '', extra = /comment|descri/i;
     function lang(t) { return typeof U !== 'undefined' && U.lang ? U.lang(t.lang) || t.lang : t.lang; }
-    function score(t) { return (want && lang(t) === want ? 8 : 0) + (defLang && t.lang === defLang ? 4 : 0) + (extra.test(t.title || '') ? -6 : 0) + (t.channels > 2 ? 1 : 0); }
+    /* Between tracks otherwise alike, the richer one: Dolby Atmos (a TrueHD Atmos movie usually carries a Dolby
+       Digital Plus Atmos track too, which LG TVs play and pass on to an Atmos soundbar), then E-AC-3 over AC-3, then
+       more channels.  The converter can't make Atmos (only Dolby's encoder can), so that track beats converting. */
+    function atmos(t) { return /atmos|joc/i.test((t.profile || '') + ' ' + (t.title || '')); }
+    function score(t) { return (want && lang(t) === want ? 8 : 0) + (defLang && t.lang === defLang ? 4 : 0) + (extra.test(t.title || '') ? -6 : 0) + (t.channels > 2 ? 1 : 0) + (atmos(t) ? 0.6 : 0) + (t.codec === 'eac3' ? 0.3 : 0) + Math.min(+t.channels || 0, 8) / 100; }
     var good = tracks.filter(function (t, i) { return !bad[i]; }).sort(function (x, y) { return score(y) - score(x) || x.index - y.index; });
     var named = tracks.some(function (t) { return !!t.lang; });
     // A playable track in the language wanted (or the movie's own, or tracks with no language at all):

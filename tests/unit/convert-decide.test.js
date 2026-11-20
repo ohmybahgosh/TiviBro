@@ -60,6 +60,12 @@ d = Convert.decide([T(0, 'dts', 6, 'eng', true), T(1, 'ac3', 2, 'eng', false, 'D
 ok('a commentary track is passed over for the main one', d.action === 'track' && d.a === 2, d);
 d = Convert.decide([T(0, 'ac3', 6, 'eng'), T(1, 'dts', 6, 'eng', true)], c2022);
 ok('the default track decides, not the first', d.action === 'track' && d.a === 0, d);
+d = Convert.decide([T(0, 'truehd', 8, 'eng', true, 'TrueHD Atmos 7.1'), T(1, 'ac3', 6, 'eng', false, 'AC3 5.1'), T(2, 'eac3', 6, 'eng', false, 'DD+ Atmos 5.1')], c2023);
+ok('TrueHD Atmos: the Dolby Digital Plus Atmos track, not AC-3 or converting', d.action === 'track' && d.a === 2, d);
+d = Convert.decide([T(0, 'truehd', 8, 'eng', true), T(1, 'ac3', 6, 'eng'), T(2, 'eac3', 6, 'eng')], c2023);
+ok('no Atmos named: E-AC-3 before AC-3', d.action === 'track' && d.a === 2, d);
+d = Convert.decide([T(0, 'truehd', 8, 'eng', true), T(1, 'eac3', 6, 'spa', false, 'Atmos'), T(2, 'ac3', 6, 'eng')], c2023);
+ok('the language still comes first', d.action === 'track' && d.a === 2, d);
 d = Convert.decide([], c2022);
 ok('no tracks known: play', d.action === 'play', d);
 ok('bad list per track', JSON.stringify(Convert.decide([T(0, 'dts', 6, '', true), T(1, 'ac3', 6, '')], c2022).bad) === '["DTS",""]');
