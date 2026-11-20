@@ -6,7 +6,7 @@ Pre-release: expect rough edges, and keep a backup before installing.
 
 ### New in alpha 183
 
-- **A Stalker portal's subscription end is found in more places** (discussion #134).  Portals name it differently (tariff_expired_date, exp_date, valid_until and more), and resellers often write it into a text field such as the phone number ("Expires 25-12-2026").  TiviBro now looks through all of them, reads day-month-year with dashes too, and when it still finds none, the log says which fields the portal sent.
+- **A Stalker portal's subscription end is found in more places** (discussion #134).  Portals name it differently (tariff_expired_date, exp_date, valid_until and more), and resellers often write it into a text field such as the phone number ("Expiration: 2026 Dec 10").  TiviBro now looks through all of them, reads that way of writing it and day-month-year with dashes too, and when it still finds none, the log says which fields the portal sent.
 
 ### In alpha 182
 

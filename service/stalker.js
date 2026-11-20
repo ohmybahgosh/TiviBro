@@ -711,6 +711,7 @@ function dateOf(v) {
   if (/^\d{9,10}$/.test(t)) { d = new Date(+t * 1000); y = d.getUTCFullYear(); mo = d.getUTCMonth() + 1; d = d.getUTCDate(); }
   else if ((m = /(\d{4})-(\d{1,2})-(\d{1,2})/.exec(t))) { y = +m[1]; mo = +m[2]; d = +m[3]; }
   else if ((m = /(\d{1,2})[.\/\-](\d{1,2})[.\/\-](\d{4})/.exec(t))) { y = +m[3]; mo = +m[2]; d = +m[1]; if (mo > 12 && d <= 12) { mo = +m[1]; d = +m[2]; } }   // 30.11.2026, 30-11-2026; 11-30-2026 when the second can't be a month
+  else if ((m = /(\d{4})[\s,]+([A-Za-z]{3,9})\.?\s+(\d{1,2})\b/.exec(t)) && MONTHS.indexOf(m[2].slice(0, 3).toLowerCase()) >= 0) { y = +m[1]; mo = MONTHS.indexOf(m[2].slice(0, 3).toLowerCase()) + 1; d = +m[3]; }   // "Expiration: 2026 Dec 10" (discussion #134)
   else if ((m = /([A-Za-z]{3,9})\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})/.exec(t)) && MONTHS.indexOf(m[1].slice(0, 3).toLowerCase()) >= 0) { y = +m[3]; mo = MONTHS.indexOf(m[1].slice(0, 3).toLowerCase()) + 1; d = +m[2]; }
   else if ((m = /(\d{1,2})\s+([A-Za-z]{3,9})\.?,?\s+(\d{4})/.exec(t)) && MONTHS.indexOf(m[2].slice(0, 3).toLowerCase()) >= 0) { y = +m[3]; mo = MONTHS.indexOf(m[2].slice(0, 3).toLowerCase()) + 1; d = +m[1]; }
   else return 0;
