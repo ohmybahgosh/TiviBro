@@ -238,7 +238,9 @@ body.guide1 .gp .gs{display:none}
 
 /* settings */
 .set-nav{width:450px;margin-right:36px;display:flex;flex-direction:column;gap:6px}
-.set-nav div{padding:10px 22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:10px;color:var(--muted)}
+/* flex:none: with 18 sections the column is taller than the screen allows, and the rows shrank to fit from the
+   bottom, so each label sat low in its box (discussion #36).  Rows sized to fit instead: 43 px, the text centred. */
+.set-nav div{flex:none;padding:6px 22px;line-height:31px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:10px;color:var(--muted)}
 .set-nav div.on{color:var(--text);background:var(--panel)}
 /* Search settings: the first row of the menu, with a magnifier (the TiviBro Symbols font draws none, so CSS does). */
 .set-nav .nav-find{position:relative;padding-left:58px}
@@ -328,6 +330,7 @@ body.pointer .set-preview{cursor:pointer}
 @keyframes menuIn{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
 .modal-title{font-size:32px;font-weight:700;padding:0 22px 4px;line-height:1.2}
 .modal-sub{font-size:22px;color:var(--muted);padding:0 22px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.modal-sub span{display:inline-block;white-space:nowrap}
 .modal-title+.modal-sub{margin-top:2px}
 .modal-body{overflow:hidden;position:relative;flex:1;min-height:0;margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.07)}
 /* More of the list above or below: a fade at that edge. */

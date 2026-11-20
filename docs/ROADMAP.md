@@ -2,7 +2,7 @@
 
 ## Now: alpha testing on real TVs
 - Alpha builds (0.6.0 alpha) are in daily use on real LG TVs: a C2 on webOS 25, an OLED65C9 on webOS 4, a 50NANO79 on webOS 5 and a 32LQ630B on webOS 22, plus the Android phone app.
-- Problem reports come straight from the TVs (Settings > Diagnostics > Report a problem) and land in GitHub issues; fixes ship in the next alpha.
+- Problem reports come straight from the TVs (Settings > System > Report a problem) and land in GitHub issues; fixes ship in the next alpha.
 - Next: beta.
 
 ## What people want next

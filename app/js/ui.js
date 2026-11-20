@@ -172,7 +172,7 @@ var UI = (function () {
   // Magic Remote: clicking outside the box is the same as Back.
   modal.addEventListener('click', function (e) { if (e.target === modal && modalH) dispatch('back', null); });
 
-  function close() { modal.classList.add('hidden'); modal.querySelector('.modal-box').classList.remove('wide', 'panel'); modalH = null; mBody.innerHTML = ''; if (onClose) { var f = onClose; onClose = null; f(); } }
+  function close() { if (mSubStop) { mSubStop(); mSubStop = null; } modal.classList.add('hidden'); modal.querySelector('.modal-box').classList.remove('wide', 'panel'); modalH = null; mBody.innerHTML = ''; if (onClose) { var f = onClose; onClose = null; f(); } }
   var onClose = null;
 
   /* Up to M_VIS rows show.  Rows that wrap onto two or three lines (long subtitle names, discussion
@@ -266,12 +266,17 @@ var UI = (function () {
 
   /* A line under the title (opts.sub: what the menu is about, like the channel and time) and the box
      opening with a short rise. */
-  var mSub = null;
+  var mSub = null, mSubStop = null;
   function heading(title, sub) {
     mTitle.textContent = T(title); mTitle._en = title;
     if (!mSub) { mSub = U.el('div', 'modal-sub'); mTitle.parentNode.insertBefore(mSub, mTitle.nextSibling); }
-    mSub.textContent = sub ? T(sub) : '';
+    if (mSubStop) { mSubStop(); mSubStop = null; }
+    mSub.textContent = '';
+    var sp = document.createElement('span'); sp.textContent = sub ? T(sub) : ''; mSub.appendChild(sp);
     mSub.style.display = sub ? '' : 'none';
+    mSub.classList.remove('mq');
+    // Longer than the box (a channel and its programme, say): it scrolls by, like a long title in the guide (discussion #36).
+    if (sub) setTimeout(function () { var over = sp.offsetWidth - mSub.clientWidth; if (over > 4 && mSub.firstChild === sp) { mSub.classList.add('mq'); mSubStop = marquee(sp, over + 8); } }, 400);
     if (modal.classList.contains('hidden')) { mBox.classList.remove('enter'); void mBox.offsetWidth; mBox.classList.add('enter'); }
   }
   function menu(title, items, onBack, opts) {

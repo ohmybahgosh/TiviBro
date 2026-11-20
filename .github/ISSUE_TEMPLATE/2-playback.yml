@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        **First, run Settings > Diagnostics > Run connection test** on the TV.  It checks the helper, your login, the channel list, a stream and the guide, step by step, and often says exactly what's wrong.
+        **First, run Settings > System > Run connection test** on the TV.  It checks the helper, your login, the channel list, a stream and the guide, step by step, and often says exactly what's wrong.
 
         **Never paste your provider's address, username, password or a stream link.**  Describe the channel instead ("a US sports channel in HEVC 4K").  TiviBro doesn't provide channels: if every app fails on a channel, the problem is the provider.
   - type: dropdown
@@ -36,7 +36,7 @@ body:
     id: test
     attributes:
       label: Connection test result
-      description: Settings > Diagnostics > Run connection test.  Type the result or attach a photo.
+      description: Settings > System > Run connection test.  Type the result or attach a photo.
   - type: dropdown
     id: source
     attributes:
@@ -85,7 +85,7 @@ body:
     id: log
     attributes:
       label: Log
-      description: Settings > Diagnostics > turn on **Detailed logging** and play the channel again.  Then **Report a problem** on the same screen saves the whole log on your phone to attach here (logins and servers taken out), or use **View app log** and **View network helper log**.  Copy the lines around the problem or attach photos.  Check that no login or stream link is in it.
+      description: Settings > System > turn on **Detailed logging** and play the channel again.  Then **Report a problem** on the same screen saves the whole log on your phone to attach here (logins and servers taken out), or use **View app log** and **View network helper log**.  Copy the lines around the problem or attach photos.  Check that no login or stream link is in it.
       render: text
   - type: checkboxes
     id: checks

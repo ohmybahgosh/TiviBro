@@ -260,6 +260,30 @@ var Diag = (function () {
     return { kind: kind, kbps: kbps };
   }
 
+  /* Channels to test with (discussion #36: the tests used the provider's first channel, sometimes an adult one you
+     had hidden): a few picked at random from what the guide shows, never hidden, blocked or adult, and not an
+     event slot with nothing on.  pl: the playlist's own channels ('' the first, or its id); raw: the provider's list
+     when the playlist under test isn't the one loaded (names only, the adult ones left out). */
+  var ADULT = /\b(adults?|xxx|porn|erotic|18\s?\+|\+\s?18)(?![a-z])/i;
+  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function testChannels(n, pl) {
+    var list = [];
+    try {
+      list = Library.channels(Library.ALL).filter(function (c) {
+        if ((c.p || '') !== pl || Library.isHidden(c) || Library.isBlocked(c) || Library.idle(c)) return false;
+        return !ADULT.test(Library.name(c) + ' ' + (Library.groupName(c.g) || ''));
+      });
+    } catch (e) { list = []; }
+    return shuffle(list.slice(0, 3000)).slice(0, n);
+  }
+  // A Stalker or M3U list as loaded for the test: a channel at random, its name and group not adult.
+  function listPick(d) {
+    var gn = {}; (d.groups || []).forEach(function (g) { gn[g.id] = g.name; });
+    var ok = (d.channels || []).filter(function (c) { return c && !ADULT.test(String(c.n || '') + ' ' + (gn[c.g] || '')); });
+    return shuffle(ok.slice(0, 3000))[0] || null;
+  }
+  function rawPick(s, n) { return shuffle((s || []).filter(function (x) { return x && x.stream_id && !ADULT.test(String(x.name || '')); }).slice(0, 3000)).slice(0, n); }
+
   function run(p) {
     if (busy) return;
     busy = true;
@@ -334,25 +358,38 @@ var Diag = (function () {
           var t0 = Date.now();
           return U.getJSON(Source.api(p, 'get_live_streams'), 90000, 'diag-streams').then(function (s) {
             if (!Array.isArray(s)) throw Object.assign(new Error('Not a list'), { kind: 'parse', body: JSON.stringify(s).slice(0, 200) });
-            ctx.first = s[0];
+            ctx.raw = s;
             return { warn: !s.length, msg: s.length + ' channels in ' + ms(t0) };
           });
         });
       }).then(function () {
-        if (!ctx.first) return;
-        var ch = { id: ctx.first.stream_id, k: 'x' + ctx.first.stream_id };
-        // Build the stream address for the playlist under test, not necessarily the active one.
-        var url = Source.base(p.server) + '/live/' + encodeURIComponent(p.user) + '/' + encodeURIComponent(p.pass) + '/' + ch.id + '.' + Store.settings.format;
-        return step('Stream test: ' + (ctx.first.name || 'first channel') + ' (' + Store.settings.format + ')', function () {
-          return probeStream(url, 5).then(function (i) {
-            var d = describeStream(i), det = ['HTTP ' + i.status + ', ' + (i.ctype || 'no content type') + ', first data after ' + i.firstMs + 'ms',
-              'received ' + Math.round(i.bytes / 1024) + ' KB in ' + i.secs.toFixed(1) + 's (about ' + d.kbps + ' kbps), looks like ' + d.kind];
-            if (i.final && i.final !== url) det.push('redirected to ' + i.final.replace(/^(https?:\/\/[^/]+).*/, '$1/…'));
-            var warn = !i.bytes || d.kind === 'a web page (not video)' || d.kind === 'unknown data';
-            if (!i.bytes) det.push('No video data arrived.  The channel may be offline, or the provider may refuse this format.');
-            return { warn: warn, msg: i.bytes ? 'video is flowing' : 'connected but no data', detail: det };
-          });
-        }).catch(function () {});
+        // Three channels from the guide (or the provider's list for a playlist not loaded), each for 5 seconds.
+        var mine = p.id === Store.playlist.id ? '' : (Store.loaded ? Store.loaded() : []).some(function (x) { return x.id === p.id; }) ? p.id : null;
+        var picks = mine !== null ? testChannels(3, mine).map(function (c) { return { id: c.id, name: Library.name(c) }; }) : [];
+        if (!picks.length) picks = rawPick(ctx.raw, 3).map(function (x) { return { id: x.stream_id, name: Names.clean(String(x.name || '')) }; });
+        var got = [], k = 0;
+        function one() {
+          if (k >= picks.length) return;
+          var c = picks[k++];
+          var url = Source.base(p.server) + '/live/' + encodeURIComponent(p.user) + '/' + encodeURIComponent(p.pass) + '/' + c.id + '.' + Store.settings.format;
+          return step('Stream test ' + k + ' of ' + picks.length + ': ' + (c.name || 'a channel') + ' (' + Store.settings.format + ')', function () {
+            return probeStream(url, 5).then(function (i) {
+              var d = describeStream(i), det = ['HTTP ' + i.status + ', ' + (i.ctype || 'no content type') + ', first data after ' + i.firstMs + 'ms',
+                'received ' + Math.round(i.bytes / 1024) + ' KB in ' + i.secs.toFixed(1) + 's (about ' + d.kbps + ' kbps), looks like ' + d.kind];
+              if (i.final && i.final !== url) det.push('redirected to ' + i.final.replace(/^(https?:\/\/[^/]+).*/, '$1/…'));
+              var warn = !i.bytes || d.kind === 'a web page (not video)' || d.kind === 'unknown data';
+              if (!i.bytes) det.push('No video data arrived.  The channel may be offline, or the provider may refuse this format.');
+              got.push({ ok: !!i.bytes && !warn, kbps: d.kbps, firstMs: i.firstMs });
+              return { warn: warn, msg: i.bytes ? 'video is flowing' : 'connected but no data', detail: det };
+            });
+          }).catch(function () { got.push({ ok: false }); }).then(one);
+        }
+        return Promise.resolve(one()).then(function () {
+          if (got.length < 2) return;
+          var ok = got.filter(function (g) { return g.ok; }), avg = function (f) { return Math.round(ok.reduce(function (a, g) { return a + (+g[f] || 0); }, 0) / Math.max(1, ok.length)); };
+          push((ok.length === got.length ? '✓  ' : '⚠  ') + ok.length + ' of ' + got.length + ' channels played' + (ok.length ? ':  about ' + avg('kbps') + ' kbps on average, first data after ' + avg('firstMs') + 'ms' : ''));
+          Log.info('diag', 'Stream tests: ' + ok.length + ' of ' + got.length + ' played' + (ok.length ? ', about ' + avg('kbps') + ' kbps' : ''));
+        });
       });
     } else if (p.type === 'stalker') {
       // A Stalker portal: the helper logs in as the box, lists the channels, then the first one's link plays.
@@ -360,7 +397,7 @@ var Diag = (function () {
         return step('Portal login and channel list', function () {
           var t0 = Date.now();
           return Source.load(p).then(function (d) {
-            ctx.first = d.channels[0];
+            ctx.first = listPick(d);
             return { msg: d.channels.length + ' channels, ' + d.groups.length + ' groups in ' + ms(t0) };
           });
         });
@@ -380,7 +417,7 @@ var Diag = (function () {
             var ok = t.indexOf('#EXTINF') >= 0;
             if (!ok) throw Object.assign(new Error('Not an M3U playlist'), { kind: 'parse', body: t.slice(0, 200) });
             var d = Source.parseM3U(t);
-            ctx.first = d.channels[0]; ctx.epg = d.epgUrl;
+            ctx.first = listPick(d); ctx.epg = d.epgUrl;
             return { msg: d.channels.length + ' channels, ' + d.groups.length + ' groups, ' + Math.round(t.length / 1024) + ' KB in ' + ms(t0), detail: [d.epgUrl ? 'guide address in playlist: ' + d.epgUrl : 'no guide address in the playlist'] };
           });
         });
@@ -492,12 +529,15 @@ var Diag = (function () {
       push('');
       // A movie: the first category that has one.
       var movie = !xc || !(p.vod && p.vod.movies) ? Promise.resolve(null) : Source.vodCats('movie').then(function (cats) {
-        cats = Array.isArray(cats) ? cats.slice(0, 3) : [];
+        // Not an adult category, nor one you hid (discussion #36).
+        var hid = ((p.vodPrefs && p.vodPrefs.hide) || {}).movie || [];
+        cats = Array.isArray(cats) ? shuffle(cats.filter(function (c) { return c && !ADULT.test(String(c.category_name || '')) && hid.map(String).indexOf(String(c.category_id)) < 0; }).slice(0, 40)).slice(0, 3) : [];
         var i = 0;
         function next() {
           if (i >= cats.length) return null;
           return U.getJSON(Source.api(p, 'get_vod_streams', '&category_id=' + encodeURIComponent(cats[i++].category_id)), 20000).then(function (l) {
-            return Array.isArray(l) && l.length ? l[0] : next();
+            var ok = Array.isArray(l) ? l.filter(function (x) { return x && !ADULT.test(String(x.name || '')); }) : [];
+            return ok.length ? ok[Math.floor(Math.random() * Math.min(ok.length, 50))] : next();
           }, next);
         }
         return next();
@@ -510,14 +550,27 @@ var Diag = (function () {
             push((r.mbps >= 10 ? '✓ ' : '⚠ ') + 'Provider: ' + r.mbps.toFixed(1) + ' Mbps, ' + verdict(r.mbps) + '   (first data after ' + r.firstMs + 'ms)');
           });
         }
-        var c = Store.edits.last && Library.find(Store.edits.last) || Library.channels(Library.ALL)[0] || Library.data.channels[0];
-        if (!c) { push('⚠ Provider: no channel to test with.'); return; }
-        push('… Your provider: playing ' + Library.name(c) + ' for 8 seconds');
-        return measure(Source.streamUrl(c), 8, 40e6).then(function (r) {
-          rows.push(['live', r.mbps]);
-          push('✓ Live channel: ' + r.mbps.toFixed(1) + ' Mbps, first data after ' + r.firstMs + 'ms.');
-          push('   A live channel arrives about as fast as it plays, so this is the channel\'s own rate, not your full speed.');
-          push('   ' + (r.mbps >= 4 ? 'It keeps up.' : 'Low: this channel may be SD, or the provider is busy right now.'));
+        // Live channels: three from the guide at random (never hidden or adult), 6 seconds each, and their average.
+        var cs = testChannels(3, '');
+        if (!cs.length) { push('⚠ Provider: no channel to test with.'); return; }
+        var res = [], k = 0;
+        function one() {
+          if (k >= cs.length) return;
+          var c = cs[k++];
+          push('… Your provider: playing ' + Library.name(c) + ' for 6 seconds');
+          return measure(Source.streamUrl(c), 6, 40e6).then(function (r) {
+            res.push(r.mbps);
+            lines.pop();
+            push('✓ ' + Library.name(c) + ': ' + r.mbps.toFixed(1) + ' Mbps, first data after ' + r.firstMs + 'ms');
+          }, function (e) { lines.pop(); push('⚠ ' + Library.name(c) + ': ' + e.message); }).then(one);
+        }
+        return Promise.resolve(one()).then(function () {
+          if (!res.length) throw new Error('none of ' + cs.length + ' channels sent anything');
+          var avg = res.reduce(function (a, b) { return a + b; }, 0) / res.length;
+          rows.push(['live', avg]);
+          push((avg >= 4 ? '✓ ' : '⚠ ') + 'Live channels: ' + avg.toFixed(1) + ' Mbps on average (' + res.length + ' of ' + cs.length + ' played).');
+          push('   A live channel arrives about as fast as it plays, so this is the channels\' own rate, not your full speed.');
+          push('   ' + (avg >= 4 ? 'They keep up.' : 'Low: these channels may be SD, or the provider is busy right now.'));
         });
       }).catch(function (e) { push('✗ Provider: ' + e.message + '.  The connection test (Settings > System) shows why.'); });
     }).then(function () {
