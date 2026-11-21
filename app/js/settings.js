@@ -1069,6 +1069,8 @@ var Settings = (function () {
     out.push(info('The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools) and men\'s college basketball (those schools and the main Division I ones without FBS football).  Other college sports, women\'s college games, junior and minor league teams, and other countries\' leagues, aren\'t in it yet.', ''));
     out.push(toggle('Show the My teams group', 'Near the top of the guide: their games on now at the top, then the ones starting within the time below.  A team\'s own channel is there while it shows a game.',
       function () { return s.teamsGroup !== false; }, function (v) { s.teamsGroup = v; apply(); }));
+    out.push(toggle('Sports in the menu', 'A screen of today\'s games with their scores and team logos (from ESPN), your teams first, and which of your channels has each one.  Blue on it picks the leagues.',
+      function () { return s.sportsTab !== false; }, function (v) { s.sportsTab = v; Store.saveSettings(); Views.buildTabs(); paint(); }));
     out.push(choice('Games starting within', 'How soon a game has to start to be in the group.', [3, 6, 12, 24], ['3 hours', '6 hours', '12 hours', '24 hours'],
       function () { return +s.teamsAhead || 6; }, function (v) { s.teamsAhead = v; apply(); }));
     out.push(toggle('Remind me before their games', 'Like the watchlist: how far ahead it looks, and a reminder or just a message, are set in Settings > Reminders and watchlist > Watchlist.',
@@ -1119,7 +1121,7 @@ var Settings = (function () {
     out.push(head('How your guide is built, in this order'));
     out.push(info('1.  Your provider\'s guide.', ''));
     out.push(info('2.  Your own guide sources, the first one first.  They fill the channels your provider\'s guide leaves empty, and take over one it has only where their programmes agree.', ''));
-    out.push(info('3.  Public fill-in, only for channels nothing else covers: epg.pw, iptv-epg.org, epgshare01, and Pluto TV\'s own guide from i.mjh.nz for Pluto channels.', ''));
+    out.push(info('3.  Public fill-in, only for channels nothing else covers: epg.pw, iptv-epg.org, epgshare01, and the Pluto TV, Samsung TV Plus, Plex and Roku guides from i.mjh.nz for their channels.', ''));
     out.push(info('4.  Matching: each channel is linked to a guide channel by its guide id, then its name.  A wrong one: Hold OK > Assign guide.', ''));
     out.push(info('A channel that will never have a guide (a radio stream, a camera, an event slot): Hold OK > No guide for this channel.  It drops out of matching and stops saying "No guide information".  The web editor\'s Guide page does many at once (Ignore).', ''));
     out.push(head(I18n.raw(p.name ? I18n.t('Guide for {x}', { x: p.name }) : I18n.t('Guide for this playlist'))));

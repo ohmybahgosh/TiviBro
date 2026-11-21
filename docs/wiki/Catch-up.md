@@ -24,4 +24,4 @@ From live TV, **From start** in the quick menu restarts the current programme.  
 
 ---
 
-← [My teams](My-teams)  ·  [Home](Home)  ·  [Recording, live pause and rewind](Recording-live-pause-and-rewind) →
+← [Sports](Sports)  ·  [Home](Home)  ·  [Recording, live pause and rewind](Recording-live-pause-and-rewind) →

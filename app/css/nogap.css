@@ -52,4 +52,9 @@
 .nogap .mmp-buttons > * + *{margin-left:16px}
 .nogap .mmp-btn > * + *{margin-left:12px}
 .nogap .mmp-more > * + *{margin-left:22px}
+.nogap .sp-head > * + *{margin-left:22px}
+.nogap .sp-track > * + *{margin-left:24px}
+.nogap .sp-team > * + *{margin-left:16px}
+.nogap .sp-meta > * + *{margin-left:10px}
+.nogap .sp-ch > * + *{margin-left:8px}
 .nogap .mv-g-row > * + *{margin-left:20px}

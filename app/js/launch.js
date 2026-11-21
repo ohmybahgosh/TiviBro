@@ -13,7 +13,7 @@
      channel   key | number | epg | name | q    play a channel; q tries each of the others in turn
      team      id (nhl:det), start, title       play a followed team's game: on now, else the one at start
      guide     -                                the guide
-     view      name: live guide movies shows media onnow recordings search settings
+     view      name: live guide movies shows media onnow sports recordings search settings
      search    q                                Search, with the words typed in
      settings  section (keys, recording, ...)   Settings, on that section
      last      -                                the channel watched before
@@ -24,7 +24,7 @@ var Launch = (function () {
   'use strict';
   var pending = null, isReady = false, onReminder = null;
   var MAIN = { team: 'id', channel: 'q', search: 'q', view: 'name', settings: 'section' };
-  var VIEWS = { live: 'live', channels: 'live', guide: 'guide', movies: 'movies', shows: 'shows', series: 'shows', media: 'media', 'my-media': 'media', onnow: 'onnow', recordings: 'recordings', search: 'search', settings: 'settings' };
+  var VIEWS = { live: 'live', channels: 'live', guide: 'guide', movies: 'movies', shows: 'shows', series: 'shows', media: 'media', 'my-media': 'media', onnow: 'onnow', sports: 'sports', recordings: 'recordings', search: 'search', settings: 'settings' };
 
   // tivibro://team/nhl:det?start=1795216200000 -> { action: 'team', id: 'nhl:det', start: '1795216200000' }
   function fromUri(uri) {

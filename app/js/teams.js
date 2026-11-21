@@ -330,8 +330,9 @@ var Teams = (function () {
      channel showing a game (a league pass, a sports network, the other team's feed), so one that doesn't
      work has others next to it; one: just one channel per game (a Favorite, else the first found), for
      reminders.  Games on now first, then by start, a game's channels together. */
-  function games(within, one) {
-    var teams = followed(), now = Date.now(), to = now + (within || ahead()), out = [], seen = {}, mineIds = {};
+  /* ids: these teams instead of the ones you follow (the Sports screen: every team playing today). */
+  function games(within, one, ids) {
+    var teams = ids ? ids.map(function (id) { return BY_ID[id]; }).filter(Boolean) : followed(), now = Date.now(), to = now + (within || ahead()), out = [], seen = {}, mineIds = {};
     if (!teams.length || !Library.data.channels.length) return out;
     teams.forEach(function (x) { mineIds[x.id] = 1; });
     /* Followed teams in a game: two teams of one league named ("Minnesota Vikings at Detroit Lions",

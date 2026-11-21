@@ -41,7 +41,7 @@ var Views = (function () {
 
   // In the language chosen (app/js/i18n.js).
   function T(x, v) { return typeof I18n !== 'undefined' ? I18n.t(x, v) : v ? String(x).replace(/\{([a-z]+)\}/g, function (a, k) { return v[k] != null ? v[k] : a; }) : x; }
-  var TAB_LABELS = { live: 'Channels', guide: 'Guide', onnow: 'Movies on now', movies: 'Movies', shows: 'Shows', media: 'My media', recordings: 'Recordings', search: 'Search', editor: 'Edit on phone', settings: 'Settings', report: 'Report a problem' };
+  var TAB_LABELS = { live: 'Channels', guide: 'Guide', onnow: 'Movies on now', sports: 'Sports', movies: 'Movies', shows: 'Shows', media: 'My media', recordings: 'Recordings', search: 'Search', editor: 'Edit on phone', settings: 'Settings', report: 'Report a problem' };
   // The guide is home: the app opens on it and Back from any other screen comes back to it.
   function home() { return Store.settings.startTab === 'live' ? 'live' : 'guide'; }
   /* The plain channel list in the menu: most people browse with the guide, so it shows only when
@@ -54,6 +54,7 @@ var Views = (function () {
     guide: '<path d="M3 5h18M3 12h18M3 19h18M9 3v18"/>',
     live: '<rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/>',
     onnow: '<path d="M4 9h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M4 9l1.5-4.5 15 3.5L20 9"/><path d="M9 5.3l1.6 3.4M14 6.4l1.6 2.6"/><path d="M10.5 12.5v5l4-2.5z"/>',
+    sports: '<path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4.5a2.5 2.5 0 0 0 2.6 4M17 6h2.5a2.5 2.5 0 0 1-2.6 4M12 14v3.5M8.5 20.5h7M9.5 17.5h5v3h-5z"/>',
     movies: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
     media: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M10 11l5 3-5 3z"/>',
     shows: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 3l4 4 4-4"/>',
@@ -72,6 +73,8 @@ var Views = (function () {
     tabs = home() === 'live' ? ['live', 'guide'] : channelsInMenu() ? ['guide', 'live'] : ['guide'];
     // Movies on now (onnow.js): in the menu while a TMDB token is saved and movie details are on.
     if (typeof Movies !== 'undefined' && Movies.on()) tabs.push('onnow');
+    // Sports (sportshub.js): scores and your channels for today's games, unless turned off in Settings > Channels and groups > My teams.
+    if (typeof SportsHub !== 'undefined' && Store.settings.sportsTab !== false) tabs.push('sports');
     // Movies and Shows: an Xtream login's, or an M3U list's own (Vod.m3u: kept by the network helper);
     // several playlists on: any of them (Vod.offered).
     var vk = Vod.offered();
@@ -647,6 +650,7 @@ var Views = (function () {
     if (lvis && t !== 'live') endListVis(true);
     if (tab === 'media' && t !== 'media') Media.leave();
     if (tab === 'onnow' && t !== 'onnow') OnNow.leave();
+    if (tab === 'sports' && t !== 'sports' && typeof SportsHub !== 'undefined') SportsHub.leave();
     if (tab === 'recordings' && t !== 'recordings' && typeof Recordings !== 'undefined') Recordings.leave();
     document.body.classList.toggle('media-open', t === 'media');
     if ((tab === 'movies' || tab === 'shows') && t !== 'movies' && t !== 'shows' && typeof VodHome !== 'undefined') VodHome.hide();                 // the clock over a backdrop gets a shadow
@@ -660,7 +664,7 @@ var Views = (function () {
       if (on) tabSel = i;
     });
     if (t !== 'guide') Guide.leave();
-    ['Live', 'Guide', 'Settings', 'Vod', 'Media', 'Onnow', 'Recordings', 'Search'].forEach(function (x) {
+    ['Live', 'Guide', 'Settings', 'Vod', 'Media', 'Onnow', 'Sports', 'Recordings', 'Search'].forEach(function (x) {
       var want = t === 'movies' || t === 'shows' ? 'Vod' : t.charAt(0).toUpperCase() + t.slice(1);
       var v = $('view' + x);
       if (v) v.classList.toggle('hidden', x !== want);
@@ -690,6 +694,7 @@ var Views = (function () {
       else if (t === 'movies' || t === 'shows') Vod.open(t === 'shows' ? 'series' : 'movie');
       else if (t === 'media') Media.open();
       else if (t === 'onnow') OnNow.open();
+      else if (t === 'sports') SportsHub.open();
       else if (t === 'recordings') Recordings.open();
       else if (t === 'search') Search.open();
     }
@@ -870,7 +875,7 @@ var Views = (function () {
       case 'editor': WebEdit.showJoin(); return;
       case 'movies': if (tabs.indexOf('movies') >= 0) leaveTo('movies'); return;
       case 'shows': if (tabs.indexOf('shows') >= 0) leaveTo('shows'); return;
-      case 'live': if (full && (fullFrom === 'onnow' || fullFrom === 'media')) leaveTo('live'); else if (full) exitFull(); else switchTab('live'); return;
+      case 'live': if (full && (fullFrom === 'onnow' || fullFrom === 'media' || fullFrom === 'sports')) leaveTo('live'); else if (full) exitFull(); else switchTab('live'); return;
       case 'exit': if (full) exitFull(); return;
       case 'fav': if (c) { var on = L.toggleFav(c.k); if (on == null) return; U.toast(on ? 'Added to Favorites' : 'Removed from Favorites'); refreshLists(true); if (full) osd(true); } return;
       case 'favorites': openGroup(L.FAV); return;
@@ -1028,7 +1033,7 @@ var Views = (function () {
   function goFull() {
     // From another screen (Search...): Back goes to the start screen, the guide or Channels.  From Movies on
     // now, Back goes back to it, on the same movie.
-    if (!full) fullFrom = tab === 'live' || tab === 'guide' || tab === 'onnow' || tab === 'media' ? tab : home() === 'live' ? 'live' : 'guide';
+    if (!full) fullFrom = tab === 'live' || tab === 'guide' || tab === 'onnow' || tab === 'media' || tab === 'sports' ? tab : home() === 'live' ? 'live' : 'guide';
     followPlaying();
     full = true;
     document.body.classList.add('full');
@@ -1043,7 +1048,7 @@ var Views = (function () {
   }
   /* away: leaving fullscreen for another screen (the side menu, a button for another screen), not Back. */
   function exitFull(away) {
-    if ((fullFrom === 'onnow' || fullFrom === 'media') && (away || tab !== fullFrom)) fullFrom = home() === 'live' ? 'live' : 'guide';
+    if ((fullFrom === 'onnow' || fullFrom === 'media' || fullFrom === 'sports') && (away || tab !== fullFrom)) fullFrom = home() === 'live' ? 'live' : 'guide';
     closePanel();
     peekUntil = 0; clearTimeout(peekT);
     full = false; overlay = false;
@@ -1063,15 +1068,15 @@ var Views = (function () {
     /* The rewind buffer keeps playing in the guide's (or Channels') window: before, it was stopped and the channel
        tuned again from the provider every time you left fullscreen (Bob), and fullscreen again started a new
        buffer.  A pause you made yourself still ends here, back to live. */
-    if (tsh && tsh.always && mode === 'live' && playing && tsh.c.k === playing.k && fullFrom !== 'onnow' && fullFrom !== 'media') { tsCard(null); if (Player.paused && Player.setPaused) Player.setPaused(false); }
+    if (tsh && tsh.always && mode === 'live' && playing && tsh.c.k === playing.k && fullFrom !== 'onnow' && fullFrom !== 'media' && fullFrom !== 'sports') { tsCard(null); if (Player.paused && Player.setPaused) Player.setPaused(false); }
     else if (tsh && mode === 'live') { var tpc = tsh.c; tsEnd(); if (playing && playing.k === tpc.k) { Player.stop(); afterTs(function () { if (playing && playing.k === tpc.k && !full) startChannel(tpc, true); }); } }
     // Back to Movies on now (or My media, after a movie on a live channel): no window for the picture, so the channel stops.
-    if (fullFrom === 'onnow' || fullFrom === 'media') {
+    if (fullFrom === 'onnow' || fullFrom === 'media' || fullFrom === 'sports') {
       mode = 'live'; cu = null; Player.stop();
       if (playing) lastPlayed = playing;
       playing = null; stage.classList.add('off');
       Keymap.setContext('other');
-      if (fullFrom === 'media') Media.open(true); else OnNow.resume();
+      if (fullFrom === 'media') Media.open(true); else if (fullFrom === 'sports') SportsHub.resume(); else OnNow.resume();
       return;
     }
     if (mode === 'catchup' && playing) { mode = 'live'; cu = null; Player.play(playing, { preview: true }); }
@@ -1193,7 +1198,7 @@ var Views = (function () {
       if (g('left')) chip('left', '◀  ' + (Keymap.get('player', 'left') === 'rewind' && !canBack ? 'Last channel' : g('left')));
       if (g('right')) chip('right', '▶  ' + g('right'));
       ['red', 'green', 'yellow', 'blue'].forEach(function (b) { if (g(b)) chip(b, g(b), b); });
-      chip('back', 'Back  ' + (fullFrom === 'live' ? 'Channels' : fullFrom === 'onnow' ? 'Movies on now' : fullFrom === 'media' ? 'My media' : 'Guide'));
+      chip('back', 'Back  ' + (fullFrom === 'live' ? 'Channels' : fullFrom === 'onnow' ? 'Movies on now' : fullFrom === 'sports' ? 'Sports' : fullFrom === 'media' ? 'My media' : 'Guide'));
     }
     var sig = JSON.stringify(items);
     var lg = typeof I18n !== 'undefined' ? I18n.lang() : '';

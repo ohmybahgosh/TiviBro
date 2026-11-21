@@ -28,4 +28,4 @@ TiviBro knows the teams by their full names ("Detroit Red Wings"), by short name
 
 ---
 
-← [Event channels: pay-per-view and sports passes](Event-channels-pay-per-view-and-sports-passes)  ·  [Home](Home)  ·  [Catch-up](Catch-up) →
+← [Event channels: pay-per-view and sports passes](Event-channels-pay-per-view-and-sports-passes)  ·  [Home](Home)  ·  [Sports](Sports) →

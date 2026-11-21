@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Sports**, a new screen in the menu: today's games with live scores and team logos (from ESPN), your teams' games this week first, then everything live, then a row per league, each with the channel of yours that has it.  OK watches, Hold OK lists every channel with the game, Yellow sets a reminder, Green follows a team, Blue picks the leagues (NFL, college football, NBA, college basketball, WNBA, NHL, MLB, MLS, Premier League, Champions League, Formula 1).
 - **Multiview's Add a channel is a small guide**: your groups on the left, the group's channels on the right with their logo, what's on now with how far in it is, and what's next, over the two boxes while they keep playing.  It opens on the box's own group and channel.
 - **Multiview's second box is smoother.**  Every channel is now read at its own pace, not just playlists: a live channel used to send its first few seconds in one go, and the pictures came in bursts that were then dropped to catch up.  On an LG C2 the box went from about 24 pictures a second, uneven, to a steady 29 to 30.
 - **Swapping the sound in Multiview keeps a picture up**: the box taking the sound shows its last picture until its video starts, instead of going black.

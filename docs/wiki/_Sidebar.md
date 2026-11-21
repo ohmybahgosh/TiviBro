@@ -18,6 +18,7 @@
 - [Other versions of a channel](Other-versions-of-a-channel)
 - [Event channels: pay-per-view and sports passes](Event-channels-pay-per-view-and-sports-passes)
 - [My teams](My-teams)
+- [Sports](Sports)
 - [Catch-up](Catch-up)
 - [Recording, live pause and rewind](Recording-live-pause-and-rewind)
 - [Movies and shows](Movies-and-shows)

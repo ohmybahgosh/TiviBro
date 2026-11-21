@@ -51,7 +51,7 @@ A link maps one-to-one onto the `open` object:
 |---|---|---|
 | `channel` | `key`, `number`, `epg`, `name`, or `q` | Plays the channel, full screen.  The fields are tried in that order, so give one.  `q` tries each in turn: key, then number (digits), then guide id, then name. |
 | `team` | `id`, optional `start`, optional `title` | Plays a followed team's game.  `id` is a My teams id, `league:abbr` in lower case, for example `nhl:det`, `nfl:det`, `mlb:det`, `ncaaf:mich` or `ncaaf:msu`.  It picks the game on now.  With `start` (ms since 1970) it picks the game starting closest to that.  A game more than 5 minutes away asks first.  `title` is only used in messages. |
-| `view` | `name` | Opens a part of TiviBro: `live` (channels), `guide`, `movies`, `shows`, `media` (My media), `onnow` (Movies on now), `recordings`, `search` or `settings`. |
+| `view` | `name` | Opens a part of TiviBro: `live` (channels), `guide`, `movies`, `shows`, `media` (My media), `onnow` (Movies on now), `sports` (Sports), `recordings`, `search` or `settings`. |
 | `guide` | none | The guide.  Same as `view` with `guide`. |
 | `search` | `q` | Search, with the words already typed in. |
 | `settings` | `section` | Settings, opened on a section: for example `keys`, `recording`, `guide`, `media`, `playback` or `about`. |
