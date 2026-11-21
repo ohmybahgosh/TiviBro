@@ -162,7 +162,7 @@ Buttons can be remapped under **Settings > Remote and buttons**, including keys 
 
 The guide is the home screen.  The channel you are on plays in the window at the top left, with the programme details beside it.
 
-- **OK** on a channel previews it in the window.  **OK again** (or **▶ Play**) goes fullscreen.  If you prefer one press, set **Settings > Guide > OK on a channel in the Guide** to *Fullscreen right away*.
+- **OK** on a channel previews it in the window.  **OK again** (or **▶ Play**) goes fullscreen.  Moved off it to look around, **Hold OK** on any channel has **Watch (the channel in the window) fullscreen** at the top, for remotes without a Play button.  If you prefer one press, set **Settings > Guide > OK on a channel in the Guide** to *Fullscreen right away*.
 - **▶** moves forward in time; **◀** moves back, and on "now" it opens the groups.  Held, they step slowly for the first second so you can stop where you want, then speed up; a held **◀** never opens the groups: it pauses at now, then keeps going back to show what was on, on any channel (playing it needs catch-up).  **Back** returns to now.  Held **▲ ▼** speed up too, three channels at a time after a second and a half.
 - **⏩ Fast forward** and **⏪ Rewind** jump a whole screen of the guide (two and a half hours) at a time.  Rewind goes back only as far as the channel's catch-up.  **Back** returns to now.
 - When the guide shows another day, the time bar says which ("Tomorrow 8:00pm"), and the day shows at midnight.

@@ -3436,6 +3436,9 @@ var Guide = (function () {
   function menu() {
     var c = list[sel]; if (!c) return;
     var h = progAt(c, focusT), now = Date.now(), items = [];
+    // The channel in the window when you've moved off it: fullscreen without a Play button (discussion #36).
+    var pvc = previewing();
+    if (pvc && !isPlaying(c)) items.push({ label: T('Watch {x} fullscreen', { x: L.name(pvc) }), sub: T('in the window now'), icon: 'full', action: function () { Views.goFull(); } });
     if (h.p && h.p.e <= now && c.arch) items.push({ label: 'Replay this programme', icon: 'replay', action: function () { Views.playCatchup(c, h.p, 0); } });
     items.push({ label: 'Watch fullscreen', icon: 'full', action: function () { if (isPlaying(c)) Views.goFull(); else Views.startChannel(c, false, Views.goFull); } });
     if (!isPlaying(c)) items.push({ label: 'Play in the window', icon: 'window', action: function () { preview(c, true); } });
