@@ -239,7 +239,11 @@ var SportsHub = (function () {
     el.innerHTML = '';
     var a = g.teams[0] || {}, h = g.teams[1] || {};
     var hero = U.el('div', 'sp-hero');
-    hero.style.background = 'linear-gradient(100deg,' + hex(a.color, 0.95) + ' 0%,rgba(11,14,26,.92) 38%,rgba(11,14,26,.92) 62%,' + hex(h.color, 0.95) + ' 100%)';
+    // Each team's side in its colours: its main colour well in, its other colour as a band on the outer edge.
+    // Deepened, so a logo in the same colour (UCLA's blue on blue) still stands out.
+    var deep = function (c) { if (!/^[0-9a-f]{6}$/i.test(c || '')) return ''; var rgb = [0, 2, 4].map(function (i) { return parseInt(c.slice(i, i + 2), 16); }), l = (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) / 255, f = l > 0.25 ? 0.5 : l > 0.12 ? 0.75 : 1; return [0, 2, 4].map(function (i) { var v = Math.round(parseInt(c.slice(i, i + 2), 16) * f); return ('0' + v.toString(16)).slice(-2); }).join(''); };
+    hero.style.background = 'linear-gradient(100deg,' + hex(deep(a.color), 1) + ' 0%,' + hex(deep(a.color), 0.9) + ' 28%,rgba(11,14,26,.92) 45%,rgba(11,14,26,.92) 55%,' + hex(deep(h.color), 0.9) + ' 72%,' + hex(deep(h.color), 1) + ' 100%)';
+    [[a, 'l'], [h, 'r']].forEach(function (x) { var alt = x[0].alt && x[0].alt.toLowerCase() !== (x[0].color || '').toLowerCase() && !/^(ffffff|000000)$/i.test(x[0].alt) ? x[0].alt : ''; if (!alt) return; var bd = U.el('div', 'sp-band ' + x[1]); bd.style.background = hex(alt, 1); hero.appendChild(bd); });
     [a, h].forEach(function (t, i) {
       if (!t.name) return;
       var sd = U.el('div', 'sp-side ' + (i ? 'r' : 'l'));

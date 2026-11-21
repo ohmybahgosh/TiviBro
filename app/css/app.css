@@ -1468,9 +1468,10 @@ body.focus-ring .sp-card.focus{box-shadow:0 0 0 5px var(--accent),0 0 0 9px #fff
 /* A game's page (sportshub.js page) */
 .sp-page{position:absolute;left:128px;right:0;top:0;bottom:0;background:var(--ink);z-index:4;padding:0 56px 0 24px}
 .sp-hero{position:absolute;left:0;right:56px;top:72px;height:284px;border-radius:24px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.45)}
+.sp-band{position:absolute;top:0;bottom:0;width:14px}.sp-band.l{left:0}.sp-band.r{right:0}
 .sp-side{position:absolute;top:26px;width:340px;display:flex;flex-direction:column;align-items:center;text-align:center}
 .sp-side.l{left:40px}.sp-side.r{right:40px}
-.sp-side img{width:150px;height:150px;object-fit:contain;filter:drop-shadow(0 6px 18px rgba(0,0,0,.6))}
+.sp-side img{width:150px;height:150px;object-fit:contain;filter:drop-shadow(0 0 1.5px rgba(255,255,255,.75)) drop-shadow(0 6px 18px rgba(0,0,0,.6))}
 .sp-side b{font-size:34px;font-weight:800;margin-top:10px;white-space:nowrap;max-width:330px;overflow:hidden;text-overflow:ellipsis}
 .sp-side small{font-size:24px;color:#d3d9ea;margin-top:2px}
 .sp-mid{position:absolute;left:400px;right:400px;top:42px;text-align:center}
