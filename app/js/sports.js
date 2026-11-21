@@ -263,16 +263,29 @@ var Sports = (function () {
   /* The guide's games for every team playing in the next day and a half, worked out at most every two minutes:
      team id -> [{ c, p, pair }]. */
   var chanCache = null, BOOT = Date.now();
+  /* The guide's listings of today's and tomorrow's games, by team id: { 'ncaaf:mich': [{ c, p, team, pair }] }, from
+     teams.js (titles, event channels, and descriptions).  Kept two minutes, or until new description finds arrive. */
   function guideGames() {
     var now = Date.now();
-    if (chanCache && now - chanCache.at < 120000 && chanCache.of === Library.data.channels) return chanCache.map;
+    var dg = typeof Teams !== 'undefined' ? Teams.descGen : 0;     // new description finds (a game named only there): look again
+    if (chanCache && now - chanCache.at < 120000 && chanCache.of === Library.data.channels && chanCache.dg === dg) return chanCache.map;
     var ids = {}, map = {};
     all().forEach(function (g) { if (g.s < now + 36 * 3600e3 && (g.state !== 'post')) g.teams.forEach(function (t) { if (t.id) ids[t.id] = 1; }); });
     var list = [];
-    try { if (typeof Teams !== 'undefined' && Teams.games && Object.keys(ids).length && typeof Epg !== 'undefined' && Epg.search) list = Teams.games(36 * 3600e3, false, Object.keys(ids)); } catch (e) { if (typeof Log !== 'undefined') Log.warn('sports', 'Finding games in the guide: ' + (e && e.message)); }
-    list.forEach(function (x) { (map[x.team.id] || (map[x.team.id] = [])).push(x); });
+    /* Your teams are looked for on their own, with the same words as the guide's My teams group, so a game named
+       only in a programme's description (a local CBS station's "College Football") is found the same way there
+       and here.  Asked together with every other team, the description search stopped at its limit first. */
+    try {
+      if (typeof Teams !== 'undefined' && Teams.games && Object.keys(ids).length && typeof Epg !== 'undefined' && Epg.search) {
+        var mine = Teams.followed ? Teams.followed().map(function (x) { return x.id; }) : [], rest = Object.keys(ids).filter(function (id) { return mine.indexOf(id) < 0; });
+        if (mine.length) list = Teams.games(36 * 3600e3, false).filter(function (x) { return ids[x.team.id]; });
+        if (rest.length) list = list.concat(Teams.games(36 * 3600e3, false, rest));
+      }
+    } catch (e) { if (typeof Log !== 'undefined') Log.warn('sports', 'Finding games in the guide: ' + (e && e.message)); }
+    var had = {};
+    list.forEach(function (x) { var hk = x.c.k + '|' + x.team.id + '|' + x.p.s; if (had[hk]) return; had[hk] = 1; (map[x.team.id] || (map[x.team.id] = [])).push(x); });
     // Nothing found yet (the guide is still loading after a start): look again in 10 seconds, not 2 minutes.
-    chanCache = { at: list.length || now - BOOT > 300000 ? now : now - 110000, of: Library.data.channels, map: map, games: {} };
+    chanCache = { at: list.length || now - BOOT > 300000 ? now : now - 110000, of: Library.data.channels, dg: dg, map: map, games: {} };
     return map;
   }
   /* [{ c, p, how: 'guide' | 'net', net }] for a game, best first: the guide naming both teams, then one team at

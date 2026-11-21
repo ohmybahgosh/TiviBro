@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Sports finds the same channels as My teams.**  A game named only in a programme's description (a local CBS station's "College Football" with the teams in its details) now shows on the game's page and card too, not just in the guide's My teams group.  The two used to take turns throwing away each other's description search.
 - **Why a title has no trailer is in the log** (discussion #36): no TMDB token, TMDB found no match for its name and year, or TMDB has no trailer for it, so a problem report says which.
 - **Logins that allow one connection** (the provider's account details say how many): when the provider refuses a channel or movie with a "busy" answer, TiviBro now says the one connection seems to be in use (another TV or app, a recording, or a stream still closing) instead of a general error.  It also stops opening a second stream for them on its own: no seek previews or chapter marks on such a provider's movies (they read the file a second time), and Multiview says at once that a second channel from that login can't play beside the first.
 - **Fewer closes on 1 GB TVs with big lists.**  With more than 8,000 channels on a TV short of memory, TiviBro now opens the channel list and your last channel first, then the guide 20 seconds later and the logo library after that, instead of building them all at once in the first seconds (which is when those TVs closed it).

@@ -597,19 +597,24 @@ var Teams = (function () {
   }
 
   /* Descriptions: looked through in the background (Epg.findDesc, the helper for a big guide), every few
-     minutes or when the followed teams change; the group is drawn again when they arrive. */
-  var desc = { key: '', at: 0, list: [], busy: false };
+     minutes or when the followed teams change; the group is drawn again when they arrive.  One answer kept per
+     word list: My teams (the teams you follow) and Sports (every team playing today) ask with different lists,
+     and with a single answer kept they took turns throwing each other's away, so a game named only in a
+     description (a local CBS station's "College Football") was missing from a Sports game's channels.  descGen
+     counts the answers that changed, so Sports knows to look again. */
+  var descs = {}, descGen = 0;
   function descHits(words) {
-    var key = words.join('|');
-    if (!desc.busy && (desc.key !== key || Date.now() - desc.at > 240000) && typeof Epg.findDesc === 'function') {
-      desc.busy = true;
+    var key = words.join('|'), d = descs[key] || (descs[key] = { at: 0, list: [], busy: false });
+    if (!d.busy && Date.now() - d.at > 240000 && typeof Epg.findDesc === 'function') {
+      d.busy = true;
       Epg.findDesc(words, 1500).then(function (l) {
-        var changed = desc.key !== key || l.length !== desc.list.length;
-        desc = { key: key, at: Date.now(), list: l, busy: false };
-        if (changed) { dirty(); if (typeof Views !== 'undefined' && Views.refreshLists) Views.refreshLists(true); }
-      }, function () { desc.busy = false; desc.at = Date.now(); });
+        var changed = !d.got || l.length !== d.list.length;
+        d.at = Date.now(); d.list = l; d.busy = false; d.got = true;
+        var ks = Object.keys(descs); if (ks.length > 4) ks.sort(function (a, b) { return descs[a].at - descs[b].at; }).slice(0, ks.length - 4).forEach(function (k) { delete descs[k]; });
+        if (changed) { descGen++; dirty(); if (typeof Views !== 'undefined' && Views.refreshLists) Views.refreshLists(true); }
+      }, function () { d.busy = false; d.at = Date.now(); });
     }
-    return desc.key === key ? desc.list : [];
+    return d.list;
   }
 
   /* The My teams group: games on now at the top, then the games starting within the hours set (Games
@@ -735,7 +740,7 @@ var Teams = (function () {
   }
   // The soonest game of yours on a channel in My teams (its programme), or null.
   function gameOn(c) { list(); return c && listCache && listCache.first ? listCache.first[c.k] || null : null; }
-  function dirty() { listCache = null; nextCache = null; desc.at = 0; }
+  function dirty() { listCache = null; nextCache = null; for (var k in descs) descs[k].at = 0; }
   /* With no game in the window, the group stays and says when the next one is: the soonest game in the
      guide within a week (team channels' "Next game" blocks count). */
   var nextCache = null;
@@ -777,7 +782,7 @@ var Teams = (function () {
   }
 
   return {
-    LEAGUES: LEAGUES, all: function () { return ALL; }, team: function (id) { return BY_ID[id]; }, named: named, norm: norm,
+    LEAGUES: LEAGUES, get descGen() { return descGen; }, all: function () { return ALL; }, team: function (id) { return BY_ID[id]; }, named: named, norm: norm,
     leagues: leagues, inLeague: inLeague, hasChannel: hasChannel, teamChannels: teamChannels, ofChannel: ofChannel,
     RULES: 3, recheck: recheck, isGame: isGame, matchup: matchup, aroundGame: aroundGame, SAME_GAME: SAME_GAME, CLOSE: CLOSE, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, list: list, uniform: uniform, gameTitle: gameTitle, gameOn: gameOn, dirty: dirty, nextGame: nextGame, emptyText: emptyText
   };
