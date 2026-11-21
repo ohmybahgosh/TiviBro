@@ -34,9 +34,13 @@ function args(input, w, f, smooth) {
   return ['-hide_banner', '-nostdin', '-loglevel', 'error', '-protocol_whitelist', 'http,tcp,crypto',
     '-fflags', 'nobuffer', '-probesize', '1500000', '-analyzeduration', '1500000',
   ].concat(smooth ? [] : ['-skip_frame', 'noref', '-skip_loop_filter', 'noref'])
-    // A playlist (.m3u8) hands over whole segments at once: read at the channel's own pace, or the pictures come in
-    // bursts of several seconds (Pluto TV on a C2: 44 waiting, a second and a half behind).
-    .concat(/\.m3u8(\?|$)/i.test(input) ? ['-re'] : []).concat([
+    /* Read at the channel's own pace, every channel: a playlist (.m3u8) hands over whole segments at once, and a
+       live TS channel sends the provider's few seconds of backlog in one go when it starts, so without it the
+       pictures came in bursts (Pluto TV on a C2: 44 waiting, a second and a half behind) and were dropped to catch
+       up.  Measured on a C2 (USA Network beside FOX): 23.6 pictures a second, 427 dropped in 30 seconds and every
+       31 ms give or take 32, before; 29.4 a second, none dropped after the start, every 33 ms give or take 5 to 10,
+       with it. */
+    .concat(['-re']).concat([
     '-i', input, '-an', '-sn', '-dn',
     '-vf', 'scale=' + w + ':-2', '-pix_fmt', 'yuvj420p',
     '-c:v', 'mjpeg', '-q:v', '7', '-r', String(f),

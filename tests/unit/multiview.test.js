@@ -17,7 +17,7 @@ ok('pictures are cut out whole, whatever the pieces', got.join(',') === '14,304'
 const a = MV._args('in', 640, 15, false).join(' '), s = MV._args('in', 640, 25, true).join(' ');
 ok('frames no other frame needs are skipped (never every B-frame: that broke up some channels)', /-skip_frame noref/.test(a) && !/bidir/.test(a));
 ok('s=1: every frame', !/skip_frame/.test(s));
-ok('a playlist is read at its own pace (-re), a TS stream as it comes', MV._args('http://h/live.m3u8', 640, 30, true).indexOf('-re') >= 0 && MV._args('http://h/1.ts', 640, 30, true).indexOf('-re') < 0);
+ok('every channel is read at its own pace (-re): a playlist and a TS stream', MV._args('http://h/live.m3u8', 640, 30, true).indexOf('-re') >= 0 && MV._args('http://h/1.ts', 640, 30, true).indexOf('-re') >= 0);
 ok('no sound, small, JPEGs at the rate asked', /-an /.test(a) && /scale=640:-2/.test(a) && /-c:v mjpeg/.test(a) && /-r 15 /.test(a));
 
 (async () => {
