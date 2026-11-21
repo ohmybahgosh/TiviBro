@@ -1072,7 +1072,7 @@ var Settings = (function () {
     out.push(toggle('My teams\' scores while watching', 'While you watch something else full screen, a live game of a team you follow shows its score in a corner of the screen, kept up to date (several take turns).  Not the game you\'re watching: its broadcast has its own.',
       function () { return s.sportsBar !== false; }, function (v) { s.sportsBar = v; Store.saveSettings(); paint(); }));
     if (s.sportsBar !== false) out.push(choice('Where the scores go', 'The corner of the screen.  Pick one your channels\' own logos and scores don\'t use.', ['tl', 'tr', 'bl', 'br'], ['Top left', 'Top right', 'Bottom left', 'Bottom right'],
-      function () { return /^(tl|tr|bl|br)$/.test(s.sportsBarAt || '') ? s.sportsBarAt : 'tl'; }, function (v) { s.sportsBarAt = v; Store.saveSettings(); paint(); }));
+      function () { return /^(tl|tr|bl|br)$/.test(s.sportsBarAt || '') ? s.sportsBarAt : 'tr'; }, function (v) { s.sportsBarAt = v; Store.saveSettings(); paint(); }));
     out.push(toggle('Alerts for my teams', 'A close game near the end asks whether to switch to it, and a final score says so, wherever you are in TiviBro.',
       function () { return s.sportsAlerts !== false; }, function (v) { s.sportsAlerts = v; Store.saveSettings(); paint(); }));
     if (mine.length) out.push(page('Hide scores', (s.sportsHide || []).length ? (s.sportsHide || []).length + ' team(s): no scores anywhere until you show them' : 'For a team you\'ll watch later: no scores anywhere until you show them', 'Hide scores', function () {
