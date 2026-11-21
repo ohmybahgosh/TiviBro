@@ -152,7 +152,7 @@ var SportsHub = (function () {
     var c = cs[0].c, set = has(g, c), items = [];
     if (g.state === 'pre' && g.s > Date.now()) items.push({ label: set ? T('Cancel the reminder') : T('Remind me at {x}', { x: U.hhmm(g.s) }), sub: T('on {x}', { x: Library.name(c) }), icon: set ? 'belloff' : 'bell', action: function () { remind(g, c); } });
     cs.slice(0, 4).forEach(function (x) { items.push({ label: T('Watch {x} now', { x: Library.name(x.c) }), icon: 'play', action: function () { play(x.c); } }); });
-    items.push({ label: T('Cancel'), current: true });
+    items.push({ label: T('Cancel'), icon: 'close', current: true });
     UI.menu(RAW(Sports.title(g)) + ',  ' + (g.state === 'pre' ? U.day(g.s) + ' ' + U.hhmm(g.s) : status(g)), items);
   }
   function has(g, c) { return Sports.reminded(g, c); }
@@ -339,9 +339,12 @@ var SportsHub = (function () {
       hr2.appendChild(U.el('th', '', '')); hr2.appendChild(U.el('th', '', T('W-L'))); hr2.appendChild(U.el('th', '', gr.rows[0] && gr.rows[0].extra ? gr.rows[0].extra.k : '')); st.appendChild(hr2);
       // The top of the table, and this game's teams always, below a break when they're further down.
       var whose = function (r) { return g.teams.filter(function (t) { return t.loc && r.team && (r.team === t.loc || r.team === t.name || r.team === t.full); })[0]; }, isMe = function (r) { return !!whose(r); };
-      var n = Math.max(3, Math.floor(((g.state === 'post' ? 440 : 360) - 80 * Math.min(bt.cs.length, 3)) / 43)), low = gr.rows.slice(n).filter(isMe), top = gr.rows.slice(0, Math.max(n - low.length, 2));
-      top.concat(low).forEach(function (r, i) {
-        var tr = U.el('tr', (isMe(r) ? 'me' : '') + (low.length && i === top.length ? ' gap' : ''));
+      var n = Math.max(3, Math.floor(((g.state === 'post' ? 440 : 360) - 80 * Math.min(bt.cs.length, 3)) / 43)), keep = [];
+      gr.rows.forEach(function (r, i) { if (i < n || isMe(r)) keep.push(i); });
+      for (var j = keep.length - 1; keep.length > n && j >= 0; j--) if (!isMe(gr.rows[keep[j]])) keep.splice(j, 1);
+      keep.forEach(function (ix, i) {
+        var r = gr.rows[ix], tr = U.el('tr', (isMe(r) ? 'me' : '') + (i && keep[i - 1] !== ix - 1 ? ' gap' : ''));
+        tr.setAttribute('data-i', ix);
         tr.appendChild(U.el('td', '', RAW(r.team))); tr.appendChild(U.el('td', '', hide ? '·' : r.rec)); tr.appendChild(U.el('td', '', hide ? '' : r.extra ? r.extra.v : ''));
         st.appendChild(tr);
       });
@@ -355,6 +358,8 @@ var SportsHub = (function () {
       if (rs.length <= 1) break;
       stt.removeChild(rs[rs.length - 1]);
     }
+    // A break wherever rows were left out.
+    if (stt) [].slice.call(stt.querySelectorAll('tr[data-i]')).forEach(function (tr, i, all) { tr.classList.toggle('gap', i > 0 && +tr.getAttribute('data-i') !== +all[i - 1].getAttribute('data-i') + 1); });
     UI.hints([['', 'OK  select', 'ok'], ['', '◀ ▶  buttons', '']].concat(bt.cs.length ? [['', '▼  channels', '']] : [], [['', 'Back  games', 'back']]));
   }
   function pageKeys(a) {

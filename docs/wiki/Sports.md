@@ -13,7 +13,7 @@
 
 **In the phone app:** a **Sports** tab with the same rows; tap a game for its score, box score, leaders, standings and the TV's channels with it, then **Watch on TV**, **Remind me** or **Follow**.
 
-**While you watch.**  When a team you follow is playing and you're watching something else full screen (a movie, another game), its **score** sits in the top corner, kept up to date; several take turns.  It isn't shown for the game you're watching, since the broadcast has its own.  **Alerts for my teams**: a close game near the end ("Pistons trail the Raptors 102 to 105, 4th 2:10") asks whether to switch to it, wherever you are in TiviBro, and a final score says so.  **Hide scores** (Settings > Channels and groups > My teams, or a game's page) keeps a team's scores out of Sports, the corner and alerts until you show that game, for a game you recorded or will watch later.  Each is a switch on the My teams page.
+**While you watch.**  When a team you follow is playing and you're watching something else full screen (a movie, another game), its **score** sits in the top corner, kept up to date; several take turns.  It isn't shown for the game you're watching, since the broadcast has its own.  **Alerts for my teams**: a close game near the end ("Pistons trail Raptors 102 to 105, 2:10 4th") asks whether to switch to it, wherever you are in TiviBro, and a final score says so.  **Hide scores** (Settings > Channels and groups > My teams, or a game's page) keeps a team's scores out of Sports, the corner and alerts until you show that game, for a game you recorded or will watch later.  Each is a switch on the My teams page.
 
 ---
 

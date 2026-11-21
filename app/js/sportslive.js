@@ -98,7 +98,9 @@ var SportsLive = (function () {
       if (close(g) && !said['c' + g.id]) {
         said['c' + g.id] = 1;
         var ahead = me.score > foe.score, tied = me.score === foe.score;
-        var what = tied ? T('{x} and the {y} are tied at {n}', { x: me.name, y: foe.name, n: me.score }) : ahead ? T('{x} lead the {y} {a} to {b}', { x: me.name, y: foe.name, a: me.score, b: foe.score }) : T('{x} trail the {y} {a} to {b}', { x: me.name, y: foe.name, a: me.score, b: foe.score });
+        // College teams go by their school ("Ohio State leads Nebraska"), the pros by their name ("Pistons trail Raptors").
+        var one = /^ncaa/.test(g.lg), v = { x: me.name, y: foe.name, a: me.score, b: foe.score, n: me.score };
+        var what = tied ? T('{x} and {y} are tied at {n}', v) : ahead ? (one ? T('{x} leads {y} {a} to {b}', v) : T('{x} lead {y} {a} to {b}', v)) : (one ? T('{x} trails {y} {a} to {b}', v) : T('{x} trail {y} {a} to {b}', v));
         ask(g, RAW(what) + ',  ' + g.detail.replace(/\s+-\s+/, ' '));
       }
       // A final: only for a game seen being played (not one over before TiviBro looked).
@@ -119,7 +121,7 @@ var SportsLive = (function () {
     var title = T('Close game');
     UI.menu(title, [
       { label: T('Watch on {x}', { x: Library.name(c) }), icon: 'play', action: function () { Views.startChannel(c, false, function () { Views.goFull(); }); } },
-      { label: T('Not now'), current: false }
+      { label: T('Not now'), icon: 'close', current: false }
     ], null, { sub: text });
     setTimeout(function () { var mt = document.getElementById('modalTitle'); if (UI.modalOpen && mt && mt.textContent.indexOf(T(title)) >= 0) UI.close(); }, 15000);
   }
