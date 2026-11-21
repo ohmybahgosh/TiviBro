@@ -532,6 +532,8 @@ module.exports = [
     fig('tv-multiview', 'TiviBro Multiview: two channels side by side on an LG TV'),
     '<h2 id="recording">Record, pause and rewind live TV</h2>',
     '<p>On a rooted TV with a USB drive, record what\'s on or schedule from the guide, with a Recordings screen and recordings filed for Plex, Jellyfin, Kodi and Infuse.  Pause live TV on any TV (up to 10 minutes without a drive, 2 hours with one), rewind what you just missed, and move along a TiviMate-style timeline.  <a href="/record-iptv-lg-tv/">Recording and live pause</a>.</p>',
+    '<h2 id="launch">Opens straight onto a channel from other apps</h2>',
+    '<p>A home screen, a launcher, a script over SSH or Home Assistant can open TiviBro on a channel (by number, name or guide id), a followed team\'s game, the guide, a search or a Settings page, with a <code>tivibro://</code> link or launch params, whether TiviBro is closed or already open.  LG\'s deep links work too.  Every action, with examples: <a href="https://github.com/ohmybahgosh/TiviBro/blob/main/docs/LAUNCH-API.md">the launch API</a>.</p>',
     '<h2 id="mymedia">Your own movies, like Plex, with Trakt</h2>',
     '<p>My media turns movies and shows on a DLNA server, WebDAV, Google Drive or Dropbox into a library with posters, a page for every show, watched marks, filters, trailers, Dolby Vision and Atmos.  Connect Trakt and your history, lists and watchlist come along.  <a href="/my-media-lg-tv/">My media and Trakt</a>.</p>',
     fig('tv-my-media', 'TiviBro My media: your own movies as shelves of posters'),

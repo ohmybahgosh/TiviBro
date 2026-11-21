@@ -14,4 +14,4 @@ See [Language](Language).
 
 ---
 
-← [Parental controls](Parental-controls)  ·  [Home](Home)  ·  [Settings: Playlists and accounts](Settings-Playlists-and-accounts) →
+← [Opening TiviBro from other apps](Opening-TiviBro-from-other-apps)  ·  [Home](Home)  ·  [Settings: Playlists and accounts](Settings-Playlists-and-accounts) →

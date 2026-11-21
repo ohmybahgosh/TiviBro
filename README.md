@@ -148,6 +148,7 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | 🔐 **Locked backups, restored from the first screen** | One AES-256 file with every playlist, login, group and setting.  A brand-new TV restores it from a computer before you've touched a setting. |
 | 🐞 **Report a problem from the couch** | **Report a problem** shows a QR code.  Your phone opens a short form, the TV adds its version, model and log with logins and server names taken out, and GitHub's bug form opens filled in.  No copying logs off the TV. |
 | 💸 **Everything free, nothing locked** | Catch-up, multiple playlists, backups, reminders and parental controls are all included.  Open source, no account, no ads, no tracking: just an anonymous daily count of installs by version, which you can switch off. |
+| 🚀 **Opens straight onto a channel from anywhere** | Home screens, launchers, scripts and Home Assistant can open TiviBro on a channel, a team's game, the guide, a search or a Settings page, with a `tivibro://` link or launch params, whether it's closed or already open.  Documented in [docs/LAUNCH-API.md](docs/LAUNCH-API.md). |
 | 📺 **Made for LG TVs** | Runs on the TV itself, webOS 4 and newer.  No Android box or Fire Stick needed. |
 
 | | TiviBro | TiviMate |
@@ -654,6 +655,8 @@ scripts/          build, install, launch, sim, inspect, serve, lint, bump-versio
 logos/            Brand artwork; logos/clean/ holds the cleaned, ready-to-use files
 docs/             Architecture, decisions, roadmap, simulator guide, TiviMate parity
 ```
+
+Other apps and scripts can open TiviBro onto a channel, a team's game or a screen: [`docs/LAUNCH-API.md`](docs/LAUNCH-API.md).
 
 | Command | What it does |
 |---|---|

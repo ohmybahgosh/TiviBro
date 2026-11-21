@@ -1,15 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 188, 2026-11-20)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 188
 
 - **Open TiviBro straight onto something from a home screen, a launcher, a script or Home Assistant.**  A channel (by number, name or guide id), a followed team's game, the guide or another part of TiviBro, a search, a Settings section, or the last channel, with launch params or a tivibro:// link (LG's deep links too).  It works when TiviBro is closed and when it's already open.  How to use it: docs/LAUNCH-API.md.
 - **A reminder waits for the screensaver to go away** again on a rooted TV.  After an update the TV forgets the extra permissions TiviBro's helper is given, until TiviBro has been opened, and in the meantime the helper couldn't tell the screensaver was on: a reminder went up over it, where the remote's OK didn't reach its Watch button.  Now the helper asks as root when it's refused, and puts the permissions back at reminder time too.
 
-## 0.6.0 (alpha 187, 2026-11-20)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 187
+### In alpha 187
 
 - **Fix match shows posters.**  Changing a movie's or show's details on My media now lists TMDB's results as posters with their year and how many votes they have, and the focused one's summary underneath, so the right one of several films of the same name is easy to pick.
 - **A show's page has its logo**, as the home hero does: in place of its name on the seasons, and small above the season's name on its episodes.  Its name in words when it has none.

@@ -31,6 +31,7 @@
 - [Settings](Settings)
 - [Updates](Updates)
 - [Parental controls](Parental-controls)
+- [Opening TiviBro from other apps](Opening-TiviBro-from-other-apps)
 
 **Every setting**
 - [Settings: Language](Settings-Language)

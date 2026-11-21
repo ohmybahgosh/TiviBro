@@ -21,4 +21,4 @@ Set a PIN under **Settings > Parental controls**, then **Hold OK** on any channe
 
 ---
 
-← [Updates](Updates)  ·  [Home](Home)  ·  [Settings: Language](Settings-Language) →
+← [Updates](Updates)  ·  [Home](Home)  ·  [Opening TiviBro from other apps](Opening-TiviBro-from-other-apps) →
