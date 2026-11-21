@@ -183,7 +183,8 @@ var Sports = (function () {
         var st = {}; (e.stats || []).forEach(function (x) { st[x.name] = x.displayValue; });
         var rec = st.wins != null && st.losses != null ? st.wins + '-' + st.losses + (st.otLosses != null ? '-' + st.otLosses : st.ties && st.ties !== '0' ? '-' + st.ties : '') : st.overall || '';
         var extra = st.points != null ? { k: 'PTS', v: st.points } : st.gamesBehind != null ? { k: 'GB', v: st.gamesBehind } : st['vs. Conf.'] != null ? { k: 'CONF', v: st['vs. Conf.'] } : null;
-        return { team: e.team || '', rec: rec, extra: extra, streak: st.streak || '' };
+        var lg = (e.logo || []).filter(function (l) { return (l.rel || []).indexOf('dark') >= 0; })[0] || (e.logo || [])[0];
+        return { team: e.team || '', rec: rec, extra: extra, streak: st.streak || '', logo: lg && lg.href ? String(lg.href).replace(/^http:/, 'https:') : '' };
       }) };
     }).filter(function (gr) { return gr.rows.length; });
     var info = j.gameInfo || {};
@@ -320,8 +321,18 @@ var Sports = (function () {
       if (!list || !list.length) return;                     // not loaded yet, or nothing
       out.push({ id: 'lg:' + lg.id, title: lg.name, sub: (when ? when + '  ·  ' : '') + (list.length === 1 ? t('1 game') : t('{n} games', { n: list.length })), items: list.slice().sort(order) });
     });
+    // Your order of the rows (Blue on Sports), the rest after them as they come.
+    var ord = Array.isArray(S().sportsOrder) ? S().sportsOrder : [];
+    if (ord.length) out.sort(function (a, b) { var x = ord.indexOf(a.id), y = ord.indexOf(b.id); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y); });
     return out;
   }
+  /* All the rows that can be on Sports, in your order: [{ id, name, league }]. */
+  function rowOrder() {
+    var all = [{ id: 'mine', name: 'My teams' }, { id: 'live', name: 'Live now' }, { id: 'recent', name: 'Recent results' }].concat(LEAGUES.map(function (l) { return { id: 'lg:' + l.id, name: l.name, league: l.id }; }));
+    var ord = Array.isArray(S().sportsOrder) ? S().sportsOrder : [];
+    return all.map(function (r, i) { return { r: r, k: ord.indexOf(r.id) < 0 ? 99 + i : ord.indexOf(r.id) }; }).sort(function (a, b) { return a.k - b.k; }).map(function (x) { return x.r; });
+  }
+  function setOrder(ids) { S().sportsOrder = ids.slice(); if (typeof Store !== 'undefined' && Store.saveSettings) Store.saveSettings(); changed(); }
   // A reminder for a game, on a channel: set or cancelled (true: set now).
   function reminded(g, c) { return (Store.edits.reminders || []).some(function (r) { return r.k === c.k && Math.abs(r.s - g.s) < 60000; }); }
   function remind(g, c) {
@@ -339,7 +350,7 @@ var Sports = (function () {
   // "Lions at Packers" (the guide's and reminders' way of naming a game).
   function title(g) { return g.teams.length === 2 ? g.teams[0].name + ' at ' + g.teams[1].name : g.name; }
 
-  return { rows: rows, follows: follows, reminded: reminded, remind: remind, loaded: loaded, refreshToday: refreshToday, byId: byId, summary: summary, gameOn: gameOn, hidesTeam: hidesTeam, hideTeam: hideTeam, hidden: hidden, reveal: reveal, followedLeagues: followedLeagues, _readSummary: readSummary,
+  return { rowOrder: rowOrder, setOrder: setOrder, rows: rows, follows: follows, reminded: reminded, remind: remind, loaded: loaded, refreshToday: refreshToday, byId: byId, summary: summary, gameOn: gameOn, hidesTeam: hidesTeam, hideTeam: hideTeam, hidden: hidden, reveal: reveal, followedLeagues: followedLeagues, _readSummary: readSummary,
     LEAGUES: LEAGUES, league: function (id) { return BY[id]; }, leagues: leagues, setLeagues: setLeagues, refresh: refresh, anyLive: anyLive, all: all, day: day, errOf: errOf,
     channels: channels, byNet: byNet, title: title, onChange: onChange, dayKey: dayKey, LIVE_MS: LIVE_MS, TODAY_MS: TODAY_MS, _game: game, _squash: squash, _bare: bare, _store: store };
 })();

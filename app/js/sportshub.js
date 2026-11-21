@@ -24,7 +24,7 @@ var SportsHub = (function () {
   /* ---------- what's in the rows (Sports.rows) ---------- */
   function mine(g) { return Sports.follows(g); }
   function data() { return Sports.rows(T); }
-  function signature(rs) { return rs.map(function (r) { return r.id + ':' + r.items.map(function (g) { return g.id + g.state + g.detail + (Sports.hidden(g) ? 'H' : '') + g.teams.map(function (t) { return t.score; }).join('-') + '#' + Sports.channels(g).length; }).join(','); }).join('|'); }
+  function signature(rs) { return rs.map(function (r) { return r.id + ':' + r.items.map(function (g) { return g.id + g.state + g.detail + (Sports.hidden(g) ? 'H' : '') + g.teams.map(function (t) { return t.score; }).join('-') + '#' + Sports.channels(g).length + ((recOf(g, Sports.channels(g)) || {}).status || ''); }).join(','); }).join('|'); }
 
   /* ---------- cards ---------- */
   function teamRow(g, t, o) {
@@ -78,6 +78,9 @@ var SportsHub = (function () {
     var cs = Sports.channels(g), best = cs[0];
     var el = U.el('div', 'sp-card' + (g.state === 'in' ? ' live' : g.state === 'post' ? ' post' : ''));
     if (r.id !== 'mine' && mine(g)) el.appendChild(U.el('span', 'sp-mine', T('MY TEAM')));
+    // Recording now, or set to record (on any of your channels with it).
+    var rr = recOf(g, cs);
+    if (rr) { var rb = U.el('span', 'sp-recb' + (rr.status === 'recording' ? ' on' : '')); rb.appendChild(U.el('i')); rb.appendChild(document.createTextNode(rr.status === 'recording' ? T('REC') : T('RECORDING SET'))); el.appendChild(rb); }
     if (g.teams.length === 2) { el.appendChild(teamRow(g, g.teams[0], g.teams[1])); el.appendChild(teamRow(g, g.teams[1], g.teams[0])); }
     else { el.appendChild(U.el('div', 'sp-event', RAW(g.name))); if (g.venue) el.appendChild(U.el('div', 'sp-venue', RAW(g.venue))); }
     el.appendChild(sportIcon(g.lg, 'card'));                    // bottom right, beside the time and channel
@@ -149,8 +152,8 @@ var SportsHub = (function () {
   function hints() {
     if (!open_ || Views.tab !== 'sports') return;
     var g = current();
-    if (!g) return UI.hints([['', 'Back  menu', 'back'], ['blue', 'Leagues']]);
-    UI.hints([['', 'OK  the game', 'ok'], ['', g.state === 'pre' && g.s > Date.now() ? 'Hold OK  remind me or watch' : 'Hold OK  watch', 'hold'], ['yellow', 'Remind me'], ['green', 'Follow a team'], ['blue', 'Leagues']]);
+    if (!g) return UI.hints([['', 'Back  menu', 'back'], ['blue', 'Rows and leagues']]);
+    UI.hints([['', 'OK  the game', 'ok'], ['', g.state === 'pre' && g.s > Date.now() ? 'Hold OK  remind me or watch' : 'Hold OK  watch', 'hold'], ['yellow', 'Remind me'], ['green', 'Follow a team'], ['blue', 'Rows and leagues']]);
   }
 
   /* ---------- doing things ---------- */
@@ -177,8 +180,22 @@ var SportsHub = (function () {
     var c = cs[0].c, set = has(g, c), items = [];
     if (g.state === 'pre' && g.s > Date.now()) items.push({ label: set ? T('Cancel the reminder') : T('Remind me at {x}', { x: U.hhmm(g.s) }), sub: T('on {x}', { x: Library.name(c) }), icon: set ? 'belloff' : 'bell', action: function () { remind(g, c); } });
     cs.slice(0, 4).forEach(function (x) { items.push({ label: T('Watch {x} now', { x: Library.name(x.c) }), icon: 'play', action: function () { play(x.c); } }); });
+    var rec = recordItem(g, cs); if (rec) items.push({ label: T(rec.label), sub: rec.sub, icon: rec.icon, action: rec.action });
     items.push({ label: T('Cancel'), icon: 'close', current: true });
     UI.menu(RAW(Sports.title(g)) + ',  ' + (g.state === 'pre' ? U.day(g.s) + ' ' + U.hhmm(g.s) : status(g)), items);
+  }
+  /* Record on a USB drive (when recording is set up): the guide's programme for the game on your best channel,
+     else the game's time (3 1/2 hours) on it.  null without recording, or for a game that's over. */
+  function recOf(g, cs) {
+    if (typeof Record === 'undefined' || !Record.of || g.state === 'post') return null;
+    for (var i = 0; i < cs.length; i++) { var x = cs[i], r = null; try { r = Record.of(x.c, x.p || { s: g.s, e: g.s + 3.5 * 3600e3, t: Sports.title(g) }); } catch (e) {} if (r) return r; }
+    return null;
+  }
+  function recordItem(g, cs) {
+    if (typeof Record === 'undefined' || !Record.menuItem || g.state === 'post' || !cs.length) return null;
+    var x = cs.filter(function (y) { return y.p; })[0] || cs[0];
+    var p = x.p || { s: g.s, e: g.s + 3.5 * 3600e3, t: Sports.title(g) };
+    try { return Record.menuItem(x.c, p); } catch (e) { return null; }
   }
   function has(g, c) { return Sports.reminded(g, c); }
   function remind(g, c) {
@@ -194,15 +211,27 @@ var SportsHub = (function () {
       return { label: RAW(t.full || t.name), sub: on ? T('Following  ·  OK stops') : T('Its games in My teams, with reminders if you want them'), current: false, action: function () { Teams.follow(t.id, !on); if (Views.refreshLists) Views.refreshLists(true); U.toast(on ? T('Not following {x}', { x: t.full || t.name }) : T('Following {x}', { x: t.full || t.name })); render(true); } };
     }));
   }
+  /* Blue: the rows of Sports in their order.  OK on one: show or hide a league, move it up, down or to the top. */
   function pickLeagues() {
-    var on = Sports.leagues().map(function (l) { return l.id; });
-    function menu(at) {
-      UI.menu(T('Leagues on Sports'), Sports.LEAGUES.map(function (l, i) {
-        var y = on.indexOf(l.id) >= 0;
-        return { label: (y ? '✓  ' : '      ') + l.name, current: i === at, action: function () { if (y) on.splice(on.indexOf(l.id), 1); else on.push(l.id); Sports.setLeagues(on); setTimeout(function () { menu(i); }, 0); } };
-      }), function () { load(true); });
+    function list(at) {
+      var on = Sports.leagues().map(function (l) { return l.id; }), rs = Sports.rowOrder();
+      UI.menu(T('Rows on Sports'), rs.map(function (r, i) {
+        var shown = !r.league || on.indexOf(r.league) >= 0;
+        return { label: (shown ? '✓  ' : '      ') + T(r.name), sub: r.league ? (shown ? T('shown') : T('hidden')) : T('always shown when it has games'), current: i === at, action: function () { setTimeout(function () { one(rs, i, on); }, 0); } };
+      }), function () { load(true); }, { sub: T('OK on a row: show, hide or move it') });
     }
-    menu(0);
+    function one(rs, i, on) {
+      var r = rs[i], ids = rs.map(function (x) { return x.id; }), shown = !r.league || on.indexOf(r.league) >= 0;
+      function move(to) { ids.splice(to, 0, ids.splice(i, 1)[0]); Sports.setOrder(ids); setTimeout(function () { list(to); }, 0); }
+      var items = [];
+      if (r.league) items.push({ label: shown ? T('Hide {x}', { x: r.name }) : T('Show {x}', { x: r.name }), icon: shown ? 'hide' : 'eye', action: function () { if (shown) on.splice(on.indexOf(r.league), 1); else on.push(r.league); Sports.setLeagues(on); setTimeout(function () { list(i); }, 0); } });
+      if (i > 0) items.push({ label: T('Move up'), icon: 'move', action: function () { move(i - 1); } });
+      if (i < rs.length - 1) items.push({ label: T('Move down'), icon: 'move', action: function () { move(i + 1); } });
+      if (i > 0) items.push({ label: T('Move to the top'), icon: 'move', action: function () { move(0); } });
+      items.push({ label: T('Back'), icon: 'back', action: function () { setTimeout(function () { list(i); }, 0); } });
+      UI.menu(T(r.name), items, function () { load(true); });
+    }
+    list(0);
   }
 
   /* ---------- a game's page (OK, Red or Info on a card) ----------
@@ -235,7 +264,8 @@ var SportsHub = (function () {
   function closePage(quiet) { if (gp) clearTimeout(gp.t); gp = null; $('spPage').classList.add('hidden'); $('spPage').innerHTML = ''; if (quiet) return; UI.setHandler(keys); render(true); }
   function buttons(g) {
     var cs = g.state === 'post' ? [] : Sports.channels(g), out = [], later = g.state === 'pre' && g.s > Date.now() + 300000;
-    if (cs.length) out.push({ label: (later ? T('Watch {x} now', { x: Library.name(cs[0].c) }) : T('Watch on {x}', { x: Library.name(cs[0].c) })), icon: 'play', run: function () { var gg = gp.g; closePage(true); play(cs[0].c, gg); } });
+    if (cs.length) out.push({ label: later ? T('Watch now') : T('Watch'), icon: 'play', run: function () { var gg = gp.g; closePage(true); play(cs[0].c, gg); } });
+    var rec = recordItem(g, cs); if (rec) out.push({ label: T(rec.label), icon: rec.icon, run: function () { rec.action(); setTimeout(drawPage, 400); } });
     if (later && cs.length) out.push({ label: has(g, cs[0].c) ? T('Cancel the reminder') : T('Remind me'), icon: 'bell', run: function () { remind(g, cs[0].c); drawPage(); } });
     g.teams.filter(function (t) { return t.id; }).forEach(function (t) {
       var on = Teams.follows(t.id);
@@ -245,11 +275,11 @@ var SportsHub = (function () {
       if (Sports.hidden(g)) out.push({ label: T('Show the score'), icon: 'eye', run: function () { Sports.reveal(g); drawPage(); } });
       else if (g.teams.some(function (t) { return t.id && Teams.follows(t.id); })) {
         var ft = g.teams.filter(function (t) { return t.id && Teams.follows(t.id); })[0], hid = Sports.hidesTeam(ft.id);
-        out.push({ label: hid ? T('Show {x} scores', { x: ft.name }) : T('Hide {x} scores', { x: ft.name }), icon: 'hide', run: function () { Sports.hideTeam(ft.id, !hid); drawPage(); } });
+        out.push({ label: hid ? T('Show scores') : T('Hide scores'), icon: 'hide', run: function () { Sports.hideTeam(ft.id, !hid); drawPage(); } });
       }
     } else g.teams.filter(function (t) { return t.id && Teams.follows(t.id); }).slice(0, 1).forEach(function (ft) {
       var hid = Sports.hidesTeam(ft.id);
-      out.push({ label: hid ? T('Show {x} scores', { x: ft.name }) : T('Hide {x} scores', { x: ft.name }), icon: 'hide', run: function () { Sports.hideTeam(ft.id, !hid); drawPage(); } });
+      out.push({ label: hid ? T('Show scores') : T('Hide scores'), icon: 'hide', run: function () { Sports.hideTeam(ft.id, !hid); drawPage(); } });
     });
     return { list: out, cs: cs };
   }
@@ -262,6 +292,7 @@ var SportsHub = (function () {
     gp.b = Math.min(gp.b, Math.max(0, bt.list.length - 1)); gp.ci = Math.min(gp.ci, Math.max(0, bt.cs.length - 1));
     if (gp.zone === 'chans' && !bt.cs.length) gp.zone = 'btns';
     el.innerHTML = '';
+    var root = el; el = U.el('div', 'sp-scroll'); root.appendChild(el);
     var a = g.teams[0] || {}, h = g.teams[1] || {};
     // A final with a winner (not a tie, not hidden): { w: 0 | 1 }.
     var fin = g.state === 'post' && !hide && g.teams.length === 2 && a.score != null && h.score != null && a.score !== h.score ? { w: a.score > h.score ? 0 : 1 } : null;
@@ -301,6 +332,8 @@ var SportsHub = (function () {
     var bar = U.el('div', 'sp-btns');
     bt.list.forEach(function (b, i) { var x = U.el('div', 'sp-btn' + (gp.zone === 'btns' && i === gp.b ? ' sel' : ''), b.label); x.onclick = function () { gp.b = i; b.run(); }; bar.appendChild(x); });
     el.appendChild(bar);
+    // Too many to fit: from the left, scrolled so the chosen one shows.
+    if (bar.scrollWidth > bar.clientWidth + 2) { bar.style.justifyContent = 'flex-start'; var sel = bar.children[gp.b]; if (sel) bar.scrollLeft = Math.max(0, sel.offsetLeft + sel.offsetWidth - bar.clientWidth + 24); }
     // Left: box score and leaders (not while the score is hidden).
     var left = U.el('div', 'sp-panel sp-box');
     if (hide) left.appendChild(U.el('div', 'sp-muted', T('The score is hidden.  Show the score above when you\'ve watched it.')));
@@ -343,7 +376,7 @@ var SportsHub = (function () {
     // A game that's over: no channels, only the standings.
     if (g.state !== 'post') right.appendChild(U.el('div', 'sp-cap', T('On your channels')));
     if (g.state !== 'post' && !bt.cs.length) right.appendChild(U.el('div', 'sp-muted', g.nets.length ? T('Not on your channels.  It\'s on {x}.', { x: g.nets.join(', ') }) : T('Not on your channels.')));
-    var CW = sum && sum.standings.length ? 2 : 3, c0 = Math.max(0, Math.min(gp.ci - (CW - 1), bt.cs.length - CW));
+    var CW = 4, c0 = Math.max(0, Math.min(gp.ci - (CW - 1), bt.cs.length - CW));
     bt.cs.slice(c0, c0 + CW).forEach(function (x, j) {
       var r = U.el('div', 'sp-chrow' + (gp.zone === 'chans' && c0 + j === gp.ci ? ' sel' : ''));
       var lg = U.el('div', 'sp-chlogo'), src = Views.logoOf ? Views.logoOf(x.c) : '';
@@ -356,40 +389,41 @@ var SportsHub = (function () {
       r.onclick = function () { var gg = gp.g; closePage(true); play(x.c, gg); };
       right.appendChild(r);
     });
-    if (sum && sum.standings.length) {
-      // The group of a team you follow when the two teams are in different ones (Raptors at Pistons: the Central).
-      var nameIs = function (r, t) { return t.loc && r.team && (r.team === t.loc || r.team === t.name || r.team === t.full); };
-      var mineT = g.teams.filter(function (t) { return t.id && Teams.follows(t.id); })[0];
-      var gr = (mineT && sum.standings.filter(function (x) { return x.rows.some(function (r) { return nameIs(r, mineT); }); })[0]) || sum.standings[0];
-      right.appendChild(U.el('div', 'sp-cap', gr.name || T('Standings')));
-      var st = U.el('table', 'sp-stand'), hr2 = U.el('tr');
-      hr2.appendChild(U.el('th', '', '')); hr2.appendChild(U.el('th', '', T('W-L'))); hr2.appendChild(U.el('th', '', gr.rows[0] && gr.rows[0].extra ? gr.rows[0].extra.k : '')); st.appendChild(hr2);
-      // The top of the table, and this game's teams always, below a break when they're further down.
-      var whose = function (r) { return g.teams.filter(function (t) { return t.loc && r.team && (r.team === t.loc || r.team === t.name || r.team === t.full); })[0]; }, isMe = function (r) { return !!whose(r); };
-      var n = Math.max(3, Math.floor(((g.state === 'post' ? 440 : 360) - 80 * Math.min(bt.cs.length, sum && sum.standings.length ? 2 : 3)) / 43)), keep = [];
-      gr.rows.forEach(function (r, i) { if (i < n || isMe(r)) keep.push(i); });
-      for (var j = keep.length - 1; keep.length > n && j >= 0; j--) if (!isMe(gr.rows[keep[j]])) keep.splice(j, 1);
-      keep.forEach(function (ix, i) {
-        var r = gr.rows[ix], tr = U.el('tr', (isMe(r) ? 'me' : '') + (i && keep[i - 1] !== ix - 1 ? ' gap' : ''));
-        tr.setAttribute('data-i', ix);
-        var nt = U.el('td'), wt = whose(r);
-        if (wt && wt.logo) { var si = new Image(); si.src = wt.logo; si.className = 'sp-mini'; nt.appendChild(si); }
-        nt.appendChild(document.createTextNode(RAW(r.team))); tr.appendChild(nt); tr.appendChild(U.el('td', '', hide ? '·' : r.rec)); tr.appendChild(U.el('td', '', hide ? '' : r.extra ? r.extra.v : ''));
-        st.appendChild(tr);
-      });
-      right.appendChild(st);
-    }
     el.appendChild(right);
-    // Rows that don't fit go, from the bottom of the top part (this game's teams stay).
-    var stt = right.querySelector('table.sp-stand');
-    for (var guard = 0; stt && guard < 12 && right.scrollHeight > right.clientHeight + 2; guard++) {
-      var rs = [].slice.call(stt.querySelectorAll('tr')).slice(1).filter(function (x) { return !/\bme\b/.test(x.className); });
-      if (rs.length <= 1) break;
-      stt.removeChild(rs[rs.length - 1]);
+    // Below the two panels: the whole division or conference, in two columns when it's long (▼ scrolls to it).
+    gp.hasStand = false;
+    if (sum && sum.standings.length) {
+      var whose = function (r) { return g.teams.filter(function (t) { return t.loc && r.team && (r.team === t.loc || r.team === t.name || r.team === t.full); })[0]; };
+      // The group of a team you follow when the two teams are in different ones (Raptors at Pistons: the Central).
+      var mineT = g.teams.filter(function (t) { return t.id && Teams.follows(t.id); })[0];
+      var gr = (mineT && sum.standings.filter(function (x) { return x.rows.some(function (r) { return whose(r) === mineT; }); })[0]) || sum.standings[0];
+      var blk = U.el('div', 'sp-panel sp-standblk');
+      blk.appendChild(U.el('div', 'sp-cap', gr.name || T('Standings')));
+      var cols = U.el('div', 'sp-standcols'), half = gr.rows.length > 8 ? Math.ceil(gr.rows.length / 2) : gr.rows.length;
+      [gr.rows.slice(0, half), gr.rows.slice(half)].forEach(function (part, pi) {
+        if (!part.length) return;
+        var st = U.el('table', 'sp-stand'), hr2 = U.el('tr');
+        hr2.appendChild(U.el('th', '', '')); hr2.appendChild(U.el('th', '', T('W-L'))); hr2.appendChild(U.el('th', '', gr.rows[0] && gr.rows[0].extra ? gr.rows[0].extra.k : '')); st.appendChild(hr2);
+        part.forEach(function (r, i) {
+          var wt = whose(r), tr = U.el('tr', wt ? 'me' : ''), nt = U.el('td');
+          nt.appendChild(U.el('span', 'sp-pos', String(pi * half + i + 1)));
+          var lgo = (wt && wt.logo) || r.logo; if (lgo) { var si = new Image(); si.src = lgo; si.className = 'sp-mini'; si.onerror = function () { this.style.visibility = 'hidden'; }; nt.appendChild(si); }
+          nt.appendChild(document.createTextNode(RAW(r.team))); tr.appendChild(nt);
+          tr.appendChild(U.el('td', '', hide ? '·' : r.rec)); tr.appendChild(U.el('td', '', hide ? '' : r.extra ? r.extra.v : ''));
+          st.appendChild(tr);
+        });
+        cols.appendChild(st);
+      });
+      blk.appendChild(cols);
+      el.appendChild(blk);
+      gp.hasStand = true;
     }
-    // A break wherever rows were left out.
-    if (stt) [].slice.call(stt.querySelectorAll('tr[data-i]')).forEach(function (tr, i, all) { tr.classList.toggle('gap', i > 0 && +tr.getAttribute('data-i') !== +all[i - 1].getAttribute('data-i') + 1); });
-    UI.hints([['', 'OK  select', 'ok'], ['', '◀ ▶  buttons', '']].concat(bt.cs.length ? [['', '▼  channels', '']] : [], [['', 'Back  games', 'back']]));
+    if (gp.zone === 'stand' && !gp.hasStand) gp.zone = 'btns';
+    var sb = el.querySelector('.sp-standblk');
+    if (gp.hasStand && gp.zone !== 'stand') { var more = U.el('div', 'sp-more', '▼   ' + (sb.querySelector('.sp-cap') || {}).textContent); more.onclick = function () { gp.zone = 'stand'; drawPage(); }; root.appendChild(more); }
+    // Scrolled just enough that the whole table shows, with the panels above still in view when it's short.
+    el.style.transform = gp.zone === 'stand' && sb ? 'translateY(' + (-Math.min(sb.offsetTop - 60, Math.max(0, sb.offsetTop + sb.offsetHeight - 980))) + 'px)' : '';
+    UI.hints(gp.zone === 'stand' ? [['', '▲  back up', 'up'], ['', 'Back  games', 'back']] : [['', 'OK  select', 'ok'], ['', '◀ ▶  buttons', '']].concat(bt.cs.length ? [['', '▼  channels', '']] : gp.hasStand ? [['', '▼  standings', '']] : [], [['', 'Back  games', 'back']]));
   }
   function pageKeys(a) {
     if (!gp) return keys(a);
@@ -398,11 +432,16 @@ var SportsHub = (function () {
       if (a === 'left' && gp.b > 0) gp.b--;
       else if (a === 'right' && gp.b < gp.btns.length - 1) gp.b++;
       else if (a === 'down' && gp.cs.length) { gp.zone = 'chans'; gp.ci = 0; }
+      else if (a === 'down' && gp.hasStand) gp.zone = 'stand';
       else if (a === 'ok') { var b = gp.btns[gp.b]; if (b) b.run(); return true; }
+      else return true;
+    } else if (gp.zone === 'stand') {
+      if (a === 'up') gp.zone = gp.cs.length ? 'chans' : 'btns';
       else return true;
     } else {
       if (a === 'up') { if (gp.ci > 0) gp.ci--; else gp.zone = 'btns'; }
       else if (a === 'down' && gp.ci < gp.cs.length - 1) gp.ci++;
+      else if (a === 'down' && gp.hasStand) gp.zone = 'stand';
       else if (a === 'ok') { var x = gp.cs[gp.ci]; if (x) { var gg = gp.g; closePage(true); play(x.c, gg); } return true; }
       else return true;
     }

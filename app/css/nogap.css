@@ -58,8 +58,10 @@
 .nogap .sp-meta > *{margin-right:10px;margin-bottom:8px}
 .nogap .sp-meta{margin-bottom:-8px}
 .nogap .sp-ch > * + *{margin-left:8px}
+.nogap .sp-recb > * + *{margin-left:7px}
 .nogap .sp-wline > * + *{margin-left:14px}
 .nogap .sp-btns > * + *{margin-left:18px}
+.nogap .sp-standcols > * + *{margin-left:48px}
 .nogap .sp-lead > * + *{margin-left:20px}
 .nogap .sp-chrow > * + *{margin-left:16px}
 .nogap .sp-bt > * + *{margin-left:10px}

@@ -1468,6 +1468,9 @@ body.focus-ring .sp-card.focus{box-shadow:0 0 0 5px var(--accent),0 0 0 9px #fff
 .sp-ch em{font-style:normal;background:rgba(255,255,255,.09);padding:3px 10px;border-radius:6px;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .sp-ch.none em{background:none;color:var(--dim);padding:0}
 .sp-dot{flex:none;width:9px;height:9px;border-radius:50%;background:var(--ok)}
+.sp-recb{position:absolute;top:-2px;left:18px;display:flex;align-items:center;gap:7px;background:#3a1418;color:#ffb3b8;font-weight:800;font-size:13px;padding:3px 10px;border-radius:0 0 8px 8px;letter-spacing:.06em}
+.sp-recb i{width:10px;height:10px;border-radius:50%;border:2px solid #ff4d5a}
+.sp-recb.on{background:#d23040;color:#fff}.sp-recb.on i{background:#fff;border-color:#fff}
 .sp-mine{position:absolute;top:-2px;right:18px;background:var(--accent);color:var(--on-accent);font-weight:800;font-size:13px;padding:3px 10px;border-radius:0 0 8px 8px;letter-spacing:.06em}
 .sp-empty{position:absolute;top:340px;left:152px;right:152px;text-align:center}
 .sp-empty b{display:block;font-size:38px;margin-bottom:14px}
@@ -1497,7 +1500,14 @@ table.sp-lscore tr.lost .sp-mini{opacity:.5}
 .sp-btns{position:absolute;left:0;right:56px;top:368px;padding:10px 12px;display:flex;justify-content:center;gap:18px;flex-wrap:nowrap;overflow:hidden}
 .sp-btn{flex:none;font-size:26px;font-weight:600;padding:14px 28px;border-radius:14px;background:rgba(255,255,255,.08);color:var(--text);white-space:nowrap;transition:transform 140ms ease,background 140ms ease}
 .sp-btn.sel{background:#fff;color:#0b0e14;font-weight:700;transform:scale(1.05);box-shadow:0 10px 28px rgba(0,0,0,.45)}
-.sp-panel{position:absolute;top:462px;bottom:78px;border-radius:20px;background:var(--panel);padding:24px 28px;overflow:hidden}
+.sp-scroll{position:absolute;left:0;right:0;top:0;bottom:0;transition:transform .25s ease-out}
+.sp-more{position:absolute;left:0;right:56px;bottom:72px;text-align:center;font-size:21px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text);opacity:.85;animation:spnudge 1.8s ease-in-out infinite}
+@keyframes spnudge{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+.sp-panel.sp-standblk{position:absolute;top:978px;bottom:auto;left:0;right:56px}
+.sp-standcols{display:flex;gap:48px;align-items:flex-start}
+.sp-standcols table.sp-stand{flex:1}
+.sp-pos{display:inline-block;width:38px;color:var(--muted);font-weight:500}
+.sp-panel{position:absolute;top:462px;bottom:128px;border-radius:20px;background:var(--panel);padding:24px 28px;overflow:hidden}
 .sp-box{left:0;width:900px}
 .sp-side2{left:928px;right:56px}
 .sp-cap{font-size:21px;font-weight:700;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin:4px 0 10px}

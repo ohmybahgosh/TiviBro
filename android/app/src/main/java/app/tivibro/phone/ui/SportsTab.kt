@@ -250,10 +250,10 @@ private fun GameSheet(model: AppModel, id: String, first: SportGame, now: Long, 
             // The standings of the teams' division or conference.
             (sum?.standings?.firstOrNull { st -> g.teams.any { t -> t.mine && rowOf(st.rows, t) != null } } ?: sum?.standings?.firstOrNull())?.let { st ->
                 Section(st.name.ifBlank { "Standings" })
-                st.rows.take(8).forEach { r ->
+                st.rows.forEach { r ->
                     val who = g.teams.firstOrNull { rowOf(st.rows, it) == r }; val me = who != null
                     Row(Modifier.fillMaxWidth().background(if (me) Color.White.copy(alpha = 0.06f) else Color.Transparent).padding(16.dp, 3.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) { if (me) MiniLogo(who); Text(r.team, fontWeight = if (me) FontWeight.Bold else FontWeight.Normal, maxLines = 1) }
+                        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) { if (who != null) MiniLogo(who) else if (r.logo.isNotBlank()) { AsyncImage(model = r.logo, contentDescription = null, contentScale = ContentScale.Fit, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(8.dp)) }; Text(r.team, fontWeight = if (me) FontWeight.Bold else FontWeight.Normal, maxLines = 1) }
                         Text(if (g.hidden) "·" else r.rec, Modifier.width(70.dp), textAlign = TextAlign.End, fontWeight = if (me) FontWeight.Bold else FontWeight.Normal)
                         Text(if (g.hidden) "" else if (r.extraKey.isNotBlank()) r.extraKey + " " + r.extraValue else "", Modifier.width(80.dp), textAlign = TextAlign.End, color = Muted, fontSize = 12.sp)
                     }

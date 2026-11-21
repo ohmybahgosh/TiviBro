@@ -179,7 +179,7 @@ data class SportChan(val key: String, val name: String, val logo: String, val wh
 data class SportLine(val abbr: String, val home: Boolean, val score: String, val periods: List<String>)
 data class SportLeader(val what: String, val who: String, val value: String)
 data class SportLeaders(val abbr: String, val list: List<SportLeader>)
-data class SportStandRow(val team: String, val rec: String, val extraKey: String, val extraValue: String)
+data class SportStandRow(val team: String, val rec: String, val extraKey: String, val extraValue: String, val logo: String = "")
 data class SportStandings(val name: String, val rows: List<SportStandRow>)
 data class SportSummary(val lines: List<SportLine>, val leaders: List<SportLeaders>, val standings: List<SportStandings>, val venue: String) {
     companion object {
@@ -189,7 +189,7 @@ data class SportSummary(val lines: List<SportLine>, val leaders: List<SportLeade
                     l.optJSONArray("periods")?.let { a -> (0 until a.length()).map { a.opt(it)?.toString().orEmpty() } }.orEmpty()) },
                 s.optJSONArray("leaders").list { t -> SportLeaders(t.optString("abbr"), t.optJSONArray("list").list { x -> SportLeader(x.optString("what"), x.optString("who"), x.optString("value")) }) },
                 s.optJSONArray("standings").list { g -> SportStandings(g.optString("name"), g.optJSONArray("rows").list { r ->
-                    val e = r.optJSONObject("extra"); SportStandRow(r.optString("team"), r.optString("rec"), e?.optString("k").orEmpty(), e?.optString("v").orEmpty()) }) },
+                    val e = r.optJSONObject("extra"); SportStandRow(r.optString("team"), r.optString("rec"), e?.optString("k").orEmpty(), e?.optString("v").orEmpty(), r.optString("logo")) }) },
                 s.optString("venue"))
         }
     }
