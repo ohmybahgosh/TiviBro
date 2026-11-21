@@ -16,7 +16,7 @@
   <img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/app-my-media-movie.png" width="30%" alt="A movie's details in the phone app, with Resume on TV">
 </p>
 
-Press **Green** on My media to rescan all saved sources for new or removed movies.  Press **Yellow** to fetch details and artwork for new movies or outdated language matches.  Yellow leaves up-to-date matches alone.  Wait for a rescan to finish before fetching details.
+Press **Green** on My media to rescan all saved sources for new or removed movies.  **Red > Fetch missing details** (or Yellow on a shelf's name) fetches details and artwork for new movies or outdated language matches, leaving up-to-date matches alone.  **Yellow on a movie** marks it watched or not watched in one press, and so does Yellow on an episode on a show's page (on a season: the whole season), in My media and in your provider's Movies and shows.  Wait for a rescan to finish before fetching details.
 
 Use **Left** and **Right** to move between movies, and **Up** and **Down** to move between shelves.  **OK** plays or resumes the selected movie.  **Hold OK** or **Red** opens movie options: add or remove a favorite, start over, mark as watched, find or correct movie details, or see file information.  Favorites and your place in a movie stay with My media across playlists and restarts.
 

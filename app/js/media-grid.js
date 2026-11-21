@@ -125,7 +125,7 @@ var MediaGrid = (function () {
   function img(src) { var i = tel('img', 'mgr-pic'); i.decoding = 'async'; i.src = src; i.onerror = function () { if (!(typeof Net !== 'undefined' && Net.retryImage && Net.retryImage(this))) this.remove(); }; return i; }
   function hints() {
     if (g.zone === 'letters') return UI.hints([['', '▲ ▼  letters'], ['', 'OK  go there'], ['', 'Back  close', 'back']]);
-    UI.hints([['', 'OK  open'], ['', 'CH+ CH−  page'], g.custom || g.sort !== 'title' ? null : ['', '▶ at the end  letters'], !titled() ? null : ['', 'Hold OK  options', 'hold'], ['red', g.custom ? 'Options' : 'Sort, filter, poster size'], ['', 'Back  close', 'back']].filter(Boolean));
+    UI.hints([['', 'OK  open'], ['', 'CH+ CH−  page'], g.custom || g.sort !== 'title' ? null : ['', '▶ at the end  letters'], !titled() ? null : ['', 'Hold OK  options', 'hold'], g.kind === 'movie' ? ['yellow', 'Watched'] : null, ['red', g.custom ? 'Options' : 'Sort, filter, poster size'], ['', 'Back  close', 'back']].filter(Boolean));
   }
   function present() { var have = {}; g.list.forEach(function (m) { have[letterOf(m)] = 1; }); return have; }
   function draw() {
@@ -269,6 +269,7 @@ var MediaGrid = (function () {
     var n = g.list.length;
     if (a === 'back') { if (g.zone === 'letters') g.zone = 'grid'; else { close(); return true; } }
     else if (a === 'red') { menu(); return true; }
+    else if (a === 'yellow' && g.zone !== 'letters') { var ym = g.list[g.sel]; if (ym && Media.movieCard && Media.movieCard(ym)) { Media.quickMarkMovie(ym); draw(); } else U.toast('Yellow marks a movie watched.  For a show, open it.'); return true; }
     else if (g.zone === 'letters') {
       var have = present();
       if (a === 'up' || a === 'down') { var i = g.letter; do { i += a === 'up' ? -1 : 1; } while (i >= 0 && i < LETTERS.length && !have[LETTERS[i]]); if (i >= 0 && i < LETTERS.length) { g.letter = i; jump(LETTERS[i]); } }

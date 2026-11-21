@@ -147,6 +147,7 @@ var Vod = (function () {
       else if (a === 'up') sp.zone = 'tabs';
       else if (a === 'ok') { var it = itemsVL.current(); if (it) play(it, false); }
       else if (a === 'red' || a === 'hold' || a === 'info') { itemMenu(itemsVL.current()); return true; }
+      else if (a === 'yellow') { quickMark(itemsVL.current()); return true; }
     }
     spDraw(); hints();
     return true;
@@ -986,6 +987,13 @@ var Vod = (function () {
     open(kind, true);
   }
 
+  /* Yellow: watched or not watched in one press, for a movie or an episode (no menu to open and close each time). */
+  function quickMark(it) {
+    if (!it || !(kind === 'movie' || it.ep)) return U.toast('Yellow marks a movie or an episode watched');
+    var id = idOf(it), on = !isWatched(id) || !!resumeOf(id);
+    mark(id, on); relist(); if (sp) spDraw();
+    U.toast(on ? 'Marked as watched' : 'Marked as not watched');
+  }
   function itemMenu(it) {
     if (!it) return;
     var id = idOf(it);
@@ -1041,13 +1049,13 @@ var Vod = (function () {
   }
   function setZone(z) { zone = z; catsVL.setActive(z === 'cats'); itemsVL.setActive(z === 'items'); hints(); }
   function hints() {
-    if (sp) return UI.hints(sp.zone === 'trl' ? [['', 'OK  play the trailer', 'ok'], ['', 'Down  seasons'], ['', 'Back  ' + (showFromHome ? 'home' : 'all shows'), 'back']] : sp.zone === 'tabs' ? [['', '◀ ▶  season'], ['', 'Down  episodes'], trailerOf(sp.s) ? ['', 'Up  trailer'] : null, ['', 'Back  ' + (showFromHome ? 'home' : 'all shows'), 'back']] : [['', 'OK  play'], ['', 'Up  seasons'], ['', 'Hold OK  options', 'hold'], ['', 'Back  ' + (showFromHome ? 'home' : 'all shows'), 'back']]);
+    if (sp) return UI.hints(sp.zone === 'trl' ? [['', 'OK  play the trailer', 'ok'], ['', 'Down  seasons'], ['', 'Back  ' + (showFromHome ? 'home' : 'all shows'), 'back']] : sp.zone === 'tabs' ? [['', '◀ ▶  season'], ['', 'Down  episodes'], trailerOf(sp.s) ? ['', 'Up  trailer'] : null, ['', 'Back  ' + (showFromHome ? 'home' : 'all shows'), 'back']] : [['', 'OK  play'], ['', 'Up  seasons'], ['', 'Hold OK  options', 'hold'], ['yellow', 'Watched'], ['', 'Back  ' + (showFromHome ? 'home' : 'all shows'), 'back']]);
     if (zone === 'cats') {
       var c = catsVL && catsVL.current();
       return UI.hints(c && c.id === LANGS ? [['', 'OK  pick languages'], ['', homeOn() ? 'Back  home' : 'Back  menu bar', 'back'], ['green', homeOn() ? 'Home' : 'Guide'], ['blue', 'Settings']]
         : [['', 'OK  open'], ['', homeOn() ? 'Hold OK  pin or hide' : 'Hold OK  hide category', 'hold'], ['', homeOn() ? 'Back  home' : 'Back  menu bar', 'back'], ['red', homeOn() ? 'Pin or hide' : 'Hide category'], ['green', homeOn() ? 'Home' : 'Guide'], ['blue', 'Settings']]);
     }
-    UI.hints([['', 'OK  ' + (kind === 'series' ? 'open' : 'play')], ['', 'Hold OK  options', 'hold'], ['', episodes && showFromHome ? 'Back  home' : 'Back  categories', 'back'], ['red', 'Options'], ['green', homeOn() ? 'Home' : 'Guide'], ['blue', 'Settings']]);
+    UI.hints([['', 'OK  ' + (kind === 'series' ? 'open' : 'play')], ['', 'Hold OK  options', 'hold'], ['', episodes && showFromHome ? 'Back  home' : 'Back  categories', 'back'], ['red', 'Options'], kind === 'movie' || episodes ? ['yellow', 'Watched'] : null, ['green', homeOn() ? 'Home' : 'Guide'], ['blue', 'Settings']]);
   }
 
   function keys(a) {
@@ -1092,6 +1100,7 @@ var Vod = (function () {
       if (kind === 'series' && !it.ep) openSeries(it); else play(it, false);
     }
     else if (a === 'red' || a === 'hold' || a === 'info') itemMenu(itemsVL.current());
+    else if (a === 'yellow') quickMark(itemsVL.current());
     else if (a === 'back') { if (episodes) { closeSeries(); if (showFromHome) toHome(); } else setZone('cats'); }
     else if (a === 'green') { if (homeOn()) toHome(); else Views.switchTab('guide'); }
     else if (a === 'blue') Views.switchTab('settings');

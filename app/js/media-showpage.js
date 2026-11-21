@@ -117,7 +117,7 @@ var MediaShowPage = (function () {
     if (facts) info.appendChild(tel('div', 'media-facts', facts));
     var plot = cur ? cur.plot || m.plot : m.plot;
     if (plot) info.appendChild(tel('div', 'media-summary shp-plot', RAW(plot)));
-    // The show's trailer, on the seasons: ▲ to it, OK plays it (Yellow from anywhere on the seasons).
+    // The show's trailer: ▲ to it, OK plays it.
     if (pg.trailer) { var tb = tel('div', 'mmp-btn shp-trl' + (pg.zone === 'trl' ? ' sel' : ''), '▶  Trailer'); tb.onclick = function () { trailer(pg); }; info.appendChild(tb); }
     b.appendChild(info);
     hints();
@@ -127,8 +127,8 @@ var MediaShowPage = (function () {
   }
   function hints() {
     if (!pg) return;
-    UI.hints(pg.zone === 'trl' ? [['', 'OK  play the trailer', 'ok'], ['', 'Down  ' + (pg.level === 'eps' ? 'episodes' : 'seasons')], ['', 'Back  close', 'back']] : pg.level === 'eps' ? [['', 'OK  play'], pg.trailer && pg.seasons.length < 2 ? ['', 'Up  trailer'] : null, ['', '◀ ▶  episodes'], ['', 'Hold OK  episode options', 'hold'], ['', 'Back  ' + (pg.seasons.length > 1 ? 'seasons' : 'close'), 'back']]
-      : pg.zone === 'trl' ? [['', 'OK  play the trailer', 'ok'], ['', 'Down  seasons'], ['', 'Back  close', 'back']] : [['', 'OK  episodes'], ['', '▶  play next'], ['', '◀ ▶  seasons'], pg.trailer ? ['', 'Up  trailer'] : null, ['', 'Hold OK  season options', 'hold'], ['', 'Back  close', 'back']].concat(pg.trailer ? [['yellow', 'Trailer']] : []));
+    UI.hints(pg.zone === 'trl' ? [['', 'OK  play the trailer', 'ok'], ['', 'Down  ' + (pg.level === 'eps' ? 'episodes' : 'seasons')], pg.level === 'eps' && pg.seasons.length > 1 ? ['', 'Up  all seasons'] : null, ['', 'Back  close', 'back']] : pg.level === 'eps' ? [['', 'OK  play'], pg.trailer ? ['', 'Up  trailer'] : null, ['', '◀ ▶  episodes'], ['', 'Hold OK  episode options', 'hold'], ['yellow', 'Watched'], ['', 'Back  ' + (pg.seasons.length > 1 ? 'seasons' : 'close'), 'back']]
+      : pg.zone === 'trl' ? [['', 'OK  play the trailer', 'ok'], ['', 'Down  seasons'], ['', 'Back  close', 'back']] : [['', 'OK  episodes'], ['', '▶  play next'], ['', '◀ ▶  seasons'], pg.trailer ? ['', 'Up  trailer'] : null, ['', 'Hold OK  season options', 'hold'], ['yellow', 'Watched'], ['', 'Back  close', 'back']]);
   }
   function drawSeasons(b, s, m) {
     if (!pg.seasons.length) { b.appendChild(tel('div', 'shp-empty', 'No episodes found for this show.')); return; }
@@ -198,15 +198,30 @@ var MediaShowPage = (function () {
     });
   }
   function trailer(state) { if (state.trailer && typeof MediaMoviePage !== 'undefined') MediaMoviePage.watchTrailer(state.trailer, function () { if (pg === state) { UI.setHandler(keys); hints(); } }, 'the show'); }
+  /* Yellow: the focused episode, or the whole season on the seasons, watched or not watched in one press. */
+  function quickMark() {
+    if (!pg || pg.loading) return;
+    var state = pg;
+    if (pg.level === 'eps') {
+      var e = pg.eps[pg.sel]; if (!e) return;
+      var on = e.watchState !== 'watched';
+      MediaSeries.setWatched(e, on, function () { U.toast(on ? 'Marked as watched' : 'Marked as not watched'); if (pg === state) draw(); });
+      return;
+    }
+    var b = pg.seasons[pg.at]; if (!b) return;
+    var all = b.watched != null && b.watched >= b.count;
+    MediaSeries.markShow(pg.show, b.key, !all, function () { if (pg === state) refresh(state); });
+  }
   function keys(a) {
     if (!pg) return false;
-    if (a === 'yellow' && pg.trailer) { trailer(pg); return true; }
+    if (a === 'yellow') { quickMark(); return true; }
     if (pg.zone === 'trl' && a !== 'up' && a !== 'down' && a !== 'ok' && a !== 'back') return true;
     if (a === 'back') { if (pg.level === 'eps' && pg.seasons.length > 1) { pg.level = 'seasons'; pg.loading = false; draw(); refresh(pg); } else close(); return true; }
     if (a === 'red' || a === 'hold' || a === 'info') { options(); return true; }
     if (pg.loading) return true;
     if (pg.zone === 'trl') {
       if (a === 'down') pg.zone = '';
+      else if (a === 'up' && pg.level === 'eps' && pg.seasons.length > 1) { pg.zone = ''; pg.level = 'seasons'; refresh(pg); }
       else if (a === 'ok') { trailer(pg); return true; }
       draw(); return true;
     }
@@ -220,8 +235,8 @@ var MediaShowPage = (function () {
       if (a === 'left' && pg.sel > 0) pg.sel--;
       else if (a === 'right' && pg.sel < n - 1) pg.sel++;
       else if (a === 'chup' || a === 'chdown') pg.sel = Math.max(0, Math.min(n - 1, pg.sel + (a === 'chup' ? -5 : 5)));
+      else if (a === 'up' && pg.trailer) pg.zone = 'trl';                       // the Trailer button first
       else if (a === 'up' && pg.seasons.length > 1) { pg.level = 'seasons'; refresh(pg); }
-      else if (a === 'up' && pg.trailer) pg.zone = 'trl';
       else if (a === 'ok' || a === 'playpause') { play(); return true; }
     }
     // ▶ on a season: its first episode not watched, played.

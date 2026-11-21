@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Yellow marks watched in one press**, wherever TiviBro keeps track: a movie or an episode in your provider's Movies and shows, a movie on My media's shelves and lists, an episode on a show's page in My media (a whole season on its seasons).  No menu to open and close for each one.  Fetching missing details on My media moved to Red > Fetch missing details (Yellow on a shelf's name still does it).
 - **A Trailer button on a show's page**, like a movie's, in Movies and shows and in My media: ▲ from the seasons (or from the episodes of a one-season show), OK plays it.
 
 ## 0.6.0 (alpha 190, 2026-11-21)

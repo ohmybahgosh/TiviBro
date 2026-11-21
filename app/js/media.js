@@ -1243,7 +1243,7 @@ var Media = (function () {
       if (at >= sources.length) return;
       return rescan(sources[at++].id).then(function (r) { if (r && r.error) failures++; if (r && r.kept) kept++; return next(); });
     }).then(function () {
-      scanningAll = false; refresh(); autoSoon(8000); U.toast(failures ? 'Rescan finished.  ' + failures + ' sources could not be read; their saved movies are kept.' : kept ? 'Media rescan finished.  The list stays as it was where scans found no movies.' : 'Media rescan finished.  Press Yellow to fetch missing details.', 6000);
+      scanningAll = false; refresh(); autoSoon(8000); U.toast(failures ? 'Rescan finished.  ' + failures + ' sources could not be read; their saved movies are kept.' : kept ? 'Media rescan finished.  The list stays as it was where scans found no movies.' : 'Media rescan finished.  Red > Fetch missing details fills in the rest.', 6000);
     }, function (e) { scanningAll = false; U.toast('Could not finish the rescan: ' + why(e), 6000); });
   }
   /* Yellow: details for what this tab holds (kind 'movies' or 'shows'), or both on Home and from Settings. */
@@ -1567,6 +1567,14 @@ var Media = (function () {
   }
 
   // Marked by hand: here, and on Trakt too (Settings > My media > Trakt > Mark as watched on Trakt), as Plex does.
+  // A movie's card (not a show, a channel, a section or a show's next episode).
+  function movieCard(m) { return !!(m && m.id && ['show', 'live', 'section', 'episode'].indexOf(m.kind) < 0 && !m.continueEpisode && !m.handle); }
+  /* Yellow on a movie: watched or not watched in one press. */
+  function quickMarkMovie(m) {
+    var on = !MediaStore.isWatched(m.id) || !!MediaStore.resume(m.id);
+    MediaStore.clearResume(m.id);
+    markMovie(m, on); U.toast(on ? 'Marked as watched' : 'Marked as not watched');
+  }
   function markMovie(m, on) {
     MediaStore.markWatched(m.id, on);
     if (typeof Trakt !== 'undefined' && Trakt.markMovie) Trakt.markMovie(m.metadata && m.metadata.id, on);
@@ -1579,8 +1587,8 @@ var Media = (function () {
     if ((typeof MediaMoviePage !== 'undefined' && MediaMoviePage.isOpen()) || (typeof MediaShowPage !== 'undefined' && MediaShowPage.isOpen()) || (typeof MediaGrid !== 'undefined' && MediaGrid.isOpen())) return;
     var m = itemsVL.current();
     if (tabsFocus) return UI.hints(searchTab || query ? [['', 'OK  search'], ['', '◀ ▶  Home, Movies, TV shows'], ['', 'Back  menu', 'back']] : [['', '◀ ▶  Home, Movies, TV shows, Search'], ['', '▼  shelves'], ['', 'Back  menu', 'back']]);
-    if (m && m.kind === 'section') return UI.hints([['', 'OK  open ' + m.title], ['', 'Back  menu', 'back'], ['red', 'Sort and shelves'], ['green', ({ shows: 'Rescan TV shows', movies: 'Rescan movies' })[detailsKindNow()] || 'Rescan'], ['yellow', ({ shows: 'Fetch show details', movies: 'Fetch movie details' })[detailsKindNow()] || 'Fetch details'], ['blue', 'Settings']]);
-    UI.hints([['', m && m.kind === 'live' ? 'OK  watch' : m && m.continueEpisode ? 'OK  play' : 'OK  open'], ['', 'Hold OK  options', 'hold'], ['', 'Back  menu', 'back'], ['red', 'Sort and shelves'], ['green', ({ shows: 'Rescan TV shows', movies: 'Rescan movies' })[detailsKindNow()] || 'Rescan'], ['yellow', ({ shows: 'Fetch show details', movies: 'Fetch movie details' })[detailsKindNow()] || 'Fetch details'], ['blue', 'Settings']]);
+    if (m && m.kind === 'section') return UI.hints([['', 'OK  open ' + m.title], ['', 'Back  menu', 'back'], ['red', 'Sort and shelves'], ['green', ({ shows: 'Rescan TV shows', movies: 'Rescan movies' })[detailsKindNow()] || 'Rescan'], ['yellow', movieCard(m) ? 'Watched' : ({ shows: 'Fetch show details', movies: 'Fetch movie details' })[detailsKindNow()] || 'Fetch details'], ['blue', 'Settings']]);
+    UI.hints([['', m && m.kind === 'live' ? 'OK  watch' : m && m.continueEpisode ? 'OK  play' : 'OK  open'], ['', 'Hold OK  options', 'hold'], ['', 'Back  menu', 'back'], ['red', 'Sort and shelves'], ['green', ({ shows: 'Rescan TV shows', movies: 'Rescan movies' })[detailsKindNow()] || 'Rescan'], ['yellow', movieCard(m) ? 'Watched' : ({ shows: 'Fetch show details', movies: 'Fetch movie details' })[detailsKindNow()] || 'Fetch details'], ['blue', 'Settings']]);
   }
   /* Red: sort, go to a shelf, arrange shelves, which source, and the focused title's options. */
   function goShelf(id) { var i = shelves.map(function (s) { return s.id; }).indexOf(id); if (i >= 0) { shelfAt = i; drawShelves(); hints(); } }
@@ -1629,6 +1637,7 @@ var Media = (function () {
     var m = itemsVL.current(), s = shelves[shelfAt], p = MediaStore.preferences(), show = (s && s.id === 'shows') || (split && section === 'shows') || (!split && has().shows && !has().movies), src = p.sourceFilter && MediaStore.source(p.sourceFilter);
     UI.menu('My media', [
       { label: 'Search My media', sub: 'A movie or show, a collection or a director', action: askSearch },
+      { label: 'Fetch missing details', sub: 'Posters and details from TMDB for titles without them', action: function () { fetchMissingDetails(detailsKindNow()); } },
       { label: (show ? 'Sort TV shows: ' : 'Sort movies: ') + sortName(show ? 'show' : 'movie'), action: function () { sortMenu(show ? 'show' : 'movie'); } },
       { label: 'Go to a shelf', sub: count(shelves.length, '1 shelf', '{n} shelves'), action: function () { UI.menu('Go to a shelf', shelves.map(function (x) { return { label: RAW(x.title), sub: String(x.movies.length), current: x === s, action: function () { goShelf(x.id); } }; })); } },
       { label: 'Arrange shelves', sub: 'Move shelves up or down, switch them off', action: function () { arrangeMenu(s && (s.id.indexOf('holiday:') === 0 ? 'holidays' : s.genre ? 'genres' : s.id)); } },
@@ -1649,7 +1658,7 @@ var Media = (function () {
     followTop = false;
     if (a !== 'ok') playToken++;
     if (a === 'green') { rescanAll(detailsKindNow()); return true; }
-    if (a === 'yellow') { fetchMissingDetails(detailsKindNow()); return true; }
+    if (a === 'yellow') { var ym = itemsVL.current(); if (!tabsFocus && movieCard(ym)) quickMarkMovie(ym); else fetchMissingDetails(detailsKindNow()); return true; }
     if (a === 'red') { mediaOptions(); return true; }
     if (a === 'blue') { Views.switchTab('settings'); Settings.section('media'); return true; }
     if (tabsFocus) {
@@ -1743,6 +1752,7 @@ var Media = (function () {
   }
 
   return {
+    quickMarkMovie: quickMarkMovie, movieCard: movieCard,
     reviewCount: function () { return reviewCards.length; },      // how many need a look (the show options offer Needs review)
     refreshShows:refreshSeries, playNow: function (m) { playNow(m); }, foundText: foundText, discover: discover, addServer: addServer, sourceDetailsNow: sourceDetailsNow, isScanning: function (id) { return !!scanning[id]; }, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); visitEnd(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress, addDropbox: addDropbox, dropboxFolders: dropboxFolders, addGdrive: addGdrive, gdrivePlaces: gdrivePlaces, gdriveFolders: gdriveFolders, gdriveKey: gdriveKey, signOut: signOut,
     rescanAll: rescanAll, newMedia: newMedia, newMediaSoon: newMediaSoon, guideLookup: guideLookup, movieById: movieById, tvByName: tvByName, tvSeason: tvSeason, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, libraryStats: libraryStats, removeLibrary: removeLibrary,

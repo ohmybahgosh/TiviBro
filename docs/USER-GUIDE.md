@@ -521,7 +521,7 @@ A show is looked up when you land on it, not ahead of time, and only by its name
   <img src="screenshots/app-my-media-movie.png" width="30%" alt="A movie's details in the phone app, with Resume on TV">
 </p>
 
-Press **Green** on My media to rescan all saved sources for new or removed movies.  Press **Yellow** to fetch details and artwork for new movies or outdated language matches.  Yellow leaves up-to-date matches alone.  Wait for a rescan to finish before fetching details.
+Press **Green** on My media to rescan all saved sources for new or removed movies.  **Red > Fetch missing details** (or Yellow on a shelf's name) fetches details and artwork for new movies or outdated language matches, leaving up-to-date matches alone.  **Yellow on a movie** marks it watched or not watched in one press, and so does Yellow on an episode on a show's page (on a season: the whole season), in My media and in your provider's Movies and shows.  Wait for a rescan to finish before fetching details.
 
 Use **Left** and **Right** to move between movies, and **Up** and **Down** to move between shelves.  **OK** plays or resumes the selected movie.  **Hold OK** or **Red** opens movie options: add or remove a favorite, start over, mark as watched, find or correct movie details, or see file information.  Favorites and your place in a movie stay with My media across playlists and restarts.
 
@@ -1184,7 +1184,7 @@ Your libraries, like Plex's: each one is a folder of movies or TV shows on a med
 | *(each library)* | | What it holds and where, with its counts: movies and how many are unmatched, shows and episode files, or **Scanning…**.  Opens the library's page (below). |
 | **Add a library** | | Find a DLNA / UPnP server, or enter the WebDAV address of your media folder and its login.  **Dropbox** is signed in from the phone app, and **Google Drive** added from the web editor or the phone app.  Subfolders are scanned too.  One folder per movie, named like **Frozen (2013)**, matches best.  In the phone app the server list and the WebDAV form are on the phone. |
 | **Scan all libraries** | | Same as Green on My media: scan every library for movies and episodes. |
-| **Fetch details for all** | | Same as Yellow: look up details for movies, shows and the episodes you have, and refresh outdated language details. |
+| **Fetch details for all** | | Same as Red > Fetch missing details on My media: look up details for movies, shows and the episodes you have, and refresh outdated language details. |
 | **Edit on a computer** *(on the TV)* | | Shows a code for a computer or phone browser: the web editor's My media page, for typing server logins, fixing many matches at once and TV show episodes. |
 | **Display and shelves ›** | | Sorting (**Sort movies by**, **Sort TV shows by**, reversed or not), **Arrange shelves** (one per tab with movies and shows), **Library poster size**, **Watched marks on posters**, **Mark what's new**, **Open where you left off**, **Play the next one automatically**, **Favorites also in lists** and **Metadata language**. |
 | **Trakt ›** | | [Settings: Trakt](#settings-trakt). |
