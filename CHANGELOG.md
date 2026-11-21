@@ -1,18 +1,18 @@
 # Changelog
 
-## Unreleased
-
-- **Where the scores go** (Settings > Channels and groups > My teams) picks the corner for your teams' scores while you watch; top right as before unless you change it.  The scores also no longer shows over the game you're watching when that channel names the game only in its description.
-- **Sports finds the same channels as My teams.**  A game named only in a programme's description (a local CBS station's "College Football" with the teams in its details) now shows on the game's page and card too, not just in the guide's My teams group.  The two used to take turns throwing away each other's description search.
-- **Why a title has no trailer is in the log** (discussion #36): no TMDB token, TMDB found no match for its name and year, or TMDB has no trailer for it, so a problem report says which.
-- **Logins that allow one connection** (the provider's account details say how many): when the provider refuses a channel or movie with a "busy" answer, TiviBro now says the one connection seems to be in use (another TV or app, a recording, or a stream still closing) instead of a general error.  It also stops opening a second stream for them on its own: no seek previews or chapter marks on such a provider's movies (they read the file a second time), and Multiview says at once that a second channel from that login can't play beside the first.
-- **Fewer closes on 1 GB TVs with big lists.**  With more than 8,000 channels on a TV short of memory, TiviBro now opens the channel list and your last channel first, then the guide 20 seconds later and the logo library after that, instead of building them all at once in the first seconds (which is when those TVs closed it).
-
-## 0.6.0 (alpha 193, 2026-11-21)
+## 0.6.0 (alpha 194, 2026-11-21)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 193
+### New in alpha 194
+
+- **Sports finds the same channels as My teams**, including a local station that names the game only in its description (a CBS affiliate's "College Football").  Your teams' score corner no longer shows over that game while you watch it.
+- **Where the scores go** (Settings > Channels and groups > My teams) picks the corner for your teams' scores; top right unless you change it.
+- **Logins that allow one connection:** a "busy" refusal now says the one connection seems to be in use (another TV or app, a recording, or a stream still closing).  TiviBro also stops opening a second stream for them: no seek previews on that provider's movies, and Multiview says at once that a second channel from that login can't play.
+- **Fewer closes on 1 GB TVs with big lists** (over 8,000 channels): the channel list and your last channel come first, then the guide and the logo library a little later, instead of all at once.
+- **Why a title has no trailer is in the log** (discussion #36): no TMDB token, no TMDB match, or no TMDB trailer.
+
+### In alpha 193
 
 - **A movie the TV refuses gets one more try** (issue #152).  When the TV's player won't open a movie or episode at all ("format error"), TiviBro has the network helper read what the file holds and plays it through the audio converter once: the picture as it is, the sound turned into Dolby Digital, in a form the TV opens.  That's usually DTS sound, which LG TVs from 2020 to 2022 can't play.  Without the converter, it offers to get it.  If it still won't play, the message now says what the file is made of ("Its picture is HEVC and its sound DTS") instead of a guess.
 - **The network helper no longer stops when a guide source redirects to an https:// address** (issue #146).  The redirect goes through the helper's relay like the first address did.
