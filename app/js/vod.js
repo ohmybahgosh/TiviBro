@@ -336,7 +336,7 @@ var Vod = (function () {
   function rowsOf(k, list, adultCat) {
     return (list || []).map(function (x) {
       var it = k === 'series'
-        ? seriesRow([x.series_id, x.name || '', x.cover || '', String(x.plot || '').slice(0, 300), x.rating || '', (x.releaseDate || x.release_date || '').slice(0, 4), String(x.category_id), +x.last_modified || 0])
+        ? seriesRow([x.series_id, x.name || '', x.cover || '', String(x.plot || '').slice(0, 300), x.rating || '', (x.releaseDate || x.release_date || '').slice(0, 4), String(x.category_id), +x.last_modified || 0, ytId(x.youtube_trailer || x.trailer)])
         : movieRow([x.stream_id, x.name || '', x.stream_icon || '', x.rating || '', x.container_extension || 'mp4', String(x.category_id), +x.added || 0]);
       if (adultCat && adultCat[it.cat]) it.adult = 1;
       return it;
@@ -488,14 +488,16 @@ var Vod = (function () {
     });
   }
   function movieRow(x) { return ({ id: x[0], name: x[1], cover: x[2], rating: x[3], ext: x[4] || 'mp4', cat: x[5], added: x[6] }); }
-  function seriesRow(x) { return ({ id: x[0], name: x[1], cover: x[2], plot: x[3], rating: x[4], year: x[5], cat: x[6], added: x[7] }); }
+  function seriesRow(x) { return ({ id: x[0], name: x[1], cover: x[2], plot: x[3], rating: x[4], year: x[5], cat: x[6], added: x[7], trailer: x[8] || '' }); }
+  // A YouTube id from what a provider sends: the id itself or a whole YouTube link.
+  function ytId(v) { var yt = String(v || '').trim(), m = /(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/.exec(yt); return m ? m[1] : /^[A-Za-z0-9_-]{11}$/.test(yt) ? yt : ''; }
   function fetchItems(k, p) {
     var api = Source.api(p, k === 'series' ? 'get_series' : 'get_vod_streams');
     function direct() {
       return Source.vodList(k, p).then(function (list) {
         return (list || []).map(function (x) {
           return k === 'series'
-            ? seriesRow([x.series_id, x.name || '', x.cover || '', String(x.plot || '').slice(0, 300), x.rating || '', (x.releaseDate || x.release_date || '').slice(0, 4), String(x.category_id), +x.last_modified || 0])
+            ? seriesRow([x.series_id, x.name || '', x.cover || '', String(x.plot || '').slice(0, 300), x.rating || '', (x.releaseDate || x.release_date || '').slice(0, 4), String(x.category_id), +x.last_modified || 0, ytId(x.youtube_trailer || x.trailer)])
             : movieRow([x.stream_id, x.name || '', x.stream_icon || '', x.rating || '', x.container_extension || 'mp4', String(x.category_id), +x.added || 0]);
         });
       });
@@ -889,6 +891,7 @@ var Vod = (function () {
     series = s; episodes = null; spStart(s); hints();
     Source.seriesInfo(s.id, plOf(s)).then(function (r) {
       if (mine !== seriesAsk) return;                 // closed, or another show opened meanwhile
+      if (!s.trailer) s.trailer = ytId(((r && r.info) || {}).youtube_trailer || ((r && r.info) || {}).trailer);   // a show's trailer, from its details
       var eps = [], byS = (r && r.episodes) || {};
       Object.keys(byS).sort(function (a, b) { return +a - +b; }).forEach(function (sn) {
         (byS[sn] || []).forEach(function (e) {
@@ -990,7 +993,12 @@ var Vod = (function () {
 
   /* Trailers (discussion #60): the provider's YouTube trailer, opened in the TV's YouTube app; TiviBro comes back
      with the Back button there.  Only on the TV, where TiviBro can ask webOS to open another app. */
-  function trailerOf(it) { var m = it && !it.ep && kind === 'movie' ? info.get(key(it)) : null; return m && m.trailer && typeof PalmServiceBridge !== 'undefined' ? m.trailer : ''; }
+  // A movie's (its details), or a show's (the list or its details; on an episode, its show's).
+  function trailerOf(it) {
+    if (!it || typeof PalmServiceBridge === 'undefined') return '';
+    if (kind === 'series') return (it.ep ? series && series.trailer : it.trailer) || '';
+    var m = !it.ep && kind === 'movie' ? info.get(key(it)) : null; return m && m.trailer ? m.trailer : '';
+  }
   function watchTrailer(id) {
     try {
       var b = new PalmServiceBridge();

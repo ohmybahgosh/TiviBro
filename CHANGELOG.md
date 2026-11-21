@@ -1,7 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 190, 2026-11-21)
 
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 190
+
+- **Trailers for shows too** (discussion #36): Hold OK on a show, or on one of its episodes, has **Watch the trailer** when your provider has one, like movies.
 - **Sports, polished.**  A colour picture of the sport on every card and league row, a **Recent results** row (your teams' finals from the last four days), and the date on every card in the TV's own format.  A league out of season no longer shows its last game.
 - **Moving around Sports is quicker**, right after TiviBro starts too: new scores wait until you stop moving, and each game's channels are worked out once.
 - **Blue on Sports arranges the rows**: show or hide a league, and move any row (My teams, Live now, Recent results or a league) up, down or to the top.
@@ -9,11 +14,7 @@
 - **A game's page**: the whole division or conference in its own block below (▼ scrolls to it), with every team's logo; this game's teams marked with their logos instead of the same blue; up to four of your channels; shorter buttons that scroll when there are many.
 - **Phone app**: a Sports square on the TV's card; the game sheet shows the date, marks the winner, lists the whole standings with logos.
 
-## 0.6.0 (alpha 189, 2026-11-21)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 189
+### In alpha 189
 
 - **Sports**, a new screen in the menu: today's games with live scores and team logos (from ESPN), your teams' games this week first, then everything live, then a row per league, each with the channel of yours that has it.  Finals show the winner.  OK opens a game, Hold OK asks to remind you or watch it, Yellow sets a reminder, Green follows a team, Blue picks the leagues (NFL, college football, NBA, college basketball, WNBA, NHL, MLB, MLS, Premier League, Champions League, Formula 1).
 - **A game's page** (OK on a game in Sports; Hold OK asks to remind you or watch it now): the score in the teams' colours, the box score by period with each team's leaders, every channel of yours that has it, the division or conference standings, and Watch, Remind me, Follow and Hide the score.  Back from a game watched from its page comes back to it.
