@@ -148,6 +148,7 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | 🔐 **Locked backups, restored from the first screen** | One AES-256 file with every playlist, login, group and setting.  A brand-new TV restores it from a computer before you've touched a setting. |
 | 🐞 **Report a problem from the couch** | **Report a problem** shows a QR code.  Your phone opens a short form, the TV adds its version, model and log with logins and server names taken out, and GitHub's bug form opens filled in.  No copying logs off the TV. |
 | 💸 **Everything free, nothing locked** | Catch-up, multiple playlists, backups, reminders and parental controls are all included.  Open source, no account, no ads, no tracking: just an anonymous daily count of installs by version, which you can switch off. |
+| 🏈 **Sports, with your teams first** | A Sports screen of today's games with live scores and logos, each tied to the channel of yours that has it.  A page per game with the box score, leaders and standings.  While you watch something else, your teams' live scores sit in the corner, and a close finish asks whether to switch. |
 | 🚀 **Opens straight onto a channel from anywhere** | Home screens, launchers, scripts and Home Assistant can open TiviBro on a channel, a team's game, the guide, a search or a Settings page, with a `tivibro://` link or launch params, whether it's closed or already open.  Documented in [docs/LAUNCH-API.md](docs/LAUNCH-API.md). |
 | 📺 **Made for LG TVs** | Runs on the TV itself, webOS 4 and newer.  No Android box or Fire Stick needed. |
 
@@ -158,6 +159,7 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | Catch-up, multiple playlists, backups | ✅ Free | Premium |
 | Open source | ✅ MIT | ❌ |
 | Sports and PPV events read from channel names | ✅ | ❌ |
+| Live scores, game pages and your teams' scores while you watch | ✅ | ❌ |
 | Edit your playlist from a computer, with autosaved drafts | ✅ | ❌ On the TV only |
 | Switches to another version of a dead channel by itself | ✅ | ❌ |
 | Preloaded name clean-up rules | ✅ About 250 country codes, tags, symbols | Your own prefix and suffix lists |

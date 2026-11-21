@@ -1,8 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 189, 2026-11-21)
 
-- **Sports**, a new screen in the menu: today's games with live scores and team logos (from ESPN), your teams' games this week first, then everything live, then a row per league, each with the channel of yours that has it.  OK watches, Yellow sets a reminder, Green follows a team, Blue picks the leagues (NFL, college football, NBA, college basketball, WNBA, NHL, MLB, MLS, Premier League, Champions League, Formula 1).
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 189
+
+- **Sports**, a new screen in the menu: today's games with live scores and team logos (from ESPN), your teams' games this week first, then everything live, then a row per league, each with the channel of yours that has it.  Finals show the winner.  OK opens a game, Hold OK asks to remind you or watch it, Yellow sets a reminder, Green follows a team, Blue picks the leagues (NFL, college football, NBA, college basketball, WNBA, NHL, MLB, MLS, Premier League, Champions League, Formula 1).
 - **A game's page** (OK on a game in Sports; Hold OK asks to remind you or watch it now): the score in the teams' colours, the box score by period with each team's leaders, every channel of yours that has it, the division or conference standings, and Watch, Remind me, Follow and Hide the score.  Back from a game watched from its page comes back to it.
 - **Your teams' scores while you watch something else**: when a team you follow is playing and you're watching a movie or another game full screen, its score sits in the top corner, kept up to date (several take turns).  Never for the game you're watching: its broadcast has its own.
 - **Sports in the phone app**: a Sports tab with the TV's rows of games; tap one for its score, box score, leaders, standings and the TV's channels with it, then Watch on TV, Remind me or Follow.  The new settings are in the phone app's and the web editor's Settings too.
@@ -13,11 +17,7 @@
 - **Swapping the sound in Multiview keeps a picture up**: the box taking the sound shows its last picture until its video starts, instead of going black.
 - **Samsung TV Plus, Plex and Roku channels get their own guides** (from i.mjh.nz), like Pluto TV's: a playlist built from those apps keeps each app's channel id as its guide id, so channels with no guide are matched exactly, by id, when there are three or more of them.
 
-## 0.6.0 (alpha 188, 2026-11-20)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 188
+### In alpha 188
 
 - **Open TiviBro straight onto something from a home screen, a launcher, a script or Home Assistant.**  A channel (by number, name or guide id), a followed team's game, the guide or another part of TiviBro, a search, a Settings section, or the last channel, with launch params or a tivibro:// link (LG's deep links too).  It works when TiviBro is closed and when it's already open.  How to use it: docs/LAUNCH-API.md.
 - **A reminder waits for the screensaver to go away** again on a rooted TV.  After an update the TV forgets the extra permissions TiviBro's helper is given, until TiviBro has been opened, and in the meantime the helper couldn't tell the screensaver was on: a reminder went up over it, where the remote's OK didn't reach its Watch button.  Now the helper asks as root when it's refused, and puts the permissions back at reminder time too.
