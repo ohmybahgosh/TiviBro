@@ -31,6 +31,8 @@ var MediaShowPage = (function () {
     MediaSeries.showDetail(card.handle || card.id, function (r) {
       if (!pg || pg.card !== card) return;
       pg.show = r; pg.loading = false;
+      // The show's trailer (TMDB, with your token): Yellow, or in the season options.
+      var cur = pg; if (typeof MediaMoviePage !== 'undefined') MediaMoviePage.trailerFor(r.metadata && r.metadata.id, function (t) { if (pg === cur && t) { pg.trailer = t; hints(); } });
       // Specials last, as Plex lists them.
       pg.seasons = (r.buckets || []).slice().sort(function (a, b) { return (a.key === '0') - (b.key === '0'); });
       // On the season with the episode you're up to (Continue watching), else the first.
@@ -124,7 +126,7 @@ var MediaShowPage = (function () {
   function hints() {
     if (!pg) return;
     UI.hints(pg.level === 'eps' ? [['', 'OK  play'], ['', '◀ ▶  episodes'], ['', 'Hold OK  episode options', 'hold'], ['', 'Back  ' + (pg.seasons.length > 1 ? 'seasons' : 'close'), 'back']]
-      : [['', 'OK  episodes'], ['', '▶  play next'], ['', '◀ ▶  seasons'], ['', 'Hold OK  season options', 'hold'], ['', 'Back  close', 'back']]);
+      : [['', 'OK  episodes'], ['', '▶  play next'], ['', '◀ ▶  seasons'], ['', 'Hold OK  season options', 'hold'], ['', 'Back  close', 'back']].concat(pg.trailer ? [['yellow', 'Trailer']] : []));
   }
   function drawSeasons(b, s, m) {
     if (!pg.seasons.length) { b.appendChild(tel('div', 'shp-empty', 'No episodes found for this show.')); return; }
@@ -188,12 +190,15 @@ var MediaShowPage = (function () {
       if (pg !== state) return;
       var items = r.items || [], w = items.filter(function (x) { return x.watchState === 'watched'; }).length;
       var menu = MediaSeries.markItems(sh, b.key, { watched: w, unwatched: items.length - w }).map(function (o) { return { label: o.label, action: function () { o.action(function () { reopen(state)(); refresh(state); }); } }; });
+      if (state.trailer) menu.push({ label: 'Watch the trailer', icon: 'play', action: function () { trailer(state); } });
       menu.push({ label: 'Show options', sub: 'Favorite, details, episode order and more', action: function () { MediaSeries.showItem({ handle: sh.handle }, reopen(state)); } });
       UI.menu(seasonName(sh, b), menu, reopen(state));
     });
   }
+  function trailer(state) { if (state.trailer && typeof MediaMoviePage !== 'undefined') MediaMoviePage.watchTrailer(state.trailer, function () { if (pg === state) { UI.setHandler(keys); hints(); } }, 'the show'); }
   function keys(a) {
     if (!pg) return false;
+    if (a === 'yellow' && pg.trailer) { trailer(pg); return true; }
     if (a === 'back') { if (pg.level === 'eps' && pg.seasons.length > 1) { pg.level = 'seasons'; pg.loading = false; draw(); refresh(pg); } else close(); return true; }
     if (a === 'red' || a === 'hold' || a === 'info') { options(); return true; }
     if (pg.loading) return true;

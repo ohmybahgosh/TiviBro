@@ -820,8 +820,17 @@ var Vod = (function () {
   var infoDeb = U.debounce(fetchInfo, 400);
   function onItem() { showInfo(); infoDeb(); }
 
+  /* A provider's show with no trailer of its own: TMDB's, with your token (series.js finds the show). */
+  var tmdbTr = {};
+  function showTrailer(it) {
+    var k = it.name + '|' + (it.year || ''); if (it.trailer || tmdbTr[k] !== undefined || typeof Series === 'undefined' || typeof MediaMoviePage === 'undefined') return;
+    var tv = Series.show(it.name, it.year, 'strong'), id = tv && tv.id; if (!id) return;
+    tmdbTr[k] = '';
+    MediaMoviePage.trailerFor(/^tmdb:/.test(id) ? id : 'tmdb:tv:' + id, function (t) { tmdbTr[k] = t || ''; });
+  }
   function fetchInfo() {
     var it = itemsVL.current();
+    if (it && !it.ep && kind === 'series') showTrailer(it);
     if (!it || it.ep || kind !== 'movie' || info.has(key(it))) return;
     info.set(key(it), null);
     Source.vodInfo(it.id, plOf(it)).then(function (r) {
@@ -996,7 +1005,7 @@ var Vod = (function () {
   // A movie's (its details), or a show's (the list or its details; on an episode, its show's).
   function trailerOf(it) {
     if (!it || typeof PalmServiceBridge === 'undefined') return '';
-    if (kind === 'series') return (it.ep ? series && series.trailer : it.trailer) || '';
+    if (kind === 'series') { var sh = it.ep ? series : it; return (sh && (sh.trailer || tmdbTr[sh.name + '|' + (sh.year || '')])) || ''; }
     var m = !it.ep && kind === 'movie' ? info.get(key(it)) : null; return m && m.trailer ? m.trailer : '';
   }
   function watchTrailer(id) {

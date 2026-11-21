@@ -52,14 +52,17 @@ var MediaMoviePage = (function () {
     $('viewMedia').classList.add('mmp-on');
     UI.setHandler(keys); draw();
     // The trailer, once per movie and session; only on the TV (it opens the YouTube app).
-    var id = md(m).id;
-    if (tv() && id && /^tmdb:[0-9]+$/.test(id) && MediaStore.tmdbToken()) {
-      if (trailers[id] !== undefined) { pg.trailer = trailers[id]; draw(); }
-      else Media.request('metadata', { credential: MediaStore.tmdbToken(), videos: id, language: MediaStore.preferences().language }, 20000).then(function (r) {
-        trailers[id] = r && r.trailer || '';
-        if (pg && pg.m === m && trailers[id]) { pg.trailer = trailers[id]; draw(); }
-      }, function () {});
-    }
+    trailerFor(md(m).id, function (t) { if (pg && pg.m === m && t) { pg.trailer = t; draw(); } });
+  }
+  /* TMDB's trailer for a movie ("tmdb:123") or a show ("tmdb:tv:123"), once per title and session: cb(YouTube id
+     or '').  Only on the TV, with a TMDB token.  Movies, shows (media-showpage.js) and the provider's shows (vod.js)
+     all ask here. */
+  function trailerFor(id, cb) {
+    if (!tv() || !id || !/^tmdb:(tv:)?[0-9]+$/.test(id) || typeof MediaStore === 'undefined' || !MediaStore.tmdbToken() || typeof Media === 'undefined') return cb('');
+    if (trailers[id] !== undefined) return cb(trailers[id]);
+    Media.request('metadata', { credential: MediaStore.tmdbToken(), videos: id, language: MediaStore.preferences().language }, 20000).then(function (r) {
+      trailers[id] = r && r.trailer || ''; cb(trailers[id]);
+    }, function () { cb(''); });
   }
   function close(keepBack) {
     var was = pg; pg = null;
@@ -129,7 +132,7 @@ var MediaMoviePage = (function () {
     else if (id === 'start') { close(true); Media.restore(); Media.playFile(m, true, reopen(m, back)); }
     else if (id === 'copies') { close(true); Media.restore(); Media.chooseCopy(m, reopen(m, back)); }
     else if (id === 'all') { var list = pg.more; close(true); Media.restore(); Media.playAll(list, reopen(m, back)); }
-    else if (id === 'trailer') watchTrailer(pg.trailer);
+    else if (id === 'trailer') { var st = pg; watchTrailer(pg.trailer, function () { if (pg === st) { UI.setHandler(keys); hints(); } }, 'the movie'); }
     else if (id === 'fav') { MediaStore.toggleFavorite(m.id); if (Media.refresh) Media.refresh(); draw(); }
     else if (id === 'more') options();
   }
@@ -138,30 +141,30 @@ var MediaMoviePage = (function () {
      needs a page with an address: service/proxy.js /trailer).  Back closes it and you are on the movie's page
      again; Yellow opens it in the TV's YouTube app instead.  Without the helper: the YouTube app. */
   var tr = null;
-  function watchTrailer(id) {
+  function watchTrailer(id, back, what) {
     if (!(typeof Net !== 'undefined' && Net.port && Net.active)) return youtubeApp(id);
+    what = what || 'the page';
     var box = tel('div', 'mmp-trailer'), f = tel('iframe');
     f.src = 'http://127.0.0.1:' + Net.port + '/trailer?v=' + id; f.setAttribute('allow', 'autoplay; encrypted-media; fullscreen'); f.tabIndex = -1;
     box.appendChild(f);
-    var tip = tel('div', 'mmp-trailer-tip', 'Back  returns to the movie      Yellow  open in the YouTube app');
+    var tip = U.el('div', 'mmp-trailer-tip', (typeof I18n !== 'undefined' ? I18n.t('Back  returns to {x}      Yellow  open in the YouTube app', { x: I18n.t(what) }) : 'Back  returns to ' + what + '      Yellow  open in the YouTube app'));
     box.appendChild(tip);
     document.body.appendChild(box);
     // The keys stay with TiviBro (the player never takes the focus), so Back always works.
     f.onload = function () { try { window.focus(); if (document.activeElement === f) f.blur(); } catch (e) {} };
     setTimeout(function () { tip.classList.add('fade'); }, 6000);
-    var state = pg;
     tr = { box: box };
     UI.setHandler(function (a) {
       if (a === 'back' || a === 'yellow' || a === 'stop') {
         box.remove(); tr = null;
         if (a === 'yellow') youtubeApp(id);
-        if (pg === state) { UI.setHandler(keys); hints(); }
+        if (back) back();
         return true;
       }
       tip.classList.remove('fade'); clearTimeout(tr && tr.t); if (tr) tr.t = setTimeout(function () { tip.classList.add('fade'); }, 4000);
       return true;
     });
-    UI.hints([['', 'Back  the movie\'s page', 'back'], ['yellow', 'YouTube app']]);
+    UI.hints([['', 'Back  ' + what, 'back'], ['yellow', 'YouTube app']]);
   }
   function youtubeApp(id) {
     try {
@@ -189,5 +192,5 @@ var MediaMoviePage = (function () {
     if (pg) draw();
     return true;
   }
-  return { open: open, close: close, isOpen: function () { return !!pg; } };
+  return { open: open, close: close, isOpen: function () { return !!pg; }, trailerFor: trailerFor, watchTrailer: watchTrailer };
 })();

@@ -6,7 +6,7 @@ Pre-release: expect rough edges, and keep a backup before installing.
 
 ### New in alpha 190
 
-- **Trailers for shows too** (discussion #36): Hold OK on a show, or on one of its episodes, has **Watch the trailer** when your provider has one, like movies.
+- **Trailers for shows too** (discussion #36), in Movies and shows and in My media.  A provider's show: Hold OK on it, or on one of its episodes, has **Watch the trailer** (the provider's, else TMDB's with your token).  A show in My media: **Yellow** on its seasons, or **Watch the trailer** in the season options, plays it inside TiviBro like a movie's (Back returns to the show).
 - **Sports, polished.**  A colour picture of the sport on every card and league row, a **Recent results** row (your teams' finals from the last four days), and the date on every card in the TV's own format.  A league out of season no longer shows its last game.
 - **Moving around Sports is quicker**, right after TiviBro starts too: new scores wait until you stop moving, and each game's channels are worked out once.
 - **Blue on Sports arranges the rows**: show or hide a league, and move any row (My teams, Live now, Recent results or a league) up, down or to the top.
