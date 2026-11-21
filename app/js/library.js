@@ -82,6 +82,10 @@ var Library = (function () {
     return had;
   }
   function clearOthers() { others = []; }
+  /* How many streams at once a playlist's login allows, when its provider says so (Xtream Codes' max_connections in
+     the account details): 0 when not known.  A login that allows one can't play two things at once, so TiviBro
+     opens no second stream for it (seek previews, a second Multiview box) and says so when it's refused. */
+  function maxConn(id) { var d = partOf(id || ''); return d && +d.maxConn || 0; }
   // One playlist's own data (its at, exp, maxConn, epgUrl, tz...): the first's for '' or its id.
   function partOf(id) {
     if (!id || (main && id === Store.settings.active)) return main;
@@ -702,7 +706,7 @@ var Library = (function () {
     hideChannel: hideChannel, hideGroup: hideGroup, renameChannel: renameChannel,
     createGroup: createGroup, renameGroup: renameGroup, deleteGroup: deleteGroup,
     copyTo: copyTo, removeFrom: removeFrom, moveInGroup: moveInGroup, moveGroup: moveGroup,
-    dataOf: dataOf, setOther: setOther, MIX: MIX, mixed: mixed, mixList: mixList, mixChanged: mixChanged, canGroup: canGroup, get mixRev() { return mixRev; }, dropOther: dropOther, clearOthers: clearOthers, partOf: partOf, get main() { return main; }, get multi() { return multi(); }, plName: plName,
+    dataOf: dataOf, setOther: setOther, MIX: MIX, mixed: mixed, mixList: mixList, mixChanged: mixChanged, canGroup: canGroup, get mixRev() { return mixRev; }, dropOther: dropOther, clearOthers: clearOthers, partOf: partOf, maxConn: maxConn, get main() { return main; }, get multi() { return multi(); }, plName: plName,
     otherIds: function () { return others.map(function (x) { return x.id; }); },
     hiddenItems: hiddenItems, allGroups: allGroups, mergedInto: mergedInto, mergedFrom: mergedFrom, mergeGroups: mergeGroups, splitGroup: splitGroup, homeOf: homeOf, versions: versions, versionKey: versionKey, linkVersion: linkVersion, linkedVersion: linkedVersion, findChannels: findChannels, numberCanGrow: numberCanGrow, qualityLabel: qualityLabel, versionTag: versionTag, hideGroups: hideGroups, get epgUrl() { return data.epgUrl; }, get type() { return Store.playlist.type; }
   };

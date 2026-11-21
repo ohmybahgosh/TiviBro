@@ -377,7 +377,12 @@ var App = (function () {
     noteVod(Store.playlist, data);
     Source.setTz(data.tz); Events.setProviderTz(data.tz);
     Library.set(data);
-    Logos.load(data);
+    /* A TV short of memory with a big list (1 GB TVs with 28,000 to 57,000 channels closed TiviBro 10 to 30 seconds
+       after it started, issues #140, #141 and #146): the channel list and the last channel first, and the logo
+       library and the guide one after the other later, so they never all build at once. */
+    var lean = leanStart();
+    if (lean) Log.info('app', 'Big list on a TV short of memory: the guide in ' + lean.guide / 1000 + 's, the logo library in ' + lean.logos / 1000 + 's');
+    if (lean) setTimeout(function () { Logos.load(Library.data); }, lean.logos); else Logos.load(data);
     Vod.reset();
     if (!ready) { Views.init(); Watch.start(); if (typeof Burnin !== 'undefined') Burnin.start(); if (typeof Memwatch !== 'undefined') Memwatch.start(); Remind.start(); ready = true; if (typeof Media !== 'undefined' && Media.autoSoon) Media.autoSoon(45000); if (typeof Media !== 'undefined' && Media.newMediaSoon) Media.newMediaSoon(60000); if (typeof Movies !== 'undefined') Movies.start(); if (typeof Trakt !== 'undefined') MediaStore.load().then(function () { Trakt.start(); }).catch(function () {}); }   // movies still without details or posters
     window.__tbBooted = true;              // compat.js shows an error screen if errors stop the start
@@ -396,7 +401,7 @@ var App = (function () {
     openOthers(gen).then(function () {
       if (gen !== startGen) return;
       if (later) Views.resume();                   // the last channel was one of another playlist's
-      setTimeout(function () { Epg.init(Library); }, fromCache ? 1500 : 300);
+      setTimeout(function () { Epg.init(Library); }, lean ? lean.guide : fromCache ? 1500 : 300);
       // A reminder can be for a channel of another playlist: once they are all in.
       if (pendingRem) { var pr = pendingRem; pendingRem = null; setTimeout(function () { openReminder(pr); }, 600); }
       Launch.ready();
@@ -473,6 +478,13 @@ var App = (function () {
      the limit is lower and background loads wait until nothing plays. */
   var startGen = 0, otherQ = [];
   function memSafe() { return !!(window.Player && Player.memSafe); }
+  // Startup on a TV short of memory (1 GB or less, or memory-safe after closes) with more than 8,000 channels: when the
+  // guide and the logo library load (ms after start), or null for everything at once as usual.
+  function leanStart() {
+    var gb = (navigator.deviceMemory || 0), n = Library.count ? Library.count() : 0;
+    if (n <= 8000 || !(memSafe() || (gb && gb <= 1))) return null;
+    return { guide: 20000, logos: 40000 };
+  }
   /* A TV short of memory with something playing: the channel list and the guide aren't read again by themselves
      (both hold the old and the new copy for a while, on top of the video; issues #61 and #64).  They are read
      once nothing plays; Reload channels and Reload guide still work at once. */

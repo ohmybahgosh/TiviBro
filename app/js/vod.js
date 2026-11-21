@@ -831,7 +831,16 @@ var Vod = (function () {
 
   /* A provider's show with no trailer of its own: TMDB's, with your token (series.js finds the show). */
   var tmdbTr = {}, tmdbTrP = {};
-  function tmdbOn() { return typeof MediaMoviePage !== 'undefined' && typeof MediaStore !== 'undefined' && MediaStore.tmdbToken && !!MediaStore.tmdbToken() && typeof Media !== 'undefined'; }
+  var saidNoToken = false;
+  function tmdbOn() {
+    var on = typeof MediaMoviePage !== 'undefined' && typeof MediaStore !== 'undefined' && MediaStore.tmdbToken && !!MediaStore.tmdbToken() && typeof Media !== 'undefined';
+    // Said once in the log, so a report shows why a title has no trailer (discussion #36).
+    if (!on && !saidNoToken) { saidNoToken = true; Log.info('vod', 'Trailers: no TMDB token, so only the provider\'s own trailers show'); }
+    return on;
+  }
+  // Why a title has no trailer, in the log (once per title), for problem reports.
+  var trSaid = {};
+  function trNote(name, why) { if (trSaid[name]) return; trSaid[name] = 1; Log.info('vod', 'No trailer for "' + name + '": ' + why); }
   /* A provider's show with no trailer of its own: TMDB's, with your token.  By the TMDB id the provider gives in
      the show's details, else the one series.js knows, else asked now by name and year (discussion #36: missing on
      some shows, when the name hadn't been looked up yet).  A promise of the YouTube id or ''. */
@@ -845,8 +854,8 @@ var Vod = (function () {
     // Only moving past a show (the list, the home): no new TMDB search for it, just the id already known.
     if (passive && !/^[0-9]+$/.test(String(it.tmdb || '')) && !(typeof Series !== 'undefined' && (Series.show(it.name, it.year, 'strong') || {}).id)) return Promise.resolve('');
     var p = idFor().then(function (id) {
-      if (!id) return '';
-      return new Promise(function (res) { MediaMoviePage.trailerFor(/^tmdb:/.test(id) ? id : 'tmdb:tv:' + id, function (t) { res(t || ''); }); });
+      if (!id) { trNote(it.name, 'the provider has none, and TMDB found no show by that name' + (it.year ? ' and year (' + it.year + ')' : '')); return ''; }
+      return new Promise(function (res) { MediaMoviePage.trailerFor(/^tmdb:/.test(id) ? id : 'tmdb:tv:' + id, function (t) { if (!t) trNote(it.name, 'the provider has none, and TMDB has no YouTube trailer for ' + id); res(t || ''); }); });
     }).then(function (t) { tmdbTr[k] = t; if (!t && tmdbTrP[k] === p) setTimeout(function () { if (tmdbTrP[k] === p) delete tmdbTrP[k]; }, 600000); return t; }, function () { return ''; });
     p.byId = !!it.tmdb;
     return (tmdbTrP[k] = p);
@@ -882,15 +891,16 @@ var Vod = (function () {
   var tmdbMv = {};
   function movieTrailer(tmdbId, name, year, cb) {
     if (!tmdbOn()) return cb('');
-    if (/^[0-9]+$/.test(String(tmdbId || ''))) return MediaMoviePage.trailerFor('tmdb:' + tmdbId, cb);
+    var noted = function (id) { return function (t) { if (!t) trNote(name, 'the provider has none, and TMDB has no YouTube trailer for ' + id); cb(t); }; };
+    if (/^[0-9]+$/.test(String(tmdbId || ''))) return MediaMoviePage.trailerFor('tmdb:' + tmdbId, noted('tmdb:' + tmdbId));
     var c = typeof Movies !== 'undefined' && Movies.clean ? Movies.clean(String(name || '').replace(/^\s*[A-Z]{2,3}\s*[-|:]\s+/, '')) : { t: name, y: '' };
     var k = c.t + '|' + (year || c.y || '');
     if (!c.t || !Media.guideLookup) return cb('');
-    if (tmdbMv[k] !== undefined) return tmdbMv[k] ? MediaMoviePage.trailerFor(tmdbMv[k], cb) : cb('');
+    if (tmdbMv[k] !== undefined) return tmdbMv[k] ? MediaMoviePage.trailerFor(tmdbMv[k], noted(tmdbMv[k])) : cb('');
     tmdbMv[k] = '';
     Media.guideLookup(c.t, year || c.y, 'strong').then(function (r) {
-      var id = r && r.metadata && r.metadata.id; if (!/^tmdb:[0-9]+$/.test(id || '')) return cb('');
-      tmdbMv[k] = id; MediaMoviePage.trailerFor(id, cb);
+      var id = r && r.metadata && r.metadata.id; if (!/^tmdb:[0-9]+$/.test(id || '')) { trNote(name, 'the provider has none, and TMDB found no movie "' + c.t + '"' + (year || c.y ? ' (' + (year || c.y) + ')' : '')); return cb(''); }
+      tmdbMv[k] = id; MediaMoviePage.trailerFor(id, noted(id));
     }, function () { cb(''); });
   }
 
@@ -993,7 +1003,7 @@ var Vod = (function () {
   function play(it, fromStart) {
     var id = idOf(it);
     var r = resumeOf(id), startAt = !fromStart && r && r.pos > 30 && !(U.isWatchedAt || function (p, d) { return d > 0 && (p >= d * 0.9 || p > d - 60); })(r.pos, r.dur) ? r.pos - 5 : 0;
-    var meta = { id: id, media: mediaOf(it), title: it.ep ? (series ? series.name : '') + '   ' + it.label : it.name, sub: it.ep ? '' : it.year || '', item: it, seriesKey: series ? pre(series) + 's' + series.id : null, p: it.pl || '' };
+    var meta = { id: id, media: mediaOf(it), title: it.ep ? (series ? series.name : '') + '   ' + it.label : it.name, sub: it.ep ? '' : it.year || '', item: it, seriesKey: series ? pre(series) + 's' + series.id : null, p: it.pl || '', provider: true };
     // An M3U list's episodes carry their own link, and its movies' links are asked for (Source.movieLink).
     var link = it.ep ? Promise.resolve(it.url || Source.episodeUrl(it.id, it.ext, plOf(it))) : Source.movieLink(it.id, it.ext, plOf(it));
     link.then(function (url) {

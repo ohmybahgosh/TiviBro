@@ -53,6 +53,7 @@ function setup(opts) {
   };
   if (opts.mkvSubs) ctx.MkvSubs = opts.mkvSubs;
   if (opts.convert) ctx.Convert = opts.convert;
+  if (opts.library) ctx.Library = opts.library;
   // What playback learns (playmemo.js), in a localStorage that can outlive one setup (an app restart).
   if (opts.memo) {
     const ls = opts.memo;
@@ -354,6 +355,12 @@ const lastState = t.states[t.states.length - 1];
 ok('#34: when reconnecting really fails, the message says the provider closed the connection and offers to try again', /^error: The provider closed the connection/.test(lastState) && /Press OK to try again/.test(lastState) && !/format/.test(lastState), lastState);
 t.P.retryNow(); t.video.duration = 7200; t.feed(0, 4000); t.run(1500);
 ok('#34: OK tries again from where it was', Math.abs(t.video.currentTime - 900) < 3, t.video.currentTime);
+
+// ---- a login that allows one connection, refused: the message says the connection is in use ----
+t = setup({ library: { maxConn: () => 1 } });
+t.P.play({ n: 'One conn', url: 'http://p/live/u/p/77.ts' });
+for (let i = 0; i < 40 && !/^error/.test(t.states[t.states.length - 1] || ''); i++) { if (t.last().h && t.last().h.err) t.last().h.err('NetworkError', 'HttpStatusCodeInvalid', { code: 403 }); if (t.video.l.error) { t.video.error = { code: 4 }; t.video.l.error.forEach(f => f()); } t.run(4000); }
+ok('one-connection login: a refused channel says the connection is in use', /allows one connection/.test(t.states[t.states.length - 1]), t.states[t.states.length - 1]);
 
 // ---- issue #152: a movie the TV refuses outright goes through the converter once, and the error names what it holds ----
 const p152 = (async () => {

@@ -237,6 +237,13 @@ var Multiview = (function () {
   }
   function setBox(i, c) {
     var b = boxes[i], before = filled();
+    /* Two channels of a playlist whose login allows one connection: the provider refuses the second (or drops the
+       first).  Said at once, instead of a box that never starts.  A channel of another playlist is fine. */
+    var pl = function (x) { var p = Store.plOf ? Store.plOf(x) : null; return p && p.id || ''; };
+    if (c && Library.maxConn && Library.maxConn(pl(c)) === 1 && boxes.some(function (o, k) { return k !== i && o.c && pl(o.c) === pl(c); })) {
+      U.toast(T('This login allows one connection, so a second channel from it can\'t play at the same time.  A channel from another playlist can.'), 7000);
+      return;
+    }
     if (b.img) { stopPic(b); }
     b.c = c; b.retried = false; b.el.classList.remove('failed');
     if (i === main) { Views.startChannel(c, true); }

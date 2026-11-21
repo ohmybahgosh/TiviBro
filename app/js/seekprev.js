@@ -51,6 +51,9 @@ var SeekPrev = (function () {
   // A movie starts (views.js playVod): its link, and whether this TV's service can make pictures.
   function start(meta, url) {
     stop();
+    /* A provider's movie on a login that allows one connection: previews and chapters read the file a second time
+       while it plays, and such a provider refuses that or cuts the movie off.  None for it. */
+    if (meta && meta.provider && typeof Library !== 'undefined' && Library.maxConn && Library.maxConn(meta.p) === 1) { Log.info('player', 'No seek previews or chapter marks: this login allows one connection'); return; }
     var u = source(url);
     if (!u || !base() || typeof Convert === 'undefined') return;
     movie = { u: u, ua: meta && meta.ua || '', chapters: [] };

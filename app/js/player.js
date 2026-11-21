@@ -890,6 +890,14 @@ var Player = (function () {
     else if (k !== 'hls') cur.url = cur.origUrl;
     cur.forceKind = k; cur.forceNative = k === 'native';
   }
+  /* A login that allows one connection, refused with a busy-sounding code: something else has it (a recording, another
+     device, a stream still closing), which the provider's code alone doesn't say.  The message for it, or ''. */
+  function oneConnBusy() {
+    var http = cur && (cur.lastHttp || cur.lastFailHttp);
+    if (!http || !/^(401|403|406|429|456|458|509)$/.test(String(http))) return '';
+    if (typeof Library === 'undefined' || !Library.maxConn || Library.maxConn((plWrap().pl || {}).id) !== 1) return '';
+    return 'Your provider allows one connection at a time on this login, and it seems to be in use (error ' + http + '): another TV or app, a recording, or a stream that hasn\'t closed yet.  Stop the other one, or wait a few seconds, then press OK.';
+  }
   /* Every engine has failed to start this channel or movie.  A live channel that played before keeps reconnecting; a
      movie the TV refused outright gets one try through the converter (rescue()); otherwise the error that best says
      why: the provider's HTTP answer, DRM, DASH, or what the file holds when the helper could read it. */
@@ -909,6 +917,7 @@ var Player = (function () {
     if (isFile() && !cur.conv && !cur.rescued && !cur.lastHttp && window.Convert && Convert.on() && /^https?:/i.test(cur.origUrl || cur.url)) { cur.rescued = true; return rescue(myToken); }
     var dr = cur.ch && cur.ch.drm;
     if (dr && !cur.lastHttp) return state('error', 'This channel is protected (' + ({ widevine: 'Widevine', playready: 'PlayReady', clearkey: 'ClearKey' }[dr.type] || dr.type) + '), and this TV could not play it' + (cur.dashWhy ? ': ' + cur.dashWhy : '') + '.  It plays in apps the provider supports.');
+    if (oneConnBusy()) return state('error', oneConnBusy());
     if (cur.lastHttp) return state('error', 'The provider is not sending this ' + (isFile() ? 'video' : 'channel') + ' right now (error ' + cur.lastHttp + ').  Press OK to try again, or try ' + (isFile() ? 'again later.' : 'another channel.'));
     if (isDash(cur.origUrl || cur.url)) return state('error', 'This channel uses DASH, and this TV could not play it' + (cur.dashWhy ? ' (' + cur.dashWhy + ')' : '') + '.');
     if (isFile() && cur.fileInfo) return state('error', 'This video will not play on this TV.  ' + cur.fileInfo + '.');
@@ -1052,7 +1061,7 @@ var Player = (function () {
         return;
       } else {
         Log.error('player', 'Gave up after ' + cur.p.retries + ' reconnects' + (cur.slowSince ? ' and ' + Math.round((now - cur.slowSince) / 60000) + ' minutes of retrying' : '') + '  ' + cur.url);
-        state('error', isFile() ? (cur.everPlayed ? CLOSED : 'This video stopped loading.  Press OK to try again.') : 'This channel stopped responding.  Press OK to try again, or try another channel.');
+        state('error', oneConnBusy() || (isFile() ? (cur.everPlayed ? CLOSED : 'This video stopped loading.  Press OK to try again.') : 'This channel stopped responding.  Press OK to try again, or try another channel.'));
         cur.failed = true;
         return;
       }
