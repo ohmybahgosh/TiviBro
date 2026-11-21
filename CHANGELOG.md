@@ -1,16 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 193, 2026-11-21)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 193
 
 - **A movie the TV refuses gets one more try** (issue #152).  When the TV's player won't open a movie or episode at all ("format error"), TiviBro has the network helper read what the file holds and plays it through the audio converter once: the picture as it is, the sound turned into Dolby Digital, in a form the TV opens.  That's usually DTS sound, which LG TVs from 2020 to 2022 can't play.  Without the converter, it offers to get it.  If it still won't play, the message now says what the file is made of ("Its picture is HEVC and its sound DTS") instead of a guess.
 - **The network helper no longer stops when a guide source redirects to an https:// address** (issue #146).  The redirect goes through the helper's relay like the first address did.
 - **A rare error report that hid the real error is fixed** (issue #142): TiviBro's own error catcher tripped over an error with a one-line description, on webOS 4.
 
-## 0.6.0 (alpha 192, 2026-11-21)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 192
+### In alpha 192
 
 - **Security: the web editor's login could be skipped** by someone on your home network while the editor was switched on, by sending a made-up login token.  Fixed: only a token the editor gave out after the right password works now.  The editor is off unless you turn it on, so a TV with it off was never open to this.  Update to this version.
 - **Security, smaller hardening:** the root recording agent on rooted TVs refuses everything but a recording's file without its secret, and compares that secret in constant time; seek previews no longer let the converter read files on the TV; settings restored from a file can't reshape TiviBro's own objects; the release workflows pin the third-party GitHub Actions they give secrets to, and Dependabot keeps them current.
