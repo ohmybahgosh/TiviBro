@@ -399,6 +399,7 @@ var App = (function () {
       setTimeout(function () { Epg.init(Library); }, fromCache ? 1500 : 300);
       // A reminder can be for a channel of another playlist: once they are all in.
       if (pendingRem) { var pr = pendingRem; pendingRem = null; setTimeout(function () { openReminder(pr); }, 600); }
+      Launch.ready();
     });
     if (!later) Views.resume();
     if (tourNext) { tourNext = false; setTimeout(function () { if (!Tour.isOpen) Tour.open({ first: true }); }, 400); }
@@ -838,7 +839,10 @@ var App = (function () {
 
   /* Watch on the TV's reminder alert: TiviBro starts with launch params, or (already running)
      gets them in webOSRelaunch.  A reminder for another playlist switches to it first. */
-  var pendingRem = Remind.launchParams();
+  /* Everything a launcher, script or deep link asks for goes through Launch (launch.js, docs/LAUNCH-API.md),
+     the reminder alert's Watch too: kept until the channels are in, then carried out. */
+  var pendingRem = null;
+  Launch.handle(Launch.launchParams());
   function openReminder(r) {
     var other = r.pid && r.pid !== Store.settings.active && Store.byId(r.pid);
     // Set while another playlist was first, and that playlist is on: its channel is in the lists already,
@@ -847,14 +851,12 @@ var App = (function () {
     else if (other) { pendingRem = r; switchPlaylist(r.pid); return; }
     Views.openReminder(r);
   }
+  Launch.onReminder(openReminder);
   document.addEventListener('webOSRelaunch', function (e) {
     var sys = window.webOSSystem || window.PalmSystem;
     try { if (sys && sys.activate) sys.activate(); } catch (err) {}
     if (Phone.launched(rawParams(e && e.detail))) return;
-    var r = Remind.params(e && e.detail);
-    if (!r) return;
-    Log.info('app', 'Brought forward by a reminder');
-    if (ready && Library.count()) openReminder(r); else pendingRem = r;
+    if (Launch.handle(e && e.detail)) Log.info('app', 'Brought forward to open something');
   });
 
   /* Another playlist becomes the first one (or the only one): everything opens again, the others

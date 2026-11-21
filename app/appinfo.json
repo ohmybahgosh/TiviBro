@@ -22,5 +22,6 @@
     "notification.operation",
     "settings.read",
     "media"
-  ]
+  ],
+  "deeplinkingParams": "{\"contentTarget\":\"$CONTENTID\"}"
 }
