@@ -1,17 +1,17 @@
 # Changelog
 
-## Unreleased
-
-- **Sports: rankings are clearer** on the TV and the phone.  A college team's poll rank shows as **#4** on the cards, with both names lined up whether or not the other team is ranked, and as **Ranked #4** beside the record on a game's page.  The stadium moved up into the banner, where it no longer runs into the leaders.
-- **Security: the web editor's login could be skipped** by someone on your home network while the editor was switched on, by sending a made-up login token.  Fixed: only a token the editor gave out after the right password works now.  The editor is off unless you turn it on, so a TV with it off was never open to this.  Update to this version.
-- **Security, smaller hardening:** the root recording agent on rooted TVs refuses everything but a recording's file without its secret, and compares that secret in constant time; seek previews no longer let the converter read files on the TV; settings restored from a file can't reshape TiviBro's own objects; the release workflows pin the third-party GitHub Actions they give secrets to, and Dependabot keeps them current.
-- **Trailers found on more titles** (discussion #36).  When the provider has none, TiviBro now asks TMDB right when you open a title's options or a show's page (waiting up to 4 seconds), by the TMDB id the provider gives or else by name and year.  Before, a show's TMDB trailer only turned up if TiviBro had already looked the show up while you moved past it.  Needs a TMDB token (Settings > API keys).
-
-## 0.6.0 (alpha 191, 2026-11-21)
+## 0.6.0 (alpha 192, 2026-11-21)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 191
+### New in alpha 192
+
+- **Security: the web editor's login could be skipped** by someone on your home network while the editor was switched on, by sending a made-up login token.  Fixed: only a token the editor gave out after the right password works now.  The editor is off unless you turn it on, so a TV with it off was never open to this.  Update to this version.
+- **Security, smaller hardening:** the root recording agent on rooted TVs refuses everything but a recording's file without its secret, and compares that secret in constant time; seek previews no longer let the converter read files on the TV; settings restored from a file can't reshape TiviBro's own objects; the release workflows pin the third-party GitHub Actions they give secrets to, and Dependabot keeps them current.
+- **Sports: rankings are clearer** on the TV and the phone.  A college team's poll rank shows as **#4** on the cards, with both names lined up whether or not the other team is ranked, and as **Ranked #4** beside the record on a game's page.  The stadium moved up into the banner, where it no longer runs into the leaders.
+- **Trailers found on more titles** (discussion #36).  When the provider has none, TiviBro now asks TMDB right when you open a title's options or a show's page (waiting up to 4 seconds), by the TMDB id the provider gives or else by name and year.  Before, a show's TMDB trailer only turned up if TiviBro had already looked the show up while you moved past it.  Needs a TMDB token (Settings > API keys).
+
+### In alpha 191
 
 - **Yellow marks watched in one press**, wherever TiviBro keeps track: a movie or an episode in your provider's Movies and shows, a movie on My media's shelves and lists, an episode on a show's page in My media (a whole season on its seasons).  No menu to open and close for each one.  Fetching missing details on My media moved to Red > Fetch missing details (Yellow on a shelf's name still does it).
 - **Reload movies and shows now** (discussion #36), in Settings > Movies and shows and in Red on the Movies or Shows home: both lists again from your provider, past the saved copies, without reloading the channels.  It says how many titles came in.
