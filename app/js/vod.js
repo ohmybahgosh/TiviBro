@@ -841,14 +841,35 @@ var Vod = (function () {
     var it = itemsVL.current();
     if (it && !it.ep && kind === 'series') showTrailer(it);
     if (!it || it.ep || kind !== 'movie' || info.has(key(it))) return;
-    info.set(key(it), null);
-    Source.vodInfo(it.id, plOf(it)).then(function (r) {
-      var i = (r && r.info) || {};
+    loadInfo(it, function () { if (itemsVL.current() === it) showInfo(); });
+  }
+  /* A movie's details from the provider (its trailer, plot, cast…), then(): for the list, the home and the wall
+     alike.  A movie with no trailer from the provider: TMDB's, with your token (discussion #36: none on Recently added). */
+  function loadInfo(it, then) {
+    var k = key(it), nm = it.name, yr = it.year;
+    info.set(k, null);
+    return Source.vodInfo(it.id, plOf(it)).then(function (r) {
+      var i = (r && r.info) || {}, md = (r && r.movie_data) || {};
       // The provider's trailer: a YouTube id, or a whole YouTube link.
-      var yt = String(i.youtube_trailer || i.trailer || '').trim(), ym = /(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/.exec(yt);
-      info.set(key(it), { trailer: ym ? ym[1] : /^[A-Za-z0-9_-]{11}$/.test(yt) ? yt : '', plot: i.plot || i.description || '', genre: i.genre || '', cast: i.cast || i.actors || '', director: i.director || '', dur: i.duration || '', year: (i.releasedate || i.release_date || '').slice(0, 4), poster: i.movie_image || i.cover_big || '', backdrop: [].concat(i.backdrop_path || [])[0] || '', media: Caps.fromXtream(i) });
-      if (itemsVL.current() === it) showInfo();
+      var m = { trailer: ytId(i.youtube_trailer || i.trailer), plot: i.plot || i.description || '', genre: i.genre || '', cast: i.cast || i.actors || '', director: i.director || '', dur: i.duration || '', year: (i.releasedate || i.release_date || '').slice(0, 4), poster: i.movie_image || i.cover_big || '', backdrop: [].concat(i.backdrop_path || [])[0] || '', media: Caps.fromXtream(i) };
+      info.set(k, m);
+      if (then) then();
+      if (!m.trailer) movieTrailer(i.tmdb_id || i.tmdb || md.tmdb_id, nm, m.year || yr, function (t) { if (t && info.get(k) === m) { m.trailer = t; if (then) then(); } });
     }).catch(function () {});
+  }
+  var tmdbMv = {};
+  function movieTrailer(tmdbId, name, year, cb) {
+    if (typeof MediaMoviePage === 'undefined' || typeof MediaStore === 'undefined' || !MediaStore.tmdbToken || !MediaStore.tmdbToken()) return cb('');
+    if (/^[0-9]+$/.test(String(tmdbId || ''))) return MediaMoviePage.trailerFor('tmdb:' + tmdbId, cb);
+    var c = typeof Movies !== 'undefined' && Movies.clean ? Movies.clean(String(name || '').replace(/^\s*[A-Z]{2,3}\s*[-|:]\s+/, '')) : { t: name, y: '' };
+    var k = c.t + '|' + (year || c.y || '');
+    if (!c.t || !Media.guideLookup) return cb('');
+    if (tmdbMv[k] !== undefined) return tmdbMv[k] ? MediaMoviePage.trailerFor(tmdbMv[k], cb) : cb('');
+    tmdbMv[k] = '';
+    Media.guideLookup(c.t, year || c.y, 'strong').then(function (r) {
+      var id = r && r.metadata && r.metadata.id; if (!/^tmdb:[0-9]+$/.test(id || '')) return cb('');
+      tmdbMv[k] = id; MediaMoviePage.trailerFor(id, cb);
+    }, function () { cb(''); });
   }
 
   function mediaOf(it) { var m = it.ep ? null : (kind === 'movie' ? info.get(key(it)) : null); return it.ep ? it.media : m && m.media; }
@@ -996,6 +1017,11 @@ var Vod = (function () {
   }
   function itemMenu(it) {
     if (!it) return;
+    // A movie whose details aren't read yet (the home, the wall): read them first, so its trailer is offered (up to 3 seconds).
+    if (kind === 'movie' && !it.ep && !info.has(key(it)) && typeof PalmServiceBridge !== 'undefined') {
+      var done = false, go = function () { if (!done) { done = true; itemMenu(it); } };
+      loadInfo(it, null).then(go); setTimeout(go, 3000); return;
+    }
     var id = idOf(it);
     var r = resumeOf(id), mine = E().myList.indexOf(key(it)) >= 0, playable = kind === 'movie' || it.ep, w = isWatched(id);
     var er = !playable && r && r.ep ? resumeOf(r.ep) : null;
@@ -1122,18 +1148,12 @@ var Vod = (function () {
   // What the home's top shows: the provider's details for a movie (asked for once), TMDB's for a show.
   function detailsOf(it, then) {
     if (kind === 'series') {
+      if (then) showTrailer(it);                        // its trailer from TMDB for the options, as in the list
       var tv = typeof Series !== 'undefined' ? Series.show(it.name, it.year, 'strong') : null;
       return { plot: it.plot && it.plot.length >= 40 ? it.plot : (tv && tv.plot) || it.plot || '', genre: tv && tv.genre, year: it.year || (tv && tv.year), rating: tv && tv.rating, backdrop: tv && (tv.backdropHd || tv.backdrop) || '', logo: tv && tv.logo || '', cast: tv && tv.cast };
     }
     var k = key(it), m = info.get(k);
-    if (m === undefined && then) {
-      info.set(k, null);
-      Source.vodInfo(it.id, plOf(it)).then(function (r) {
-        var i = (r && r.info) || {}, yt = String(i.youtube_trailer || i.trailer || '').trim(), ym = /(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/.exec(yt);
-        info.set(k, { trailer: ym ? ym[1] : /^[A-Za-z0-9_-]{11}$/.test(yt) ? yt : '', plot: i.plot || i.description || '', genre: i.genre || '', cast: i.cast || i.actors || '', director: i.director || '', dur: i.duration || '', year: (i.releasedate || i.release_date || '').slice(0, 4), poster: i.movie_image || i.cover_big || '', backdrop: [].concat(i.backdrop_path || [])[0] || '', media: Caps.fromXtream(i) });
-        then();
-      }).catch(function () {});
-    }
+    if (m === undefined && then) loadInfo(it, then);
     if (!m) return { plot: it.plot || '' };
     return { plot: m.plot, genre: m.genre, cast: m.cast, director: m.director, dur: niceDur(m.dur), year: m.year, backdrop: m.backdrop, media: m.media ? Caps.label(m.media) : '' };
   }
@@ -1156,9 +1176,27 @@ var Vod = (function () {
     progress: function (it) { return progressOf(it); }, where: function (it) { return whereOf(it); }, details: function (it, then) { return detailsOf(it, then); },
     isMine: function (it) { return E().myList.indexOf(key(it)) >= 0; }, isWatched: function (it) { return isWatched(idOf(it)); },
     open: function (it) { if (kind === 'series' && !it.ep) { toList(null, it); showFromHome = true; openSeries(it); setZone('items'); } else play(it, false); },
-    menu: function (it) { itemMenu(it); }, list: function (cid, it) { toList(cid, it); }
+    menu: function (it) { itemMenu(it); }, list: function (cid, it) { toList(cid, it); }, reload: function () { reloadNow(); }
   };
 
+  /* Reload movies and shows now (discussion #36): both lists again from the provider, past the helper's and this
+     TV's saved copies, without reloading the channels.  The screen you're on shows them when they're in. */
+  var reloading = false;
+  function reloadNow() {
+    if (reloading) { U.toast('Already reloading movies and shows'); return; }
+    var kinds = ['movie', 'series'].filter(function (k) { return sources(k).length; });
+    if (!kinds.length) { U.toast('No playlist with movies or shows'); return; }
+    reloading = true; Vod.reset(true); U.toast('Reloading movies and shows');
+    var counts = [];
+    kinds.reduce(function (pr, k) {
+      return pr.then(function () { return load(k).then(function (d) { counts.push((d ? d.browse ? d.total : d.items.length : 0) + (k === 'series' ? ' shows' : ' movies')); }, function (e) { Log.warn('vod', 'Reload of the ' + (k === 'series' ? 'shows' : 'movies') + ' failed: ' + (e && e.message || e)); }); });
+    }, Promise.resolve()).then(function () {
+      reloading = false;
+      U.toast(counts.length ? counts.join(' and ') + ' loaded' : 'Movies and shows did not load.  Try again in a moment.');
+      var t = typeof Views !== 'undefined' && Views.tab;
+      if ((t === 'movies' || t === 'shows') && !UI.modalOpen) open(t === 'shows' ? 'series' : 'movie');
+    });
+  }
   function open(k, keepState) {
     if (!built) build();
     var changed = k !== kind;
@@ -1284,5 +1322,5 @@ var Vod = (function () {
   function arrange(k) { U.toast('Loading ' + (k === 'series' ? 'shows' : 'movies') + '…'); load(k).then(function () { kind = k; VodHome.arrange(k, homeApi); }, function (e) { U.toast('Could not load the list: ' + (e && e.message || e), 5000); }); }
   // Settings > Movies and shows > Order categories changed: the list again, on the same category.
   function recats() { if (!catsVL || !data[kind]) return; var c = catsVL.current(), cl = catList(); catsVL.setItems(cl, Math.max(0, cl.findIndex(function (x) { return c && x.id === c.id; }))); }
-  return { arrange: arrange, recats: recats, homeApi: function () { return homeApi; }, _test: { homeApi: function () { return homeApi; }, catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, lean: lean, findRemote: findRemote, titleCount: titleCount, countsFor: countsFor, get searchState() { return searchState(); }, offered: offered, reset: function (fresh) { if (fresh) freshAt = Date.now(); gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; seriesAsk++; spClose(); } };
+  return { arrange: arrange, recats: recats, reloadNow: reloadNow, homeApi: function () { return homeApi; }, _test: { homeApi: function () { return homeApi; }, catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, lean: lean, findRemote: findRemote, titleCount: titleCount, countsFor: countsFor, get searchState() { return searchState(); }, offered: offered, reset: function (fresh) { if (fresh) freshAt = Date.now(); gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; seriesAsk++; spClose(); } };
 })();

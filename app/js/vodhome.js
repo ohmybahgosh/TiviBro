@@ -239,13 +239,26 @@ var VodHome = (function () {
     show(k, api, false);
     openWall({ id: 'catwall:' + c.id, cat: c.id, title: c.name, items: items, back: back });
   }
+  /* The wall's top: the shelf, then the title you're on with its details and summary, as the home's top shows
+     (discussion #36: no way to see a movie's details with posters full screen). */
+  var wallT = null;
+  function wallHeadSoon() { clearTimeout(wallT); wallT = setTimeout(wallHead, 150); wallHead(true); }
+  function wallHead(quick) {
+    var head = $('vodWallHead'); if (mode !== 'wall' || !wall || !head) return;
+    var it = wall.items[wallAt];
+    head.innerHTML = '';
+    var wcn = !wall.cat && it ? A.catName(it) : '';   // a mixed wall: the focused title's category
+    head.appendChild(U.el('div', 'media-kicker', (kind === 'series' ? 'Shows' : 'Movies') + '  ›  ' + wall.title + '  ·  ' + count(wall.items.length, '1 ' + word(), '{n} ' + word() + 's') + (wall.id.indexOf('tmdb:') && wall.id.indexOf('holiday:') && wall.id !== 'recent' && wall.id !== 'continue' ? '  ·  ' + sortName() : '') + (wcn ? '  ·  ' + wcn : '')));
+    if (!it) { head.appendChild(U.el('h1', 'media-title', wall.title)); return; }
+    var d = A.details(it, quick ? null : function () { if (mode === 'wall' && wall && wall.items[wallAt] === it) wallHead(true); }) || {};
+    head.appendChild(U.el('h1', 'media-title', it.name));
+    var facts = [d.year || yearOf(it), d.dur, d.genre, A.stars(it) || (d.rating ? '★ ' + d.rating : ''), d.media].filter(Boolean).join('   ·   ');
+    if (facts) head.appendChild(U.el('div', 'media-facts', facts));
+    if (d.plot) head.appendChild(U.el('p', 'media-summary vod-wall-plot', d.plot));
+  }
   function drawWall() {
     var box = $('vodWall'), rows = Math.ceil(wall.items.length / WALL_COLS), r = Math.floor(wallAt / WALL_COLS);
-    $('vodWallHead').innerHTML = '';
-    var wcn = !wall.cat && wall.items[wallAt] ? A.catName(wall.items[wallAt]) : '';   // a mixed wall: the focused title's category
-    $('vodWallHead').appendChild(U.el('div', 'media-kicker', (kind === 'series' ? 'Shows' : 'Movies') + '  ›  ' + wall.title + (wcn ? '  ·  ' + wcn : '')));
-    $('vodWallHead').appendChild(U.el('h1', 'media-title', wall.title));
-    $('vodWallHead').appendChild(U.el('div', 'media-facts', count(wall.items.length, '1 ' + word(), '{n} ' + word() + 's') + (wall.id.indexOf('tmdb:') && wall.id.indexOf('holiday:') && wall.id !== 'recent' && wall.id !== 'continue' ? '   ·   ' + sortName() : '')));
+    wallHeadSoon();
     var first = Math.max(0, Math.min(r - 1, rows - 2)), need = Math.min(rows, first + 3) - first, n = need * WALL_COLS;
     while (wallViews.length < n) { var t = tile(); box.appendChild(t.el); wallViews.push(t); (function (t) { t.el.addEventListener('click', function () { wallAt = t._at; drawWall(); ok(); }); })(t); }
     wallViews.forEach(function (t, i) {
@@ -312,7 +325,8 @@ var VodHome = (function () {
       mode === 'home' && { label: 'Go to a shelf', action: function () { UI.menu('Go to a shelf', shelves.map(function (x, i) { return { label: RAW(x.title), sub: String(x.items.length), current: i === at, action: function () { at = i; draw(); } }; })); } },
       mode === 'home' && { label: 'Arrange shelves', sub: 'Move, switch off, pin categories', action: function () { arrangeMenu(s && (s.id.indexOf('holiday:') === 0 ? 'holidays' : s.id)); } },
       { label: 'All categories', sub: 'Green', action: function () { A.list(s && s.cat, it); } },
-      it && { label: (kind === 'series' ? 'Show' : 'Movie') + ' options', action: function () { A.menu(it); } }
+      it && { label: (kind === 'series' ? 'Show' : 'Movie') + ' options', action: function () { A.menu(it); } },
+      A.reload && { label: 'Reload movies and shows', sub: 'New titles from your provider', action: function () { A.reload(); } }
     ].filter(Boolean));
   }
 

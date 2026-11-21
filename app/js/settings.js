@@ -1172,6 +1172,7 @@ var Settings = (function () {
       ['provider', 'name'], ['The provider\'s order', 'Name (A–Z)'], function () { return s.vodCatSort === 'name' ? 'name' : 'provider'; }, function (v) { s.vodCatSort = v; save(); if (typeof Vod !== 'undefined' && Vod.recats) Vod.recats(); }));
     out.push(choice('Open a category as', 'A list beside the categories, or a full-screen wall of posters (Back goes to the categories).',
       ['list', 'wall'], ['List', 'Posters, full screen'], function () { return s.vodCatWall ? 'wall' : 'list'; }, function (v) { s.vodCatWall = v === 'wall'; save(); }));
+    out.push(action('Reload movies and shows now', 'Both lists again from your provider, for titles added since they last loaded.  Your channels stay as they are.  Red on the Movies or Shows home too.', function () { Vod.reloadNow(); }));
     out.push(action('Arrange the Movies home', 'Move its shelves up or down, switch them off, and pin categories.  Red on the Movies home too.', function () { Vod.arrange('movie'); }));
     out.push(action('Arrange the Shows home', 'Move its shelves up or down, switch them off, and pin categories.  Red on the Shows home too.', function () { Vod.arrange('series'); }));
     out.push(autoNextRow());
@@ -1773,8 +1774,8 @@ var Settings = (function () {
         jump('Subtitles automatically', 'On whenever a stream has them.'), jump('Closed captions', 'For live TV channels that send them.'), jump('Subtitle size', 'Bigger or smaller.'),
         jump('OpenSubtitles key and sign-in', 'Needed for Find subtitles.')]; }),
       prob('Movies or shows are missing', 'Movies and Shows, or My media, are empty or not all there.', function () { return [
-        tip('Movies and Shows come from your provider and load again with the playlist (Playlists and accounts > the playlist > Reload channels now).  My media scans your own libraries: Green on My media scans again.'),
-        jump('Movies and Shows open on', 'Home, or the list of categories.'), jump('Scan all libraries', 'Look for added and removed movies and episodes.'), jump('Fetch details for all', 'Posters and details from TMDB.')]; }),
+        tip('Movies and Shows come from your provider and load again with the playlist, or on their own with Reload movies and shows now.  My media scans your own libraries: Green on My media scans again.'),
+        jump('Reload movies and shows now', 'Titles added since they last loaded.'), jump('Movies and Shows open on', 'Home, or the list of categories.'), jump('Scan all libraries', 'Look for added and removed movies and episodes.'), jump('Fetch details for all', 'Posters and details from TMDB.')]; }),
       prob('TiviBro closed by itself, or is slow', 'It quits while playing, or the screens are slow.', function () { return [
         tip('TiviBro says what it was doing when it closed, and offers to send a report.  On TVs with 1 or 2 GB, these settings help most.'),
         jump('Memory-safe playback', 'Holds less video in memory.'), jump('Seek previews', 'Off frees the memory a 4K movie\'s pictures take.'), jump('Public guide fill-in', 'Fewer countries means less to read.'), jump('Keep past days', 'Fewer days of catch-up guide.'),
