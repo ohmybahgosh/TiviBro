@@ -115,14 +115,15 @@ fun SportsTab(model: AppModel, id: String, playing: String, now: Long) {
 }
 
 @Composable
-private fun TeamLine(t: SportTeam, lose: Boolean, big: Boolean = false) {
+private fun TeamLine(t: SportTeam, lose: Boolean, big: Boolean = false, rankSlot: Boolean = t.rank > 0) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(if (big) 40.dp else 34.dp)) {
         Box(Modifier.size(if (big) 32.dp else 26.dp), contentAlignment = Alignment.Center) {
             if (t.logo.isNotBlank()) AsyncImage(model = t.logo, contentDescription = t.name, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
             else Text(t.abbr, fontSize = 10.sp, color = Muted)
         }
         Spacer(Modifier.width(10.dp))
-        if (t.rank > 0) Text(t.rank.toString() + " ", color = Muted, fontSize = 12.sp)
+        // A poll rank as "#4", in a fixed slot when either team has one, so both names start at the same place.
+        if (rankSlot) Text(if (t.rank > 0) "#" + t.rank else "", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.width(28.dp))
         Text(t.name, fontWeight = FontWeight.SemiBold, color = if (lose) Muted else TextHi, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
         if (t.rec.isNotBlank()) Text("  " + t.rec, color = Muted, fontSize = 11.sp, maxLines = 1)
         Spacer(Modifier.weight(1f))
@@ -138,7 +139,7 @@ private fun loses(g: SportGame, t: SportTeam): Boolean {
 @Composable
 private fun GameCard(g: SportGame, row: String, now: Long, onClick: () -> Unit) {
     Column(Modifier.width(270.dp).clip(RoundedCornerShape(14.dp)).background(Brush.linearGradient(listOf(Panel2, Panel))).clickable(onClick = onClick).padding(14.dp, 10.dp)) {
-        if (g.teams.size == 2) g.teams.forEach { TeamLine(it, loses(g, it)) }
+        if (g.teams.size == 2) { val ranked = g.teams.any { it.rank > 0 }; g.teams.forEach { TeamLine(it, loses(g, it), rankSlot = ranked) } }
         else Text(g.name, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.height(68.dp))
         Spacer(Modifier.height(6.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -270,8 +271,10 @@ private fun TeamBlock(t: SportTeam, modifier: Modifier, won: Boolean = false, lo
         Box(Modifier.size(52.dp), contentAlignment = Alignment.Center) {
             if (t.logo.isNotBlank()) AsyncImage(model = t.logo, contentDescription = t.name, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize(), alpha = if (lost) 0.55f else 1f)
         }
-        Text((if (t.rank > 0) "${t.rank} " else "") + t.name, fontWeight = FontWeight.Bold, color = if (lost) Color(0xFFAAB2C8) else TextHi, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
-        if (t.rec.isNotBlank()) Text(t.rec, color = Color(0xFFD3D9EA), fontSize = 11.sp)
+        Text(t.name, fontWeight = FontWeight.Bold, color = if (lost) Color(0xFFAAB2C8) else TextHi, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
+        // The poll rank in words beside the record, not a bare number before the name.
+        val sub = listOfNotNull(if (t.rank > 0) "Ranked #${t.rank}" else null, t.rec.ifBlank { null }).joinToString("  ·  ")
+        if (sub.isNotBlank()) Text(sub, color = Color(0xFFD3D9EA), fontSize = 11.sp)
         if (won) Text("WINNER", color = Color(0xFF0B0E14), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(top = 4.dp).clip(RoundedCornerShape(50)).background(Color.White).padding(10.dp, 1.dp))
     }
 }

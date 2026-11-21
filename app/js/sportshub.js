@@ -36,7 +36,8 @@ var SportsHub = (function () {
     else lg.textContent = t.abbr;
     el.appendChild(lg);
     var n = U.el('div', 'sp-name');
-    if (t.rank) n.appendChild(U.el('small', 'sp-rank', String(t.rank)));
+    // A ranked team's poll rank as "#4"; when either team has one, both rows keep the same room for it, so the names line up.
+    if (t.rank || (o && o.rank)) n.appendChild(U.el('small', 'sp-rank', t.rank ? '#' + t.rank : ''));
     n.appendChild(document.createTextNode(RAW(t.name)));
     if (t.rec) n.appendChild(U.el('span', 'sp-rec', t.rec));
     el.appendChild(n);
@@ -312,8 +313,9 @@ var SportsHub = (function () {
       if (!t.name) return;
       var sd = U.el('div', 'sp-side ' + (i ? 'r' : 'l') + (fin ? (i === fin.w ? ' won' : ' lost') : ''));
       if (t.logo) { var im = new Image(); im.src = t.logo; im.alt = ''; im.onerror = function () { this.remove(); }; sd.appendChild(im); }
-      var nm = U.el('b', '', RAW((t.rank ? t.rank + '  ' : '') + t.name)); nm.setAttribute('data-raw', ''); sd.appendChild(nm);
-      sd.appendChild(U.el('small', '', [t.rec, i ? T('Home') : T('Away')].filter(Boolean).join('  ·  ')));
+      var nm = U.el('b', '', RAW(t.name)); nm.setAttribute('data-raw', ''); sd.appendChild(nm);
+      // The poll rank in words ("Ranked #4"), beside the record, rather than a bare number by the name.
+      sd.appendChild(U.el('small', '', [t.rank ? T('Ranked') + ' #' + t.rank : '', t.rec, i ? T('Home') : T('Away')].filter(Boolean).join('  ·  ')));
       if (fin && i === fin.w) sd.appendChild(U.el('i', 'sp-wbadge', T('Winner')));
       hero.appendChild(sd);
     });
@@ -375,7 +377,8 @@ var SportsHub = (function () {
           });
         });
       }
-      if (sum.venue) left.appendChild(U.el('div', 'sp-venue2', sum.venue + (sum.city ? ',  ' + sum.city : '')));
+      // Where it's played: in the banner, under the score (at the panel's foot it ran into the leaders).
+      if (sum.venue && !g.note) { var vm = el.querySelector('.sp-mid'); if (vm) vm.appendChild(U.el('div', 'sp-note', sum.venue + (sum.city ? ',  ' + sum.city : ''))); }
     }
     el.appendChild(left);
     // Right: your channels, then the standings.
