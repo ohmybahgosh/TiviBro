@@ -456,6 +456,7 @@ var UI = (function () {
 
   var lastHints = [], lastSig = '', lastFirst = null;
   function hints(list) {
+    list = (list || []).filter(Boolean);
     // The guide asks on every move: the same hints again change nothing (no rebuilding, no measuring).
     var sig = (typeof I18n !== 'undefined' ? I18n.lang() : '') + JSON.stringify(list), h = U.$('hints');
     if (sig === lastSig && h.firstChild === lastFirst) return;           // (the side menu puts back what it covered)

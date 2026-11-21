@@ -67,6 +67,10 @@ var Vod = (function () {
     if (facts) info.appendChild(U.el('div', 'media-facts', facts));
     var plot = s.plot && s.plot.length >= 40 ? s.plot : (tv && tv.plot) || s.plot || '';
     if (plot) info.appendChild(U.el('div', 'media-summary shp-plot', plot));
+    // The show's trailer, like a movie's page: ▲ from the seasons, OK plays it.
+    var trl = trailerOf(s);
+    if (trl) { var tb = U.el('div', 'mmp-btn shp-trl' + (sp.zone === 'trl' ? ' sel' : ''), '▶  Trailer'); tb.onclick = function () { watchTrailer(trl); }; info.appendChild(tb); }
+    else if (sp.zone === 'trl') sp.zone = 'tabs';
     box.appendChild(info);
     if (sp.loading) { box.appendChild(U.el('div', 'shp-empty', 'Loading episodes…')); return; }
     if (!episodes || !episodes.length) { box.appendChild(U.el('div', 'shp-empty', 'This show has no episodes from the provider.')); return; }
@@ -127,8 +131,12 @@ var Vod = (function () {
     if (a === 'green') { if (homeOn()) toHome(); else Views.switchTab('guide'); return true; }
     if (a === 'blue') { Views.switchTab('settings'); return true; }
     if (!sp || sp.loading || !episodes || !episodes.length) return true;
-    if (sp.zone === 'tabs') {
-      if (a === 'left' && sp.at > 0) spSeason(sp.at - 1);
+    if (sp.zone === 'trl') {
+      if (a === 'down') sp.zone = 'tabs';
+      else if (a === 'ok') { watchTrailer(trailerOf(sp.s)); return true; }
+    } else if (sp.zone === 'tabs') {
+      if (a === 'up' && trailerOf(sp.s)) sp.zone = 'trl';
+      else if (a === 'left' && sp.at > 0) spSeason(sp.at - 1);
       else if (a === 'right' && sp.at < sp.rows.length - 1) spSeason(sp.at + 1);
       else if (a === 'down' || a === 'ok') sp.zone = 'eps';
     } else {
@@ -1033,7 +1041,7 @@ var Vod = (function () {
   }
   function setZone(z) { zone = z; catsVL.setActive(z === 'cats'); itemsVL.setActive(z === 'items'); hints(); }
   function hints() {
-    if (sp) return UI.hints(sp.zone === 'tabs' ? [['', '◀ ▶  season'], ['', 'Down  episodes'], ['', 'Back  ' + (showFromHome ? 'home' : 'all shows'), 'back']] : [['', 'OK  play'], ['', 'Up  seasons'], ['', 'Hold OK  options', 'hold'], ['', 'Back  ' + (showFromHome ? 'home' : 'all shows'), 'back']]);
+    if (sp) return UI.hints(sp.zone === 'trl' ? [['', 'OK  play the trailer', 'ok'], ['', 'Down  seasons'], ['', 'Back  ' + (showFromHome ? 'home' : 'all shows'), 'back']] : sp.zone === 'tabs' ? [['', '◀ ▶  season'], ['', 'Down  episodes'], trailerOf(sp.s) ? ['', 'Up  trailer'] : null, ['', 'Back  ' + (showFromHome ? 'home' : 'all shows'), 'back']] : [['', 'OK  play'], ['', 'Up  seasons'], ['', 'Hold OK  options', 'hold'], ['', 'Back  ' + (showFromHome ? 'home' : 'all shows'), 'back']]);
     if (zone === 'cats') {
       var c = catsVL && catsVL.current();
       return UI.hints(c && c.id === LANGS ? [['', 'OK  pick languages'], ['', homeOn() ? 'Back  home' : 'Back  menu bar', 'back'], ['green', homeOn() ? 'Home' : 'Guide'], ['blue', 'Settings']]

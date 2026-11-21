@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **A Trailer button on a show's page**, like a movie's, in Movies and shows and in My media: ▲ from the seasons (or from the episodes of a one-season show), OK plays it.
+
 ## 0.6.0 (alpha 190, 2026-11-21)
 
 Pre-release: expect rough edges, and keep a backup before installing.

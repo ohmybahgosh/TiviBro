@@ -32,7 +32,7 @@ var MediaShowPage = (function () {
       if (!pg || pg.card !== card) return;
       pg.show = r; pg.loading = false;
       // The show's trailer (TMDB, with your token): Yellow, or in the season options.
-      var cur = pg; if (typeof MediaMoviePage !== 'undefined') MediaMoviePage.trailerFor(r.metadata && r.metadata.id, function (t) { if (pg === cur && t) { pg.trailer = t; hints(); } });
+      var cur = pg; if (typeof MediaMoviePage !== 'undefined') MediaMoviePage.trailerFor(r.metadata && r.metadata.id, function (t) { if (pg === cur && t) { pg.trailer = t; draw(); } });
       // Specials last, as Plex lists them.
       pg.seasons = (r.buckets || []).slice().sort(function (a, b) { return (a.key === '0') - (b.key === '0'); });
       // On the season with the episode you're up to (Continue watching), else the first.
@@ -117,6 +117,8 @@ var MediaShowPage = (function () {
     if (facts) info.appendChild(tel('div', 'media-facts', facts));
     var plot = cur ? cur.plot || m.plot : m.plot;
     if (plot) info.appendChild(tel('div', 'media-summary shp-plot', RAW(plot)));
+    // The show's trailer, on the seasons: ▲ to it, OK plays it (Yellow from anywhere on the seasons).
+    if (pg.trailer) { var tb = tel('div', 'mmp-btn shp-trl' + (pg.zone === 'trl' ? ' sel' : ''), '▶  Trailer'); tb.onclick = function () { trailer(pg); }; info.appendChild(tb); }
     b.appendChild(info);
     hints();
     if (pg.loading) { b.appendChild(tel('div', 'shp-empty', pg.level === 'eps' ? 'Loading episodes…' : 'Loading seasons…')); return; }
@@ -125,15 +127,15 @@ var MediaShowPage = (function () {
   }
   function hints() {
     if (!pg) return;
-    UI.hints(pg.level === 'eps' ? [['', 'OK  play'], ['', '◀ ▶  episodes'], ['', 'Hold OK  episode options', 'hold'], ['', 'Back  ' + (pg.seasons.length > 1 ? 'seasons' : 'close'), 'back']]
-      : [['', 'OK  episodes'], ['', '▶  play next'], ['', '◀ ▶  seasons'], ['', 'Hold OK  season options', 'hold'], ['', 'Back  close', 'back']].concat(pg.trailer ? [['yellow', 'Trailer']] : []));
+    UI.hints(pg.zone === 'trl' ? [['', 'OK  play the trailer', 'ok'], ['', 'Down  ' + (pg.level === 'eps' ? 'episodes' : 'seasons')], ['', 'Back  close', 'back']] : pg.level === 'eps' ? [['', 'OK  play'], pg.trailer && pg.seasons.length < 2 ? ['', 'Up  trailer'] : null, ['', '◀ ▶  episodes'], ['', 'Hold OK  episode options', 'hold'], ['', 'Back  ' + (pg.seasons.length > 1 ? 'seasons' : 'close'), 'back']]
+      : pg.zone === 'trl' ? [['', 'OK  play the trailer', 'ok'], ['', 'Down  seasons'], ['', 'Back  close', 'back']] : [['', 'OK  episodes'], ['', '▶  play next'], ['', '◀ ▶  seasons'], pg.trailer ? ['', 'Up  trailer'] : null, ['', 'Hold OK  season options', 'hold'], ['', 'Back  close', 'back']].concat(pg.trailer ? [['yellow', 'Trailer']] : []));
   }
   function drawSeasons(b, s, m) {
     if (!pg.seasons.length) { b.appendChild(tel('div', 'shp-empty', 'No episodes found for this show.')); return; }
     b.appendChild(tel('div', 'mshp-row', 'Seasons'));
     var track = tel('div', 'mshp-seasons'), from = Math.max(0, Math.min(pg.at - 2, pg.seasons.length - 7)), to = Math.min(pg.seasons.length, from + 7);
     for (var i = from; i < to; i++) (function (x, i) {
-      var c = tel('div', 'mshp-season' + (i === pg.at ? ' sel' : '')), art = tel('div', 'mshp-poster'), pic = x.poster || m.poster;
+      var c = tel('div', 'mshp-season' + (i === pg.at && pg.zone !== 'trl' ? ' sel' : '')), art = tel('div', 'mshp-poster'), pic = x.poster || m.poster;
       if (pic) art.appendChild(img(pic, 'shp-pic'));
       else art.appendChild(tel('span', 'mshp-noart', seasonName(s, x)));
       // Plex's corner: ✓ once the whole season's watched, else how many episodes are left (once one's watched).
@@ -154,7 +156,7 @@ var MediaShowPage = (function () {
     var track = tel('div', 'shp-track mshp-eps'), from = Math.max(0, pg.sel - 2), to = Math.min(list.length, from + 8);
     for (var i = from; i < to; i++) (function (e, i) {
       var em = md(e), w = e.watchState === 'watched', hide = spoilers && !w;
-      var c = tel('div', 'shp-card' + (i === pg.sel ? ' sel' : '')), art = tel('div', 'shp-art'), pic = !hide && em.still || em.poster || m.backdrop || m.poster;
+      var c = tel('div', 'shp-card' + (i === pg.sel && pg.zone !== 'trl' ? ' sel' : '')), art = tel('div', 'shp-art'), pic = !hide && em.still || em.poster || m.backdrop || m.poster;
       if (pic) art.appendChild(img(pic, 'shp-pic' + (pic === em.still ? '' : ' cover')));
       art.appendChild(tel('span', 'shp-num', e.order === 'date' ? String(e.airDate || '') : 'E' + (e.number != null ? e.number : e.absoluteNumber || '?')));
       if (w) art.appendChild(tel('span', 'shp-done', '✓'));
@@ -199,11 +201,18 @@ var MediaShowPage = (function () {
   function keys(a) {
     if (!pg) return false;
     if (a === 'yellow' && pg.trailer) { trailer(pg); return true; }
+    if (pg.zone === 'trl' && a !== 'up' && a !== 'down' && a !== 'ok' && a !== 'back') return true;
     if (a === 'back') { if (pg.level === 'eps' && pg.seasons.length > 1) { pg.level = 'seasons'; pg.loading = false; draw(); refresh(pg); } else close(); return true; }
     if (a === 'red' || a === 'hold' || a === 'info') { options(); return true; }
     if (pg.loading) return true;
+    if (pg.zone === 'trl') {
+      if (a === 'down') pg.zone = '';
+      else if (a === 'ok') { trailer(pg); return true; }
+      draw(); return true;
+    }
     if (pg.level === 'seasons') {
-      if (a === 'left' && pg.at > 0) pg.at--;
+      if (a === 'up' && pg.trailer) pg.zone = 'trl';
+      else if (a === 'left' && pg.at > 0) pg.at--;
       else if (a === 'right' && pg.at < pg.seasons.length - 1) pg.at++;
       else if (a === 'ok' || a === 'down') return season(pg.at), true;
     } else {
@@ -212,6 +221,7 @@ var MediaShowPage = (function () {
       else if (a === 'right' && pg.sel < n - 1) pg.sel++;
       else if (a === 'chup' || a === 'chdown') pg.sel = Math.max(0, Math.min(n - 1, pg.sel + (a === 'chup' ? -5 : 5)));
       else if (a === 'up' && pg.seasons.length > 1) { pg.level = 'seasons'; refresh(pg); }
+      else if (a === 'up' && pg.trailer) pg.zone = 'trl';
       else if (a === 'ok' || a === 'playpause') { play(); return true; }
     }
     // ▶ on a season: its first episode not watched, played.
