@@ -1450,7 +1450,10 @@ body.focus-ring .sp-card.focus{box-shadow:0 0 0 5px var(--accent),0 0 0 9px #fff
 .sp-rank{font-size:24px;color:var(--text);opacity:.85;margin-right:8px;font-weight:700}
 .sp-rec{font-size:24px;color:var(--text);opacity:.72;margin-left:10px;font-weight:500}
 .sp-score{font-size:42px;font-weight:800;font-variant-numeric:tabular-nums}
-.sp-team.lose .sp-name,.sp-team.lose .sp-score{color:var(--muted)}
+.sp-team.lose .sp-name,.sp-team.lose .sp-score{color:var(--dim)}
+.sp-team.lose .sp-logo{opacity:.5}
+.sp-team.win .sp-name,.sp-team.win .sp-score{font-weight:800;color:var(--text)}
+.sp-win{flex:none;width:22px;margin-left:-6px;font-size:22px;color:var(--accent-text);text-align:right}
 .sp-event{font-size:26px;font-weight:700;line-height:1.25;max-height:100px;overflow:hidden}
 .sp-venue{font-size:20px;color:var(--muted);margin-top:6px}
 .sp-meta{position:absolute;left:22px;right:22px;bottom:18px;display:flex;align-items:center;gap:10px;font-size:22px;color:var(--muted);white-space:nowrap}
@@ -1468,10 +1471,16 @@ body.focus-ring .sp-card.focus{box-shadow:0 0 0 5px var(--accent),0 0 0 9px #fff
 /* A game's page (sportshub.js page) */
 .sp-page{position:absolute;left:128px;right:0;top:0;bottom:0;background:var(--ink);z-index:4;padding:0 56px 0 24px}
 .sp-hero{position:absolute;left:0;right:56px;top:72px;height:284px;border-radius:24px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.45)}
+.sp-side.lost img{opacity:.45}.sp-side.lost b{color:#aab2c8}
+.sp-wbadge{font-style:normal;margin-top:8px;font-size:18px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;background:#fff;color:#0b0e14;padding:3px 12px;border-radius:999px}
+.sp-big span.lost{opacity:.42}
+table.sp-lscore tr.won td{font-weight:800;color:var(--text)}
+table.sp-lscore tr.lost td{color:var(--dim)}
+table.sp-lscore tr.lost .sp-mini{opacity:.5}
 .sp-band{position:absolute;top:0;bottom:0;width:14px}.sp-band.l{left:0}.sp-band.r{right:0}
-.sp-side{position:absolute;top:26px;width:340px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.sp-side{position:absolute;top:14px;width:340px;display:flex;flex-direction:column;align-items:center;text-align:center}
 .sp-side.l{left:40px}.sp-side.r{right:40px}
-.sp-side img{width:150px;height:150px;object-fit:contain;filter:drop-shadow(0 0 1.5px rgba(255,255,255,.75)) drop-shadow(0 6px 18px rgba(0,0,0,.6))}
+.sp-side img{width:128px;height:128px;object-fit:contain;filter:drop-shadow(0 0 1.5px rgba(255,255,255,.75)) drop-shadow(0 6px 18px rgba(0,0,0,.6))}
 .sp-side b{font-size:34px;font-weight:800;margin-top:10px;white-space:nowrap;max-width:330px;overflow:hidden;text-overflow:ellipsis}
 .sp-side small{font-size:24px;color:#d3d9ea;margin-top:2px}
 .sp-mid{position:absolute;left:400px;right:400px;top:42px;text-align:center}
@@ -1484,7 +1493,7 @@ body.focus-ring .sp-card.focus{box-shadow:0 0 0 5px var(--accent),0 0 0 9px #fff
 .sp-note{font-size:23px;color:#c9d0e2;margin-top:6px}
 .sp-btns{position:absolute;left:0;right:56px;top:368px;padding:10px 12px;display:flex;justify-content:center;gap:18px;flex-wrap:nowrap;overflow:hidden}
 .sp-btn{flex:none;font-size:26px;font-weight:600;padding:14px 28px;border-radius:14px;background:rgba(255,255,255,.08);color:var(--text);white-space:nowrap;transition:transform 140ms ease,background 140ms ease}
-.sp-btn.sel{background:#fff;color:#0b0e14;transform:scale(1.05);box-shadow:0 10px 28px rgba(0,0,0,.45)}
+.sp-btn.sel{background:#fff;color:#0b0e14;font-weight:700;transform:scale(1.05);box-shadow:0 10px 28px rgba(0,0,0,.45)}
 .sp-panel{position:absolute;top:462px;bottom:78px;border-radius:20px;background:var(--panel);padding:24px 28px;overflow:hidden}
 .sp-box{left:0;width:900px}
 .sp-side2{left:928px;right:56px}
@@ -1516,7 +1525,6 @@ table.sp-stand th{font-size:19px;color:var(--muted);font-weight:600;text-align:r
 table.sp-stand td{padding:6px 8px;text-align:right;border-top:1px solid var(--line);color:var(--text)}
 table.sp-stand th:first-child,table.sp-stand td:first-child{text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:330px}
 table.sp-stand tr.me td{color:var(--accent-text);font-weight:700}
-table.sp-stand tr.me[style] td{color:inherit}
 table.sp-stand tr.gap td{border-top:2px dashed var(--line)}
 /* The score bar while watching (sportslive.js) */
 .sp-bug{position:fixed;top:40px;right:56px;z-index:30;border-radius:14px;overflow:hidden;background:rgba(8,10,18,.86);box-shadow:0 8px 28px rgba(0,0,0,.5);pointer-events:none}

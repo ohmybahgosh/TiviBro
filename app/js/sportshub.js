@@ -3,8 +3,8 @@
    the teams you follow, this week), Live now (every league), then a row per league (today's games, or
    tomorrow's when it has none today).
 
-   OK watches the game on your best channel (a game more than five minutes away asks first: remind me, or watch
-   the channel now).  Hold OK or Red: every channel of yours that has it, and a reminder.  Green follows one of
+   OK (or Red, or Info) opens the game's page.  Hold OK asks: remind me (a game not started yet), or watch it on
+   one of your channels that has it.  Green follows one of
    the two teams.  Blue picks the leagues.  Scores update every 30 seconds while a game is live. */
 var SportsHub = (function () {
   'use strict';
@@ -29,7 +29,8 @@ var SportsHub = (function () {
   /* ---------- cards ---------- */
   function teamRow(g, t, o) {
     var hide = Sports.hidden(g), lose = !hide && g.state === 'post' && o && t.score != null && o.score != null && t.score < o.score;
-    var el = U.el('div', 'sp-team' + (lose ? ' lose' : ''));
+    var win = !hide && g.state === 'post' && o && t.score != null && o.score != null && t.score > o.score;
+    var el = U.el('div', 'sp-team' + (lose ? ' lose' : '') + (win ? ' win' : ''));
     var lg = U.el('div', 'sp-logo');
     if (t.logo) { var im = new Image(); im.decoding = 'async'; im.alt = ''; im.onerror = function () { this.remove(); lg.textContent = t.abbr; }; im.src = t.logo; lg.appendChild(im); }
     else lg.textContent = t.abbr;
@@ -40,6 +41,8 @@ var SportsHub = (function () {
     if (t.rec) n.appendChild(U.el('span', 'sp-rec', t.rec));
     el.appendChild(n);
     if (g.state !== 'pre' && t.score != null && !hide) el.appendChild(U.el('div', 'sp-score', String(t.score)));
+    // The winner of a final: a mark beside the score (the loser is greyed).
+    if (g.state === 'post' && !hide && o && t.score != null) el.appendChild(U.el('div', 'sp-win', win ? '◀' : ''));
     return el;
   }
   function status(g) {
@@ -122,7 +125,7 @@ var SportsHub = (function () {
     if (!open_ || Views.tab !== 'sports') return;
     var g = current();
     if (!g) return UI.hints([['', 'Back  menu', 'back'], ['blue', 'Leagues']]);
-    UI.hints([['', g.state === 'pre' && g.s > Date.now() + 300000 ? 'OK  remind me or watch' : 'OK  watch', 'ok'], ['', 'Hold OK  the game', 'hold'], ['yellow', 'Remind me'], ['green', 'Follow a team'], ['blue', 'Leagues']]);
+    UI.hints([['', 'OK  the game', 'ok'], ['', g.state === 'pre' && g.s > Date.now() ? 'Hold OK  remind me or watch' : 'Hold OK  watch', 'hold'], ['yellow', 'Remind me'], ['green', 'Follow a team'], ['blue', 'Leagues']]);
   }
 
   /* ---------- doing things ---------- */
@@ -137,13 +140,20 @@ var SportsHub = (function () {
     if (g.state === 'pre' && g.s > Date.now() + 300000) return askRemind(g, cs);
     play(cs[0].c);
   }
+  /* Hold OK on a card: watch it or be reminded.  A reminder only for a game that hasn't started, and every
+     channel of yours that has it (up to four). */
+  function quick(g) {
+    touched = true;
+    var cs = Sports.channels(g);
+    if (!cs.length) return watch(g);
+    askRemind(g, cs);
+  }
   function askRemind(g, cs) {
-    var c = cs[0].c, set = has(g, c);
-    UI.menu(RAW(Sports.title(g)) + ',  ' + U.day(g.s) + ' ' + U.hhmm(g.s), [
-      { label: set ? T('Cancel the reminder') : T('Remind me at {x}', { x: U.hhmm(g.s) }), sub: T('on {x}', { x: Library.name(c) }), icon: set ? 'belloff' : 'bell', action: function () { remind(g, c); } },
-      { label: T('Watch {x} now', { x: Library.name(c) }), icon: 'play', action: function () { play(c); } },
-      { label: T('Cancel'), current: true }
-    ]);
+    var c = cs[0].c, set = has(g, c), items = [];
+    if (g.state === 'pre' && g.s > Date.now()) items.push({ label: set ? T('Cancel the reminder') : T('Remind me at {x}', { x: U.hhmm(g.s) }), sub: T('on {x}', { x: Library.name(c) }), icon: set ? 'belloff' : 'bell', action: function () { remind(g, c); } });
+    cs.slice(0, 4).forEach(function (x) { items.push({ label: T('Watch {x} now', { x: Library.name(x.c) }), icon: 'play', action: function () { play(x.c); } }); });
+    items.push({ label: T('Cancel'), current: true });
+    UI.menu(RAW(Sports.title(g)) + ',  ' + (g.state === 'pre' ? U.day(g.s) + ' ' + U.hhmm(g.s) : status(g)), items);
   }
   function has(g, c) { return Sports.reminded(g, c); }
   function remind(g, c) {
@@ -170,7 +180,7 @@ var SportsHub = (function () {
     menu(0);
   }
 
-  /* ---------- a game's page (Hold OK, Red or Info on a card) ----------
+  /* ---------- a game's page (OK, Red or Info on a card) ----------
      The score big in the two teams' colours, then buttons: Watch on your best channel, a reminder, follow, hide
      or show the score.  Under them the box score by period with each team's leaders, every channel of yours that
      has the game, and the standings of the teams' division or conference.  ◀ ▶ along the buttons, ▼ to the
@@ -219,16 +229,6 @@ var SportsHub = (function () {
     return { list: out, cs: cs };
   }
   function abIdx(g, ab) { for (var i = 0; i < g.teams.length; i++) if (g.teams[i].abbr === ab) return i; return 9; }
-  /* A team's colour, light enough to read on the dark panels: its main colour, else its other one, else the main
-     one mixed with white (Michigan's navy, say, comes out a light blue). */
-  function tone(t) {
-    function rgb(c) { return /^[0-9a-f]{6}$/i.test(c || '') ? [0, 2, 4].map(function (i) { return parseInt(c.slice(i, i + 2), 16); }) : null; }
-    function lum(v) { return (0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]) / 255; }
-    var a = rgb(t && t.color), b = rgb(t && t.alt), v = a && lum(a) >= 0.32 ? a : b && lum(b) >= 0.32 && lum(b) <= 0.92 ? b : a;
-    if (!v) return '';
-    for (var i = 0; i < 8 && lum(v) < 0.4; i++) v = v.map(function (x) { return Math.round(x + (255 - x) * 0.22); });
-    return 'rgb(' + v.join(',') + ')';
-  }
   function hex(c, a) { return /^[0-9a-f]{6}$/i.test(c || '') ? 'rgba(' + parseInt(c.slice(0, 2), 16) + ',' + parseInt(c.slice(2, 4), 16) + ',' + parseInt(c.slice(4, 6), 16) + ',' + a + ')' : 'rgba(40,50,80,' + a + ')'; }
   function drawPage() {
     if (!gp) return;
@@ -238,6 +238,8 @@ var SportsHub = (function () {
     if (gp.zone === 'chans' && !bt.cs.length) gp.zone = 'btns';
     el.innerHTML = '';
     var a = g.teams[0] || {}, h = g.teams[1] || {};
+    // A final with a winner (not a tie, not hidden): { w: 0 | 1 }.
+    var fin = g.state === 'post' && !hide && g.teams.length === 2 && a.score != null && h.score != null && a.score !== h.score ? { w: a.score > h.score ? 0 : 1 } : null;
     var hero = U.el('div', 'sp-hero');
     // Each team's side in its colours: its main colour well in, its other colour as a band on the outer edge.
     // Deepened, so a logo in the same colour (UCLA's blue on blue) still stands out.
@@ -246,14 +248,22 @@ var SportsHub = (function () {
     [[a, 'l'], [h, 'r']].forEach(function (x) { var alt = x[0].alt && x[0].alt.toLowerCase() !== (x[0].color || '').toLowerCase() && !/^(ffffff|000000)$/i.test(x[0].alt) ? x[0].alt : ''; if (!alt) return; var bd = U.el('div', 'sp-band ' + x[1]); bd.style.background = hex(alt, 1); hero.appendChild(bd); });
     [a, h].forEach(function (t, i) {
       if (!t.name) return;
-      var sd = U.el('div', 'sp-side ' + (i ? 'r' : 'l'));
+      var sd = U.el('div', 'sp-side ' + (i ? 'r' : 'l') + (fin ? (i === fin.w ? ' won' : ' lost') : ''));
       if (t.logo) { var im = new Image(); im.src = t.logo; im.alt = ''; im.onerror = function () { this.remove(); }; sd.appendChild(im); }
       var nm = U.el('b', '', RAW((t.rank ? t.rank + '  ' : '') + t.name)); nm.setAttribute('data-raw', ''); sd.appendChild(nm);
       sd.appendChild(U.el('small', '', [t.rec, i ? T('Home') : T('Away')].filter(Boolean).join('  ·  ')));
+      if (fin && i === fin.w) sd.appendChild(U.el('i', 'sp-wbadge', T('Winner')));
       hero.appendChild(sd);
     });
     var mid = U.el('div', 'sp-mid');
-    if (g.teams.length === 2 && g.state !== 'pre' && !hide) mid.appendChild(U.el('div', 'sp-big', (a.score != null ? a.score : '') + '  –  ' + (h.score != null ? h.score : '')));
+    if (g.teams.length === 2 && g.state !== 'pre' && !hide) {
+      // A final: the loser's score greyed.
+      var big = U.el('div', 'sp-big');
+      big.appendChild(U.el('span', fin && fin.w !== 0 ? 'lost' : '', a.score != null ? String(a.score) : ''));
+      big.appendChild(document.createTextNode('  –  '));
+      big.appendChild(U.el('span', fin && fin.w !== 1 ? 'lost' : '', h.score != null ? String(h.score) : ''));
+      mid.appendChild(big);
+    }
     else if (g.teams.length !== 2) mid.appendChild(U.el('div', 'sp-big ev', RAW(g.name)));
     else mid.appendChild(U.el('div', 'sp-big pre', g.state === 'pre' ? U.hhmm(g.s) : T('Score hidden')));
     var line = U.el('div', 'sp-wline');
@@ -279,11 +289,11 @@ var SportsHub = (function () {
         for (var i = 0; i < n; i++) hr.appendChild(U.el('th', '', String(i + 1)));
         hr.appendChild(U.el('th', '', 'T')); tb.appendChild(hr);
         lines.forEach(function (l, k) {
-          var tr = U.el('tr'), t = g.teams[k] || {}, td = U.el('td');
+          var tr = U.el('tr', fin ? (k === fin.w ? 'won' : 'lost') : ''), t = g.teams[k] || {}, td = U.el('td');
           if (t.logo) { var im = new Image(); im.src = t.logo; im.className = 'sp-mini'; td.appendChild(im); }
-          td.appendChild(document.createTextNode(RAW(t.name || l.abbr))); if (tone(t)) td.style.color = tone(t); tr.appendChild(td);
+          td.appendChild(document.createTextNode(RAW(t.name || l.abbr))); tr.appendChild(td);
           for (var p = 0; p < n; p++) tr.appendChild(U.el('td', '', l.periods[p] != null ? String(l.periods[p]) : ''));
-          tr.appendChild(U.el('td', 'tot', String(l.score != null ? l.score : ''))); tb.appendChild(tr);
+          tr.appendChild(U.el('td', 'tot', String(l.score != null ? l.score : '') + (fin && k === fin.w ? ' ◀' : ''))); tb.appendChild(tr);
         });
         left.appendChild(tb);
       } else if (g.state === 'pre') left.appendChild(U.el('div', 'sp-muted', T('The box score starts with the game.')));
@@ -293,7 +303,7 @@ var SportsHub = (function () {
           // A line a leader (football's are long: "16/27, 162 YDS, 1 TD"), the team's abbreviation on its first.
           tl.list.slice(0, 2).forEach(function (x, k) {
             var r = U.el('div', 'sp-lead');
-            var ab = U.el('b', '', k ? '' : tl.abbr), lt = tone(g.teams[abIdx(g, tl.abbr)]); if (lt) ab.style.color = lt; r.appendChild(ab);
+            r.appendChild(U.el('b', '', k ? '' : tl.abbr));
             var c = U.el('span', '', x.who + '   '); c.appendChild(U.el('em', '', x.value)); c.appendChild(U.el('small', '', '   ' + x.what.toLowerCase())); r.appendChild(c);
             left.appendChild(r);
           });
@@ -320,7 +330,10 @@ var SportsHub = (function () {
       right.appendChild(r);
     });
     if (sum && sum.standings.length) {
-      var gr = sum.standings[0];
+      // The group of a team you follow when the two teams are in different ones (Raptors at Pistons: the Central).
+      var nameIs = function (r, t) { return t.loc && r.team && (r.team === t.loc || r.team === t.name || r.team === t.full); };
+      var mineT = g.teams.filter(function (t) { return t.id && Teams.follows(t.id); })[0];
+      var gr = (mineT && sum.standings.filter(function (x) { return x.rows.some(function (r) { return nameIs(r, mineT); }); })[0]) || sum.standings[0];
       right.appendChild(U.el('div', 'sp-cap', gr.name || T('Standings')));
       var st = U.el('table', 'sp-stand'), hr2 = U.el('tr');
       hr2.appendChild(U.el('th', '', '')); hr2.appendChild(U.el('th', '', T('W-L'))); hr2.appendChild(U.el('th', '', gr.rows[0] && gr.rows[0].extra ? gr.rows[0].extra.k : '')); st.appendChild(hr2);
@@ -329,7 +342,6 @@ var SportsHub = (function () {
       var n = Math.max(3, Math.floor((360 - 80 * Math.min(bt.cs.length, 3)) / 43)), low = gr.rows.slice(n).filter(isMe), top = gr.rows.slice(0, Math.max(n - low.length, 2));
       top.concat(low).forEach(function (r, i) {
         var tr = U.el('tr', (isMe(r) ? 'me' : '') + (low.length && i === top.length ? ' gap' : ''));
-        if (whose(r) && tone(whose(r))) tr.style.color = tone(whose(r));
         tr.appendChild(U.el('td', '', RAW(r.team))); tr.appendChild(U.el('td', '', hide ? '·' : r.rec)); tr.appendChild(U.el('td', '', hide ? '' : r.extra ? r.extra.v : ''));
         st.appendChild(tr);
       });
@@ -376,8 +388,8 @@ var SportsHub = (function () {
     else if (a === 'chup' || a === 'chdown') { pos[r.id] = U.clamp(at + (a === 'chup' ? -4 : 4), 0, r.items.length - 1); draw(); }
     else if (a === 'up') { if (row > 0) { row--; draw(); } }
     else if (a === 'down') { if (row < rows.length - 1) { row++; draw(); } }
-    else if (a === 'ok') watch(r.items[at]);
-    else if (a === 'red' || a === 'hold' || a === 'info') page(r.items[at]);
+    else if (a === 'ok' || a === 'red' || a === 'info') page(r.items[at]);
+    else if (a === 'hold') quick(r.items[at]);
     else if (a === 'yellow') { var g = r.items[at], cs = Sports.channels(g); if (cs.length && g.state === 'pre') remind(g, cs[0].c); else U.toast(T('Reminders are for games that haven\'t started')); }
     else if (a === 'green') follow(r.items[at]);
     return true;

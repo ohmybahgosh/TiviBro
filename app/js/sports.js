@@ -122,7 +122,9 @@ var Sports = (function () {
     var jobs = [], mine = followedLeagues();
     loaded().forEach(function (lg) {
       jobs.push(load(lg, dayKey(0), force), load(lg, dayKey(1), force));
-      if (mine.indexOf(lg.id) >= 0) for (var d = 2; d <= AHEAD_DAYS; d++) jobs.push(load(lg, dayKey(d), false));
+      // Yesterday too for your teams' leagues: last night's games get their finals (else one loaded before it
+      // started stays "7:30pm" for good).
+      if (mine.indexOf(lg.id) >= 0) { jobs.push(load(lg, dayKey(-1), false)); for (var d = 2; d <= AHEAD_DAYS; d++) jobs.push(load(lg, dayKey(d), false)); }
     });
     jobs.forEach(function (j) { j.then(function () { if (then) then(); }); });
     return Promise.all(jobs);
@@ -297,7 +299,7 @@ var Sports = (function () {
   function rows(t) {
     t = t || function (x, v) { return String(x).replace(/\{([a-z])\}/g, function (a, k) { return v && v[k] != null ? v[k] : a; }); };
     var now = Date.now(), out = [], every = all(), seen = {};
-    var my = every.filter(function (g) { if (seen[g.id] || !follows(g)) return false; seen[g.id] = 1; return g.state !== 'post' || g.s > now - 12 * 3600e3; }).sort(order).slice(0, 14);
+    var my = every.filter(function (g) { if (seen[g.id] || !follows(g)) return false; seen[g.id] = 1; return g.state === 'post' ? g.s > now - 12 * 3600e3 : g.state !== 'pre' || g.s > now - 6 * 3600e3; }).sort(order).slice(0, 14);
     if (my.length) out.push({ id: 'mine', title: t('My teams'), sub: t('on now first, then what\'s next'), items: my });
     seen = {};
     var live = every.filter(function (g) { if (seen[g.id] || g.state !== 'in') return false; seen[g.id] = 1; return BY[g.lg] && leagues().indexOf(BY[g.lg]) >= 0 || follows(g); }).sort(order);
