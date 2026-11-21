@@ -49,7 +49,7 @@
   try { new Function('"use strict"; let a = 1; const f = (x) => x + a; class K {} return `${f(1)}`;')(); } catch (e) { modern = false; }
   var errors = [];
   window.addEventListener('error', function (e) { if (errors.length < 5) errors.push((e.message || 'error') + (e.filename ? '  (' + String(e.filename).split('/').pop() + ':' + e.lineno + ')' : '')); });
-  window.addEventListener('unhandledrejection', function (e) { var r = e && e.reason; if (errors.length < 5) errors.push(String(r && r.message || r || 'error') + (r && r.stack ? '  (' + String(r.stack).split('\n')[1].replace(/^\s+at\s+/, '').split('/').pop() + ')' : '')); });
+  window.addEventListener('unhandledrejection', function (e) { var r = e && e.reason; if (errors.length < 5) errors.push(String(r && r.message || r || 'error') + (r && r.stack && String(r.stack).split('\n')[1] ? '  (' + String(r.stack).split('\n')[1].replace(/^\s+at\s+/, '').split('/').pop() + ')' : '')   /* a one-line stack ("Failed to fetch") has no second line: this handler itself threw on it (issue #142) */); });
   function screen(title, lines, retry) {
     var b = document.body; if (!b) return;
     var box = document.createElement('div');

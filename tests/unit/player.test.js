@@ -52,6 +52,7 @@ function setup(opts) {
     addEventListener: (t, f) => { winL[t] = f; }
   };
   if (opts.mkvSubs) ctx.MkvSubs = opts.mkvSubs;
+  if (opts.convert) ctx.Convert = opts.convert;
   // What playback learns (playmemo.js), in a localStorage that can outlive one setup (an app restart).
   if (opts.memo) {
     const ls = opts.memo;
@@ -353,6 +354,26 @@ const lastState = t.states[t.states.length - 1];
 ok('#34: when reconnecting really fails, the message says the provider closed the connection and offers to try again', /^error: The provider closed the connection/.test(lastState) && /Press OK to try again/.test(lastState) && !/format/.test(lastState), lastState);
 t.P.retryNow(); t.video.duration = 7200; t.feed(0, 4000); t.run(1500);
 ok('#34: OK tries again from where it was', Math.abs(t.video.currentTime - 900) < 3, t.video.currentTime);
+
+// ---- issue #152: a movie the TV refuses outright goes through the converter once, and the error names what it holds ----
+const p152 = (async () => {
+  const asked = [];
+  const conv = { on: () => true, status: () => Promise.resolve({ state: 'ready' }), plan: () => Promise.resolve(null), ensureKey: () => Promise.resolve(),
+    probe: u => { asked.push(u); return Promise.resolve({ video: 'h264', audio: [{ codec: 'dts', channels: 6 }], duration: 6000 }); },
+    decide: () => ({ action: 'convert', a: 0, bad: [true] }), fmtFor: () => 'mkv', NAMES: { dts: 'DTS', h264: 'H.264' }, link: () => 'http://127.0.0.1:47811/convert/k/a.mkv', offer() {}, noSound: w => w + ' sound' };
+  const t2 = setup({ convert: conv });
+  t2.P.play({ n: 'Refused', url: 'http://p/movie/u/p/152.mkv' }, { live: false });
+  for (let i = 0; i < 20 && !asked.length; i++) { t2.video.error = { code: 4 }; (t2.video.l.error || []).forEach(f => f()); if (t2.last() && t2.last().h && t2.last().h.err) t2.last().h.err('MediaError', 'FormatUnsupported', {}); t2.run(3000); await new Promise(r => setImmediate(r)); }
+  await new Promise(r => setImmediate(r)); await new Promise(r => setImmediate(r));
+  ok('#152: a refused movie file is read by the helper', asked[0] === 'http://p/movie/u/p/152.mkv', JSON.stringify(asked));
+  ok('#152: and tried through the converter', t2.logs.some(l => /through the audio converter/.test(l)) && /convert/.test(t2.video._src), t2.video._src);
+  const startsBefore = t2.logs.filter(l => /^Start /.test(l)).length;
+  for (let i = 0; i < 12; i++) { t2.video.error = { code: 4 }; (t2.video.l.error || []).forEach(f => f()); if (t2.last() && t2.last().h && t2.last().h.err) t2.last().h.err('MediaError', 'FormatUnsupported', {}); t2.run(3000); await new Promise(r => setImmediate(r)); }
+  const ls = t2.states[t2.states.length - 1];
+  ok('#152: refused again, the error says what the file holds', /^error: .*picture is H\.264 and its sound DTS/.test(ls), ls);
+  ok('#152: the helper is asked once only', asked.length === 1, asked.length);
+  ok('#152: a converted stream that fails too is not followed by the same file again', t2.logs.filter(l => /^Start /.test(l)).length - startsBefore <= 1, t2.logs.filter(l => /^Start /.test(l)).length - startsBefore);
+})();
 
 t = setup();
 t.P.play({ n: 'Long pause', url: 'http://p/movie/u/p/32.mkv' }, { live: false });
@@ -873,5 +894,7 @@ ok('other files play directly, without subtitle extraction', mp4.calls.length ==
   ok('Try again starts on the player the channel started on', t.last().kind === k0, k0 + ' -> ' + t.made.map(x => x.kind).join(','));
 }
 
-if (fail) { console.log(fail + ' player test(s) failed'); process.exit(1); }
-console.log('all player tests passed');
+p152.then(() => {
+  if (fail) { console.log(fail + ' player test(s) failed'); process.exit(1); }
+  console.log('all player tests passed');
+});

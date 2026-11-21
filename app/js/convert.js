@@ -191,7 +191,9 @@ var Convert = (function () {
 
   /* ---------- asking, once ---------- */
   // The offer, on the TV's screen.  cb(true) once the converter is ready, cb(false) otherwise.
-  function offer(what, guessed, cb) {
+  /* Offer to get the converter.  what: the sound's name ("DTS"); guessed: not known for sure.  why: instead of the
+     sentence about the sound, another reason (a movie the TV refused outright, player.js rescue()). */
+  function offer(what, guessed, cb, why) {
     var s = settings();
     // Carried by this build: no question, just unpack it.
     if (st && st.bundled && st.state !== 'failed') return get().then(function () { cb(true); }, function () { cb(false); });
@@ -199,9 +201,9 @@ var Convert = (function () {
     if (s.convertNever || typeof UI === 'undefined' || !UI.panel) return cb(false);
     s.convertAsked = true;
     try { Store.saveSettings(); } catch (e) {}
-    var body = U.el('p', 'panel-text', (guessed ? 'This movie\'s sound looks like ' + what + ', which this TV can\'t play.' : 'This movie\'s sound is ' + what + ', which this TV can\'t play.') +
+    var body = U.el('p', 'panel-text', why ? why + '' : (guessed ? 'This movie\'s sound looks like ' + what + ', which this TV can\'t play.' : 'This movie\'s sound is ' + what + ', which this TV can\'t play.') +
       '  Get the audio converter (2 MB, kept on the TV\'s storage)?  It turns the sound into Dolby Digital, which every LG TV plays.  Settings > Audio and subtitles can remove it again.');
-    UI.panel('Sound this TV can\'t play', body, [
+    UI.panel(why ? 'This video won\'t play as it is' : 'Sound this TV can\'t play', body, [
       { label: 'Get', action: function () {
         U.toast('Getting the audio converter…', 30000);
         get(function (p) { U.toast('Getting the audio converter… ' + p + '%', 30000); }).then(function () { U.toast('Audio converter ready', 2500); cb(true); },

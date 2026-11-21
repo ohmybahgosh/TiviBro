@@ -312,13 +312,25 @@ function start(body, log) {
     // its files with a 302 to a tokenized address, and an unfollowed one read as an empty guide.
     var hops = 0;
     get(src.url);
+    /* Where a redirect goes, as an address this http-only reader can open.  The relay usually hands redirects back
+       as relay addresses already; one that points straight at an https:// address (issue #146's crash: Node's http
+       module throws on it, which took the whole helper down) goes through the relay the first address used. */
+    function relayed(from, to) {
+      if (/^http:/i.test(to)) return to;
+      var m = /^(http:\/\/(?:127\.0\.0\.1|localhost):\d+(?:\/ua\/[A-Za-z0-9_-]+)?)\/x\//.exec(from), p = /^https:/i.test(to) ? require('url').parse(to) : null;
+      return m && p && p.host ? m[1] + '/x/https/' + p.host + (p.path || '/') : '';
+    }
     function get(url) {
-    var req = current = http.get(url, function (res) {
+    var req;
+    try { req = current = http.get(url, onRes); } catch (e) { return finish(e); }   // never an uncaught throw: it ends the helper
+    function onRes(res) {
       var code = res.statusCode || 0;
       if (code >= 300 && code < 400 && res.headers.location) {
         res.resume();
         if (++hops > 5) return finish(new Error('too many redirects'));
-        return get(require('url').resolve(url, res.headers.location));
+        var to = relayed(url, require('url').resolve(url, res.headers.location));
+        if (!to) return finish(new Error('redirected to an address the helper can\'t read'));
+        return get(to);
       }
       if (code !== 200) { res.resume(); return finish(new Error('HTTP ' + code)); }
       var size = +(res.headers['x-raw-length'] || res.headers['content-length']) || 0, dec = new StringDecoder('utf8');
@@ -340,7 +352,7 @@ function start(body, log) {
       });
       res.on('end', function () { clearInterval(tick); if (stopped) return finish(new Error('stopped')); buf += dec.end(); eat(true); job.programmes = total; finish(); });
       res.on('error', function (e) { clearInterval(tick); finish(e); });
-    });
+    }
     req.on('error', function (e) { finish(e); });
     req.setTimeout(120000, function () { try { req.abort(); } catch (e) {} finish(new Error('timed out')); });
     }

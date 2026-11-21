@@ -890,6 +890,9 @@ var Player = (function () {
     else if (k !== 'hls') cur.url = cur.origUrl;
     cur.forceKind = k; cur.forceNative = k === 'native';
   }
+  /* Every engine has failed to start this channel or movie.  A live channel that played before keeps reconnecting; a
+     movie the TV refused outright gets one try through the converter (rescue()); otherwise the error that best says
+     why: the provider's HTTP answer, DRM, DASH, or what the file holds when the helper could read it. */
   function giveUp(myToken) {
     if (myToken !== token) return;
     // A live channel that has played here before is not a format problem: keep it coming back.
@@ -902,10 +905,13 @@ var Player = (function () {
     if (cur.live && !cur.timeshift && !cur.deadCounted && window.DeadList) { cur.deadCounted = cur.deadFailed = true; try { DeadList.failed(cur.ch, cur.origUrl || cur.url, cur.lastHttp || 0); } catch (e) {} }
     // A movie that was playing here a moment ago is not a format the TV can't decode (issue #34).
     if (isFile() && cur.everPlayed) return state('error', CLOSED);
+    // A movie the TV's player refused outright: one more try through the helper's converter (issue #152).
+    if (isFile() && !cur.conv && !cur.rescued && !cur.lastHttp && window.Convert && Convert.on() && /^https?:/i.test(cur.origUrl || cur.url)) { cur.rescued = true; return rescue(myToken); }
     var dr = cur.ch && cur.ch.drm;
     if (dr && !cur.lastHttp) return state('error', 'This channel is protected (' + ({ widevine: 'Widevine', playready: 'PlayReady', clearkey: 'ClearKey' }[dr.type] || dr.type) + '), and this TV could not play it' + (cur.dashWhy ? ': ' + cur.dashWhy : '') + '.  It plays in apps the provider supports.');
     if (cur.lastHttp) return state('error', 'The provider is not sending this ' + (isFile() ? 'video' : 'channel') + ' right now (error ' + cur.lastHttp + ').  Press OK to try again, or try ' + (isFile() ? 'again later.' : 'another channel.'));
     if (isDash(cur.origUrl || cur.url)) return state('error', 'This channel uses DASH, and this TV could not play it' + (cur.dashWhy ? ' (' + cur.dashWhy + ')' : '') + '.');
+    if (isFile() && cur.fileInfo) return state('error', 'This video will not play on this TV.  ' + cur.fileInfo + '.');
     state('error', isFile() ? 'This video will not play on this TV.  It may use a format the TV cannot decode.' : 'This channel will not play on this TV.  It may use a format the TV cannot decode, or the provider may be having trouble with it.');
   }
 
@@ -1425,6 +1431,41 @@ var Player = (function () {
     start(token);
   }
 
+  /* ---------- a movie the TV's player refused (issue #152) ----------
+     Its players said "format error" before the first picture: often an MKV whose sound the TV can't play (DTS on
+     2020 to 2022 LG TVs) that the converter's plan didn't catch, because the provider's details don't name the sound.
+     The helper's ffmpeg reads what the file holds, and the movie goes through the converter once (the picture copied,
+     the sound made into one the TV plays, in a container it opens).  Without the converter it's offered first.  If
+     that fails too, the error names what the file holds, so it's clear what the TV couldn't play. */
+  function rescue(my) {
+    var url = cur.origUrl || cur.url;
+    state('loading', T('Checking what this video is made of…'));
+    Convert.status(true).then(function (s) {
+      if (my !== token || !cur) return;
+      if (s.state === 'ready') return look();
+      Convert.offer('', true, function (got) { if (my !== token || !cur) return; if (got) look(); else giveUp(my); },
+        'This TV\'s player couldn\'t open this video.  Often the sound is one the TV can\'t play (DTS on many LG TVs from 2020 to 2022), or the file is packed in a way it doesn\'t read.  ' +
+        'The audio converter (2 MB, kept on the TV\'s storage) can repack it into a form the TV plays, turning the sound into Dolby Digital.  Get it and try again?');
+    }, function () { giveUp(my); });
+    function look() {
+      Convert.probe(url).then(function (info) {
+        if (my !== token || !cur) return;
+        var aud = (info && info.audio) || [], vid = (info && info.video) || '';
+        if (!vid && !aud.length) { Log.warn('player', 'The helper could not read this file either'); return giveUp(my); }
+        var name = function (c) { return Convert.NAMES[c] || String(c || '?').toUpperCase(); };
+        cur.fileInfo = 'Its picture is ' + (vid ? name(vid) : 'unknown') + ' and its sound ' + (aud.length ? aud.map(function (t) { return name(t.codec); }).join(', ') : 'none');
+        Log.info('player', 'Refused file: ' + cur.fileInfo + '; trying it through the converter');
+        var d = Convert.decide(aud, Caps.probe(), { lang: Store.settings.audioLang === 'orig' ? '' : Store.settings.audioLang || '' }), a = d.a != null ? d.a : 0, t = aud[a] || {};
+        return Convert.ensureKey().then(function () {
+          if (my !== token || !cur) return;
+          useConv({ src: url, a: a, fmt: Convert.fmtFor(vid), video: vid, codec: t.codec || '', channels: t.channels || 0, rate: t.rate || 0, tracks: aud, bad: d.bad || [], dur: info.duration || 0 }, 'Repacked by the converter for this TV');
+          cur.retries = 0; cur.failed = false; st = null;
+          start(my);
+        });
+      }).catch(function (e) { if (my !== token || !cur) return; Log.warn('player', 'Could not check the file: ' + (e && e.message || e)); giveUp(my); });
+    }
+  }
+
   /* ---------- sound the TV can't play (convert.js) ---------- */
   function base() { return cur && cur.conv ? cur.conv.base || 0 : 0; }
   function trackLabel(t, i, bad) {
@@ -1506,6 +1547,8 @@ var Player = (function () {
   function convFailed(my, why) {
     if (my !== token || !cur || !cur.conv) return;
     var conv = cur.conv;
+    // A movie the TV refused as it is (rescue()): playing it as it is again can't work; say what it holds instead.
+    if (cur.rescued && !conv.played) { Log.warn('player', 'Converted stream did not start either (' + why + ')'); cur.conv = null; return giveUp(my); }
     Log.warn('player', 'Converted sound did not start (' + why + '); playing the movie as it is');
     if (!conv.played && conv.t && !cur.startAt) cur.startAt = conv.t;
     cur.conv = null; cur.convNotice = ''; cur.noSound = Caps.unplayable(conv.codec, conv.channels, null, conv.rate) || '';
