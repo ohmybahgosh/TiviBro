@@ -163,5 +163,6 @@ tap "More"
 tap "Change settings"
 shot 17-backup-settings 4
 tap "Cancel"
-if adb logcat -d | grep -E "FATAL EXCEPTION|AndroidRuntime: Process: $PKG" ; then echo "The app crashed"; adb logcat -d | grep -A30 "FATAL EXCEPTION" | head -60; exit 1; fi
+# Only TiviBro's own crashes: the emulator's UiAutomation (uiautomator dump) dies now and then on its own.
+if adb logcat -d | grep -E "AndroidRuntime: Process: $PKG" ; then echo "The app crashed"; adb logcat -d | grep -A30 "Process: $PKG" | head -60; exit 1; fi
 echo "no crashes"
