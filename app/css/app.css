@@ -1477,7 +1477,6 @@ body.focus-ring .sp-card.focus{box-shadow:0 0 0 5px var(--accent),0 0 0 9px #fff
 table.sp-lscore tr.won td{font-weight:800;color:var(--text)}
 table.sp-lscore tr.lost td{color:var(--dim)}
 table.sp-lscore tr.lost .sp-mini{opacity:.5}
-.sp-band{position:absolute;top:0;bottom:0;width:14px}.sp-band.l{left:0}.sp-band.r{right:0}
 .sp-side{position:absolute;top:14px;width:340px;display:flex;flex-direction:column;align-items:center;text-align:center}
 .sp-side.l{left:40px}.sp-side.r{right:40px}
 .sp-side img{width:128px;height:128px;object-fit:contain;filter:drop-shadow(0 0 1.5px rgba(255,255,255,.75)) drop-shadow(0 6px 18px rgba(0,0,0,.6))}

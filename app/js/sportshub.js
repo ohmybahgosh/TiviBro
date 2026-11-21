@@ -209,7 +209,7 @@ var SportsHub = (function () {
   // quiet: leaving for the player (nothing to draw behind it).
   function closePage(quiet) { if (gp) clearTimeout(gp.t); gp = null; $('spPage').classList.add('hidden'); $('spPage').innerHTML = ''; if (quiet) return; UI.setHandler(keys); render(true); }
   function buttons(g) {
-    var cs = Sports.channels(g), out = [], later = g.state === 'pre' && g.s > Date.now() + 300000;
+    var cs = g.state === 'post' ? [] : Sports.channels(g), out = [], later = g.state === 'pre' && g.s > Date.now() + 300000;
     if (cs.length) out.push({ label: (later ? T('Watch {x} now', { x: Library.name(cs[0].c) }) : T('Watch on {x}', { x: Library.name(cs[0].c) })), icon: 'play', run: function () { var gg = gp.g; closePage(true); play(cs[0].c, gg); } });
     if (later && cs.length) out.push({ label: has(g, cs[0].c) ? T('Cancel the reminder') : T('Remind me'), icon: 'bell', run: function () { remind(g, cs[0].c); drawPage(); } });
     g.teams.filter(function (t) { return t.id; }).forEach(function (t) {
@@ -241,11 +241,10 @@ var SportsHub = (function () {
     // A final with a winner (not a tie, not hidden): { w: 0 | 1 }.
     var fin = g.state === 'post' && !hide && g.teams.length === 2 && a.score != null && h.score != null && a.score !== h.score ? { w: a.score > h.score ? 0 : 1 } : null;
     var hero = U.el('div', 'sp-hero');
-    // Each team's side in its colours: its main colour well in, its other colour as a band on the outer edge.
+    // Each team's side in its colour.
     // Deepened, so a logo in the same colour (UCLA's blue on blue) still stands out.
     var deep = function (c) { if (!/^[0-9a-f]{6}$/i.test(c || '')) return ''; var rgb = [0, 2, 4].map(function (i) { return parseInt(c.slice(i, i + 2), 16); }), l = (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) / 255, f = l > 0.25 ? 0.5 : l > 0.12 ? 0.75 : 1; return [0, 2, 4].map(function (i) { var v = Math.round(parseInt(c.slice(i, i + 2), 16) * f); return ('0' + v.toString(16)).slice(-2); }).join(''); };
     hero.style.background = 'linear-gradient(100deg,' + hex(deep(a.color), 1) + ' 0%,' + hex(deep(a.color), 0.9) + ' 28%,rgba(11,14,26,.92) 45%,rgba(11,14,26,.92) 55%,' + hex(deep(h.color), 0.9) + ' 72%,' + hex(deep(h.color), 1) + ' 100%)';
-    [[a, 'l'], [h, 'r']].forEach(function (x) { var alt = x[0].alt && x[0].alt.toLowerCase() !== (x[0].color || '').toLowerCase() && !/^(ffffff|000000)$/i.test(x[0].alt) ? x[0].alt : ''; if (!alt) return; var bd = U.el('div', 'sp-band ' + x[1]); bd.style.background = hex(alt, 1); hero.appendChild(bd); });
     [a, h].forEach(function (t, i) {
       if (!t.name) return;
       var sd = U.el('div', 'sp-side ' + (i ? 'r' : 'l') + (fin ? (i === fin.w ? ' won' : ' lost') : ''));
@@ -314,8 +313,9 @@ var SportsHub = (function () {
     el.appendChild(left);
     // Right: your channels, then the standings.
     var right = U.el('div', 'sp-panel sp-side2');
-    right.appendChild(U.el('div', 'sp-cap', T('On your channels')));
-    if (!bt.cs.length) right.appendChild(U.el('div', 'sp-muted', g.nets.length ? T('Not on your channels.  It\'s on {x}.', { x: g.nets.join(', ') }) : T('Not on your channels.')));
+    // A game that's over: no channels, only the standings.
+    if (g.state !== 'post') right.appendChild(U.el('div', 'sp-cap', T('On your channels')));
+    if (g.state !== 'post' && !bt.cs.length) right.appendChild(U.el('div', 'sp-muted', g.nets.length ? T('Not on your channels.  It\'s on {x}.', { x: g.nets.join(', ') }) : T('Not on your channels.')));
     var c0 = Math.max(0, Math.min(gp.ci - 1, bt.cs.length - 3));
     bt.cs.slice(c0, c0 + 3).forEach(function (x, j) {
       var r = U.el('div', 'sp-chrow' + (gp.zone === 'chans' && c0 + j === gp.ci ? ' sel' : ''));
@@ -339,7 +339,7 @@ var SportsHub = (function () {
       hr2.appendChild(U.el('th', '', '')); hr2.appendChild(U.el('th', '', T('W-L'))); hr2.appendChild(U.el('th', '', gr.rows[0] && gr.rows[0].extra ? gr.rows[0].extra.k : '')); st.appendChild(hr2);
       // The top of the table, and this game's teams always, below a break when they're further down.
       var whose = function (r) { return g.teams.filter(function (t) { return t.loc && r.team && (r.team === t.loc || r.team === t.name || r.team === t.full); })[0]; }, isMe = function (r) { return !!whose(r); };
-      var n = Math.max(3, Math.floor((360 - 80 * Math.min(bt.cs.length, 3)) / 43)), low = gr.rows.slice(n).filter(isMe), top = gr.rows.slice(0, Math.max(n - low.length, 2));
+      var n = Math.max(3, Math.floor(((g.state === 'post' ? 440 : 360) - 80 * Math.min(bt.cs.length, 3)) / 43)), low = gr.rows.slice(n).filter(isMe), top = gr.rows.slice(0, Math.max(n - low.length, 2));
       top.concat(low).forEach(function (r, i) {
         var tr = U.el('tr', (isMe(r) ? 'me' : '') + (low.length && i === top.length ? ' gap' : ''));
         tr.appendChild(U.el('td', '', RAW(r.team))); tr.appendChild(U.el('td', '', hide ? '·' : r.rec)); tr.appendChild(U.el('td', '', hide ? '' : r.extra ? r.extra.v : ''));
@@ -355,7 +355,7 @@ var SportsHub = (function () {
       if (rs.length <= 1) break;
       stt.removeChild(rs[rs.length - 1]);
     }
-    UI.hints([['', 'OK  select', 'ok'], ['', '◀ ▶  buttons', ''], ['', '▼  channels', ''], ['', 'Back  games', 'back']]);
+    UI.hints([['', 'OK  select', 'ok'], ['', '◀ ▶  buttons', '']].concat(bt.cs.length ? [['', '▼  channels', '']] : [], [['', 'Back  games', 'back']]));
   }
   function pageKeys(a) {
     if (!gp) return keys(a);
