@@ -104,7 +104,7 @@ var Sports = (function () {
       var list = (j.events || []).map(function (e) { return game(lg, e); }).filter(function (g) { return g.s && (lg.race || g.teams.length === 2); });
       store[lg.id][key] = { at: Date.now(), games: list };
       // Days gone by aren't kept (TiviBro can stay open for days).
-      var y = dayKey(-1); Object.keys(store[lg.id]).forEach(function (k) { if (k < y) delete store[lg.id][k]; });
+      var y = dayKey(-4); Object.keys(store[lg.id]).forEach(function (k) { if (k < y) delete store[lg.id][k]; });
       return store[lg.id][key];
     }, function (e) {
       var old = store[lg.id][key];
@@ -125,6 +125,8 @@ var Sports = (function () {
       // Yesterday too: last night's finals for Recent results (and a game loaded before it started doesn't stay
       // "7:30pm" for good).  The days ahead only for your teams' leagues.
       jobs.push(load(lg, dayKey(-1), false));
+      // Your teams' leagues: three more days back for Recent results.
+      if (mine.indexOf(lg.id) >= 0) for (var b = 2; b <= 4; b++) jobs.push(load(lg, dayKey(-b), false));
       if (mine.indexOf(lg.id) >= 0) for (var d = 2; d <= AHEAD_DAYS; d++) jobs.push(load(lg, dayKey(d), false));
     });
     jobs.forEach(function (j) { j.then(function () { if (then) then(); }); });
@@ -260,7 +262,7 @@ var Sports = (function () {
   }
   /* The guide's games for every team playing in the next day and a half, worked out at most every two minutes:
      team id -> [{ c, p, pair }]. */
-  var chanCache = null;
+  var chanCache = null, BOOT = Date.now();
   function guideGames() {
     var now = Date.now();
     if (chanCache && now - chanCache.at < 120000 && chanCache.of === Library.data.channels) return chanCache.map;
@@ -270,14 +272,23 @@ var Sports = (function () {
     try { if (typeof Teams !== 'undefined' && Teams.games && Object.keys(ids).length && typeof Epg !== 'undefined' && Epg.search) list = Teams.games(36 * 3600e3, false, Object.keys(ids)); } catch (e) { if (typeof Log !== 'undefined') Log.warn('sports', 'Finding games in the guide: ' + (e && e.message)); }
     list.forEach(function (x) { (map[x.team.id] || (map[x.team.id] = [])).push(x); });
     // Nothing found yet (the guide is still loading after a start): look again in 10 seconds, not 2 minutes.
-    chanCache = { at: list.length ? now : now - 110000, of: Library.data.channels, map: map };
+    chanCache = { at: list.length || now - BOOT > 300000 ? now : now - 110000, of: Library.data.channels, map: map, games: {} };
     return map;
   }
   /* [{ c, p, how: 'guide' | 'net', net }] for a game, best first: the guide naming both teams, then one team at
      the right time, then the networks ESPN names.  A Favorite comes first among equals. */
   function channels(g) {
     if (!g || typeof Library === 'undefined' || !Library.data.channels.length) return [];
-    var out = [], seen = {}, gm = guideGames(), ids = g.teams.map(function (t) { return t.id; }).filter(Boolean);
+    // Worked out once per game until the guide's games are looked at again (cards, the page and the score bar ask
+    // many times a second).
+    var gm = guideGames(), memo = chanCache && chanCache.games, mk = g.id + '|' + g.s;
+    if (memo && memo[mk]) return memo[mk];
+    var out = channelsOf(g, gm);
+    if (memo) memo[mk] = out;
+    return out;
+  }
+  function channelsOf(g, gm) {
+    var out = [], seen = {}, ids = g.teams.map(function (t) { return t.id; }).filter(Boolean);
     function add(c, p, how, rank, net) { if (!c || seen[c.k] || !shown(c)) return; seen[c.k] = 1; out.push({ c: c, p: p || null, how: how, net: net || '', r: rank - (Library.isFav && Library.isFav(c.k) ? 0.5 : 0) }); }
     ids.forEach(function (id) {
       (gm[id] || []).forEach(function (x) {
@@ -302,16 +313,16 @@ var Sports = (function () {
   function rows(t) {
     t = t || function (x, v) { return String(x).replace(/\{([a-z])\}/g, function (a, k) { return v && v[k] != null ? v[k] : a; }); };
     var now = Date.now(), out = [], every = all(), seen = {};
-    var my = every.filter(function (g) { if (seen[g.id] || !follows(g)) return false; seen[g.id] = 1; return g.state === 'post' ? g.s > now - 12 * 3600e3 : g.state !== 'pre' || g.s > now - 6 * 3600e3; }).sort(order).slice(0, 14);
+    var my = every.filter(function (g) { if (seen[g.id] || !follows(g)) return false; seen[g.id] = 1; return g.state === 'pre' ? g.s > now - 6 * 3600e3 : g.state === 'in'; }).sort(order).slice(0, 14);
     if (my.length) out.push({ id: 'mine', title: t('My teams'), sub: t('on now first, then what\'s next'), items: my });
     seen = {};
     var live = every.filter(function (g) { if (seen[g.id] || g.state !== 'in') return false; seen[g.id] = 1; return BY[g.lg] && leagues().indexOf(BY[g.lg]) >= 0 || follows(g); }).sort(order);
     if (live.length) out.push({ id: 'live', title: t('Live now'), sub: live.length === 1 ? t('1 game') : t('{n} games', { n: live.length }), items: live });
-    // Finals of the last day and a half, your teams' first, then the newest.
+    // Your teams' finals of the last four days, the newest first.
     seen = {};
-    var recent = every.filter(function (g) { if (seen[g.id] || g.state !== 'post' || g.s < now - 36 * 3600e3) return false; seen[g.id] = 1; return BY[g.lg] && leagues().indexOf(BY[g.lg]) >= 0 || follows(g); })
-      .sort(function (a, b) { return (follows(b) ? 1 : 0) - (follows(a) ? 1 : 0) || b.s - a.s; }).slice(0, 30);
-    if (recent.length) out.push({ id: 'recent', title: t('Recent results'), sub: t('final scores, your teams first'), items: recent });
+    var recent = every.filter(function (g) { if (seen[g.id] || g.state !== 'post' || g.s < now - 4 * 86400e3) return false; seen[g.id] = 1; return follows(g); })
+      .sort(function (a, b) { return b.s - a.s; }).slice(0, 20);
+    if (recent.length) out.push({ id: 'recent', title: t('Recent results'), sub: t('your teams\' final scores'), items: recent });
     leagues().forEach(function (lg) {
       // ESPN's scoreboard for a league out of season answers with its last game (MLB in November: the World
       // Series).  Only games from the last day and a half and later count, so such a league has no row.

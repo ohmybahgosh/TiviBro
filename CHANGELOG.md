@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- **Sports, polished.**  A colour picture of the sport on every card and league row, a **Recent results** row (finals from the last day and a half, your teams first), and the date on every card in the TV's own format.  A league out of season no longer shows its last game.
+- **Sports, polished.**  A colour picture of the sport on every card and league row, a **Recent results** row (your teams' finals from the last four days), and the date on every card in the TV's own format.  A league out of season no longer shows its last game.
+- **Moving around Sports is quicker**, right after TiviBro starts too: new scores wait until you stop moving, and each game's channels are worked out once.
 - **Blue on Sports arranges the rows**: show or hide a league, and move any row (My teams, Live now, Recent results or a league) up, down or to the top.
 - **Record a game** from its page or Hold OK when recording is set up, and a card shows **REC** or **RECORDING SET**.
 - **A game's page**: the whole division or conference in its own block below (▼ scrolls to it), with every team's logo; this game's teams marked with their logos instead of the same blue; up to four of your channels; shorter buttons that scroll when there are many.

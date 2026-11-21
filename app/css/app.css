@@ -1433,7 +1433,7 @@ body.mv-open #osd,body.mv-open #clock,body.mv-open .qpanel{display:none!importan
 .spo-head h1{font-size:44px;font-weight:800}
 .sp-sub{font-size:22px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sp-rows{position:absolute;left:128px;right:0;top:122px;bottom:70px;overflow:hidden;padding:8px 0 0 24px}
-.sp-stage{transition:transform .18s ease-out}
+.sp-stage{transition:transform .18s ease-out;will-change:transform}
 .sp-shelf{padding:0 0 30px}
 .sp-shelf h3{font-size:30px;font-weight:700;color:var(--muted);margin:0 0 14px 4px;white-space:nowrap}
 .sp-shelf.active h3{color:var(--text)}
@@ -1457,7 +1457,7 @@ body.focus-ring .sp-card.focus{box-shadow:0 0 0 5px var(--accent),0 0 0 9px #fff
 .sp-event{font-size:26px;font-weight:700;line-height:1.25;max-height:100px;overflow:hidden}
 .sp-venue{font-size:20px;color:var(--muted);margin-top:6px}
 .sp-sic{flex:none;display:inline-flex;width:28px;height:28px}
-.sp-sic svg{width:100%;height:100%;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
+.sp-sic svg{width:100%;height:100%}
 .sp-sic.card{position:absolute;right:20px;bottom:18px;width:50px;height:50px}
 .sp-sic.big{width:34px;height:34px;vertical-align:-7px;margin-right:12px}
 .sp-meta{position:absolute;left:22px;right:84px;bottom:18px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;font-size:22px;color:var(--muted);white-space:nowrap}

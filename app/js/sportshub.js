@@ -11,7 +11,7 @@ var SportsHub = (function () {
   var T = function (s, v) { return typeof I18n !== 'undefined' ? I18n.t(s, v) : String(s).replace(/\{([a-z])\}/g, function (a, k) { return v && v[k] != null ? v[k] : a; }); };
   var RAW = function (s) { return typeof I18n !== 'undefined' ? I18n.raw(s) : s; };
   var $ = function (id) { return document.getElementById(id); };
-  var BOOT = Date.now(), openedAt = 0, built = false, open_ = false, rows = [], row = 0, pos = {}, timer = null, sig = '', firstLoad = true, touched = false;
+  var rT = null, BOOT = Date.now(), openedAt = 0, built = false, open_ = false, rows = [], row = 0, pos = {}, timer = null, sig = '', firstLoad = true, touched = false;
   var CARD = 472;                                               // a card and the gap after it, px (app.css .sp-card)
 
   function build() {
@@ -105,7 +105,7 @@ var SportsHub = (function () {
     // Until you move, the first game of the first row (games arriving while it loads would move you along).
     if (!touched) { row = 0; pos = {}; }
     var wasRow = touched && rows[row] && rows[row].id, was = wasRow && rows[row].items[pos[wasRow] || 0];
-    rows = rs; sig = s;
+    rows = rs; sig = s; hs = null;
     var stage = $('spStage'); stage.innerHTML = '';
     var empty = !rows.length;
     $('spEmpty').classList.toggle('hidden', !empty);
@@ -137,16 +137,23 @@ var SportsHub = (function () {
     draw();
   }
   function current() { var r = rows[row]; return r && r.items[pos[r.id] || 0]; }
+  var hs = null;
   function draw() {
     var shelves = document.querySelectorAll('#spStage .sp-shelf');
+    // Only what changed: the card that had focus, the one that has it, and each row's slide (set when it moves).
+    var old = document.querySelector('#spStage .sp-card.focus'), shelf = shelves[row], r0 = rows[row];
+    var now_ = shelf && r0 ? shelf.querySelectorAll('.sp-card')[pos[r0.id] || 0] : null;
+    if (old && old !== now_) old.classList.remove('focus');
+    if (now_) now_.classList.add('focus');
     shelves.forEach(function (el, ri) {
-      var r = rows[ri], at = pos[r.id] || 0;
-      el.querySelectorAll('.sp-card').forEach(function (c, i) { c.classList.toggle('focus', ri === row && i === at); });
-      el.querySelector('.sp-track').style.transform = 'translateX(' + (-Math.max(0, at - 2) * CARD) + 'px)';
-      el.classList.toggle('active', ri === row);
+      var r = rows[ri], x = 'translateX(' + (-Math.max(0, (pos[r.id] || 0) - 2) * CARD) + 'px)', tr = el.querySelector('.sp-track');
+      if (tr.style.transform !== x) tr.style.transform = x;
+      if (el.classList.contains('active') !== (ri === row)) el.classList.toggle('active', ri === row);
     });
-    var y = 0; for (var i = 0; i < row && i < shelves.length; i++) y += shelves[i].offsetHeight;
-    $('spStage').style.transform = 'translateY(' + (-Math.max(0, y - (row ? shelves[row - 1].offsetHeight * 0.35 : 0))) + 'px)';
+    // Shelf heights read once per redraw (reading them on every press makes the TV lay the page out again).
+    if (!hs || hs.length !== shelves.length) hs = [].map.call(shelves, function (x) { return x.offsetHeight; });
+    var y = 0; for (var i = 0; i < row && i < hs.length; i++) y += hs[i];
+    $('spStage').style.transform = 'translateY(' + (-Math.max(0, y - (row ? hs[row - 1] * 0.35 : 0))) + 'px)';
     hints();
   }
   function hints() {
@@ -450,6 +457,7 @@ var SportsHub = (function () {
   }
 
   function keys(a) {
+    lastKey = Date.now();
     var r = rows[row];
     if (a === 'back') { Views.tabBar(restore); return true; }
     if (a === 'blue') { pickLeagues(); return true; }
@@ -469,10 +477,19 @@ var SportsHub = (function () {
   }
   function restore() { UI.setHandler(keys); hints(); }
 
-  function load(force) {
-    Sports.refresh(force, function () { if (open_ && Views.tab === 'sports' && !Views.full && !UI.modalOpen) render(false); }).then(function () {
-      firstLoad = false;
+  // New scores while you're moving along the cards wait until you stop (a full redraw takes a moment on a TV).
+  var lastKey = 0;
+  function later() {
+    clearTimeout(rT);
+    rT = setTimeout(function () {
+      if (Date.now() - lastKey < 1500) return later();
       if (open_ && Views.tab === 'sports' && !Views.full && !UI.modalOpen) render(false);
+    }, 600);
+  }
+  function load(force) {
+    Sports.refresh(force, function () { later(); }).then(function () {
+      firstLoad = false;
+      later();
       schedule();
     });
   }
