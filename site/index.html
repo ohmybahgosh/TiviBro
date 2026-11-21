@@ -37,7 +37,7 @@
   "image":"https://tivibro.app/img/social-preview.png","screenshot":"https://tivibro.app/img/guide-poster.webp",
   "downloadUrl":"https://github.com/ohmybahgosh/TiviBro/releases","installUrl":"https://tivibro.app/#install",
   "license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,
-  "featureList":["TV guide with live preview","Catch-up","Movies and shows","Sports and PPV events","Xtream Codes, M3U and Stalker portal playlists","MPEG-DASH channels","XMLTV guides","English, Spanish, Portuguese and Russian","Set up from your phone","Web editor for channels and groups","Android remote app"],
+  "featureList":["TV guide with live preview","Catch-up","Movies and shows","Sports and PPV events","Live sports scores and game pages","Multiview: two channels at once","Xtream Codes, M3U and Stalker portal playlists","MPEG-DASH channels","XMLTV guides","English, Spanish, Portuguese and Russian","Set up from your phone","Web editor for channels and groups","Android remote app"],
   "author":{"@type":"Person","@id":"https://ohmybahgosh.dev/#person","name":"OhMyBahGosh","url":"https://ohmybahgosh.dev/"},
   "sameAs":["https://github.com/ohmybahgosh/TiviBro","https://ohmybahgosh.dev/tivibro/"]}
 ]}
@@ -110,7 +110,7 @@
   <div class="floor" aria-hidden="true"></div>
   <div class="wrap hero-grid">
     <div class="hero-copy reveal">
-      <p class="pill"><span class="dot"></span><span id="ver">0.6.0 alpha</span><span class="sep">·</span>free and open source</p>
+      <a class="pill" href="#sports-new"><span class="dot"></span><span id="ver">0.6.0 alpha</span><span class="sep">·</span><b>New: Sports, with live scores for your teams</b> <span aria-hidden="true">→</span></a>
       <h1>The IPTV player <span class="grad">LG TVs never got.</span></h1>
       <p class="lead">A free, guide-first IPTV player for LG webOS.  Bring your own Xtream Codes, M3U or Stalker portal subscription; TiviBro gives it a real TV guide, catch-up, movies and shows, and an editor to tame thousands of channels.  Built to feel like TiviMate, and go further.</p>
       <div class="cta">
@@ -140,8 +140,8 @@
 <!-- ========== TICKER ========== -->
 <div class="ticker" aria-hidden="true">
   <div class="ticker-track">
-    <span>Guide first</span><span>My teams</span><span>16 themes</span><span>Catch-up</span><span>Movies and shows</span><span>A guide for every channel</span><span>Sports and PPV from channel names</span><span>Set up from your phone</span><span>A phone remote</span><span>Logos for every channel</span><span>East or West feeds</span><span>Your city's locals</span><span>Locked backups</span><span>HDR · Dolby Vision · Atmos</span><span>Free and open source</span>
-    <span>Guide first</span><span>My teams</span><span>16 themes</span><span>Catch-up</span><span>Movies and shows</span><span>A guide for every channel</span><span>Sports and PPV from channel names</span><span>Set up from your phone</span><span>A phone remote</span><span>Logos for every channel</span><span>East or West feeds</span><span>Your city's locals</span><span>Locked backups</span><span>HDR · Dolby Vision · Atmos</span><span>Free and open source</span>
+    <span>Live sports scores</span><span>Multiview</span><span>Guide first</span><span>My teams</span><span>16 themes</span><span>Catch-up</span><span>Movies and shows</span><span>A guide for every channel</span><span>Sports and PPV from channel names</span><span>Set up from your phone</span><span>A phone remote</span><span>Logos for every channel</span><span>East or West feeds</span><span>Your city's locals</span><span>Locked backups</span><span>HDR · Dolby Vision · Atmos</span><span>Free and open source</span>
+    <span>Live sports scores</span><span>Multiview</span><span>Guide first</span><span>My teams</span><span>16 themes</span><span>Catch-up</span><span>Movies and shows</span><span>A guide for every channel</span><span>Sports and PPV from channel names</span><span>Set up from your phone</span><span>A phone remote</span><span>Logos for every channel</span><span>East or West feeds</span><span>Your city's locals</span><span>Locked backups</span><span>HDR · Dolby Vision · Atmos</span><span>Free and open source</span>
   </div>
 </div>
 
@@ -154,6 +154,18 @@
       <p class="sub">TiviBro is in alpha, with a new build most weeks.  Here's what landed lately.  The <a href="/changelog/">changelog</a> has every change, and you can <a href="/ideas/">vote on what comes next</a>.</p>
     </div>
     <div class="bento">
+      <article class="tile wide reveal spot" id="sports-new">
+        <div class="tile-copy"><span class="ico"><svg class="i"><use href="#i-trophy"/></svg></span><h3>Sports: live scores, tied to your channels</h3><p>Today's games with live scores and logos, your teams first, then a row per league from the NFL to Formula 1.  Every game shows which of your channels has it.</p></div>
+        <img loading="lazy" src="img/shots/tv-sports.webp" alt="The Sports screen: your teams' games first, then a row per league, each with the channel that has it" width="1280" height="720">
+      </article>
+      <article class="tile wide reveal spot">
+        <div class="tile-copy"><span class="ico"><svg class="i"><use href="#i-trophy"/></svg></span><h3>A page for every game</h3><p>The box score, each team's leaders, your channels with the game and the standings.  Finals show the winner.  Watch, remind, follow or hide the score from there.</p></div>
+        <img loading="lazy" src="img/shots/tv-sports-game.webp" alt="A game's page: Ohio State at Nebraska with leaders, the channels that have it and the Big Ten standings" width="1280" height="720">
+      </article>
+      <article class="tile wide reveal spot">
+        <div class="tile-copy"><span class="ico"><svg class="i"><use href="#i-bell"/></svg></span><h3>Your teams' scores while you watch something else</h3><p>Watching something else while your team plays?  Its live score sits in the corner, never over the game itself.  A close finish asks whether to switch, and Hide scores keeps a recorded game spoiler-free.</p></div>
+        <img loading="lazy" src="img/shots/tv-sports-corner.webp" alt="Your teams' live score in the top corner while another channel plays" width="1280" height="720">
+      </article>
       <article class="tile wide reveal spot">
         <div class="tile-copy"><span class="ico"><svg class="i"><use href="#i-monitor"/></svg></span><h3>Multiview: two games at once</h3><p>The first IPTV app on webOS to show two channels together.  webOS lets an app play one video, so TiviBro plays the one you hear as normal video and makes the other itself, on the TV, as smooth live video beside it.  OK swaps the sound, Blue goes fullscreen.  Any webOS TV, rooted or not.</p></div>
         <img loading="lazy" src="img/shots/tv-multiview.webp" alt="Multiview: a sports channel with sound beside a news channel" width="1280" height="720">
@@ -511,6 +523,7 @@
     <details class="reveal"><summary>Is it really free?</summary><p>Yes.  It's MIT licensed open source, with no accounts, ads or paid tiers, and the app on your TV doesn't track you.  It only sends an anonymous daily count of TVs by version, which you can switch off.</p></details>
     <details class="reveal"><summary>Are my logins safe?</summary><p>Logins stay on the TV.  The web editor only ever sees server names, it needs the password shown on the TV, and backups are always encrypted with a passphrase you choose.</p></details>
     <details class="reveal"><summary>Something isn't working.  How do I report it?</summary><p>On the TV, open <b>Report a problem</b> (at the bottom of the menu in test builds, in <b>Settings &gt; System</b>, and on the first screen) and scan the QR code.  Your phone opens a short form; the TV adds its version, model and log with logins and server names taken out, and the report goes to GitHub with one press, no account needed.  If TiviBro closed by itself, the next start asks right away and can send the report straight from the TV.</p></details>
+    <details class="reveal"><summary>Does TiviBro show live sports scores?</summary><p>Yes.  The Sports screen lists today's games with live scores and logos (from ESPN), each with the channel of yours that has it, and a page per game with the box score, leaders and standings.  Follow your teams and their live scores show in the corner while you watch something else, with an alert when a game is close near the end.  All free, on any webOS TV.</p></details>
     <details class="reveal"><summary>Can I watch two channels at once on an LG TV?</summary><p>Yes.  TiviBro's Multiview puts two channels side by side, the first webOS IPTV player we know of to do it.  webOS lets an app play one video at a time, so the channel you hear plays as normal video and the other is made into live pictures on the TV.  Each box uses one of your provider's connections.  <a href="/multiview-lg-tv/">How Multiview works</a>.</p></details>
     <details class="reveal"><summary>Can TiviBro record, or pause live TV?</summary><p>Yes.  On a rooted TV with a USB drive it records what's on or schedules from the guide, and files recordings for Plex, Jellyfin, Kodi and Infuse.  Pause works on any TV, up to 10 minutes without a drive and 2 hours with one.  <a href="/record-iptv-lg-tv/">Recording and live pause</a>.</p></details>
     <details class="reveal"><summary>Can I get TiviMate on an LG TV?</summary><p>No.  TiviMate is an Android app, and LG TVs run webOS, so it can't be installed on them.  TiviBro is a webOS app built to feel like TiviMate: a guide-first layout, catch-up, groups you make yourself and clean channel names, and it goes further with phone set-up and a web editor.  <a href="/tivimate-for-lg-tv/">TiviBro and TiviMate compared</a>.</p></details>

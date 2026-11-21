@@ -21,6 +21,11 @@
   <a href="https://github.com/tolgakurtuluss/awesome-webos"><img alt="Listed in awesome-webos" src="https://img.shields.io/badge/listed%20in-awesome--webos-fc60a8?style=flat-square"></a>
 </p>
 
+<h3 align="center">🏈 New in alpha 189: Sports</h3>
+<p align="center">Today's games with <b>live scores and logos</b>, your teams first, each tied to the channel of yours that has it.  A <b>page for every game</b> with the box score, leaders and standings.  And while you watch something else, <b>your teams' live scores sit in the corner</b>, with an alert when a game is close near the end.</p>
+<p align="center"><a href="#sports"><img src="docs/screenshots/tv-sports.png" width="49%" alt="The Sports screen: your teams first, then a row per league"></a> <a href="#sports"><img src="docs/screenshots/tv-sports-corner.png" width="49%" alt="Your teams' live score in the corner while another channel plays"></a></p>
+<p align="center"><sub><a href="#sports">More about Sports</a> · <a href="https://github.com/ohmybahgosh/TiviBro/releases/tag/v0.6.0-alpha.189">Alpha 189 release notes</a></sub></p>
+
 > [!IMPORTANT]
 > **📱 Help get TiviBro for Android into the Play Store.**  The free phone app (remote and TV guide for TiviBro on your TV) is in closed testing on Google Play.  To publish it for everyone, Google needs **12 testers opted in for 14 days in a row**.
 >
@@ -360,6 +365,13 @@ TV series get the same in the guide: a poster, when the show started, its networ
 **Multiview** puts two channels side by side.  The one with the sound icon plays as normal video; the other is live video beside it, up to 30 frames a second, made on the TV.  OK on the other box gives it the sound, OK on an empty box picks a channel from your groups, and Blue goes fullscreen.  In fullscreen: quick menu > **Multiview**, or hold OK on a channel > **Watch in Multiview**.  Each box uses one of your provider's connections.
 
 <p align="center"><a href="https://tivibro.app/view/#tv-multiview"><img src="docs/screenshots/tv-multiview.png" width="70%" alt="Multiview: two channels side by side"></a></p>
+
+### Sports
+
+**Sports**, in the menu, lists today's games with live scores and team logos (from ESPN): your teams first, then everything live, then a row per league, from the NFL and college football to the NBA, NHL, MLB, soccer and Formula 1.  Each game shows the channel of yours that has it.  **OK** opens a game's page with the box score, each team's leaders, every channel of yours that has it and the standings; finals show the winner.  **Hold OK** asks to remind you or watch it now.  While you watch something else, your teams' live scores sit in the top corner (never over the game you're watching), and a close finish asks whether to switch.  **Hide scores** keeps a game you'll watch later spoiler-free.
+
+<p align="center"><a href="https://tivibro.app/view/#tv-sports"><img src="docs/screenshots/tv-sports.png" width="49%" alt="Sports: your teams first, then a row per league"></a> <a href="https://tivibro.app/view/#tv-sports-game"><img src="docs/screenshots/tv-sports-game.png" width="49%" alt="A game's page: leaders, channels and standings"></a></p>
+<p align="center"><a href="https://tivibro.app/view/#tv-sports-final"><img src="docs/screenshots/tv-sports-final.png" width="49%" alt="A final: the winner marked, the loser greyed"></a> <a href="https://tivibro.app/view/#tv-sports-corner"><img src="docs/screenshots/tv-sports-corner.png" width="49%" alt="Your teams' live score in the corner while another channel plays"></a></p>
 
 ### My teams
 
