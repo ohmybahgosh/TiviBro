@@ -6,7 +6,7 @@ Its own section in Settings, right under Playlists and accounts.  The TiviBro ph
 
 Two different ways to use a phone with TiviBro, on one page.  Each works without the other: the phone app doesn't need the web editor switched on.
 
-- **The TiviBro phone app** (Android) is a remote with the guide, On now, Movies, Shows, My media, reminders, backups and all of these settings.  Pair it once with **Pair the TiviBro app…**: that QR code is scanned inside the app, not with the phone's camera.
+- **The TiviBro phone app** (Android) is a remote with the guide, On now, Sports, Movies, Shows, My media, reminders, backups and all of these settings.  Pair it once with **Pair the TiviBro app…**: that QR code is scanned inside the app, not with the phone's camera.
 - **The web editor** works in any browser, for bigger jobs: groups, channels, names, Smart clean-up, guide matching, reminders and backups.  **Open it in a phone's browser (QR code)** is for the phone's camera.  The phone app opens the editor by itself (**Edit channels**), so the switch below is only needed for a browser.
 
 In release builds, where the phone app isn't offered yet, this page is called **Web editor** and has only the web editor's rows.

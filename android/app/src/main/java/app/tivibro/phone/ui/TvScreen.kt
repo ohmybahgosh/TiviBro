@@ -182,6 +182,7 @@ fun TvScreen(
             // Until the TV has said what it has, the tab a shortcut opened stays.
             val waiting = state == null
             val tabs = listOfNotNull("Remote", "Channels", "Guide", "On now".takeIf { state?.onnow == true || waiting && tab == "On now" },
+                "Sports".takeIf { state?.sports == true || waiting && tab == "Sports" },
                 "Movies".takeIf { state?.movies != false }, "Shows".takeIf { state?.series != false },
                 "My media".takeIf { state?.media == true || waiting && tab == "My media" }, "Settings")
             val cur = if (tab in tabs) tab else "Remote"
@@ -201,6 +202,7 @@ fun TvScreen(
                 "Channels" -> Channels(lineup, lineupNote, state?.channelKey.orEmpty(), now, onPlay, onOpen = { onOpen(); onLoadLineup(true) }, onRetry = { onLoadLineup(true) }, onFav = onFav, onOptions = { chanOptions = it })
                 "Guide" -> GuideTab(model, id, lineup, lineupNote, state?.channelKey.orEmpty(), now, onPlay, onOpen = { onOpen(); onLoadLineup(true) }, onRetry = { onLoadLineup(true) }, onReminders = { onGo("reminders", "") })
                 "On now" -> OnNowTab(model, id, state?.channelKey.orEmpty(), now)
+                "Sports" -> SportsTab(model, id, state?.channelKey.orEmpty(), now)
                 "Movies" -> VodTab(model, id, "movie")
                 "Shows" -> VodTab(model, id, "series")
                 "My media" -> if ((state?.mediaLibraryVersion ?: 0) >= 2) MyMediaTab(model, id) else VodTab(model, id, "media")

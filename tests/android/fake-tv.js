@@ -57,7 +57,7 @@ const t0 = Date.now() - 20 * 60000;
 const chans = Array.from({ length: 40 }, (_, i) => ({ k: 'fake|' + (i + 1), n: NAMES[i % 10] + (i >= 10 ? ' ' + (Math.floor(i / 10) + 1) : ''), num: i + 1, logo: '', fav: i < 3 ? 1 : 0, now: { t: SHOWS[i % 10], s: t0, e: t0 + 60 * 60000 }, ...(i === 2 ? { dead: 1 } : {}) }));      // one "not playing lately" (issue #37)
 const groups = [{ id: 'fav', name: 'Favorites', keys: chans.slice(0, 3).map((x) => x.k) }, { id: 'news', name: 'News', keys: chans.filter((x, i) => i % 10 < 4).map((x) => x.k) }, { id: 'sports', name: 'Sports', keys: chans.filter((x, i) => i % 10 >= 4 && i % 10 < 8).map((x) => x.k) }];
 let seq = 0, playing = chans[0], paused = false;
-function sendState() { return ctl('/companion/state', { state: { tab: 'live', full: true, playing: { k: playing.k, name: playing.n, num: playing.num, logo: '', group: 'News' }, now: playing.now, next: { t: 'Late Edition', s: t0 + 60 * 60000 }, paused, inputs: [], vod2: { movies: true, series: true, media: true, onnow: true } } }); }
+function sendState() { return ctl('/companion/state', { state: { tab: 'live', full: true, playing: { k: playing.k, name: playing.n, num: playing.num, logo: '', group: 'News' }, now: playing.now, next: { t: 'Late Edition', s: t0 + 60 * 60000 }, paused, inputs: [], vod2: { movies: true, series: true, media: true, onnow: true, sports: true } } }); }
 async function tivibro() {
   await sendState();
   for (;;) {
@@ -111,6 +111,16 @@ async function answer(cmd) {
     look.rows[1].on = a.op === 'toggle' && a.i === 1 ? a.on : look.rows[1].on;
     if (a.op === 'choice' && a.i === 2) { look.rows[2].cur = a.v; look.rows[2].value = look.rows[2].options[a.v]; }
     return a.op === 'page' ? say(look) : say({ msg: '', page: look });
+  }
+  // Sports: two made-up games, one on now on a made-up channel.
+  if (cmd.what === 'sports') {
+    const now = Date.now(), team = (id, name, abbr, score, mine) => ({ id, name, full: 'Demo ' + name, abbr, logo: '', color: '1d428a', rec: '7-3', rank: 0, score, mine });
+    const live = { id: 'g1', lg: 'nhl', league: 'NHL', s: now - 3600e3, state: 'in', detail: '4:10 - 3rd', hidden: 0, name: 'Owls at Hawks', teams: [team('nhl:a', 'Owls', 'OWL', 2, 1), team('nhl:b', 'Hawks', 'HWK', 3, 0)], nets: ['ESPN'], venue: 'Demo Arena', note: '', chans: [{ k: chans[0].k, n: chans[0].n, logo: '', what: 'NHL Hockey: Owls at Hawks' }], r: 0 };
+    const later = Object.assign({}, live, { id: 'g2', s: now + 3 * 3600e3, state: 'pre', detail: '', teams: [team('nhl:c', 'Bears', 'BRS', null, 0), team('nhl:d', 'Foxes', 'FOX', null, 0)], chans: [] });
+    if (a.op === 'game') return say(Object.assign({}, a.id === 'g2' ? later : live, { sum: { lines: [{ abbr: 'OWL', home: false, score: 2, periods: ['1', '1', '0'] }, { abbr: 'HWK', home: true, score: 3, periods: ['0', '2', '1'] }], leaders: [], standings: [], venue: 'Demo Arena' } }));
+    if (a.op === 'remind') return say({ on: 1 });
+    if (a.op === 'follow') return say({ on: a.on !== false ? 1 : 0 });
+    return say({ rows: [{ id: 'mine', t: 'My teams', sub: 'on now first, then what\'s next', games: [live] }, { id: 'lg:nhl', t: 'NHL', sub: '2 games', games: [live, later] }], leagues: ['NHL'] });
   }
   // Movies on now: made-up films on the made-up channels, with posters and backdrops from posters.js.
   if (cmd.what === 'onnow') {

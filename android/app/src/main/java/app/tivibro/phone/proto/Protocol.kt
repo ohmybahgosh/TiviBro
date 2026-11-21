@@ -354,6 +354,8 @@ data class NowState(
     val mediaLibraryVersion: Int = 0,
     /** Whether the TV finds the movies on now (a TMDB token saved there): the On now tab. */
     val onnow: Boolean = false,
+    /** Whether the TV shows Sports (scores tied to its channels): the Sports tab. */
+    val sports: Boolean = false,
     /** The newest channel list the TV has sent (it sends one again after channels are hidden, renamed or moved). */
     val lineupRev: Int = 0,
     /** Whether the TV records (a USB drive in it, or recordings on one): the Recordings shortcut; null from an older TiviBro. */
@@ -377,6 +379,7 @@ data class NowState(
                 media = s?.optJSONObject("vod2")?.takeIf { it.has("media") }?.optBoolean("media"),
                 mediaLibraryVersion = s?.optJSONObject("vod2")?.optInt("mediaLibraryVersion") ?: 0,
                 onnow = s?.optJSONObject("vod2")?.optBoolean("onnow") == true,
+                sports = s?.optJSONObject("vod2")?.optBoolean("sports") == true,
                 lineupRev = j.optInt("lineupRev"),
                 rec = s?.optJSONObject("rec")?.optBoolean("on"), recNow = s?.optJSONObject("rec")?.optInt("now") ?: 0,
                 inputs = s?.optJSONArray("inputs")?.let { a -> (0 until a.length()).mapNotNull { TvInput.from(a.optJSONObject(it)) } }.orEmpty(),

@@ -406,7 +406,9 @@ TiviBro knows the teams by their full names ("Detroit Red Wings"), by short name
 - **Hold OK** (or **Red**, or **Info**) opens the game's page: the score in the two teams' colours, then **Watch on** your best channel, **Remind me**, **Follow**, and **Hide** or **Show** the score.  Under them the box score by quarter, period or inning with each team's leaders, every channel of yours that has the game (▼ to them, OK watches), and the standings of the teams' division or conference.  **Back** from a game you watched from its page comes back to the page, and Back from the page to the same game on Sports.
 - Scores update every 30 seconds while a game is live, and only while the screen is open.  Turn the screen off in **Settings > Channels and groups > My teams > Sports in the menu**.
 
-**While you watch.**  A game on the channel you're watching full screen (your guide or an event channel names the two teams, or a network shows a game being played) gets a small **score bar** in the top corner, kept up to date, with the league's other games one after another under it.  **Alerts for my teams**: a close game near the end ("Pistons trail the Raptors 102 to 105, 4th 2:10") asks whether to switch to it, wherever you are in TiviBro, and a final score says so.  **Hide scores** (Settings > Channels and groups > My teams, or a game's page) keeps a team's scores out of Sports, the score bar and alerts until you show that game, for a game you recorded or will watch later.  Each is a switch on the My teams page.
+**In the phone app:** a **Sports** tab with the same rows; tap a game for its score, box score, leaders, standings and the TV's channels with it, then **Watch on TV**, **Remind me** or **Follow**.
+
+**While you watch.**  When a team you follow is playing and you're watching something else full screen (a movie, another game), its **score** sits in the top corner, kept up to date; several take turns.  It isn't shown for the game you're watching, since the broadcast has its own.  **Alerts for my teams**: a close game near the end ("Pistons trail the Raptors 102 to 105, 4th 2:10") asks whether to switch to it, wherever you are in TiviBro, and a final score says so.  **Hide scores** (Settings > Channels and groups > My teams, or a game's page) keeps a team's scores out of Sports, the corner and alerts until you show that game, for a game you recorded or will watch later.  Each is a switch on the My teams page.
 
 ### Catch-up
 
@@ -845,7 +847,7 @@ Its own section in Settings, right under Playlists and accounts.  The TiviBro ph
 
 Two different ways to use a phone with TiviBro, on one page.  Each works without the other: the phone app doesn't need the web editor switched on.
 
-- **The TiviBro phone app** (Android) is a remote with the guide, On now, Movies, Shows, My media, reminders, backups and all of these settings.  Pair it once with **Pair the TiviBro app…**: that QR code is scanned inside the app, not with the phone's camera.
+- **The TiviBro phone app** (Android) is a remote with the guide, On now, Sports, Movies, Shows, My media, reminders, backups and all of these settings.  Pair it once with **Pair the TiviBro app…**: that QR code is scanned inside the app, not with the phone's camera.
 - **The web editor** works in any browser, for bigger jobs: groups, channels, names, Smart clean-up, guide matching, reminders and backups.  **Open it in a phone's browser (QR code)** is for the phone's camera.  The phone app opens the editor by itself (**Edit channels**), so the switch below is only needed for a browser.
 
 In release builds, where the phone app isn't offered yet, this page is called **Web editor** and has only the web editor's rows.

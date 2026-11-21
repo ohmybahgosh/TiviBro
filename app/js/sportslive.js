@@ -1,21 +1,19 @@
 /* Sports while you watch (sports.js has the scores):
-   - the score bar: a game on the channel you're watching fullscreen (the guide or an event channel naming the two
-     teams, or a network ESPN says has a game on) gets a small score in the top corner, kept up to date, and under
-     it the league's other games one after another;
+   - your teams' scores: while you watch something else full screen (a movie, another game, a show), a live game of
+     a team you follow gets its score in the top corner, kept up to date; several take turns.  Not for the game
+     you're watching (its broadcast has its own score), and never for a team whose scores you hide;
    - alerts for the teams you follow, wherever you are in TiviBro: a close game near the end ("Pistons trail the
-     Raptors 102 to 105, 2:10 left in the 4th") asks whether to switch to it, and a final score says so.
-   Neither for a team whose scores you hide (Sports: Hide its scores).  Each is a switch in Settings > Channels and
-   groups > My teams.  Looks every 30 seconds while TiviBro is on screen, and only asks ESPN again when what's
-   loaded is old (sports.js: 30 seconds while a game is live, else 5 minutes). */
+     Raptors 102 to 105, 2:10 4th") asks whether to switch to it, and a final score says so.
+   Each is a switch in Settings > Channels and groups > My teams.  Looks every 30 seconds while TiviBro is on
+   screen, and only asks ESPN again when what's loaded is old (30 seconds while a game is live, else 5 minutes). */
 var SportsLive = (function () {
   'use strict';
   var T = function (s, v) { return typeof I18n !== 'undefined' ? I18n.t(s, v) : String(s).replace(/\{([a-z])\}/g, function (a, k) { return v && v[k] != null ? v[k] : a; }); };
   var RAW = function (s) { return typeof I18n !== 'undefined' ? I18n.raw(s) : s; };
-  var timer = null, bug = null, shown = null, other = 0, lastAlertLook = 0, said = {}, started = false;
+  var timer = null, bug = null, shown = null, lastAlertLook = 0, said = {}, started = false;
 
   function S() { return Store.settings; }
   function barOn() { return S().sportsBar !== false; }
-  function tickerOn() { return S().sportsTicker !== false; }
   function alertsOn() { return S().sportsAlerts !== false; }
 
   /* ---------- the score bar ---------- */
@@ -38,9 +36,8 @@ var SportsLive = (function () {
     var d = g.detail.split(/\s+-\s+/);                    // "2:10 - 4th", "End of 3rd", "Halftime"
     return d.length === 2 ? d[1] + '\n' + d[0] : g.detail;
   }
-  function others(g) {
-    return Sports.all().filter(function (x) { return x.lg === g.lg && x.id !== g.id && x.state === 'in' && !Sports.hidden(x) && x.teams.length === 2; });
-  }
+  /* Your teams' live games, except the one on the channel you're watching.  Several: each for 10 seconds. */
+  var turn = 0, turnT = null, list = [];
   function drawBug(g) {
     var b = el();
     b.innerHTML = '';
@@ -50,23 +47,22 @@ var SportsLive = (function () {
     clockOf(g).split('\n').forEach(function (l, i) { ck.appendChild(U.el(i ? 'small' : 'b', '', l)); });
     top.appendChild(ck);
     b.appendChild(top);
-    var os = tickerOn() ? others(g) : [];
-    if (os.length) {
-      var x = os[other++ % os.length], line = U.el('div', 'sp-bline');
-      line.appendChild(U.el('i', '', Sports.league(g.lg).name));
-      line.appendChild(document.createTextNode(x.teams[0].abbr + ' ' + x.teams[0].score + '   ' + x.teams[1].abbr + ' ' + x.teams[1].score + '   ' + clockOf(x).replace('\n', ' ')));
-      b.appendChild(line);
-    }
+    if (list.length > 1) b.appendChild(U.el('div', 'sp-bline', (Sports.league(g.lg) || {}).name + '   ·   ' + (turn % list.length + 1) + ' / ' + list.length));
     b.classList.remove('hidden');
     shown = g.id;
   }
-  function hideBug() { if (bug) bug.classList.add('hidden'); shown = null; }
-  function watchingLive() { return Views.full && Views.mode === 'live' && Views.playing && !document.body.classList.contains('mv-open'); }
+  function hideBug() { if (bug) bug.classList.add('hidden'); shown = null; list = []; clearInterval(turnT); turnT = null; }
+  function watching() { return Views.full && !!(Views.playing || Views.vod) && !document.body.classList.contains('mv-open'); }
   function lookBar() {
-    if (!barOn() || !watchingLive()) return hideBug();
-    var g = Sports.gameOn(Views.playing);
-    if (!g || g.teams.length !== 2 || Sports.hidden(g)) return hideBug();
-    drawBug(g);
+    if (!barOn() || !watching()) return hideBug();
+    var on = Views.mode === 'live' && Views.playing ? Sports.gameOn(Views.playing) : null;
+    list = Sports.all().filter(function (g, i, a) {
+      return g.state === 'in' && g.teams.length === 2 && mineIn(g) && !Sports.hidden(g) && (!on || on.id !== g.id) && a.findIndex(function (x) { return x.id === g.id; }) === i;
+    });
+    if (!list.length) return hideBug();
+    drawBug(list[turn % list.length]);
+    if (list.length > 1 && !turnT) turnT = setInterval(function () { if (!list.length || !watching()) return hideBug(); turn++; drawBug(list[turn % list.length]); }, 10000);
+    if (list.length < 2 && turnT) { clearInterval(turnT); turnT = null; }
   }
 
   /* ---------- alerts for your teams ---------- */
@@ -105,13 +101,13 @@ var SportsLive = (function () {
         var what = tied ? T('{x} and the {y} are tied at {n}', { x: me.name, y: foe.name, n: me.score }) : ahead ? T('{x} lead the {y} {a} to {b}', { x: me.name, y: foe.name, a: me.score, b: foe.score }) : T('{x} trail the {y} {a} to {b}', { x: me.name, y: foe.name, a: me.score, b: foe.score });
         ask(g, RAW(what) + ',  ' + g.detail.replace(/\s+-\s+/, ' '));
       }
-      if (g.state === 'post' && !said['f' + g.id] && now - g.s < 5 * 3600e3) {
+      // A final: only for a game seen being played (not one over before TiviBro looked).
+      if (g.state === 'in') said['i' + g.id] = 1;
+      if (g.state === 'post' && said['i' + g.id] && !said['f' + g.id] && now - g.s < 6 * 3600e3) {
         said['f' + g.id] = 1;
-        // Not at start-up for games long over: only one that ended since TiviBro last looked.
-        if (said._ready) U.toast(T('Final') + ':  ' + RAW(g.teams[0].name + ' ' + g.teams[0].score + ',  ' + g.teams[1].name + ' ' + g.teams[1].score), 8000);
+        U.toast(T('Final') + ':  ' + RAW(g.teams[0].name + ' ' + g.teams[0].score + ',  ' + g.teams[1].name + ' ' + g.teams[1].score), 8000);
       }
     });
-    said._ready = 1;
   }
   // "Watch it?" unless you're watching it already, or a question is up; it goes by itself after 15 seconds.
   function ask(g, text) {
@@ -131,10 +127,9 @@ var SportsLive = (function () {
   function tick() {
     if (document.hidden) return;
     try {
-      if (barOn() && watchingLive()) {
-        var ids = Sports.leagues().map(function (l) { return l.id; });
-        Sports.refreshToday(ids, false).then(lookBar);
-      } else hideBug();
+      var mine = typeof Teams !== 'undefined' && Teams.followed().length;
+      if (barOn() && mine && watching()) Sports.refreshToday(Sports.followedLeagues(), false).then(lookBar);
+      else hideBug();
       lookAlerts();
     } catch (e) { Log.warn('sports', 'Live scores: ' + (e && e.message)); }
   }
@@ -144,8 +139,8 @@ var SportsLive = (function () {
     timer = setInterval(tick, 30000);
     setTimeout(tick, 8000);
     // Fullscreen on or off: the bar follows at once, not at the next look.
-    document.addEventListener('keyup', function () { setTimeout(function () { if (!watchingLive()) hideBug(); else if (barOn() && !shown) tick(); }, 300); });
-    if (Sports.onChange) Sports.onChange(function () { if (watchingLive()) lookBar(); });
+    document.addEventListener('keyup', function () { setTimeout(function () { if (!watching()) hideBug(); else lookBar(); }, 300); });
+    if (Sports.onChange) Sports.onChange(function () { if (watching()) lookBar(); });
   }
   return { start: start, tick: tick, _close: close };
 })();

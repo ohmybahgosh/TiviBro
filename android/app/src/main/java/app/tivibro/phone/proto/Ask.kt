@@ -165,3 +165,55 @@ data class VodInfo(
         )
     }
 }
+
+/* Sports (sports.js on the TV, phone.js 'sports'): the rows of the TV's Sports screen, and one game's page.
+   A team whose scores are hidden on the TV comes without its score ([SportGame.hidden]). */
+data class SportTeam(val id: String, val name: String, val full: String, val abbr: String, val logo: String, val color: String, val rec: String,
+                     val rank: Int, val score: Int?, val mine: Boolean) {
+    companion object {
+        fun from(j: JSONObject) = SportTeam(j.optString("id"), j.optString("name"), j.optString("full"), j.optString("abbr"), j.optString("logo"),
+            j.optString("color"), j.optString("rec"), j.optInt("rank"), if (j.isNull("score") || !j.has("score")) null else j.optInt("score"), j.optInt("mine") == 1)
+    }
+}
+data class SportChan(val key: String, val name: String, val logo: String, val what: String)
+data class SportLine(val abbr: String, val home: Boolean, val score: String, val periods: List<String>)
+data class SportLeader(val what: String, val who: String, val value: String)
+data class SportLeaders(val abbr: String, val list: List<SportLeader>)
+data class SportStandRow(val team: String, val rec: String, val extraKey: String, val extraValue: String)
+data class SportStandings(val name: String, val rows: List<SportStandRow>)
+data class SportSummary(val lines: List<SportLine>, val leaders: List<SportLeaders>, val standings: List<SportStandings>, val venue: String) {
+    companion object {
+        fun from(j: JSONObject?): SportSummary? = j?.let { s ->
+            SportSummary(
+                s.optJSONArray("lines").list { l -> SportLine(l.optString("abbr"), l.optBoolean("home"), l.opt("score")?.toString().orEmpty(),
+                    l.optJSONArray("periods")?.let { a -> (0 until a.length()).map { a.opt(it)?.toString().orEmpty() } }.orEmpty()) },
+                s.optJSONArray("leaders").list { t -> SportLeaders(t.optString("abbr"), t.optJSONArray("list").list { x -> SportLeader(x.optString("what"), x.optString("who"), x.optString("value")) }) },
+                s.optJSONArray("standings").list { g -> SportStandings(g.optString("name"), g.optJSONArray("rows").list { r ->
+                    val e = r.optJSONObject("extra"); SportStandRow(r.optString("team"), r.optString("rec"), e?.optString("k").orEmpty(), e?.optString("v").orEmpty()) }) },
+                s.optString("venue"))
+        }
+    }
+}
+data class SportGame(val id: String, val league: String, val start: Long, val state: String, val detail: String, val hidden: Boolean, val name: String,
+                     val teams: List<SportTeam>, val nets: List<String>, val venue: String, val note: String, val chans: List<SportChan>, val reminder: Boolean,
+                     val sum: SportSummary? = null) {
+    val live get() = state == "in"
+    val mine get() = teams.any { it.mine }
+    /** "Lions at Packers", as the guide says it. */
+    val title get() = if (teams.size == 2) teams[0].name + " at " + teams[1].name else name
+    companion object {
+        fun from(j: JSONObject) = SportGame(j.optString("id"), j.optString("league"), j.optLong("s"), j.optString("state"), j.optString("detail"), j.optInt("hidden") == 1,
+            j.optString("name"), j.optJSONArray("teams").list { SportTeam.from(it) },
+            j.optJSONArray("nets")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty(), j.optString("venue"), j.optString("note"),
+            j.optJSONArray("chans").list { c -> SportChan(c.optString("k"), c.optString("n"), c.optString("logo"), c.optString("what")) }, j.optInt("r") == 1,
+            SportSummary.from(j.optJSONObject("sum")))
+    }
+}
+data class SportRow(val id: String, val title: String, val sub: String, val games: List<SportGame>)
+data class SportsList(val off: Boolean, val msg: String, val rows: List<SportRow>, val leagues: List<String>) {
+    companion object {
+        fun from(j: JSONObject) = SportsList(j.optBoolean("off"), j.optString("msg"),
+            j.optJSONArray("rows").list { r -> SportRow(r.optString("id"), r.optString("t"), r.optString("sub"), r.optJSONArray("games").list { SportGame.from(it) }) },
+            j.optJSONArray("leagues")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty())
+    }
+}

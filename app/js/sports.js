@@ -103,6 +103,8 @@ var Sports = (function () {
     busy[bk] = fetch(url, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('ESPN said ' + r.status); return r.json(); }).then(function (j) {
       var list = (j.events || []).map(function (e) { return game(lg, e); }).filter(function (g) { return g.s && (lg.race || g.teams.length === 2); });
       store[lg.id][key] = { at: Date.now(), games: list };
+      // Days gone by aren't kept (TiviBro can stay open for days).
+      var y = dayKey(-1); Object.keys(store[lg.id]).forEach(function (k) { if (k < y) delete store[lg.id][k]; });
       return store[lg.id][key];
     }, function (e) {
       var old = store[lg.id][key];
@@ -114,9 +116,11 @@ var Sports = (function () {
   }
   /* Today for every league shown and tomorrow (a league with nothing today shows tomorrow), and the week ahead
      for the leagues of the teams you follow (My teams).  Each answer is shown as it comes. */
+  // The leagues loaded: the ones shown, and those of the teams you follow (My teams shows them even when their league isn't).
+  function loaded() { var l = leagues(), ids = l.map(function (x) { return x.id; }); followedLeagues().forEach(function (id) { if (ids.indexOf(id) < 0 && BY[id]) l.push(BY[id]); }); return l; }
   function refresh(force, then) {
     var jobs = [], mine = followedLeagues();
-    leagues().forEach(function (lg) {
+    loaded().forEach(function (lg) {
       jobs.push(load(lg, dayKey(0), force), load(lg, dayKey(1), force));
       if (mine.indexOf(lg.id) >= 0) for (var d = 2; d <= AHEAD_DAYS; d++) jobs.push(load(lg, dayKey(d), false));
     });
@@ -126,7 +130,7 @@ var Sports = (function () {
   function anyLive() { return all().some(function (g) { return g.state === 'in'; }); }
   function all() {
     var out = [];
-    leagues().forEach(function (lg) { var m = store[lg.id] || {}; Object.keys(m).forEach(function (k) { out = out.concat(m[k].games); }); });
+    loaded().forEach(function (lg) { var m = store[lg.id] || {}; Object.keys(m).forEach(function (k) { out = out.concat(m[k].games); }); });
     return out;
   }
   function day(lgId, off) { var m = store[lgId] || {}, d = m[dayKey(off)]; return d ? d.games : null; }
@@ -173,7 +177,7 @@ var Sports = (function () {
     return { lines: lines, leaders: leaders, standings: groups, venue: info.venue && info.venue.fullName || '', city: info.venue && info.venue.address ? [info.venue.address.city, info.venue.address.state].filter(Boolean).join(', ') : '' };
   }
 
-  /* ---------- the game on a channel (the score bar while you watch) ----------
+  /* ---------- the game on a channel (so the corner never repeats the game you're watching) ----------
      What's on now names two teams (the guide, or an event channel's name), or the channel is a network ESPN says
      shows a game being played.  Only games loaded already (refreshToday). */
   function gameOn(c) {
@@ -272,12 +276,48 @@ var Sports = (function () {
     return out;
   }
 
+  /* ---------- the rows of the Sports screen (and the phone app's Sports tab) ----------
+     My teams (the games of the teams you follow this week: on now, what's next, today's finals last), Live now,
+     then a row per league shown: today's games, or tomorrow's when it has none today.  t: the words, translated. */
+  function follows(g) { return typeof Teams !== 'undefined' && g.teams.some(function (x) { return x.id && Teams.follows(x.id); }); }
+  function order(a, b) {
+    var ra = a.state === 'in' ? 0 : a.state === 'pre' ? 1 : 2, rb = b.state === 'in' ? 0 : b.state === 'pre' ? 1 : 2;
+    return ra - rb || (ra === 2 ? b.s - a.s : a.s - b.s);
+  }
+  function rows(t) {
+    t = t || function (x, v) { return String(x).replace(/\{([a-z])\}/g, function (a, k) { return v && v[k] != null ? v[k] : a; }); };
+    var now = Date.now(), out = [], every = all(), seen = {};
+    var my = every.filter(function (g) { if (seen[g.id] || !follows(g)) return false; seen[g.id] = 1; return g.state !== 'post' || g.s > now - 12 * 3600e3; }).sort(order).slice(0, 14);
+    if (my.length) out.push({ id: 'mine', title: t('My teams'), sub: t('on now first, then what\'s next'), items: my });
+    seen = {};
+    var live = every.filter(function (g) { if (seen[g.id] || g.state !== 'in') return false; seen[g.id] = 1; return BY[g.lg] && leagues().indexOf(BY[g.lg]) >= 0 || follows(g); }).sort(order);
+    if (live.length) out.push({ id: 'live', title: t('Live now'), sub: live.length === 1 ? t('1 game') : t('{n} games', { n: live.length }), items: live });
+    leagues().forEach(function (lg) {
+      var today = day(lg.id, 0), when = '', list = today;
+      if (today && !today.length) { list = day(lg.id, 1); when = t('Tomorrow'); }
+      if (!list || !list.length) return;                     // not loaded yet, or nothing
+      out.push({ id: 'lg:' + lg.id, title: lg.name, sub: (when ? when + '  ·  ' : '') + (list.length === 1 ? t('1 game') : t('{n} games', { n: list.length })), items: list.slice().sort(order) });
+    });
+    return out;
+  }
+  // A reminder for a game, on a channel: set or cancelled (true: set now).
+  function reminded(g, c) { return (Store.edits.reminders || []).some(function (r) { return r.k === c.k && Math.abs(r.s - g.s) < 60000; }); }
+  function remind(g, c) {
+    var rem = Store.edits.reminders, i = rem.findIndex(function (r) { return r.k === c.k && Math.abs(r.s - g.s) < 60000; }), on = i < 0;
+    if (!on) rem.splice(i, 1);
+    // Not "team:" (My teams' own reminders, taken away when those are switched off): one you set yourself.
+    else { rem.push({ k: c.k, s: g.s, e: g.s + 3 * 3600e3, t: title(g) }); if (typeof Log !== 'undefined') Log.info('remind', 'Reminder set: ' + title(g) + ' (Sports)'); }
+    Store.saveEdits();
+    if (typeof Remind !== 'undefined' && Remind.sync) Remind.sync(true);
+    return on;
+  }
+
   function changed() { listeners.forEach(function (f) { try { f(); } catch (e) {} }); }
   function onChange(f) { listeners.push(f); }
   // "Lions at Packers" (the guide's and reminders' way of naming a game).
   function title(g) { return g.teams.length === 2 ? g.teams[0].name + ' at ' + g.teams[1].name : g.name; }
 
-  return { refreshToday: refreshToday, byId: byId, summary: summary, gameOn: gameOn, hidesTeam: hidesTeam, hideTeam: hideTeam, hidden: hidden, reveal: reveal, followedLeagues: followedLeagues, _readSummary: readSummary,
+  return { rows: rows, follows: follows, reminded: reminded, remind: remind, loaded: loaded, refreshToday: refreshToday, byId: byId, summary: summary, gameOn: gameOn, hidesTeam: hidesTeam, hideTeam: hideTeam, hidden: hidden, reveal: reveal, followedLeagues: followedLeagues, _readSummary: readSummary,
     LEAGUES: LEAGUES, league: function (id) { return BY[id]; }, leagues: leagues, setLeagues: setLeagues, refresh: refresh, anyLive: anyLive, all: all, day: day, errOf: errOf,
     channels: channels, byNet: byNet, title: title, onChange: onChange, dayKey: dayKey, LIVE_MS: LIVE_MS, TODAY_MS: TODAY_MS, _game: game, _squash: squash, _bare: bare, _store: store };
 })();

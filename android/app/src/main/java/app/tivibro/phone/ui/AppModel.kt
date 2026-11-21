@@ -26,6 +26,8 @@ import app.tivibro.phone.proto.Schedule
 import app.tivibro.phone.proto.ProgDetail
 import app.tivibro.phone.proto.VisList
 import app.tivibro.phone.proto.OnNow
+import app.tivibro.phone.proto.SportGame
+import app.tivibro.phone.proto.SportsList
 import app.tivibro.phone.proto.VodCat
 import app.tivibro.phone.proto.VodInfo
 import app.tivibro.phone.proto.VodPage
@@ -677,6 +679,13 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         if (op != "info") { if (r.msg.isNotBlank()) say(r.msg); loadLineup(id, true) }
         return r
     }
+
+    /** Sports on the TV (ESPN's scores, tied to the TV's channels): its rows, one game's page, a reminder, following a team. */
+    suspend fun sports(id: String): SportsList = SportsList.from(ask(id, "sports", JSONObject().put("op", "list"), timeoutMs = 30_000))
+    suspend fun sportsGame(id: String, game: String): SportGame = SportGame.from(ask(id, "sports", JSONObject().put("op", "game").put("id", game), timeoutMs = 30_000))
+    suspend fun sportsShow(id: String, game: String): SportGame = SportGame.from(ask(id, "sports", JSONObject().put("op", "show").put("id", game), tries = 1))
+    suspend fun sportsRemind(id: String, game: String): Boolean = ask(id, "sports", JSONObject().put("op", "remind").put("id", game), tries = 1).optInt("on") == 1
+    suspend fun sportsFollow(id: String, team: String, on: Boolean): Boolean = ask(id, "sports", JSONObject().put("op", "follow").put("team", team).put("on", on), tries = 1).optInt("on") == 1
 
     /** Movies on now on the TV's channels (TMDB, with the TV's token). */
     suspend fun onNow(id: String): OnNow = OnNow.from(ask(id, "onnow", JSONObject(), timeoutMs = 25_000))

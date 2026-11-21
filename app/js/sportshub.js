@@ -21,29 +21,9 @@ var SportsHub = (function () {
       '<div class="sp-rows" id="spRows"><div class="sp-stage" id="spStage"></div></div><div class="sp-empty hidden" id="spEmpty"></div><div class="sp-page hidden" id="spPage"></div>';
   }
 
-  /* ---------- what's in the rows ---------- */
-  function mine(g) { return g.teams.some(function (t) { return t.id && Teams.follows && Teams.follows(t.id); }); }
-  function order(a, b) {
-    var ra = a.state === 'in' ? 0 : a.state === 'pre' ? 1 : 2, rb = b.state === 'in' ? 0 : b.state === 'pre' ? 1 : 2;
-    return ra - rb || (ra === 2 ? b.s - a.s : a.s - b.s);
-  }
-  function data() {
-    var now = Date.now(), out = [], every = Sports.all(), seen = {};
-    // My teams: on now, then what's next this week, and today's finals last.
-    var my = every.filter(function (g) { if (seen[g.id] || !mine(g)) return false; seen[g.id] = 1; return g.state !== 'post' || g.s > now - 12 * 3600e3; }).sort(order).slice(0, 14);
-    if (my.length) out.push({ id: 'mine', title: T('My teams'), sub: T('on now first, then what\'s next'), items: my });
-    seen = {};
-    var live = every.filter(function (g) { if (seen[g.id] || g.state !== 'in') return false; seen[g.id] = 1; return true; }).sort(order);
-    if (live.length) out.push({ id: 'live', title: T('Live now'), sub: live.length === 1 ? T('1 game') : T('{n} games', { n: live.length }), items: live });
-    Sports.leagues().forEach(function (lg) {
-      var today = Sports.day(lg.id, 0), when = '', list = today;
-      if (today && !today.length) { list = Sports.day(lg.id, 1); when = T('Tomorrow'); }
-      if (!list) return;                                      // not loaded yet
-      if (!list.length) return;
-      out.push({ id: 'lg:' + lg.id, title: lg.name, sub: (when ? when + '  ·  ' : '') + (list.length === 1 ? T('1 game') : T('{n} games', { n: list.length })), items: list.slice().sort(order) });
-    });
-    return out;
-  }
+  /* ---------- what's in the rows (Sports.rows) ---------- */
+  function mine(g) { return Sports.follows(g); }
+  function data() { return Sports.rows(T); }
   function signature(rs) { return rs.map(function (r) { return r.id + ':' + r.items.map(function (g) { return g.id + g.state + g.detail + (Sports.hidden(g) ? 'H' : '') + g.teams.map(function (t) { return t.score; }).join('-'); }).join(','); }).join('|'); }
 
   /* ---------- cards ---------- */
@@ -165,18 +145,10 @@ var SportsHub = (function () {
       { label: T('Cancel'), current: true }
     ]);
   }
-  function has(g, c) { return (Store.edits.reminders || []).some(function (r) { return r.k === c.k && Math.abs(r.s - g.s) < 60000; }); }
+  function has(g, c) { return Sports.reminded(g, c); }
   function remind(g, c) {
-    var rem = Store.edits.reminders, i = rem.findIndex(function (r) { return r.k === c.k && Math.abs(r.s - g.s) < 60000; });
-    if (i >= 0) { rem.splice(i, 1); U.toast(T('Reminder cancelled')); }
-    else {
-      var follow = g.teams.filter(function (t) { return t.id && Teams.follows(t.id); })[0];
-      rem.push({ k: c.k, s: g.s, e: g.s + 3 * 3600e3, t: Sports.title(g), w: follow ? 'team:' + follow.id : '' });
-      U.toast(T('Reminder set for {x} on {y}', { x: U.hhmm(g.s), y: Library.name(c) }));
-      Log.info('remind', 'Reminder set: ' + Sports.title(g) + ' at ' + U.hhmm(g.s) + ' (Sports)');
-    }
-    Store.saveEdits();
-    if (typeof Remind !== 'undefined' && Remind.sync) Remind.sync(true);
+    var on = Sports.remind(g, c);
+    U.toast(on ? T('Reminder set for {x} on {y}', { x: U.hhmm(g.s), y: Library.name(c) }) : T('Reminder cancelled'));
     render(true);
   }
   function follow(g) {
@@ -184,7 +156,7 @@ var SportsHub = (function () {
     if (!ts.length) { U.toast(T('These teams can\'t be followed yet')); return; }
     UI.menu(T('Follow a team'), ts.map(function (t) {
       var on = Teams.follows(t.id);
-      return { label: RAW(t.full || t.name), sub: on ? T('Following  ·  OK stops') : T('Its games in My teams, with reminders if you want them'), current: false, action: function () { Teams.follow(t.id, !on); U.toast(on ? T('Not following {x}', { x: t.full || t.name }) : T('Following {x}', { x: t.full || t.name })); render(true); } };
+      return { label: RAW(t.full || t.name), sub: on ? T('Following  ·  OK stops') : T('Its games in My teams, with reminders if you want them'), current: false, action: function () { Teams.follow(t.id, !on); if (Views.refreshLists) Views.refreshLists(true); U.toast(on ? T('Not following {x}', { x: t.full || t.name }) : T('Following {x}', { x: t.full || t.name })); render(true); } };
     }));
   }
   function pickLeagues() {
@@ -232,7 +204,7 @@ var SportsHub = (function () {
     if (later && cs.length) out.push({ label: has(g, cs[0].c) ? T('Cancel the reminder') : T('Remind me'), icon: 'bell', run: function () { remind(g, cs[0].c); drawPage(); } });
     g.teams.filter(function (t) { return t.id; }).forEach(function (t) {
       var on = Teams.follows(t.id);
-      out.push({ label: on ? T('Following {x}', { x: t.name }) : T('Follow {x}', { x: t.name }), icon: 'star', run: function () { Teams.follow(t.id, !on); Store.saveSettings(); drawPage(); } });
+      out.push({ label: on ? T('Following {x}', { x: t.name }) : T('Follow {x}', { x: t.name }), icon: 'star', run: function () { Teams.follow(t.id, !on); if (Views.refreshLists) Views.refreshLists(true); drawPage(); } });
     });
     if (g.state !== 'pre') {
       if (Sports.hidden(g)) out.push({ label: T('Show the score'), icon: 'eye', run: function () { Sports.reveal(g); drawPage(); } });

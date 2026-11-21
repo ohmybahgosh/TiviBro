@@ -1069,14 +1069,12 @@ var Settings = (function () {
     out.push(info('The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools) and men\'s college basketball (those schools and the main Division I ones without FBS football).  Other college sports, women\'s college games, junior and minor league teams, and other countries\' leagues, aren\'t in it yet.', ''));
     out.push(toggle('Show the My teams group', 'Near the top of the guide: their games on now at the top, then the ones starting within the time below.  A team\'s own channel is there while it shows a game.',
       function () { return s.teamsGroup !== false; }, function (v) { s.teamsGroup = v; apply(); }));
-    out.push(toggle('Score bar while watching', 'A game on the channel you\'re watching full screen gets its score in the top corner, kept up to date.',
+    out.push(toggle('My teams\' scores while watching', 'While you watch something else full screen, a live game of a team you follow shows its score in the top corner, kept up to date (several take turns).  Not the game you\'re watching: its broadcast has its own.',
       function () { return s.sportsBar !== false; }, function (v) { s.sportsBar = v; Store.saveSettings(); paint(); }));
-    out.push(toggle('Other scores under it', 'The league\'s other games being played, one after another, under the score bar.',
-      function () { return s.sportsTicker !== false; }, function (v) { s.sportsTicker = v; Store.saveSettings(); paint(); }));
     out.push(toggle('Alerts for my teams', 'A close game near the end asks whether to switch to it, and a final score says so, wherever you are in TiviBro.',
       function () { return s.sportsAlerts !== false; }, function (v) { s.sportsAlerts = v; Store.saveSettings(); paint(); }));
     if (mine.length) out.push(page('Hide scores', (s.sportsHide || []).length ? (s.sportsHide || []).length + ' team(s): no scores anywhere until you show them' : 'For a team you\'ll watch later: no scores anywhere until you show them', 'Hide scores', function () {
-      return [info('A team\'s scores stay hidden in Sports, the score bar and alerts.  On a game\'s page, Show the score shows that one.', '')].concat(mine.map(function (t) {
+      return [info('A team\'s scores stay hidden in Sports, the corner while you watch and alerts.  On a game\'s page, Show the score shows that one.', '')].concat(mine.map(function (t) {
         return toggle(I18n.raw(t.name), '', function () { return Sports.hidesTeam(t.id); }, function (v) { Sports.hideTeam(t.id, v); paint(); });
       }));
     }));

@@ -283,6 +283,31 @@ var Phone = (function () {
       return { k: c.k, name: Library.name(c), provider: c.n, renamed: !!E.renames[c.k], hidden: !!E.hiddenChannels[c.k], group: Library.groupName(c.g), groups: mine(), msg: msg,
         team: team ? { id: team.id, name: team.name, on: Teams.follows(team.id) ? 1 : 0 } : null };
     },
+    /* Sports (sports.js): the TV's Sports screen for the phone's Sports tab.  op: 'list' (the rows, after a look at
+       ESPN), 'game' (one game's page: box score, leaders, standings, your channels), 'remind' (a reminder on the
+       best channel, set or cancelled), 'follow' (a team, on or off).  A team whose scores you hide comes without them. */
+    sports: function (a) {
+      if (typeof Sports === 'undefined') return { off: true, msg: 'Update TiviBro on the TV for Sports.' };
+      function team(g, t) { var h = Sports.hidden(g); return { id: t.id || '', name: t.name, full: t.full, abbr: t.abbr, logo: t.logo, color: t.color, rec: t.rec, rank: t.rank || 0, score: h || g.state === 'pre' || t.score == null ? null : t.score, mine: t.id && Teams.follows(t.id) ? 1 : 0 }; }
+      function chans(g) { return Sports.channels(g).slice(0, 8).map(function (x) { return { k: x.c.k, n: Library.name(x.c), logo: Views.logoOf(x.c) || '', what: x.p ? x.p.t : x.net ? x.net + ' shows it' : '' }; }); }
+      function one(g, full) {
+        var cs = full ? chans(g) : chans(g).slice(0, 1);
+        return { id: g.id, lg: g.lg, league: (Sports.league(g.lg) || {}).name || '', s: g.s, state: g.state, detail: g.detail, hidden: Sports.hidden(g) ? 1 : 0, name: g.name,
+          teams: g.teams.map(function (t) { return team(g, t); }), nets: g.nets, venue: g.venue, note: g.note, chans: cs, r: cs[0] && Sports.reminded(g, Library.find(cs[0].k)) ? 1 : 0 };
+      }
+      var op = String(a.op || 'list');
+      if (op === 'list') return Sports.refresh(false).then(function () {
+        return { rows: Sports.rows(function (s, v) { return I18n.t(s, v); }).map(function (r) { return { id: r.id, t: r.title, sub: r.sub, games: r.items.map(function (g) { return one(g, false); }) }; }),
+          leagues: Sports.leagues().map(function (l) { return l.name; }) };
+      });
+      var g = Sports.byId(String(a.id || ''));
+      if (!g) throw new Error('That game isn\'t on the TV\'s Sports any more.  Pull to refresh.');
+      if (op === 'game') return Sports.summary(g).then(function (v) { var o = one(g, true); o.sum = Sports.hidden(g) ? null : v; return o; });
+      if (op === 'remind') { var c = Sports.channels(g)[0]; if (!c) throw new Error('None of the TV\'s channels has this game.'); return { on: Sports.remind(g, c.c) ? 1 : 0 }; }
+      if (op === 'follow') { var id = String(a.team || ''); if (!Teams.team(id)) throw new Error('Unknown team'); Teams.follow(id, a.on !== false); if (Views.refreshLists) Views.refreshLists(true); return { on: Teams.follows(id) ? 1 : 0 }; }
+      if (op === 'show') { Sports.reveal(g); return one(g, true); }
+      throw new Error('Unknown request');
+    },
     /* Movies on now (onnow.js on the TV): the movies on now and starting in the next three hours, each
        once with the channels showing it.  { off } when there's no TMDB token or it's switched off. */
     onnow: function () {
@@ -576,7 +601,7 @@ var Phone = (function () {
     if (ins.length) out.inputs = ins;
     // Movies and Shows tabs on the phone only when the provider has them.
     var vk = Vod.offered();          // several playlists on: any of them
-    out.vod2 = { mediaLibraryVersion:2, movies: vk.indexOf('movie') >= 0, series: vk.indexOf('series') >= 0, media: typeof MediaStore !== 'undefined' && MediaStore.sources().length > 0, onnow: typeof Movies !== 'undefined' && Movies.on() };
+    out.vod2 = { mediaLibraryVersion:2, movies: vk.indexOf('movie') >= 0, series: vk.indexOf('series') >= 0, media: typeof MediaStore !== 'undefined' && MediaStore.sources().length > 0, onnow: typeof Movies !== 'undefined' && Movies.on(), sports: typeof SportsHub !== 'undefined' && Store.settings.sportsTab !== false };
     // Recordings on the phone's home screen: once the TV has a USB drive or recordings, and how many record now.
     if (typeof Record !== 'undefined' && Record.base()) out.rec = { on: Record.shown(), now: Record.recs.filter(function (r) { return r.status === 'recording'; }).length };
     return out;
