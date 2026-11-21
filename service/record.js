@@ -92,6 +92,8 @@ function needed() {
   var until = 0; (state && state.recs || []).forEach(function (r) { if ((r.status === 'scheduled' || r.status === 'recording') && r.end > until) until = r.end; });
   try { fs.writeFileSync(f, JSON.stringify({ until: until, at: Date.now() })); fs.chmodSync(f, 420); } catch (e) {}
 }
+// A path for the root shell line that starts the agent, in single quotes (a space or $ in it stays text).
+function shq(s) { return "'" + String(s).replace(/'/g, "'\\''") + "'"; }
 function neededFile() { try { return path.join(require('./storage').sub('rec'), 'needed.json'); } catch (e) { return ''; } }
 // In the helper: once a minute, the agent is started again when a recording still needs it and it isn't answering.
 var watchT = null;
@@ -749,7 +751,7 @@ function ensureAgent(cb) {
     var done = function (ok) { var l = agentStarting || []; agentStarting = null; l.forEach(function (f) { f(ok); }); };
     // One with another secret (its key file was lost): stopped first.  Then ours, in the background.
     var pidf = '/media/developer/.tivibro-rec/agent.pid';
-    var cmd = (code === 403 ? 'kill $(cat ' + pidf + ') 2>/dev/null; sleep 1; ' : '') + 'TIVIBRO_REC_CTL=' + agentKey() + ' TIVIBRO_REC_NEEDED=' + neededFile() + ' nohup /usr/bin/node ' + path.join(__dirname, 'record-agent.js') + ' >/dev/null 2>&1 &';
+    var cmd = (code === 403 ? 'kill $(cat ' + pidf + ') 2>/dev/null; sleep 1; ' : '') + 'TIVIBRO_REC_CTL=' + agentKey() + ' TIVIBRO_REC_NEEDED=' + shq(neededFile()) + ' nohup /usr/bin/node ' + shq(path.join(__dirname, 'record-agent.js')) + ' >/dev/null 2>&1 &';
     lcall('luna://org.webosbrew.hbchannel.service/exec', { command: cmd }, function (r) {
       var ok0 = r && r.returnValue !== false, tries = 0;
       if (!ok0) { agentNoUntil = Date.now() + 600000; var s0 = 'not possible: ' + (r && (r.errorText || r.stderrString) || 'no Homebrew Channel'); if (s0 !== agentSaid) { agentSaid = s0; note('warn', 'recording agent ' + s0); } return done(false); }

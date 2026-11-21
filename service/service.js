@@ -38,7 +38,7 @@ var reminders = require('./remind').create({
   // these two fixed questions: nothing from a reminder reaches the command line.
   rootAsk: function (uri, cb) {
     var Q = { 'luna://com.webos.service.tvpower/power/getPowerState': 1, 'luna://com.webos.applicationManager/getForegroundAppInfo': 1 };
-    if (!Q[uri]) return cb(null);
+    if (!Object.prototype.hasOwnProperty.call(Q, uri)) return cb(null);
     lcallP('luna://org.webosbrew.hbchannel.service/exec', { command: 'luna-send -n 1 -w 3000 ' + uri + " '{}'" }, function (res) {
       var out = String(res && (res.stdoutString || res.stdout) || ''), j = null;
       try { j = JSON.parse(out); } catch (e) {}

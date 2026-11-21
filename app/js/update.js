@@ -165,7 +165,7 @@ var Update = (function () {
     clearInterval(timer);
     timer = setInterval(function () { if (auto() && Date.now() - ((load() || {}).checked || 0) >= EVERY) check(true).catch(function () {}); }, 30 * 60000);
     /* Brought back to the front (Android keeps an app in the background for days; webOS too, when TiviBro was
-       left open): look again when the last look is over an hour old (Bob's phone saw alpha 171 only after a
+       left open): look again when the last look is over an hour old (a phone in testing saw alpha 171 only after a
        force stop). */
     if (!autoCheck.vis && typeof document !== 'undefined' && document.addEventListener) {
       autoCheck.vis = true;

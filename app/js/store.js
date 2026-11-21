@@ -126,6 +126,7 @@ var Store = (function () {
     if (!Array.isArray(base)) for (var k in base) out[k] = base[k];
     if (over && typeof over === 'object') {
       for (var j in over) {
+        if (j === '__proto__' || j === 'constructor' || j === 'prototype') continue;   // a restored file can't reshape objects
         if (over[j] && typeof over[j] === 'object' && !Array.isArray(over[j]) && base[j] && typeof base[j] === 'object' && !Array.isArray(base[j]))
           out[j] = merge(base[j], over[j]);
         else out[j] = over[j];

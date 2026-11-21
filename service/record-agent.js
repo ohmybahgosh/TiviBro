@@ -11,10 +11,18 @@ process.env.TIVIBRO_REC_AGENT = '1';
 process.env.TIVIBRO_REC_LIST = process.env.TIVIBRO_REC_LIST || path.join(DIR, 'recordings.json');
 var Record = require('./record');
 var CTL = process.env.TIVIBRO_REC_CTL || '', LOG = path.join(DIR, 'agent.log');
+// The secret, compared in constant time (a byte-by-byte compare that stops early tells a guesser how far it got).
+function sameText(a, b) {
+  a = String(a || ''); b = String(b || '');
+  if (!b || a.length !== b.length) return false;
+  var d = 0; for (var i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return d === 0;
+}
 function log(o) { o.t = Date.now(); try { fs.appendFileSync(LOG, JSON.stringify(o) + '\n'); } catch (e) {} }
 var server = http.createServer(function (req, res) {
   var file = req.url.indexOf('/record/file/') === 0 || (req.url.indexOf('/record/ts/') === 0 && req.method !== 'POST');
-  if (!file && CTL && req.headers['x-tivibro-ctl'] !== CTL) { res.writeHead(403, { 'Content-Type': 'application/json' }); return res.end('{"error":"not allowed","code":"ctl"}'); }
+  // Everything but a recording's file needs the secret; an agent started without one answers nothing else.
+  if (!file && !sameText(req.headers['x-tivibro-ctl'], CTL)) { res.writeHead(403, { 'Content-Type': 'application/json' }); return res.end('{"error":"not allowed","code":"ctl"}'); }
   Record.handle(req, res, {}, log);
 });
 server.on('error', function (e) { log({ lv: 'error', event: 'agent listen failed', e: e.code }); process.exit(0); });
@@ -22,7 +30,7 @@ server.listen(+(process.env.TIVIBRO_REC_AGENT_PORT || 47820), '127.0.0.1', funct
   try { fs.writeFileSync(path.join(DIR, 'agent.pid'), String(process.pid)); } catch (e) {}
   log({ lv: 'info', event: 'agent listening' }); Record.start({ log: log });
 });
-/* The helper, kept up for the phone app (Bob: the phone said "TiviBro's connection starting" for good).  Installing a
+/* The helper, kept up for the phone app (the phone used to say "TiviBro's connection starting" for good).  Installing a
    new TiviBro stops the helper and clears the wake-ups it sets with webOS, and nothing starts it again until TiviBro
    is opened.  This agent runs as root the whole time (rooted TVs): once a minute, with the phone app connection
    switched on and nothing answering on its port, it asks webOS to start the helper (its "wake" method). */

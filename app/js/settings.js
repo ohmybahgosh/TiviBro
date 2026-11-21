@@ -5,7 +5,7 @@ var Settings = (function () {
   // Shown in the language chosen (app/js/i18n.js); the rows themselves are written in English.
   function T(x, v) { return x && typeof x === 'string' && typeof I18n !== 'undefined' ? I18n.t(x, v) : x; }
   var nav = $('setNav'), body = $('setBody');
-  /* The sections (the second Settings overhaul, Bob: "2-3 nested clicks to get to things"): every setting is in a
+  /* The sections (the second Settings overhaul: things were "2-3 nested clicks" away): every setting is in a
      section, at most one page down, and a page only holds a list (each playlist, Manage groups, hidden channels, Fix
      a problem).  What used to be a page inside another section (API keys, Audio and subtitles, Remote and buttons,
      Recording, Channel names, Backups) is a section of its own, and a page's advanced settings sit at its bottom

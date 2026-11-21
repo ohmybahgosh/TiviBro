@@ -596,7 +596,7 @@ var Views = (function () {
 
   // Every way of starting a live channel goes through here, so the PIN check can't be skipped.
   /* buffer: a channel you chose to watch in a window (OK in the guide) starts in the rewind buffer as fullscreen would,
-     so going fullscreen after doesn't tune it again (Bob); a preview while you move through the lists doesn't. */
+     so going fullscreen after doesn't tune it again; a preview while you move through the lists doesn't. */
   function startChannel(c, preview, then, buffer) {
     Parental.gate('channels', c, function () {
       if (!foSwitching) fo = null;            // picking a channel yourself ends a backup chain
@@ -1066,7 +1066,7 @@ var Views = (function () {
       return;
     }
     /* The rewind buffer keeps playing in the guide's (or Channels') window: before, it was stopped and the channel
-       tuned again from the provider every time you left fullscreen (Bob), and fullscreen again started a new
+       tuned again from the provider every time you left fullscreen, and fullscreen again started a new
        buffer.  A pause you made yourself still ends here, back to live. */
     if (tsh && tsh.always && mode === 'live' && playing && tsh.c.k === playing.k && fullFrom !== 'onnow' && fullFrom !== 'media' && fullFrom !== 'sports') { tsCard(null); if (Player.paused && Player.setPaused) Player.setPaused(false); }
     else if (tsh && mode === 'live') { var tpc = tsh.c; tsEnd(); if (playing && playing.k === tpc.k) { Player.stop(); afterTs(function () { if (playing && playing.k === tpc.k && !full) startChannel(tpc, true); }); } }
@@ -1187,7 +1187,7 @@ var Views = (function () {
       // The quick menu starts with Pause, Rewind and Record: said here, as a Magic Remote has no buttons for them.
       if (g('ok')) chip('ok', 'OK  ' + (Keymap.get('player', 'ok') === 'panel' ? 'Pause, record, more' : g('ok')));
       // With the info bar up, ▲ is the timeline (live pause, the rewind buffer or a recording), whatever ▲ is set to.
-      // (The legend is drawn before the bar shows, so this can't wait for it: Bob saw "▲  Recent" with the dot there.)
+      // (The legend is drawn before the bar shows, so this can't wait for it: "▲  Recent" once showed with the dot there.)
       var tlUp = canScrub();
       if (tlUp) chip('up', '▲  Timeline');
       if (!tlUp && Keymap.get('player', 'up') === 'chprev' && Keymap.get('player', 'down') === 'chnext') chip('down', '▲ ▼  Change channel');
@@ -1350,7 +1350,7 @@ var Views = (function () {
       else if (a === 'ff') step = (+Store.settings.ffStep || 120) * seekAccel(1);
       else if (a === 'back' && !hidden) { $('osd').classList.add('hidden'); return true; }
       else if (a === 'back' || a === 'yellow' || a === 'stop') { lwLive(); return true; }
-      // OK does what it's set to (Remote and buttons > In the player; the quick menu at first, Bob), not always Pause.
+      // OK does what it's set to (Remote and buttons > In the player; the quick menu at first), not always Pause.
       if (step) { lwSeek(step); return true; }
     }
     if (mode === 'catchup') {
@@ -1467,7 +1467,7 @@ var Views = (function () {
       e.ghost.style.left = pc(scrub.t);
       var behind = Math.round((tl.now - scrub.t) / 1000);
       e.label.textContent = behind < 8 ? T('Live') : U.hhmm(scrub.t) + '  ·  ' + T('{t} behind live', { t: fmtDur(behind) });
-      // Over the handle, but kept inside the bar at either end (it ran off the screen's edge near the start, Bob).
+      // Over the handle, but kept inside the bar at either end (it ran off the screen's edge near the start).
       var bw = bar.clientWidth, lw = e.label.offsetWidth, x = U.clamp((scrub.t - tl.from) / span, 0, 1) * bw;
       e.label.style.left = (bw && lw ? U.clamp(x, lw / 2, Math.max(lw / 2, bw - lw / 2)) + 'px' : pc(scrub.t));
     }
@@ -1577,7 +1577,7 @@ var Views = (function () {
     if (mode !== 'live' || !playing || !full || tsh || Player.tshift || !tsOn()) return false;
     var c = playing;
     /* The player's connection goes first, then the drive's copy opens its own: a provider that allows one connection
-       refuses a second (HTTP 418 on Bob's), and the card stands in for the picture meanwhile. */
+       refuses a second (HTTP 418 on some), and the card stands in for the picture meanwhile. */
     Player.stop();
     tsh = { c: c, at: Date.now(), id: null };
     tsCard(c);
@@ -1832,7 +1832,7 @@ var Views = (function () {
     if (slowOpen && (s === 'playing' || playing !== slowOpen)) { slowOpen = null; if (UI.modalOpen) UI.close(); }
     if (s === 'playing' || s === 'error' || s === 'idle') stage.classList.remove('blank');
     spin.classList.toggle('hidden', !(s === 'loading' || s === 'buffering'));
-    // "Tuning" is a channel's word: a movie, an episode, a recording or My media is "Loading" (Bob).
+    // "Tuning" is a channel's word: a movie, an episode, a recording or My media is "Loading".
     spinText.textContent = s === 'loading' ? (msg || (mode === 'vod' ? 'Loading' : 'Tuning')) : (msg || 'Buffering');
     spinPlain = s === 'buffering' && (!msg || msg === 'Buffering');
     verr.classList.toggle('hidden', s !== 'error');
@@ -2232,7 +2232,7 @@ var Views = (function () {
     var bar = U.el('div', 'qp-bar'), fill = U.el('i'), tl = timeline();
     if (tl) {
       // Live pause, the rewind buffer or a recording: the same timeline as the info bar (what's kept, what's
-      // recorded, where you are), and ▲ moves the dot (Bob: OK's panel had no timeline, ▶'s info bar did).
+      // recorded, where you are), and ▲ moves the dot (OK's panel used to have no timeline while ▶'s info bar did).
       var span = Math.max(1, tl.to - tl.from), pc = function (t) { return U.clamp((t - tl.from) / span, 0, 1) * 100; };
       bar.classList.add('tl');
       fill.style.width = pc(tl.now) + '%';

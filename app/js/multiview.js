@@ -3,7 +3,7 @@
    project notes).  So the channel with sound plays as video in its box, and the other one is live video without
    sound that the network helper makes (service/multiview.js: ffmpeg on the TV, every frame, up to 30 a second, as
    JPEGs, sent at an even pace).  OK on the other box swaps them.  Each box uses a connection to the
-   provider, so a login allowing one connection can't.  Two boxes only (Bob: a solid two rather than a choppy four;
+   provider, so a login allowing one connection can't.  Two boxes only (a solid two rather than a choppy four;
    the helper and the layout could do four).
 
    Keys: ◀ ▶ move between boxes, OK gives that box the sound (or picks a channel for an empty box: your groups,
@@ -37,7 +37,7 @@ var Multiview = (function () {
     if (typeof Net !== 'undefined' && Net.unwrap) u = Net.unwrap(u);
     var ua = Store.plOf && Store.plOf(c) && Store.plOf(c).ua || '';
     /* Two boxes (one of pictures beside the video): every frame, up to 30 a second, as smooth as the channel allows
-       for a game beside a game (Bob).  Four: lighter, without the frames nothing needs, up to 20 a second each.
+       for a game beside a game.  Four: lighter, without the frames nothing needs, up to 20 a second each.
        On a C2 with the 64-bit ffmpeg: a 1080p channel's every frame takes about 0.8 of a core. */
     var one = boxes.filter(function (b) { return b.c; }).length <= 2;
     return base() + '/mv/' + key + '/tile.mjpg?id=' + encodeURIComponent(c.k).slice(0, 20) + '&w=' + w + '&f=' + (one ? '30&s=1' : '20') + '&u=' + encodeURIComponent(u) + (ua ? '&ua=' + encodeURIComponent(ua) : '');

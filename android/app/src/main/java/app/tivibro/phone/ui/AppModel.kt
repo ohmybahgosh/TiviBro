@@ -134,7 +134,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     /** Wi-Fi or Ethernet: the way the phone reaches its TVs (not mobile data). */
     /* Not only the default network: with a VPN on, or mobile data preferred for a moment (Pixel's adaptive
        connectivity), the default isn't Wi-Fi while the phone is still on it, and Turn on said "turn on Wi-Fi" with
-       Wi-Fi on (Bob).  Any connected Wi-Fi or Ethernet network counts. */
+       Wi-Fi on.  Any connected Wi-Fi or Ethernet network counts. */
     private fun lanCaps(c: NetworkCapabilities?) = c != null && (c.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) || c.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET))
     @Suppress("DEPRECATION")
     private fun onLan(n: Network?): Boolean = runCatching {

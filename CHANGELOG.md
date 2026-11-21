@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Security: the web editor's login could be skipped** by someone on your home network while the editor was switched on, by sending a made-up login token.  Fixed: only a token the editor gave out after the right password works now.  The editor is off unless you turn it on, so a TV with it off was never open to this.  Update to this version.
+- **Security, smaller hardening:** the root recording agent on rooted TVs refuses everything but a recording's file without its secret, and compares that secret in constant time; seek previews no longer let the converter read files on the TV; settings restored from a file can't reshape TiviBro's own objects; the release workflows pin the third-party GitHub Actions they give secrets to, and Dependabot keeps them current.
 - **Trailers found on more titles** (discussion #36).  When the provider has none, TiviBro now asks TMDB right when you open a title's options or a show's page (waiting up to 4 seconds), by the TMDB id the provider gives or else by name and year.  Before, a show's TMDB trailer only turned up if TiviBro had already looked the show up while you moved past it.  Needs a TMDB token (Settings > API keys).
 
 ## 0.6.0 (alpha 191, 2026-11-21)

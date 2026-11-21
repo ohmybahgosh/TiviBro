@@ -31,6 +31,11 @@ function req(url, method, body, token) {
   ok('never inside another site\'s frame, and no address sent on to links', hdr['x-frame-options'] === 'DENY' && /frame-ancestors 'none'/.test(hdr['content-security-policy'] || '') && hdr['referrer-policy'] === 'no-referrer', JSON.stringify(hdr));
   a = await req(L + '/api/state');
   ok('API refuses without login', a.status === 401);
+  // Names every object inherits are not tokens (an auth bypass before alpha 192).
+  for (const fake of ['constructor', '__proto__', 'toString', 'hasOwnProperty', 'valueOf', '0'.repeat(48)]) {
+    a = await req(L + '/api/rev', 'GET', null, fake);
+    ok('a made-up token "' + fake.slice(0, 16) + '" is refused', a.status === 401, a.status);
+  }
   a = await req(L + '/api/login', 'POST', { password: 'abcdefgh' });
   ok('accepts the password without dash, any case', a.status === 200 && a.json.token);
   const T = a.json.token;

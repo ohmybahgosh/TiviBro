@@ -156,10 +156,13 @@ function create(log) {
         send(res, 200, { token: token });
       });
     }
-    var tok = req.headers['x-token'];
+    /* The login token from the X-Token header.  Only a token this editor made counts: 48 hex characters that are
+       the tokens list's own entry.  A bare st.tokens[tok] lookup would also find what every object inherits
+       ("constructor", "__proto__", "toString"), and let anyone in without the password. */
+    var tok = String(req.headers['x-token'] || '');
+    if (!/^[0-9a-f]{48}$/.test(tok) || !Object.prototype.hasOwnProperty.call(st.tokens, tok)) return send(res, 401, { error: 'Please log in' });
     // A login lasts a day; then the password again (a browser left logged in on a shared computer).
-    if (tok && st.tokens[tok] && Date.now() - st.tokens[tok] > TOKEN_MS) { delete st.tokens[tok]; delete st.seen[tok]; }
-    if (!tok || !st.tokens[tok]) return send(res, 401, { error: 'Please log in' });
+    if (Date.now() - st.tokens[tok] > TOKEN_MS) { delete st.tokens[tok]; delete st.seen[tok]; return send(res, 401, { error: 'Please log in' }); }
     st.seen[tok] = Date.now();
     if (u === '/api/state' && req.method === 'GET') {
       if (!st.snapshot) return send(res, 503, { error: 'The TV has not sent its channel list yet.  Keep TiviBro open on the TV.' });

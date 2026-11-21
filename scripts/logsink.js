@@ -1,7 +1,7 @@
 // Development log receiver for TiviBro.  The app (in the simulator or a desktop browser) finds it
 // on 127.0.0.1:47812 and streams every log line here.  Writes:
 //   logs/session-<date>-<time>.log   one file per run
-//   logs/latest.log                  always the current run (what Claude reads)
+//   logs/latest.log                  always the current run (the one to read when debugging)
 // Credentials are already masked by the app before they are sent.
 'use strict';
 const http = require('http'), fs = require('fs'), path = require('path');

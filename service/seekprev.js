@@ -54,7 +54,7 @@ function query(url) {
   return q;
 }
 function args(input, t, w) {
-  return ['-hide_banner', '-nostdin', '-loglevel', 'error', '-threads', '1', '-protocol_whitelist', 'http,tcp,file',
+  return ['-hide_banner', '-nostdin', '-loglevel', 'error', '-threads', '1', '-protocol_whitelist', 'http,tcp',
     '-probesize', '2000000', '-analyzeduration', '0'].concat(
     // Through the piece cache (blockcache.js), whose answers are 256 KB at most: ask again from there, at once.
     input.indexOf('/preview/') >= 0 ? ['-reconnect', '1', '-reconnect_at_eof', '1', '-reconnect_delay_max', '0'] : [],
@@ -80,7 +80,7 @@ function chapters(input, cb) {
   if (chapterCache[input]) return cb(chapterCache[input]);
   var bin = Ffmpeg.binary(); if (!bin) return cb([]);
   var err = '', p, done = false;
-  try { p = cp.spawn(bin, ['-hide_banner', '-nostdin', '-protocol_whitelist', 'http,tcp,file', '-probesize', '2000000', '-analyzeduration', '0', '-i', input], { stdio: ['ignore', 'ignore', 'pipe'] }); } catch (e) { return cb([]); }
+  try { p = cp.spawn(bin, ['-hide_banner', '-nostdin', '-protocol_whitelist', 'http,tcp', '-probesize', '2000000', '-analyzeduration', '0', '-i', input], { stdio: ['ignore', 'ignore', 'pipe'] }); } catch (e) { return cb([]); }
   var timer = setTimeout(function () { stopProc(p); }, 15000);
   p.stderr.on('data', function (d) { if (err.length < 400000) err += d; });
   var end = function () { if (done) return; done = true; clearTimeout(timer); var c = parseChapters(err); chapterCache[input] = c; chapterOrder.push(input); while (chapterOrder.length > 20) delete chapterCache[chapterOrder.shift()]; cb(c); };

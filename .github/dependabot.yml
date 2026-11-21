@@ -1,0 +1,9 @@
+# Keeps the GitHub Actions the workflows use up to date, including the third-party ones pinned to a commit
+# (android.yml): a pull request each week when one has a new release.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
