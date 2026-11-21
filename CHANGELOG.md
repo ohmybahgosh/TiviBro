@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Your teams' score corner moved to the top left**, off the channel's own logo, and **Where the scores go** (Settings > Channels and groups > My teams) picks any corner.  It also no longer shows over the game you're watching when that channel names the game only in its description.
 - **Sports finds the same channels as My teams.**  A game named only in a programme's description (a local CBS station's "College Football" with the teams in its details) now shows on the game's page and card too, not just in the guide's My teams group.  The two used to take turns throwing away each other's description search.
 - **Why a title has no trailer is in the log** (discussion #36): no TMDB token, TMDB found no match for its name and year, or TMDB has no trailer for it, so a problem report says which.
 - **Logins that allow one connection** (the provider's account details say how many): when the provider refuses a channel or movie with a "busy" answer, TiviBro now says the one connection seems to be in use (another TV or app, a recording, or a stream still closing) instead of a general error.  It also stops opening a second stream for them on its own: no seek previews or chapter marks on such a provider's movies (they read the file a second time), and Multiview says at once that a second channel from that login can't play beside the first.

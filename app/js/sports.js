@@ -211,6 +211,10 @@ var Sports = (function () {
       list.forEach(function (g) { if (!best && g.teams.length === 2 && g.teams.every(function (x) { return x.id && ids.indexOf(x.id) >= 0; })) best = g; });
     });
     if (best) return best;
+    // A listing that names the game only in its description ("Live: College Football" on a local CBS station): the
+    // channel is one of the game's own (channels(), from teams.js), so the score corner isn't shown over it.
+    list.forEach(function (g) { if (!best && g.state === 'in' && channels(g).some(function (x) { return x.c.k === c.k; })) best = g; });
+    if (best) return best;
     var b = bare(Library.name(c));
     list.forEach(function (g) {
       if (best || g.state !== 'in') return;

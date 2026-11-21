@@ -1555,6 +1555,9 @@ table.sp-stand tr.gap td{border-top:2px dashed var(--line)}
 .sp-bline{font-size:19px;color:#d6dbea;padding:7px 16px;border-top:1px solid rgba(255,255,255,.08);white-space:pre}
 .sp-bline i{font-style:normal;font-weight:800;font-size:15px;letter-spacing:.06em;color:var(--accent2);margin-right:12px}
 body:not(.full) .sp-bug,body.mv-open .sp-bug{display:none}
+.sp-bug.at-tl{left:56px;right:auto}
+.sp-bug.at-bl{left:56px;right:auto;top:auto;bottom:48px}
+.sp-bug.at-br{top:auto;bottom:48px}
 /* Multiview's channel picker: a small guide over the boxes (multiview.js pick) */
 .mv-guide{position:absolute;right:0;top:0;bottom:0;width:1240px;background:rgba(9,12,22,.94);box-shadow:-20px 0 40px rgba(0,0,0,.5);z-index:3}
 .mv-g-title{position:absolute;left:40px;top:30px;font-size:32px;font-weight:700;color:#fff}

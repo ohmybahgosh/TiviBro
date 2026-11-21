@@ -41,6 +41,10 @@ var SportsLive = (function () {
   function drawBug(g) {
     var b = el();
     b.innerHTML = '';
+    // Which corner (Settings > Channels and groups > My teams > Where the scores go): top left by default, since the
+    // channel's own logo is usually top right or bottom right.
+    var at = /^(tl|tr|bl|br)$/.test(Store.settings.sportsBarAt || '') ? Store.settings.sportsBarAt : 'tl';
+    ['tl', 'tr', 'bl', 'br'].forEach(function (k) { b.classList.toggle('at-' + k, k === at); });
     var top = U.el('div', 'sp-btop');
     top.appendChild(side(g.teams[0])); top.appendChild(side(g.teams[1]));
     var ck = U.el('div', 'sp-bclock' + (g.state === 'in' ? ' live' : ''));
