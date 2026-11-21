@@ -1429,8 +1429,8 @@ body.mv-open #osd,body.mv-open #clock,body.mv-open .qpanel{display:none!importan
 .mv-snd{width:26px;height:26px;margin-right:10px;vertical-align:-5px;fill:#fff;stroke:#fff;stroke-width:2;stroke-linecap:round}
 /* Sports (sportshub.js): today's games as cards, a row per league */
 .view.sports{position:relative;display:block;padding:0 0 0 152px;overflow:hidden}
-.sp-head{position:absolute;left:152px;top:44px;right:56px;display:flex;align-items:baseline;gap:22px}
-.sp-head h1{font-size:44px;font-weight:800}
+.spo-head{position:absolute;left:152px;top:44px;right:56px;display:flex;align-items:baseline;gap:22px}
+.spo-head h1{font-size:44px;font-weight:800}
 .sp-sub{font-size:22px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sp-rows{position:absolute;left:152px;right:0;top:130px;bottom:70px;overflow:hidden}
 .sp-stage{transition:transform .18s ease-out}
@@ -1465,6 +1465,69 @@ body.focus-ring .sp-card.focus{box-shadow:0 0 0 5px var(--accent),0 0 0 9px #fff
 .sp-empty{position:absolute;top:340px;left:152px;right:152px;text-align:center}
 .sp-empty b{display:block;font-size:38px;margin-bottom:14px}
 .sp-empty p{font-size:24px;color:var(--muted)}
+/* A game's page (sportshub.js page) */
+.sp-page{position:absolute;left:152px;right:0;top:0;bottom:0;background:var(--ink);z-index:4;padding:0 56px 0 0}
+.sp-hero{position:absolute;left:0;right:56px;top:40px;height:300px;border-radius:24px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.45)}
+.sp-side{position:absolute;top:34px;width:340px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.sp-side.l{left:40px}.sp-side.r{right:40px}
+.sp-side img{width:150px;height:150px;object-fit:contain;filter:drop-shadow(0 6px 18px rgba(0,0,0,.6))}
+.sp-side b{font-size:30px;font-weight:800;margin-top:10px;white-space:nowrap;max-width:330px;overflow:hidden;text-overflow:ellipsis}
+.sp-side small{font-size:20px;color:#d3d9ea;margin-top:2px}
+.sp-mid{position:absolute;left:400px;right:400px;top:50px;text-align:center}
+.sp-big{font-size:118px;font-weight:900;line-height:1.05;letter-spacing:.02em;font-variant-numeric:tabular-nums;white-space:nowrap;text-shadow:0 4px 20px rgba(0,0,0,.5)}
+.sp-big.pre{font-size:84px;padding-top:16px}
+.sp-big.ev{font-size:44px;white-space:normal;padding-top:20px}
+.sp-wline{font-size:24px;margin-top:8px;color:#e6eaf5;display:flex;align-items:center;justify-content:center;gap:14px;white-space:nowrap;max-width:100%}
+.sp-whtx{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.sp-mid{overflow:hidden}
+.sp-note{font-size:20px;color:#c9d0e2;margin-top:6px}
+.sp-btns{position:absolute;left:0;right:56px;top:364px;display:flex;gap:16px;flex-wrap:nowrap;overflow:hidden}
+.sp-btn{flex:none;font-size:24px;font-weight:600;padding:14px 28px;border-radius:14px;background:rgba(255,255,255,.08);color:var(--text);white-space:nowrap;transition:transform 140ms ease,background 140ms ease}
+.sp-btn.sel{background:#fff;color:#0b0e14;transform:scale(1.05);box-shadow:0 10px 28px rgba(0,0,0,.45)}
+.sp-panel{position:absolute;top:452px;bottom:78px;border-radius:20px;background:var(--panel);padding:24px 28px;overflow:hidden}
+.sp-box{left:0;width:900px}
+.sp-side2{left:928px;right:56px}
+.sp-cap{font-size:19px;font-weight:700;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin:4px 0 10px}
+.sp-cap ~ .sp-cap{margin-top:22px}
+.sp-muted{font-size:23px;color:var(--muted);line-height:1.4}
+table.sp-lscore{width:100%;border-collapse:collapse;font-size:24px;font-variant-numeric:tabular-nums}
+table.sp-lscore th{font-size:18px;font-weight:600;color:var(--muted);padding:6px 8px;text-align:center}
+table.sp-lscore td{padding:10px 8px;text-align:center;border-top:1px solid var(--line);color:var(--text)}
+table.sp-lscore th:first-child,table.sp-lscore td:first-child{text-align:left;white-space:nowrap}
+table.sp-lscore td.tot{font-weight:800;font-size:28px}
+.sp-mini{width:30px;height:30px;object-fit:contain;vertical-align:-8px;margin-right:12px}
+.sp-lead{display:flex;align-items:baseline;gap:20px;font-size:21px;margin:6px 0;white-space:nowrap;overflow:hidden}
+.sp-lead span{overflow:hidden;text-overflow:ellipsis}
+.sp-lead b{flex:none;width:64px;color:var(--accent-text)}
+.sp-lead em{font-style:normal;font-weight:800}
+.sp-lead small{color:var(--muted);font-size:17px}
+.sp-venue2{position:absolute;left:28px;bottom:20px;font-size:19px;color:var(--dim)}
+.sp-chrow{display:flex;align-items:center;gap:16px;padding:10px 12px;border-radius:12px}
+.sp-chrow.sel{background:rgba(91,140,255,.22);box-shadow:inset 0 0 0 3px var(--accent)}
+.sp-chlogo{flex:none;width:96px;height:54px;border-radius:8px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.sp-chlogo img{max-width:88px;max-height:48px;object-fit:contain}
+.sp-chtx{flex:1;min-width:0}
+.sp-chtx b{display:block;font-size:23px;white-space:pre;overflow:hidden;text-overflow:ellipsis}
+.sp-chtx small{display:block;font-size:18px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sp-q{flex:none;font-size:16px;font-weight:700;background:rgba(255,255,255,.1);padding:3px 9px;border-radius:6px}
+table.sp-stand{width:100%;border-collapse:collapse;font-size:21px;font-variant-numeric:tabular-nums}
+table.sp-stand th{font-size:17px;color:var(--muted);font-weight:600;text-align:right;padding:4px 8px}
+table.sp-stand td{padding:6px 8px;text-align:right;border-top:1px solid var(--line);color:var(--text)}
+table.sp-stand th:first-child,table.sp-stand td:first-child{text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:330px}
+table.sp-stand tr.me td{color:var(--accent-text);font-weight:700}
+/* The score bar while watching (sportslive.js) */
+.sp-bug{position:fixed;top:40px;right:56px;z-index:30;border-radius:14px;overflow:hidden;background:rgba(8,10,18,.86);box-shadow:0 8px 28px rgba(0,0,0,.5);pointer-events:none}
+.sp-btop{display:flex;align-items:stretch}
+.sp-bt{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:24px;font-weight:600;color:#fff}
+.sp-bt img{width:36px;height:36px;object-fit:contain}
+.sp-bt b{font-size:32px;font-weight:800;font-variant-numeric:tabular-nums;margin-left:4px}
+.sp-bclock{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 16px;background:rgba(255,255,255,.08);line-height:1.15;min-width:90px}
+.sp-bclock b{font-size:21px;color:#fff}
+.sp-bclock small{font-size:18px;color:#c5cbe0;font-variant-numeric:tabular-nums}
+.sp-bclock.live b{color:#ff8a8d}
+.sp-bline{font-size:19px;color:#d6dbea;padding:7px 16px;border-top:1px solid rgba(255,255,255,.08);white-space:pre}
+.sp-bline i{font-style:normal;font-weight:800;font-size:15px;letter-spacing:.06em;color:var(--accent2);margin-right:12px}
+body:not(.full) .sp-bug,body.mv-open .sp-bug{display:none}
 /* Multiview's channel picker: a small guide over the boxes (multiview.js pick) */
 .mv-guide{position:absolute;right:0;top:0;bottom:0;width:1240px;background:rgba(9,12,22,.94);box-shadow:-20px 0 40px rgba(0,0,0,.5);z-index:3}
 .mv-g-title{position:absolute;left:40px;top:30px;font-size:32px;font-weight:700;color:#fff}

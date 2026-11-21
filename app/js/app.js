@@ -400,6 +400,7 @@ var App = (function () {
       // A reminder can be for a channel of another playlist: once they are all in.
       if (pendingRem) { var pr = pendingRem; pendingRem = null; setTimeout(function () { openReminder(pr); }, 600); }
       Launch.ready();
+      if (typeof SportsLive !== 'undefined') SportsLive.start();
     });
     if (!later) Views.resume();
     if (tourNext) { tourNext = false; setTimeout(function () { if (!Tour.isOpen) Tour.open({ first: true }); }, 400); }

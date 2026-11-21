@@ -41,5 +41,36 @@ const cs = Sports.channels(g);
 ok('the guide finds the game on the local station first', cs.length && cs[0].c.k === 'k6' && cs[0].how === 'guide', cs.map(x => x.c.n + ':' + x.how));
 ok('the network channel follows when ESPN names one', !g.nets.some(n => /NHL Net/.test(n)) || cs.some(x => x.c.k === 'k2' && x.how === 'net'));
 ok('channels that have nothing to do with it stay out', !cs.some(x => x.c.k === 'k5'));
+// A game's page: box score by period, leaders, the division's standings.
+const sum = Sports._readSummary(JSON.parse(fs.readFileSync(path.join(__dirname, '../fixtures/espn-nba-summary.json'), 'utf8')));
+ok('box score: visitors first, a line a quarter', sum.lines.length === 2 && !sum.lines[0].home && sum.lines[0].periods.length === 4, sum.lines);
+ok('leaders for both teams', sum.leaders.length === 2 && sum.leaders.every(l => l.list.length && l.list[0].who), sum.leaders);
+ok('standings with a record and games back', sum.standings.length && sum.standings[0].rows[0].rec && sum.standings[0].rows[0].extra && sum.standings[0].rows[0].extra.k === 'GB', sum.standings[0] && sum.standings[0].rows[0]);
+ok('standings name without the season', sum.standings[0].name && !/^\d{4}/.test(sum.standings[0].name), sum.standings[0].name);
+// Hiding scores: a followed team's game shows no score until shown once.
+Store.settings.sportsHide = [];
+const live = Object.assign({}, g, { id: 'x1', state: 'in' });
+ok('a game is shown by default', !Sports.hidden(live));
+Sports.hideTeam('nhl:det', true);
+ok('a hidden team hides the score', Sports.hidden(live));
+ok('a game not started has nothing to hide', !Sports.hidden(Object.assign({}, live, { state: 'pre' })));
+Sports.reveal(live);
+ok('shown once on its page', !Sports.hidden(live));
+// The game on a channel: the guide names the two teams.
+const liveG = Object.assign({}, g, { state: 'in' });
+Sports._store.nhl[Sports.dayKey(0)] = { at: Date.now(), games: [liveG] };
+global.Epg.nowNext = c => c.k === 'k6' ? { now: { t: 'NHL Hockey: ' + away + ' at ' + home, s: start, e: start + 3 * 3600e3 } } : null;
+ok('the game on the channel the guide says', Sports.gameOn(chans[5]) && Sports.gameOn(chans[5]).id === g.id);
+ok('no game on a movie channel', !Sports.gameOn(chans[4]));
+// Close games near the end, for the alerts (sportslive.js).
+global.Sports = Sports;
+eval(fs.readFileSync(path.join(__dirname, '../../app/js/sportslive.js'), 'utf8') + ';global.SportsLive=SportsLive;');
+const two = (a, b) => [{ score: a }, { score: b }];
+ok('NBA: 3 points with 2 minutes left in the 4th is close', SportsLive._close({ lg: 'nba', state: 'in', period: 4, clock: '2:10', teams: two(102, 105) }));
+ok('NBA: 15 points is not', !SportsLive._close({ lg: 'nba', state: 'in', period: 4, clock: '2:10', teams: two(90, 105) }));
+ok('NBA: close in the 2nd is not near the end', !SportsLive._close({ lg: 'nba', state: 'in', period: 2, clock: '2:10', teams: two(50, 51) }));
+ok('NHL: one goal with 4 minutes left in the 3rd', SportsLive._close({ lg: 'nhl', state: 'in', period: 3, clock: '4:00', teams: two(2, 3) }));
+ok('soccer: the 85th minute, level', SportsLive._close({ lg: 'epl', state: 'in', period: 2, clock: "85'", teams: two(1, 1) }));
+ok('a final is not a close game', !SportsLive._close({ lg: 'nba', state: 'post', period: 4, clock: '0:00', teams: two(102, 105) }));
 console.log(fail ? fail + ' failures' : 'all sports tests passed');
 process.exit(fail ? 1 : 0);

@@ -131,6 +131,82 @@ var Sports = (function () {
   }
   function day(lgId, off) { var m = store[lgId] || {}, d = m[dayKey(off)]; return d ? d.games : null; }
   function errOf(lgId) { var d = (store[lgId] || {})[dayKey(0)]; return d && d.err || ''; }
+  // Today only, for these leagues (the score bar and alerts while you watch: no days ahead).
+  function refreshToday(ids, force) { return Promise.all(ids.map(function (id) { return BY[id] ? load(BY[id], dayKey(0), force) : null; })); }
+  // A game again from what's loaded (the newest answer), by its id.
+  function byId(id) { var g = null; all().forEach(function (x) { if (x.id === id) g = x; }); return g; }
+
+  /* ---------- a game's page: box score by period, leaders, the standings of its division ----------
+     .../summary?event=<id>: about 400 KB (it has every play), so only for the page that's open, kept a minute
+     (30 seconds while live) and only the parts used. */
+  var sums = {};
+  function summary(g, force) {
+    var lg = BY[g.lg], c = sums[g.id], ttl = g.state === 'in' ? LIVE_MS : 60000;
+    if (!lg) return Promise.resolve(null);
+    if (!force && c && Date.now() - c.at < ttl) return Promise.resolve(c.v);
+    return fetch(BASE + lg.path + '/summary?event=' + encodeURIComponent(g.id), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('ESPN said ' + r.status); return r.json(); }).then(function (j) {
+      var v = readSummary(j);
+      Object.keys(sums).forEach(function (k) { if (Date.now() - sums[k].at > 10 * 60000) delete sums[k]; });
+      sums[g.id] = { at: Date.now(), v: v };
+      return v;
+    }, function (e) { if (typeof Log !== 'undefined') Log.warn('sports', 'Game page not loaded: ' + (e && e.message)); return c ? c.v : null; });
+  }
+  function readSummary(j) {
+    var comp = j.header && j.header.competitions && j.header.competitions[0] || {};
+    var lines = (comp.competitors || []).map(function (t) {
+      return { abbr: t.team && t.team.abbreviation || '', home: t.homeAway === 'home', score: t.score, periods: (t.linescores || []).map(function (l) { return l.displayValue != null ? l.displayValue : l.value; }) };
+    }).sort(function (a, b) { return (a.home ? 1 : 0) - (b.home ? 1 : 0); });
+    var leaders = (j.leaders || []).map(function (tl) {
+      return { abbr: tl.team && tl.team.abbreviation || '', list: (tl.leaders || []).filter(function (x) { return x.leaders && x.leaders[0]; }).slice(0, 3).map(function (x) {
+        var l = x.leaders[0]; return { what: x.displayName || x.name || '', who: l.athlete && (l.athlete.shortName || l.athlete.displayName) || '', value: l.displayValue || '' };
+      }) };
+    }).filter(function (x) { return x.list.length; });
+    var groups = ((j.standings || {}).groups || []).slice(0, 2).map(function (gr) {
+      return { name: String(gr.header || '').replace(/^\d{4}(-\d{2})?\s+/, ''), rows: ((gr.standings || {}).entries || []).map(function (e) {
+        var st = {}; (e.stats || []).forEach(function (x) { st[x.name] = x.displayValue; });
+        var rec = st.wins != null && st.losses != null ? st.wins + '-' + st.losses + (st.otLosses != null ? '-' + st.otLosses : st.ties && st.ties !== '0' ? '-' + st.ties : '') : st.overall || '';
+        var extra = st.points != null ? { k: 'PTS', v: st.points } : st.gamesBehind != null ? { k: 'GB', v: st.gamesBehind } : st['vs. Conf.'] != null ? { k: 'CONF', v: st['vs. Conf.'] } : null;
+        return { team: e.team || '', rec: rec, extra: extra, streak: st.streak || '' };
+      }) };
+    }).filter(function (gr) { return gr.rows.length; });
+    var info = j.gameInfo || {};
+    return { lines: lines, leaders: leaders, standings: groups, venue: info.venue && info.venue.fullName || '', city: info.venue && info.venue.address ? [info.venue.address.city, info.venue.address.state].filter(Boolean).join(', ') : '' };
+  }
+
+  /* ---------- the game on a channel (the score bar while you watch) ----------
+     What's on now names two teams (the guide, or an event channel's name), or the channel is a network ESPN says
+     shows a game being played.  Only games loaded already (refreshToday). */
+  function gameOn(c) {
+    if (!c) return null;
+    var now = Date.now(), list = all().filter(function (g) { return g.state === 'in' || (g.state === 'pre' && g.s < now + 15 * 60000) || (g.state === 'post' && g.s > now - 5 * 3600e3 && now - g.s < 4 * 3600e3); });
+    if (!list.length) return null;
+    var texts = [];
+    try { var nn = typeof Epg !== 'undefined' && Epg.nowNext ? Epg.nowNext(c) : null; if (nn && nn.now) texts.push(nn.now.t); } catch (e) {}
+    try { var ev = typeof Events !== 'undefined' && Events.of ? Events.of(c) : null; if (ev && ev.title) texts.push(ev.title); } catch (e) {}
+    var best = null;
+    texts.forEach(function (t) {
+      if (best || typeof Teams === 'undefined' || !Teams.named) return;
+      var ids = Teams.named(t, c.n, Teams.all(), true).map(function (x) { return x.id; });
+      if (ids.length < 2) return;
+      list.forEach(function (g) { if (!best && g.teams.length === 2 && g.teams.every(function (x) { return x.id && ids.indexOf(x.id) >= 0; })) best = g; });
+    });
+    if (best) return best;
+    var b = bare(Library.name(c));
+    list.forEach(function (g) {
+      if (best || g.state !== 'in') return;
+      if (g.nets.some(function (n) { var w = NETS[squash(n)] || NETS[squash(n).replace(/hd$/, '')]; return w && w.indexOf(b) >= 0; })) best = g;
+    });
+    return best;
+  }
+
+  /* ---------- hiding scores (recorded games, or a game you'll watch later) ----------
+     A team you hide scores for: none of its scores show anywhere until you show that game's on its page (for
+     as long as TiviBro is open). */
+  var shownOnce = {};
+  function hidesTeam(id) { return (S().sportsHide || []).indexOf(id) >= 0; }
+  function hideTeam(id, on) { var l = S().sportsHide || (S().sportsHide = []), i = l.indexOf(id); if (on && i < 0) l.push(id); if (!on && i >= 0) l.splice(i, 1); if (typeof Store !== 'undefined' && Store.saveSettings) Store.saveSettings(); changed(); }
+  function hidden(g) { return !!g && g.state !== 'pre' && !shownOnce[g.id] && g.teams.some(function (t) { return t.id && hidesTeam(t.id); }); }
+  function reveal(g) { shownOnce[g.id] = 1; changed(); }
 
   /* ---------- your channels for a game ---------- */
   function squash(s) { s = String(s || '').toLowerCase(); if (s.normalize) s = s.normalize('NFKD').replace(/[̀-ͯ]/g, ''); return s.replace(/&/g, 'and').replace(/\+/g, 'plus').replace(/[^a-z0-9]+/g, ''); }
@@ -201,7 +277,8 @@ var Sports = (function () {
   // "Lions at Packers" (the guide's and reminders' way of naming a game).
   function title(g) { return g.teams.length === 2 ? g.teams[0].name + ' at ' + g.teams[1].name : g.name; }
 
-  return { LEAGUES: LEAGUES, league: function (id) { return BY[id]; }, leagues: leagues, setLeagues: setLeagues, refresh: refresh, anyLive: anyLive, all: all, day: day, errOf: errOf,
+  return { refreshToday: refreshToday, byId: byId, summary: summary, gameOn: gameOn, hidesTeam: hidesTeam, hideTeam: hideTeam, hidden: hidden, reveal: reveal, followedLeagues: followedLeagues, _readSummary: readSummary,
+    LEAGUES: LEAGUES, league: function (id) { return BY[id]; }, leagues: leagues, setLeagues: setLeagues, refresh: refresh, anyLive: anyLive, all: all, day: day, errOf: errOf,
     channels: channels, byNet: byNet, title: title, onChange: onChange, dayKey: dayKey, LIVE_MS: LIVE_MS, TODAY_MS: TODAY_MS, _game: game, _squash: squash, _bare: bare, _store: store };
 })();
 if (typeof module !== 'undefined') module.exports = Sports;
