@@ -120,5 +120,14 @@ t('Pluto channels match Pluto\'s own guide by id', () => {
   assert.strictEqual(f[0].prefix, 'mjhpluto:US/');
   assert.strictEqual(P.appFiles(miss, false).length, 0, 'gzip only: TVs that cannot unzip skip it');
   assert.strictEqual(P.sourceOf('mjhpluto:US/abc').name, 'i.mjh.nz Pluto TV');
+  // Samsung TV Plus, Plex and Roku: the channel's own id is the guide's, as it is; Plex and Roku have one file for every country.
+  assert.strictEqual(P.appId('USBA370000104'), 'USBA370000104');
+  assert.strictEqual(P.appId('6a1610bebdf296985fd95603-66635fc0ca7b22f4c3a2d743'), '6a1610bebdf296985fd95603-66635fc0ca7b22f4c3a2d743');
+  assert.strictEqual(P.appId('483af83e821059b8b3f0825ae2d43e31'), '483af83e821059b8b3f0825ae2d43e31');
+  assert.strictEqual(P.appId('ESPNHD'), '', 'an ordinary id is not Samsung\'s');
+  assert.strictEqual(P.appId('XXBA370000104'), '', 'a country Samsung has no guide for');
+  const f2 = P.appFiles(['USBA370000101', 'USBA370000102', 'USBA370000103', '483af83e821059b8b3f0825ae2d43e31', '483af83e821059b8b3f0825ae2d43e32', '483af83e821059b8b3f0825ae2d43e33'].map(epg => ({ epg })), true);
+  assert.deepStrictEqual(f2.map(x => x.url), ['https://i.mjh.nz/SamsungTVPlus/us.xml.gz', 'https://i.mjh.nz/Roku/all.xml.gz']);
+  assert.strictEqual(f2[1].cc, '');
 });
 console.log(n + ' passed');

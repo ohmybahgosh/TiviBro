@@ -31,7 +31,15 @@ var PubEpg = (function () {
      Only downloaded when a playlist has such channels with no guide. */
   var BY_ID = [
     { id: 'mjhpluto', name: 'i.mjh.nz Pluto TV', site: 'https://i.mjh.nz', re: /^([A-Z]{2})_([0-9a-f]{24})$/i, base: 'https://i.mjh.nz/PlutoTV/',
-      regions: { US: 'us', CA: 'ca', GB: 'gb', UK: 'gb', DE: 'de', FR: 'fr', ES: 'es', IT: 'it', BR: 'br', MX: 'mx', AR: 'ar', CL: 'cl', DK: 'dk', SE: 'se', NO: 'no' } }
+      regions: { US: 'us', CA: 'ca', GB: 'gb', UK: 'gb', DE: 'de', FR: 'fr', ES: 'es', IT: 'it', BR: 'br', MX: 'mx', AR: 'ar', CL: 'cl', DK: 'dk', SE: 'se', NO: 'no' } },
+    /* The same for Samsung TV Plus, Plex and The Roku Channel: their channels keep the app's own id as their guide
+       id (same: the id is the guide's as it is), so a playlist built from those apps matches exactly.  Samsung's
+       start with the country ("USBA370000104"); Plex's (two 24-character hex parts) and Roku's (32 hex) don't say
+       one, so those use the one file for every country. */
+    { id: 'mjhsamsung', name: 'i.mjh.nz Samsung TV Plus', site: 'https://i.mjh.nz', same: true, re: /^(?=([A-Z]{2}))(?=[A-Z0-9]*\d{4})([A-Z]{2}[A-Z0-9]{9,13})$/, base: 'https://i.mjh.nz/SamsungTVPlus/',
+      regions: { US: 'us', CA: 'ca', GB: 'gb', DE: 'de', FR: 'fr', ES: 'es', IT: 'it', AT: 'at', CH: 'ch', IN: 'in', KR: 'kr' } },
+    { id: 'mjhplex', name: 'i.mjh.nz Plex', site: 'https://i.mjh.nz', same: true, re: /^()([0-9a-f]{24}-[0-9a-f]{24})$/i, base: 'https://i.mjh.nz/Plex/', regions: { '': 'all' } },
+    { id: 'mjhroku', name: 'i.mjh.nz Roku', site: 'https://i.mjh.nz', same: true, re: /^()([0-9a-f]{32})$/i, base: 'https://i.mjh.nz/Roku/', regions: { '': 'all' } }
   ];
   /* Sports guides (Settings > Guide > Sports guides): US sports networks and team channels, from two
      community projects.  Fetched by the helper only (big files, read as they come in, keeping only the
@@ -104,7 +112,7 @@ var PubEpg = (function () {
 
   // The id the app's own guide uses for a channel's guide id, or ''.
   function appId(epg) {
-    for (var i = 0; i < BY_ID.length; i++) { var m = BY_ID[i].re.exec(epg || ''); if (m && BY_ID[i].regions[m[1].toUpperCase()]) return m[2].toLowerCase(); }
+    for (var i = 0; i < BY_ID.length; i++) { var m = BY_ID[i].re.exec(epg || ''); if (m && BY_ID[i].regions[m[1].toUpperCase()]) return BY_ID[i].same ? m[2] : m[2].toLowerCase(); }
     return '';
   }
   // Files for the channels with no guide that one of those apps covers: a region with three or more.
@@ -116,8 +124,8 @@ var PubEpg = (function () {
       missing.forEach(function (c) { var m = s.re.exec(c.epg || ''); if (m && s.regions[m[1].toUpperCase()]) { var r = s.regions[m[1].toUpperCase()]; by[r] = (by[r] || 0) + 1; } });
       Object.keys(by).forEach(function (r) {
         if (by[r] < 3) return;
-        var cc = r === 'gb' ? 'GB' : r.toUpperCase();
-        out.push({ url: (test ? String(test).replace(/\/?$/, '/') + s.id + '/' : s.base) + r + '.xml.gz', cc: cc, src: s.id, name: s.name, prefix: s.id + ':' + cc + '/' });
+        var cc = r === 'all' ? '' : r === 'gb' ? 'GB' : r.toUpperCase();
+        out.push({ url: (test ? String(test).replace(/\/?$/, '/') + s.id + '/' : s.base) + r + '.xml.gz', cc: cc, src: s.id, name: s.name, prefix: s.id + ':' + (cc || 'ALL') + '/' });
       });
     });
     return out;

@@ -1284,7 +1284,8 @@ var Epg = (function () {
         if (ch.epg) add('id:' + ch.epg);
         var hid = handId(ch); if (hid) add('id:' + hid);
         var aid = PubEpg.appId ? PubEpg.appId(hid || ch.epg) : '';          // "US_5ca5…" is "5ca5…" in Pluto's own guide
-        if (aid && !seen['id:' + aid]) { seen['id:' + aid] = 1; (pk['id:' + aid] || (pk['id:' + aid] = [])).push([ch.k, pd, '']); }
+        // With no country: the app's file may be for every country (Plex, Roku), and an app's id is exact anyway.
+        if (aid && !seen['app:' + aid]) { seen['app:' + aid] = 1; (pk['id:' + aid] || (pk['id:' + aid] = [])).push([ch.k, pd, '']); }
       });
       var started = Date.now(), g = guard('pub', sig, forced); if (!g) return;
       return work(files, { pk: pk, want: want }, g, sig, { asked: miss.length, countries: ccs }).then(function (res) {

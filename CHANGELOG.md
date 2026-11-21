@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Samsung TV Plus, Plex and Roku channels get their own guides** (from i.mjh.nz), like Pluto TV's: a playlist built from those apps keeps each app's channel id as its guide id, so channels with no guide are matched exactly, by id, when there are three or more of them.
+
 ## 0.6.0 (alpha 188, 2026-11-20)
 
 Pre-release: expect rough edges, and keep a backup before installing.
