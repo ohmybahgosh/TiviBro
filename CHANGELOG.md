@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 191, 2026-11-21)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 191
 
 - **Yellow marks watched in one press**, wherever TiviBro keeps track: a movie or an episode in your provider's Movies and shows, a movie on My media's shelves and lists, an episode on a show's page in My media (a whole season on its seasons).  No menu to open and close for each one.  Fetching missing details on My media moved to Red > Fetch missing details (Yellow on a shelf's name still does it).
 - **Reload movies and shows now** (discussion #36), in Settings > Movies and shows and in Red on the Movies or Shows home: both lists again from your provider, past the saved copies, without reloading the channels.  It says how many titles came in.
@@ -8,11 +12,7 @@
 - **Trailers on Recently added and the wall** (discussion #36): a movie's options read its details first when they aren't in yet, so **Watch the trailer** is there from the home and the wall too.  A movie with no trailer from the provider gets TMDB's, with your token, as shows already do.
 - **A Trailer button on a show's page**, like a movie's, in Movies and shows and in My media: ▲ from the seasons (or from the episodes of a one-season show), OK plays it.
 
-## 0.6.0 (alpha 190, 2026-11-21)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 190
+### In alpha 190
 
 - **Trailers for shows too** (discussion #36), in Movies and shows and in My media.  A provider's show: Hold OK on it, or on one of its episodes, has **Watch the trailer** (the provider's, else TMDB's with your token).  A show in My media: **Yellow** on its seasons, or **Watch the trailer** in the season options, plays it inside TiviBro like a movie's (Back returns to the show).
 - **Sports, polished.**  A colour picture of the sport on every card and league row, a **Recent results** row (your teams' finals from the last four days), and the date on every card in the TV's own format.  A league out of season no longer shows its last game.
