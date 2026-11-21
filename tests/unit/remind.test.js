@@ -118,6 +118,14 @@ const fire = p => new Promise(res => R.fire(p, res));
   w = await new Promise(res => R2.fire(Object.assign({ pid: 'p9' }, rl[0]), res));
   ok('root not available: a toast', /toast/.test(w) && calls.some(c => /createToast$/.test(c.uri)), w);
   answer = {};
+  // Developer mode refuses the power state and the app in front: asked again as root, so the screensaver is seen.
+  let asked = [];
+  const R3 = require('../../service/remind.js').create({ files: [path.join(dir, 'r3.json')], now: () => now, log() {}, later: () => {},
+    call: (uri, params, cb) => { calls.push({ uri, params }); cb(/getPowerState|getForegroundAppInfo/.test(uri) ? { returnValue: false, errorText: 'Denied method call' } : { returnValue: true }); },
+    rootAsk: (uri, cb) => { asked.push(uri); cb(/getPowerState/.test(uri) ? { returnValue: true, state: 'Active' } : { returnValue: true, appId: 'com.webos.app.screensaver' }); } });
+  R3.set({ pid: 'p8', list: rl }); calls = [];
+  w = await new Promise(res => R3.fire(Object.assign({ pid: 'p8' }, rl[0]), res));
+  ok('refused questions asked as root: the screensaver waits', /waiting/.test(w) && asked.length === 2 && !calls.some(c => /createAlert|createToast/.test(c.uri)), w);
   console.log(fail ? fail + ' failures' : 'all reminder helper tests passed');
   process.exit(fail ? 1 : 0);
 })();

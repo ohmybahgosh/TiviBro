@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **A reminder waits for the screensaver to go away** again on a rooted TV.  After an update the TV forgets the extra permissions TiviBro's helper is given, until TiviBro has been opened, and in the meantime the helper couldn't tell the screensaver was on: a reminder went up over it, where the remote's OK didn't reach its Watch button.  Now the helper asks as root when it's refused, and puts the permissions back at reminder time too.
+
 ## 0.6.0 (alpha 187, 2026-11-20)
 
 Pre-release: expect rough edges, and keep a backup before installing.

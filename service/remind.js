@@ -176,11 +176,25 @@ function create(opts) {
 
   /* Is someone using the TV?  The screen must be on (not the screensaver, Always Ready or off) and
      the app in front not an ambient one.  If the TV won't say, assume yes. */
+  /* Developer mode refuses the helper both questions until the permissions grant.js adds are in (an update or a
+     reinstall writes them out again, and they apply from the helper's next start).  Refused on a rooted TV: asked
+     again as root (opts.rootAsk, through the Homebrew Channel).  Before, a refusal read as "can't tell, so in use",
+     and a reminder at 01:00 went up over the screensaver, where the alert can't take the remote's OK. */
+  function ask(uri, cb) {
+    call(uri, {}, function (r) {
+      if (r && r.returnValue !== false) return cb(r);
+      if (!opts.rootAsk) return cb(r);
+      opts.rootAsk(uri, function (r2) { cb(r2 && r2.returnValue !== false ? r2 : r); });
+    });
+  }
   function inUse(cb) {
-    call('luna://com.webos.service.tvpower/power/getPowerState', {}, function (ps) {
+    if (opts.grant) opts.grant();
+    ask('luna://com.webos.service.tvpower/power/getPowerState', function (ps) {
       var st = ps && ps.returnValue !== false ? String(ps.state || '') : '';
       if (st && !/^active$/i.test(st)) return cb(false, 'power state ' + st + (ps.processing ? ', ' + ps.processing : ''));
-      call('luna://com.webos.applicationManager/getForegroundAppInfo', {}, function (fg) {
+      // Active but the screensaver up: not in use either (the TV says "screen saver" in its own words).
+      if (ps && /screen ?saver/i.test(String(ps.processing || '') + ' ' + String(ps.powerStatus || ps.TVPowerStatus || ''))) return cb(false, 'screensaver');
+      ask('luna://com.webos.applicationManager/getForegroundAppInfo', function (fg) {
         var id = fg && fg.returnValue !== false ? String(fg.appId || '') : '';
         log({ lv: 'info', event: 'reminder check', power: st || 'unknown', foreground: id || 'unknown' });
         if (id && AMBIENT.test(id)) return cb(false, id + ' in front');

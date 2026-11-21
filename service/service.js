@@ -34,6 +34,18 @@ var reminders = require('./remind').create({
       cb(res && res.returnValue !== false && /"returnValue"\s*:\s*true/.test(out), (res && res.errorText) || out.slice(0, 200), id ? id[1] : '');
     });
   },
+  // The power state and the app in front, asked as root when developer mode refuses them (remind.js inUse).  Only
+  // these two fixed questions: nothing from a reminder reaches the command line.
+  rootAsk: function (uri, cb) {
+    var Q = { 'luna://com.webos.service.tvpower/power/getPowerState': 1, 'luna://com.webos.applicationManager/getForegroundAppInfo': 1 };
+    if (!Q[uri]) return cb(null);
+    lcallP('luna://org.webosbrew.hbchannel.service/exec', { command: 'luna-send -n 1 -w 3000 ' + uri + " '{}'" }, function (res) {
+      var out = String(res && (res.stdoutString || res.stdout) || ''), j = null;
+      try { j = JSON.parse(out); } catch (e) {}
+      cb(res && res.returnValue !== false && j ? j : null);
+    });
+  },
+  grant: function () { if (typeof grant !== 'undefined' && grant) grant.ensure(); },
   // And closed again as root after a few seconds (an alert made as root may only be closed by root).
   rootClose: function (id, cb) {
     if (!/^[A-Za-z0-9._\-]{1,80}$/.test(id || '')) return cb(false);
