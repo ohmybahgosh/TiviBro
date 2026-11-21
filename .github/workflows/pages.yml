@@ -69,7 +69,7 @@ jobs:
         run: |
           ls -R _site | head -50
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
   deploy:
