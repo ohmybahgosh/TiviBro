@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Trailers found on more titles** (discussion #36).  When the provider has none, TiviBro now asks TMDB right when you open a title's options or a show's page (waiting up to 4 seconds), by the TMDB id the provider gives or else by name and year.  Before, a show's TMDB trailer only turned up if TiviBro had already looked the show up while you moved past it.  Needs a TMDB token (Settings > API keys).
+
 ## 0.6.0 (alpha 191, 2026-11-21)
 
 Pre-release: expect rough edges, and keep a backup before installing.

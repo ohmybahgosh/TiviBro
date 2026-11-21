@@ -830,16 +830,38 @@ var Vod = (function () {
   function onItem() { showInfo(); infoDeb(); }
 
   /* A provider's show with no trailer of its own: TMDB's, with your token (series.js finds the show). */
-  var tmdbTr = {};
-  function showTrailer(it) {
-    var k = it.name + '|' + (it.year || ''); if (it.trailer || tmdbTr[k] !== undefined || typeof Series === 'undefined' || typeof MediaMoviePage === 'undefined') return;
-    var tv = Series.show(it.name, it.year, 'strong'), id = tv && tv.id; if (!id) return;
-    tmdbTr[k] = '';
-    MediaMoviePage.trailerFor(/^tmdb:/.test(id) ? id : 'tmdb:tv:' + id, function (t) { tmdbTr[k] = t || ''; });
+  var tmdbTr = {}, tmdbTrP = {};
+  function tmdbOn() { return typeof MediaMoviePage !== 'undefined' && typeof MediaStore !== 'undefined' && MediaStore.tmdbToken && !!MediaStore.tmdbToken() && typeof Media !== 'undefined'; }
+  /* A provider's show with no trailer of its own: TMDB's, with your token.  By the TMDB id the provider gives in
+     the show's details, else the one series.js knows, else asked now by name and year (discussion #36: missing on
+     some shows, when the name hadn't been looked up yet).  A promise of the YouTube id or ''. */
+  function showTrailer(it, passive) {
+    if (!it) return Promise.resolve('');
+    if (it.trailer) return Promise.resolve(it.trailer);
+    var k = it.name + '|' + (it.year || '');
+    if (tmdbTr[k]) return Promise.resolve(tmdbTr[k]);
+    if (tmdbTrP[k] && !(it.tmdb && !tmdbTrP[k].byId)) return tmdbTrP[k];
+    if (!tmdbOn()) return Promise.resolve('');
+    // Only moving past a show (the list, the home): no new TMDB search for it, just the id already known.
+    if (passive && !/^[0-9]+$/.test(String(it.tmdb || '')) && !(typeof Series !== 'undefined' && (Series.show(it.name, it.year, 'strong') || {}).id)) return Promise.resolve('');
+    var p = idFor().then(function (id) {
+      if (!id) return '';
+      return new Promise(function (res) { MediaMoviePage.trailerFor(/^tmdb:/.test(id) ? id : 'tmdb:tv:' + id, function (t) { res(t || ''); }); });
+    }).then(function (t) { tmdbTr[k] = t; if (!t && tmdbTrP[k] === p) setTimeout(function () { if (tmdbTrP[k] === p) delete tmdbTrP[k]; }, 600000); return t; }, function () { return ''; });
+    p.byId = !!it.tmdb;
+    return (tmdbTrP[k] = p);
+    function idFor() {
+      if (/^[0-9]+$/.test(String(it.tmdb || ''))) return Promise.resolve('tmdb:tv:' + it.tmdb);
+      var tv = typeof Series !== 'undefined' ? Series.show(it.name, it.year, 'strong') : null;
+      if (tv && tv.id) return Promise.resolve(tv.id);
+      var c = typeof Series !== 'undefined' && Series.clean ? Series.clean(it.name) : { t: it.name, y: '' };
+      if (!c.t || !Media.tvByName) return Promise.resolve('');
+      return Media.tvByName(c.t, it.year || c.y, 'strong').then(function (r) { return (r && r.metadata && r.metadata.id) || ''; }, function () { return ''; });
+    }
   }
   function fetchInfo() {
     var it = itemsVL.current();
-    if (it && !it.ep && kind === 'series') showTrailer(it);
+    if (it && !it.ep && kind === 'series') showTrailer(it, true);
     if (!it || it.ep || kind !== 'movie' || info.has(key(it))) return;
     loadInfo(it, function () { if (itemsVL.current() === it) showInfo(); });
   }
@@ -854,12 +876,12 @@ var Vod = (function () {
       var m = { trailer: ytId(i.youtube_trailer || i.trailer), plot: i.plot || i.description || '', genre: i.genre || '', cast: i.cast || i.actors || '', director: i.director || '', dur: i.duration || '', year: (i.releasedate || i.release_date || '').slice(0, 4), poster: i.movie_image || i.cover_big || '', backdrop: [].concat(i.backdrop_path || [])[0] || '', media: Caps.fromXtream(i) };
       info.set(k, m);
       if (then) then();
-      if (!m.trailer) movieTrailer(i.tmdb_id || i.tmdb || md.tmdb_id, nm, m.year || yr, function (t) { if (t && info.get(k) === m) { m.trailer = t; if (then) then(); } });
+      if (!m.trailer) m.tr = new Promise(function (res) { movieTrailer(i.tmdb_id || i.tmdb || md.tmdb_id, nm, m.year || yr, function (t) { if (t && info.get(k) === m) { m.trailer = t; if (then) then(); } res(t || ''); }); });
     }).catch(function () {});
   }
   var tmdbMv = {};
   function movieTrailer(tmdbId, name, year, cb) {
-    if (typeof MediaMoviePage === 'undefined' || typeof MediaStore === 'undefined' || !MediaStore.tmdbToken || !MediaStore.tmdbToken()) return cb('');
+    if (!tmdbOn()) return cb('');
     if (/^[0-9]+$/.test(String(tmdbId || ''))) return MediaMoviePage.trailerFor('tmdb:' + tmdbId, cb);
     var c = typeof Movies !== 'undefined' && Movies.clean ? Movies.clean(String(name || '').replace(/^\s*[A-Z]{2,3}\s*[-|:]\s+/, '')) : { t: name, y: '' };
     var k = c.t + '|' + (year || c.y || '');
@@ -931,6 +953,8 @@ var Vod = (function () {
     Source.seriesInfo(s.id, plOf(s)).then(function (r) {
       if (mine !== seriesAsk) return;                 // closed, or another show opened meanwhile
       if (!s.trailer) s.trailer = ytId(((r && r.info) || {}).youtube_trailer || ((r && r.info) || {}).trailer);   // a show's trailer, from its details
+      var sin = (r && r.info) || {}; if (!s.tmdb && /^[0-9]+$/.test(String(sin.tmdb || sin.tmdb_id || ''))) s.tmdb = String(sin.tmdb || sin.tmdb_id);
+      if (!s.trailer) showTrailer(s).then(function (t) { if (t && sp && sp.s === s) { spDraw(); hints(); } });
       var eps = [], byS = (r && r.episodes) || {};
       Object.keys(byS).sort(function (a, b) { return +a - +b; }).forEach(function (sn) {
         (byS[sn] || []).forEach(function (e) {
@@ -1015,13 +1039,11 @@ var Vod = (function () {
     mark(id, on); relist(); if (sp) spDraw();
     U.toast(on ? 'Marked as watched' : 'Marked as not watched');
   }
-  function itemMenu(it) {
+  function itemMenu(it, fresh) {
     if (!it) return;
     // A movie whose details aren't read yet (the home, the wall): read them first, so its trailer is offered (up to 3 seconds).
-    if (kind === 'movie' && !it.ep && !info.has(key(it)) && typeof PalmServiceBridge !== 'undefined') {
-      var done = false, go = function () { if (!done) { done = true; itemMenu(it); } };
-      loadInfo(it, null).then(go); setTimeout(go, 3000); return;
-    }
+    if (!fresh && !trailerOf(it) && typeof PalmServiceBridge !== 'undefined' && tmdbOn()) { findTrailer(it, function () { itemMenu(it, true); }); return; }
+    if (!fresh && kind === 'movie' && !it.ep && !info.has(key(it)) && typeof PalmServiceBridge !== 'undefined') { var done = false, go = function () { if (!done) { done = true; itemMenu(it, true); } }; loadInfo(it, null).then(go); setTimeout(go, 3000); return; }
     var id = idOf(it);
     var r = resumeOf(id), mine = E().myList.indexOf(key(it)) >= 0, playable = kind === 'movie' || it.ep, w = isWatched(id);
     var er = !playable && r && r.ep ? resumeOf(r.ep) : null;
@@ -1049,6 +1071,17 @@ var Vod = (function () {
     if (!it || typeof PalmServiceBridge === 'undefined') return '';
     if (kind === 'series') { var sh = it.ep ? series : it; return (sh && (sh.trailer || tmdbTr[sh.name + '|' + (sh.year || '')])) || ''; }
     var m = !it.ep && kind === 'movie' ? info.get(key(it)) : null; return m && m.trailer ? m.trailer : '';
+  }
+  /* The trailer, looked up now when it isn't known yet (up to 4 seconds): for the options. */
+  function findTrailer(it, cb) {
+    var t = trailerOf(it), done = false, fin = function (x) { if (!done) { done = true; cb(x || ''); } };
+    if (t || !it || typeof PalmServiceBridge === 'undefined' || !tmdbOn()) return cb(t);
+    setTimeout(function () { fin(trailerOf(it)); }, 4000);
+    if (kind === 'series') { showTrailer(it.ep ? series : it).then(fin); return; }
+    if (it.ep) return fin('');
+    var k = key(it);
+    var wait = function () { var m = info.get(k); if (m && m.trailer) return fin(m.trailer); if (m && m.tr) m.tr.then(fin); else fin(''); };
+    if (!info.has(k)) loadInfo(it, null).then(wait); else if (info.get(k) === null) setTimeout(function () { wait(); }, 1500); else wait();
   }
   function watchTrailer(id) {
     try {
@@ -1148,7 +1181,7 @@ var Vod = (function () {
   // What the home's top shows: the provider's details for a movie (asked for once), TMDB's for a show.
   function detailsOf(it, then) {
     if (kind === 'series') {
-      if (then) showTrailer(it);                        // its trailer from TMDB for the options, as in the list
+      if (then) showTrailer(it, true);                  // its trailer from TMDB for the options, as in the list
       var tv = typeof Series !== 'undefined' ? Series.show(it.name, it.year, 'strong') : null;
       return { plot: it.plot && it.plot.length >= 40 ? it.plot : (tv && tv.plot) || it.plot || '', genre: tv && tv.genre, year: it.year || (tv && tv.year), rating: tv && tv.rating, backdrop: tv && (tv.backdropHd || tv.backdrop) || '', logo: tv && tv.logo || '', cast: tv && tv.cast };
     }
