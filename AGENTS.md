@@ -13,5 +13,6 @@ The short version:
 - Edit `app/js/names.js`, `tidy.js`, `pubepg.js` and `links.js`, never their copies in `service/editor/` (`npm run build` copies them).
 - Edit `docs/USER-GUIDE.md`, never `docs/wiki/` (generated).
 - Text people read: plain words, two spaces between sentences, no em dashes.
+- Every function of 20 lines or more gets a comment above it saying what it does (lint's `scripts/doc-check.js` fails if a file gains an uncommented one).  Comments explain why, in plain words, without naming people.
 - Before you finish: `npm run lint` and `npm test` pass, a test covers the change, `CHANGELOG.md` has a line under `## Unreleased` with a bold headline, and the user guide covers new settings or screens.
 - Don't bump versions, edit release notes or the `homebrew` branch, or cut releases.

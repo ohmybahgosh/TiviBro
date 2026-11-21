@@ -36,6 +36,7 @@ Ground rules:
 - **Never lose the user's work.**  Edits are overlays on the provider's list; anything destructive asks first or can be undone.
 - **Shared code stays shared.**  `app/js/names.js` and `app/js/tidy.js` are copied into `service/editor/` by `npm run build`; lint fails if they differ.
 - **No secrets in the repository.**  Real provider tests read logins from a file outside the repo (see `tests/real/xc.js`).
+- **Comment what you write.**  A function of 20 lines or more gets a comment above it saying what it does; `npm run lint` checks.
 - **Write for viewers.**  Plain words in the UI and docs, and a line in CHANGELOG.md under "## Unreleased" for anything they'd notice.
 
 Open a pull request against `main`; the template lists what to check.  Don't target the `homebrew` branch: it only holds the files the Homebrew Channel and the installer read, and the release workflow writes it.
