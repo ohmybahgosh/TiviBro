@@ -12,7 +12,7 @@ var SportsHub = (function () {
   var RAW = function (s) { return typeof I18n !== 'undefined' ? I18n.raw(s) : s; };
   var $ = function (id) { return document.getElementById(id); };
   var built = false, open_ = false, rows = [], row = 0, pos = {}, timer = null, sig = '', firstLoad = true, touched = false;
-  var CARD = 432;                                               // a card and the gap after it, px (app.css .sp-card)
+  var CARD = 472;                                               // a card and the gap after it, px (app.css .sp-card)
 
   function build() {
     if (built) return;
@@ -43,7 +43,7 @@ var SportsHub = (function () {
     return el;
   }
   function status(g) {
-    if (Sports.hidden(g)) return g.state === 'in' ? T('On now, score hidden') : T('Played, score hidden');
+    if (g.state !== 'pre' && Sports.hidden(g)) return g.state === 'in' ? T('On now, score hidden') : T('Played, score hidden');
     if (g.state === 'in') return g.detail.replace(/\s+-\s+/, ' ');
     if (g.state === 'post') return T('Final') + (/OT|SO|\/\d/.test(g.detail) ? ' ' + g.detail.replace(/^Final\/?/i, '') : '');
     var d = U.day(g.s);
@@ -219,6 +219,16 @@ var SportsHub = (function () {
     return { list: out, cs: cs };
   }
   function abIdx(g, ab) { for (var i = 0; i < g.teams.length; i++) if (g.teams[i].abbr === ab) return i; return 9; }
+  /* A team's colour, light enough to read on the dark panels: its main colour, else its other one, else the main
+     one mixed with white (Michigan's navy, say, comes out a light blue). */
+  function tone(t) {
+    function rgb(c) { return /^[0-9a-f]{6}$/i.test(c || '') ? [0, 2, 4].map(function (i) { return parseInt(c.slice(i, i + 2), 16); }) : null; }
+    function lum(v) { return (0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]) / 255; }
+    var a = rgb(t && t.color), b = rgb(t && t.alt), v = a && lum(a) >= 0.32 ? a : b && lum(b) >= 0.32 && lum(b) <= 0.92 ? b : a;
+    if (!v) return '';
+    for (var i = 0; i < 8 && lum(v) < 0.4; i++) v = v.map(function (x) { return Math.round(x + (255 - x) * 0.22); });
+    return 'rgb(' + v.join(',') + ')';
+  }
   function hex(c, a) { return /^[0-9a-f]{6}$/i.test(c || '') ? 'rgba(' + parseInt(c.slice(0, 2), 16) + ',' + parseInt(c.slice(2, 4), 16) + ',' + parseInt(c.slice(4, 6), 16) + ',' + a + ')' : 'rgba(40,50,80,' + a + ')'; }
   function drawPage() {
     if (!gp) return;
@@ -241,10 +251,10 @@ var SportsHub = (function () {
     var mid = U.el('div', 'sp-mid');
     if (g.teams.length === 2 && g.state !== 'pre' && !hide) mid.appendChild(U.el('div', 'sp-big', (a.score != null ? a.score : '') + '  –  ' + (h.score != null ? h.score : '')));
     else if (g.teams.length !== 2) mid.appendChild(U.el('div', 'sp-big ev', RAW(g.name)));
-    else mid.appendChild(U.el('div', 'sp-big pre', hide ? T('Score hidden') : U.hhmm(g.s)));
+    else mid.appendChild(U.el('div', 'sp-big pre', g.state === 'pre' ? U.hhmm(g.s) : T('Score hidden')));
     var line = U.el('div', 'sp-wline');
     if (g.state === 'in') line.appendChild(U.el('span', 'sp-live', T('LIVE')));
-    line.appendChild(U.el('span', 'sp-whtx', [status(g), g.state === 'pre' ? U.day(g.s) : '', Sports.league(g.lg).name, g.nets[0] || ''].filter(Boolean).join('   ·   ')));
+    line.appendChild(U.el('span', 'sp-whtx', [g.state === 'pre' ? '' : status(g), g.state === 'pre' ? U.day(g.s) : '', Sports.league(g.lg).name, g.nets[0] || ''].filter(Boolean).join('   ·   ')));
     mid.appendChild(line);
     if (g.note) mid.appendChild(U.el('div', 'sp-note', RAW(g.note)));
     hero.appendChild(mid);
@@ -267,7 +277,7 @@ var SportsHub = (function () {
         lines.forEach(function (l, k) {
           var tr = U.el('tr'), t = g.teams[k] || {}, td = U.el('td');
           if (t.logo) { var im = new Image(); im.src = t.logo; im.className = 'sp-mini'; td.appendChild(im); }
-          td.appendChild(document.createTextNode(RAW(t.name || l.abbr))); tr.appendChild(td);
+          td.appendChild(document.createTextNode(RAW(t.name || l.abbr))); if (tone(t)) td.style.color = tone(t); tr.appendChild(td);
           for (var p = 0; p < n; p++) tr.appendChild(U.el('td', '', l.periods[p] != null ? String(l.periods[p]) : ''));
           tr.appendChild(U.el('td', 'tot', String(l.score != null ? l.score : ''))); tb.appendChild(tr);
         });
@@ -279,7 +289,7 @@ var SportsHub = (function () {
           // A line a leader (football's are long: "16/27, 162 YDS, 1 TD"), the team's abbreviation on its first.
           tl.list.slice(0, 2).forEach(function (x, k) {
             var r = U.el('div', 'sp-lead');
-            r.appendChild(U.el('b', '', k ? '' : tl.abbr));
+            var ab = U.el('b', '', k ? '' : tl.abbr), lt = tone(g.teams[abIdx(g, tl.abbr)]); if (lt) ab.style.color = lt; r.appendChild(ab);
             var c = U.el('span', '', x.who + '   '); c.appendChild(U.el('em', '', x.value)); c.appendChild(U.el('small', '', '   ' + x.what.toLowerCase())); r.appendChild(c);
             left.appendChild(r);
           });
@@ -292,8 +302,8 @@ var SportsHub = (function () {
     var right = U.el('div', 'sp-panel sp-side2');
     right.appendChild(U.el('div', 'sp-cap', T('On your channels')));
     if (!bt.cs.length) right.appendChild(U.el('div', 'sp-muted', g.nets.length ? T('Not on your channels.  It\'s on {x}.', { x: g.nets.join(', ') }) : T('Not on your channels.')));
-    var c0 = Math.max(0, Math.min(gp.ci - 2, bt.cs.length - 4));
-    bt.cs.slice(c0, c0 + 4).forEach(function (x, j) {
+    var c0 = Math.max(0, Math.min(gp.ci - 1, bt.cs.length - 3));
+    bt.cs.slice(c0, c0 + 3).forEach(function (x, j) {
       var r = U.el('div', 'sp-chrow' + (gp.zone === 'chans' && c0 + j === gp.ci ? ' sel' : ''));
       var lg = U.el('div', 'sp-chlogo'), src = Views.logoOf ? Views.logoOf(x.c) : '';
       if (src) { var im = new Image(); im.src = src; im.onerror = function () { this.remove(); }; lg.appendChild(im); }
@@ -310,14 +320,25 @@ var SportsHub = (function () {
       right.appendChild(U.el('div', 'sp-cap', gr.name || T('Standings')));
       var st = U.el('table', 'sp-stand'), hr2 = U.el('tr');
       hr2.appendChild(U.el('th', '', '')); hr2.appendChild(U.el('th', '', T('W-L'))); hr2.appendChild(U.el('th', '', gr.rows[0] && gr.rows[0].extra ? gr.rows[0].extra.k : '')); st.appendChild(hr2);
-      gr.rows.slice(0, Math.max(3, 7 - Math.min(bt.cs.length, 4))).forEach(function (r) {
-        var tr = U.el('tr', g.teams.some(function (t) { return t.loc && r.team && (r.team === t.loc || r.team === t.name || r.team === t.full); }) ? 'me' : '');
+      // The top of the table, and this game's teams always, below a break when they're further down.
+      var whose = function (r) { return g.teams.filter(function (t) { return t.loc && r.team && (r.team === t.loc || r.team === t.name || r.team === t.full); })[0]; }, isMe = function (r) { return !!whose(r); };
+      var n = Math.max(3, Math.floor((360 - 80 * Math.min(bt.cs.length, 3)) / 43)), low = gr.rows.slice(n).filter(isMe), top = gr.rows.slice(0, Math.max(n - low.length, 2));
+      top.concat(low).forEach(function (r, i) {
+        var tr = U.el('tr', (isMe(r) ? 'me' : '') + (low.length && i === top.length ? ' gap' : ''));
+        if (whose(r) && tone(whose(r))) tr.style.color = tone(whose(r));
         tr.appendChild(U.el('td', '', RAW(r.team))); tr.appendChild(U.el('td', '', hide ? '·' : r.rec)); tr.appendChild(U.el('td', '', hide ? '' : r.extra ? r.extra.v : ''));
         st.appendChild(tr);
       });
       right.appendChild(st);
     }
     el.appendChild(right);
+    // Rows that don't fit go, from the bottom of the top part (this game's teams stay).
+    var stt = right.querySelector('table.sp-stand');
+    for (var guard = 0; stt && guard < 12 && right.scrollHeight > right.clientHeight + 2; guard++) {
+      var rs = [].slice.call(stt.querySelectorAll('tr')).slice(1).filter(function (x) { return !/\bme\b/.test(x.className); });
+      if (rs.length <= 1) break;
+      stt.removeChild(rs[rs.length - 1]);
+    }
     UI.hints([['', 'OK  select', 'ok'], ['', '◀ ▶  buttons', ''], ['', '▼  channels', ''], ['', 'Back  games', 'back']]);
   }
   function pageKeys(a) {

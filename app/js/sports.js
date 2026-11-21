@@ -128,9 +128,19 @@ var Sports = (function () {
     return Promise.all(jobs);
   }
   function anyLive() { return all().some(function (g) { return g.state === 'in'; }); }
+  /* Every loaded game once.  ESPN's NFL scoreboard for today is the whole week, so a game can be in two days'
+     answers: the newer answer wins. */
   function all() {
-    var out = [];
-    loaded().forEach(function (lg) { var m = store[lg.id] || {}; Object.keys(m).forEach(function (k) { out = out.concat(m[k].games); }); });
+    var out = [], at = {}, pos = {};
+    loaded().forEach(function (lg) {
+      var m = store[lg.id] || {};
+      Object.keys(m).forEach(function (k) {
+        m[k].games.forEach(function (g) {
+          if (pos[g.id] == null) { pos[g.id] = out.length; at[g.id] = m[k].at; out.push(g); }
+          else if (m[k].at > at[g.id]) { out[pos[g.id]] = g; at[g.id] = m[k].at; }
+        });
+      });
+    });
     return out;
   }
   function day(lgId, off) { var m = store[lgId] || {}, d = m[dayKey(off)]; return d ? d.games : null; }

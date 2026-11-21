@@ -118,7 +118,7 @@ var SportsLive = (function () {
     if (!c) { U.toast(text, 8000); return; }
     var title = T('Close game');
     UI.menu(title, [
-      { label: T('Watch on {x}', { x: Library.name(c) }), sub: text, icon: 'play', action: function () { Views.startChannel(c, false, function () { Views.goFull(); }); } },
+      { label: T('Watch on {x}', { x: Library.name(c) }), icon: 'play', action: function () { Views.startChannel(c, false, function () { Views.goFull(); }); } },
       { label: T('Not now'), current: false }
     ], null, { sub: text });
     setTimeout(function () { var mt = document.getElementById('modalTitle'); if (UI.modalOpen && mt && mt.textContent.indexOf(T(title)) >= 0) UI.close(); }, 15000);
