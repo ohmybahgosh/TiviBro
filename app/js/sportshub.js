@@ -11,7 +11,7 @@ var SportsHub = (function () {
   var T = function (s, v) { return typeof I18n !== 'undefined' ? I18n.t(s, v) : String(s).replace(/\{([a-z])\}/g, function (a, k) { return v && v[k] != null ? v[k] : a; }); };
   var RAW = function (s) { return typeof I18n !== 'undefined' ? I18n.raw(s) : s; };
   var $ = function (id) { return document.getElementById(id); };
-  var built = false, open_ = false, rows = [], row = 0, pos = {}, timer = null, sig = '', firstLoad = true, touched = false;
+  var BOOT = Date.now(), openedAt = 0, built = false, open_ = false, rows = [], row = 0, pos = {}, timer = null, sig = '', firstLoad = true, touched = false;
   var CARD = 472;                                               // a card and the gap after it, px (app.css .sp-card)
 
   function build() {
@@ -24,7 +24,7 @@ var SportsHub = (function () {
   /* ---------- what's in the rows (Sports.rows) ---------- */
   function mine(g) { return Sports.follows(g); }
   function data() { return Sports.rows(T); }
-  function signature(rs) { return rs.map(function (r) { return r.id + ':' + r.items.map(function (g) { return g.id + g.state + g.detail + (Sports.hidden(g) ? 'H' : '') + g.teams.map(function (t) { return t.score; }).join('-'); }).join(','); }).join('|'); }
+  function signature(rs) { return rs.map(function (r) { return r.id + ':' + r.items.map(function (g) { return g.id + g.state + g.detail + (Sports.hidden(g) ? 'H' : '') + g.teams.map(function (t) { return t.score; }).join('-') + '#' + Sports.channels(g).length; }).join(','); }).join('|'); }
 
   /* ---------- cards ---------- */
   function teamRow(g, t, o) {
@@ -45,6 +45,12 @@ var SportsHub = (function () {
     if (g.state === 'post' && !hide && o && t.score != null) el.appendChild(U.el('div', 'sp-win', win ? '◀' : ''));
     return el;
   }
+  // A card's time with its date, in the TV's date format: "Sat, Nov 22  ·  1:00pm", "Final  ·  Fri, Nov 21".
+  function cardWhen(g) {
+    if (g.state === 'in') return status(g);
+    if (g.state === 'post') return status(g) + '  ·  ' + U.dateShort(g.s);
+    return U.dateShort(g.s) + '  ·  ' + U.hhmm(g.s);
+  }
   function status(g) {
     if (g.state !== 'pre' && Sports.hidden(g)) return g.state === 'in' ? T('On now, score hidden') : T('Played, score hidden');
     if (g.state === 'in') return g.detail.replace(/\s+-\s+/, ' ');
@@ -52,16 +58,33 @@ var SportsHub = (function () {
     var d = U.day(g.s);
     return (d === T('Today') ? '' : d + ' ') + U.hhmm(g.s);
   }
+  /* A small colour picture of the sport, on each card and before a league's row (32 x 32, flat, no ids). */
+  var SPORT_ICON = {
+    football: '<g transform="rotate(-35 16 16)"><ellipse cx="16" cy="16" rx="13.5" ry="8.2" fill="#8b4a22" stroke="#5a2c10" stroke-width="1"/><path d="M5 13.5C9 9.6 23 9.6 27 13.5C23 11.4 9 11.4 5 13.5Z" fill="#b0632f" opacity=".9"/><path d="M7.2 10.8v10.4M24.8 10.8v10.4" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/><path d="M11.5 16h9" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/><path d="M13 14.6v2.8M15 14.6v2.8M17 14.6v2.8M19 14.6v2.8" stroke="#fff" stroke-width="1.1" stroke-linecap="round"/></g>',
+    basketball: '<circle cx="16" cy="16" r="13.5" fill="#f2862a" stroke="#8c3a0b" stroke-width="1"/><path d="M16 2.5v27M2.5 16h27M6.8 6.2C11.6 10.6 11.6 21.4 6.8 25.8M25.2 6.2C20.4 10.6 20.4 21.4 25.2 25.8" fill="none" stroke="#7a3008" stroke-width="1.3"/><ellipse cx="10.5" cy="9.5" rx="4" ry="2.2" transform="rotate(-35 10.5 9.5)" fill="#fff" opacity=".22"/>',
+    hockey: '<path d="M7 3.5L20 21.5" stroke="#d9a065" stroke-width="3" stroke-linecap="round"/><path d="M25 3.5L12 21.5" stroke="#c98a4b" stroke-width="3" stroke-linecap="round"/><path d="M7 3.5l1.6 2.2M25 3.5l-1.6 2.2" stroke="#1d222b" stroke-width="3.2" stroke-linecap="round"/><path d="M18.6 19.6l2.6-.6c1 1 3 1.6 5.6 1.4 1 0 1.6.6 1.4 1.5l-.2.8c-.2.9-.9 1.4-1.9 1.4-3.6 0-6.4-1-8-3z" fill="#e8edf5" stroke="#1f2a44" stroke-width=".9"/><path d="M13.4 19.6l-2.6-.6c-1 1-3 1.6-5.6 1.4-1 0-1.6.6-1.4 1.5l.2.8c.2.9.9 1.4 1.9 1.4 3.6 0 6.4-1 8-3z" fill="#e8edf5" stroke="#1f2a44" stroke-width=".9"/><path d="M22.5 20.2v3M24.5 20.6v3M9.5 20.2v3M7.5 20.6v3" stroke="#3b82f6" stroke-width="1"/><ellipse cx="16" cy="28" rx="5.2" ry="2" fill="#05070a"/><rect x="10.8" y="25.8" width="10.4" height="2.2" fill="#151a22"/><ellipse cx="16" cy="25.8" rx="5.2" ry="2" fill="#363d4a"/><ellipse cx="14.8" cy="25.3" rx="2" ry=".55" fill="#fff" opacity=".22"/>',
+    baseball: '<circle cx="16" cy="16" r="13.5" fill="#fbf8f0" stroke="#c9c2b2" stroke-width="1"/><path d="M8.2 5.2C12.6 10 12.6 22 8.2 26.8M23.8 5.2C19.4 10 19.4 22 23.8 26.8" fill="none" stroke="#d8352a" stroke-width="1.2"/><path d="M8.2 5.2C12.6 10 12.6 22 8.2 26.8M23.8 5.2C19.4 10 19.4 22 23.8 26.8" fill="none" stroke="#d8352a" stroke-width="3.4" stroke-dasharray=".8 2.1"/><ellipse cx="11" cy="9" rx="4" ry="2" transform="rotate(-35 11 9)" fill="#fff" opacity=".7"/>',
+    soccer: '<circle cx="16" cy="16" r="13.5" fill="#fff" stroke="#2a2f38" stroke-width="1.1"/><path d="M16 11.3l4.5 3.2-1.7 5.3h-5.6l-1.7-5.3z" fill="#1d222b"/><path d="M16 11.3V6.4M20.5 14.5l4.6-1.6M18.8 19.8l2.9 4M13.2 19.8l-2.9 4M11.5 14.5l-4.6-1.6" stroke="#2a2f38" stroke-width="1"/><path d="M12.6 3.4L16 5.9l3.4-2.5A13.5 13.5 0 0 0 12.6 3.4zM26.7 10.4l-1.2 4 2.5 3.3a13.5 13.5 0 0 0-1.3-7.3zM24.6 26.4l-1.2-4.1-4.1-.2-1.2 7.1a13.5 13.5 0 0 0 6.5-2.8zM7.4 26.4a13.5 13.5 0 0 0 6.5 2.8l-1.2-7.1-4.1.2zM5.3 10.4A13.5 13.5 0 0 0 4 17.7l2.5-3.3z" fill="#1d222b"/>',
+    racing: '<path d="M6.5 3.5v26" stroke="#aab3c2" stroke-width="2" stroke-linecap="round"/><path d="M7.5 5c4-1.6 8 1.6 12 0s6-1 8 0v12.5c-2-1-4-1.6-8 0s-8-1.6-12 0z" fill="#fff" stroke="#2a2f38" stroke-width=".8"/><path d="M7.5 5c1.3-.5 2.7-.6 4-.4v4.2c-1.3-.2-2.7-.1-4 .4zM15.5 5.6c1.3.3 2.7.3 4-.1v4.1c-1.3.4-2.7.4-4 .1zM11.5 8.8c1.4.2 2.7.6 4 .9v4.2c-1.3-.3-2.6-.7-4-.9zM19.5 9.6c1.3-.4 2.6-.7 4-.7v4.2c-1.4 0-2.7.3-4 .7zM7.5 13.2c1.3-.5 2.7-.6 4-.4v4.2c-1.3-.2-2.7-.1-4 .4zM15.5 13.9c1.3.3 2.7.3 4-.1v4.1c-1.3.4-2.7.4-4 .1zM23.5 4.6c1.4-.1 2.7.1 4 .4v3.9c-1.3-.3-2.6-.5-4-.4zM23.5 12.9c1.4-.1 2.7.1 4 .4v4.2c-1.3-.3-2.6-.5-4-.4z" fill="#1d222b"/>'
+  };
+  function sportOf(lg) { var l = Sports.league(lg); return l && l.path ? l.path.split('/')[0] : ''; }
+  function sportIcon(lg, cls) {
+    var k = sportOf(lg), svg = SPORT_ICON[k];
+    var s = U.el('span', 'sp-sic' + (cls ? ' ' + cls : ''));
+    if (svg) s.innerHTML = '<svg viewBox="0 0 32 32" aria-hidden="true">' + svg + '</svg>';
+    return s;
+  }
   function card(g, r, ri, i) {
     var cs = Sports.channels(g), best = cs[0];
     var el = U.el('div', 'sp-card' + (g.state === 'in' ? ' live' : g.state === 'post' ? ' post' : ''));
     if (r.id !== 'mine' && mine(g)) el.appendChild(U.el('span', 'sp-mine', T('MY TEAM')));
     if (g.teams.length === 2) { el.appendChild(teamRow(g, g.teams[0], g.teams[1])); el.appendChild(teamRow(g, g.teams[1], g.teams[0])); }
     else { el.appendChild(U.el('div', 'sp-event', RAW(g.name))); if (g.venue) el.appendChild(U.el('div', 'sp-venue', RAW(g.venue))); }
+    el.appendChild(sportIcon(g.lg, 'card'));                    // bottom right, beside the time and channel
     var meta = U.el('div', 'sp-meta');
     if (g.state === 'in') meta.appendChild(U.el('span', 'sp-live', T('LIVE')));
-    if (r.id === 'mine' || r.id === 'live') meta.appendChild(U.el('span', 'sp-lg', Sports.league(g.lg).name));
-    meta.appendChild(U.el('span', 'sp-st', status(g)));
+    if (r.id === 'mine' || r.id === 'live' || r.id === 'recent') { var L = Sports.league(g.lg); meta.appendChild(U.el('span', 'sp-lg', L.short || L.name)); }
+    meta.appendChild(U.el('span', 'sp-st', cardWhen(g)));
     var ch = U.el('span', 'sp-ch' + (best ? '' : ' none'));
     if (best) { ch.appendChild(U.el('i', 'sp-dot')); ch.appendChild(U.el('em', '', RAW(Library.name(best.c)) + (cs.length > 1 ? '  +' + (cs.length - 1) : ''))); }
     else if (g.state !== 'post') ch.appendChild(U.el('em', '', g.nets.length ? RAW(g.nets[0]) + ' · ' + T('not on your channels') : T('not on your channels')));
@@ -94,7 +117,9 @@ var SportsHub = (function () {
     }
     rows.forEach(function (r, ri) {
       var shelf = U.el('div', 'sp-shelf'), track = U.el('div', 'sp-track');
-      var h = U.el('h3', '', r.title); h.appendChild(U.el('span', 'sp-rsub', r.sub)); shelf.appendChild(h);
+      var h = U.el('h3', '', '');
+      if (/^lg:/.test(r.id)) h.appendChild(sportIcon(r.id.slice(3), 'big'));
+      h.appendChild(document.createTextNode(r.title)); h.appendChild(U.el('span', 'sp-rsub', r.sub)); shelf.appendChild(h);
       r.items.forEach(function (g, i) { track.appendChild(card(g, r, ri, i)); });
       shelf.appendChild(track);
       stage.appendChild(shelf);
@@ -302,7 +327,9 @@ var SportsHub = (function () {
           // A line a leader (football's are long: "16/27, 162 YDS, 1 TD"), the team's abbreviation on its first.
           tl.list.slice(0, 2).forEach(function (x, k) {
             var r = U.el('div', 'sp-lead');
-            r.appendChild(U.el('b', '', k ? '' : tl.abbr));
+            var lb = U.el('b'), lt = g.teams[abIdx(g, tl.abbr)];
+            if (!k) { if (lt && lt.logo) { var li = new Image(); li.src = lt.logo; li.className = 'sp-mini'; lb.appendChild(li); } lb.appendChild(document.createTextNode(tl.abbr)); }
+            r.appendChild(lb);
             var c = U.el('span', '', x.who + '   '); c.appendChild(U.el('em', '', x.value)); c.appendChild(U.el('small', '', '   ' + x.what.toLowerCase())); r.appendChild(c);
             left.appendChild(r);
           });
@@ -316,8 +343,8 @@ var SportsHub = (function () {
     // A game that's over: no channels, only the standings.
     if (g.state !== 'post') right.appendChild(U.el('div', 'sp-cap', T('On your channels')));
     if (g.state !== 'post' && !bt.cs.length) right.appendChild(U.el('div', 'sp-muted', g.nets.length ? T('Not on your channels.  It\'s on {x}.', { x: g.nets.join(', ') }) : T('Not on your channels.')));
-    var c0 = Math.max(0, Math.min(gp.ci - 1, bt.cs.length - 3));
-    bt.cs.slice(c0, c0 + 3).forEach(function (x, j) {
+    var CW = sum && sum.standings.length ? 2 : 3, c0 = Math.max(0, Math.min(gp.ci - (CW - 1), bt.cs.length - CW));
+    bt.cs.slice(c0, c0 + CW).forEach(function (x, j) {
       var r = U.el('div', 'sp-chrow' + (gp.zone === 'chans' && c0 + j === gp.ci ? ' sel' : ''));
       var lg = U.el('div', 'sp-chlogo'), src = Views.logoOf ? Views.logoOf(x.c) : '';
       if (src) { var im = new Image(); im.src = src; im.onerror = function () { this.remove(); }; lg.appendChild(im); }
@@ -339,13 +366,15 @@ var SportsHub = (function () {
       hr2.appendChild(U.el('th', '', '')); hr2.appendChild(U.el('th', '', T('W-L'))); hr2.appendChild(U.el('th', '', gr.rows[0] && gr.rows[0].extra ? gr.rows[0].extra.k : '')); st.appendChild(hr2);
       // The top of the table, and this game's teams always, below a break when they're further down.
       var whose = function (r) { return g.teams.filter(function (t) { return t.loc && r.team && (r.team === t.loc || r.team === t.name || r.team === t.full); })[0]; }, isMe = function (r) { return !!whose(r); };
-      var n = Math.max(3, Math.floor(((g.state === 'post' ? 440 : 360) - 80 * Math.min(bt.cs.length, 3)) / 43)), keep = [];
+      var n = Math.max(3, Math.floor(((g.state === 'post' ? 440 : 360) - 80 * Math.min(bt.cs.length, sum && sum.standings.length ? 2 : 3)) / 43)), keep = [];
       gr.rows.forEach(function (r, i) { if (i < n || isMe(r)) keep.push(i); });
       for (var j = keep.length - 1; keep.length > n && j >= 0; j--) if (!isMe(gr.rows[keep[j]])) keep.splice(j, 1);
       keep.forEach(function (ix, i) {
         var r = gr.rows[ix], tr = U.el('tr', (isMe(r) ? 'me' : '') + (i && keep[i - 1] !== ix - 1 ? ' gap' : ''));
         tr.setAttribute('data-i', ix);
-        tr.appendChild(U.el('td', '', RAW(r.team))); tr.appendChild(U.el('td', '', hide ? '·' : r.rec)); tr.appendChild(U.el('td', '', hide ? '' : r.extra ? r.extra.v : ''));
+        var nt = U.el('td'), wt = whose(r);
+        if (wt && wt.logo) { var si = new Image(); si.src = wt.logo; si.className = 'sp-mini'; nt.appendChild(si); }
+        nt.appendChild(document.createTextNode(RAW(r.team))); tr.appendChild(nt); tr.appendChild(U.el('td', '', hide ? '·' : r.rec)); tr.appendChild(U.el('td', '', hide ? '' : r.extra ? r.extra.v : ''));
         st.appendChild(tr);
       });
       right.appendChild(st);
@@ -411,10 +440,12 @@ var SportsHub = (function () {
   function schedule() {
     clearTimeout(timer);
     if (!open_) return;
-    timer = setTimeout(function () { if (open_ && Views.tab === 'sports' && !Views.full) load(false); else schedule(); }, Sports.anyLive() ? Sports.LIVE_MS : Sports.TODAY_MS);
+    // The first two minutes after TiviBro starts the guide may still be loading: look for the channels again soon.
+    var soon = Date.now() - openedAt < 120000 || Date.now() - BOOT < 180000;
+    timer = setTimeout(function () { if (open_ && Views.tab === 'sports' && !Views.full) load(false); else schedule(); }, soon ? 15000 : Sports.anyLive() ? Sports.LIVE_MS : Sports.TODAY_MS);
   }
   function open() {
-    build(); open_ = true;
+    build(); open_ = true; openedAt = Date.now();
     rows = []; row = 0; pos = {}; sig = ''; touched = false;
     UI.setHandler(keys);
     render(true);

@@ -22,16 +22,16 @@ var Sports = (function () {
   /* team: the My teams league (teams.js) whose teams these are, for following and the guide. */
   var LEAGUES = [
     { id: 'nfl', name: 'NFL', path: 'football/nfl', team: 'nfl' },
-    { id: 'ncaaf', name: 'College football', path: 'football/college-football', team: 'ncaaf' },
+    { id: 'ncaaf', name: 'College football', short: 'NCAAF', path: 'football/college-football', team: 'ncaaf' },
     { id: 'nba', name: 'NBA', path: 'basketball/nba', team: 'nba' },
-    { id: 'ncaab', name: 'College basketball', path: 'basketball/mens-college-basketball', team: 'ncaab' },
+    { id: 'ncaab', name: 'College basketball', short: 'NCAAB', path: 'basketball/mens-college-basketball', team: 'ncaab' },
     { id: 'wnba', name: 'WNBA', path: 'basketball/wnba', team: 'wnba' },
     { id: 'nhl', name: 'NHL', path: 'hockey/nhl', team: 'nhl' },
     { id: 'mlb', name: 'MLB', path: 'baseball/mlb', team: 'mlb' },
     { id: 'mls', name: 'MLS', path: 'soccer/usa.1', team: 'mls' },
-    { id: 'epl', name: 'Premier League', path: 'soccer/eng.1' },
-    { id: 'ucl', name: 'Champions League', path: 'soccer/uefa.champions' },
-    { id: 'f1', name: 'Formula 1', path: 'racing/f1', race: true }
+    { id: 'epl', name: 'Premier League', short: 'EPL', path: 'soccer/eng.1' },
+    { id: 'ucl', name: 'Champions League', short: 'UCL', path: 'soccer/uefa.champions' },
+    { id: 'f1', name: 'Formula 1', short: 'F1', path: 'racing/f1', race: true }
   ];
   var BY = {}; LEAGUES.forEach(function (l) { BY[l.id] = l; });
   var DEFAULT = ['nfl', 'ncaaf', 'nba', 'nhl', 'mlb'];
@@ -122,9 +122,10 @@ var Sports = (function () {
     var jobs = [], mine = followedLeagues();
     loaded().forEach(function (lg) {
       jobs.push(load(lg, dayKey(0), force), load(lg, dayKey(1), force));
-      // Yesterday too for your teams' leagues: last night's games get their finals (else one loaded before it
-      // started stays "7:30pm" for good).
-      if (mine.indexOf(lg.id) >= 0) { jobs.push(load(lg, dayKey(-1), false)); for (var d = 2; d <= AHEAD_DAYS; d++) jobs.push(load(lg, dayKey(d), false)); }
+      // Yesterday too: last night's finals for Recent results (and a game loaded before it started doesn't stay
+      // "7:30pm" for good).  The days ahead only for your teams' leagues.
+      jobs.push(load(lg, dayKey(-1), false));
+      if (mine.indexOf(lg.id) >= 0) for (var d = 2; d <= AHEAD_DAYS; d++) jobs.push(load(lg, dayKey(d), false));
     });
     jobs.forEach(function (j) { j.then(function () { if (then) then(); }); });
     return Promise.all(jobs);
@@ -267,7 +268,8 @@ var Sports = (function () {
     var list = [];
     try { if (typeof Teams !== 'undefined' && Teams.games && Object.keys(ids).length && typeof Epg !== 'undefined' && Epg.search) list = Teams.games(36 * 3600e3, false, Object.keys(ids)); } catch (e) { if (typeof Log !== 'undefined') Log.warn('sports', 'Finding games in the guide: ' + (e && e.message)); }
     list.forEach(function (x) { (map[x.team.id] || (map[x.team.id] = [])).push(x); });
-    chanCache = { at: now, of: Library.data.channels, map: map };
+    // Nothing found yet (the guide is still loading after a start): look again in 10 seconds, not 2 minutes.
+    chanCache = { at: list.length ? now : now - 110000, of: Library.data.channels, map: map };
     return map;
   }
   /* [{ c, p, how: 'guide' | 'net', net }] for a game, best first: the guide naming both teams, then one team at
@@ -304,9 +306,17 @@ var Sports = (function () {
     seen = {};
     var live = every.filter(function (g) { if (seen[g.id] || g.state !== 'in') return false; seen[g.id] = 1; return BY[g.lg] && leagues().indexOf(BY[g.lg]) >= 0 || follows(g); }).sort(order);
     if (live.length) out.push({ id: 'live', title: t('Live now'), sub: live.length === 1 ? t('1 game') : t('{n} games', { n: live.length }), items: live });
+    // Finals of the last day and a half, your teams' first, then the newest.
+    seen = {};
+    var recent = every.filter(function (g) { if (seen[g.id] || g.state !== 'post' || g.s < now - 36 * 3600e3) return false; seen[g.id] = 1; return BY[g.lg] && leagues().indexOf(BY[g.lg]) >= 0 || follows(g); })
+      .sort(function (a, b) { return (follows(b) ? 1 : 0) - (follows(a) ? 1 : 0) || b.s - a.s; }).slice(0, 30);
+    if (recent.length) out.push({ id: 'recent', title: t('Recent results'), sub: t('final scores, your teams first'), items: recent });
     leagues().forEach(function (lg) {
-      var today = day(lg.id, 0), when = '', list = today;
-      if (today && !today.length) { list = day(lg.id, 1); when = t('Tomorrow'); }
+      // ESPN's scoreboard for a league out of season answers with its last game (MLB in November: the World
+      // Series).  Only games from the last day and a half and later count, so such a league has no row.
+      var fresh = function (l) { return l && l.filter(function (g) { return g.s > now - 36 * 3600e3; }); };
+      var today = fresh(day(lg.id, 0)), when = '', list = today;
+      if (today && !today.length) { list = fresh(day(lg.id, 1)); when = t('Tomorrow'); }
       if (!list || !list.length) return;                     // not loaded yet, or nothing
       out.push({ id: 'lg:' + lg.id, title: lg.name, sub: (when ? when + '  ·  ' : '') + (list.length === 1 ? t('1 game') : t('{n} games', { n: list.length })), items: list.slice().sort(order) });
     });

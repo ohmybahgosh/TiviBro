@@ -63,6 +63,15 @@ var U = (function () {
     h = h % 12 || 12;
     return h + ':' + pad(m) + ampm;
   }
+  /* A date the way the TV writes dates (its region's locale): "Sat, Nov 21" in the US, "Sat 21 Nov" in the UK.
+     weekday false: "Nov 21". */
+  function tvLocale() {
+    try { var l = typeof I18n !== 'undefined' && I18n.detected ? String(I18n.detected().locale || '').replace('_', '-') : ''; return l || navigator.language || 'en-US'; } catch (e) { return 'en-US'; }
+  }
+  function dateShort(ts, weekday) {
+    var o = { month: 'short', day: 'numeric' }; if (weekday !== false) o.weekday = 'short';
+    try { return new Date(ts).toLocaleDateString(tvLocale(), o); } catch (e) { return new Date(ts).toDateString().slice(0, 10); }
+  }
   // "Today", "Tomorrow" or the weekday, for programme times in lists.
   function day(ts) {
     var d = new Date(ts), t = new Date(), y = new Date(t.getFullYear(), t.getMonth(), t.getDate()).getTime();
@@ -280,6 +289,6 @@ var U = (function () {
   return {
     watchedFrac: watchedFrac, isWatchedAt: isWatchedAt,
     lines: lines, notice: notice, hsl: hsl, luminance: luminance, onColor: onColor, mix: mix,
-    runtime: runtime, secretShape: secretShape, KEY: KEY, $: $, el: el, clamp: clamp, debounce: debounce, hhmm: hhmm, day: day, LANGS: LANGS, lang: lang, hash: hash,
+    runtime: runtime, secretShape: secretShape, KEY: KEY, $: $, el: el, clamp: clamp, debounce: debounce, hhmm: hhmm, day: day, dateShort: dateShort, tvLocale: tvLocale, LANGS: LANGS, lang: lang, hash: hash,
     b64utf8: b64utf8, request: request, readJSON: readJSON, httpSays: httpSays, getJSON: getJSON, getText: getText, toast: toast, idle: idle, pad: pad, loc: loc };
 })();

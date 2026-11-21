@@ -46,6 +46,7 @@ import androidx.compose.material.icons.rounded.Movie
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.FiberManualRecord
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.SportsFootball
 import androidx.compose.material.icons.rounded.Theaters
 import androidx.compose.material.icons.rounded.VideoLibrary
 import androidx.compose.material.icons.rounded.Edit
@@ -286,6 +287,7 @@ private fun Empty(modifier: Modifier, onScan: () -> Unit, onFind: () -> Unit) {
 private fun iconOf(s: Shortcut): ImageVector = when (s) {
     Shortcut.REMOTE -> Icons.Rounded.SettingsRemote
     Shortcut.GUIDE -> Icons.Rounded.CalendarMonth
+    Shortcut.SPORTS -> Icons.Rounded.SportsFootball
     Shortcut.ON_NOW -> Icons.Rounded.Theaters
     Shortcut.VOD -> Icons.Rounded.Movie
     Shortcut.MEDIA -> Icons.Rounded.VideoLibrary

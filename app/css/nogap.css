@@ -55,7 +55,8 @@
 .nogap .spo-head > * + *{margin-left:22px}
 .nogap .sp-track > * + *{margin-left:24px}
 .nogap .sp-team > * + *{margin-left:18px}
-.nogap .sp-meta > * + *{margin-left:10px}
+.nogap .sp-meta > *{margin-right:10px;margin-bottom:8px}
+.nogap .sp-meta{margin-bottom:-8px}
 .nogap .sp-ch > * + *{margin-left:8px}
 .nogap .sp-wline > * + *{margin-left:14px}
 .nogap .sp-btns > * + *{margin-left:18px}

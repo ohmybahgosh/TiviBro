@@ -55,6 +55,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.tivibro.phone.proto.SportGame
+import app.tivibro.phone.proto.SportStandRow
 import app.tivibro.phone.proto.SportTeam
 import app.tivibro.phone.proto.SportsList
 import app.tivibro.phone.proto.TbException
@@ -63,18 +64,15 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private fun clock(t: Long): String = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT).format(java.util.Date(t))
-private fun dayOf(t: Long, now: Long): String {
-    val a = java.util.Calendar.getInstance().apply { timeInMillis = now }; val b = java.util.Calendar.getInstance().apply { timeInMillis = t }
-    val d = ((b.get(java.util.Calendar.YEAR) - a.get(java.util.Calendar.YEAR)) * 366) + b.get(java.util.Calendar.DAY_OF_YEAR) - a.get(java.util.Calendar.DAY_OF_YEAR)
-    return when (d) { 0 -> ""; 1 -> "Tomorrow "; else -> java.text.SimpleDateFormat("EEE ", java.util.Locale.getDefault()).format(java.util.Date(t)) }
-}
 /** As the TV says it: "2:10 4th", "Final", or when it starts ("Tomorrow 7:00 PM"). */
 private fun status(g: SportGame, now: Long): String = when {
     g.hidden -> if (g.live) "On now, score hidden" else "Played, score hidden"
     g.state == "in" -> g.detail.replace(Regex("\\s+-\\s+"), " ")
     g.state == "post" -> "Final" + (Regex("OT|SO|/\\d").find(g.detail)?.let { " " + g.detail.replace(Regex("^Final/?", RegexOption.IGNORE_CASE), "") } ?: "")
-    else -> dayOf(g.start, now) + clock(g.start)
+    else -> dateOf(g.start) + "  ·  " + clock(g.start)
 }
+/** "Sat, Nov 22", in the phone's own date format. */
+private fun dateOf(t: Long): String = android.text.format.DateFormat.format(android.text.format.DateFormat.getBestDateTimePattern(java.util.Locale.getDefault(), "EEEMMMd"), t).toString()
 private fun color(hex: String, a: Float): Color = try { Color(android.graphics.Color.parseColor("#$hex")).copy(alpha = a) } catch (e: Exception) { Panel2.copy(alpha = a) }
 
 @Composable
@@ -146,7 +144,7 @@ private fun GameCard(g: SportGame, row: String, now: Long, onClick: () -> Unit) 
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (g.live) { StatusTag(true, "LIVE"); Spacer(Modifier.width(6.dp)) }
             if (row == "mine" || row == "live") { Text(g.league, color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold); Spacer(Modifier.width(6.dp)) }
-            Text(status(g, now), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+            Text(status(g, now) + if (g.state == "post") "  ·  " + dateOf(g.start) else "", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
             Spacer(Modifier.weight(1f))
             val c = g.chans.firstOrNull()
             Text(c?.name ?: if (g.state == "post") "" else "not on the TV's channels", color = if (c != null) TextHi else Muted, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
@@ -176,21 +174,25 @@ private fun GameSheet(model: AppModel, id: String, first: SportGame, now: Long, 
     ModalBottomSheet(onDismissRequest = onDone, sheetState = sheet, containerColor = Panel) {
         Column(Modifier.padding(bottom = 24.dp).verticalScroll(rememberScrollState())) {
             val a = g.teams.getOrNull(0); val h = g.teams.getOrNull(1)
+            // A final with a winner: 0 or 1, else -1.
+            val win = if (g.state == "post" && !g.hidden && a?.score != null && h?.score != null && a.score != h.score) (if (a.score!! > h.score!!) 0 else 1) else -1
+            // Which standings row is a team's: its full name starts with the row's ("Michigan" for the Wolverines, not the Spartans).
+            fun rowOf(rows: List<SportStandRow>, t: SportTeam): SportStandRow? = rows.filter { r -> r.team == t.name || r.team == t.full || t.full.startsWith(r.team + " ") }.maxByOrNull { it.team.length }
             // The score in the two teams' colours.
             Box(Modifier.fillMaxWidth().padding(16.dp, 0.dp).clip(RoundedCornerShape(18.dp))
                 .background(Brush.horizontalGradient(listOf(color(a?.color ?: "", 0.9f), Ink.copy(alpha = 0.92f), Ink.copy(alpha = 0.92f), color(h?.color ?: "", 0.9f)))).padding(14.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (a != null) TeamBlock(a, Modifier.weight(1f))
+                    if (a != null) TeamBlock(a, Modifier.weight(1f), win == 0, win == 1)
                     Column(Modifier.weight(1.2f), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(if (g.teams.size == 2 && g.state != "pre" && !g.hidden) "${a?.score ?: ""}  –  ${h?.score ?: ""}" else if (g.hidden) "Score hidden" else clock(g.start),
                             fontSize = if (g.state != "pre" && !g.hidden) 36.sp else 24.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.Center)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             if (g.live) { StatusTag(true, "LIVE"); Spacer(Modifier.width(6.dp)) }
-                            Text(status(g, now), fontSize = 12.sp, maxLines = 1)
+                            Text(if (g.state == "pre" && !g.hidden) dateOf(g.start) else status(g, now), fontSize = 12.sp, maxLines = 1)
                         }
                         Text(listOf(g.league, g.nets.firstOrNull().orEmpty()).filter { it.isNotBlank() }.joinToString("  ·  "), color = Color(0xFFD3D9EA), fontSize = 11.sp, maxLines = 1)
                     }
-                    if (h != null) TeamBlock(h, Modifier.weight(1f))
+                    if (h != null) TeamBlock(h, Modifier.weight(1f), win == 1, win == 0)
                 }
             }
             // Watch on TV, a reminder, follow, show the score.
@@ -215,17 +217,18 @@ private fun GameSheet(model: AppModel, id: String, first: SportGame, now: Long, 
                 Column(Modifier.padding(16.dp, 0.dp)) {
                     Row { Text("", Modifier.weight(2f)); (1..n).forEach { Text(it.toString(), Modifier.weight(1f), color = Muted, fontSize = 11.sp, textAlign = TextAlign.Center) }; Text("T", Modifier.weight(1f), color = Muted, fontSize = 11.sp, textAlign = TextAlign.Center) }
                     lines.forEachIndexed { i, l ->
-                        Row(Modifier.padding(vertical = 4.dp)) {
-                            Text(g.teams.getOrNull(i)?.name ?: l.abbr, Modifier.weight(2f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        val dim = win >= 0 && i != win
+                        Row(Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Row(Modifier.weight(2f), verticalAlignment = Alignment.CenterVertically) { MiniLogo(g.teams.getOrNull(i)); Text(g.teams.getOrNull(i)?.name ?: l.abbr, color = if (dim) Muted else TextHi, fontWeight = if (i == win) FontWeight.Bold else FontWeight.Normal, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                             (0 until n).forEach { p -> Text(l.periods.getOrNull(p).orEmpty(), Modifier.weight(1f), textAlign = TextAlign.Center) }
-                            Text(l.score, Modifier.weight(1f), fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center)
+                            Text(l.score + if (i == win) " ◀" else "", Modifier.weight(1f), fontWeight = FontWeight.ExtraBold, color = if (dim) Muted else TextHi, textAlign = TextAlign.Center)
                         }
                     }
                 }
-                sum?.leaders?.forEach { tl ->
+                sum?.leaders?.sortedBy { tl -> g.teams.indexOfFirst { it.abbr == tl.abbr }.let { if (it < 0) 9 else it } }?.forEach { tl ->
                     tl.list.take(2).forEachIndexed { k, x ->
-                        Row(Modifier.padding(16.dp, 3.dp)) {
-                            Text(if (k == 0) tl.abbr else "", Modifier.width(52.dp), color = Accent, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        Row(Modifier.padding(16.dp, 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Row(Modifier.width(76.dp), verticalAlignment = Alignment.CenterVertically) { if (k == 0) { MiniLogo(g.teams.firstOrNull { it.abbr == tl.abbr }); Text(tl.abbr, fontWeight = FontWeight.Bold, fontSize = 13.sp) } }
                             Text(x.who + "  ", fontSize = 13.sp); Text(x.value, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
@@ -245,13 +248,13 @@ private fun GameSheet(model: AppModel, id: String, first: SportGame, now: Long, 
                 }
             }
             // The standings of the teams' division or conference.
-            sum?.standings?.firstOrNull()?.let { st ->
+            (sum?.standings?.firstOrNull { st -> g.teams.any { t -> t.mine && rowOf(st.rows, t) != null } } ?: sum?.standings?.firstOrNull())?.let { st ->
                 Section(st.name.ifBlank { "Standings" })
                 st.rows.take(8).forEach { r ->
-                    val me = g.teams.any { it.full.contains(r.team) || it.name == r.team }
-                    Row(Modifier.padding(16.dp, 3.dp)) {
-                        Text(r.team, Modifier.weight(1f), color = if (me) Accent else TextHi, fontWeight = if (me) FontWeight.Bold else FontWeight.Normal, maxLines = 1)
-                        Text(if (g.hidden) "·" else r.rec, Modifier.width(70.dp), textAlign = TextAlign.End, color = if (me) Accent else TextHi)
+                    val who = g.teams.firstOrNull { rowOf(st.rows, it) == r }; val me = who != null
+                    Row(Modifier.fillMaxWidth().background(if (me) Color.White.copy(alpha = 0.06f) else Color.Transparent).padding(16.dp, 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) { if (me) MiniLogo(who); Text(r.team, fontWeight = if (me) FontWeight.Bold else FontWeight.Normal, maxLines = 1) }
+                        Text(if (g.hidden) "·" else r.rec, Modifier.width(70.dp), textAlign = TextAlign.End, fontWeight = if (me) FontWeight.Bold else FontWeight.Normal)
                         Text(if (g.hidden) "" else if (r.extraKey.isNotBlank()) r.extraKey + " " + r.extraValue else "", Modifier.width(80.dp), textAlign = TextAlign.End, color = Muted, fontSize = 12.sp)
                     }
                 }
@@ -262,14 +265,23 @@ private fun GameSheet(model: AppModel, id: String, first: SportGame, now: Long, 
 }
 
 @Composable
-private fun TeamBlock(t: SportTeam, modifier: Modifier) {
+private fun TeamBlock(t: SportTeam, modifier: Modifier, won: Boolean = false, lost: Boolean = false) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.size(52.dp), contentAlignment = Alignment.Center) {
-            if (t.logo.isNotBlank()) AsyncImage(model = t.logo, contentDescription = t.name, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
+            if (t.logo.isNotBlank()) AsyncImage(model = t.logo, contentDescription = t.name, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize(), alpha = if (lost) 0.55f else 1f)
         }
-        Text((if (t.rank > 0) "${t.rank} " else "") + t.name, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
+        Text((if (t.rank > 0) "${t.rank} " else "") + t.name, fontWeight = FontWeight.Bold, color = if (lost) Color(0xFFAAB2C8) else TextHi, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
         if (t.rec.isNotBlank()) Text(t.rec, color = Color(0xFFD3D9EA), fontSize = 11.sp)
+        if (won) Text("WINNER", color = Color(0xFF0B0E14), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(top = 4.dp).clip(RoundedCornerShape(50)).background(Color.White).padding(10.dp, 1.dp))
     }
+}
+
+/** A team's logo, small, before its name in the box score, leaders and standings. */
+@Composable
+private fun MiniLogo(t: SportTeam?) {
+    if (t == null || t.logo.isBlank()) return
+    AsyncImage(model = t.logo, contentDescription = null, contentScale = ContentScale.Fit, modifier = Modifier.size(20.dp))
+    Spacer(Modifier.width(8.dp))
 }
 
 @Composable
