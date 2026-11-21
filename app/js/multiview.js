@@ -92,6 +92,20 @@ var Multiview = (function () {
   }
 
   function stopPic(b) { if (b.img) { b.img.stop(); b.img = null; } }
+  // A still of a box's pictures, shown where the video goes until the video plays.
+  function hold(b) {
+    var img = b.img && b.img.el;
+    if (!img || !img.naturalWidth) return;
+    var cv = document.createElement('canvas'); cv.className = 'mv-pic mv-still';
+    cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+    try { cv.getContext('2d').drawImage(img, 0, 0); } catch (e) { return; }
+    // In the video's own box (the stage, over the boxes), under its spinner.
+    var st = stage(), v = document.getElementById('video'), done = false;
+    st.insertBefore(cv, document.getElementById('spinner'));
+    function gone() { if (done) return; done = true; cv.remove(); if (v) v.removeEventListener('playing', gone); }
+    if (v) v.addEventListener('playing', gone);
+    setTimeout(gone, 8000);
+  }
 
   /* A box's moving pictures: an <img> showing the helper's JPEGs one after another.  The helper sends them at an
      even pace (service/multiview.js), since an <img> shows each one the moment it comes.  A worker decoding them
@@ -115,28 +129,95 @@ var Multiview = (function () {
     if (!b || !b.c || i === main) return;
     var was = main;
     main = i;
-    if (b.img) { stopPic(b); }
+    /* Its last picture stays in the box, still, until the video has its first frame (or 8 seconds), so the box
+       doesn't go black while the channel connects; the other box's pictures follow as soon as the video let go. */
+    if (b.img) { hold(b); stopPic(b); }
     placeStage();
     Views.startChannel(b.c, true);
     Log.info('multiview', 'Sound from ' + Library.name(b.c) + (was >= 0 && boxes[was] && boxes[was].c ? ', pictures for ' + Library.name(boxes[was].c) : ''));
     setTimeout(function () { boxes.forEach(paint); }, was >= 0 ? 400 : 0);   // the old one's pictures after the video let go of its connection
   }
 
-  /* A channel for a box: your groups as the guide has them (Favorites, Recent and your groups first), then the
-     group's channels with what's on now.  Search by name is there too, first. */
+  /* A channel for a box: a small guide over the boxes, both still playing behind it.  Your groups on the left (as
+     the guide has them: Favorites, Recent and your groups first, Search by name at the top), the group's channels
+     on the right with their logo, what's on now with how far in it is, and what's next.  It opens on the group of
+     the box's channel (or the one with sound), on that channel.  ▲ ▼ move, ◀ ▶ between the two lists, OK picks,
+     Back closes. */
+  var pk = null, ROWS = 8;
   function pick(i) {
     var gs = Library.groups().filter(function (g) { return !g.head && !g.hidden && !g.blocked; });
-    UI.menu(T('A channel for this box'), [{ label: T('Search by name…'), action: function () { search(i); } }].concat(gs.map(function (g) {
-      return { label: I18n.raw(g.name), sub: g.count ? String(g.count) : '', action: function () { setTimeout(function () { channels(i, g); }, 0); } };
-    })));
+    var at = (boxes[i] && boxes[i].c) || (boxes[main] && boxes[main].c) || null, gi = 0, ci = 0;
+    if (at) { var k = gs.findIndex(function (g) { return g.id === at.g; }); if (k >= 0) gi = k; }
+    pk = { i: i, gs: gs, gi: gi + 1, ci: 0, col: 'ch', el: U.el('div', 'mv-guide') };
+    var chs = list();
+    if (at) { ci = chs.findIndex(function (c) { return c.k === at.k; }); pk.ci = Math.max(0, ci); }
+    if (!chs.length) pk.col = 'gr';
+    root.appendChild(pk.el);
+    UI.setHandler(pickKeys);
+    drawPick();
   }
-  function channels(i, g) {
-    var list = Library.channels(g.id).slice(0, 600), shown = {};
+  // The groups column: Search first, then the groups.
+  function list() { var g = pk.gi > 0 ? pk.gs[pk.gi - 1] : null; return g ? Library.channels(g.id).slice(0, 2000) : []; }
+  function drawPick() {
+    var el = pk.el, chs = list(), shown = {}, now = Date.now();
     boxes.forEach(function (b) { if (b.c) shown[b.c.k] = 1; });
-    UI.menu(I18n.raw(g.name), list.map(function (c) {
-      var nn = Epg.nowNext ? Epg.nowNext(c) : null, now = nn && nn.now;
-      return { label: I18n.raw((c.num ? c.num + '  ' : '') + Library.name(c)), sub: shown[c.k] ? T('on screen') : now ? I18n.raw(now.t) : '', action: function () { setBox(i, c); } };
-    }), function () { setTimeout(function () { pick(i); }, 0); });
+    el.innerHTML = '';
+    el.appendChild(U.el('div', 'mv-g-title', T('A channel for this box')));
+    var gcol = U.el('div', 'mv-g-groups' + (pk.col === 'gr' ? ' on' : '')), names = [T('Search by name…')].concat(pk.gs.map(function (g) { return I18n.raw(g.name); }));
+    var g0 = Math.max(0, Math.min(pk.gi - 4, names.length - 11));
+    names.slice(g0, g0 + 11).forEach(function (n, j) { var r = U.el('div', 'mv-g-group' + (g0 + j === pk.gi ? ' sel' : ''), n); r.setAttribute('data-raw', ''); gcol.appendChild(r); });
+    el.appendChild(gcol);
+    var ccol = U.el('div', 'mv-g-chans' + (pk.col === 'ch' ? ' on' : ''));
+    if (!chs.length) ccol.appendChild(U.el('div', 'mv-g-empty', pk.gi ? T('No channels in this group') : T('OK to type a name')));
+    var c0 = Math.max(0, Math.min(pk.ci - 3, chs.length - ROWS));
+    chs.slice(c0, c0 + ROWS).forEach(function (c, j) {
+      var row = U.el('div', 'mv-g-row' + (c0 + j === pk.ci ? ' sel' : '') + (shown[c.k] ? ' shown' : ''));
+      var lg = U.el('div', 'mv-g-logo'), src = Views.logoOf ? Views.logoOf(c) : '';
+      if (src) { var im = new Image(); im.decoding = 'async'; im.onerror = function () { this.remove(); }; im.src = src; lg.appendChild(im); }
+      row.appendChild(lg);
+      var tx = U.el('div', 'mv-g-text');
+      var nm = U.el('div', 'mv-g-name', (c.num ? c.num + '   ' : '') + Library.name(c) + (shown[c.k] ? '   ·   ' + T('on screen') : '')); nm.setAttribute('data-raw', ''); tx.appendChild(nm);
+      var nn = Epg.nowNext ? Epg.nowNext(c) : null, p = nn && nn.now, nx = nn && nn.next;
+      var pr = U.el('div', 'mv-g-now', p ? U.hhmm(p.s) + ' – ' + U.hhmm(p.e) + '   ' + p.t : T('No guide information')); pr.setAttribute('data-raw', ''); tx.appendChild(pr);
+      if (p) { var bar = U.el('div', 'mv-g-bar'), fill = U.el('i'); fill.style.width = Math.max(0, Math.min(100, (now - p.s) / (p.e - p.s) * 100)) + '%'; bar.appendChild(fill); tx.appendChild(bar); }
+      if (nx) { var nt = U.el('div', 'mv-g-next', T('Next') + ':  ' + U.hhmm(nx.s) + '   ' + nx.t); nt.setAttribute('data-raw', ''); tx.appendChild(nt); }
+      row.appendChild(tx);
+      row.onclick = function () { pk.ci = c0 + j; choose(); };
+      ccol.appendChild(row);
+    });
+    if (chs.length > ROWS) ccol.appendChild(U.el('div', 'mv-g-pos', (pk.ci + 1) + ' / ' + chs.length));
+    el.appendChild(ccol);
+    var h = U.el('div', 'mv-g-hints', T('OK  pick') + '        ' + T('◀ ▶  groups and channels') + '        ' + T('Back  close'));
+    el.appendChild(h);
+  }
+  function choose() {
+    var c = list()[pk.ci], i = pk.i;
+    if (!c) return;
+    closePick();
+    setBox(i, c);
+  }
+  function closePick() { if (pk && pk.el) pk.el.remove(); pk = null; UI.setHandler(keys); boxes.forEach(paint); }
+  function pickKeys(a) {
+    if (!pk) return keys(a);
+    var n = list().length;
+    if (a === 'back') { closePick(); return true; }
+    if (pk.col === 'gr') {
+      if (a === 'up' && pk.gi > 0) { pk.gi--; pk.ci = 0; }
+      else if (a === 'down' && pk.gi < pk.gs.length) { pk.gi++; pk.ci = 0; }
+      else if (a === 'chup' || a === 'chdown') { pk.gi = Math.max(0, Math.min(pk.gs.length, pk.gi + (a === 'chup' ? -8 : 8))); pk.ci = 0; }
+      else if (a === 'ok' && pk.gi === 0) { var i = pk.i; closePick(); search(i); return true; }
+      else if ((a === 'right' || a === 'ok') && n) pk.col = 'ch';
+      else return true;
+    } else {
+      if (a === 'up' && pk.ci > 0) pk.ci--;
+      else if (a === 'down' && pk.ci < n - 1) pk.ci++;
+      else if (a === 'chup' || a === 'chdown') pk.ci = Math.max(0, Math.min(n - 1, pk.ci + (a === 'chup' ? -ROWS : ROWS)));
+      else if (a === 'left') pk.col = 'gr';
+      else if (a === 'ok') { choose(); return true; }
+      else return true;
+    }
+    drawPick();
+    return true;
   }
   function search(i) {
     UI.prompt(T('A channel for this box'), '', function (q) {
@@ -216,13 +297,15 @@ var Multiview = (function () {
   function stats() {
     if (!open) return;
     fetch(base() + '/mv/' + key + '/status', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
-      (j.tiles || []).forEach(function (t) { Log.info('multiview', 'Box ' + t.id + ': ' + t.fps + ' pictures a second, ' + t.kbps + ' kb/s, ' + t.dropped + ' dropped'); });
+      // behind: dropped because the app hadn't taken the last pictures yet; the rest came from ffmpeg too fast to keep.
+      (j.tiles || []).forEach(function (t) { Log.info('multiview', 'Box ' + t.id + ': ' + t.fps + ' pictures a second, ' + t.kbps + ' kb/s, ' + t.dropped + ' dropped (' + (t.behind || 0) + ' with the app behind), ' + (t.queued || 0) + ' waiting, every ' + (t.gapMs || '?') + ' ms give or take ' + (t.jitterMs || '?')); });
     }, function () {});
   }
 
   // Back: fullscreen on the box with sound (the others' pictures stop).
   function close(full) {
     if (!open) return true;
+    if (pk) { pk.el.remove(); pk = null; }
     open = false; clearInterval(statT);
     // Kept for the quick menu's Multiview: back to these boxes, with the channel playing now in the sound box.
     last = boxes.map(function (b, i) { return i === main ? null : b.c; }).filter(Boolean);

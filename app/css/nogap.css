@@ -52,3 +52,4 @@
 .nogap .mmp-buttons > * + *{margin-left:16px}
 .nogap .mmp-btn > * + *{margin-left:12px}
 .nogap .mmp-more > * + *{margin-left:22px}
+.nogap .mv-g-row > * + *{margin-left:20px}

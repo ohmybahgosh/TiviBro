@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Multiview's Add a channel is a small guide**: your groups on the left, the group's channels on the right with their logo, what's on now with how far in it is, and what's next, over the two boxes while they keep playing.  It opens on the box's own group and channel.
+- **Swapping the sound in Multiview keeps a picture up**: the box taking the sound shows its last picture until its video starts, instead of going black.
 - **Samsung TV Plus, Plex and Roku channels get their own guides** (from i.mjh.nz), like Pluto TV's: a playlist built from those apps keeps each app's channel id as its guide id, so channels with no guide are matched exactly, by id, when there are three or more of them.
 
 ## 0.6.0 (alpha 188, 2026-11-20)
