@@ -1471,7 +1471,7 @@ body.focus-ring .sp-card.focus{box-shadow:0 0 0 5px var(--accent),0 0 0 9px #fff
 /* A game's page (sportshub.js page) */
 .sp-page{position:absolute;left:128px;right:0;top:0;bottom:0;background:var(--ink);z-index:4;padding:0 56px 0 24px}
 .sp-hero{position:absolute;left:0;right:56px;top:72px;height:284px;border-radius:24px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.45)}
-.sp-side.lost img{opacity:.45}.sp-side.lost b{color:#aab2c8}
+.sp-side.lost img{opacity:.7;filter:grayscale(1) brightness(1.8) drop-shadow(0 6px 18px rgba(0,0,0,.6))}.sp-side.lost b{color:#aab2c8}
 .sp-wbadge{font-style:normal;margin-top:8px;font-size:18px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;background:#fff;color:#0b0e14;padding:3px 12px;border-radius:999px}
 .sp-big span.lost{opacity:.42}
 table.sp-lscore tr.won td{font-weight:800;color:var(--text)}
