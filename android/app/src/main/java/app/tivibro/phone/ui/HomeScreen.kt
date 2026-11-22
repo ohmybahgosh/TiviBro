@@ -21,6 +21,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -260,20 +261,35 @@ fun HomeScreen(
     }
 }
 
+/* First run: no TV yet.  Three short steps, then the two ways to pair (scan the TV's code, or find it on
+   the network), and a link for anyone who hasn't put TiviBro on the TV yet. */
 @Composable
 private fun Empty(modifier: Modifier, onScan: () -> Unit, onFind: () -> Unit) {
-    Column(modifier.fillMaxSize().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-        Box(Modifier.size(96.dp).clip(CircleShape).background(Panel2), contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.Tv, null, tint = Accent, modifier = Modifier.size(48.dp))
+    val uri = androidx.compose.ui.platform.LocalUriHandler.current
+    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        Box(Modifier.size(88.dp).clip(CircleShape).background(Panel2), contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.Tv, null, tint = Accent, modifier = Modifier.size(44.dp))
         }
-        Spacer(Modifier.height(24.dp))
-        Text("Pair your TV", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
-        Spacer(Modifier.height(10.dp))
-        Text(
-            "On the TV, open TiviBro and go to Settings, Phone app and web editor, and choose Pair the TiviBro app.",
-            style = MaterialTheme.typography.bodyLarge, color = Muted, textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(20.dp))
+        Text("Welcome to TiviBro", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+        Text("Your TV's remote, guide, sports and settings, on your phone.", style = MaterialTheme.typography.bodyMedium, color = Muted, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp))
+        Spacer(Modifier.height(22.dp))
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Panel).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            listOf(
+                "Open TiviBro on your TV" to "The phone and the TV need to be on the same Wi-Fi.",
+                "Settings > Phone app and web editor" to "Then choose Pair the TiviBro app.  A code shows on the TV.",
+                "Scan the code, or find the TV" to "Scanning is quickest.  Finding asks for the code shown on the TV.",
+            ).forEachIndexed { n, (t, sub) ->
+                Row(verticalAlignment = Alignment.Top) {
+                    Box(Modifier.size(28.dp).clip(CircleShape).background(if (n == 2) Accent else Panel2), contentAlignment = Alignment.Center) {
+                        Text("${n + 1}", color = if (n == 2) OnAccent else TextHi, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Column { Text(t, fontWeight = FontWeight.SemiBold); Text(sub, color = Muted, style = MaterialTheme.typography.bodySmall) }
+                }
+            }
+        }
+        Spacer(Modifier.height(22.dp))
         Button(onClick = onScan, modifier = Modifier.fillMaxWidth().height(54.dp)) {
             Icon(Icons.Rounded.QrCodeScanner, null); Spacer(Modifier.width(10.dp)); Text("Scan the code on the TV")
         }
@@ -281,6 +297,8 @@ private fun Empty(modifier: Modifier, onScan: () -> Unit, onFind: () -> Unit) {
         OutlinedButton(onClick = onFind, modifier = Modifier.fillMaxWidth().height(54.dp)) {
             Icon(Icons.Rounded.Search, null); Spacer(Modifier.width(10.dp)); Text("Find TVs on this network")
         }
+        Spacer(Modifier.height(14.dp))
+        TextButton(onClick = { runCatching { uri.openUri("https://tivibro.app/install") } }) { Text("TiviBro isn't on my TV yet") }
     }
 }
 
