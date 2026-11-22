@@ -44,7 +44,7 @@ jobs:
             qemu-user ffmpeg make xz-utils bzip2 patch
 
       - name: Cache toolchain and sources
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ${{ env.CACHE_DIR }}/zig-0.*
