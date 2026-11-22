@@ -2101,10 +2101,10 @@ var Views = (function () {
     /* Your teams' score corner, on or off from here (the same switch as Settings > Channels and groups > My teams),
        while one of their games is on: the corner can sit over something you want to see. */
     var teamLive = typeof Sports !== 'undefined' && typeof Teams !== 'undefined' && Teams.follows && Sports.all().some(function (g) { return g.state === 'in' && g.teams.some(function (t) { return t.id && Teams.follows(t.id); }); });
-    if (teamLive) add('scores', { label: 'My teams\' scores', icon: 'scores', v: Store.settings.sportsBar === false ? 'off' : 'on', run: function () {
+    if (teamLive) add('scores', { label: 'Scores', icon: 'scores', v: Store.settings.sportsBar === false ? 'off' : 'on', run: function () {
       Store.settings.sportsBar = Store.settings.sportsBar === false; Store.saveSettings();
       if (typeof SportsLive !== 'undefined' && SportsLive.refresh) SportsLive.refresh();
-      U.toast(Store.settings.sportsBar ? 'Your teams\' scores show in the corner' : 'Scores corner off.  OK > My teams\' scores, or Settings > Channels and groups > My teams, turns it back on.', 5000);
+      U.toast(Store.settings.sportsBar ? 'Your teams\' scores show in the corner' : 'Scores corner off.  OK > Scores, or Settings > Channels and groups > My teams, turns it back on.', 5000);
       renderPanel();
     } });
     var tracks = Player.audioTracks();
