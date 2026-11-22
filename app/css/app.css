@@ -248,6 +248,9 @@ body.guide1 .gp .gs{display:none}
 .set-nav .nav-find::before{content:"";position:absolute;left:22px;top:50%;width:14px;height:14px;margin-top:-11px;border:3px solid currentColor;border-radius:50%}
 .set-nav .nav-find::after{content:"";position:absolute;left:38px;top:50%;width:3px;height:10px;margin-top:2px;background:currentColor;transform:rotate(-45deg);border-radius:2px}
 .set-nav.active div.on{background:var(--accent);color:var(--on-accent)}
+/* A page's list (settings.js navList): back, the page's name, then its parts. */
+.set-nav .nav-back{color:var(--muted);font-size:24px}
+.set-nav .nav-title{font-size:34px;font-weight:700;color:var(--text);line-height:1.2;white-space:normal;padding:10px 22px 14px;margin-bottom:6px;border-bottom:2px solid rgba(255,255,255,.08);border-radius:0}
 .set-body{flex:1;overflow:hidden;position:relative}
 /* Settings with the channel still playing (views.js pip): the picture in the top corner, what's on beside it,
    the settings below at full width, so no row is narrower or hidden behind the picture. */
@@ -1202,7 +1205,7 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .set-body .opt.tone-danger .ol{color:#ff9a9d}
 /* Settings home (settings.js homeBuild): the section list and page give way to it. */
 #viewSettings.home > .set-nav,#viewSettings.home > .set-main{display:none}
-.set-home{flex:1;min-width:0;display:flex;flex-direction:column;gap:22px;overflow:hidden;padding-right:24px}
+.set-home{flex:1;min-width:0;display:flex;flex-direction:column;gap:22px;overflow:hidden;padding:4px 24px 0 18px;margin-left:-18px}
 .set-home.hidden{display:none}
 .sh-top{display:flex;align-items:center;gap:28px}
 .sh-title{flex:1;font-size:52px;font-weight:700;letter-spacing:-.02em}

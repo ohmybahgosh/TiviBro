@@ -2581,5 +2581,18 @@ I18n.add('pt-BR', {
   "OK opens it.  Back comes back here.": "OK abre.  Voltar volta aqui.",
   "OK goes there.": "OK vai para lá.",
   "OK opens it.": "OK abre.",
-  "Back  up one level, then Settings": "Voltar  sobe um nível, depois Configurações"
+  "Back  up one level, then Settings": "Voltar  sobe um nível, depois Configurações",
+  "All settings": "Todas as configurações",
+  "Overview": "Geral",
+  "Back  the list on the left, then Settings": "Voltar  a lista à esquerda, depois Configurações",
+  "Sound": "Som",
+  "How subtitles look": "Aparência das legendas",
+  "Browsing": "Navegação",
+  "Homes and lists": "Inícios e listas",
+  "While watching": "Enquanto assiste",
+  "Text and panels": "Texto e painéis",
+  "Logos and numbers": "Logos e números",
+  "Clock and info panel": "Relógio e painel de informações",
+  "Posters": "Pôsteres",
+  "Shelves": "Prateleiras"
 });

@@ -2072,5 +2072,20 @@ I18n.add('ru', {
   "OK opens it.  Back comes back here.": "OK открывает.  «Назад» возвращает сюда.",
   "OK goes there.": "OK переходит туда.",
   "OK opens it.": "OK открывает.",
-  "Back  up one level, then Settings": "Назад  на уровень вверх, потом Настройки"
+  "Back  up one level, then Settings": "Назад  на уровень вверх, потом Настройки",
+  "All settings": "Все настройки",
+  "Overview": "Общее",
+  "Back  the list on the left, then Settings": "Назад  список слева, потом Настройки",
+  "Sound": "Звук",
+  "Subtitles": "Субтитры",
+  "How subtitles look": "Вид субтитров",
+  "Browsing": "Просмотр каталога",
+  "Categories": "Категории",
+  "Homes and lists": "Главные экраны и списки",
+  "While watching": "Во время просмотра",
+  "Text and panels": "Текст и панели",
+  "Logos and numbers": "Логотипы и номера",
+  "Clock and info panel": "Часы и инфопанель",
+  "Posters": "Постеры",
+  "Shelves": "Полки"
 });

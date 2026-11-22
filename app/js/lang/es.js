@@ -2069,5 +2069,20 @@ I18n.add('es', {
   "OK opens it.  Back comes back here.": "OK lo abre.  Atrás vuelve aquí.",
   "OK goes there.": "OK va allí.",
   "OK opens it.": "OK lo abre.",
-  "Back  up one level, then Settings": "Atrás  sube un nivel, luego Configuración"
+  "Back  up one level, then Settings": "Atrás  sube un nivel, luego Configuración",
+  "All settings": "Toda la configuración",
+  "Overview": "General",
+  "Back  the list on the left, then Settings": "Atrás  la lista de la izquierda, luego Configuración",
+  "Sound": "Sonido",
+  "Subtitles": "Subtítulos",
+  "How subtitles look": "Aspecto de los subtítulos",
+  "Browsing": "Explorar",
+  "Categories": "Categorías",
+  "Homes and lists": "Inicios y listas",
+  "While watching": "Mientras ves",
+  "Text and panels": "Texto y paneles",
+  "Logos and numbers": "Logotipos y números",
+  "Clock and info panel": "Reloj y panel de información",
+  "Posters": "Pósteres",
+  "Shelves": "Estantes"
 });

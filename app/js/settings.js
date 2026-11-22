@@ -31,8 +31,24 @@ var Settings = (function () {
     'Keep downloaded subtitles', 'Audio converter', 'Learn a button', 'Button tester', 'Restore default buttons', 'Detailed logging', 'User-Agent', 'Provider guide time offset',
     'Reset watch time', 'View network helper log', 'Clear log', 'What this TV can play', 'Report a problem in the menu', 'Count this TV in the install numbers'];
   function advanced(it) { return !!(it && !it.head && !it.preview && !it.keep && ADV.indexOf(it.label) >= 0); }
+  /* Headings added before a row, so no part of a page runs long on the TV (where each heading is a part of its
+     own in the list on the left).  Only headings: every row stays where it was, and the phone and the web
+     editor show the same headings. */
+  var SPLIT = { 'Audio language': 'Sound', 'Subtitles automatically': 'Subtitles', 'Subtitle colour': 'How subtitles look',
+    'Movies and Shows open on': 'Browsing', 'Order categories': 'Categories', 'Reload movies and shows now': 'Homes and lists', 'Play the next one automatically': 'While watching',
+    'Text size': 'Text and panels', 'Channel logos': 'Logos and numbers', 'Show clock': 'Clock and info panel',
+    'Library poster size': 'Posters', 'Arrange Home shelves': 'Shelves' };
+  function split(list) {
+    var out = [];
+    list.forEach(function (it, i) {
+      var h = it && !it.head && !it.raw && SPLIT[it.label], prev = out[out.length - 1];
+      if (h && !(prev && prev.head)) out.push(head(h));
+      out.push(it);
+    });
+    return out;
+  }
   function shape(fn) {
-    var list = (fn() || []).filter(Boolean);
+    var list = split((fn() || []).filter(Boolean));
     if (fn.adv) return list;
     var out = [], adv = [];
     list.forEach(function (it) { if (advanced(it)) adv.push(it); else out.push(it); });
@@ -55,11 +71,6 @@ var Settings = (function () {
     return s[0] === 'language' && tr.indexOf('Language') !== 0 ? tr + '  ·  Language' : tr;
   }
   /* sec -1: Search settings, the first row of the menu (findPage). */
-  function nextSec(d) {
-    var i = sec + d; while (SECTIONS[i] && !shown(i)) i += d;
-    if (SECTIONS[i]) return i;
-    return sec >= 0 && d < 0 ? -1 : sec;
-  }
   var stack = [];               // sub-pages: [{ title, fn, sel }]
 
   function cyc(list, cur, dir) { var i = list.indexOf(cur); if (i < 0) i = 0; return list[(i + dir + list.length) % list.length]; }
@@ -1859,71 +1870,108 @@ var Settings = (function () {
     for (var k = 0; k < list.length; k++) if (list[k] && list[k].page && list[k].label === p[1]) { n = k; break; }
     return { i: i, n: n, it: list[n] };
   }
+  /* A page's parts (the overhaul): its headings split it, and the list on the left shows those parts instead
+     of every section, so a long page is a few short ones.  Only the part you're in is drawn; moving past its
+     last row goes on into the next part.  Every row is still there, in the same order (the phone and the web
+     editor get the whole page, as before).  Rows before the first heading are the first part. */
+  var parts = [], grp = 0, navSel = 0;
+  function groupsOf(list) {
+    var out = [], cur = null;
+    list.forEach(function (it, i) {
+      if (it && it.head && it.label) { cur = { title: it.raw ? it.label : T(it.label), start: i + 1, end: i + 1 }; out.push(cur); return; }
+      if (!cur) { cur = { title: '', start: i, end: i }; out.push(cur); }
+      cur.end = i + 1;
+    });
+    return out.filter(function (g) { return g.end > g.start; });
+  }
+  function groupOf(i) { for (var g = 0; g < parts.length; g++) if (i >= parts[g].start && i < parts[g].end) return g; return 0; }
+  function firstIn(g, back) {
+    var G = parts[g]; if (!G) return 0;
+    if (back) { for (var i = G.end - 1; i >= G.start; i--) if (focusable(i)) return i; return G.end - 1; }
+    for (var j = G.start; j < G.end; j++) if (focusable(j)) return j; return G.start;
+  }
+  function pageTitle() { var top = stack[stack.length - 1]; return top ? T(top.title) : sec < 0 ? T('Search settings') : navTitle(SECTIONS[sec]); }
   function build() {
     var top = stack[stack.length - 1];
-    items = top ? [head(stack.map(function (x) { return T(x.title); }).join('  ›  '))].concat(shape(top.fn, top.title)) : sec < 0 ? findPage() : shape(FNS[sec], SECTIONS[sec][1]);
+    items = top ? shape(top.fn, top.title) : sec < 0 ? findPage() : shape(FNS[sec], SECTIONS[sec][1]);
     items = items.filter(Boolean);
+    parts = sec < 0 && !top ? [{ title: '', start: 0, end: items.length }] : groupsOf(items);
+    if (!parts.length) parts = [{ title: '', start: 0, end: items.length }];
     sel = U.clamp(sel, 0, Math.max(0, items.length - 1));
-    if (!focusable(sel)) { var i = sel; while (i < items.length && !focusable(i)) i++; if (i >= items.length) { i = sel; while (i > 0 && !focusable(i)) i--; } sel = i; }
+    grp = groupOf(sel);
+    var G = parts[grp];
+    if (!focusable(sel) || sel < G.start || sel >= G.end) sel = firstIn(grp);
+    if (zone === 'nav') navSel = grp;
     body.innerHTML = '';
     scrollEl = U.el('div', 'set-scroll');
     scrollEl._y = 0;
-    rowEls = items.map(function (it, i) {
-      if (it.preview) return it.el;
-      var k = kindOf(it), tone = k === 'action' && !it.go && !it.raw ? actionTone(it.label) : '';
-      var d = U.el('div', 'opt k-' + k + (it.head ? ' head' : '') + (it.big ? ' big' : it.info ? ' dim' : '') + (it.attn ? ' attn' : '') + (it.cls ? ' ' + it.cls : '') + (tone ? ' tone-' + tone : ''));
-      var l = U.el('div', 'ol', it.raw ? it.label : T(it.label));
-      // Under the name, its first sentence; the whole note, and what the buttons do, show in the panel on the right.
-      d._title = it.raw ? it.label : T(it.label); d._how = howTo(k, tone, it);
-      if (it.sub) { var full = it.raw ? it.sub : T(it.sub), short = brief(full); l.appendChild(U.el('small', '', short)); d._help = full; }
-      d.appendChild(l);
-      if (!it.head) {
-        d._v = U.el('div', 'ov'); d.appendChild(d._v);
-        // On / Off as a switch.
-        if (it.toggle) { d._tg = U.el('span', 'tgl'); d._tg.appendChild(U.el('i', '')); d.appendChild(d._tg); }
-        // A value you change with ◀ ▶ shows the arrows on the focused row, and with the Magic
-        // Remote each arrow can be clicked.
-        if (it.cycle && !it.toggle) {
-          d.classList.add('cyc');
-          var al = U.el('span', 'ar', '‹'), ar = U.el('span', 'ar', '›');
-          d._sw = U.el('i', 'sw hidden'); d._t = U.el('span', '');
-          [al, d._sw, d._t, ar].forEach(function (x) { d._v.appendChild(x); });
-          al.addEventListener('click', function (e) { e.stopPropagation(); zone = 'body'; sel = i; it.cycle(-1); });
-          ar.addEventListener('click', function (e) { e.stopPropagation(); zone = 'body'; sel = i; it.cycle(1); });
-        }
-      }
-      // Magic Remote: hover focuses a row, click is OK (or changes the value).
-      if (focusable(i)) {
-        d.addEventListener('mousemove', function () { if (UI.pointer && (zone !== 'body' || sel !== i)) { zone = 'body'; sel = i; paint(); } });
-        d.addEventListener('click', function () { zone = 'body'; sel = i; paint(); keys('ok'); });
-      }
-      return d;
+    rowEls = [];
+    items.forEach(function (it, i) {
+      if (i < G.start || i >= G.end) return;
+      rowEls[i] = drawRow(it, i);
     });
-    rowEls.forEach(function (e) { scrollEl.appendChild(e); });
+    rowEls.forEach(function (e) { if (e) scrollEl.appendChild(e); });
     body.appendChild(scrollEl);
     paint();
   }
+  // One row of the page, with its value, switch or ◀ ▶, and the mouse (Magic Remote) wired to it.
+  function drawRow(it, i) {
+    if (it.preview) return it.el;
+    var k = kindOf(it), tone = k === 'action' && !it.go && !it.raw ? actionTone(it.label) : '';
+    var d = U.el('div', 'opt k-' + k + (it.head ? ' head' : '') + (it.big ? ' big' : it.info ? ' dim' : '') + (it.attn ? ' attn' : '') + (it.cls ? ' ' + it.cls : '') + (tone ? ' tone-' + tone : ''));
+    var l = U.el('div', 'ol', it.raw ? it.label : T(it.label));
+    // Under the name, its first sentence; the whole note, and what the buttons do, show in the panel on the right.
+    d._title = it.raw ? it.label : T(it.label); d._how = howTo(k, tone, it);
+    if (it.sub) { var full = it.raw ? it.sub : T(it.sub), short = brief(full); l.appendChild(U.el('small', '', short)); d._help = full; }
+    d.appendChild(l);
+    if (!it.head) {
+      d._v = U.el('div', 'ov'); d.appendChild(d._v);
+      // On / Off as a switch.
+      if (it.toggle) { d._tg = U.el('span', 'tgl'); d._tg.appendChild(U.el('i', '')); d.appendChild(d._tg); }
+      // A value you change with ◀ ▶ shows the arrows on the focused row, and with the Magic
+      // Remote each arrow can be clicked.
+      if (it.cycle && !it.toggle) {
+        d.classList.add('cyc');
+        var al = U.el('span', 'ar', '‹'), ar = U.el('span', 'ar', '›');
+        d._sw = U.el('i', 'sw hidden'); d._t = U.el('span', '');
+        [al, d._sw, d._t, ar].forEach(function (x) { d._v.appendChild(x); });
+        al.addEventListener('click', function (e) { e.stopPropagation(); zone = 'body'; sel = i; it.cycle(-1); });
+        ar.addEventListener('click', function (e) { e.stopPropagation(); zone = 'body'; sel = i; it.cycle(1); });
+      }
+    }
+    // Magic Remote: hover focuses a row, click is OK (or changes the value).
+    if (focusable(i)) {
+      d.addEventListener('mousemove', function () { if (UI.pointer && (zone !== 'body' || sel !== i)) { zone = 'body'; sel = i; paint(); } });
+      d.addEventListener('click', function () { zone = 'body'; sel = i; paint(); keys('ok'); });
+    }
+    return d;
+  }
   var navKey = '';
   function paint() {
-    // The section list only changes with the section, what's shown or the language: rebuilding it on every
-    // move made the page lay out again each time (slow on a TV).
-    var key = [sec, typeof I18n !== 'undefined' ? I18n.lang() : ''].concat(SECTIONS.map(function (s, i) { return shown(i) ? navTitle(s) : ''; })).join('|');
+    // The list on the left only changes with the page, its part or the language: rebuilding it on every move
+    // made the page lay out again each time (slow on a TV).
+    var key = [sec, stack.length, grp, navSel, zone, parts.length, typeof I18n !== 'undefined' ? I18n.lang() : '', pageTitle()].join('|');
     if (key !== navKey || !nav.firstChild) { navKey = key; navList(); }
     nav.classList.toggle('active', zone === 'nav');
     rows();
   }
+  /* The list on the left: back (to the page before, or to the Settings home), the page's name, then its parts.
+     navSel -1 is back. */
   function navList() {
     nav.innerHTML = '';
-    var sn = U.el('div', 'nav-find' + (sec < 0 ? ' on' : ''), T('Search settings'));
-    sn.addEventListener('click', function () { stack = []; sec = -1; sel = 0; zone = 'body'; build(); if (!findQ) askFind(); });
-    nav.appendChild(sn);
-    SECTIONS.forEach(function (s, i) {
-      if (!shown(i)) return;
-      var n = U.el('div', (i === sec ? 'on' : '') + (s[0] === 'about' && typeof Update !== 'undefined' && Update.state && Update.state.state === 'available' ? ' attn' : ''), navTitle(s));
-      n.addEventListener('click', function () { stack = []; sec = i; sel = 0; zone = 'nav'; build(); });
+    var back = U.el('div', 'nav-back' + (zone === 'nav' && navSel < 0 ? ' on' : ''), '‹  ' + (stack.length ? (stack.length > 1 ? T(stack[stack.length - 2].title) : SECTIONS[sec] ? navTitle(SECTIONS[sec]) : T('Search settings')) : T('All settings')));
+    back.addEventListener('click', function () { navBack(); });
+    nav.appendChild(back);
+    nav.appendChild(U.el('div', 'nav-title', pageTitle()));
+    if (parts.length > 1) parts.forEach(function (g, i) {
+      var n = U.el('div', i === grp ? 'on' : '', g.title || T('Overview'));
+      n.addEventListener('click', function () { openGroup(i); zone = 'body'; build(); });
       nav.appendChild(n);
     });
   }
+  // Back from the list on the left: the page before, or the Settings home.
+  function navBack() { if (stack.length) { pop(); zone = 'nav'; navSel = grp; paint(); } else { zone = 'nav'; homeShow(true); } }
+  function openGroup(i) { grp = U.clamp(i, 0, parts.length - 1); sel = firstIn(grp); navSel = grp; }
   function put(el, s) { s = s == null ? '' : String(s); if (el.textContent !== s) el.textContent = s; }
   /* What kind of row it is, for its look (and the phone's and the web editor's): a setting with choices, an On / Off
      switch, a page, a button, a fact (status), a note or tip, or a heading. */
@@ -1974,6 +2022,7 @@ var Settings = (function () {
   function rows() {
     rowEls.forEach(function (e, i) {
       var it = items[i];
+      if (!e) return;
       // Only the words that changed: writing them all again on every move made the page lay out again.
       if (e._t) {
         put(e._t, it.value ? T(it.value()) : '');
@@ -1990,7 +2039,7 @@ var Settings = (function () {
       var y = f.offsetTop, h = body.clientHeight, cur = scrollEl._y || 0;
       if (y + cur < 40) cur = -y + 40;
       if (y + f.offsetHeight + cur > h - 40) cur = h - 40 - y - f.offsetHeight;
-      if (zone === 'nav' || sel <= 1) cur = 0;
+      if (zone === 'nav' || sel <= parts[grp].start + 1) cur = 0;
       // On the last row you can pick, show what comes after it too (notes, results): otherwise text
       // under the last choice could never be scrolled into view.
       if (zone === 'body' && lastFocusable() === sel) cur = Math.min(cur, scrollMin());
@@ -2015,7 +2064,7 @@ var Settings = (function () {
     var th = Math.max(36, Math.round(h * h / full)), top = Math.round((h - th) * (y / min));
     bar.firstChild.style.height = th + 'px'; bar.firstChild.style.transform = 'translateY(' + top + 'px)';
   }
-  function lastFocusable() { for (var i = items.length - 1; i >= 0; i--) if (focusable(i)) return i; return -1; }
+  function lastFocusable() { var G = parts[grp] || { start: 0, end: items.length }; for (var i = G.end - 1; i >= G.start; i--) if (focusable(i)) return i; return -1; }
   function focusable(i) { var it = items[i]; return !!(it && !it.head && !it.info && !it.preview); }
 
   function keys(a) {
@@ -2023,10 +2072,12 @@ var Settings = (function () {
     if (a === 'hold' && Views.pipOn) { Views.pipFull(); return true; }
     if (onHome) return homeKeys(a);
     if (zone === 'nav') {
-      if (a === 'up') { if (nextSec(-1) !== sec) { sec = nextSec(-1); sel = 0; build(); } else Views.tabBar(function () { UI.setHandler(keys); paint(); }); }
-      else if (a === 'down') { if (nextSec(1) !== sec) { sec = nextSec(1); sel = 0; build(); } }
+      var many = parts.length > 1;
+      if (a === 'up') { if (navSel >= 0) { navSel--; if (navSel >= 0) { openGroup(navSel); build(); } else paint(); } else Views.tabBar(function () { UI.setHandler(keys); paint(); }); }
+      else if (a === 'down') { if (navSel < 0 && many) { openGroup(0); build(); } else if (navSel < 0) { zone = 'body'; paint(); } else if (navSel < parts.length - 1) { openGroup(navSel + 1); build(); } }
+      else if (a === 'ok' && navSel < 0) navBack();
       else if (a === 'right' || a === 'ok') { zone = 'body'; paint(); if (sec < 0 && !findQ) askFind(); }      // pages of facts only scroll
-      else if (a === 'left' || a === 'back') homeShow(true);
+      else if (a === 'left' || a === 'back') navBack();
       else if (a === 'green') Views.switchTab('live');
       else if (a === 'yellow' || a === 'search') openFind();
       return true;
@@ -2034,18 +2085,20 @@ var Settings = (function () {
     if (a === 'yellow' || a === 'search') { openFind(); return true; }
     var it = items[sel];
     if (a === 'up' || a === 'down') {
-      var d = a === 'up' ? -1 : 1, i = sel + d;
-      while (i >= 0 && i < items.length && !focusable(i)) i += d;
-      if (i >= 0 && i < items.length) { sel = i; paint(); }
-      // Nothing more to pick that way (a page of facts, or notes under the last choice): scroll.
+      var d = a === 'up' ? -1 : 1, i = sel + d, G = parts[grp];
+      while (i >= G.start && i < G.end && !focusable(i)) i += d;
+      if (i >= G.start && i < G.end) { sel = i; paint(); }
+      // Nothing more to pick that way in this part: notes still below are scrolled to first, then the next part.
+      else if (scrollEl && d > 0 && (scrollEl._y || 0) > scrollMin() + 4) setScroll((scrollEl._y || 0) - Math.round(body.clientHeight * 0.6));
+      else if (grp + d >= 0 && grp + d < parts.length) { grp += d; sel = firstIn(grp, d < 0); navSel = grp; build(); }
       else if (scrollEl) setScroll((scrollEl._y || 0) - d * Math.round(body.clientHeight * 0.6));
     }
     else if (a === 'chup') { for (var j = 0; j < 8; j++) keys('up'); }
     else if (a === 'chdown') { for (var k = 0; k < 8; k++) keys('down'); }
-    else if (a === 'left') { if (it && it.cycle) it.cycle(-1); else if (stack.length) pop(); else { zone = 'nav'; paint(); } }
+    else if (a === 'left') { if (it && it.cycle) it.cycle(-1); else { zone = 'nav'; navSel = parts.length > 1 ? grp : -1; paint(); } }
     else if (a === 'right') { if (it && it.cycle) it.cycle(1); }
     else if (a === 'ok') { if (it && it.action) it.action(); else if (it && it.cycle) it.cycle(1); }
-    else if (a === 'back') { if (stack.length) pop(); else { zone = 'nav'; paint(); } }
+    else if (a === 'back') { zone = 'nav'; navSel = parts.length > 1 ? grp : -1; paint(); }
     return true;
   }
 
@@ -2113,7 +2166,7 @@ var Settings = (function () {
     // An advanced setting with Advanced view off: into the page's Advanced row.
     if (n < 0) for (var j = 0; j < items.length; j++) if (items[j] && items[j].cls === 'adv-row' && items[j].page) { push(items[j].page.title, items[j].page.fn); n = at(); break; }
     if (n >= 0) sel = n;
-    zone = 'body'; paint();
+    zone = 'body'; build();
   }
 
   /* ---------- Settings home (the overhaul): what needs you, the everyday sections as tiles with their
@@ -2213,7 +2266,7 @@ var Settings = (function () {
   function open() {
     if (!stack.length) zone = 'nav';
     UI.setHandler(keys);
-    UI.hints([['', '◀ ▶  change value'], ['', 'OK  select'], ['', 'Back  up one level, then Settings'], ['yellow', 'Search settings']]);
+    UI.hints([['', '◀ ▶  change value'], ['', 'OK  select'], ['', 'Back  the list on the left, then Settings'], ['yellow', 'Search settings']]);
     build();
     // Coming to Settings from the menu: the home first.  A section opened by name (section(), always called
     // after switching to Settings) hides it again.
