@@ -268,7 +268,7 @@ body.guide1 .gp .gs{display:none}
 body.pointer .set-preview{cursor:pointer}
 .set-preview{width:448px;height:252px;flex:none;border-radius:12px;background:#000}
 /* Room for the clock (top right): a focused row at the top must not cover it. */
-#viewSettings{padding-top:84px}
+#viewSettings{padding-top:84px;position:relative}
 .set-scroll{position:absolute;left:0;right:0;top:0;will-change:transform}
 .opt{display:flex;align-items:center;min-height:80px;padding:12px 24px;border-radius:10px;gap:24px}
 .opt .ol{flex:1;min-width:0}
@@ -1185,7 +1185,48 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .shp-pos{position:absolute;right:56px;top:880px;font-size:22px;color:var(--muted)}
 
 /* ---------- Settings rows (the Settings overhaul): each kind its own look, so rows don't blend ---------- */
-.set-help{flex:none;height:106px;margin-top:8px;padding:12px 24px 0;border-top:1px solid rgba(255,255,255,.08);color:var(--text);opacity:.85;font-size:22px;line-height:1.4;overflow:hidden}
+/* The panel beside the page (settings.js help): the focused setting's name, its whole note and what the remote
+   does on it.  The page keeps the rest of the width. */
+.set-main{position:relative;padding-right:430px}
+.set-help{position:absolute;right:0;top:0;width:400px;max-height:100%;box-sizing:border-box;padding:26px 28px;border-radius:20px;background:var(--panel);border:2px solid rgba(255,255,255,.06);color:var(--text);font-size:23px;line-height:1.45;overflow:hidden}
+.set-help.empty{display:none}
+#viewSettings.pip .set-help{top:272px;max-height:calc(100% - 272px)}
+.set-help .sh-k{font-size:18px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.set-help b{display:block;font-size:28px;font-weight:700;line-height:1.25;margin-bottom:12px}
+.set-help p{margin:0 0 14px;color:#c7cee6}
+.set-help .sh-how{color:var(--accent-text);font-size:21px}
+/* A button that does its job now: filled, like a button.  One that deletes or resets: red, and it asks first. */
+.set-body .opt.tone-go .ol{color:var(--text)}
+.set-body .opt.tone-go{background:linear-gradient(90deg,rgba(91,140,255,.16),transparent 75%)}
+.set-body .opt.tone-go .ov:empty::before{content:'';display:inline-block;width:0;height:0;border-left:16px solid var(--accent);border-top:10px solid transparent;border-bottom:10px solid transparent}
+.set-body .opt.tone-danger .ol{color:#ff9a9d}
+/* Settings home (settings.js homeBuild): the section list and page give way to it. */
+#viewSettings.home > .set-nav,#viewSettings.home > .set-main{display:none}
+.set-home{flex:1;min-width:0;display:flex;flex-direction:column;gap:22px;overflow:hidden;padding-right:24px}
+.set-home.hidden{display:none}
+.sh-top{display:flex;align-items:center;gap:28px}
+.sh-title{flex:1;font-size:52px;font-weight:700;letter-spacing:-.02em}
+.sh-find{display:flex;align-items:center;gap:14px;width:620px;padding:16px 24px;border-radius:18px;background:var(--panel);border:2px solid rgba(255,255,255,.08);color:var(--muted);font-size:24px}
+.sh-find span{flex:1}.sh-find b{width:20px;height:20px;border-radius:5px}.sh-find em{font-style:normal;color:var(--text);font-size:20px}
+.sh-status{display:flex;flex-direction:column;gap:4px;padding:20px 28px;border-radius:22px;background:var(--panel);border:2px solid rgba(255,255,255,.08)}
+.sh-status b{font-size:28px;font-weight:600}.sh-status span{font-size:21px;color:var(--muted)}
+.sh-status.attn{background:rgba(61,220,151,.12);border-color:rgba(61,220,151,.55)}.sh-status.attn b{color:var(--ok)}
+.sh-head{font-size:20px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-text);margin-top:6px}
+.sh-grid{display:flex;flex-wrap:wrap;margin:-10px}
+.sh-tile{display:flex;flex-direction:column;gap:10px;box-sizing:border-box;width:calc(25% - 20px);margin:10px;padding:24px 26px;border-radius:22px;background:var(--panel);border:2px solid rgba(255,255,255,.08);min-width:0}
+.sh-tile b{font-size:29px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sh-tile span{font-size:20px;color:var(--muted);min-height:26px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sh-chips{display:flex;flex-wrap:wrap;gap:14px}
+.sh-chip{padding:12px 22px;border-radius:999px;background:var(--panel);border:2px solid rgba(255,255,255,.08);font-size:23px;color:#c7cee6}
+.set-home .focus{background:var(--raised);border-color:#fff;color:var(--text);transform:scale(1.03);box-shadow:0 14px 36px rgba(0,0,0,.45)}
+.sh-ico{display:block;width:44px;height:44px;border-radius:12px;background:rgba(91,140,255,.18);position:relative}
+.sh-ico::after{content:'';position:absolute;top:12px;left:12px;right:12px;bottom:12px;border-radius:4px;border:3px solid var(--accent-text)}
+.ico-sports{background:rgba(255,180,94,.18)}.ico-sports::after{border-color:#ffb45e;border-radius:0 0 10px 10px;border-top-width:3px}
+.ico-play{background:rgba(51,225,255,.15)}.ico-play::after{top:12px;right:12px;bottom:12px;left:15px;border:0;border-left:17px solid #33e1ff;border-top:10px solid transparent;border-bottom:10px solid transparent;border-radius:0}
+.ico-audio{background:rgba(51,225,255,.15)}.ico-audio::after{border-color:#33e1ff}
+.ico-rec{background:rgba(255,107,107,.15)}.ico-rec::after{top:13px;right:13px;bottom:13px;left:13px;border-radius:50%;border:0;background:#ff8a8a}
+.ico-bell{background:rgba(255,180,94,.18)}.ico-bell::after{border-color:#ffb45e;border-radius:10px 10px 3px 3px}
+.ico-movies::after,.ico-media::after{border-radius:3px}
 .set-body .opt{border-bottom:1px solid rgba(255,255,255,.05);margin-bottom:2px}
 .set-body .opt.focus{border-bottom-color:transparent}
 .set-body .opt .ol small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}

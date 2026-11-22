@@ -48,6 +48,13 @@
 .nogap .gpv-idle > * + *{margin-top:10px}
 .nogap .shp-tabs > * + *{margin-left:14px}
 .nogap .shp-track > * + *{margin-left:26px}
+.nogap .set-home > * + *{margin-top:22px}
+.nogap .sh-top > * + *{margin-left:28px}
+.nogap .sh-find > * + *{margin-left:14px}
+.nogap .sh-status > * + *{margin-top:4px}
+.nogap .sh-tile > * + *{margin-top:10px}
+.nogap .sh-chips > *{margin-right:14px;margin-bottom:14px}
+.nogap .sh-chips{margin-bottom:-14px}
 .nogap .mshp-seasons > * + *{margin-left:30px}
 .nogap .mmp-buttons > * + *{margin-left:16px}
 .nogap .mmp-btn > * + *{margin-left:12px}

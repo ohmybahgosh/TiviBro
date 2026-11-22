@@ -1870,10 +1870,12 @@ var Settings = (function () {
     scrollEl._y = 0;
     rowEls = items.map(function (it, i) {
       if (it.preview) return it.el;
-      var d = U.el('div', 'opt k-' + kindOf(it) + (it.head ? ' head' : '') + (it.big ? ' big' : it.info ? ' dim' : '') + (it.attn ? ' attn' : '') + (it.cls ? ' ' + it.cls : ''));
+      var k = kindOf(it), tone = k === 'action' && !it.go && !it.raw ? actionTone(it.label) : '';
+      var d = U.el('div', 'opt k-' + k + (it.head ? ' head' : '') + (it.big ? ' big' : it.info ? ' dim' : '') + (it.attn ? ' attn' : '') + (it.cls ? ' ' + it.cls : '') + (tone ? ' tone-' + tone : ''));
       var l = U.el('div', 'ol', it.raw ? it.label : T(it.label));
-      // Under the name, its first sentence; the whole note shows in the help line when the row is focused.
-      if (it.sub) { var full = it.raw ? it.sub : T(it.sub), short = brief(full); l.appendChild(U.el('small', '', short)); d._help = short !== full ? full : ''; }
+      // Under the name, its first sentence; the whole note, and what the buttons do, show in the panel on the right.
+      d._title = it.raw ? it.label : T(it.label); d._how = howTo(k, tone, it);
+      if (it.sub) { var full = it.raw ? it.sub : T(it.sub), short = brief(full); l.appendChild(U.el('small', '', short)); d._help = full; }
       d.appendChild(l);
       if (!it.head) {
         d._v = U.el('div', 'ov'); d.appendChild(d._v);
@@ -1944,14 +1946,30 @@ var Settings = (function () {
   }
   // A note's first sentence (sentences end with ".  "), for under the name.
   function brief(t) { t = String(t || ''); var i = t.indexOf('.  '); return i > 0 && i < t.length - 3 ? t.slice(0, i + 1) : t; }
+  /* The panel beside the page: the focused setting's name, its whole note, and what the remote does on it,
+     so the rows can stay short and anyone can tell what a press will do. */
   function help(e) {
     var h = document.getElementById('setHelp'); if (!h) return;
-    // Three lines at most (about 330 characters): a longer note ends with … rather than running under the hints.
-    var t = e && e._help && zone === 'body' ? e._help : '';
-    if (t.length > 330) t = t.slice(0, t.lastIndexOf(' ', 328)) + ' …';
-    put(h, t);
-    // Longer words (Spanish, Russian) can still need a fourth line: shorten until it fits.
-    for (var n = 0; n < 8 && t && h.scrollHeight > h.clientHeight + 2; n++) { t = t.slice(0, t.lastIndexOf(' ', Math.floor(t.length * 0.85))) + ' …'; put(h, t); }
+    var on = e && zone === 'body' && e._title;
+    h.classList.toggle('empty', !on);
+    if (!on) { if (h._t !== '') { h.innerHTML = ''; h._t = ''; } return; }
+    var key = e._title + '|' + (e._help || '') + '|' + e._how;
+    if (h._t === key) return;
+    h._t = key; h.innerHTML = '';
+    h.appendChild(U.el('div', 'sh-k', T('About this')));
+    h.appendChild(U.el('b', '', e._title));
+    if (e._help) h.appendChild(U.el('p', '', e._help));
+    if (e._how) h.appendChild(U.el('div', 'sh-how', e._how));
+  }
+  // What the remote does on a row, in plain words, for the panel.
+  function howTo(k, tone, it) {
+    if (tone === 'danger') return T('OK asks first, then does it.');
+    if (tone === 'go') return T('OK does it now.');
+    if (k === 'toggle') return T('OK or ◀ ▶ switches it on or off.');
+    if (k === 'choice') return T('◀ ▶ changes it.');
+    if (k === 'page') return T('OK opens it.  Back comes back here.');
+    if (k === 'action') return it && it.go ? T('OK goes there.') : T('OK opens it.');
+    return '';
   }
   function rows() {
     rowEls.forEach(function (e, i) {
@@ -2003,11 +2021,12 @@ var Settings = (function () {
   function keys(a) {
     // The channel playing in the corner (views.js pip): Hold OK goes back to it in fullscreen.
     if (a === 'hold' && Views.pipOn) { Views.pipFull(); return true; }
+    if (onHome) return homeKeys(a);
     if (zone === 'nav') {
       if (a === 'up') { if (nextSec(-1) !== sec) { sec = nextSec(-1); sel = 0; build(); } else Views.tabBar(function () { UI.setHandler(keys); paint(); }); }
       else if (a === 'down') { if (nextSec(1) !== sec) { sec = nextSec(1); sel = 0; build(); } }
       else if (a === 'right' || a === 'ok') { zone = 'body'; paint(); if (sec < 0 && !findQ) askFind(); }      // pages of facts only scroll
-      else if (a === 'left' || a === 'back') Views.tabBar(function () { UI.setHandler(keys); paint(); });
+      else if (a === 'left' || a === 'back') homeShow(true);
       else if (a === 'green') Views.switchTab('live');
       else if (a === 'yellow' || a === 'search') openFind();
       return true;
@@ -2097,11 +2116,108 @@ var Settings = (function () {
     zone = 'body'; paint();
   }
 
+  /* ---------- Settings home (the overhaul): what needs you, the everyday sections as tiles with their
+     current value, and every other section as a chip under them.  Every section shown in the list is on
+     it (TILES first, the rest as chips, in SECTIONS order), so nothing is harder to reach than before.
+     OK opens a section's page; Back from a section's list comes back here. ---------- */
+  var homeEl = null, onHome = false, hsel = -1, hitems = [];
+  var TILES = ['guide', 'sports', 'playback', 'audio', 'recording', 'reminders', 'vod', 'media'];
+  var TILE_ICON = { guide: 'guide', sports: 'sports', playback: 'play', audio: 'audio', recording: 'rec', reminders: 'bell', vod: 'movies', media: 'media' };
+  // One line under a tile: what it's set to now.  Anything that fails says nothing rather than something wrong.
+  function tileLine(id) {
+    var s = S(), out = '';
+    try {
+      if (id === 'guide') { var st = Epg.status || {}; out = Epg.loading ? T('Loading now') : st.at ? T('Loaded {x}', { x: when(st.at) }) : ''; }
+      else if (id === 'sports') { var n = Teams.followed().length; out = n ? T(n === 1 ? '{n} team' : '{n} teams', { n: n }) + (s.sportsBar !== false ? '  ·  ' + T('scores on') : '') : T('No teams yet'); }
+      else if (id === 'playback') out = s.memSafe ? T('Memory-safe') : '';
+      else if (id === 'audio') out = s.subsAuto ? T('Subtitles automatically') : T('Subtitles off');
+      else if (id === 'recording') { var sp = typeof Record !== 'undefined' && Record.space; out = sp ? T('USB drive, {x} free', { x: Math.round(sp.freeMB / 1024) + ' GB' }) : (typeof Record !== 'undefined' && Record.share ? T('Network share') : T('No USB drive')); }
+      else if (id === 'reminders') { var r = (Store.edits.reminders || []).length; out = r ? T(r === 1 ? '{n} reminder' : '{n} reminders', { n: r }) : T('None set'); }
+      else if (id === 'media') { var m = typeof MediaStore !== 'undefined' ? MediaStore.sources().length : 0; out = m ? T(m === 1 ? '{n} library' : '{n} libraries', { n: m }) : T('No libraries yet'); }
+    } catch (e) { out = ''; }
+    return out;
+  }
+  // What needs you: an update ready, else a short "all good" with the channel count.
+  function homeStatus() {
+    var up = typeof Update !== 'undefined' && Update.state && Update.state.state === 'available' && Update.state.latest;
+    if (up) return { attn: true, title: T('Update ready: {x}', { x: Update.state.latest.version }), sub: T('OK opens it.  TiviBro restarts with all your settings.'), go: 'about' };
+    var n = 0; try { n = L.count(); } catch (e) {}
+    return { attn: false, title: T('Everything looks good'), sub: n ? T('{n} channels', { n: n }) + (tileLine('guide') ? '  ·  ' + T('Guide') + ': ' + tileLine('guide') : '') : '' };
+  }
+  function shownIds() { var out = []; SECTIONS.forEach(function (x, i) { if (shown(i)) out.push(x[0]); }); return out; }
+  // Draws the home: search, what needs you, the tiles and the chips, each one a stop for the remote (hitems, by row and column).
+  function homeBuild() {
+    if (!homeEl) { homeEl = U.el('div', 'set-home hidden'); $('viewSettings').appendChild(homeEl); }
+    homeEl.innerHTML = ''; hitems = [];
+    var ids = shownIds(), st = homeStatus(), row = 0;
+    var top = U.el('div', 'sh-top');
+    top.appendChild(U.el('div', 'sh-title', T('Settings')));
+    var find = U.el('div', 'sh-find'); find.appendChild(U.el('span', '', T('Search: subtitles, buffer, clock…'))); find.appendChild(U.el('b', 'k-yellow')); find.appendChild(U.el('em', '', T('Yellow')));
+    top.appendChild(find); homeEl.appendChild(top);
+    hitems.push({ el: find, row: row, col: 0, go: function () { onHome = false; openFind(); } });
+    row++;
+    var card = U.el('div', 'sh-status' + (st.attn ? ' attn' : ''));
+    card.appendChild(U.el('b', '', st.title)); if (st.sub) card.appendChild(U.el('span', '', st.sub));
+    homeEl.appendChild(card);
+    if (st.go) { hitems.push({ el: card, row: row, col: 0, go: function () { goSection(st.go); } }); row++; }
+    homeEl.appendChild(U.el('div', 'sh-head', T('Watching')));
+    var grid = U.el('div', 'sh-grid'), col = 0;
+    TILES.filter(function (id) { return ids.indexOf(id) >= 0; }).forEach(function (id) {
+      var i = -1; SECTIONS.forEach(function (x, k) { if (x[0] === id) i = k; });
+      var t = U.el('div', 'sh-tile'); t.appendChild(U.el('i', 'sh-ico ico-' + TILE_ICON[id]));
+      t.appendChild(U.el('b', '', navTitle(SECTIONS[i]))); t.appendChild(U.el('span', '', tileLine(id)));
+      grid.appendChild(t);
+      hitems.push({ el: t, row: row + Math.floor(col / 4), col: col % 4, go: function () { goSection(id); } }); col++;
+    });
+    homeEl.appendChild(grid); row += Math.ceil(col / 4);
+    homeEl.appendChild(U.el('div', 'sh-head', T('Everything else')));
+    var chips = U.el('div', 'sh-chips'); col = 0;
+    ids.filter(function (id) { return TILES.indexOf(id) < 0; }).forEach(function (id) {
+      var i = -1; SECTIONS.forEach(function (x, k) { if (x[0] === id) i = k; });
+      var c = U.el('div', 'sh-chip', navTitle(SECTIONS[i])); chips.appendChild(c);
+      hitems.push({ el: c, row: row + Math.floor(col / 6), col: col % 6, go: function () { goSection(id); } }); col++;
+    });
+    homeEl.appendChild(chips);
+    hitems.forEach(function (h, n) { h.el.addEventListener('click', function () { hsel = n; homePaint(); h.go(); }); h.el.addEventListener('mousemove', function () { if (UI.pointer && hsel !== n) { hsel = n; homePaint(); } }); });
+    // First time: on the first tile (the search box is one press up).
+    if (hsel < 0) hsel = hitems.findIndex(function (h) { return h.el.classList.contains('sh-tile'); });
+    hsel = U.clamp(hsel, 0, hitems.length - 1);
+    homePaint();
+  }
+  function homePaint() { hitems.forEach(function (h, n) { h.el.classList.toggle('focus', n === hsel); }); }
+  function homeShow(on) {
+    onHome = on;
+    if (on) homeBuild(); else if (homeEl) homeEl.classList.add('hidden');
+    if (homeEl && on) homeEl.classList.remove('hidden');
+    $('viewSettings').classList.toggle('home', on);
+  }
+  function goSection(id) { homeShow(false); for (var i = 0; i < SECTIONS.length; i++) if (SECTIONS[i][0] === id && shown(i)) { sec = i; stack = []; sel = 0; zone = 'body'; build(); return; } }
+  // The remote on the home: arrows move between rows (to the nearest column), OK opens, Back goes to the menu bar.
+  function homeKeys(a) {
+    var h = hitems[hsel]; if (!h) return true;
+    if (a === 'left' || a === 'right') {
+      var same = hitems.map(function (x, n) { return n; }).filter(function (n) { return hitems[n].row === h.row; }), k = same.indexOf(hsel) + (a === 'left' ? -1 : 1);
+      if (k >= 0 && k < same.length) hsel = same[k]; else if (a === 'left') Views.tabBar(function () { UI.setHandler(keys); homePaint(); });
+    } else if (a === 'up' || a === 'down') {
+      var r = h.row + (a === 'up' ? -1 : 1), best = -1;
+      hitems.forEach(function (x, n) { if (x.row === r && (best < 0 || Math.abs(x.col - h.col) < Math.abs(hitems[best].col - h.col))) best = n; });
+      if (best >= 0) hsel = best; else if (a === 'up') Views.tabBar(function () { UI.setHandler(keys); homePaint(); });
+    } else if (a === 'ok') { h.go(); return true; }
+    else if (a === 'yellow' || a === 'search') { homeShow(false); openFind(); return true; }
+    else if (a === 'back') { Views.tabBar(function () { UI.setHandler(keys); homePaint(); }); return true; }
+    else if (a === 'green') { Views.switchTab('live'); return true; }
+    homePaint();
+    return true;
+  }
+
   function open() {
     if (!stack.length) zone = 'nav';
     UI.setHandler(keys);
-    UI.hints([['', '◀ ▶  change value'], ['', 'OK  select'], ['', 'Back  up one level, then menu bar'], ['yellow', 'Search settings']]);
+    UI.hints([['', '◀ ▶  change value'], ['', 'OK  select'], ['', 'Back  up one level, then Settings'], ['yellow', 'Search settings']]);
     build();
+    // Coming to Settings from the menu: the home first.  A section opened by name (section(), always called
+    // after switching to Settings) hides it again.
+    if (!stack.length && zone === 'nav') homeShow(true);
   }
 
   // One playlist's page (after it closed TiviBro, or most of its channels fail; issue #25).
@@ -2116,6 +2232,7 @@ var Settings = (function () {
   // Straight to one section (the phone app's own shortcut, and tests).
   function section(id) {
     if (id === 'phone' && !phoneOK()) return false;
+    homeShow(false);
     if (ALIAS[id]) id = ALIAS[id];
     var pg = pageOf(id);
     if (pg && pg.it) { sec = pg.i; stack = []; sel = pg.n; zone = 'body'; push(pg.it.page.title, pg.it.page.fn); return true; }

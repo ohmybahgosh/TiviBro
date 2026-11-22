@@ -2314,9 +2314,16 @@ var Views = (function () {
       else if (l + w - box.scrollLeft > box.clientWidth) box.scrollLeft = l + w - box.clientWidth + 40;
     }
   }
+  /* The subtitles this video can show.  A captions track only once it has lines: the TV's own player lists the
+     closed captions inside a file's video (two "English" ones on a WEB-DL episode) but never hands an app their
+     text, so they could be picked and nothing ever showed.  hls.js fills its captions track as they come. */
   function subtitleTracks() {
     var t = video && video.textTracks, out = [];
-    for (var i = 0; t && i < t.length; i++) if ((t[i].kind === 'subtitles' || t[i].kind === 'captions') && !(window.Subs && Subs.gone(t[i]))) out.push(t[i]);
+    for (var i = 0; t && i < t.length; i++) {
+      var x = t[i];
+      if (x.kind === 'captions' && !(x.cues && x.cues.length)) continue;
+      if ((x.kind === 'subtitles' || x.kind === 'captions') && !(window.Subs && Subs.gone(x))) out.push(x);
+    }
     return out;
   }
   function subtitleStatus() {
