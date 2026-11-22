@@ -331,8 +331,10 @@ var Teams = (function () {
      work has others next to it; one: just one channel per game (a Favorite, else the first found), for
      reminders.  Games on now first, then by start, a game's channels together. */
   /* ids: these teams instead of the ones you follow (the Sports screen: every team playing today). */
-  function games(within, one, ids) {
-    var teams = ids ? ids.map(function (id) { return BY_ID[id]; }).filter(Boolean) : followed(), now = Date.now(), to = now + (within || ahead()), out = [], seen = {}, mineIds = {};
+  /* late: also listings that ended this long ago (ms), for Sports: a game in overtime outlives its listing ("College
+     Football" until 7:00 on a local station while the game goes on), and the channel is still the game's. */
+  function games(within, one, ids, late) {
+    var teams = ids ? ids.map(function (id) { return BY_ID[id]; }).filter(Boolean) : followed(), now = Date.now(), gone = now - (late || 0), to = now + (within || ahead()), out = [], seen = {}, mineIds = {};
     if (!teams.length || !Library.data.channels.length) return out;
     teams.forEach(function (x) { mineIds[x.id] = 1; });
     /* Followed teams in a game: two teams of one league named ("Minnesota Vikings at Detroit Lions",
@@ -365,7 +367,7 @@ var Teams = (function () {
     Object.keys(tc).forEach(function (id) { tc[id].forEach(function (c) { (whose[c.k] || (whose[c.k] = [])).push(id); }); });
     function theirs(k) { return whose[k] && !whose[k].some(function (id) { return mineIds[id]; }); }
     function take(c, p, team) {
-      if (!c || !shown(c) || !p.t || p.e <= now || p.s > to) return;
+      if (!c || !shown(c) || !p.t || p.e <= gone || p.s > to) return;
       // Another team's own channel (the opponent's) shows the same game: yours is enough.
       if (theirs(c.k)) return;
       if (!one) {
@@ -417,7 +419,7 @@ var Teams = (function () {
         p = { s: g.start, e: g.start + 3 * 3600e3, t: g.title, ev: 1 };
       }
       // A replay of a game already played (the guide says it was shown before) isn't the game.
-      if (!c || p.e <= now || p.s > far || p.rp) return;
+      if (!c || p.e <= gone || p.s > far || p.rp) return;
       var ctx = c.n + ' | ' + (gname[c.g] || '');
       curTag = tagOf(p.t + ' | ' + ctx);
       // The same title on the same channel (every airing): worked out once.
@@ -431,7 +433,7 @@ var Teams = (function () {
     descHits(dwords).forEach(function (r) {
       var c = Library.find(r.key) || byEpg[r.key], p = r.p;
       if (c && Library.mixed && !Library.mixed(c, 'teams')) c = byEpg[r.key] || null;     // a playlist not mixed into My teams
-      if (!c || p.e <= now || p.s > to || p.rp || !SPORTY.test(p.t) || /\breplay\b/i.test(p.t)) return;
+      if (!c || p.e <= gone || p.s > to || p.rp || !SPORTY.test(p.t) || /\breplay\b/i.test(p.t)) return;
       // A description is loose talk: the team by its full name, or the league named ("NFL Football"), so a
       // college game between the Tigers and the Cardinals isn't the Detroit Tigers.
       var ctx = p.t + ' | ' + c.n + ' | ' + (gname[c.g] || '');

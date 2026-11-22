@@ -282,8 +282,9 @@ var Sports = (function () {
     try {
       if (typeof Teams !== 'undefined' && Teams.games && Object.keys(ids).length && typeof Epg !== 'undefined' && Epg.search) {
         var mine = Teams.followed ? Teams.followed().map(function (x) { return x.id; }) : [], rest = Object.keys(ids).filter(function (id) { return mine.indexOf(id) < 0; });
-        if (mine.length) list = Teams.games(36 * 3600e3, false).filter(function (x) { return ids[x.team.id]; });
-        if (rest.length) list = list.concat(Teams.games(36 * 3600e3, false, rest));
+        // Listings that ended in the last 2 hours count too (a game in overtime); channelsOf() keeps them only for a game still on.
+        if (mine.length) list = Teams.games(36 * 3600e3, false, null, 2 * 3600e3).filter(function (x) { return ids[x.team.id]; });
+        if (rest.length) list = list.concat(Teams.games(36 * 3600e3, false, rest, 2 * 3600e3));
       }
     } catch (e) { if (typeof Log !== 'undefined') Log.warn('sports', 'Finding games in the guide: ' + (e && e.message)); }
     var had = {};
@@ -301,15 +302,25 @@ var Sports = (function () {
     var gm = guideGames(), memo = chanCache && chanCache.games, mk = g.id + '|' + g.s;
     if (memo && memo[mk]) return memo[mk];
     var out = channelsOf(g, gm);
+    /* A game that runs long (overtime, extra innings) outlives its listing: the channel's "College Football" ends
+       on the hour and the next programme starts in the guide while the game is still on.  The channels found
+       for a live game stay its own until it's over, so the page keeps them and the score corner stays off them. */
+    if (g.state === 'in') {
+      var st = sticky[g.id] || (sticky[g.id] = {});
+      out.forEach(function (x) { st[x.c.k] = x; });
+      Object.keys(st).forEach(function (k) { if (!out.some(function (x) { return x.c.k === k; })) out.push(st[k]); });
+    } else if (sticky[g.id]) delete sticky[g.id];
     if (memo) memo[mk] = out;
     return out;
   }
+  var sticky = {};
   function channelsOf(g, gm) {
     var out = [], seen = {}, ids = g.teams.map(function (t) { return t.id; }).filter(Boolean);
     function add(c, p, how, rank, net) { if (!c || seen[c.k] || !shown(c)) return; seen[c.k] = 1; out.push({ c: c, p: p || null, how: how, net: net || '', r: rank - (Library.isFav && Library.isFav(c.k) ? 0.5 : 0) }); }
     ids.forEach(function (id) {
       (gm[id] || []).forEach(function (x) {
         if (Math.abs(x.p.s - g.s) > 3 * 3600e3 && !(x.p.s <= g.s && x.p.e > g.s)) return;
+        if (x.p.e <= Date.now() && g.state !== 'in') return;          // an ended listing only for a game still on (overtime)
         var other = ids.filter(function (o) { return o !== id; })[0], both = other && (x.pair || '').indexOf(other.split(':')[1]) >= 0;
         add(x.c, x.p, 'guide', both ? 0 : 1);
       });
