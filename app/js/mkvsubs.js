@@ -296,13 +296,16 @@ var MkvSubs = (function () {
 
   // Walk element headers and skip media payloads by their declared size. A cluster
   // commonly contains megabytes of video for only a few bytes of subtitle text.
-  function readSparseCluster(range, off, trackNumbers, scale, positions) {
+  /* [win]: how much to read at a time around an element header (4 KB when the cues point at the blocks;
+     256 KB when walking a whole Cluster for a file whose cues index only the video, so the walk takes a few
+     dozen short reads and skips the large video frames it doesn't need without reading them). */
+  function readSparseCluster(range, off, trackNumbers, scale, positions, win) {
     var cache = null, cacheStart = 0, clusterEnd, stamp = 0, found = [];
     function read(pos, size) {
       if (size > 65536) return Promise.reject(new Error('oversized subtitle element'));
       if (cache && pos >= cacheStart && pos + size <= cacheStart + cache.length)
         return Promise.resolve(cache.subarray(pos - cacheStart, pos - cacheStart + size));
-      return range(pos, Math.min(pos + Math.max(size, 4096) - 1, clusterEnd === undefined ? off + 15 : clusterEnd - 1)).then(function (buf) {
+      return range(pos, Math.min(pos + Math.max(size, win || 4096) - 1, clusterEnd === undefined ? off + 15 : clusterEnd - 1)).then(function (buf) {
         cache = buf; cacheStart = pos;
         if (buf.length < size) throw new Error('truncated cluster');
         return buf.subarray(0, size);
@@ -375,25 +378,6 @@ var MkvSubs = (function () {
       return found.map(function (g) {
         var start = (stamp + g.block.rel) * scale / 1e9;
         return { track: g.block.track, startSec: start, endSec: start + (g.duration === undefined ? 2 : g.duration * scale / 1e9), text: g.block.text };
-      });
-    });
-  }
-
-  /* A whole Cluster in one read, for a file whose Cues index only the video (see MKV.discover): its subtitle
-     blocks sit between the video and audio blocks with nothing pointing at them, so the Cluster is read in
-     full and walked in memory.  One read instead of hundreds of small ones; capped so a broken size can't
-     ask for the whole file. */
-  var MAX_SCAN_CLUSTER = 24 * 1024 * 1024;
-  function readWholeCluster(range, off, trackNumbers, scale) {
-    return range(off, off + 15).then(function (head) {
-      var id = readId(head, 0), sz = readVint(head, id.next);
-      if (id.value !== 0x1F43B675 || sz.value === null || sz.value > MAX_SCAN_CLUSTER) throw new Error('invalid cluster');
-      return range(off, off + sz.next + sz.value - 1).then(function (all) {
-        var out = [];
-        trackNumbers.forEach(function (n) {
-          readClusterBlocks(all, sz.next, all.length, n, scale, true).forEach(function (c) { out.push({ track: n, startSec: c.startSec, endSec: c.endSec, text: c.text }); });
-        });
-        return out;
       });
     });
   }
@@ -472,7 +456,7 @@ var MkvSubs = (function () {
         /* No cue for any subtitle track: mkvmerge indexes only the video unless told otherwise, so most
            WEB-DL episodes are like this (a Netflix one with English, SDH and 33 more languages showed none).
            Every subtitle line is still inside the Clusters the video's cue points name: each Cluster
-           becomes a "cue" for every subtitle track, running to the next one, and is read whole (scan). */
+           becomes a "cue" for every subtitle track, running to the next one, and is walked (scan). */
         var all = readCuesForTrack(cuesBuf, cuesContentStart, cuesContentEnd, null, timecodeScale), seen = {}, pts = [];
         all.forEach(function (c) { if (!seen[c.clusterPos]) { seen[c.clusterPos] = 1; pts.push({ timeSec: c.timeSec, clusterPos: c.clusterPos }); } });
         pts.sort(function (a, b) { return a.timeSec - b.timeSec; });
@@ -533,22 +517,16 @@ var MkvSubs = (function () {
     },
     read: function (rec, item, range, alive) {
       var ix = rec.index, off = item.off, positions = [], indexed = true;
-      if (ix.scan) return readWholeCluster(range, off, item.tracks.map(function (i) { return ix.perTrackCues[i].track.number; }), ix.timecodeScale).then(function (found) {
-        var out = [];
-        if (!alive()) return out;
-        item.tracks.forEach(function (i) {
-          var tr = ix.perTrackCues[i].track;
-          found.forEach(function (f) { if (f.track !== tr.number) return; var text = subtitleText(f.text, tr.codecId); if (text.trim()) out.push({ track: i, s: f.startSec, e: f.endSec, text: text }); });
-        });
-        return out;
-      });
+      // A file whose cues index only the video (discover's scan): walk the Cluster, 256 KB at a time, for the
+      // subtitle blocks; a seek or a low buffer cancels one short read, not the whole Cluster.
+      if (ix.scan) indexed = false;
       var perTrackCues = item.tracks.map(function (i) { return ix.perTrackCues[i]; });
       perTrackCues.forEach(function (t) { t.cues.forEach(function (c) {
         if (ix.segmentDataStart + c.clusterPos !== off) return;
         if (c.relativePos === undefined) indexed = false;
         else if (positions.indexOf(c.relativePos) < 0) positions.push(c.relativePos);
       }); });
-      return readSparseCluster(range, off, perTrackCues.map(function (t) { return t.track.number; }), ix.timecodeScale, indexed ? positions : null).then(function (found) {
+      return readSparseCluster(range, off, perTrackCues.map(function (t) { return t.track.number; }), ix.timecodeScale, indexed ? positions : null, ix.scan ? 262144 : 0).then(function (found) {
         var out = [];
         if (!alive()) return out;
         for (var a = 0; a < perTrackCues.length; a++) {

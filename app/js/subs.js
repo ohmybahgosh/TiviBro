@@ -128,18 +128,26 @@ var Subs = (function () {
       .replace(/[([]?\b(4k|uhd|fhd|hd|sd|1080p|720p|2160p|multi[- ]?subs?|hevc|x26[45])\b[)\]]?/ig, '').replace(/\s{2,}/g, ' ').trim()
       .replace(/\s*[([]\s*(19|20)\d\d\s*[)\]]\s*$/, '').replace(/[\s\-|:]+$/, '').trim();
   }
+  // What to search OpenSubtitles for, from what is playing: movie or episode, its name, year, season and number, and its TMDB id when known.
   function guess(meta) {
-    var it = meta && meta.item || {}, q = { type: 'movie', query: '', year: '', season: 0, episode: 0 };
+    var it = meta && meta.item || {}, q = { type: 'movie', query: '', year: '', season: 0, episode: 0, tmdb: '' };
     /* An episode from My media: the show's name, its season and number (the search said "S1E2 Episode 2", which no
        subtitle site knows).  The name from the library, else from the file's ("Cunk on Cinema - S01E02 - ..."). */
     if (it.kind === 'episode' && it.showId && !it.ep) {
       var fm = /^(.*?)[\s._-]+\(?(?:19|20)?\d{0,2}\)?[\s._-]*S\d{1,2}E\d{1,3}/i.exec(String(it.file || ''));
       q.type = 'episode'; q.season = +it.season || 0; q.episode = +it.number || 0;
       q.query = clean((typeof Media !== 'undefined' && Media.showTitle && Media.showTitle(it.showId)) || (fm ? fm[1].replace(/[._]/g, ' ') : '') || String(meta.title || ''));
+      // The show's TMDB id when My media knows it: OpenSubtitles finds a new show's episodes by id that its
+      // name search misses (The Altruists, two days after it came out).
+      q.tmdb = (typeof Media !== 'undefined' && Media.showTmdb && Media.showTmdb(it.showId)) || '';
       return q;
     }
     if (it.ep) { q.type = 'episode'; q.query = clean(String(meta.title || '').split(/\s{3}/)[0]); q.season = +it.season || 0; q.episode = +it.num || 0; }
-    else { q.query = clean(it.name || it.title || meta && meta.title); q.year = String(it.year || meta && meta.sub || '').slice(0, 4); }
+    else {
+      q.query = clean(it.name || it.title || meta && meta.title); q.year = String(it.year || meta && meta.sub || '').slice(0, 4);
+      var mid = /^tmdb:(\d+)$/.exec(String(it.metadata && it.metadata.id || it.tmdb_id || ''));      // a My media movie TMDB knows
+      if (mid) q.tmdb = mid[1];
+    }
     if (!/^\d{4}$/.test(q.year)) { var y = /\b(19|20)\d\d\b/.exec(it.name || it.title || meta && meta.title || ''); q.year = y ? y[0] : ''; }
     return q;
   }
@@ -520,7 +528,7 @@ var Subs = (function () {
   }
   function search(meta, q) {
     U.toast('Looking on OpenSubtitles…', 3000);
-    token().then(function (tk) { return ask('search', { key: state.key, token: tk, query: q.query, year: q.year, season: q.season, episode: q.episode, type: q.type, langs: langs() }); })
+    token().then(function (tk) { return ask('search', { key: state.key, token: tk, query: q.query, year: q.year, season: q.season, episode: q.episode, type: q.type, tmdb: q.tmdb || '', langs: langs() }); })
       .then(function (j) {
         var r = j.results || [];
         if (!r.length) { U.toast('Nothing found for "' + q.query + '".  Change the title or the languages.', 6000); return find(meta); }

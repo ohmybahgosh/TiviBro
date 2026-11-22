@@ -1,7 +1,7 @@
 /* Subtitles from OpenSubtitles.com for what's playing (discussion #19).  The app sends the viewer's own
    API key (and login token, if they signed in) with each request, the way it sends the TMDB token;
    only the search words (title, year, season and episode) and the chosen file id leave the TV.
-     POST /media/subs/search   { key, token, query, year, season, episode, type, langs: ['en','ea'] }
+     POST /media/subs/search   { key, token, query, year, season, episode, type, tmdb, langs: ['en','ea'] }
        -> { results: [{ id, lang, release, downloads, hi, fps, ai, trusted, title }], perLang } | { error, message }
           (one search per language, up to 40 each)
      POST /media/subs/get      { key, token, id } -> { text, name, remaining, reset } | { error, message }
@@ -60,8 +60,10 @@ function keyOk(q) { return /^[A-Za-z0-9]{16,64}$/.test(str(q.key, 80)); }
 // The search address: parameters sorted, values lower case, spaces as "+".
 function searchUrl(q) {
   var p = {};
-  var query = str(q.query, 120).toLowerCase().replace(/\s+/g, ' ').trim();
-  if (query) p.query = query;
+  var query = str(q.query, 120).toLowerCase().replace(/\s+/g, ' ').trim(), tmdb = /^\d{1,9}$/.test(str(q.tmdb)) ? str(q.tmdb) : '';
+  // By TMDB id when known (the show's for an episode): exact, where the name search can miss a new show.
+  if (tmdb) p[q.type === 'episode' ? 'parent_tmdb_id' : 'tmdb_id'] = tmdb;
+  else if (query) p.query = query;
   if (/^\d{4}$/.test(str(q.year))) p.year = str(q.year);
   if (+q.season > 0) p.season_number = String(+q.season);
   if (+q.episode > 0) p.episode_number = String(+q.episode);
@@ -96,6 +98,7 @@ function words(s) {
     .replace(/^(the|a|an) /, '');
 }
 function score(r, q) {
+  if (/^\d{1,9}$/.test(str(q.tmdb))) return 4;            // asked by id: every result is for it
   var want = words(q.query);
   if (!want) return 1;
   var ws = want.split(' '), t = words(r.title), rel = ' ' + words(r.release) + ' ', sc = 0;
@@ -139,10 +142,10 @@ function search(q, cb) {
       /* Nothing for an episode asked as show + season + episode: OpenSubtitles files some new shows' episodes
          without the show linked (a 2025 Netflix series came back empty while Plex found several).  Asked once
          more as words, "the altruists s01e02", the way their release names are written. */
-      if (!out.length && !q._words && q.type === 'episode' && +q.season > 0 && +q.episode > 0) {
+      if (!out.length && !q._words && q.type === 'episode' && +q.season > 0 && +q.episode > 0) {   // (by id too)
         var again = {}; Object.keys(q).forEach(function (k) { again[k] = q[k]; });
         var pad = function (n) { return (n < 10 ? '0' : '') + n; };
-        again.query = str(q.query, 100) + ' s' + pad(+q.season) + 'e' + pad(+q.episode); again.season = 0; again.episode = 0; again.type = ''; again._words = true;
+        again.query = str(q.query, 100) + ' s' + pad(+q.season) + 'e' + pad(+q.episode); again.season = 0; again.episode = 0; again.type = ''; again.tmdb = ''; again._words = true;
         return search(again, function (r) { if (r && r.results) { r.results = r.results.filter(function (x) { return !x.season || (x.season === +q.season && x.episode === +q.episode); }); } cb(r); });
       }
       cb({ results: out, total: total, perLang: counts });

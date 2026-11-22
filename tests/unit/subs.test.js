@@ -41,7 +41,7 @@ ok('ASS dialogue lines', c.length === 1 && c[0].s === 2 && c[0].e === 4.5 && c[0
 ok('broken blocks are skipped', T.parse('1\nnot a time\nx\n\n2\n00:00:05,000 --> 00:00:04,000\nbackwards\n').length === 0);
 
 // What's playing.
-ok('a movie: the title without tags and the year', JSON.stringify(T.guess({ title: 'EN - The Matrix (1999) [4K]', item: { name: 'EN - The Matrix (1999) 4K' } })) === JSON.stringify({ type: 'movie', query: 'The Matrix', year: '1999', season: 0, episode: 0 }),
+ok('a movie: the title without tags and the year', JSON.stringify(T.guess({ title: 'EN - The Matrix (1999) [4K]', item: { name: 'EN - The Matrix (1999) 4K' } })) === JSON.stringify({ type: 'movie', query: 'The Matrix', year: '1999', season: 0, episode: 0, tmdb: '' }),
   JSON.stringify(T.guess({ title: 'EN - The Matrix (1999) [4K]', item: { name: 'EN - The Matrix (1999) 4K' } })));
 const ep = T.guess({ title: '|US| Breaking Bad   S2 E5   Breakage', item: { ep: true, season: 2, num: 5 } });
 ok('an episode: the show, season and episode', ep.type === 'episode' && ep.query === 'Breaking Bad' && ep.season === 2 && ep.episode === 5, JSON.stringify(ep));
@@ -110,6 +110,7 @@ const KEY = 'a'.repeat(32);
   ok('search: one request per language, each with its own results', asked2.length === 2 && asked2.some(a => /languages=en&/.test(a)) && asked2.some(a => /languages=es&/.test(a)) &&
     out.results.filter(r => r.lang === 'en').length === 40 && out.results.filter(r => r.lang === 'es').length === 3 && out.perLang.en === 40 && out.perLang.es === 3, JSON.stringify(asked2) + ' ' + JSON.stringify(out.perLang));
   calls.splice(before, 2);
+  ok('by TMDB id: an episode asks for its show\'s id, not its name', /parent_tmdb_id=308007/.test(S._test.searchUrl({ query: 'The Altruists', tmdb: '308007', type: 'episode', season: 1, episode: 2 })) && !/query=/.test(S._test.searchUrl({ query: 'x', tmdb: '308007', type: 'episode', season: 1, episode: 2 })) && /[?&]tmdb_id=603/.test(S._test.searchUrl({ query: 'The Matrix', tmdb: '603', type: 'movie' })));
   // An episode OpenSubtitles hasn't linked to its show: nothing by show + season + episode, so once more as words.
   const before3 = calls.length;
   replies.push({ code: 200, body: { total_count: 2, data: [
