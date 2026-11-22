@@ -237,10 +237,11 @@ body.guide1 .gp .gs{display:none}
 .guide-group.focus{background:var(--accent);color:var(--on-accent)}
 
 /* settings */
-.set-nav{width:450px;margin-right:36px;display:flex;flex-direction:column;gap:6px}
+.set-nav{width:450px;margin-right:36px;display:flex;flex-direction:column;gap:3px}
 /* flex:none: with 18 sections the column is taller than the screen allows, and the rows shrank to fit from the
-   bottom, so each label sat low in its box (discussion #36).  Rows sized to fit instead: 43 px, the text centred. */
-.set-nav div{flex:none;padding:6px 22px;line-height:31px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:10px;color:var(--muted)}
+   bottom, so each label sat low in its box (discussion #36).  Rows sized to fit instead: 39 px, the text centred,
+   so all 19 sections and Search fit above the hint bar (with Sports, 43 px rows ran under it). */
+.set-nav div{flex:none;padding:6px 22px;line-height:27px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:10px;color:var(--muted)}
 .set-nav div.on{color:var(--text);background:var(--panel)}
 /* Search settings: the first row of the menu, with a magnifier (the TiviBro Symbols font draws none, so CSS does). */
 .set-nav .nav-find{position:relative;padding-left:58px}
