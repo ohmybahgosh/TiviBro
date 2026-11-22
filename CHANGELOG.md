@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 196, 2026-11-22)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 196
 
 - **Manage groups lists the groups you show first**, then the hidden ones, each under its own heading with a count.  With most groups hidden, the ones you watch are together at the top.
 - **Phone app: dragging a group shows where it lands.**  The other groups slide aside to open a gap as you drag, and the list shows the new order as soon as you let go.  Hold a group near the top or bottom of the screen and the list scrolls that way, so it can go a long way in one drag.  While the TV saves a move the list fades for a moment, so quick drags in a row never jump back.  A group moves among the shown (or hidden) ones even when hidden groups sit between them.
@@ -10,11 +14,7 @@
 - **The channel keeps playing in Settings again, on the new layout** (discussion #36).  The picture and what's on sit in a column at the top right, on the Settings home and on every page, above the help panel, instead of being missing on the home and squeezed between the list and the help on a page.
 - **TV Settings text is bigger:** the parts of a page on the left, and the settings and their notes.
 
-## 0.6.0 (alpha 195, 2026-11-22)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 195
+### In alpha 195
 
 - **Sports has its own place in Settings.**  Your teams, the scores corner, alerts and the My teams group are in **Settings > Sports** on the TV, the phone and the web editor.
 - **Web editor, redone.**  Settings come in cards where a switch, a choice, a button that does something now and a red button that deletes all look different.  A search box finds any setting and opens its page.  The page list is grouped, with Sports in it.  Groups and channels drag with a finger on phones and tablets, and Alt + ↑ ↓ moves a group.  The welcome page for a new TV is three short steps.
