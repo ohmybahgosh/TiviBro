@@ -126,6 +126,7 @@ I18n.add('es', {
   "College Football": "Fútbol americano universitario", "Has its own channel": "Tiene canal propio", "Games only, no team channels": "Solo partidos, sin canales de equipo",
   "{n} teams have their own channel": ["{n} equipo tiene canal propio", "{n} equipos tienen canal propio"], "{n} followed ›": ["{n} seguido ›", "{n} seguidos ›"],
   "Stopped following the {x}": "Ya no sigues a {x}", "Follow the {x}": "Seguir a {x}", "Unfollow": "Dejar de seguir", "{x} teams": "Equipos de {x}",
+  "Teams in the corner": "Equipos en la esquina", "All your teams": "Todos tus equipos", "{x} of {y} teams": "{x} de {y} equipos", "Turn a team off to leave its games out of the corner while you watch.  Its scores still show in Sports and in alerts.": "Desactiva un equipo para que sus partidos no salgan en la esquina mientras ves algo.  Sus marcadores siguen en Deportes y en los avisos.",
   "Tick the teams you follow.  Teams with their own channel in this playlist say so.": "Marca los equipos que sigues.  Los que tienen canal propio en esta lista lo indican.",
   // Playlists and setup
   "Add another playlist": "Añadir otra lista", "Add playlist…": "Añadir lista…", "Playlist name": "Nombre de la lista", "Playlist settings": "Configuración de la lista",

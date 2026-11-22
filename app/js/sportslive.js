@@ -60,7 +60,7 @@ var SportsLive = (function () {
     if (!barOn() || !watching()) return hideBug();
     var on = Views.mode === 'live' && Views.playing ? Sports.gameOn(Views.playing) : null;
     list = Sports.all().filter(function (g, i, a) {
-      return g.state === 'in' && g.teams.length === 2 && mineIn(g) && !Sports.hidden(g) && (!on || on.id !== g.id) && a.findIndex(function (x) { return x.id === g.id; }) === i;
+      return g.state === 'in' && g.teams.length === 2 && inCorner(g) && !Sports.hidden(g) && (!on || on.id !== g.id) && a.findIndex(function (x) { return x.id === g.id; }) === i;
     });
     if (!list.length) return hideBug();
     drawBug(list[turn % list.length]);
@@ -79,6 +79,12 @@ var SportsLive = (function () {
     if (/^(mls|epl|ucl)$/.test(g.lg)) { var min = parseInt(g.clock, 10); return g.period >= 2 && min >= 80; }
     if (g.lg === 'mlb') return g.period >= 9;
     return g.period >= r[0] && secs(g.clock) <= r[1];
+  }
+  /* A game for the corner: one of its teams is followed, its scores aren't hidden, and it isn't one turned
+     off in Settings > Sports and My teams > Teams in the corner (sportsBarOff). */
+  function inCorner(g) {
+    var off = S().sportsBarOff || [];
+    return g.teams.some(function (t) { return t.id && Teams.follows && Teams.follows(t.id) && !Sports.hidesTeam(t.id) && off.indexOf(t.id) < 0; });
   }
   function mineIn(g) { return g.teams.filter(function (t) { return t.id && Teams.follows && Teams.follows(t.id) && !Sports.hidesTeam(t.id); })[0]; }
   function lookAlerts() {
@@ -155,5 +161,5 @@ var SportsLive = (function () {
     document.addEventListener('keyup', function () { setTimeout(function () { if (!watching()) hideBug(); else lookBar(); }, 300); });
     if (Sports.onChange) Sports.onChange(function () { if (watching()) lookBar(); });
   }
-  return { start: start, tick: tick, refresh: function () { lookBar(); }, _close: close };
+  return { start: start, tick: tick, refresh: function () { lookBar(); }, _close: close, _inCorner: inCorner };
 })();

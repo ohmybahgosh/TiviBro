@@ -1301,6 +1301,18 @@ var Settings = (function () {
       function () { return s.sportsBar !== false; }, function (v) { s.sportsBar = v; Store.saveSettings(); paint(); }));
     if (s.sportsBar !== false) out.push(choice('Where the scores go', 'The corner of the screen.  Pick one your channels\' own logos and scores don\'t use.', ['tl', 'tr', 'bl', 'br'], ['Top left', 'Top right', 'Bottom left', 'Bottom right'],
       function () { return /^(tl|tr|bl|br)$/.test(s.sportsBarAt || '') ? s.sportsBarAt : 'tr'; }, function (v) { s.sportsBarAt = v; Store.saveSettings(); paint(); }));
+    /* Which followed teams' games the corner shows (sportsBarOff: the ones it leaves out).  Only the corner:
+       Sports, alerts and reminders still have them, unlike Hide scores below. */
+    if (s.sportsBar !== false && mine.length) out.push(page('Teams in the corner', (s.sportsBarOff || []).length ? T('{x} of {y} teams', { x: mine.length - mine.filter(function (t) { return (s.sportsBarOff || []).indexOf(t.id) >= 0; }).length, y: mine.length }) : T('All your teams'), 'Teams in the corner', function () {
+      return [info('Turn a team off to leave its games out of the corner while you watch.  Its scores still show in Sports and in alerts.', '')].concat(mine.map(function (t) {
+        return toggle(I18n.raw(t.name), t.league.toUpperCase(), function () { return (s.sportsBarOff || []).indexOf(t.id) < 0; }, function (v) {
+          var l = (s.sportsBarOff || []).filter(function (id) { return id !== t.id; });
+          if (!v) l.push(t.id);
+          s.sportsBarOff = l; Store.saveSettings(); paint();
+          if (typeof SportsLive !== 'undefined') SportsLive.refresh();
+        });
+      }));
+    }));
     out.push(toggle('Alerts for my teams', 'A close game near the end asks whether to switch to it, and a final score says so, wherever you are in TiviBro.  Never for the game you\'re watching.',
       function () { return s.sportsAlerts !== false; }, function (v) { s.sportsAlerts = v; Store.saveSettings(); paint(); }));
     if (mine.length) out.push(page('Hide scores', (s.sportsHide || []).length ? (s.sportsHide || []).length + ' team(s): no scores anywhere until you show them' : 'For a team you\'ll watch later: no scores anywhere until you show them', 'Hide scores', function () {

@@ -128,6 +128,7 @@ I18n.add('ru', {
   "{n} teams have their own channel": ["У {n} команды есть свой канал", "У {n} команд есть свой канал", "У {n} команд есть свой канал"],
   "{n} followed ›": "Отслеживается: {n} ›", "Stopped following the {x}": "Вы больше не следите за {x}", "Follow the {x}": "Следить за {x}",
   "Unfollow": "Не следить", "{x} teams": "Команды {x}",
+  "Teams in the corner": "Команды в углу", "All your teams": "Все ваши команды", "{x} of {y} teams": "{x} из {y} команд", "Turn a team off to leave its games out of the corner while you watch.  Its scores still show in Sports and in alerts.": "Выключите команду, чтобы её матчи не показывались в углу во время просмотра.  Счёт по-прежнему виден в разделе «Спорт» и в оповещениях.",
   "Tick the teams you follow.  Teams with their own channel in this playlist say so.": "Отметьте команды, за которыми следите.  У команд со своим каналом в этом плейлисте это указано.",
   // Playlists and setup
   "Add another playlist": "Добавить ещё плейлист", "Add playlist…": "Добавить плейлист…", "Playlist name": "Название плейлиста", "Playlist settings": "Настройки плейлиста",

@@ -433,6 +433,7 @@ I18n.add('pt-BR', {
   "Stopped following the {x}": "Você não segue mais {x}",
   "Follow the {x}": "Seguir {x}",
   "Unfollow": "Deixar de seguir",
+  "Teams in the corner": "Times no canto", "All your teams": "Todos os seus times", "{x} of {y} teams": "{x} de {y} times", "Turn a team off to leave its games out of the corner while you watch.  Its scores still show in Sports and in alerts.": "Desligue um time para tirar os jogos dele do canto enquanto você assiste.  Os placares continuam em Esportes e nos alertas.",
   "{x} teams": "Times de {x}",
   "Tick the teams you follow.  Teams with their own channel in this playlist say so.": "Marque os times que você segue.  Os que têm canal próprio nesta lista mostram isso.",
   "Add another playlist": "Adicionar outra lista",

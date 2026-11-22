@@ -90,6 +90,13 @@ ok('NBA: 15 points is not', !SportsLive._close({ lg: 'nba', state: 'in', period:
 ok('NBA: close in the 2nd is not near the end', !SportsLive._close({ lg: 'nba', state: 'in', period: 2, clock: '2:10', teams: two(50, 51) }));
 ok('NHL: one goal with 4 minutes left in the 3rd', SportsLive._close({ lg: 'nhl', state: 'in', period: 3, clock: '4:00', teams: two(2, 3) }));
 ok('soccer: the 85th minute, level', SportsLive._close({ lg: 'epl', state: 'in', period: 2, clock: "85'", teams: two(1, 1) }));
+// The corner: a followed team's game, unless that team is turned off for the corner (sportsBarOff) or hidden.
+Store.settings.sportsHide = [];
+const det = { id: 'x9', teams: [{ id: 'nhl:det' }, { id: 'nhl:nyi' }] }, other = { id: 'x8', teams: [{ id: 'nhl:bos' }, { id: 'nhl:nyr' }] };
+ok('the corner: a followed team\'s game', SportsLive._inCorner(det) && !SportsLive._inCorner(other));
+Store.settings.sportsBarOff = ['nhl:det'];
+ok('the corner: not a team turned off for it', !SportsLive._inCorner(det));
+Store.settings.sportsBarOff = [];
 ok('a final is not a close game', !SportsLive._close({ lg: 'nba', state: 'post', period: 4, clock: '0:00', teams: two(102, 105) }));
 console.log(fail ? fail + ' failures' : 'all sports tests passed');
 process.exit(fail ? 1 : 0);
