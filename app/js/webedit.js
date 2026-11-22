@@ -390,6 +390,7 @@ var WebEdit = (function () {
     /* Settings, the same pages the TV and the phone app show (Settings.phone): the sections, one page (sec and the
        rows followed into it), and a change (toggle, choice, cycle, action, or the answer to a question it asked). */
     setSections: function () { return { msg: '', data: Settings.phone.sections() }; },
+    setFind: function (a) { return { msg: '', data: Settings.phone.find(String(a.q || '').slice(0, 80)) }; },
     setPage: function (a) { return Settings.phone.ready().then(function () { return { msg: '', data: Settings.phone.page(String(a.sec || ''), Array.isArray(a.path) ? a.path.map(Number) : []) }; }); },
     setChange: function (a) {
       var path = Array.isArray(a.path) ? a.path.map(Number) : [];

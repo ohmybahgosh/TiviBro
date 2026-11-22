@@ -2231,6 +2231,32 @@ var Settings = (function () {
       return Promise.race([Convert.status(true).then(function (x) { convSt = x; convAt = Date.now(); }), new Promise(function (r) { setTimeout(r, 3000); })]);
     },
     sections: function () { return SECTIONS.filter(function (x, i) { return shown(i); }).map(function (x) { return { id: x[0], title: title(x) }; }); },
+    /* Search every setting, for the phone and the web editor's search box: each hit with its section and the rows
+       to follow to its page (the same path page() takes), best matches first (name before note). */
+    find: function (q) {
+      q = norm1(q).trim(); if (q.length < 2) return [];
+      var hits = [], seen = {};
+      findIndex().forEach(function (r) {
+        var name = norm1(T(r.label)) + norm1(r.label), note = norm1(r.sub ? T(r.sub) : '') + norm1(r.sub), key = r.label + '|' + r.sub;
+        var w = name.indexOf(q) >= 0 ? 0 : note.indexOf(q) >= 0 ? 1 : -1;
+        if (w < 0 || seen[key]) return;
+        seen[key] = 1; hits.push({ r: r, w: w });
+      });
+      hits.sort(function (a, b) { return a.w - b.w || a.r.trail.length - b.r.trail.length; });
+      return hits.slice(0, 40).map(function (h) {
+        var r = h.r, path = [], list = null, i = -1;
+        for (var x = 0; x < SECTIONS.length; x++) if (SECTIONS[x][0] === r.sec) i = x;
+        try {
+          list = shape(FNS[i], SECTIONS[i][1]);
+          r.chain.forEach(function (pg) {
+            var n = list.findIndex(function (it) { var p = it && (it.page || it.phonePage); return p && p.fn === pg.fn; });
+            if (n < 0) throw new Error('moved');
+            path.push(n); list = shape(pg.fn, pg.title);
+          });
+        } catch (e) { return null; }
+        return { label: String(T(r.label)), sub: r.sub ? brief(String(T(r.sub))) : '', trail: r.trail.map(function (t) { return String(T(t)); }).join('  ›  '), sec: r.sec, path: path };
+      }).filter(Boolean);
+    },
     page: function (secId, path) { var p = rowsOf(secId, path); return { title: p.title, trail: p.trail, rows: p.list.map(rowData).filter(function (r, n) { return !p.list[n].preview; }) }; },   // pictures (a preview, the TMDB credit) stay on the TV
     // op: 'toggle' (on), 'choice' (v: the choice's index), 'cycle' (dir), 'action', 'answer' (to a dialog).
     change: function (secId, path, n, op, a) {

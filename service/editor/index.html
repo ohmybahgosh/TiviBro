@@ -151,6 +151,10 @@ main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;position
 .ssw i::before{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#c9d1ea;transition:.15s} .ssw input:checked + i{background:var(--accent)} .ssw input:checked + i::before{left:23px;background:#fff}
 .ssw input:focus-visible + i{outline:2px solid var(--accent2);outline-offset:2px}
 .setmenu{display:flex;flex-direction:column;gap:4px;max-height:60vh;overflow:auto} .setmenu button{text-align:left;padding:10px 12px} .setmenu button small{display:block;color:var(--muted);font-weight:400;margin-top:2px} .setmenu button.on{outline:2px solid var(--accent)}
+.setq{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:0 12px;width:min(380px,100%)}
+.setq:focus-within{border-color:var(--accent)} .setq svg{width:17px;height:17px;fill:none;stroke:var(--muted);stroke-width:2;flex:none}
+.setq input{border:0!important;background:none!important;padding:10px 0!important;flex:1;outline:none}
+.srow.found{animation:found 2.2s ease-out} @keyframes found{0%,40%{background:rgba(51,225,255,.18)}100%{background:transparent}}
 .setlegend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--dim);margin:2px 4px 18px}
 .setlegend span{display:inline-flex;align-items:center;gap:6px}
 .setlegend i{display:inline-block;width:22px;height:12px;border-radius:4px;background:var(--line)}
@@ -954,7 +958,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
     <!-- HELP -->
     <!-- SETTINGS: the TV's own Settings, page by page (Settings.phone), drawn here -->
     <section class="page hidden" id="p-settings">
-      <div class="phead"><div><h1>Settings</h1><p>Everything in the TV's Settings, the same sections and pages.  Changes apply on the TV at once.</p></div></div>
+      <div class="phead"><div class="grow"><h1>Settings</h1><p>Everything in the TV's Settings, the same sections and pages.  Changes apply on the TV at once.</p></div><label class="setq"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="setQ" type="search" placeholder="Search all settings" aria-label="Search all settings" autocomplete="off"></label></div>
       <div class="scroll"><div class="setwrap"><nav id="setSecs" class="setsecs"></nav><div class="setmain"><div id="setTrail" class="settrail"></div><div class="setlegend" aria-hidden="true"><span><i class="tg"></i>On or off</span><span><i class="pk"></i>Pick one</span><span><i class="go"></i>Does it now</span><span><i class="dg"></i>Deletes, asks first</span></div><div id="setRows" class="setrows"><p class="muted">Loading…</p></div></div></div></div>
     </section>
 
@@ -1775,6 +1779,39 @@ function setOpen(sub) {
   if (ST.secs) return go();
   command('setSections').then(function (r) { ST.secs = r.data || []; go(); }).catch(function (e) { $('setRows').innerHTML = '<p class="bad">' + esc(e.message) + '</p>'; });
 }
+/* Search all settings (the TV's settings.js find): results replace the page; one opens its page there and
+   lights the row up.  Empty box: back to the section. */
+var setQT = null, setFound = '';
+$('setQ').addEventListener('input', function () {
+  clearTimeout(setQT);
+  var q = this.value.trim();
+  setQT = setTimeout(function () { if (q.length < 2) { if (ST.secs) setLoad(); return; } setSearch(q); }, 250);
+});
+$('setQ').addEventListener('keydown', function (e) { if (e.key === 'Escape') { this.value = ''; setLoad(); } if (e.key === 'Enter') { var b = $('setRows').querySelector('.srow.click'); if (b) b.click(); } });
+function setSearch(q) {
+  command('setFind', { q: q }, 30000).then(function (r) {
+    if ($('setQ').value.trim() !== q) return;
+    var hits = r.data || [], box = $('setRows');
+    $('setTrail').textContent = hits.length ? hits.length + (hits.length === 1 ? ' setting' : ' settings') + ' for "' + q + '"' : 'No setting has "' + q + '" in its name or its note.';
+    box.innerHTML = '';
+    if (!hits.length) return;
+    var card = document.createElement('div'); card.className = 'scard'; box.appendChild(card);
+    hits.forEach(function (h) {
+      var d = document.createElement('div'); d.className = 'srow click jump'; d.tabIndex = 0;
+      d.innerHTML = '<div class="sl"><b>' + esc(h.label) + '</b><small>' + esc(h.trail) + (h.sub ? '  ·  ' + esc(h.sub) : '') + '</small></div><div class="sv"></div>';
+      d.onclick = function () { $('setQ').value = ''; ST.sec = h.sec; ST.path = h.path; setFound = h.label; drawSecs(); setLoad(); history.replaceState(null, '', '#settings/' + h.sec); };
+      d.onkeydown = function (e) { if (e.key === 'Enter') d.click(); };
+      card.appendChild(d);
+    });
+  }).catch(function (e) { toast(e.message); });
+}
+// After a search result opened its page: light the row up and bring it into view.
+function setLight() {
+  if (!setFound) return;
+  var name = setFound; setFound = '';
+  var row = [].slice.call($('setRows').querySelectorAll('.srow')).filter(function (x) { var b = x.querySelector('.sl b'); return b && b.textContent === name; })[0];
+  if (row) { row.classList.add('found'); row.scrollIntoView({ block: 'center' }); }
+}
 function drawSecs() {
   var n = $('setSecs'); n.innerHTML = '';
   if (page === 'settings') {
@@ -1831,6 +1868,7 @@ function setDraw(pg) {
   });
   // A card with nothing in it (a heading at the very end): gone.
   box.querySelectorAll('.scard').forEach(function (c) { if (!c.children.length) { var h = c.previousElementSibling; if (h && h.className === 'shead') h.remove(); c.remove(); } });
+  setLight();
 }
 // A choice with a few short options is a row of buttons (all visible, one click); longer ones are a list.
 function setSeg(r) {
@@ -1869,7 +1907,7 @@ function setRow(r) {
   d.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target === d) { e.preventDefault(); d.click(); } });
   return d;
 }
-// An action row: a jump to another section, a page-like row (its value ends in ›), or a real button.
+// An action row: a whole-row button (opening more when its value ends in ›), or, for one that does its job now or deletes something, a real button.
 function setAction(r, d, v) {
   function run() {
     // A row that opens another section (the TV's link()): open it here.
@@ -1878,10 +1916,11 @@ function setAction(r, d, v) {
   }
   var val = String(r.value || ''), opens = r.go || /›$/.test(val);
   if (r.attn && val) { var bd = document.createElement('span'); bd.className = 'badge'; bd.textContent = val; v.appendChild(bd); d.classList.add('click'); d.onclick = run; return; }
-  if (opens && !r.tone) { v.textContent = val.replace(/\s*›$/, ''); d.classList.add('click', 'jump'); d.tabIndex = 0; d.onclick = run; return; }
+  // An ordinary action (pick a language, open a menu): the whole row is the button, with ›  when it opens more.
+  if (!r.tone) { v.textContent = val.replace(/\s*›$/, ''); d.classList.add('click'); if (opens) d.classList.add('jump'); d.tabIndex = 0; d.onclick = run; return; }
   if (val && !/›$/.test(val)) { var sp = document.createElement('span'); sp.textContent = val; v.appendChild(sp); }
-  var b = document.createElement('button'); b.type = 'button'; b.className = 'sbtn' + (r.tone ? ' ' + r.tone : '');
-  b.textContent = r.tone === 'go' ? r.label.replace(/\s+now$/i, '') : r.tone === 'danger' ? (r.label.split(' ')[0]) : (/›$/.test(val) ? 'Open' : 'Go');
+  var b = document.createElement('button'); b.type = 'button'; b.className = 'sbtn ' + r.tone;
+  b.textContent = r.tone === 'go' ? r.label.replace(/\s+now$/i, '') : r.label.split(' ')[0];
   b.onclick = function (e) { e.stopPropagation(); run(); };
   v.appendChild(b);
 }
@@ -1897,7 +1936,7 @@ document.addEventListener('keydown', function (e) {
   if (mod && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); undo(); }
   else if (mod && ((e.shiftKey && (e.key === 'z' || e.key === 'Z')) || e.key === 'y')) { e.preventDefault(); redoIt(); }
   else if (e.key === '/') {
-    var box = { gc: 'cSearch', guide: 'mSearch' }[page];
+    var box = { gc: 'cSearch', guide: 'mSearch', settings: 'setQ' }[page];
     if (box) { e.preventDefault(); $(box).focus(); }
   }
 });

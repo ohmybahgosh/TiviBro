@@ -346,6 +346,7 @@ var Phone = (function () {
       try { Parental.phoneOk(a.pin); } catch (e) { if (e.code === 'pin') return { locked: true, msg: e.message }; throw e; }
       var op = String(a.op || 'page'), path = Array.isArray(a.path) ? a.path.map(Number) : [];
       if (op === 'sections') return { sections: Settings.phone.sections() };
+      if (op === 'find') return { hits: Settings.phone.find(String(a.q || '').slice(0, 80)) };
       return Settings.phone.ready().then(function () {
         if (op === 'page') return Settings.phone.page(String(a.sec || ''), path);
         return Settings.phone.change(String(a.sec || ''), path, +a.i, op, a);
