@@ -9,7 +9,7 @@
   <a href="https://tivibro.app/view/#tv-my-media-all"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-my-media-all.png" width="49%" alt="My media: All movies"></a>
 </p>
 
-**In the phone app**, a **My media** tab shows the same shelves (Continue watching, Favorites, All movies) as a poster grid with search.  Tap a movie for its details, then **Resume on TV** or **Play on TV**: the TV opens My media and plays it.  **Settings > My media** in the phone app adds sources too: **Add media** looks for servers on your network (the TV looks, you tap one), takes a WebDAV address and login typed on the phone, signs in to **Dropbox** and lets you pick the folder, or takes a **Google Drive** service account key and lets you pick the drive and folder.  Tap a source to rescan it, change its **Content**, fetch its movie details or remove it, and tap the TMDB token row to paste a token.  A scan that takes longer carries on on the TV.
+**In the phone app**, a **My media** tab shows the same shelves (Continue watching, Favorites, All movies) as a poster grid with search.  Tap a movie for its details, then **Resume on TV** or **Play on TV**: the TV opens My media and plays it.  **Settings > My media** in the phone app adds sources too: **Add media** looks for servers on your network (the TV looks, you tap one), finds **Windows and network shares** (or takes a server's name or address) and their login, takes a WebDAV address and login typed on the phone, signs in to **Dropbox** and lets you pick the folder, or takes a **Google Drive** service account key and lets you pick the drive and folder.  Tap a source to rescan it, change its **Content**, fetch its movie details, change a share's or WebDAV folder's **login**, or remove it, and tap the TMDB token row to paste a token.  A scan that takes longer carries on on the TV.
 
 <p align="center">
   <img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/app-my-media.png" width="30%" alt="My media in the phone app">
@@ -22,7 +22,17 @@ Use **Left** and **Right** to move between movies, and **Up** and **Down** to mo
 
 **Back** opens the standard main menu directly.  **Left** from the first movie does the same.  There is no separate source menu on the movie screen; all sources appear together and source management stays in Settings.
 
-**Add media and preferences are in Settings > My media**, not in the movie shelves.  **Blue** from My media opens those settings directly.  Choose **Add media > Browse my network (DLNA / UPnP)** to find a home server, or **Add a WebDAV server** and enter its WebDAV address and login.  Dropbox is added from the phone app, and Google Drive from the web editor or the phone app (see below).  The phone app's **Settings > My media** does the same, with the typing on the phone.  Turn on media sharing on a home server first.  A playlist must already be set up.
+**Add media and preferences are in Settings > My media**, not in the movie shelves.  **Blue** from My media opens those settings directly.  Choose **Add media > Browse my network (DLNA / UPnP)** to find a home server, **Add a Windows or network share (SMB)** for a shared folder (see [Windows and network shares](My-media#windows-and-network-shares)), or **Add a WebDAV server** and enter its WebDAV address and login.  Dropbox is added from the phone app, and Google Drive from the web editor or the phone app (see below).  The phone app's **Settings > My media** does the same, with the typing on the phone.  Turn on media sharing on a home server first.  A playlist must already be set up.
+
+#### Windows and network shares
+
+A shared folder on a Windows PC, a Mac, a NAS (Synology, QNAP, Unraid, TrueNAS) or a router with a USB drive plays straight from the share, with seeking and the subtitle files beside each movie.  **Add media > Add a Windows or network share (SMB)**:
+
+1. The TV looks for shares on your network for a few seconds and lists what answers, by name.  A server that isn't listed can still be typed: its name (like **NAS** or **DESKTOP-PC**), its IP address, or a whole path like `\\NAS\Movies`.  A Windows PC shows up when its file sharing and network discovery are on.
+2. Sign in: the user name and password of an account on that computer (on Windows, the PC's user name or your Microsoft account email).  Leave the user name empty for a guest; Windows 11 doesn't allow guests.  A server you already have a library on offers **Sign in as** with the login saved there, so a second folder needs no typing.
+3. Pick the share, then the folder: **Add** scans it and its subfolders.
+
+SMB 2 and 3 are used, signed and encrypted where the server asks, so Windows 11 shares work.  SMB1-only servers aren't supported.  The login stays on the TV, like a WebDAV password: never in backups, logs or the web editor.  If the server's address changes (a router gives it a new one), TiviBro finds it again by its name.  When its password changes, use **Change login** on the library's page.  New movies and episodes are noticed by themselves, down to a show's season folders.
 
 **Movies and TV shows.**  A new source finds both.  A source added before alpha 61 stays movies only until you open it in **Settings > My media** and set **Content** to **Movies and TV shows** (or **TV shows only**), then rescan.
 

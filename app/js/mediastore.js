@@ -97,10 +97,25 @@ var MediaStore = (function () {
     // Google Drive: the folder's id, its shared drive's, where it is in words, the service account's email (display only) and its key, a secret like pass.
     if (s.type === 'gdrive') { row.root = s.root; row.driveId = s.driveId || ''; row.where = s.where || ''; row.account = s.account || ''; row.key = s.key; }
     // A Windows or network share (SMB): the server, the share, the folder in it, where in words, and the domain.
-    if (s.type === 'smb') { row.server = s.server; row.share = s.share; row.folder = s.folder || '/'; row.where = s.where || ''; row.domain = s.domain || ''; }
+    if (s.type === 'smb') { row.server = s.server; row.host = s.host || ''; row.share = s.share; row.folder = s.folder || '/'; row.where = s.where || ''; row.domain = s.domain || ''; }
     state.sources.push(row);
     save(); menu();
     return id;
+  }
+  /* A share's server answers at a new address now (service/smb.js): saved there, and where it is in words
+     follows when it named the address. */
+  function smbMoved(id, server) {
+    var s = source(id); if (!s || s.type !== 'smb' || !server || s.server === server) return;
+    var was = '\\\\' + s.server.replace(/:\d+$/, '') + '\\';
+    if (s.where && s.where.indexOf(was) === 0) s.where = '\\\\' + server.replace(/:\d+$/, '') + '\\' + s.where.slice(was.length);
+    s.server = server; save();
+  }
+  /* A source's login changed (Change login): user, password and domain.  Only for logins the viewer typed
+     (SMB and WebDAV). */
+  function setLogin(id, user, pass, domain) {
+    var s = source(id); if (!s || (s.type !== 'smb' && s.type !== 'webdav')) return false;
+    s.user = String(user || ''); s.pass = String(pass || ''); if (s.type === 'smb') s.domain = String(domain || '');
+    save(); return true;
   }
   // The My media tab shows in the menu only while there is a source (views.js buildTabs).
   function menu() { if (typeof Views !== 'undefined' && Views.buildTabs) setTimeout(function () { Views.buildTabs(); }, 0); }
@@ -257,7 +272,7 @@ var MediaStore = (function () {
 
   return {
     gdriveKeys: gdriveKeys, gdriveAccounts: function () { return gdriveKeys().map(function (k) { return k.account; }); },
-    preferredSource: function () { return state.preferredMediaSource || null; }, sourcePreference: sourcePreference, migrationError: function () { return migrationError; }, sources: function () { return state.sources.slice(); }, source: source, sourceMode: sourceMode, publicSources: publicSources, addSource: addSource, removeSource: removeSource, restoreSource: restoreSource,
+    preferredSource: function () { return state.preferredMediaSource || null; }, sourcePreference: sourcePreference, migrationError: function () { return migrationError; }, sources: function () { return state.sources.slice(); }, source: source, sourceMode: sourceMode, publicSources: publicSources, addSource: addSource, removeSource: removeSource, smbMoved: smbMoved, setLogin: setLogin, restoreSource: restoreSource,
     tmdbToken: function () { return state.tmdbToken || ''; }, trakt: trakt, setTrakt: setTrakt, sourceUpdate: sourceUpdate, setCheck: setCheck, sortList: sortList, compare: compare, setTmdbToken: setTmdbToken, isFavorite: isFavorite, toggleFavorite: toggleFavorite, sections: sections, preferences: preferences, setMetadata: setMetadata, setFormat: setFormat, markMissed: markMissed, flush: flush, applyScan: applyScan, movies: movies, load: load,
     resume: function (id) { return state.resume[id] || null; }, saveResume: saveResume, saveEpisodeResume: saveEpisodeResume, importResume: importResume, clearResume: clearResume, markWatched: markWatched, isWatched: isWatched
   };

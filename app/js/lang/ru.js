@@ -157,7 +157,7 @@ I18n.add('ru', {
   "First aired (newest first)": "Дате премьеры (сначала новые)", "Mark as watched": "Отметить как просмотренное", "Mark unwatched": "Отметить как непросмотренное",
   "Play the next one automatically": "Автоматически включать следующее", "Play next episode automatically": "Автоматически включать следующую серию", "Open episodes": "Открыть серии", "Return to episodes": "Вернуться к сериям",
   "Other versions": "Другие версии", "Other versions…": "Другие версии…", "Switch to another version": "Переключиться на другую версию", "Media sources": "Источники медиа",
-  "Add media": "Добавить медиа", "Media servers": "Медиасерверы", "No media sources yet": "Источников медиа пока нет", "Rescan": "Пересканировать",
+  "Add media": "Добавить медиа", "Media servers": "Медиасерверы", "No media sources yet": "Источников медиа пока нет", "Rescan": "Пересканировать", "Change login": "Сменить логин",
   "Rescan media sources": "Пересканировать источники медиа", "Your media library": "Ваша медиатека", "No items in this view": "Здесь пока ничего нет",
   "Movie details from TMDB": "Сведения о фильмах из TMDB", "Fetch movie details": "Загрузить сведения о фильмах", "Movie title": "Название фильма",
   "Season and episode": "Сезон и серия", "Show title": "Название сериала", "Correct details": "Исправить сведения", "Correction saved": "Исправление сохранено",

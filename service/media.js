@@ -403,6 +403,7 @@ function scanSmb(source, cb) {
   function done() {
     if (stop) return cb(Smb.failure(stop));
     var result = { movies: movies, files: discovery(source) ? discovered : undefined, partial: partial, errors: errors, skipped: skipped };
+    if (Smb.movedTo(source)) result.smbServer = Smb.movedTo(source);     // the app saves where the server is now
     if (paused) result._continuation = { queue: queue, visited: visited, movies: movies, discovered: discovered, errors: errors.filter(function (e) { return !/^stopped early/.test(e); }), partial: errors.some(function (e) { return !/^stopped early/.test(e); }) };
     cb(result);
   }
@@ -640,10 +641,18 @@ function changeCheck(source, prev, cb) {
       out('dav:' + fingerprint(parsePropfind(body).map(function (x) { return samePath(x.href) + '|' + x.etag + '|' + x.modified + '|' + (x.dir ? 'd' : x.size); })));
     });
   }
-  // A share: its top folder's names, sizes and times (a new movie in a subfolder changes the folder's time).
-  if (type === 'smb') return Smb.list(source, '', function (e, entries) {
-    if (e) return cb(Smb.failure(e));
-    out('smb:' + fingerprint(entries.map(function (x) { return x.name + '|' + x.mtime + '|' + (x.dir ? 'd' : x.size); })));
+  /* A share: its folders three levels down, their times and how many files each holds, in one connection
+     (Smb.tree): a new episode in Show/Season 1 changes that folder's time.  A program without tree: the top
+     folder's names, sizes and times. */
+  if (type === 'smb') return Smb.tree(source, 3, function (e, folders) {
+    var moved = Smb.movedTo(source);
+    function done(lines) { cb({ token: 'smb:' + fingerprint(lines), changed: !!(prev && prev !== 'smb:' + fingerprint(lines)), smbServer: moved || undefined }); }
+    if (!e) return done(folders.map(function (x) { return x.path + '|' + x.mtime + '|' + x.files; }));
+    if (e.kind !== 'other') return cb(Smb.failure(e));
+    Smb.list(source, '', function (e2, entries) {
+      if (e2) return cb(Smb.failure(e2));
+      done(entries.map(function (x) { return x.name + '|' + x.mtime + '|' + (x.dir ? 'd' : x.size); }));
+    });
   });
   if (type === 'dlna') {
     var soap = '<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:GetSystemUpdateID xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1"></u:GetSystemUpdateID></s:Body></s:Envelope>';
@@ -884,7 +893,7 @@ function gdriveRequest(kind, q, res, ALLOW, log) {
    network, no login).  The login comes with each ask
    and is never kept here or sent back. */
 function smbRequest(kind, q, res, ALLOW, log) {
-  var source = { type: 'smb', server: q.server, share: q.share, folder: '/', user: q.user, pass: q.pass, domain: q.domain };
+  var source = { type: 'smb', server: q.server, host: q.name, share: q.share, folder: '/', user: q.user, pass: q.pass, domain: q.domain };
   function answer(e, out) {
     log({ lv: e ? 'warn' : 'info', event: 'smb ' + kind, host: hostOf(source), count: out && (out.shares || out.folders || out.servers) ? (out.shares || out.folders || out.servers).length : undefined, error: e ? e.kind || 'other' : null });
     send(res, ALLOW, 200, e ? Smb.failure(e) : out);

@@ -372,6 +372,15 @@ var WebEdit = (function () {
   /* ---------- browser actions ---------- */
   function find(id) { return Store.settings.playlists.filter(function (p) { return p.id === id; })[0]; }
   function clean(v) { return typeof v === 'string' ? v.trim() : ''; }
+  /* The login for a share from the web editor: typed, or (saved: a library's id) the one saved with a
+     library on that server, which the page never sees.  name0: the server's name found on the network. */
+  function smbEditorLogin(a, at) {
+    var l = { server: at.server, share: clean(a.share), user: clean(a.user), pass: String(a.pass || ''), domain: clean(a.domain), name: clean(a.name0) };
+    var kept = a.saved ? Media.smbLoginOf(a.saved) : null;
+    if (a.saved && !kept) throw new Error('That library is gone from the TV.');
+    if (kept) { l.user = kept.user; l.pass = kept.pass; l.domain = kept.domain; }
+    return l;
+  }
   function loadAndSave(p) {
     return Source.load(p).then(function (data) {
       var f = data && data.fixed;
@@ -450,23 +459,30 @@ var WebEdit = (function () {
     },
     /* A Windows or network share (SMB) from the web editor: the server and login with each ask (shares,
        folders), then the folder picked.  The login is never sent back to the page. */
+    // The libraries on a server whose login can be used again (never the password).
+    mediaSmbSaved: function (a) { return Promise.resolve({ msg: '', data: Media.smbSaved(clean(a.server), clean(a.name)) }); },
+    // A share's or WebDAV folder's new login, checked with the server first.
+    mediaLogin: function (a) {
+      return Media.setLogin(clean(a.id), clean(a.user), String(a.pass || ''), clean(a.domain)).then(function (r) { if (r.error) throw new Error(r.message); return { msg: r.msg }; });
+    },
     mediaSmbDiscover: function () {
       return Media.smbDiscover().then(function (list) { return { msg: '', data: list.map(function (x) { return { name: x.name, server: x.server }; }) }; });
     },
     mediaSmbShares: function (a) {
       var at = Media.smbAddress(clean(a.server));
       if (!at) return Promise.reject(new Error('Enter the server\'s name or IP address, like NAS or 192.168.1.20.'));
-      return Media.smbShares({ server: at.server, user: clean(a.user), pass: String(a.pass || ''), domain: clean(a.domain) }).then(function (r) { if (r.error) throw new Error(r.message); return { msg: '', data: r.shares || [] }; });
+      return Media.smbShares(smbEditorLogin(a, at)).then(function (r) { if (r.error) throw new Error(r.message); return { msg: '', data: r.shares || [] }; });
     },
     mediaSmbFolders: function (a) {
       var at = Media.smbAddress(clean(a.server));
       if (!at) return Promise.reject(new Error('Enter the server\'s name or IP address.'));
-      return Media.smbFolders({ server: at.server, share: clean(a.share), user: clean(a.user), pass: String(a.pass || ''), domain: clean(a.domain) }, clean(a.path) || '/').then(function (r) { if (r.error) throw new Error(r.message); return { msg: '', data: r.folders || [] }; });
+      return Media.smbFolders(smbEditorLogin(a, at), clean(a.path) || '/').then(function (r) { if (r.error) throw new Error(r.message); return { msg: '', data: r.folders || [] }; });
     },
     mediaSmbAdd: function (a) {
       var at = Media.smbAddress(clean(a.server));
       if (!at) return Promise.reject(new Error('Enter the server\'s name or IP address.'));
-      return Media.addSmb({ server: at.server, share: clean(a.share), folder: clean(a.folder) || '/', user: clean(a.user), pass: String(a.pass || ''), domain: clean(a.domain) }, clean(a.name)).then(function (r) {
+      var l = smbEditorLogin(a, at); l.folder = clean(a.folder) || '/';
+      return Media.addSmb(l, clean(a.name)).then(function (r) {
         if (r.error) throw new Error(r.message || 'Could not add that share.');
         return { msg: 'Share added: ' + (r.movies || 0) + ' movies and ' + (r.episodes || 0) + ' episodes.' + (Media.leftOut ? Media.leftOut(r.skipped) : '') };
       });

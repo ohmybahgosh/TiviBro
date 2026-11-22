@@ -8,6 +8,9 @@
  *   tivibro-smb shares <server[:port]>                      one JSON line per disk share
  *   tivibro-smb ls     <server[:port]> <share> <folder>     one JSON line per entry (name, dir, size, mtime)
  *   tivibro-smb stat   <server[:port]> <share> <path>       one JSON line (dir, size, mtime)
+ *   tivibro-smb tree   <server[:port]> <share> <folder> <depth>
+ *                                                          one JSON line per folder down to depth (path,
+ *                                                          mtime, files): what changed, in one connection
  *   tivibro-smb cat    <server[:port]> <share> <path> <offset> <length|-1>
  *                                                          the file's bytes from offset (all of it with -1)
  *
@@ -47,7 +50,7 @@
 #define TB_SHARE_ENUM 1
 #endif
 
-#define TB_VERSION "1"
+#define TB_VERSION "2"
 #define PIECE_MAX (512 * 1024)
 #define DEPTH 3
 #define TIMEOUT_S 15
@@ -249,6 +252,57 @@ static int cmd_stat(const char *server, const char *share, const char *path)
         return 0;
 }
 
+/* ---------- folders down a few levels, for the check for new media ---------- */
+
+#define TREE_MAX 5000
+static int tree_count;
+
+/* Prints the folder at path (its time and how many files it holds), then its folders, down to depth.
+   A folder's time changes when something is added to it directly, so a new episode in Show/Season 1
+   shows here without listing every file.  At most TREE_MAX folders. */
+static void tree_walk(struct smb2_context *smb2, const char *path, int depth)
+{
+        struct smb2dir *dir;
+        struct smb2dirent *ent;
+        struct smb2_stat_64 st;
+        char **subs = NULL;
+        int nsub = 0, files = 0, i;
+        uint64_t mtime = 0;
+
+        if (tree_count >= TREE_MAX) return;
+        tree_count++;
+        if (smb2_stat(smb2, path, &st) == 0) mtime = st.smb2_mtime;
+        dir = smb2_opendir(smb2, path);
+        if (!dir) return;
+        while ((ent = smb2_readdir(smb2, dir))) {
+                if (!strcmp(ent->name, ".") || !strcmp(ent->name, "..")) continue;
+                if (ent->st.smb2_type != SMB2_TYPE_DIRECTORY) { files++; continue; }
+                if (depth <= 0 || ent->name[0] == '.' || ent->name[0] == '$') continue;
+                subs = realloc(subs, sizeof(char *) * (nsub + 1));
+                if (!subs) break;
+                subs[nsub] = malloc(strlen(path) + strlen(ent->name) + 2);
+                if (!subs[nsub]) break;
+                sprintf(subs[nsub], "%s%s%s", path, path[0] ? "/" : "", ent->name);
+                nsub++;
+        }
+        smb2_closedir(smb2, dir);
+        fputs("{\"path\":", stdout);
+        json_str(stdout, path);
+        printf(",\"mtime\":%" PRIu64 ",\"files\":%d}\n", mtime, files);
+        for (i = 0; i < nsub; i++) { tree_walk(smb2, subs[i], depth - 1); free(subs[i]); }
+        free(subs);
+}
+
+static int cmd_tree(const char *server, const char *share, const char *folder, const char *depth)
+{
+        struct smb2_context *smb2 = connect_to(server, share);
+        int d = atoi(depth);
+        tree_walk(smb2, folder, d < 0 ? 0 : d > 4 ? 4 : d);
+        smb2_disconnect_share(smb2);
+        smb2_destroy_context(smb2);
+        return 0;
+}
+
 /* ---------- reading a file: pieces in flight, written out in order ---------- */
 
 struct piece {
@@ -407,7 +461,7 @@ static int cmd_shares(const char *server)
 static int usage(void)
 {
         fputs("tivibro-smb " TB_VERSION " (libsmb2)\n"
-              "usage: tivibro-smb check|shares|ls|stat|cat <server[:port]> [share] [path] [offset length]\n"
+              "usage: tivibro-smb check|shares|ls|stat|tree|cat <server[:port]> [share] [path] [depth | offset length]\n"
               "login on stdin: user, password, domain (one per line)\n", stderr);
         return 1;
 }
@@ -424,6 +478,7 @@ int main(int argc, char **argv)
         if (!strcmp(argv[1], "shares") && argc == 3) return cmd_shares(argv[2]);
         if (!strcmp(argv[1], "ls") && argc == 5) return cmd_ls(argv[2], argv[3], rel(argv[4]));
         if (!strcmp(argv[1], "stat") && argc == 5) return cmd_stat(argv[2], argv[3], rel(argv[4]));
+        if (!strcmp(argv[1], "tree") && argc == 6) return cmd_tree(argv[2], argv[3], rel(argv[4]), argv[5]);
         if (!strcmp(argv[1], "cat") && argc == 7) return cmd_cat(argv[2], argv[3], rel(argv[4]), argv[5], argv[6]);
         return usage();
 }

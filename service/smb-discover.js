@@ -232,4 +232,15 @@ function discover(cb, opts) {
   }
 }
 
-module.exports = { discover: discover, _parseMdns: parseMdns, _mdnsQuery: mdnsQuery, _parseProbeMatch: parseProbeMatch, _parseNodeStatus: parseNodeStatus, _nbName: nbName };
+/* Where a server answers now, by its name (a share whose address changed, or a Windows name the TV's DNS
+   doesn't know): cb(server or '').  Names match without case, .local or a domain after the first dot. */
+function locate(name, cb, opts) {
+  var want = str(name).toLowerCase().replace(/\.local\.?$/, '').split('.')[0];
+  if (!want) return cb('');
+  discover(function (r) {
+    var hit = (r.servers || []).filter(function (s) { return s.name.toLowerCase().replace(/\.local\.?$/, '').split('.')[0] === want; })[0];
+    cb(hit ? hit.server : '');
+  }, opts);
+}
+
+module.exports = { discover: discover, locate: locate, _parseMdns: parseMdns, _mdnsQuery: mdnsQuery, _parseProbeMatch: parseProbeMatch, _parseNodeStatus: parseNodeStatus, _nbName: nbName };

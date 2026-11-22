@@ -108,6 +108,11 @@ fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Un
     var smbName by remember { mutableStateOf("") }
     // The servers the TV found on its network (name to address), once asked.
     var smbFound by remember { mutableStateOf<List<Pair<String, String>>?>(null) }
+    // The found server's name (kept so the TV can find it again if its address changes), and the logins saved
+    // with libraries there (id to label): picking one signs in with it, the password never on the phone.
+    var smbName0 by remember { mutableStateOf("") }
+    var smbSavedList by remember { mutableStateOf(listOf<Pair<String, String>>()) }
+    var smbSaved by remember { mutableStateOf("") }
     // Google Drive: the key (memory only), the account it is, and where the picker is.
     var gdKey by remember { mutableStateOf("") }
     var gdAccount by remember { mutableStateOf("") }
@@ -141,7 +146,7 @@ fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Un
             gdList = if (a == null) emptyList() else (0 until a.length()).map { a.getJSONObject(it).let { f -> GdFolder(f.optString("name"), f.optString("id"), here.driveId) } }
         }
     }
-    fun smbArgs(op: String) = JSONObject().put("op", op).put("server", smbServer).put("user", user).put("pass", pass)
+    fun smbArgs(op: String) = JSONObject().put("op", op).put("server", smbServer).put("user", user).put("pass", pass).put("name0", smbName0).also { if (smbSaved.isNotEmpty()) it.put("saved", smbSaved) }
     /* The share list (share empty), or a folder's folders: what the TV reads from the server with the login. */
     fun smbOpen(share: String, trail: List<String>) {
         smbList = null
@@ -227,9 +232,16 @@ fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Un
                         TextButton(enabled = busy == null, onClick = { smbLook() }) { Text("Look on my network") }
                         smbFound?.let { found ->
                             if (found.isEmpty()) Text("Nothing answered.  A PC needs file sharing (and network discovery) on.  You can still type its name or address.", color = Muted, style = MaterialTheme.typography.bodySmall)
-                            found.forEach { (name, server) -> Choice(name, if (name == server) "Pick it, then enter its login" else server) { smbServer = server } }
+                            found.forEach { (name, server) -> Choice(name, if (name == server) "Pick it, then enter its login" else server) {
+                                smbServer = server; smbName0 = name; smbSaved = ""
+                                run("Asking the TV…", JSONObject().put("op", "smbsaved").put("server", server).put("name0", name)) { r ->
+                                    val a = r.optJSONArray("saved")
+                                    smbSavedList = if (a == null) emptyList() else (0 until a.length()).map { a.getJSONObject(it).let { x -> x.optString("id") to ("Sign in as " + x.optString("user").ifBlank { "a guest" } + " (saved with " + x.optString("name") + ")") } }
+                                }
+                            } }
                         }
-                        OutlinedTextField(smbServer, { smbServer = it.trim() }, label = { Text("Server name or address (NAS, 192.168.1.20)") }, singleLine = true, enabled = busy == null,
+                        smbSavedList.forEach { (sid, label) -> Choice(label, "The TV uses the login it already has") { smbSaved = sid; smbOpen("", emptyList()) } }
+                        OutlinedTextField(smbServer, { smbServer = it.trim(); smbSaved = ""; smbSavedList = emptyList() }, label = { Text("Server name or address (NAS, 192.168.1.20)") }, singleLine = true, enabled = busy == null,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), modifier = Modifier.fillMaxWidth())
                         OutlinedTextField(user, { user = it }, label = { Text("User name") }, singleLine = true, enabled = busy == null, modifier = Modifier.fillMaxWidth())
                         SecretField(pass, { pass = it }, "Password", enabled = busy == null)
@@ -289,7 +301,7 @@ fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Un
                     step == "pick" -> onDone(false)
                     step == "smbpick" && smbTrail.size > 1 -> smbOpen(smbShare, smbTrail.dropLast(1))
                     step == "smbpick" && smbShare.isNotEmpty() -> smbOpen("", emptyList())
-                    step == "smbpick" -> step = "smb"
+                    step == "smbpick" -> { step = "smb"; smbSaved = "" }
                     step == "gdpick" && gdTrail.isNotEmpty() -> gdOpen(gdTrail.dropLast(1))
                     step == "gdpick" -> { step = "gdkey"; if (gdKey.startsWith("saved:")) gdKey = "" }
                     else -> { step = "pick"; gdKey = ""; gdSaved = emptyList() }
@@ -306,8 +318,11 @@ fun MediaSourceDialog(model: AppModel, id: String, sid: String, onDone: (changed
     var src by remember { mutableStateOf<MediaSrc?>(null) }
     var busy by remember { mutableStateOf<String?>("Asking the TV…") }
     var error by remember { mutableStateOf<String?>(null) }
-    var step by remember { mutableStateOf("menu") }          // menu, mode, remove, details
+    var step by remember { mutableStateOf("menu") }          // menu, mode, remove, details, login
     var changed by remember { mutableStateOf(false) }
+    // A new login (Change login): memory only, sent once to the TV, which checks it with the server.
+    var newUser by remember { mutableStateOf("") }
+    var newPass by remember { mutableStateOf("") }
 
     fun run(what: String, args: JSONObject, close: Boolean = true) {
         busy = what; error = null
@@ -343,6 +358,12 @@ fun MediaSourceDialog(model: AppModel, id: String, sid: String, onDone: (changed
                         }
                     }
                     step == "remove" -> Text("Remove ${s.name} from My media?  Your files stay where they are.")
+                    step == "login" -> {
+                        Text("The TV checks the new login with the server before saving it.  The library and its matches stay.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                        Spacer(Modifier.size(8.dp))
+                        OutlinedTextField(newUser, { newUser = it }, label = { Text("User name (empty for a guest)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                        SecretField(newPass, { newPass = it }, "Password")
+                    }
                     step == "details" -> Text(when (s.mode) {
                         "shows" -> "Fetch show details from TMDB?  Show names and years, or saved show IDs, are sent to TMDB with the TV's token.  Your source logins are never sent."
                         "automatic" -> "Fetch movie and show details from TMDB?  Titles and years, or saved IDs, are sent to TMDB with the TV's token.  Your source logins are never sent."
@@ -353,6 +374,7 @@ fun MediaSourceDialog(model: AppModel, id: String, sid: String, onDone: (changed
                         Choice("Restart scan", "Start over from the top of the folder") { run("Scanning ${s.name} from the start…", JSONObject().put("op", "rescan").put("restart", true)) }
                         Choice("Content: " + (MODES.firstOrNull { it.first == s.mode }?.second ?: "Movies only"), "What to look for in this source") { step = "mode" }
                         Choice(when (s.mode) { "shows" -> "Fetch show details"; "automatic" -> "Fetch movie and show details"; else -> "Fetch movie details" }, "TMDB, with the token saved on the TV") { step = "details" }
+                        if (s.type == "smb" || s.type == "webdav") Choice("Change login", "When its password changed") { step = "login" }
                         Choice("Remove", "Your files stay where they are") { step = "remove" }
                     }
                 }
@@ -362,6 +384,7 @@ fun MediaSourceDialog(model: AppModel, id: String, sid: String, onDone: (changed
             when (step) {
                 "remove" -> TextButton(enabled = busy == null, onClick = { run("Removing…", JSONObject().put("op", "remove")) }) { Text("Remove", color = Bad) }
                 "details" -> TextButton(enabled = busy == null, onClick = { run("Fetching details…", JSONObject().put("op", "details")) }) { Text("Fetch details") }
+                "login" -> TextButton(enabled = busy == null, onClick = { run("Checking the login with the server…", JSONObject().put("op", "login").put("user", newUser).put("pass", newPass)) }) { Text("Check and save") }
                 else -> {}
             }
         },

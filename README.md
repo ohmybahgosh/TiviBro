@@ -8,7 +8,8 @@
 <p align="center">
   <b>The IPTV player LG TVs never got.</b><br>
   A free, open-source IPTV player for LG webOS TVs, built to feel like TiviMate and go further.<br>
-  Bring your own Xtream Codes, M3U or Stalker portal subscription.
+  Bring your own Xtream Codes, M3U or Stalker portal subscription.<br>
+  <b>Free DVR and timeshift:</b> record from the guide to a USB drive, and pause and rewind any live channel, not only catch-up ones.
 </p>
 
 <p align="center">

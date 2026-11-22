@@ -208,6 +208,8 @@ test_one() {
   ok "lists disk shares" "$([[ "$got" == *'"media"'* && "$got" == *'"guest"'* && "$got" != *IPC* ]] && echo 1)" "$got"
   got="$(printf '%s' "$L" | run_for "$arch" ls "$S" media /Movies/)"
   ok "lists a folder" "$([[ "$got" == *'"name":"Film (2020).mkv","dir":false,"size":9000000'* ]] && echo 1)" "$got"
+  got="$(printf '%s' "$L" | run_for "$arch" tree "$S" media / 3)"
+  ok "lists folders down a few levels" "$([[ "$got" == *'"path":"Movies","mtime":'*'"files":1}'* ]] && echo 1)" "$got"
   got="$(printf '%s' "$L" | run_for "$arch" cat "$S" media "Movies/Film (2020).mkv" 0 -1 | sha256sum | cut -c1-64)"
   ok "reads a whole file" "$([ "$got" = "$(sha256sum < "$T/media/Movies/Film (2020).mkv" | cut -c1-64)" ] && echo 1)"
   got="$(printf '%s' "$L" | run_for "$arch" cat "$S" media "Movies/Film (2020).mkv" 1234567 2000001 | sha256sum | cut -c1-64)"

@@ -518,7 +518,7 @@ A show is looked up when you land on it, not ahead of time, and only by its name
   <a href="https://tivibro.app/view/#tv-my-media-all"><img src="screenshots/tv-my-media-all.png" width="49%" alt="My media: All movies"></a>
 </p>
 
-**In the phone app**, a **My media** tab shows the same shelves (Continue watching, Favorites, All movies) as a poster grid with search.  Tap a movie for its details, then **Resume on TV** or **Play on TV**: the TV opens My media and plays it.  **Settings > My media** in the phone app adds sources too: **Add media** looks for servers on your network (the TV looks, you tap one), takes a WebDAV address and login typed on the phone, signs in to **Dropbox** and lets you pick the folder, or takes a **Google Drive** service account key and lets you pick the drive and folder.  Tap a source to rescan it, change its **Content**, fetch its movie details or remove it, and tap the TMDB token row to paste a token.  A scan that takes longer carries on on the TV.
+**In the phone app**, a **My media** tab shows the same shelves (Continue watching, Favorites, All movies) as a poster grid with search.  Tap a movie for its details, then **Resume on TV** or **Play on TV**: the TV opens My media and plays it.  **Settings > My media** in the phone app adds sources too: **Add media** looks for servers on your network (the TV looks, you tap one), finds **Windows and network shares** (or takes a server's name or address) and their login, takes a WebDAV address and login typed on the phone, signs in to **Dropbox** and lets you pick the folder, or takes a **Google Drive** service account key and lets you pick the drive and folder.  Tap a source to rescan it, change its **Content**, fetch its movie details, change a share's or WebDAV folder's **login**, or remove it, and tap the TMDB token row to paste a token.  A scan that takes longer carries on on the TV.
 
 <p align="center">
   <img src="screenshots/app-my-media.png" width="30%" alt="My media in the phone app">
@@ -531,7 +531,17 @@ Use **Left** and **Right** to move between movies, and **Up** and **Down** to mo
 
 **Back** opens the standard main menu directly.  **Left** from the first movie does the same.  There is no separate source menu on the movie screen; all sources appear together and source management stays in Settings.
 
-**Add media and preferences are in Settings > My media**, not in the movie shelves.  **Blue** from My media opens those settings directly.  Choose **Add media > Browse my network (DLNA / UPnP)** to find a home server, or **Add a WebDAV server** and enter its WebDAV address and login.  Dropbox is added from the phone app, and Google Drive from the web editor or the phone app (see below).  The phone app's **Settings > My media** does the same, with the typing on the phone.  Turn on media sharing on a home server first.  A playlist must already be set up.
+**Add media and preferences are in Settings > My media**, not in the movie shelves.  **Blue** from My media opens those settings directly.  Choose **Add media > Browse my network (DLNA / UPnP)** to find a home server, **Add a Windows or network share (SMB)** for a shared folder (see [Windows and network shares](#windows-and-network-shares)), or **Add a WebDAV server** and enter its WebDAV address and login.  Dropbox is added from the phone app, and Google Drive from the web editor or the phone app (see below).  The phone app's **Settings > My media** does the same, with the typing on the phone.  Turn on media sharing on a home server first.  A playlist must already be set up.
+
+#### Windows and network shares
+
+A shared folder on a Windows PC, a Mac, a NAS (Synology, QNAP, Unraid, TrueNAS) or a router with a USB drive plays straight from the share, with seeking and the subtitle files beside each movie.  **Add media > Add a Windows or network share (SMB)**:
+
+1. The TV looks for shares on your network for a few seconds and lists what answers, by name.  A server that isn't listed can still be typed: its name (like **NAS** or **DESKTOP-PC**), its IP address, or a whole path like `\\NAS\Movies`.  A Windows PC shows up when its file sharing and network discovery are on.
+2. Sign in: the user name and password of an account on that computer (on Windows, the PC's user name or your Microsoft account email).  Leave the user name empty for a guest; Windows 11 doesn't allow guests.  A server you already have a library on offers **Sign in as** with the login saved there, so a second folder needs no typing.
+3. Pick the share, then the folder: **Add** scans it and its subfolders.
+
+SMB 2 and 3 are used, signed and encrypted where the server asks, so Windows 11 shares work.  SMB1-only servers aren't supported.  The login stays on the TV, like a WebDAV password: never in backups, logs or the web editor.  If the server's address changes (a router gives it a new one), TiviBro finds it again by its name.  When its password changes, use **Change login** on the library's page.  New movies and episodes are noticed by themselves, down to a show's season folders.
 
 **Movies and TV shows.**  A new source finds both.  A source added before alpha 61 stays movies only until you open it in **Settings > My media** and set **Content** to **Movies and TV shows** (or **TV shows only**), then rescan.
 
@@ -1180,14 +1190,14 @@ The Movies and Shows screens, and the TMDB details for them and the guide.
 
 ### Settings: My media
 
-Your libraries, like Plex's: each one is a folder of movies or TV shows on a media server (DLNA / UPnP, WebDAV, Dropbox or Google Drive).  The [My media](#my-media) screen keeps the shelves full-width; managing libraries stays here.  The phone app's **Settings > My media** does all of this too, with the typing on the phone.
+Your libraries, like Plex's: each one is a folder of movies or TV shows on a media server (DLNA / UPnP, a Windows or network share, WebDAV, Dropbox or Google Drive).  The [My media](#my-media) screen keeps the shelves full-width; managing libraries stays here.  The phone app's **Settings > My media** does all of this too, with the typing on the phone.
 
 <p align="center"><a href="https://tivibro.app/view/#tv-set-my-media"><img src="screenshots/tv-set-my-media.png" width="70%" alt="Settings: My media"></a></p>
 
 | Settings > My media | Default | What it does |
 |---|---|---|
 | *(each library)* | | What it holds and where, with its counts: movies and how many are unmatched, shows and episode files, or **Scanning…**.  Opens the library's page (below). |
-| **Add a library** | | Find a DLNA / UPnP server, or enter the WebDAV address of your media folder and its login.  **Dropbox** is signed in from the phone app, and **Google Drive** added from the web editor or the phone app.  Subfolders are scanned too.  One folder per movie, named like **Frozen (2013)**, matches best.  In the phone app the server list and the WebDAV form are on the phone. |
+| **Add a library** | | Find a DLNA / UPnP server, find or name a Windows or network share and sign in to it, or enter the WebDAV address of your media folder and its login.  **Dropbox** is signed in from the phone app, and **Google Drive** added from the web editor or the phone app.  Subfolders are scanned too.  One folder per movie, named like **Frozen (2013)**, matches best.  In the phone app the server list and the WebDAV form are on the phone. |
 | **Scan all libraries** | | Same as Green on My media: scan every library for movies and episodes. |
 | **Fetch details for all** | | Same as Red > Fetch missing details on My media: look up details for movies, shows and the episodes you have, and refresh outdated language details. |
 | **Edit on a computer** *(on the TV)* | | Shows a code for a computer or phone browser: the web editor's My media page, for typing server logins, fixing many matches at once and TV show episodes. |
@@ -1204,6 +1214,7 @@ Your libraries, like Plex's: each one is a folder of movies or TV shows on a med
 | **Show on Home** | On: its Recently added, Continue watching and favorites are on My media's Home.  Off: only on the Movies and TV shows tabs. |
 | **Scan now**, **Restart scan** | Look for added or removed files; Restart starts over from the first folder.  While it scans: **Pause scan**. |
 | **Fetch movie details** / **Fetch show details** | From TMDB, for this library. |
+| **Change login** *(shares and WebDAV)* | A new user name and password, checked with the server before it's saved.  The library and its matches stay.  In the phone app it's in the library's form, in the web editor on its card. |
 | **More for this library** | Its folder, Dropbox sign-in, pause or restart a scan.  In the phone app: the phone's own form. |
 | **Unmatched movies ›** | The movies TMDB didn't recognise, each with **Fix match**: type the title, pick the right movie. |
 | **Shows that need review** | Episodes TiviBro couldn't place and shows without a match, on the TV shows tab. |
@@ -1575,7 +1586,7 @@ Add Xtream Codes, M3U or Stalker portal playlists (or paste the provider's **Ful
 
 ### My media in the editor
 
-The same libraries as **Settings > My media** on the TV and in the phone app: a change in one place shows in the others.  Each library card shows what it holds, its counts and a matched bar, with **Show on Home**, **Rename**, **Scan now**, **Fetch details**, **Unmatched** (type a title, search TMDB and pick the right movie: the quickest way to fix many at once) and **Remove**.  Add a WebDAV server (address and login, checked by the TV before it's saved), set the sort orders, shelves and metadata language, and paste, test or remove your TMDB token.  A home media server (DLNA / UPnP) is added from the phone app or the TV, which can look for it on your network.
+The same libraries as **Settings > My media** on the TV and in the phone app: a change in one place shows in the others.  Each library card shows what it holds, its counts and a matched bar, with **Show on Home**, **Rename**, **Scan now**, **Fetch details**, **Unmatched** (type a title, search TMDB and pick the right movie: the quickest way to fix many at once), **Change login** (shares and WebDAV) and **Remove**.  Add a Windows or network share (**Look on my network** lists what the TV finds; a login saved with another library on that server can be used again), add a WebDAV server (address and login, checked by the TV before it's saved), set the sort orders, shelves and metadata language, and paste, test or remove your TMDB token.  A home media server (DLNA / UPnP) is added from the phone app or the TV, which can look for it on your network.
 
 **Trakt** has the same as Settings > My media > Trakt: connect (the code shows here too), the two switches, your lists with what each holds, and adding a list by its link or NAME/LIST, by searching, or from Trakt's charts.
 

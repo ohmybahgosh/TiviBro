@@ -126,6 +126,8 @@ var Diag = (function () {
       [p.user, p.pass].forEach(function (x) { x = String(x || '').trim(); if (x.length >= 3) hosts.push([x, '***']); });
       (p.epgSources || []).forEach(function (x) { var h = hostOf(x.url); if (h) hosts.push([h, '<guide>']); });
     });
+    // My media logins too (a share's or WebDAV password, a Dropbox token), though nothing logs them.
+    try { (window.MediaStore ? MediaStore.sources() : []).forEach(function (m) { [m.pass, m.refresh].forEach(function (x) { x = String(x || '').trim(); if (x.length >= 3) hosts.push([x, '***']); }); }); } catch (e) {}
     hosts.sort(function (a, b) { return b[0].length - a[0].length; });
     // Any other server in a link, say one typed on the first screen and not saved yet, becomes <server>.
     // Kept: TiviBro's own sites, the logo projects, and addresses on this TV or the home network.

@@ -155,7 +155,7 @@ I18n.add('es', {
   "First aired (newest first)": "Primera emisión (más recientes primero)", "Mark as watched": "Marcar como visto", "Mark unwatched": "Marcar como no visto",
   "Play the next one automatically": "Reproducir el siguiente automáticamente", "Play next episode automatically": "Reproducir el siguiente episodio automáticamente", "Open episodes": "Abrir episodios", "Return to episodes": "Volver a los episodios",
   "Other versions": "Otras versiones", "Other versions…": "Otras versiones…", "Switch to another version": "Cambiar a otra versión", "Media sources": "Fuentes de medios",
-  "Add media": "Añadir medios", "Media servers": "Servidores de medios", "No media sources yet": "Todavía no hay fuentes de medios", "Rescan": "Volver a escanear",
+  "Add media": "Añadir medios", "Media servers": "Servidores de medios", "No media sources yet": "Todavía no hay fuentes de medios", "Rescan": "Volver a escanear", "Change login": "Cambiar inicio de sesión",
   "Rescan media sources": "Volver a escanear las fuentes de medios", "Your media library": "Tu biblioteca de medios", "No items in this view": "No hay elementos en esta vista",
   "Movie details from TMDB": "Datos de películas de TMDB", "Fetch movie details": "Obtener datos de películas", "Movie title": "Título de la película",
   "Season and episode": "Temporada y episodio", "Show title": "Título de la serie", "Correct details": "Corregir datos", "Correction saved": "Corrección guardada",

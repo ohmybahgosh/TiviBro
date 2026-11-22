@@ -113,12 +113,44 @@ const SRC = { type: 'smb', server: 'nas.local', share: 'Media', folder: '/', use
   ok('a player hanging up stops the read', stopped);
   server.close();
 
+  // ---------- folders down a few levels (the check for new media) ----------
+  const tr = await p((f) => Smb.tree(SRC, 3, (e, l) => f({ e, l })));
+  ok('tree: the share\'s folders with their times and file counts', !tr.e && tr.l.some((x) => x.path === 'Movies/Heat (1995)' && x.files === 2 && x.mtime > 1e12), tr);
+
+  // ---------- a server whose address changed ----------
+  process.env.FAKE_SMB_DOWN = '10.0.0.9';
+  let looked = 0;
+  Smb._config({ forget: true, locate: (name, cb) => { looked++; cb(name === 'nas' ? '10.0.0.20' : ''); } });
+  const away2 = Object.assign({}, SRC, { server: '10.0.0.9', host: 'NAS' });
+  const back = await p((f) => Smb.list(away2, '/', (e, l) => f({ e, l })));
+  ok('an address that stopped answering: found again by its name, and asked there', !back.e && back.l.length > 0 && looked === 1 && Smb.movedTo(away2) === '10.0.0.20', back.e && back.e.kind);
+  const moved = await p((f) => Media.scan(away2, f));
+  ok('the scan says where the server is now, for the app to save', moved.smbServer === '10.0.0.20' && (moved.movies || []).length === 2, moved.smbServer);
+  const ip = Object.assign({}, SRC, { server: '10.0.0.9' });
+  const noName = await p((f) => Smb.check(ip, (e) => f(e)));
+  ok('an address with no name to look up: unreachable, nothing looked for', noName && noName.kind === 'unreachable' && looked === 1);
+  const typed = Object.assign({}, SRC, { server: 'oldname' });
+  process.env.FAKE_SMB_DOWN = '10.0.0.9,oldname';
+  Smb._config({ locate: (name, cb) => { looked++; cb(name === 'oldname' ? '10.0.0.30' : ''); } });
+  const typedR = await p((f) => Smb.check(typed, (e, r) => f({ e, r })));
+  ok('a typed name the TV can\'t look up (a Windows name): found on the network', !typedR.e && Smb.movedTo(typed) === '10.0.0.30', typedR.e && typedR.e.kind);
+  const again2 = await p((f) => Smb.check(Object.assign({}, SRC, { server: '10.0.0.9', host: 'gone' }), (e) => f(e)));
+  const again3 = await p((f) => Smb.check(Object.assign({}, SRC, { server: '10.0.0.9', host: 'gone' }), (e) => f(e)));
+  ok('a server that is simply off: looked for once a minute, not on every ask', again2 && again3 && again2.kind === 'unreachable' && looked === 3, looked);
+  delete process.env.FAKE_SMB_DOWN;
+  Smb._config({ forget: true, locate: null });
+
   // ---------- the change check ----------
   const c1 = await p((f) => Media.changeCheck(SRC, '', f));
   const c2 = await p((f) => Media.changeCheck(SRC, c1.token, f));
   put('Media/New.Film.2024.mkv', 'z');
   const c3 = await p((f) => Media.changeCheck(SRC, c2.token, f));
   ok('the change check: same share, same token; a new file, changed', /^smb:/.test(c1.token) && !c2.changed && c3.changed, [c1, c2, c3]);
+  await new Promise((f) => setTimeout(f, 1100));        // folder times are in seconds
+  put('Media/Movies/Heat (1995)/Heat.1995.1080p.fr.srt', 'x');
+  const c4 = await p((f) => Media.changeCheck(SRC, c3.token, f));
+  ok('a file added deep in a folder (a new episode in a season folder) is noticed', c4.changed, [c3, c4]);
+  fs.unlinkSync(path.join(ROOT, 'Media/Movies/Heat (1995)/Heat.1995.1080p.fr.srt'));   // the subtitle checks below expect one
 
   // ---------- subtitles beside a movie ----------
   const subs = await p((f) => Sidecar.lookup(SRC, heat.path, f));
@@ -147,7 +179,7 @@ const SRC = { type: 'smb', server: 'nas.local', share: 'Media', folder: '/', use
   Smb._config({ reset: true });
   Smb._config({ bundle, arch: 'armv7', sums: { armv7: crypto.createHash('sha256').update(gz).digest('hex') } });
   const right = await p((f) => Smb.program((e, prog) => f({ e, prog })));
-  ok('the bundled program, checked, unpacked onto the TV\'s storage and tried', !right.e && /smb-1-armv7$/.test(right.prog || '') && (fs.statSync(right.prog).mode & 0o777) === 0o700, right.e && right.e.message);
+  ok('the bundled program, checked, unpacked onto the TV\'s storage and tried', !right.e && /smb-1-tb2-armv7$/.test(right.prog || '') && (fs.statSync(right.prog).mode & 0o777) === 0o700, right.e && right.e.message);
   const again = await p((f) => Smb.list(SRC, '/', (e, l) => f({ e, l })));
   ok('and used from then on', !again.e && again.l.length > 0, again.e && again.e.message);
   // A 64-bit kernel under a 32-bit userland: the 64-bit build first; one that doesn't run there falls back.
@@ -157,7 +189,7 @@ const SRC = { type: 'smb', server: 'nas.local', share: 'Media', folder: '/', use
   Smb._config({ reset: true });
   Smb._config({ bundle, arch: null, archList: ['aarch64', 'armv7'], sums: { armv7: crypto.createHash('sha256').update(gz).digest('hex'), aarch64: crypto.createHash('sha256').update(fs.readFileSync(path.join(bundle, 'tivibro-smb-aarch64.gz'))).digest('hex') } });
   const fall = await p((f) => Smb.program((e, prog) => f({ e, prog })));
-  ok('a 64-bit build that won\'t run falls back to the 32-bit one', !fall.e && /smb-1-armv7$/.test(fall.prog || ''), fall.e && fall.e.message);
+  ok('a 64-bit build that won\'t run falls back to the 32-bit one', !fall.e && /smb-1-tb2-armv7$/.test(fall.prog || ''), fall.e && fall.e.message);
   fs.unlinkSync(fall.prog);
   Smb._config({ reset: true });
   Smb._config({ bundle: fs.mkdtempSync(path.join(os.tmpdir(), 'tb-smb-none-')), arch: 'armv7', sums: { armv7: 'a'.repeat(64) } });

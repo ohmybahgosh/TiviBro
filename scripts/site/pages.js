@@ -490,7 +490,7 @@ module.exports = [
   short: 'Every part of TiviBro, with screenshots and videos.',
   kicker: 'Features', h1: 'Everything TiviBro does',
   published: '2026-11-08', image: 'img/shots/tv-guide.webp',
-  lead: 'A free, guide-first IPTV player for LG webOS TVs.  Bring your own Xtream Codes, M3U or Stalker portal subscription; TiviBro gives it a real TV guide, catch-up, movies and shows, Multiview, recording and live pause, and an editor to tame thousands of channels.',
+  lead: 'A free, guide-first IPTV player for LG webOS TVs.  Bring your own Xtream Codes, M3U or Stalker portal subscription; TiviBro gives it a real TV guide, catch-up, a free DVR and timeshift (record, pause and rewind live TV), movies and shows, Multiview, and an editor to tame thousands of channels.',
   body: [
     '<h2 id="guide">A guide first, like TiviMate</h2>',
     '<p>The programme guide is the home screen.  The channel you are on plays in the window at the top left, with the programme details beside it.  The first <b>OK</b> previews a channel, the second goes fullscreen, and <b>◀ ▶</b> move through time.  Each group remembers where you were.</p>',

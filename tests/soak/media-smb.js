@@ -97,6 +97,26 @@ put('Photos/a.jpg', 10);
   for (let n = 0; n < 20 && !(await ev(() => MediaStore.movies(null).length)); n++) await page.waitForTimeout(300);
   ok('its movies are in My media', await ev(() => MediaStore.movies(null).map((m) => m.title).sort().join() === 'Heat,Moana 2'), await ev(() => MediaStore.movies(null).map((m) => m.title).join()));
 
+  // A second folder on the same server signs in with the login saved there (the phone never gets the password).
+  r = await mm('smbsaved', { server: 'nas' });
+  ok('the phone is offered the login saved with the library on that server, without its password', r.saved && r.saved.length === 1 && r.saved[0].user === 'tv' && !/"pw"/.test(JSON.stringify(r)), JSON.stringify(r));
+  r = await mm('smbshares', { server: 'nas', saved: sid });
+  ok('and the shares open with it', r.shares && r.shares.length === 2, JSON.stringify(r));
+  // Change login: checked with the server before it's saved.
+  r = await mm('login', { id: sid, user: 'tv', pass: 'wrong' });
+  ok('a wrong new login is refused, the old one kept', /user name and password/.test(r.err || '') && await ev((p) => MediaStore.sources().some((x) => x.type === 'smb' && x.pass === p), PASS), JSON.stringify(r));
+  r = await mm('login', { id: sid, user: 'tv', pass: PASS });
+  ok('a right one is saved', /Login saved/.test(r.msg || ''), JSON.stringify(r));
+  // Privacy: a backup carries no My media logins (they live apart from the settings), and the problem
+  // report masks a library's password wherever it turns up in the log.
+  r = await ev(() => Backup.create().then((b) => JSON.stringify(b)));
+  ok('a backup has no share login in it', !/"type":"smb"/.test(r) && !/tivibro\.media/.test(r), r.slice(0, 200));
+  r = await ev(() => {
+    const s = MediaStore.sources().find((x) => x.type === 'smb'), was = s.pass;
+    s.pass = 'Zq9-long-share-secret'; Log.warn('test', 'a message that names Zq9-long-share-secret');
+    return Diag.report().then((x) => { s.pass = was; return x.text; });
+  });
+  ok('the problem report masks a library password that reached the log', r.indexOf('Zq9-long-share-secret') < 0 && /a message that names \*\*\*/.test(r), r.slice(-300));
   // Playing from a localhost link.
   await ev(() => Views.switchTab('media')); await page.waitForTimeout(500);
   await ev(() => { var original = Player.play; Player.play = function (ch, opts) { window.__mediaPlay = opts; return original.apply(this, arguments); }; });

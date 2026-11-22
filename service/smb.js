@@ -7,8 +7,8 @@
      reader                         a movie read with Range for media-stream.js: each range is one run of
                                     "cat", so seeking simply starts another one and the old one is stopped
 
-   A source is { type: 'smb', server: 'host' or 'host:port', share, folder ('/' or '/Movies'), user, pass,
-   domain }.  The login goes to the program on its stdin, never on its command line (other programs on
+   A source is { type: 'smb', server: 'host' or 'host:port', host (the server's name, when server is an
+   address), share, folder ('/' or '/Movies'), user, pass, domain }.  The login goes to the program on its stdin, never on its command line (other programs on
    the TV can read those), and never into a log.  An empty user signs in as a guest.
 
    Memory: the program holds at most 1.5 MB while it reads, and the helper runs at most MAX_RUNS of the
@@ -23,10 +23,10 @@ require('./compat');
 var fs = require('fs'), path = require('path'), cp = require('child_process'), crypto = require('crypto'), zlib = require('zlib');
 var Storage = require('./storage');
 
-var VERSION = '1';
+var VERSION = '2';
 /* The release the bundled programs come from (.github/workflows/smb.yml, scripts/smb/bundle.sh), and the
    SHA-256 of each .gz there. */
-var TAG = 'smb-1-tb1';
+var TAG = 'smb-1-tb2';
 var SHA256 = { armv7: '1c3cdcb31d62b988876bca56400dec77e11330fe2b56f3d4fe9a6503aec02a3c', aarch64: '304e3b2a374d4a1365b8f54fb4978d10dd26bde8a0bd8110395ea6ec693be3dd' };
 var BUNDLE = path.join(__dirname, 'smb-bundle');
 var cfg = { sums: SHA256, bundle: BUNDLE, arch: null };
@@ -47,9 +47,41 @@ function cleanPath(p) {
   if (parts.some(function (x) { return x === '..' || /[\x00-\x1f]/.test(x); })) return null;
   return '/' + parts.join('/');
 }
+/* ---------- a server whose address changed ----------
+   A source keeps the server's name (host: the name it was found under, or the name typed) as well as the
+   address.  When the address stops answering, the server is looked for on the network by that name
+   (smb-discover.js) and, if it answers somewhere else now, used there: here until the helper restarts,
+   and saved with the source by the app (movedTo, sent back with scans and checks).  One look per name a
+   minute, so a server that is simply off doesn't slow every ask. */
+var moved = {}, lastLook = {};
+function isAddress(h) { return /^\d{1,3}(\.\d{1,3}){3}$/.test(h) || /^\[/.test(h); }
+// The server's name for looking it up, lower case, without :port or .local; '' when there's only an address.
+function hostKey(s) {
+  var h = str(s && s.host).trim() || str(s && s.server).trim().replace(/:\d+$/, '');
+  return !h || isAddress(h) ? '' : h.toLowerCase().replace(/\.local\.?$/, '');
+}
+function whereNow(s) { var k = hostKey(s); return k && moved[k] ? moved[k] : ''; }
+// Where a source's server answers now, when that isn't its saved address (else '').
+function movedTo(s) { var w = whereNow(s); return w && w !== str(s && s.server).trim() ? w : ''; }
+/* Looks for the server by name (cb(true) when it moved, so the ask is worth trying again).  The port the
+   source had is kept unless the network says another. */
+function relocate(s, cb) {
+  var k = hostKey(s), now = Date.now();
+  if (!k || now - (lastLook[k] || 0) < 60000) return cb(false);
+  lastLook[k] = now;
+  (cfg.locate || require('./smb-discover').locate)(k, function (found) {
+    if (!found) return cb(false);
+    var port = /:(\d+)$/.exec(str(s.server)), to = /:\d+$/.test(found) || !port || port[1] === '445' ? found : found + ':' + port[1];
+    if (to === (whereNow(s) || str(s.server).trim())) return cb(false);
+    moved[k] = to;
+    log({ lv: 'info', event: 'smb server moved', host: k });
+    cb(true);
+  });
+}
+
 // The checked parts of a source, or an Error with kind 'address' or 'login'.
 function parts(source) {
-  var s = source || {}, server = str(s.server).trim(), share = str(s.share).trim().replace(/^[\\/]+|[\\/]+$/g, '');
+  var s = source || {}, server = whereNow(s) || str(s.server).trim(), share = str(s.share).trim().replace(/^[\\/]+|[\\/]+$/g, '');
   var port = /:(\d+)$/.exec(server.replace(/^\[[^\]]*\]/, ''));
   if (!SERVER.test(server) || (port && (+port[1] < 1 || +port[1] > 65535))) return bad('address');
   if (share && (!/^[^\\/\x00-\x1f"*:<>?|]{1,80}$/.test(share) || share.charAt(0) === '-')) return bad('address');
@@ -75,7 +107,10 @@ function arches() {
   try { m = str(cp.execFileSync('uname', ['-m'], { timeout: 3000, stdio: ['ignore', 'pipe', 'ignore'] })).trim(); } catch (e) {}
   return m === 'aarch64' ? ['aarch64', 'armv7'] : ['armv7'];
 }
-function nameFor(a) { return 'smb-' + VERSION + '-' + a; }
+// The unpacked program's name carries its release, so a new release is unpacked again.
+function nameFor(a) { return TAG + '-' + a; }
+// Older unpacked programs in the folder, once a new one runs.
+function removeOld(dir) { try { fs.readdirSync(dir).forEach(function (n) { if (/^smb-/.test(n) && n.indexOf(TAG + '-') !== 0) rm(path.join(dir, n)); }); } catch (e) {} }
 function sha256(file, cb) {
   var h = crypto.createHash('sha256'), s = fs.createReadStream(file);
   s.on('data', function (d) { h.update(d); }); s.on('error', cb); s.on('end', function () { cb(null, h.digest('hex')); });
@@ -120,7 +155,7 @@ function prepareOne(dir, a, cb) {
         if (done) return; done = true;
         if (err) { rm(tmp); return cb(err); }
         try { fs.chmodSync(tmp, parseInt('700', 8)); fs.renameSync(tmp, final); } catch (e2) { rm(tmp); return cb(e2); }
-        tryRun(final, function (e3) { if (e3) { rm(final); return cb(e3); } log({ lv: 'info', event: 'smb program ready', arch: a }); cb(null, final); });
+        tryRun(final, function (e3) { if (e3) { rm(final); return cb(e3); } removeOld(dir); log({ lv: 'info', event: 'smb program ready', arch: a }); cb(null, final); });
       }
       z.on('error', fin); out.on('error', fin); out.on('close', function () { fin(null); });
       fs.createReadStream(gz).on('error', fin).pipe(z).pipe(out);
@@ -181,26 +216,36 @@ function run(p, args, cb) {
 
 /* ---------- what My media asks ---------- */
 
+/* One run for a source: build(p) gives the program's arguments from the checked parts.  A server that
+   doesn't answer is looked for by name and, found elsewhere, asked once more there. */
+function runFor(source, build, cb) {
+  var p = parts(source); if (p instanceof Error) return cb(p);
+  var args = build(p); if (args instanceof Error) return cb(args);
+  run(p, args, function (e, rows) {
+    if (!e || (e.kind !== 'unreachable' && e.kind !== 'timeout')) return cb(e, rows, p);
+    relocate(source, function (again) {
+      if (!again) return cb(e, rows, p);
+      var p2 = parts(source);
+      run(p2, build(p2), function (e2, rows2) { cb(e2, rows2, p2); });
+    });
+  });
+}
+
 // Signs in and opens the share: cb(err, { dialect }).
 function check(source, cb) {
-  var p = parts(source); if (p instanceof Error) return cb(p);
-  if (!p.share) return cb(bad('noshare'));
-  run(p, ['check', p.server, p.share], function (e, rows) { cb(e, e ? null : { dialect: rows[0] && rows[0].dialect }); });
+  runFor(source, function (p) { return p.share ? ['check', p.server, p.share] : bad('noshare'); }, function (e, rows) { cb(e, e ? null : { dialect: rows[0] && rows[0].dialect }); });
 }
 // The disk shares on the source's server (hidden ones like C$ left out): cb(err, [{ name, comment }]).
 function shares(source, cb) {
-  var p = parts(source); if (p instanceof Error) return cb(p);
-  run(p, ['shares', p.server], function (e, rows) {
+  runFor(source, function (p) { return ['shares', p.server]; }, function (e, rows) {
     cb(e, e ? null : rows.filter(function (r) { return r && typeof r.name === 'string'; }).map(function (r) { return { name: r.name, comment: str(r.comment) }; }));
   });
 }
 /* One folder (a path inside the share; the source's folder when empty): cb(err, entries), each
    { name, dir, size, mtime (ms), path }. */
 function list(source, folder, cb) {
-  var p = parts(source); if (p instanceof Error) return cb(p);
-  var f = cleanPath(folder || p.folder);
-  if (f === null || !p.share) return cb(bad('address'));
-  run(p, ['ls', p.server, p.share, f], function (e, rows) {
+  var f = null;
+  runFor(source, function (p) { f = cleanPath(folder || p.folder); return f === null || !p.share ? bad('address') : ['ls', p.server, p.share, f]; }, function (e, rows) {
     if (e) return cb(e);
     cb(null, rows.filter(function (r) { return r && typeof r.name === 'string' && r.name.indexOf('/') < 0; }).map(function (r) {
       return { name: r.name, dir: !!r.dir, size: +r.size || 0, mtime: (+r.mtime || 0) * 1000, path: (f === '/' ? '' : f) + '/' + r.name };
@@ -209,12 +254,19 @@ function list(source, folder, cb) {
 }
 // One file: cb(err, { size, mtime, dir }).
 function stat(source, file, cb) {
-  var p = parts(source); if (p instanceof Error) return cb(p);
   var f = cleanPath(file);
-  if (!f || f === '/' || !p.share) return cb(bad('address'));
-  run(p, ['stat', p.server, p.share, f], function (e, rows) {
+  runFor(source, function (p) { return !f || f === '/' || !p.share ? bad('address') : ['stat', p.server, p.share, f]; }, function (e, rows) {
     if (e || !rows[0]) return cb(e || bad('notfound'));
     cb(null, { size: +rows[0].size || 0, mtime: (+rows[0].mtime || 0) * 1000, dir: !!rows[0].dir });
+  });
+}
+
+/* The source's folder and its folders down to depth (at most 4): cb(err, [{ path, mtime (ms), files }]), for
+   the check for new media.  A program from before tree (tivibro-smb 1) answers 'other'. */
+function tree(source, depth, cb) {
+  runFor(source, function (p) { return p.share ? ['tree', p.server, p.share, p.folder, String(Math.max(0, Math.min(4, depth | 0)))] : bad('noshare'); }, function (e, rows) {
+    if (e) return cb(e);
+    cb(null, rows.filter(function (r) { return r && typeof r.path === 'string'; }).map(function (r) { return { path: r.path, mtime: (+r.mtime || 0) * 1000, files: +r.files || 0 }; }));
   });
 }
 
@@ -224,13 +276,14 @@ var reads = [];
    range the player asks.  Reads don't wait behind scans; at most MAX_READS at once (a player, its
    subtitle reader and a seek preview), the oldest stopped to make room. */
 function reader(source, file) {
-  var p = parts(source), f = cleanPath(file), known = null;
+  var f = cleanPath(file), known = null;
   return {
     size: function (cb) {
       if (known) return cb(null, known);
       stat(source, file, function (e, st) { if (!e) known = st; cb(e, st); });
     },
     open: function (start, end, cb) {
+      var p = parts(source);              // here, not before: the size check may have found the server elsewhere
       if (p instanceof Error || !f) return cb(p instanceof Error ? p : bad('address'));
       program(function (e, prog) {
         if (e) return cb(e);
@@ -271,6 +324,6 @@ function failure(e) {
 
 module.exports = {
   setLog: function (f) { logFn = f; }, VERSION: VERSION, TAG: TAG, SHA256: SHA256,
-  check: check, shares: shares, list: list, stat: stat, reader: reader, failure: failure, parts: parts, cleanPath: cleanPath, program: program,
-  _config: function (o) { if (o.sums) cfg.sums = o.sums; if (o.bundle !== undefined) cfg.bundle = o.bundle; if (o.arch !== undefined) cfg.arch = o.arch; if (o.archList) cfg.archList = o.archList; if (o.reset) { cfg = { sums: SHA256, bundle: BUNDLE, arch: null }; ready = ''; } if (o.runMs) RUN_MS = o.runMs; }
+  check: check, shares: shares, list: list, stat: stat, tree: tree, reader: reader, movedTo: movedTo, hostKey: hostKey, failure: failure, parts: parts, cleanPath: cleanPath, program: program,
+  _config: function (o) { if (o.sums) cfg.sums = o.sums; if (o.bundle !== undefined) cfg.bundle = o.bundle; if (o.arch !== undefined) cfg.arch = o.arch; if (o.archList) cfg.archList = o.archList; if (o.reset) { cfg = { sums: SHA256, bundle: BUNDLE, arch: null, locate: cfg.locate }; ready = ''; } if (o.runMs) RUN_MS = o.runMs; if (o.locate !== undefined) cfg.locate = o.locate; if (o.forget) { moved = {}; lastLook = {}; } }
 };

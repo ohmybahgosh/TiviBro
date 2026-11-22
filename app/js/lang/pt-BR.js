@@ -501,7 +501,7 @@ I18n.add('pt-BR', {
   "Add media": "Adicionar mídias",
   "Media servers": "Servidores de mídia",
   "No media sources yet": "Ainda não há fontes de mídia",
-  "Rescan": "Escanear de novo",
+  "Rescan": "Escanear de novo", "Change login": "Alterar login",
   "Rescan media sources": "Escanear as fontes de mídia de novo",
   "Your media library": "Sua biblioteca de mídias",
   "No items in this view": "Não há itens nesta visualização",

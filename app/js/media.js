@@ -26,7 +26,8 @@ var Media = (function () {
         .then(function (r) { return r.json(); }).then(function (j) { finish(null, j); }, function () { finish(new Error('Could not reach the media helper.  Please try again.')); });
     });
   }
-  function scanSource(source,restart) { return MediaStore.load().then(function () { return ask('scan', { source: source, restart:!!restart }, 150000); }); }
+  // A scan; a share found at a new address (service/smb.js relocate) is saved there.
+  function scanSource(source,restart) { return MediaStore.load().then(function () { return ask('scan', { source: source, restart:!!restart }, 150000); }).then(function (r) { if (r && r.smbServer && source.id) MediaStore.smbMoved(source.id, r.smbServer); return r; }); }
 
   function why(e) { return (e && e.message) || 'That did not work.'; }
 
@@ -857,6 +858,7 @@ var Media = (function () {
       if (i >= list.length) { checking = false; return newMediaSoon(); }
       var s = MediaStore.source(list[i].id); if (!s) return next(i + 1);
       ask('check', { source: s, token: s.check || '' }, 30000).then(function (r) {
+        if (r && r.smbServer) MediaStore.smbMoved(s.id, r.smbServer);
         if (!r || r.error || !r.token) return next(i + 1);
         var first = !s.check; MediaStore.setCheck(s.id, r.token);
         if (!r.changed || first) return next(i + 1);
@@ -1041,11 +1043,13 @@ var Media = (function () {
   function addSmb(o, name) {
     var l = smbLogin(o);
     if (!l.share) { U.toast('Pick a share first.', 5000); return Promise.resolve({ error: 'noshare', message: 'Pick a share first.' }); }
-    var folder = String(o.folder || '/'), where = '\\\\' + l.server.replace(/:\d+$/, '') + '\\' + l.share + (folder === '/' ? '' : folder.replace(/\//g, '\\'));
-    var source = { contentMode: 'automatic', type: 'smb', server: l.server, share: l.share, folder: folder, user: l.user, pass: l.pass, domain: l.domain, where: where,
+    // host: the server's name, kept to find it again if its address changes (service/smb.js relocate).
+    var host = l.name && !/^\d{1,3}(\.\d{1,3}){3}(:\d+)?$/.test(l.name) ? String(l.name).slice(0, 80) : '';
+    var folder = String(o.folder || '/'), where = '\\\\' + (host || l.server.replace(/:\d+$/, '')) + '\\' + l.share + (folder === '/' ? '' : folder.replace(/\//g, '\\'));
+    var source = { contentMode: 'automatic', type: 'smb', server: l.server, host: host, share: l.share, folder: folder, user: l.user, pass: l.pass, domain: l.domain, where: where,
       name: String(name || '').trim().slice(0, 80) || (folder === '/' ? l.share : folder.split('/').pop()) };
     U.toast('Checking ' + source.name + '…');
-    return scanSource(source).then(function (res) { return addScanned(source, res); }, function (e) { U.toast(why(e), 6000); return { error: 'helper', message: why(e) }; });
+    return scanSource(source).then(function (res) { if (res && res.smbServer) source.server = res.smbServer; return addScanned(source, res); }, function (e) { U.toast(why(e), 6000); return { error: 'helper', message: why(e) }; });
   }
   /* The TV's own way in: the servers found on the network (or one typed), then a user name and password
      typed with the remote, then the lists. */
@@ -1065,8 +1069,28 @@ var Media = (function () {
     if (servers.length) items.push({ label: 'Look again', action: askSmb });
     UI.menu(servers.length ? 'Shares on your network' : 'No shares found', items);
   }
-  // The login for a server (a = smbAddress), then its shares (or the share and folder it named).
+  /* The libraries already on this server (the same address, or the same name), whose login can be used
+     again for another folder: [{ id, name, user }].  Never the password. */
+  function smbSaved(server, name) {
+    var key = function (x) { return String(x || '').toLowerCase().replace(/:\d+$/, '').replace(/\.local\.?$/, ''); };
+    var want = [key(server), key(name)].filter(Boolean), seen = {};
+    return MediaStore.sources().filter(function (x) {
+      if (x.type !== 'smb' || !(want.indexOf(key(x.server)) >= 0 || (x.host && want.indexOf(key(x.host)) >= 0))) return false;
+      var k = (x.user || '') + '|' + (x.domain || ''); if (seen[k]) return false; seen[k] = 1; return true;
+    }).map(function (x) { return { id: x.id, name: x.name, user: x.user || '' }; });
+  }
+  // A saved library's login, for asking its server again (phone app and web editor send its id, not the password).
+  function smbLoginOf(id) { var x = MediaStore.source(String(id || '')); return x && x.type === 'smb' ? { user: x.user || '', pass: x.pass || '', domain: x.domain || '' } : null; }
+  // The login for a server (a = smbAddress): one saved with a library there, or typed.
   function smbAsk(a) {
+    var saved = smbSaved(a.server, a.name);
+    if (!saved.length) return smbType(a);
+    UI.menu(RAW(a.name || a.server), saved.map(function (x) {
+      return { label: 'Sign in as ' + (x.user ? RAW(x.user) : 'a guest'), sub: 'The login saved with ' + RAW(x.name), action: function () { var l = smbLoginOf(x.id); smbPick(smbLogin({ server: a.server, share: a.share, user: l.user, pass: l.pass, domain: l.domain, name: a.name }), a.share ? [a.folder] : null); } };
+    }).concat([{ label: 'Another login', action: function () { smbType(a); } }]));
+  }
+  // The login typed with the remote, then the server's shares (or the share and folder it named).
+  function smbType(a) {
     UI.prompt('User name (empty for a guest)', '', function (user) {
       if (!String(user || '').trim()) return smbPick(smbLogin({ server: a.server, share: a.share, name: a.name }), a.share ? [a.folder] : null);
       UI.prompt('Password', '', function (pass) { smbPick(smbLogin({ server: a.server, share: a.share, user: user, pass: pass, name: a.name }), a.share ? [a.folder] : null); }, '', true);
@@ -1339,6 +1363,29 @@ var Media = (function () {
       if (!list.length) { if (kind === 'movies') U.toast('All movie details are up to date.', 4000); return { updated: 0 }; }
       return fetchDetails(list, language);
     }).then(function(result){return kind === 'movies' ? result : showDetails(true,result);}).catch(function (e) { U.toast(why(e), 6000); });
+  }
+  /* A new login for a share or WebDAV library (its password changed): checked against the server before
+     it's saved, so the library and its matches stay.  From the TV (changeLogin) or the phone app and the
+     web editor (setLogin).  Promise of { msg } or { error, message }. */
+  function setLogin(id, user, pass, domain) {
+    var s = MediaStore.source(String(id || ''));
+    if (!s || (s.type !== 'smb' && s.type !== 'webdav')) return Promise.resolve({ error: 'address', message: 'That library has no login to change.' });
+    var trial = {}; Object.keys(s).forEach(function (k) { trial[k] = s[k]; });
+    trial.user = String(user || '').trim(); trial.pass = String(pass || ''); if (s.type === 'smb') trial.domain = String(domain || '').trim();
+    return ask('check', { source: trial, token: '' }, 40000).then(function (r) {
+      if (r && r.error) return { error: r.error, message: r.message || 'That login didn\'t work.' };
+      MediaStore.setLogin(s.id, trial.user, trial.pass, trial.domain);
+      if (r && r.smbServer) MediaStore.smbMoved(s.id, r.smbServer);
+      return { msg: 'Login saved for ' + s.name + '.' };
+    }, function (e) { return { error: 'helper', message: why(e) }; });
+  }
+  function changeLogin(s) {
+    UI.prompt('User name (empty for a guest)', s.user || '', function (user) {
+      UI.prompt('Password', '', function (pass) {
+        U.toast('Checking the login…');
+        setLogin(s.id, user, pass, s.domain).then(function (r) { U.toast(r.error ? r.message : r.msg, r.error ? 7000 : 4000); });
+      }, '', true);
+    }, s.type === 'smb' ? 'On a Windows PC: the PC\'s user name or your Microsoft account email.' : '');
   }
   // Remove a library (source): asks first; your files stay; Undo puts it back (not Dropbox, which signs out).
   function removeLibrary(s) {
@@ -1834,7 +1881,7 @@ var Media = (function () {
   return {
     quickMarkMovie: quickMarkMovie, movieCard: movieCard,
     reviewCount: function () { return reviewCards.length; },      // how many need a look (the show options offer Needs review)
-    refreshShows:refreshSeries, playNow: function (m) { playNow(m); }, foundText: foundText, discover: discover, addServer: addServer, sourceDetailsNow: sourceDetailsNow, isScanning: function (id) { return !!scanning[id]; }, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); visitEnd(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress, addDropbox: addDropbox, dropboxFolders: dropboxFolders, addGdrive: addGdrive, gdrivePlaces: gdrivePlaces, addSmb: addSmb, smbDiscover: smbDiscover, smbShares: smbShares, smbFolders: smbFolders, smbAddress: smbAddress, gdriveFolders: gdriveFolders, gdriveKey: gdriveKey, signOut: signOut,
+    refreshShows:refreshSeries, playNow: function (m) { playNow(m); }, foundText: foundText, discover: discover, addServer: addServer, sourceDetailsNow: sourceDetailsNow, isScanning: function (id) { return !!scanning[id]; }, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); visitEnd(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress, addDropbox: addDropbox, dropboxFolders: dropboxFolders, addGdrive: addGdrive, gdrivePlaces: gdrivePlaces, addSmb: addSmb, smbDiscover: smbDiscover, smbSaved: smbSaved, smbLoginOf: smbLoginOf, setLogin: setLogin, changeLogin: changeLogin, smbShares: smbShares, smbFolders: smbFolders, smbAddress: smbAddress, gdriveFolders: gdriveFolders, gdriveKey: gdriveKey, signOut: signOut,
     rescanAll: rescanAll, newMedia: newMedia, newMediaSoon: newMediaSoon, guideLookup: guideLookup, movieById: movieById, tvByName: tvByName, tvSeason: tvSeason, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, libraryStats: libraryStats, removeLibrary: removeLibrary,
     // The web editor's Fix match: search TMDB by a typed title, then save the one picked.
     searchDetails: function (title) { if (!MediaStore.tmdbToken()) return Promise.reject(new Error('Add a TMDB API token first.')); return metadataRequest({ title: String(title || '').slice(0, 200) }).then(function (r) { return (r.matches || []).slice(0, 10).map(function (x) { return { id: x.id, title: x.title, year: x.year || '' }; }); }); },

@@ -3835,6 +3835,18 @@ function loadMedia() {
       btn('Rename', 'ghost', function () { var n = prompt('Library name', s.name); if (!n || !n.trim()) return; command('mediaSourceUpdate', { id: s.id, name: n.trim() }).then(function () { loadMedia(); }, function (e) { msg('mediaMsg', 'bad', e.message); }); });
       btn('Scan now', '', function (b) { b.disabled = true; command('mediaRescan', { id: s.id }, 160000, cmdMsg('mediaMsg', 'Scanning…')).then(function (r) { msg('mediaMsg', 'ok', r.msg); loadMedia(); }).catch(function (e) { b.disabled = false; msg('mediaMsg', 'bad', e.message); }); });
       btn('Fetch details', '', function () { command('mediaLibraryDetails', { id: s.id }).then(function (r) { msg('mediaMsg', 'ok', r.msg); }, function (e) { msg('mediaMsg', 'bad', e.message); }); });
+      // A share's or WebDAV folder's new login: a small form here, checked with the server by the TV before it's saved.
+      if (s.type === 'smb' || s.type === 'webdav') {
+        var lf = document.createElement('form'); lf.className = 'form hidden';
+        lf.innerHTML = '<label class="f">User name<input type="text" autocomplete="off"></label><label class="f">Password<input type="password" autocomplete="new-password"></label><div class="full row"><button type="submit" class="primary">Check and save</button></div>';
+        lf.onsubmit = function (e) {
+          e.preventDefault();
+          var ins = lf.querySelectorAll('input'), b = lf.querySelector('button'); b.disabled = true;
+          command('mediaLogin', { id: s.id, user: ins[0].value, pass: ins[1].value }, 60000, cmdMsg('mediaMsg', 'Checking the login with the server…')).then(function (r) { ins[1].value = ''; lf.classList.add('hidden'); msg('mediaMsg', 'ok', r.msg); }).catch(function (e2) { msg('mediaMsg', 'bad', e2.message); }).then(function () { b.disabled = false; });
+        };
+        btn('Change login', 'ghost', function () { lf.classList.toggle('hidden'); });
+        card.appendChild(lf);
+      }
       var box = document.createElement('div'); box.className = 'lib-unmatched hidden';
       if (s.unmatched) btn('Unmatched (' + s.unmatched + ')', '', function () { if (!box.classList.toggle('hidden')) unmatchedList(s, box); });
       btn('Remove', 'ghost danger', function (b) { ask('Remove this library?', 'Your files stay where they are.', 'Remove', function () { b.disabled = true; command('mediaRemove', { id: s.id }, 160000, cmdMsg('mediaMsg', 'Working…')).then(function (r) { msg('mediaMsg', 'ok', r.msg); loadMedia(); }).catch(function (e) { b.disabled = false; msg('mediaMsg', 'bad', e.message); }); }, true); });
@@ -4010,7 +4022,7 @@ $('mediaAdd').onsubmit = function (e) {
 };
 
 /* ---------- a Windows or network share (SMB): the login stays in this page's memory until the folder is added ---------- */
-var smb = { login: null, trail: [] };   // trail: '' (the server's shares), then the share's folder paths opened, '/' first
+var smb = { login: null, trail: [], name0: '' };   // trail: '' (the server's shares), then the share's folder paths opened, '/' first
 function smbHere() { return smb.trail[smb.trail.length - 1]; }
 function smbShow(list, shares) {
   var box = $('smbFolders'), here = smbHere(); box.innerHTML = '';
@@ -4034,18 +4046,28 @@ function smbOpen() {
 $('smbForm').onsubmit = function (e) {
   e.preventDefault();
   var text = $('smbServer').value.trim().replace(/^smb:\/\//i, '').replace(/\\/g, '/').replace(/^\/+/, ''), bits = text.split('/').filter(function (x) { return x; });
-  smb.login = { server: bits[0] || '', share: bits[1] || '', user: $('smbUser').value, pass: $('smbPass').value };
+  smb.login = { server: bits[0] || '', share: bits[1] || '', user: $('smbUser').value, pass: $('smbPass').value, name0: smb.name0 && $('smbServer').value.trim() === bits[0] ? smb.name0 : '' };
   smb.trail = bits[1] ? ['/' + bits.slice(2).join('/')] : [];
   $('smbPass').value = '';
   smbOpen();
 };
+/* Logins saved with libraries on this server: one click signs in with it (the TV keeps the password; the page
+   only sends the library's id). */
+function smbSavedFor(server, name) {
+  command('mediaSmbSaved', { server: server, name: name || '' }).then(function (r) {
+    var box = $('smbFound');
+    (r.data || []).forEach(function (x) { box.appendChild(gdButton('Sign in as ' + (x.user || 'a guest') + ' (saved with ' + x.name + ')', function () {
+      smb.login = { server: server, share: '', saved: x.id, name0: name || '' }; smb.trail = []; smbOpen();
+    })); });
+  }).catch(function () {});
+}
 // The servers the TV finds on the network: picking one fills in the server.
 $('smbLook').onclick = function () {
   var b = this; b.disabled = true;
   command('mediaSmbDiscover', {}, 30000, cmdMsg('smbMsg', 'Looking for shares on the TV\'s network…')).then(function (r) {
     var box = $('smbFound'); box.innerHTML = ''; box.classList.remove('hidden');
     msg('smbMsg', 'ok', r.data.length ? 'Pick one, then enter its login:' : 'Nothing answered.  A PC needs file sharing (and network discovery) on.  You can still type its name or address.');
-    r.data.forEach(function (s) { box.appendChild(gdButton(s.name === s.server ? s.server : s.name + ' (' + s.server + ')', function () { $('smbServer').value = s.server; $('smbUser').focus(); })); });
+    r.data.forEach(function (s) { box.appendChild(gdButton(s.name === s.server ? s.server : s.name + ' (' + s.server + ')', function () { $('smbServer').value = s.server; smb.name0 = s.name; smbSavedFor(s.server, s.name); $('smbUser').focus(); })); });
   }).catch(function (e) { msg('smbMsg', 'bad', e.message); }).then(function () { b.disabled = false; });
 };
 $('smbUp').onclick = function () { smb.trail.pop(); if (!smb.trail.length) smb.login.share = ''; smbOpen(); };

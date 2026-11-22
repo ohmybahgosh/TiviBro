@@ -419,11 +419,17 @@ var Phone = (function () {
       }
       /* A Windows or network share (SMB): smbdiscover (the servers on the network), smbshares (the disk shares
          on a server), smbfolders (one folder's folders) and addsmb (the folder picked).  The login comes with each ask and is never sent back. */
+      // The libraries on a server whose login can be used again: [{ id, name, user }], never a password.
+      if (op === 'smbsaved') return Promise.resolve({ saved: Media.smbSaved(String(a.server || ''), String(a.name0 || '')) });
+      // A share's or WebDAV folder's new login, checked with the server first.
+      if (op === 'login') return Media.setLogin(String(a.id || ''), String(a.user || '').slice(0, 300), String(a.pass || '').slice(0, 2000), String(a.domain || '').slice(0, 100)).then(function (r) { if (r.error) throw new Error(r.message); return { msg: r.msg, sources: sources() }; });
       if (op === 'smbdiscover') return Media.smbDiscover().then(function (list) { return { servers: list.map(function (x) { return { name: String(x.name || ''), server: String(x.server || '') }; }) }; });
       if (op === 'smbshares' || op === 'smbfolders' || op === 'addsmb') {
         var at = Media.smbAddress(a.server);
         if (!at) throw new Error('Enter the server\'s name or IP address, like NAS or 192.168.1.20.');
-        var login = { server: at.server, share: String(a.share || at.share || ''), user: String(a.user || '').slice(0, 300), pass: String(a.pass || '').slice(0, 400), domain: String(a.domain || '').slice(0, 100) };
+        var login = { server: at.server, share: String(a.share || at.share || ''), user: String(a.user || '').slice(0, 300), pass: String(a.pass || '').slice(0, 400), domain: String(a.domain || '').slice(0, 100), name: String(a.name0 || '').slice(0, 80) };
+        // saved: a library's id on this server, whose login is used (the phone never has its password).
+        if (a.saved) { var kept = Media.smbLoginOf(a.saved); if (!kept) throw new Error('That library is gone from the TV.'); login.user = kept.user; login.pass = kept.pass; login.domain = kept.domain; }
         if (op === 'smbshares') return Media.smbShares(login).then(function (r) {
           if (r.error) throw new Error(r.message || 'The server didn\'t answer.');
           return { shares: (r.shares || []).map(function (x) { return { name: String(x.name || ''), comment: String(x.comment || '') }; }) };

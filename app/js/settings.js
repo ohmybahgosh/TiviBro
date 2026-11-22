@@ -346,6 +346,8 @@ var Settings = (function () {
       Media.isScanning(id) ? action('Pause scan', 'Stops after the current request.', function () { Media.sourceMenu(s); }) : action('Scan now', 'Look for added or removed files.', heavy(function () { Media.rescan(id); U.toast('Scanning ' + s.name + '…'); })),
       Media.isScanning(id) ? null : action('Restart scan', 'Starts over from the first folder.', heavy(function () { Media.rescan(id, true); })),
       action(Media.detailsLabel(s), 'From TMDB, with your saved API token.', heavy(function () { Media.libraryDetails(id); })),
+      // A share's or WebDAV folder's login, typed with the remote (the phone app and web editor have their own form).
+      s.type === 'smb' || s.type === 'webdav' ? tvOnly(action('Change login', 'When its password changed.  Checked with the server before it\'s saved; the library and its matches stay.', function () { Media.changeLogin(MediaStore.source(id)); }, function () { return I18n.raw(s.user || 'Guest'); })) : null,
       (function () { var c = phoneDoes('media-source', action('More for this library', 'Its folder, Dropbox sign-in, pause or restart a scan.  On the phone: its own form.', function () { Media.sourceMenu(s); })); c.sid = id; return c; })(),
       head('Needs attention'));
     if (st.kind !== 'shows' && st.waiting) out.push(action('Not looked up yet', 'Movies TMDB hasn\'t been asked about yet (a lookup that stopped, or no token then).  OK looks them up now; it also happens by itself.', heavy(function () { Media.lookUpWaiting(id); }), function () { return String(st.waiting); }));
