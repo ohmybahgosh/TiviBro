@@ -147,5 +147,5 @@ var SportsLive = (function () {
     document.addEventListener('keyup', function () { setTimeout(function () { if (!watching()) hideBug(); else lookBar(); }, 300); });
     if (Sports.onChange) Sports.onChange(function () { if (watching()) lookBar(); });
   }
-  return { start: start, tick: tick, _close: close };
+  return { start: start, tick: tick, refresh: function () { lookBar(); }, _close: close };
 })();

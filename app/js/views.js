@@ -2051,7 +2051,7 @@ var Views = (function () {
      ◀ ▶ move along a row, ▲ ▼ switch rows, OK picks, Back closes.  Clickable with the pointer. */
   var qp = null;                  // { row, col, rows: [[items]], timer }
   // Quick menu buttons.  Each can be switched off in Settings > Remote and buttons > Quick menu buttons.
-  var QP_BUTTONS = [['pause', 'Pause and rewind'], ['rec', 'Record'], ['list', 'Channel guide'], ['start', 'Watch from start'], ['fav', 'Favorite'], ['guide', 'TV guide'], ['versions', 'Other versions'], ['multi', 'Multiview'], ['audio', 'Audio track'],
+  var QP_BUTTONS = [['pause', 'Pause and rewind'], ['rec', 'Record'], ['list', 'Channel guide'], ['start', 'Watch from start'], ['fav', 'Favorite'], ['guide', 'TV guide'], ['versions', 'Other versions'], ['multi', 'Multiview'], ['scores', 'My teams\' scores'], ['audio', 'Audio track'],
     ['subs', 'Subtitles'], ['cc', 'Closed captions'], ['quality', 'Video quality'], ['picture', 'Aspect'], ['sleep', 'Sleep timer'],
     ['info', 'Stream info'], ['reconnect', 'Reconnect']];
   // Line icons for the quick actions, drawn like the side menu's (24 x 24, stroked).
@@ -2071,6 +2071,7 @@ var Views = (function () {
     picture: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 9H6v2M16 9h2v2M8 15H6v-2M16 15h2v-2"/>',
     multi: '<rect x="3" y="4" width="8" height="7" rx="1.5"/><rect x="13" y="4" width="8" height="7" rx="1.5"/><rect x="3" y="13" width="8" height="7" rx="1.5"/><rect x="13" y="13" width="8" height="7" rx="1.5"/>',
     sleep: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+    scores: '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M12 6v12M7 10v4M17 10v4"/>',
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
     reconnect: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>'
   };
@@ -2097,6 +2098,15 @@ var Views = (function () {
     add('guide', { label: 'TV guide', icon: 'guide', run: function () { closePanel(); leaveTo('guide'); } });
     if (c && L.versions(c).length) add('versions', { label: 'Other versions', icon: 'versions', v: versionsSummary(c), run: function () { closePanel(); versionsMenu(c); } });
     if (c && mode === 'live' && typeof Multiview !== 'undefined') add('multi', { label: 'Multiview', icon: 'multi', v: 'more channels', run: function () { closePanel(); Multiview.again(c, lastPlayed); } });
+    /* Your teams' score corner, on or off from here (the same switch as Settings > Channels and groups > My teams),
+       while one of their games is on: the corner can sit over something you want to see. */
+    var teamLive = typeof Sports !== 'undefined' && typeof Teams !== 'undefined' && Teams.follows && Sports.all().some(function (g) { return g.state === 'in' && g.teams.some(function (t) { return t.id && Teams.follows(t.id); }); });
+    if (teamLive) add('scores', { label: 'My teams\' scores', icon: 'scores', v: Store.settings.sportsBar === false ? 'off' : 'on', run: function () {
+      Store.settings.sportsBar = Store.settings.sportsBar === false; Store.saveSettings();
+      if (typeof SportsLive !== 'undefined' && SportsLive.refresh) SportsLive.refresh();
+      U.toast(Store.settings.sportsBar ? 'Your teams\' scores show in the corner' : 'Scores corner off.  OK > My teams\' scores, or Settings > Channels and groups > My teams, turns it back on.', 5000);
+      renderPanel();
+    } });
     var tracks = Player.audioTracks();
     if (tracks.length > 1) add('audio', { label: 'Audio', icon: 'audio', v: (tracks.filter(function (t) { return t.on; })[0] || {}).label || '', run: function () { closePanel(); audioMenu(); } });
     // Live captions (CEA-608) have their own switch; Subtitles is for real subtitle tracks.

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Turn your teams' score corner off from fullscreen:** OK > **My teams' scores**, while one of your teams is playing.  The same switch as in Settings, so it stays off until you turn it back on.
 - **A game in overtime keeps its channels.**  When a game runs past its listing (a local station's "College Football" ends on the hour while the game goes on), Sports still lists that channel for the game and your teams' score corner stays off it.
 
 ## 0.6.0 (alpha 194, 2026-11-21)
