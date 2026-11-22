@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 201, 2026-11-22)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 201
 
 - **Pick which teams show in the score corner.**  Settings > Sports and My teams > Teams in the corner: turn a team off and its games stay out of the corner while you watch, but still show in Sports and alerts.  Also in the phone app and the web editor.
 - **My media reads Windows and network shares (SMB).**  Add media > Add a Windows or network share: a PC, Mac, NAS or router's shared folder, found on the network or by its name or address, and a login (or as a guest), then pick the share and folder.  Also in the phone app (Add media > Add a Windows or network share) and the web editor.  SMB 2 and 3 with signing and encryption, so Windows 11 shares work; SMB1 isn't supported.  Movies play with seeking, subtitles beside them are found, and the login stays on the TV.
@@ -9,11 +13,7 @@
   - Change login on a share or WebDAV library: Settings > My media, the library's page, also in the phone app and the web editor.  The new login is checked before it's saved.
   - A second library on the same server can use the login saved with the first.
 
-## 0.6.0 (alpha 200, 2026-11-22)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 200
+### In alpha 200
 
 - **Playlists on or off in one place.**  With several playlists, Settings > Playlists and accounts has a Playlists on or off section with a switch for each, so you don't have to open a playlist to turn it off or back on.
 - **The score corner no longer shows the game you're watching** on a channel whose listing also names another team in passing (a local station's "...lost their last game to Chicago" put up the Lions score on the Lions game).
