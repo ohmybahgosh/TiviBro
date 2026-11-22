@@ -1490,7 +1490,7 @@ I18n.add('ru', {
   "Movies and TV shows": "Фильмы и сериалы",
   "Movies matching \"": "Фильмы по запросу «",
   "Movies or TV shows decides how files are read and which tab they go to.  Movies and TV shows sorts each file by its name.": "«Фильмы» или «Сериалы» определяет, как читаются файлы и на какую вкладку они попадают.  «Фильмы и сериалы» распределяет каждый файл по имени.",
-  "Movies or TV shows from a DLNA / UPnP server, a WebDAV folder (address and login), Dropbox (signs in from the phone app) or Google Drive (the web editor or the phone app).  Subfolders are scanned too.": "Фильмы или сериалы с сервера DLNA / UPnP, папки WebDAV (адрес и вход), Dropbox (вход из приложения на телефоне) или Google Drive (веб-редактор или приложение на телефоне).  Вложенные папки тоже сканируются.",
+  "Movies or TV shows from a DLNA / UPnP server, a Windows or network share (name and login), a WebDAV folder (address and login), Dropbox (signs in from the phone app) or Google Drive (the web editor or the phone app).  Subfolders are scanned too.": "Фильмы или сериалы с сервера DLNA / UPnP, общей папки Windows или сетевой папки (имя и логин), папки WebDAV (адрес и вход), Dropbox (вход из приложения на телефоне) или Google Drive (веб-редактор или приложение на телефоне).  Вложенные папки тоже сканируются.",
   "My list": "Мой список",
   "Needs attention": "Требует внимания",
   "New Year's movies": "Новогодние фильмы",

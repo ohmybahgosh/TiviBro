@@ -1487,7 +1487,7 @@ I18n.add('es', {
   "Movies and TV shows": "Películas y series de TV",
   "Movies matching \"": "Películas que coinciden con «",
   "Movies or TV shows decides how files are read and which tab they go to.  Movies and TV shows sorts each file by its name.": "Películas o Series de TV decide cómo se leen los archivos y a qué pestaña van.  Películas y series de TV clasifica cada archivo por su nombre.",
-  "Movies or TV shows from a DLNA / UPnP server, a WebDAV folder (address and login), Dropbox (signs in from the phone app) or Google Drive (the web editor or the phone app).  Subfolders are scanned too.": "Películas o series de un servidor DLNA / UPnP, una carpeta WebDAV (dirección e inicio de sesión), Dropbox (inicia sesión desde la app del teléfono) o Google Drive (el editor web o la app del teléfono).  También se escanean las subcarpetas.",
+  "Movies or TV shows from a DLNA / UPnP server, a Windows or network share (name and login), a WebDAV folder (address and login), Dropbox (signs in from the phone app) or Google Drive (the web editor or the phone app).  Subfolders are scanned too.": "Películas o series de un servidor DLNA / UPnP, una carpeta compartida de Windows o de red (nombre y usuario), una carpeta WebDAV (dirección e inicio de sesión), Dropbox (inicia sesión desde la app del teléfono) o Google Drive (el editor web o la app del teléfono).  También se escanean las subcarpetas.",
   "My list": "Mi lista",
   "Needs attention": "Requiere atención",
   "New Year's movies": "Películas de Año Nuevo",

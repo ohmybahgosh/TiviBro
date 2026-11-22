@@ -301,7 +301,7 @@ var Settings = (function () {
       row.sid = s.id; out.push(row);
     });
     if (!MediaStore.sources().length) out.push(info('No libraries yet', 'Choose Add a library below'));
-    out.push(phoneDoes('media-add', action('Add a library', 'Movies or TV shows from a DLNA / UPnP server, a WebDAV folder (address and login), Dropbox (signs in from the phone app) or Google Drive (the web editor or the phone app).  Subfolders are scanned too.', function () { Media.addMenu(); })));
+    out.push(phoneDoes('media-add', action('Add a library', 'Movies or TV shows from a DLNA / UPnP server, a Windows or network share (name and login), a WebDAV folder (address and login), Dropbox (signs in from the phone app) or Google Drive (the web editor or the phone app).  Subfolders are scanned too.', function () { Media.addMenu(); })));
     out.push(head('All libraries'),
       action('Scan all libraries', 'Look for added and removed movies and episodes.  Green on the My media screen.', heavy(function () { Media.rescanAll(); })),
       action('Fetch details for all', 'Look up movies, shows and owned episodes on TMDB, and refresh details in another language.  Yellow on My media.', heavy(function () { Media.fetchMissingDetails(); })),
