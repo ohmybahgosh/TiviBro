@@ -1031,6 +1031,23 @@ var Settings = (function () {
     return out;
   }
 
+  /* ---------- each group's channel order ---------- */
+  /* Sort each group (Settings > Channels and groups): the order of the channels in each shown group, the same as Hold
+     OK on a group > Sort channels on the TV.  Next event first suits sports and PPV groups.  "As in Settings" follows
+     Channel order above; a group whose channels you moved by hand says so and keeps that until it's changed here. */
+  function groupSortPage() {
+    var out = [], gs = L.allGroups().filter(function (g) { return !g.hidden && g.id !== L.FAV; });
+    var vals = ['', 'event', 'provider', 'az', 'za', 'number'], labels = ['As in Settings', 'Next event first', 'Provider order', 'A to Z', 'Z to A', 'Channel number'];
+    out.push(info('Next event first puts what\'s on now first, then what starts soonest, and channels with nothing on last: for sports and PPV groups.', ''));
+    out.push(head('Shown groups (' + gs.length + ')'));
+    gs.forEach(function (g) {
+      var mine = L.sortOf(g.id) === 'custom';
+      out.push(choice(I18n.raw(L.groupName(g.id)), mine ? 'Your own order now (channels you moved)' : '', mine ? vals.concat('custom') : vals, mine ? labels.concat('Your order') : labels,
+        function () { return L.sortOf(g.id); }, function (v) { L.setSort(g.id, v); relist(); build(); }));
+    });
+    return out;
+  }
+
   /* ---------- merge groups: tick several, then show them as one ---------- */
   var mergePick = {};                         // the groups ticked on the Merge groups page, by id
   /* Merge groups (Settings > Channels and groups): tick provider groups, then merge them into a new group (the first
@@ -1094,6 +1111,7 @@ var Settings = (function () {
     var s = S(), out = [], hid = L.hiddenItems();
     function apply() { Store.saveSettings(); relist(); build(); }
     out.push(page('Manage groups', 'Show or hide each group in one list, like TiviMate.  ' + hid.groups.length + ' hidden now.', 'Manage groups', manageGroups));
+    out.push(page('Sort each group', 'The order of the channels in each group, Next event first for sports and PPV included.', 'Sort each group', groupSortPage));
     out.push(page('Rename groups', 'Give any group a name of your own, typed on the TV or the phone.', 'Rename groups', renamePage));
     var merged = L.allGroups().filter(function (g) { return L.mergedFrom(g.id).length; }).length;
     out.push(page('Merge groups', 'Tick several groups and show them as one: in a new group, one of them or another group.' + (merged ? '  ' + merged + ' merged now.' : ''), 'Merge groups', mergePage));
