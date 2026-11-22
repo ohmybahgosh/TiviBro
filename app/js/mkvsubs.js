@@ -482,6 +482,10 @@ var MkvSubs = (function () {
     // asked for, as MP4 files are.  Fetched is kept per track and cluster ('track:offset').
     candidates: function (rec, now, ctx) {
       var ix = rec.index, byCluster = {}, items = [];
+      // The helper sees the player's own download (helper above): then only the Cluster under the picture is
+      // read here (a seek lands mid-Cluster, where the helper starts at the next one), not the 30 s around it.
+      // A player not fetching through the helper (nothing seen after 8 s): the reader does it all, as before.
+      var tapped = ix.scan && rec.bg && rec.bg.key && (rec.bg.seen > 0 || Date.now() - rec.bg.at < 8000);
       for (var i = 0; ctx && i < ix.perTrackCues.length; i++) {
         var want = ctx.demand(i);
         if (!want) continue;
@@ -491,7 +495,7 @@ var MkvSubs = (function () {
         for (var w = 0; w < wins.length; w++) {
           // A scanned file (whole Clusters walked) starts at the line on screen and reads ahead: going back 30 s
           // first cost several Clusters' reads before the next line, after every seek.
-          var from = wins[w] === 'now' ? now - (ix.scan ? 8 : 30) : wins[w].from, to = wins[w] === 'now' ? now + 60 : wins[w].to;
+          var from = wins[w] === 'now' ? now - (tapped ? 1 : ix.scan ? 8 : 30) : wins[w].from, to = wins[w] === 'now' ? now + (tapped ? 1 : 60) : wins[w].to;
           var a = (from - shift) / scale, b = (to - shift) / scale;
           for (var c = 0; c < cues.length; c++) {
             // A line overlapping the window counts (as for MP4), so one still on screen when its track
@@ -511,16 +515,20 @@ var MkvSubs = (function () {
       items.forEach(function (it) { it.id = it.off + ':' + it.tracks.join(','); });
       return items.sort(function (x, y) { return x.dist - y.dist || x.off - y.off; });
     },
-    /* The helper reads a scanned file through (service/subscan.js), every subtitle track at once, from the
-       Cluster at the picture to the end, then from the start: once a stretch is read its lines show at once,
-       seeks included, and the reader leaves it alone.  done(lines for EmbedSubs, or null). */
+    /* A scanned file's lines from the helper (service/subscan.js): the TV player fetches the file through the
+       helper, which keeps the subtitle blocks of every subtitle track from those bytes as they pass, so there
+       is no second download (a movie is gigabytes).  The player reads ahead of the picture, so a line is
+       there before it's due, after a seek too.  Asked every 2 s; what the helper has seen the reader leaves
+       alone (candidates).  done(lines for EmbedSubs, or null). */
     helper: function (rec, now, ctx, done) {
-      var ix = rec.index, bg = rec.bg || (rec.bg = { key: '', since: {}, done: false, busy: false });
-      if (!ix.scan || !rec.size || !rec.resolved || typeof Net === 'undefined' || !Net.port || !Net.ctlFetch) { bg.done = true; return done(null); }   // the reader alone
+      var ix = rec.index, bg = rec.bg || (rec.bg = { key: '', since: {}, done: false, busy: false, at: 0, seen: 0 });
+      if (!ix.scan || !rec.size || typeof Net === 'undefined' || !Net.port || !Net.ctlFetch) { bg.done = true; return done(null); }   // the reader alone
       if (bg.busy) return done(null);
       var on = false;
       for (var i = 0; i < ix.perTrackCues.length; i++) if (ctx.demand(i)) on = true;
-      if (!on && !bg.key) return done(null);                      // nothing shown yet: no pass
+      // Asked for at once, shown or not: the player's download is under way, and what passes before the helper
+      // knows the file is gone for it.  Lines are fetched only while a track is shown.
+      if (!on && bg.key) return done(null);
       var base = 'http://127.0.0.1:' + Net.port + '/media/subs/', pts = ix.perTrackCues[0].cues;
       function post(route, body) {
         return Net.ctlFetch(base + route, { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function (r) { return r.json(); });
@@ -528,10 +536,8 @@ var MkvSubs = (function () {
       bg.busy = true;
       var step;
       if (!bg.key) {
-        var at = pts[0];
-        for (var c = 0; c < pts.length; c++) if (pts[c].timeSec <= now) at = pts[c];
-        step = post('scan', { url: rec.resolved, size: rec.size, from: ix.segmentDataStart + at.clusterPos, first: ix.segmentDataStart + pts[0].clusterPos, scale: ix.timecodeScale,
-          tracks: ix.perTrackCues.map(function (t) { return t.track.number; }) }).then(function (j) { if (!j || j.error) throw new Error(j && j.error || 'no answer'); bg.key = j.key; return null; });
+        step = post('scan', { size: rec.size, scale: ix.timecodeScale, tracks: ix.perTrackCues.map(function (t) { return t.track.number; }),
+          clusters: pts.map(function (p) { return ix.segmentDataStart + p.clusterPos; }) }).then(function (j) { if (!j || j.error) throw new Error(j && j.error || 'no answer'); bg.key = j.key; bg.at = Date.now(); return null; });
       } else step = post('lines', { key: bg.key, since: bg.since }).then(function (j) {
         if (!j || j.error) { if (j && j.error === 'gone') bg.key = ''; else bg.done = true; return null; }
         var out = [], byNum = {};
@@ -549,10 +555,10 @@ var MkvSubs = (function () {
             for (var k2 = 0; k2 < ix.perTrackCues.length; k2++) rec.fetched[k2 + ':' + (ix.segmentDataStart + p.clusterPos)] = true;
           });
         });
-        if (j.done) { bg.done = true; if (j.error) Log.warn('mkv', 'Subtitle pass stopped: ' + j.error); }
+        bg.seen = +j.seen || 0;
         return out;
       });
-      step.then(function (out) { bg.busy = false; done(out); }, function (e) { bg.busy = false; bg.done = true; Log.warn('mkv', 'Subtitle pass unavailable: ' + (e && e.message)); done(null); });
+      step.then(function (out) { bg.busy = false; done(out); }, function (e) { bg.busy = false; bg.done = true; Log.warn('mkv', 'Subtitles from the helper unavailable: ' + (e && e.message)); done(null); });
     },
     complete: function (rec) {
       var ix = rec.index;

@@ -475,6 +475,9 @@ function create(opts) {
       }
       if (!unz || code >= 300 || req.method === 'HEAD') {
         res.writeHead(code, h);
+        // A part of an MKV whose subtitles the app asked the helper to watch for (subscan.js): read on the way past.
+        var tap = code === 206 && req.method !== 'HEAD' ? require('./subscan').tap(ur.headers['content-range']) : null;
+        if (tap) ur.on('data', tap);
         ur.pipe(res);
         ur.on('end', function () { if (xfer) xfer.done = true; finish(); });
         return;

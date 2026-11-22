@@ -36,29 +36,26 @@ const other = [];
 const feed2 = Reader([3], 1000000, (t, s, e, text) => other.push(text), () => {});
 feed2(file);
 ok('a track not asked for: nothing', other.length === 0, other);
-// The whole pass over HTTP: from the second Cluster to the end, then the first; lines and what's covered.
-const http = require('http'), S = require('../../service/subscan.js');
+// Read from the bytes passing through the proxy: an answer that began before the app asked (the player's
+// first read), one starting mid-Cluster (a seek), and a file nobody asked for.
+const S = require('../../service/subscan.js');
 const c1 = cluster(1000, [el(0xA3, block(1, 0, video)), el(0xA3, block(7, 100, 'One'))]), c2 = cluster(5000, [el(0xA3, block(7, 0, 'Two')), el(0xA3, block(1, 5, video))]);
-const body = Buffer.concat([Buffer.alloc(40, 0xEC), c1, c2]);         // 40 bytes standing in for the header
-const srv = http.createServer((req, res) => {
-  const m = /bytes=(\d+)-(\d+)/.exec(req.headers.range || ''), a = +m[1], b = Math.min(+m[2], body.length - 1);
-  res.writeHead(206, { 'Content-Range': 'bytes ' + a + '-' + b + '/' + body.length, 'Content-Length': b - a + 1 });
-  res.end(body.slice(a, b + 1));
-}).listen(0, () => {
-  const url = 'http://127.0.0.1:' + srv.address().port + '/ep.mkv';
-  S.scan({ url, size: body.length, from: 40 + c1.length, first: 40, scale: 1000000, tracks: [7] }, (r) => {
-    const wait = () => S.lines({ key: r.key, since: {} }, (j) => {
-      if (!j.done) return setTimeout(wait, 20);
-      const got = (j.lines[7] || []).map(l => l[2]).sort().join();
-      ok('the pass over HTTP: both Clusters\' lines, the playing one first', got === 'One,Two' && j.lines[7][0][2] === 'Two', j);
-      ok('covered: from the playing position to the end, and the start', j.covered.length === 2 && j.covered[0][1] === 1e9 && j.covered[1][0] === 1 && j.covered[1][1] === 5, j.covered);
-      S.lines({ key: r.key, since: { 7: 2 } }, (k) => {
-        ok('asked again with what it has: nothing new', k.lines[7].length === 0, k);
-        srv.close();
-        console.log(fails ? fails + ' subscan test(s) failed' : 'all subscan tests passed');
-        process.exit(fails ? 1 : 0);
-      });
+const body = Buffer.concat([Buffer.alloc(40, 0xEC), c1, c2, Buffer.alloc(800000, 3)]);   // header, two Clusters, the rest of a big file
+const total = body.length, cr = (a) => 'bytes ' + a + '-' + (total - 1) + '/' + total;
+const pass = (t, a, step) => { for (let i = a; i < total; i += step) t(body.slice(i, Math.min(total, i + step))); };
+const early = S.tap(cr(0));                                  // the player's first answer, before the app asks
+early(body.slice(0, 30));
+S.scan({ size: total, scale: 1000000, tracks: [7], clusters: [40, 40 + c1.length] }, (r) => {
+  pass(early, 30, 777);
+  S.lines({ key: r.key, since: {} }, (j) => {
+    ok('an answer under way when the app asked: its lines from the next Cluster on', (j.lines[7] || []).map(l => l[2]).join() === 'One,Two' && j.seen > 0, j);
+    const seek = S.tap(cr(40 + 20));                         // mid-Cluster: starts at the next one
+    pass(seek, 60, 4096);
+    S.lines({ key: r.key, since: { 7: 2 } }, (k) => {
+      ok('a seek mid-Cluster: nothing doubled, the next Cluster read', k.lines[7].length === 0 && k.covered.length === 2 && k.covered[1][0] === 5, k);
+      ok('a file nobody asked for is not watched', S.tap('bytes 0-99/' + (total + 1))(Buffer.alloc(10)) === undefined && S.tap('bytes 0-9/500') === null);
+      console.log(fails ? fails + ' subscan test(s) failed' : 'all subscan tests passed');
+      process.exit(fails ? 1 : 0);
     });
-    wait();
   });
 });

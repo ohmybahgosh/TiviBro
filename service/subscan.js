@@ -1,23 +1,24 @@
-/* Subtitle lines of an MKV whose index (Cues) points only at the video, read by the helper in one pass.
+/* Subtitle lines of an MKV whose index (Cues) points only at the video, read from the bytes the TV is
+   already downloading: no second download.
 
-   Most WEB-DL episodes are muxed so: every subtitle line is in the file, but nothing says where.  The
-   app's own reader (app/js/mkvsubs.js, "scan") walks the Clusters near the picture, and that is slow
-   to come back after a seek over the internet.  So the helper also reads the file through, from the
-   Cluster at the playing position to the end, then from the first Cluster up to it, and keeps every
-   line of the asked subtitle tracks.  Once a stretch is read, the app shows its lines at once, seeks
-   included.  The video frames are streamed past, not kept: memory holds only the text.
+   Most WEB-DL episodes and movies are muxed so: every subtitle line is in the file, but nothing says
+   where, and reading the file again to find them would double the data (a movie is gigabytes).  But
+   the TV's player fetches the file through this helper (proxy.js, for HTTPS and custom headers), so
+   the helper looks at those bytes on their way past: from the first Cluster in each answer on, the
+   subtitle blocks of the asked tracks are kept and everything else streams by untouched.  The player
+   reads ahead of the picture, so a line is here before it's due, and a seek's new reads bring the
+   lines from there.
 
-     POST /media/subs/scan   { url, size, from, first, scale, tracks: [number...] }  -> { key }
+     POST /media/subs/scan   { size, scale, tracks: [number...], clusters: [byte offset...] }  -> { key }
      POST /media/subs/lines  { key, since: { track: count } }
-                             -> { lines: { track: [[s, e, text]...] }, covered: [[fromSec, toSec]...], done, error }
+                             -> { lines: { track: [[s, e, text]...] }, covered: [[fromSec, toSec]...], seen, done }
 
-   url is the file's address as the app plays it (the helper's own /x/ link for HTTPS).  from and first
-   are byte offsets of Clusters (the one at the playing position, and the first); scale is the
-   TimecodeScale.  Text comes back as stored (the app turns ASS/SSA and tags into plain text). */
+   size is the file's (it picks out the file's answers in the proxy), clusters the Cluster offsets the
+   Cues name (where an answer that starts mid-Cluster can start reading), scale the TimecodeScale.
+   Text comes back as stored (the app turns ASS/SSA and tags into plain text). */
 'use strict';
-var http = require('http'), https = require('https'), URL_ = require('url');
 
-var JOBS = {}, ORDER = [], KEEP = 3;           // the last three files read, like the app's own cache
+var JOBS = {}, BYSIZE = {}, ORDER = [], KEEP = 3;           // the last three files asked for, like the app's own cache
 var MAX_CHARS = 4000000;                       // text kept per file (every language of a long movie fits)
 
 // EBML: the length of an ID or size from its first byte (the number of leading zero bits, plus one).
@@ -92,59 +93,56 @@ function Reader(tracks, scale, onLine, onTime) {
   };
 }
 
-// GET bytes [from, to) of url, following redirects; onData(chunk) as it streams; done(err).
-function stream(url, from, to, onData, done, hops) {
-  var u = URL_.parse(url), lib = u.protocol === 'https:' ? https : http, finished = false;
-  function end(e) { if (!finished) { finished = true; done(e); } }
-  var req = lib.get({ hostname: u.hostname, port: u.port, path: u.path, headers: { Range: 'bytes=' + from + '-' + (to - 1), 'User-Agent': 'TiviBro' } }, function (res) {
-    if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location && (hops || 0) < 4) { res.resume(); return stream(URL_.resolve(url, res.headers.location), from, to, onData, end, (hops || 0) + 1); }
-    if (res.statusCode !== 206) { res.resume(); return end(new Error('HTTP ' + res.statusCode + ' for a part of the file')); }
-    res.on('data', function (c) { try { onData(c); } catch (e) { req.abort(); end(e); } });
-    res.on('end', function () { end(null); });
-    res.on('error', end);
-  });
-  req.on('error', end);
-  req.setTimeout(30000, function () { req.abort(); end(new Error('the file stopped answering')); });
-  return req;
-}
-
-// Starts (or finds) the read of one file.  One job per file and set of tracks; the oldest beyond KEEP go.
+// The file to watch for: one job per file (by size) and set of tracks; the oldest beyond KEEP go.
 function scan(q, cb) {
-  var url = String(q.url || ''), size = +q.size, from = +q.from, first = +q.first, scale = +q.scale || 1000000;
+  var size = +q.size, scale = +q.scale || 1000000;
   var tracks = (Array.isArray(q.tracks) ? q.tracks : []).map(Number).filter(function (n) { return n > 0 && n < 128; }).slice(0, 64);
-  if (!/^https?:\/\//.test(url) || !(size > 0) || !(from >= 0) || !(first >= 0) || from > size || !tracks.length) return cb({ error: 'bad request' });
-  var key = url.split('?')[0].slice(-200) + '|' + size + '|' + tracks.join(',');
-  var job = JOBS[key];
-  if (!job) {
-    job = JOBS[key] = { lines: {}, covered: [], done: false, error: '', chars: 0 };
+  var clusters = (Array.isArray(q.clusters) ? q.clusters : []).map(Number).filter(function (n) { return n >= 0 && n < size; }).sort(function (a, b) { return a - b; });
+  if (!(size > 0) || !tracks.length || !clusters.length) return cb({ error: 'bad request' });
+  var key = size + '|' + tracks.join(',');
+  if (!JOBS[key]) {
+    var job = JOBS[key] = { size: size, scale: scale, tracks: tracks, clusters: clusters, lines: {}, have: {}, covered: [], chars: 0, seen: 0 };
     tracks.forEach(function (t) { job.lines[t] = []; });
+    BYSIZE[size] = job;
     ORDER.push(key);
-    while (ORDER.length > KEEP) { var old = JOBS[ORDER.shift()]; if (old && old.req) old.req.abort(); }
-    Object.keys(JOBS).forEach(function (k) { if (ORDER.indexOf(k) < 0) delete JOBS[k]; });
-    run(job, url, size, from, first, scale, tracks);
+    while (ORDER.length > KEEP) { var old = JOBS[ORDER.shift()]; if (old) { if (BYSIZE[old.size] === old) delete BYSIZE[old.size]; delete JOBS[old.size + '|' + old.tracks.join(',')]; } }
   }
   cb({ key: key });
 }
-// The two passes: the playing position to the end, then the start to the playing position.
-function run(job, url, size, from, first, scale, tracks) {
-  var passes = [[from, size]];
-  if (first < from) passes.push([first, from]);
-  (function next(i) {
-    if (i >= passes.length) { job.done = true; job.req = null; return; }
-    var span = null;
-    var feed = Reader(tracks, scale, function (t, s, e, text) {
-      if (job.chars > MAX_CHARS) return;
-      job.chars += text.length; job.lines[t].push([s, e, text]);
+/* For the proxy: every part of a large file it passes on ("bytes 1000-1999/123456789") gets a watcher that only
+   counts bytes until the app asks for that file (by size): the player starts the video before the app has read
+   the file's index, and its first answer can run for the whole film.  From then on, from the first Cluster at
+   or after the current position, the subtitle blocks are kept.  It never throws (the video comes first): a
+   problem stops looking at that answer. */
+function tap(contentRange) {
+  var m = /^bytes (\d+)-\d+\/(\d+)$/i.exec(String(contentRange || ''));
+  if (!m || +m[2] < 1048576) return null;
+  var pos = +m[1], total = +m[2], job = null, from = -1, feed = null, span = null, dead = false;
+  function start() {
+    var lo = 0, hi = job.clusters.length;
+    while (lo < hi) { var mid = (lo + hi) >> 1; if (job.clusters[mid] < pos) lo = mid + 1; else hi = mid; }
+    if (lo >= job.clusters.length) { dead = true; return; }
+    from = job.clusters[lo];
+    feed = Reader(job.tracks, job.scale, function (t, s, e, text) {
+      var k = t + '|' + Math.round(s * 100) + '|' + text;
+      if (job.have[k] || job.chars > MAX_CHARS) return;
+      job.have[k] = 1; job.chars += text.length; job.lines[t].push([s, e, text]);
     }, function (sec) {
-      if (!span) { span = [sec, sec]; job.covered.push(span); } else span[1] = Math.max(span[1], sec);
+      if (!span) { span = [sec, sec]; job.covered.push(span); if (job.covered.length > 400) job.covered.shift(); } else span[1] = Math.max(span[1], sec);
     });
-    job.req = stream(url, passes[i][0], passes[i][1], feed, function (e) {
-      if (e && !job.aborted) { job.error = e.message; job.done = true; return; }
-      // A pass read to its end: the first covers the rest of the file, the second everything up to the first's start.
-      if (span) span[1] = i === 0 ? Infinity : Math.max(span[1], job.covered[0] ? job.covered[0][0] : span[1]);
-      next(i + 1);
-    });
-  })(0);
+  }
+  return function (chunk) {
+    if (dead) return;
+    try {
+      if (!job) { job = BYSIZE[total] || null; if (job) start(); if (dead) return; }
+      if (!job) { pos += chunk.length; return; }
+      job.seen += chunk.length;
+      if (pos + chunk.length <= from) { pos += chunk.length; return; }
+      if (pos < from) { chunk = chunk.slice(from - pos); pos = from; }
+      pos += chunk.length;
+      feed(chunk);
+    } catch (e) { dead = true; }
+  };
 }
 // The lines found since the app last asked (per track, by count), and what is covered so far.
 function lines(q, cb) {
@@ -152,7 +150,7 @@ function lines(q, cb) {
   if (!job) return cb({ error: 'gone' });
   var since = q.since && typeof q.since === 'object' ? q.since : {}, out = {};
   Object.keys(job.lines).forEach(function (t) { out[t] = job.lines[t].slice(Math.max(0, +since[t] || 0), (+since[t] || 0) + 3000); });
-  cb({ lines: out, covered: job.covered.map(function (c) { return [c[0], c[1] === Infinity ? 1e9 : c[1]]; }), done: job.done, error: job.error });
+  cb({ lines: out, covered: job.covered.map(function (c) { return [c[0], c[1]]; }), seen: job.seen, done: false });
 }
 
-module.exports = { scan: scan, lines: lines, _test: { Reader: Reader } };
+module.exports = { scan: scan, lines: lines, tap: tap, _test: { Reader: Reader } };
