@@ -1029,7 +1029,10 @@ var Media = (function () {
     if (!bits.length || !/^(?:[A-Za-z0-9][A-Za-z0-9._-]*|\[[0-9A-Fa-f:.]+\])(?::\d{1,5})?$/.test(bits[0])) return null;
     return { server: bits[0], share: bits[1] || '', folder: '/' + bits.slice(2).join('/') };
   }
-  function smbLogin(o) { return { server: o.server, share: o.share || '', user: String(o.user || '').trim(), pass: String(o.pass || ''), domain: String(o.domain || '').trim() }; }
+  // The login and place the helper is asked with (name: the server's name found on the network, for titles only).
+  function smbLogin(o) { var l = { server: o.server, share: o.share || '', user: String(o.user || '').trim(), pass: String(o.pass || ''), domain: String(o.domain || '').trim() }; if (o.name) l.name = String(o.name); return l; }
+  // A failure while picking: a guest turned away is told to sign in instead.
+  function smbTrouble(login, r) { U.toast(!login.user && (r.error === 'denied' || r.error === 'login' || r.error === 'signing') ? 'Guests can\'t open that here.  Choose the server again and enter a user name and password.' : r.message, 8000); }
   // The disk shares on a server, the folders in one folder, for the pickers (TV, phone app, web editor).
   function smbShares(o) { return ask('smb/shares', smbLogin(o), 40000); }
   // The SMB servers on the network (service/smb-discover.js): [{ name, server, via }].
@@ -1051,7 +1054,7 @@ var Media = (function () {
     smbDiscover().then(function (servers) { smbServers(servers); }, function () { smbServers([]); });
   }
   function smbServers(servers) {
-    var items = servers.map(function (s) { return { label: RAW(s.name), sub: s.name === s.server ? 'Sign in to it' : RAW(s.server), action: function () { smbAsk(smbAddress(s.server)); } }; });
+    var items = servers.map(function (s) { return { label: RAW(s.name), sub: s.name === s.server ? 'Sign in to it' : RAW(s.server), action: function () { var a = smbAddress(s.server); a.name = s.name; smbAsk(a); } }; });
     items.push({ label: 'Type a server name or address', sub: servers.length ? 'One that isn\'t listed' : 'Nothing answered.  A PC needs file sharing (and network discovery) on', action: function () {
       UI.prompt('Server name or address', '', function (text) {
         var a = smbAddress(text);
@@ -1065,8 +1068,8 @@ var Media = (function () {
   // The login for a server (a = smbAddress), then its shares (or the share and folder it named).
   function smbAsk(a) {
     UI.prompt('User name (empty for a guest)', '', function (user) {
-      if (!String(user || '').trim()) return smbPick(smbLogin({ server: a.server, share: a.share }), a.share ? [a.folder] : null);
-      UI.prompt('Password', '', function (pass) { smbPick(smbLogin({ server: a.server, share: a.share, user: user, pass: pass }), a.share ? [a.folder] : null); }, '', true);
+      if (!String(user || '').trim()) return smbPick(smbLogin({ server: a.server, share: a.share, name: a.name }), a.share ? [a.folder] : null);
+      UI.prompt('Password', '', function (pass) { smbPick(smbLogin({ server: a.server, share: a.share, user: user, pass: pass, name: a.name }), a.share ? [a.folder] : null); }, '', true);
     }, 'On a Windows PC: the PC\'s user name or your Microsoft account email.');
   }
   /* The share list (trail null), then folder by folder (trail: the folders opened, '/' first).  Each folder
@@ -1075,16 +1078,16 @@ var Media = (function () {
     if (!trail) {
       U.toast('Asking ' + login.server + ' for its shares…');
       return smbShares(login).then(function (r) {
-        if (r.error) { U.toast(r.message, 8000); return; }
+        if (r.error) return smbTrouble(login, r);
         var items = (r.shares || []).map(function (sh) { return { label: RAW(sh.name), sub: sh.comment ? RAW(sh.comment) : 'Open this share', action: function () { smbPick(Object.assign({}, login, { share: sh.name }), ['/']); } }; });
         if (!items.length) items.push({ label: 'No shares found', sub: 'Share a folder on the server, or check the user can see it' });
-        UI.menu(RAW(login.server), items);
+        UI.menu(RAW(login.name || login.server), items);
       }, function (e) { U.toast(why(e), 6000); });
     }
     var here = trail[trail.length - 1], label = here === '/' ? login.share : here.split('/').pop();
     U.toast('Opening ' + label + '…');
     smbFolders(login, here).then(function (r) {
-      if (r.error) { U.toast(r.message, 8000); return; }
+      if (r.error) return smbTrouble(login, r);
       var items = [{ label: 'Add ' + RAW(label), sub: '\\\\' + login.server + '\\' + login.share + (here === '/' ? '' : here.replace(/\//g, '\\')) + '  ·  movies and TV shows in it and its folders', action: function () {
         addSmb(Object.assign({}, login, { folder: here })).then(function (res) { if (res && !res.error) U.toast(label + ' added: ' + (res.movies || 0) + ' movies and ' + (res.episodes || 0) + ' episodes so far.', 6000); });
       } }];
