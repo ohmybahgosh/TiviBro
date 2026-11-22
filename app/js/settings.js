@@ -1002,11 +1002,71 @@ var Settings = (function () {
     return out;
   }
 
+  /* ---------- merge groups: tick several, then show them as one ---------- */
+  var mergePick = {};                         // the groups ticked on the Merge groups page, by id
+  /* Merge groups (Settings > Channels and groups): tick provider groups, then merge them into a new group (the first
+     one ticked, given the new name), into one of them, or into another group of the same playlist.  The groups
+     merged now are listed first, each with Split.  Your own groups aren't merged (they hold channels you picked). */
+  function mergePage() {
+    var out = [], prov = L.allGroups().filter(function (g) { return !L.isCustom(g.id); });
+    var free = prov.filter(function (g) { return !L.mergedInto(g.id); });
+    Object.keys(mergePick).forEach(function (id) { if (!free.some(function (g) { return g.id === id; })) delete mergePick[id]; });
+    var ticked = free.filter(function (g) { return mergePick[g.id]; });
+    var nameOf = function (g) { return L.groupName(g.id); };
+    var targets = prov.filter(function (g) { return L.mergedFrom(g.id).length; });
+    if (targets.length) {
+      out.push(head('Merged now'));
+      targets.forEach(function (t) {
+        out.push(action('Split ' + nameOf(t), 'Holds ' + L.mergedFrom(t.id).map(function (id) { return L.groupName(id); }).join(', ') + '.  Split puts them back as they were.', function () {
+          // Back as they were, the provider's name too (a merge into a new group named it).
+          var was = nameOf(t); L.splitGroup(t.id); L.setGroupName(t.id, ''); relist(); build(); U.toast(was + ' split');
+        }));
+      });
+    }
+    out.push(head('Merge the ticked groups (' + ticked.length + ')'));
+    if (!ticked.length) out.push(info('Tick the groups to merge below, then choose here where they go.', ''));
+    else {
+      out.push(action('Into a new group…', 'Name it, and the ticked groups show as that one group.', function () {
+        UI.prompt('Name for the merged group', '', function (n) { if (n && n.trim()) mergeTicked(ticked[0], ticked, n.trim()); }, 'Typing is easier from the phone app.');
+      }));
+      if (ticked.length > 1) out.push(action('Into one of them…', 'Pick which ticked group the others go into.', function () {
+        UI.menu('Merge into', ticked.map(function (g) { return { label: I18n.raw(nameOf(g)), action: function () { mergeTicked(g, ticked, ''); } }; }));
+      }));
+      out.push(action('Into another group…', 'Pick a group that isn\'t ticked; the ticked ones go into it.', function () {
+        var p0 = ticked[0].p || '';
+        var others = free.filter(function (g) { return !mergePick[g.id] && (g.p || '') === p0; });
+        UI.menu('Merge into', others.map(function (g) { return { label: I18n.raw(nameOf(g)), sub: g.hidden ? 'hidden' : '', action: function () { mergeTicked(g, ticked, ''); } }; }));
+      }));
+      out.push(action('Clear the ticks', '', function () { mergePick = {}; build(); }));
+    }
+    var shown = free.filter(function (g) { return !g.hidden; }), hidden = free.filter(function (g) { return g.hidden; });
+    out.push(head('Groups'));
+    shown.concat(hidden).forEach(function (g) {
+      var on = function () { return !!mergePick[g.id]; }, set = function (v) { if (v) mergePick[g.id] = 1; else delete mergePick[g.id]; build(); };
+      out.push({ label: I18n.raw(nameOf(g)), sub: g.hidden ? 'hidden' : '', toggle: true, get: on, set: set,
+        value: function () { return on() ? 'Ticked' : ''; }, cycle: function () { set(!on()); } });
+    });
+    return out;
+  }
+  /* The ticked groups merged into target (a ticked one or not), which takes the new name when given.  Only groups of
+     one playlist go together.  A hidden target is shown again when any shown group went into it. */
+  function mergeTicked(target, ticked, name) {
+    var p0 = target.p || '';
+    if (ticked.some(function (g) { return (g.p || '') !== p0; })) { U.toast('Groups from different playlists can\'t be merged', 5000); return; }
+    var n = L.mergeGroups(target.id, ticked.map(function (g) { return g.id; }).filter(function (id) { return id !== target.id; }));
+    if (name) L.setGroupName(target.id, name);
+    if (target.hidden && ticked.some(function (g) { return !g.hidden; })) L.hideGroup(target.id, false);
+    mergePick = {}; relist(); build();
+    U.toast(n + (n === 1 ? ' group' : ' groups') + ' merged into ' + L.groupName(target.id));
+  }
+
   /* ---------- channels and groups ---------- */
   function groups() {
     var s = S(), out = [], hid = L.hiddenItems();
     function apply() { Store.saveSettings(); relist(); build(); }
     out.push(page('Manage groups', 'Show or hide each group in one list, like TiviMate.  ' + hid.groups.length + ' hidden now.', 'Manage groups', manageGroups));
+    var merged = L.allGroups().filter(function (g) { return L.mergedFrom(g.id).length; }).length;
+    out.push(page('Merge groups', 'Tick several groups and show them as one: in a new group, one of them or another group.' + (merged ? '  ' + merged + ' merged now.' : ''), 'Merge groups', mergePage));
     out.push(toggle('Show hidden items in lists', 'Hidden groups and channels appear dimmed so you can unhide them from their menu.', function () { return s.showHidden; }, function (v) { s.showHidden = v; apply(); }));
     out.push(head('Sorting'));
     out.push(choice('Channel order', 'For provider groups and All channels.  Your own groups keep the order you set.', ['playlist', 'number', 'name', 'watch'], ['Playlist order', 'Channel number', 'Name', 'Most watched'], function () { return s.sortChannels; }, function (v) { s.sortChannels = v; apply(); }));

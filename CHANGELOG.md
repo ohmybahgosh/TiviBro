@@ -4,6 +4,7 @@
 
 - **Manage groups lists the groups you show first**, then the hidden ones, each under its own heading with a count.  With most groups hidden, the ones you watch are together at the top.
 - **Phone app: dragging a group shows where it lands.**  The other groups slide aside to open a gap as you drag, and the list shows the new order as soon as you let go.  Hold a group near the top or bottom of the screen and the list scrolls that way, so it can go a long way in one drag.  While the TV saves a move the list fades for a moment, so quick drags in a row never jump back.  A group moves among the shown (or hidden) ones even when hidden groups sit between them.
+- **Merge groups** (Settings > Channels and groups, on the TV, the phone and the web editor): tick several groups, then merge them into a new group you name, into one of them, or into another group.  Groups merged now are listed with Split, which puts them back as they were.
 - **TV Settings text is bigger:** the parts of a page on the left, and the settings and their notes.
 
 ## 0.6.0 (alpha 195, 2026-11-22)
