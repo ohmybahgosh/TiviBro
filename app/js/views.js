@@ -3154,11 +3154,11 @@ var Guide = (function () {
      both teams with their records and ESPN's start, with the guide's if it says another time. */
   function espnLine(eg, p) {
     var a = eg.teams[0] || {}, b = eg.teams[1] || {};
-    if (eg.state === 'in') return 'ESPN   ' + a.abbr + ' ' + (a.score != null ? a.score : 0) + ' – ' + (b.score != null ? b.score : 0) + ' ' + b.abbr + (eg.detail ? '   ·   ' + eg.detail : '');
-    if (eg.state === 'post') return 'ESPN   ' + T('Final') + ':  ' + a.abbr + ' ' + a.score + ' – ' + b.score + ' ' + b.abbr;
+    if (eg.state === 'in') return a.abbr + ' ' + (a.score != null ? a.score : 0) + ' – ' + (b.score != null ? b.score : 0) + ' ' + b.abbr + (eg.detail ? '   ·   ' + eg.detail : '');
+    if (eg.state === 'post') return T('Final') + ':  ' + a.abbr + ' ' + a.score + ' – ' + b.score + ' ' + b.abbr;
     var rec = function (t) { return (t.name || t.abbr) + (t.rec ? ' (' + t.rec + ')' : ''); };
     var off = Math.abs(eg.s - p.s) > 10 * 60000 ? '   ·   ' + T('the guide says {x}', { x: U.hhmm(p.s) }) : '';
-    return 'ESPN   ' + rec(a) + ' at ' + rec(b) + '   ·   ' + T('starts {x}', { x: U.hhmm(eg.s) }) + off;
+    return rec(a) + ' at ' + rec(b) + '   ·   ' + T('starts {x}', { x: U.hhmm(eg.s) }) + off;
   }
   function drawDetail() {
     detail.innerHTML = '';
@@ -3363,9 +3363,11 @@ var Guide = (function () {
     var h = progAt(c, focusT), now = Date.now(), target;
     if (h.p) {
       // The next programme that has time of its own: a guide listing one twice leaves the copy with none, and
-      // stepping onto it went nowhere, so Left seemed stuck until you changed rows.
+      // stepping onto it went nowhere, so Left seemed stuck until you changed rows.  Right also passes a listing
+      // inside the one focused (an event channel's "Starts 1:00pm" from 6am with a second from noon, both to 1:00):
+      // it landed back on now, inside the first, and Right stayed stuck there.
       var j = h.i + dir, nb = h.l[j];
-      while (nb && (nb.e <= nb.s || (dir < 0 ? nb.s >= h.p.s : nb.s <= h.p.s))) { j += dir; nb = h.l[j]; }
+      while (nb && (nb.e <= nb.s || (dir < 0 ? nb.s >= h.p.s : nb.s <= h.p.s || nb.e <= h.p.e))) { j += dir; nb = h.l[j]; }
       target = nb ? nb.s + 60e3 : (dir > 0 ? h.p.e + 60e3 : h.p.s - 60e3);
       // Back onto what's on now: now, not its start.  A long block (an event channel's "Starts …" from days
       // before) took the guide back to its first day, and Right then Left no longer lined up.

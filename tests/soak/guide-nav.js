@@ -139,6 +139,19 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     const afterLeft = await ev(() => Guide.__focusT());
     await ev((k) => { const c = Library.data.channels.find((x) => x.k === k), l = Epg.request(c) || []; const j = l.findIndex((q) => q.e <= q.s); if (j >= 0) l.splice(j, 1); Guide.draw(); }, gk);
     ok('the next programme listed twice: Right, then Left comes back to what\'s on now', !!dup && afterRight >= dup.e && afterLeft >= dup.s && afterLeft < dup.e, JSON.stringify({ dup, afterRight, afterLeft }));
+    // A long listing with a shorter one inside it, both ending together (an event channel's "Starts 1:00pm"
+    // from the morning and again from noon): Right goes on to the next programme rather than staying put.
+    const nest = await ev((k) => {
+      const c = Library.data.channels.find((x) => x.k === k), l = Epg.request(c) || [], now = Date.now(), i = l.findIndex((q) => q.s <= now && q.e > now);
+      if (i < 0 || !l[i + 1]) return null;
+      const p = l[i], inner = { s: Math.max(p.s, now - 20 * 60e3), e: p.e, t: p.t, nest: 1 };
+      p.s0 = p.s; p.s = Math.min(p.s, now - 6 * 3600e3); l.splice(i + 1, 0, inner); Guide.draw();
+      return { e: p.e, next: l[i + 2].s };
+    }, gk);
+    await ev(() => Guide.draw()); await code(RIGHT); await wait(300);
+    const pastNest = await ev(() => Guide.__focusT());
+    await ev((k) => { const c = Library.data.channels.find((x) => x.k === k), l = Epg.request(c) || []; const j = l.findIndex((q) => q.nest); if (j >= 0) l.splice(j, 1); l.forEach((q) => { if (q.s0) { q.s = q.s0; delete q.s0; } }); Guide.draw(); }, gk);
+    ok('a listing inside the one on now: Right goes on to the next programme', !!nest && pastNest >= nest.next, JSON.stringify({ nest, pastNest }));
     await ev((k) => Guide.open(Library.ALL, k), back0); await wait(700);
     if ((await st()).zone !== 'grid') { await code(RIGHT); await wait(400); }
     // What's on now has its aired-so-far shading over the cell's left side: the stripe is drawn above it.

@@ -9,6 +9,7 @@
 - **Subtitles in movies played through the audio converter** (issue #154).  A movie whose sound is converted (DTS, or one the TV refused) showed none of its own subtitles, only OpenSubtitles.  They're read from the movie as the converter reads it, so nothing is downloaded twice.
 - **Blue to Settings from Movies, Shows or My media:** Back goes to the list on the left first, as everywhere in Settings, and its top row (‹ Movies) goes back to that screen.
 - **My teams leaves out replays.**  A listing like "NHL Hockey: Islanders at Red Wings" the day after the game was played is checked against ESPN's schedule: with no game for that team within a few hours, it isn't the game, and no reminder is set for it.  Old games shown again ("Orioles Classics: 1996") are left out too.
+- **Guide: Right no longer sticks on an event channel's "Starts 1:00pm" block** when the guide lists it twice (from the morning and again from noon).  It goes on to the game.
 - **Buttons for a Magic Remote.**  Settings > Remote and buttons asks which remote you use (or detects it).  With a Magic Remote, which has no Play / Pause, Stop, ◀◀ ▶▶, Record or Info, those buttons are marked as missing, and Use the Magic Remote buttons puts what they do on Hold of a colour button: in fullscreen Hold Red records, Hold Yellow pauses and Hold Blue shows stream info; in the guide Hold Red records and Hold Blue gives a show's details.  The recommended action for each button follows the remote.
 
 ## 0.6.0 (alpha 198, 2026-11-22)
