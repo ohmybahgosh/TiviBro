@@ -2150,7 +2150,21 @@ var Settings = (function () {
     });
   }
   // Back from the list on the left: the page before, or the Settings home.
-  function navBack() { if (stack.length) { pop(); zone = 'nav'; navSel = grp; paint(); } else { zone = 'nav'; homeShow(true); } }
+  /* Back from the list on the left: the page before, or the screen Settings was opened from with its Blue button
+     (Movies on now, My media, Movies and shows: cameFrom), else the Settings home. */
+  function navBack() {
+    if (cameFrom && stack.length <= cameDepth) { var t = cameFrom; cameFrom = ''; Views.switchTab(t); return; }
+    if (stack.length) { pop(); zone = 'nav'; navSel = grp; paint(); return; }
+    zone = 'nav'; homeShow(true);
+  }
+  var cameFrom = '', cameDepth = 0;            // the screen Settings was opened from, and how deep that page was
+  // Settings opened on a section from another screen (its Blue button): Back from that section goes back there.
+  function openFrom(id) {
+    var from = Views.tab;
+    Views.switchTab('settings');
+    section(id);
+    cameFrom = from && from !== 'settings' ? from : ''; cameDepth = stack.length;
+  }
   function openGroup(i) { grp = U.clamp(i, 0, parts.length - 1); sel = firstIn(grp); navSel = grp; }
   function put(el, s) { s = s == null ? '' : String(s); if (el.textContent !== s) el.textContent = s; }
   /* What kind of row it is, for its look (and the phone's and the web editor's): a setting with choices, an On / Off
@@ -2289,7 +2303,7 @@ var Settings = (function () {
     else if (a === 'left') { if (it && it.cycle) it.cycle(-1); else { zone = 'nav'; navSel = parts.length > 1 ? grp : -1; paint(); } }
     else if (a === 'right') { if (it && it.cycle) it.cycle(1); }
     else if (a === 'ok') { if (it && it.action) it.action(); else if (it && it.cycle) it.cycle(1); }
-    else if (a === 'back') { zone = 'nav'; navSel = parts.length > 1 ? grp : -1; paint(); }
+    else if (a === 'back') { if (cameFrom && stack.length <= cameDepth) { navBack(); return true; } zone = 'nav'; navSel = parts.length > 1 ? grp : -1; paint(); }
     return true;
   }
 
@@ -2431,6 +2445,7 @@ var Settings = (function () {
   function homePaint() { hitems.forEach(function (h, n) { h.el.classList.toggle('focus', n === hsel); }); }
   function homeShow(on) {
     onHome = on;
+    if (on) cameFrom = '';
     if (on) homeBuild(); else if (homeEl) homeEl.classList.add('hidden');
     if (homeEl && on) homeEl.classList.remove('hidden');
     $('viewSettings').classList.toggle('home', on);
@@ -2684,6 +2699,6 @@ var Settings = (function () {
 
   // Drawn again in a new language (I18n.onChange in app.js).
   function redraw() { if (!document.getElementById('viewSettings').classList.contains('hidden')) build(); }
-  return { capturing: function () { return !!cap; }, dns: { ids: DNS_IDS, names: DNS_NAMES, ask: askDns }, open: open, redraw: redraw, assignGuide: assignGuide, section: section, openPlaylist: openPlaylist, openTeams: openTeams, live: live, reset: function () { stack = []; sel = 0; }, phone: forPhone,
+  return { capturing: function () { return !!cap; }, dns: { ids: DNS_IDS, names: DNS_NAMES, ask: askDns }, open: open, openFrom: openFrom, redraw: redraw, assignGuide: assignGuide, section: section, openPlaylist: openPlaylist, openTeams: openTeams, live: live, reset: function () { stack = []; sel = 0; }, phone: forPhone,
     LOOK: { ACCENTS: ACCENTS, ACCENT_NAMES: ACCENT_NAMES, THEMES: THEMES, THEME_NAMES: THEME_NAMES, THEME_INK: THEME_INK } };
 })();

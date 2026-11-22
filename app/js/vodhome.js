@@ -340,7 +340,7 @@ var VodHome = (function () {
     if (a === 'red') { options(); return true; }
     if (a === 'green') { var s0 = mode === 'wall' ? wall : shelves[at]; A.list(s0 && s0.cat, current()); return true; }
     if (a === 'yellow') { Views.switchTab('search'); return true; }
-    if (a === 'blue') { Views.switchTab('settings'); if (Settings.section) Settings.section('vod'); return true; }
+    if (a === 'blue') { Settings.openFrom('vod'); return true; }            // Back there comes back here
     if (a === 'hold' || a === 'info') { if (current()) A.menu(current()); return true; }
     if (a === 'ok') { ok(); return true; }
     if (mode === 'wall') {

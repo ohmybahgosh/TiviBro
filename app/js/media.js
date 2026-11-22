@@ -1660,7 +1660,7 @@ var Media = (function () {
     if (a === 'green') { rescanAll(detailsKindNow()); return true; }
     if (a === 'yellow') { var ym = itemsVL.current(); if (!tabsFocus && movieCard(ym)) quickMarkMovie(ym); else fetchMissingDetails(detailsKindNow()); return true; }
     if (a === 'red') { mediaOptions(); return true; }
-    if (a === 'blue') { Views.switchTab('settings'); Settings.section('media'); return true; }
+    if (a === 'blue') { Settings.openFrom('media'); return true; }          // Back there comes back here
     if (tabsFocus) {
       var si = SECTIONS.map(function (x) { return x[0]; }).filter(function (k) { return k !== 'favorites' || counts.favorites; }).concat(['search']), cur = searchTab || query ? si.length - 1 : si.indexOf(section);
       if (a === 'left' || a === 'right') {

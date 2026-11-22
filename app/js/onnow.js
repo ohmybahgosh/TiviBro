@@ -189,6 +189,9 @@ var OnNow = (function () {
     var items = (list.length > SHOW_MAX + 1 ? list.slice(0, SHOW_MAX) : list).map(row);
     if (list.length > SHOW_MAX + 1) items.push({ label: 'All ' + list.length + ' showings…', icon: 'list', action: function () { UI.menu(g.m.title + ': every showing', list.map(row)); } });
     if (!g.live) items.push({ label: 'Watch the channel now', sub: Library.name(g.c) + ' (the movie starts at ' + U.hhmm(g.p.s) + ')', icon: 'play', action: function () { Views.startChannel(g.c, false, function () { Views.goFull(); }); } });
+    // Its trailer from TMDB (discussion #36), opened over this screen; Back comes back here.
+    if (g.m.id && typeof Views !== 'undefined' && Views.movieTrailer && typeof MediaMoviePage !== 'undefined' && typeof PalmServiceBridge !== 'undefined')
+      items.push({ label: 'Watch the trailer', icon: 'play', sub: 'YouTube', action: function () { Views.movieTrailer(g.m); } });
     items.push({ label: 'Show in the guide', icon: 'grid', action: function () { Views.switchTab('guide'); Guide.open(Library.MOVIES, g.c.k); } });
     UI.menu(RAW(g.m.title + (g.m.year ? ' (' + g.m.year + ')' : '')), items);
   }
@@ -196,7 +199,7 @@ var OnNow = (function () {
   function keys(a) {
     var r = rows[row];
     if (a === 'back') { Views.tabBar(restore); return true; }
-    if (a === 'blue') { Views.switchTab('settings'); Settings.section('keys'); return true; }
+    if (a === 'blue') { Settings.openFrom('keys'); return true; }          // Back there comes back here
     if (!r) { if (a === 'left') Views.tabBar(restore); return true; }
     var at = pos[r.id] || 0;
     if (a === 'left') { if (at === 0) Views.tabBar(restore); else { pos[r.id] = at - 1; draw(); } }
