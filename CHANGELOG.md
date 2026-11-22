@@ -1,15 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 200, 2026-11-22)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 200
 
 - **Playlists on or off in one place.**  With several playlists, Settings > Playlists and accounts has a Playlists on or off section with a switch for each, so you don't have to open a playlist to turn it off or back on.
 - **The score corner no longer shows the game you're watching** on a channel whose listing also names another team in passing (a local station's "...lost their last game to Chicago" put up the Lions score on the Lions game).
 
-## 0.6.0 (alpha 199, 2026-11-22)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 199
+### In alpha 199
 
 - **My teams uses ESPN's schedule more:**
   - The guide's top panel shows ESPN's word on a game of your teams: the score and period while it's on, Final after, and before it both teams' records and ESPN's start (with the guide's time if it says another).
