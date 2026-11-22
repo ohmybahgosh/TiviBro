@@ -99,6 +99,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.ui.draw.shadow
@@ -108,6 +109,12 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.zIndex
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.rememberUpdatedState
@@ -179,6 +186,9 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
     var showLog by remember { mutableStateOf(false) }
     var native by remember { mutableStateOf<SetRow?>(null) }      // a media-add, media-source or tmdb-token row open here
     var question by remember { mutableStateOf<TvDialog?>(null) }  // a question from the TV, asked here
+    // A group dragged to a new place is on its way to the TV: its list is faded and can't be dragged again until the
+    // TV answers, so a quick second drag never shows the first answer's older order for a moment.
+    var moving by remember { mutableStateOf(false) }
     if (showLog) { LogScreen(model, id) { showLog = false }; return }
 
     // Every request carries where we are and the PIN (if one was typed); the answer may say "locked".
@@ -197,6 +207,7 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
             busy = false
         }
     }
+    LaunchedEffect(busy) { if (!busy) moving = false }
     fun loadSections() = send("sections") { r ->
         val a = r.optJSONArray("sections") ?: JSONArray()
         sections = (0 until a.length()).map { a.getJSONObject(it).let { s -> s.optString("id") to s.optString("title") } }
@@ -294,7 +305,12 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
               // The rows are read later by the list, after Back may have cleared the page: keep this page's.
               val cards = cardsOf(page?.rows.orEmpty())
               val lit = found
-              LazyColumn(contentPadding = PaddingValues(16.dp, 4.dp, 16.dp, 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+              // The list and where it is on screen: a group dragged near its top or bottom edge scrolls it (MovableRows).
+              val listState = rememberLazyListState()
+              var listBox by remember { mutableStateOf(0f to 0f) }
+              val edges = ListEdges(listState) { listBox }
+              LazyColumn(state = listState, contentPadding = PaddingValues(16.dp, 4.dp, 16.dp, 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp),
+                  modifier = Modifier.onGloballyPositioned { val y = it.positionInWindow().y; listBox = y to y + it.size.height }) {
                 cards.forEachIndexed { n, (head, rows) ->
                   if (head.isNotBlank()) item(key = "h$n") { SetHead(head) }
                   // One row as the TV sent it, with what each kind of tap does.
@@ -307,7 +323,7 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
                         onAction = { if (r.go.isNotBlank() && sections?.any { it.first == r.go } != false) { path = emptyList(); sec = r.go } else press(r) },
                         drag = drag)
                   item(key = "c$n") { SetCard {
-                    if (rows.any { it.move }) MovableRows(rows, onMove = { r, by -> change("move", r, JSONObject().put("by", by)) }) { r, d -> one(r, d) }
+                    if (rows.any { it.move }) MovableRows(rows, syncing = moving, edges = edges, onMove = { r, by -> moving = true; change("move", r, JSONObject().put("by", by)) }) { r, d -> one(r, d) }
                     else rows.forEachIndexed { k, r ->
                       if (k > 0) HorizontalDivider(color = Line.copy(alpha = 0.45f), thickness = 0.5.dp)
                       one(r, null)
@@ -434,6 +450,9 @@ private fun SectionRow(id: String, title: String, sub: String = "", onClick: () 
     }
 }
 /** A page's rows in cards: each heading starts one; rows before the first heading get a card with no heading. */
+/** The scrolling list a card of draggable rows is in, and its top and bottom on screen (window pixels). */
+private class ListEdges(val state: LazyListState, val box: () -> Pair<Float, Float>)
+
 /** A row that can be dragged in its card: whether it is the one lifted now, and what its handle reports. */
 private class RowDrag(val lifted: Boolean, val onStart: () -> Unit, val onDrag: (Float) -> Unit, val onEnd: () -> Unit, val onCancel: () -> Unit)
 
@@ -441,9 +460,10 @@ private class RowDrag(val lifted: Boolean, val onStart: () -> Unit, val onDrag: 
    follows the finger above the others, and the rows between where it was and where it would land slide out of the
    way by its height, so you see the gap it will drop into.  It lands past a neighbour once it is over that
    neighbour's middle.  On letting go the card shows the new order at once and onMove(row, places) tells the TV,
-   which sends the page back in that order. */
+   which sends the page back in that order; until then (syncing) the rows are faded and can't be dragged. */
 @Composable
-private fun MovableRows(rows: List<SetRow>, onMove: (SetRow, Int) -> Unit, row: @Composable (SetRow, RowDrag?) -> Unit) {
+private fun MovableRows(rows: List<SetRow>, syncing: Boolean, edges: ListEdges?, onMove: (SetRow, Int) -> Unit, row: @Composable (SetRow, RowDrag?) -> Unit) {
+    val fade by animateFloatAsState(if (syncing) 0.45f else 1f, tween(160), label = "syncing")
     var order by remember(rows) { mutableStateOf(rows) }
     var from by remember(rows) { mutableStateOf(-1) }
     var dy by remember(rows) { mutableFloatStateOf(0f) }
@@ -458,6 +478,26 @@ private fun MovableRows(rows: List<SetRow>, onMove: (SetRow, Int) -> Unit, row: 
         return t
     }
     val to = landing()
+    /* Held near the list's top or bottom edge (the outer 90 dp), the list scrolls that way, faster the closer to the
+       edge, and the lifted row moves with it so it stays under the finger: a group can be carried past more groups
+       than fit on the screen.  The row's place on screen is its laid-out top (before the drag offset) plus dy. */
+    val tops = remember(rows) { mutableStateMapOf<Int, Float>() }
+    val zone = with(LocalDensity.current) { 90.dp.toPx() }
+    val fast = with(LocalDensity.current) { 22.dp.toPx() }
+    LaunchedEffect(from, edges) {
+        if (from < 0 || edges == null) return@LaunchedEffect
+        while (true) {
+            withFrameNanos { }
+            val (top, bottom) = edges.box()
+            val mid = (tops[from] ?: continue) + dy + h(from) / 2f
+            val speed = when {
+                mid < top + zone -> -fast * ((top + zone - mid) / zone).coerceIn(0f, 1f)
+                mid > bottom - zone -> fast * ((mid - (bottom - zone)) / zone).coerceIn(0f, 1f)
+                else -> 0f
+            }
+            if (speed != 0f) { val moved = edges.state.scrollBy(speed); dy += moved }
+        }
+    }
     order.forEachIndexed { k, r ->
         key(r.i) {
             val gap = if (from >= 0) h(from).toFloat() else 0f
@@ -465,12 +505,12 @@ private fun MovableRows(rows: List<SetRow>, onMove: (SetRow, Int) -> Unit, row: 
             // Sliding while a row is dragged; at once when it drops, as the order itself changes then.
             val shift by animateFloatAsState(room, if (from < 0) snap() else tween(140), label = "make room")
             val lifted = k == from
-            Column(Modifier.onSizeChanged { heights[k] = maxOf(1, it.height) }.zIndex(if (lifted) 1f else 0f)
-                .graphicsLayer { translationY = if (lifted) dy else shift }) {
+            Column(Modifier.onSizeChanged { heights[k] = maxOf(1, it.height) }.onGloballyPositioned { tops[k] = it.positionInWindow().y }.zIndex(if (lifted) 1f else 0f)
+                .graphicsLayer { translationY = if (lifted) dy else shift; alpha = fade }) {
                 if (k > 0) HorizontalDivider(color = Line.copy(alpha = 0.45f), thickness = 0.5.dp)
                 row(r, if (!r.move) null else RowDrag(lifted,
-                    onStart = { from = k; dy = 0f },
-                    onDrag = { dy += it },
+                    onStart = { if (!syncing) { from = k; dy = 0f } },
+                    onDrag = { if (from >= 0) dy += it },
                     onEnd = {
                         val t = landing(); val by = t - from
                         if (from >= 0 && by != 0) { order = order.toMutableList().apply { add(t, removeAt(from)) }; onMove(r, by) }
