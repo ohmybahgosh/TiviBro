@@ -6,6 +6,15 @@
    tabs, the editor on any of its pages, adding a shared playlist, backups and restore points, reminders). */
 package app.tivibro.phone
 
+import app.tivibro.phone.ui.Ink
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Box
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -159,6 +168,8 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
             .addOnFailureListener { model.say("The code scanner isn't available on this phone.  Pick the TV from the list and type the code instead.") }
     }
 
+    // Tablets, foldables and landscape: the app keeps a comfortable width in the middle instead of stretching.
+    Box(Modifier.fillMaxSize().background(Ink), contentAlignment = Alignment.TopCenter) { Box(Modifier.fillMaxHeight().widthIn(max = 760.dp)) {
     NavHost(nav, startDestination = "home") {
         composable("home") {
             HomeScreen(
@@ -294,6 +305,7 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
                 onOpen = { where -> if (nav.currentBackStackEntry?.id == e.id) { nav.popBackStack(); go(id, where) } })
         }
     }
+    } }
 
     // A Dropbox sign-in under way (started in Settings > My media > Add media): over whatever screen is open,
     // since Android may have recreated the app while the browser was open.  Added: show that TV's My media.

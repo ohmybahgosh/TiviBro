@@ -43,6 +43,8 @@ import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.FastRewind
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Dialpad
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.material.icons.rounded.Keyboard
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
@@ -346,6 +348,23 @@ private fun Remote(volume: Volume?, onKey: (String) -> Unit, onAction: (String) 
                 Box(Modifier.size(width = 52.dp, height = 28.dp).clip(RoundedCornerShape(14.dp)).background(c).clickable(onClickLabel = k) { onKey(k) })
             }
             Key(Icons.Rounded.Info, "Info", { onKey("info") }, size = 44.dp)
+        }
+        Spacer(Modifier.height(18.dp))
+        // Channel numbers, like the remote's: tap 1 2 to go to 12.  Last goes back to the channel before.
+        var pad by remember { mutableStateOf(false) }
+        TextButton(onClick = { pad = !pad }) { Icon(Icons.Rounded.Dialpad, null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text(if (pad) "Hide numbers" else "Channel numbers") }
+        if (pad) Column(verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            listOf(listOf("1", "2", "3"), listOf("4", "5", "6"), listOf("7", "8", "9"), listOf("last", "0", "ok")).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    row.forEach { k ->
+                        when (k) {
+                            "last" -> Key(Icons.Rounded.History, "Last channel", { onAction("last") }, size = 60.dp)
+                            "ok" -> Key(null, "OK", { onKey("ok") }, size = 60.dp, color = Accent, tint = OnAccent, text = "OK")
+                            else -> Key(null, k, { onKey("num$k") }, size = 60.dp, text = k)
+                        }
+                    }
+                }
+            }
         }
     }
 }

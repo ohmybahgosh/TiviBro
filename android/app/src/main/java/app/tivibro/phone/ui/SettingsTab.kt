@@ -35,6 +35,41 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Tv
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material.icons.rounded.Article
+import androidx.compose.material.icons.rounded.CalendarViewWeek
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.EmojiEvents
+import androidx.compose.material.icons.rounded.FiberManualRecord
+import androidx.compose.material.icons.rounded.Key
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Movie
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.PhoneAndroid
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Restore
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.SettingsRemote
+import androidx.compose.material.icons.rounded.Subtitles
+import androidx.compose.material.icons.rounded.Translate
+import androidx.compose.material.icons.rounded.UnfoldMore
+import androidx.compose.material.icons.rounded.VideoLibrary
+import androidx.compose.material.icons.rounded.ViewList
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -90,13 +125,16 @@ data class SetRow(
     val brief: String = "",
     /** A row that opens another section (the TV's link()): its id.  The phone opens it here; older TVs send none. */
     val go: String = "",
+    /** A button's weight (settings.js actionTone): "go" does its job right now (Reload guide now), "danger" deletes
+        or resets and asks first.  Blank for the rest; older TVs send none. */
+    val tone: String = "",
 ) {
     companion object {
         fun from(j: JSONObject) = SetRow(
             j.optInt("i"), j.optString("kind"), j.optString("label"), j.optString("sub"), j.optString("value"),
             j.optBoolean("on"), j.optJSONArray("options")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty(), j.optInt("cur", -1), j.optString("swatch"),
             j.optString("phone"), j.optString("sid"), j.optString("epage"), j.optInt("tv") == 1 || j.optBoolean("tv"), j.optString("ptype"),
-            j.optString("look"), j.optInt("attn") == 1, j.optString("style"), j.optString("brief"), j.optString("go"),
+            j.optString("look"), j.optInt("attn") == 1, j.optString("style"), j.optString("brief"), j.optString("go"), j.optString("tone"),
         )
     }
 }
@@ -174,10 +212,21 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
     LaunchedEffect(sec, path) { if (sec != null) { page = null; loadPage() } }
     BackHandler(enabled = sec != null) { if (path.isNotEmpty()) path = path.dropLast(1) else { sec = null; page = null } }
 
+    var query by remember { mutableStateOf("") }
+    var hits by remember { mutableStateOf<List<SetHit>?>(null) }
+    var found by remember { mutableStateOf("") }      // a search hit's name, lit up once its page opens
+    // Searching every setting on the TV (settings.js find), a moment after typing stops.
+    LaunchedEffect(query) {
+        val q = query.trim()
+        if (q.length < 2) { hits = null; return@LaunchedEffect }
+        kotlinx.coroutines.delay(300)
+        send("find", JSONObject().put("q", q)) { r -> hits = r.optJSONArray("hits")?.let { a -> (0 until a.length()).map { SetHit.from(a.getJSONObject(it)) } }.orEmpty() }
+    }
+
     Column(Modifier.fillMaxSize()) {
         if (sec != null) Row(Modifier.fillMaxWidth().padding(4.dp, 2.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { if (path.isNotEmpty()) path = path.dropLast(1) else { sec = null; page = null } }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") }
-            Text(page?.title ?: sections?.firstOrNull { it.first == sec }?.second ?: "", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            Text(page?.title ?: sections?.firstOrNull { it.first == sec }?.second ?: "", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
             if (busy) CircularProgressIndicator(Modifier.size(18.dp).padding(end = 4.dp), strokeWidth = 2.dp, color = Accent)
             Spacer(Modifier.width(12.dp))
         }
@@ -186,37 +235,63 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
             sec == null -> {
                 val l = sections
                 if (l == null) Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { if (error == null) CircularProgressIndicator() else Button(onClick = { loadSections() }) { Text("Try again") } }
-                else LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
-                    item { Text("The TV's own settings.  Changes apply on the TV right away.", color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(16.dp, 8.dp)) }
-                    items(l, key = { it.first }) { (sid, title) ->
-                        Row(Modifier.fillMaxWidth().clickable { path = emptyList(); sec = sid }.padding(16.dp, 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(title, modifier = Modifier.weight(1f))
-                            Icon(Icons.Rounded.ChevronRight, null, tint = Muted)
+                else LazyColumn(contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    item { SearchBox(query, { query = it }) }
+                    val h = hits
+                    if (h != null) {
+                        item { Text(if (h.isEmpty()) "No setting has that in its name or its note." else "${h.size} setting${if (h.size == 1) "" else "s"}", color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(4.dp, 4.dp)) }
+                        if (h.isNotEmpty()) item {
+                            SetCard { h.forEachIndexed { n, x ->
+                                if (n > 0) HorizontalDivider(color = Line.copy(alpha = 0.5f), thickness = 0.5.dp)
+                                Row(Modifier.fillMaxWidth().clickable { found = x.label; query = ""; path = x.path; sec = x.sec }.padding(16.dp, 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Column(Modifier.weight(1f)) {
+                                        Text(x.label, fontWeight = FontWeight.Medium)
+                                        Text(x.trail + if (x.sub.isNotBlank()) "  ·  " + x.sub else "", color = Muted, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                    }
+                                    Icon(Icons.Rounded.ChevronRight, null, tint = Muted)
+                                }
+                            } }
                         }
-                        HorizontalDivider(color = Line.copy(alpha = 0.5f), thickness = 0.5.dp)
-                    }
-                    item {
-                        Row(Modifier.fillMaxWidth().clickable { showLog = true }.padding(16.dp, 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
-                                Text("TiviBro log")
-                                Text("What TiviBro on the TV did and what went wrong, to read or share", color = Muted, style = MaterialTheme.typography.bodySmall)
+                    } else {
+                        // The sections in four groups, each a card, with an icon apiece (SectionGroups).
+                        SECTION_GROUPS.forEach { (title, ids) ->
+                            val mine = ids.mapNotNull { sid -> l.firstOrNull { it.first == sid } }
+                            if (mine.isNotEmpty()) {
+                                item(key = "h-$title") { SetHead(title) }
+                                item(key = "c-$title") { SetCard { mine.forEachIndexed { n, (sid, t) ->
+                                    if (n > 0) HorizontalDivider(color = Line.copy(alpha = 0.5f), thickness = 0.5.dp, modifier = Modifier.padding(start = 64.dp))
+                                    SectionRow(sid, t) { path = emptyList(); sec = sid }
+                                } } }
                             }
-                            Icon(Icons.Rounded.ChevronRight, null, tint = Muted)
                         }
+                        // Sections a newer TV has that this app doesn't group yet: at the end, so none goes missing.
+                        val rest = l.filter { s0 -> SECTION_GROUPS.none { s0.first in it.second } }
+                        item(key = "c-more") { SetCard {
+                            rest.forEach { (sid, t) -> SectionRow(sid, t) { path = emptyList(); sec = sid }; HorizontalDivider(color = Line.copy(alpha = 0.5f), thickness = 0.5.dp, modifier = Modifier.padding(start = 64.dp)) }
+                            SectionRow("log", "TiviBro log", "What TiviBro on the TV did and what went wrong") { showLog = true }
+                        } }
                     }
                 }
             }
             page == null -> Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { if (error == null) CircularProgressIndicator() else Button(onClick = { loadPage() }) { Text("Try again") } }
             else -> {
               // The rows are read later by the list, after Back may have cleared the page: keep this page's.
-              val rows = page?.rows.orEmpty()
-              LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
-                items(rows, key = { it.i }) { r -> SettingRow(r,
-                    onToggle = { v -> change("toggle", r, JSONObject().put("on", v)) },
-                    onPick = { picking = r },
-                    onCycle = { d -> change("cycle", r, JSONObject().put("dir", d)) },
-                    onOpen = { path = path + r.i },
-                    onAction = { if (r.go.isNotBlank() && sections?.any { it.first == r.go } != false) { path = emptyList(); sec = r.go } else press(r) }) }
+              val cards = cardsOf(page?.rows.orEmpty())
+              val lit = found
+              LazyColumn(contentPadding = PaddingValues(16.dp, 4.dp, 16.dp, 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                cards.forEachIndexed { n, (head, rows) ->
+                  if (head.isNotBlank()) item(key = "h$n") { SetHead(head) }
+                  item(key = "c$n") { SetCard { rows.forEachIndexed { k, r ->
+                    if (k > 0) HorizontalDivider(color = Line.copy(alpha = 0.45f), thickness = 0.5.dp)
+                    SettingRow(r, lit = lit.isNotBlank() && r.label == lit,
+                        onToggle = { v -> change("toggle", r, JSONObject().put("on", v)) },
+                        onPick = { picking = r },
+                        onChoose = { v -> change("choice", r, JSONObject().put("v", v)) },
+                        onCycle = { d -> change("cycle", r, JSONObject().put("dir", d)) },
+                        onOpen = { found = ""; path = path + r.i },
+                        onAction = { if (r.go.isNotBlank() && sections?.any { it.first == r.go } != false) { path = emptyList(); sec = r.go } else press(r) })
+                  } } }
+                }
               }
             }
         }
@@ -270,76 +345,170 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
     }
 }
 
-/* Each kind of row its own look, as on the TV (the Settings overhaul): headings as small capitals in the accent
-   colour, choices with their value in a pill, switches, pages with a chevron, buttons in the accent colour,
-   facts quiet on a darker band, notes with a bar beside them, and a row that wants you (an update ready) in
-   green so it can't be missed.  The note under a name is its first sentence; tap ⓘ for all of it. */
+/** A search hit (settings.js find): its name, where it is, and the rows to follow to its page. */
+private data class SetHit(val label: String, val sub: String, val trail: String, val sec: String, val path: List<Int>) {
+    companion object {
+        fun from(j: JSONObject) = SetHit(j.optString("label"), j.optString("sub"), j.optString("trail"), j.optString("sec"),
+            j.optJSONArray("path")?.let { a -> (0 until a.length()).map { a.optInt(it) } }.orEmpty())
+    }
+}
+
+/* The TV's sections in four groups on the phone's Settings home, each with an icon and a colour, so the one
+   you want is quick to spot.  Ids the TV sends that aren't here go in a last card (newer TVs). */
+private val SECTION_GROUPS = listOf(
+    "Watching" to listOf("guide", "sports", "playback", "audio", "recording", "reminders"),
+    "Channels and library" to listOf("playlists", "channels", "names", "vod", "media"),
+    "Look and control" to listOf("look", "remote", "language", "parental"),
+    "System" to listOf("connect", "keys", "backups", "about"),
+)
+private fun sectionIcon(id: String): Pair<ImageVector, Color> = when (id) {
+    "guide" -> Icons.Rounded.CalendarViewWeek to Accent
+    "sports" -> Icons.Rounded.EmojiEvents to Warn
+    "playback" -> Icons.Rounded.PlayArrow to Accent2
+    "audio" -> Icons.Rounded.Subtitles to Accent2
+    "recording" -> Icons.Rounded.FiberManualRecord to Bad
+    "reminders" -> Icons.Rounded.Notifications to Warn
+    "playlists" -> Icons.Rounded.Tv to Good
+    "channels" -> Icons.Rounded.ViewList to Good
+    "names" -> Icons.Rounded.Edit to Good
+    "vod" -> Icons.Rounded.Movie to Accent
+    "media" -> Icons.Rounded.VideoLibrary to Accent
+    "look" -> Icons.Rounded.Palette to Accent2
+    "remote" -> Icons.Rounded.SettingsRemote to Accent2
+    "language" -> Icons.Rounded.Translate to Accent2
+    "parental" -> Icons.Rounded.Lock to Warn
+    "connect" -> Icons.Rounded.PhoneAndroid to Muted
+    "keys" -> Icons.Rounded.Key to Muted
+    "backups" -> Icons.Rounded.Restore to Muted
+    "log" -> Icons.Rounded.Article to Muted
+    else -> Icons.Rounded.Settings to Muted
+}
+
 @Composable
-private fun SettingRow(r: SetRow, onToggle: (Boolean) -> Unit, onPick: () -> Unit, onCycle: (Int) -> Unit, onOpen: () -> Unit, onAction: () -> Unit) {
-    val look = r.look.ifBlank { if (r.kind == "info") (if (r.value.isBlank()) "note" else "status") else r.kind }
-    when {
-        r.kind == "head" -> {
-            if (r.label.isNotBlank()) Column(Modifier.fillMaxWidth().padding(16.dp, 22.dp, 16.dp, 6.dp)) {
-                Text(r.label.uppercase(), color = Accent2, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-                HorizontalDivider(color = Line, thickness = 1.dp, modifier = Modifier.padding(top = 6.dp))
-            } else Spacer(Modifier.size(8.dp))
-            return
-        }
-        r.kind == "info" && !r.attn -> {
-            if (look == "status") Row(Modifier.fillMaxWidth().background(Panel2.copy(alpha = 0.55f)).padding(16.dp, 9.dp)) {
-                Text(r.label, color = Muted, modifier = Modifier.weight(1f))
-                Spacer(Modifier.width(12.dp))
-                Text(r.value, textAlign = TextAlign.End, modifier = Modifier.weight(1f))
-            } else Row(Modifier.fillMaxWidth().padding(16.dp, 8.dp)) {
-                Box(Modifier.width(3.dp).size(3.dp, 36.dp).background(if (r.style == "tip") Accent else Line))
-                Spacer(Modifier.width(12.dp))
-                Text(r.label, color = if (r.style == "tip") TextHi else Muted, style = MaterialTheme.typography.bodySmall)
-            }
-            return
-        }
-    }
-    val click: (() -> Unit)? = when (r.kind) { "toggle" -> { { onToggle(!r.on) } }; "choice" -> onPick; "page" -> onOpen; "action" -> onAction; else -> null }
-    var more by remember(r.i, r.label) { mutableStateOf(false) }
-    val box = when {
-        r.attn -> Modifier.padding(8.dp, 6.dp).clip(RoundedCornerShape(12.dp)).background(Good.copy(alpha = 0.16f)).border(2.dp, Good, RoundedCornerShape(12.dp))
-        r.style == "adv-row" -> Modifier.padding(8.dp, 8.dp).clip(RoundedCornerShape(12.dp)).border(1.dp, Line, RoundedCornerShape(12.dp))
-        else -> Modifier
-    }
-    Row(Modifier.fillMaxWidth().then(box).let { if (click != null) it.clickable(onClick = click) else it }.padding(16.dp, 12.dp), verticalAlignment = Alignment.CenterVertically) {
+private fun SearchBox(q: String, set: (String) -> Unit) {
+    OutlinedTextField(q, set, singleLine = true, placeholder = { Text("Search all settings") }, shape = RoundedCornerShape(14.dp),
+        leadingIcon = { Icon(Icons.Rounded.Search, null, tint = Muted) },
+        trailingIcon = { if (q.isNotEmpty()) IconButton(onClick = { set("") }) { Icon(Icons.Rounded.Close, "Clear") } },
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search), modifier = Modifier.fillMaxWidth())
+}
+/** A heading above a card: small capitals in the accent colour. */
+@Composable
+private fun SetHead(t: String) = Text(t.uppercase(), color = Color(0xFF7DA2FF), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(6.dp, 10.dp, 6.dp, 0.dp))
+/** A rounded card holding rows. */
+@Composable
+private fun SetCard(content: @Composable () -> Unit) =
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Panel).border(1.dp, Line.copy(alpha = 0.8f), RoundedCornerShape(18.dp))) { content() }
+@Composable
+private fun SectionRow(id: String, title: String, sub: String = "", onClick: () -> Unit) {
+    val (icon, tint) = sectionIcon(id)
+    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(14.dp, 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)).background(tint.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) { Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp)) }
+        Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text(r.label, fontWeight = if (r.kind == "action" || r.attn) FontWeight.SemiBold else FontWeight.Normal,
-                color = when { r.attn -> Good; r.kind == "action" && r.style != "jump" -> Accent; else -> TextHi })
-            val note = if (more || r.brief.isBlank()) r.sub else r.brief
-            if (note.isNotBlank()) Row(verticalAlignment = Alignment.Top) {
-                Text(note, color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f, fill = false), maxLines = if (more) Int.MAX_VALUE else 3, overflow = TextOverflow.Ellipsis)
-                if (r.brief.isNotBlank()) Text(if (more) "  less" else "  ⓘ more", color = Accent, style = MaterialTheme.typography.bodySmall, modifier = Modifier.clickable { more = !more })
-            }
-            if (r.tv) Row(Modifier.padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.Tv, null, tint = Muted, modifier = Modifier.size(14.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("On the TV: look at the TV's screen", color = Muted, style = MaterialTheme.typography.labelSmall)
-            }
-            if ((r.kind == "page" || r.kind == "action") && !r.attn && r.value.isNotBlank() && r.value != "›") Text(r.value.removeSuffix("›").trim(), color = Muted, style = MaterialTheme.typography.bodyMedium)
+            Text(title, fontWeight = FontWeight.SemiBold)
+            if (sub.isNotBlank()) Text(sub, color = Muted, style = MaterialTheme.typography.bodySmall)
         }
-        if (r.swatch.isNotBlank()) {
-            val col = runCatching { Color(android.graphics.Color.parseColor(r.swatch)) }.getOrNull()
-            if (col != null) { Spacer(Modifier.width(8.dp)); Box(Modifier.size(18.dp).clip(CircleShape).background(col)) }
+        Icon(Icons.Rounded.ChevronRight, null, tint = Muted)
+    }
+}
+/** A page's rows in cards: each heading starts one; rows before the first heading get a card with no heading. */
+private fun cardsOf(rows: List<SetRow>): List<Pair<String, List<SetRow>>> {
+    val out = mutableListOf<Pair<String, MutableList<SetRow>>>()
+    rows.forEach { r ->
+        if (r.kind == "head") { if (r.label.isNotBlank() || out.isEmpty() || out.last().second.isNotEmpty()) out.add(r.label to mutableListOf()) }
+        else { if (out.isEmpty()) out.add("" to mutableListOf()); out.last().second.add(r) }
+    }
+    return out.filter { it.second.isNotEmpty() }
+}
+/** A choice shown as a row of buttons: a few short options (the web editor does the same). */
+private fun segmented(r: SetRow) = r.options.size in 2..3 && r.options.sumOf { it.length } <= 24
+
+/* Each kind of row looks different, so you can tell at a glance what a tap does: a switch, a value in a pill
+   (tap to pick), a few options as buttons, a page with a chevron, a filled button for one that does its job
+   now (Reload guide now), a red one for one that deletes or resets, facts quiet on a darker band, notes with
+   a bar beside them, and a row that wants you (an update ready) in green.  The note under a name is its first
+   sentence; tap "more" for all of it.  [lit]: a search hit, lit up for a moment. */
+@Composable
+private fun SettingRow(r: SetRow, lit: Boolean, onToggle: (Boolean) -> Unit, onPick: () -> Unit, onChoose: (Int) -> Unit, onCycle: (Int) -> Unit, onOpen: () -> Unit, onAction: () -> Unit) {
+    val look = r.look.ifBlank { if (r.kind == "info") (if (r.value.isBlank()) "note" else "status") else r.kind }
+    if (r.kind == "info" && !r.attn) {
+        if (look == "status") Row(Modifier.fillMaxWidth().background(Panel2.copy(alpha = 0.45f)).padding(16.dp, 10.dp)) {
+            Text(r.label, color = Muted, modifier = Modifier.weight(1f))
+            Spacer(Modifier.width(12.dp))
+            Text(r.value, textAlign = TextAlign.End, modifier = Modifier.weight(1f))
+        } else Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).padding(16.dp, 10.dp)) {
+            Box(Modifier.width(3.dp).fillMaxHeight().background(if (r.style == "tip") Accent else Line))
+            Spacer(Modifier.width(12.dp))
+            Text(r.label, color = if (r.style == "tip") TextHi else Muted, style = MaterialTheme.typography.bodySmall)
         }
-        Spacer(Modifier.width(8.dp))
-        when {
-            r.attn && r.value.isNotBlank() -> Text(r.value, color = Ink, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.clip(RoundedCornerShape(50)).background(Good).padding(12.dp, 4.dp))
-            r.kind == "toggle" -> Switch(checked = r.on, onCheckedChange = onToggle)
-            r.kind == "choice" -> Text(r.value, color = TextHi, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.clip(RoundedCornerShape(50)).background(Panel2).padding(14.dp, 6.dp))
-            r.kind == "page" || r.style == "jump" -> Icon(Icons.Rounded.ChevronRight, null, tint = TextHi)
-            r.kind == "action" -> if (r.phone == "log" || r.phone in SCREENS) Icon(Icons.Rounded.ChevronRight, null, tint = Muted)
-            r.kind == "cycle" -> {
-                IconButton(onClick = { onCycle(-1) }) { Icon(Icons.Rounded.ChevronLeft, "Previous") }
-                Text(r.value)
-                IconButton(onClick = { onCycle(1) }) { Icon(Icons.Rounded.ChevronRight, "Next") }
+        return
+    }
+    val button = r.kind == "action" && (r.tone == "go" || r.tone == "danger") && !r.attn
+    val seg = r.kind == "choice" && segmented(r)
+    val click: (() -> Unit)? = when {
+        button || seg -> null
+        r.kind == "toggle" -> { { onToggle(!r.on) } }
+        r.kind == "choice" -> onPick; r.kind == "page" -> onOpen; r.kind == "action" -> onAction; else -> null
+    }
+    var more by remember(r.i, r.label) { mutableStateOf(false) }
+    val glow by animateColorAsState(if (lit) Accent2.copy(alpha = 0.16f) else Color.Transparent, tween(1800), label = "found")
+    val bg = when { r.attn -> Good.copy(alpha = 0.14f); r.tone == "go" && button -> Accent.copy(alpha = 0.08f); else -> glow }
+    Column(Modifier.fillMaxWidth().background(bg).let { if (click != null) it.clickable(onClick = click) else it }.padding(16.dp, 13.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(r.label, fontWeight = if (r.attn || button) FontWeight.SemiBold else FontWeight.Medium,
+                    color = when { r.attn -> Good; r.tone == "danger" -> Color(0xFFFF9A9D); else -> TextHi })
+                val note = if (more || r.brief.isBlank()) r.sub else r.brief
+                if (note.isNotBlank()) Row(verticalAlignment = Alignment.Top) {
+                    Text(note, color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f, fill = false), maxLines = if (more) Int.MAX_VALUE else 3, overflow = TextOverflow.Ellipsis)
+                    if (r.brief.isNotBlank()) Text(if (more) "  less" else "  more", color = Accent, style = MaterialTheme.typography.bodySmall, modifier = Modifier.clickable { more = !more })
+                }
+                if (r.tv) Row(Modifier.padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Tv, null, tint = Muted, modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("On the TV: look at the TV's screen", color = Muted, style = MaterialTheme.typography.labelSmall)
+                }
+                if ((r.kind == "page" || r.kind == "action") && !r.attn && !button && r.value.isNotBlank() && r.value != "›") Text(r.value.removeSuffix("›").trim(), color = Muted, style = MaterialTheme.typography.bodyMedium)
             }
+            if (r.swatch.isNotBlank()) {
+                val col = runCatching { Color(android.graphics.Color.parseColor(r.swatch)) }.getOrNull()
+                if (col != null) { Spacer(Modifier.width(8.dp)); Box(Modifier.size(18.dp).clip(CircleShape).background(col)) }
+            }
+            Spacer(Modifier.width(8.dp))
+            when {
+                r.attn && r.value.isNotBlank() -> Text(r.value, color = Ink, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.clip(RoundedCornerShape(50)).background(Good).padding(12.dp, 4.dp))
+                r.kind == "toggle" -> Switch(checked = r.on, onCheckedChange = onToggle)
+                r.kind == "choice" && !seg -> Row(Modifier.clip(RoundedCornerShape(10.dp)).background(Panel2).border(1.dp, Line, RoundedCornerShape(10.dp)).padding(12.dp, 7.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(r.value, color = TextHi, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 140.dp))
+                    Icon(Icons.Rounded.UnfoldMore, null, tint = Muted, modifier = Modifier.size(16.dp))
+                }
+                r.kind == "page" || r.style == "jump" || r.go.isNotBlank() -> Icon(Icons.Rounded.ChevronRight, null, tint = Muted)
+                r.kind == "action" && !button && (r.phone == "log" || r.phone in SCREENS || r.value.endsWith("›")) -> Icon(Icons.Rounded.ChevronRight, null, tint = Muted)
+                r.kind == "cycle" -> {
+                    IconButton(onClick = { onCycle(-1) }) { Icon(Icons.Rounded.ChevronLeft, "Previous") }
+                    Text(r.value)
+                    IconButton(onClick = { onCycle(1) }) { Icon(Icons.Rounded.ChevronRight, "Next") }
+                }
+            }
+        }
+        // A few options: all of them as buttons under the name, one tap.
+        if (seg) Row(Modifier.padding(top = 10.dp).fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Ink).border(1.dp, Line, RoundedCornerShape(12.dp)).padding(3.dp)) {
+            r.options.forEachIndexed { n, o ->
+                val on = n == r.cur
+                Box(Modifier.weight(1f).clip(RoundedCornerShape(9.dp)).background(if (on) Accent else Color.Transparent).clickable(enabled = !on) { onChoose(n) }.padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                    Text(o, color = if (on) OnAccent else Muted, fontWeight = if (on) FontWeight.Bold else FontWeight.Normal, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+                }
+            }
+        }
+        // Does its job now (filled) or deletes something (red outline): a real button, full width under the name.
+        if (button) {
+            Spacer(Modifier.height(10.dp))
+            if (r.tone == "go") Button(onClick = onAction, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
+                Icon(Icons.Rounded.Refresh, null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text(r.label.replace(Regex("\\s+now$", RegexOption.IGNORE_CASE), ""), fontWeight = FontWeight.Bold)
+            } else OutlinedButton(onClick = onAction, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, Bad.copy(alpha = 0.6f)),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFF9A9D))) { Text(r.label, fontWeight = FontWeight.SemiBold) }
+            if (r.value.isNotBlank() && r.value != "›") Text(r.value.removeSuffix("›").trim(), color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 6.dp).align(Alignment.CenterHorizontally))
         }
     }
-    if (!r.attn && r.style != "adv-row") HorizontalDivider(color = Line.copy(alpha = 0.35f), thickness = 0.5.dp, modifier = Modifier.padding(start = 16.dp))
 }
