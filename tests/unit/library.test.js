@@ -40,6 +40,25 @@ L.moveGroup('z', -1);
 ok('a move goes from the order shown', provOrder() === 'a2,z,m', provOrder());
 ctx.Store.settings.sortGroups = 'playlist'; edits.groupOrder = []; L.dirty();
 
+// Next event first (Hold OK on a group > Sort channels): on now, then soonest, then the rest, nothing on last.
+{
+  const pad = n => String(n).padStart(2, '0');
+  const at = ms => { const d = new Date(ms); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':00'; };
+  const now = Date.now();
+  L.set({ groups: [{ id: 'ppv', name: 'PPV' }], channels: [
+    { k: 'p1', n: 'PPV 01 | Old Fight (' + at(now - 3 * 86400e3) + ')', g: 'ppv' },
+    { k: 'p2', n: 'PPV 02 | Later Fight (' + at(now + 5 * 3600e3) + ')', g: 'ppv' },
+    { k: 'p3', n: 'PPV 03', g: 'ppv' },
+    { k: 'p4', n: 'PPV 04 | Soon Fight (' + at(now + 2 * 3600e3) + ')', g: 'ppv' },
+    { k: 'p5', n: 'PPV 05 | Live Fight (' + at(now - 30 * 60e3) + ')', g: 'ppv' }] });
+  L.setSort('ppv', 'event');
+  const order = L.channels('ppv').map(c => c.k).join(',');
+  ok('next event first: on now, soonest, later, then the rest, the long-over one last', order === 'p5,p4,p2,p3,p1', order);
+  ok('the sort is kept for the group', L.sortOf('ppv') === 'event');
+  L.setSort('ppv', '');
+  ok('back to the usual order', L.channels('ppv').map(c => c.k).join(',') === 'p1,p2,p3,p4,p5', L.channels('ppv').map(c => c.k).join(','));
+}
+
 // Other versions of a channel (backups when one stops working).
 L.set({ groups: [{ id: 'us', name: 'US | News' }, { id: 'uk', name: 'UK | News' }, { id: 'x', name: 'Backup' }], channels: [
   { k: 'a', n: 'US| CNN FHD', g: 'us', num: 1 }, { k: 'b', n: 'US| CNN HD', g: 'us', num: 2 }, { k: 'c', n: 'US| CNN SD', g: 'us', num: 3 },

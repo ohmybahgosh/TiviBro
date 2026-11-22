@@ -13,7 +13,7 @@ var WebEdit = (function () {
   'use strict';
   var on = false, timer = 0, appliedRev = 0, lastCmd = 0, lastDraft = 0, lastSig = '', status = null, busy = false, onStatus = null;
   var FIELDS = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'custom', 'groupOrder', 'epgMap', 'groupAdd', 'groupRemove', 'groupSort', 'chanOrder', 'watchlist', 'toolSkip', 'guideSkip', 'noGuide', 'groupMerge'];
-  var SORTS = ['provider', 'az', 'za', 'number', 'custom'];
+  var SORTS = ['provider', 'az', 'za', 'number', 'custom', 'event'];
   var SNAP_AUTO = 15, SNAP_NAMED = 30;
   /* Ports for the editor.  High ones (one per ten thousand) for networks that block the common ones,
      and a random high port that stays the same until you ask for a new one, so a saved address or

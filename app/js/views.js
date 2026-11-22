@@ -2456,6 +2456,7 @@ var Views = (function () {
       !virtual && !custom && L.mergedFrom(g.id).length && { label: 'Split back into ' + (L.mergedFrom(g.id).length + 1) + ' groups', sub: 'undo the merge', action: function () { L.splitGroup(g.id); refreshLists(true); U.toast('Split back into its groups'); } },
       !virtual && { label: 'Move up', action: function () { L.moveGroup(g.id, -1); refreshLists(true); groupsVL.move(-1); } },
       !virtual && { label: 'Move down', action: function () { L.moveGroup(g.id, 1); refreshLists(true); groupsVL.move(1); } },
+      !virtual && { label: 'Sort channels…', sub: sortName(L.sortOf(g.id)), action: function () { sortMenu(g); } },
       L.hasOwnOrder(g.id) && { label: 'Back to the provider\'s channel order', sub: 'undo the channels you moved here', action: function () { L.resetOrder(g.id); refreshLists(true); U.toast('Provider order restored'); } },
       g.id === L.EVENTS && { label: 'Turn off Events by time', sub: 'back on in Settings > Channels and groups', action: function () {
         // Several playlists on: off for each of them (each has its own switch).
@@ -2478,6 +2479,19 @@ var Views = (function () {
       custom && { label: 'Delete group', action: function () { UI.confirm('Delete ' + g.name + '?', 'Delete', function () { L.deleteGroup(g.id); refreshLists(); }); } },
       { label: 'Edit on a phone or computer…', sub: 'scan a QR code: rename, hide and sort with a real keyboard', action: function () { WebEdit.showJoin(); } }
     ]);
+  }
+
+  /* A group's own channel order (Hold OK on a group > Sort channels): Next event first suits sports and PPV groups,
+     where most channels are off air (on now first, then soonest, the ones with nothing on last). */
+  var SORT_NAMES = { '': 'as in Settings', provider: 'Provider order', event: 'Next event first', az: 'A to Z', za: 'Z to A', number: 'Channel number', custom: 'Your order' };
+  function sortName(m) { return T(SORT_NAMES[m] || SORT_NAMES['']); }
+  function sortMenu(g) {
+    var cur = L.sortOf(g.id), modes = ['', 'event', 'provider', 'az', 'za', 'number'];
+    if (cur === 'custom') modes.push('custom');
+    UI.menu('Sort ' + L.groupName(g.id), modes.map(function (m) {
+      return { label: (m === cur ? '✓ ' : '') + sortName(m), sub: m === 'event' ? 'on now first, then the soonest; nothing on last' : m === '' ? 'Settings > Channels and groups > Channel order' : '', current: m === cur,
+        action: function () { L.setSort(g.id, m); refreshLists(true); U.toast(L.groupName(g.id) + ': ' + sortName(m)); } };
+    }));
   }
 
   /* Merge groups (Hold OK on a provider group): tick the provider groups to show inside this one.  Groups

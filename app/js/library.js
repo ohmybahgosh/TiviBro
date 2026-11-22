@@ -499,7 +499,8 @@ var Library = (function () {
     if (gid === MOVIES) return typeof Movies !== 'undefined' ? Movies.channels() : [];
     if (!isCustom(gid) && mergedInto(gid)) return channels(mergedInto(gid), withHidden);
     var hit = !withHidden && groupCache.get(gid);
-    if (hit) return hit;
+    // A group sorted by next event is worked out again after 5 minutes (events start and end), like Events by time.
+    if (hit && !(hit.evAt && Date.now() - hit.evAt > 300000)) return hit;
     var e = E(), showHidden = withHidden || S().showHidden, list;
     var sortable = false;
     if (gid === RECENT) {
@@ -538,17 +539,38 @@ var Library = (function () {
         .sort(function (x, y) { var a = pos[x.c.k], b = pos[y.c.k]; return (a != null ? a : 1e9 + x.i) - (b != null ? b : 1e9 + y.i); })
         .map(function (x) { return x.c; });
     }
-    var mode = own ? { az: 'name', za: 'za', number: 'number', provider: 'playlist', custom: 'playlist' }[own] || 'playlist' : S().sortChannels;
+    var mode = own ? { az: 'name', za: 'za', number: 'number', provider: 'playlist', custom: 'playlist', event: 'event' }[own] || 'playlist' : S().sortChannels;
     if ((sortable || own) && mode !== 'playlist') {
       list = list.slice();
       if (mode === 'number') list.sort(function (a, b) { return a.num - b.num; });
       else if (mode === 'name') list.sort(function (a, b) { return name(a).localeCompare(name(b), undefined, { numeric: true }); });
       else if (mode === 'za') list.sort(function (a, b) { return name(b).localeCompare(name(a), undefined, { numeric: true }); });
       else if (mode === 'watch') list.sort(function (a, b) { return (e.watch[b.k] || 0) - (e.watch[a.k] || 0); });
+      else if (mode === 'event') { list = byEvent(list); list.evAt = Date.now(); }
     }
     if (!withHidden) groupCache.set(gid, list);
     return list;
   }
+
+  /* Next event first, a group's own sort (merged MLB, NFL or PPV groups, where most channels are off air): channels
+     whose names carry an event (Events.of) on now first, then the ones starting soonest, then the rest in the
+     order they came, and last the ones with nothing on (an event long over, or a name that says so). */
+  function byEvent(list) {
+    var now = Date.now();
+    return list.map(function (c, i) {
+      var ev = typeof Events !== 'undefined' ? Events.of(c) : null, r = 2, t = 0;
+      if (ev && ev.end > now) { r = ev.start <= now ? 0 : 1; t = ev.start; }
+      else if ((ev && ev.end <= now) || (typeof Names !== 'undefined' && Names.idle && Names.idle(c.n))) r = 3;
+      return { c: c, r: r, t: t, i: i };
+    }).sort(function (a, b) { return a.r - b.r || a.t - b.t || a.i - b.i; }).map(function (x) { return x.c; });
+  }
+  // A group's own channel order (Hold OK on a group > Sort channels): provider, event, az, za or number; '' for the setting's.
+  function setSort(gid, mode) {
+    var e = E(); if (!e.groupSort) e.groupSort = {};
+    if (mode) e.groupSort[gid] = mode; else delete e.groupSort[gid];
+    commit();
+  }
+  function sortOf(gid) { var e = E(); return (e.groupSort && e.groupSort[gid]) || ''; }
 
   /* ---------- edits ---------- */
   function commit() { dirty(); Store.saveEdits(); }
@@ -716,7 +738,7 @@ var Library = (function () {
     shownAnywhere: shownAnywhere, isBlocked: isBlocked, block: block, get data() { return data; }, dirty: dirty, name: name, groups: groups, channels: channels, groupName: groupName,
     noGuide: noGuide, setNoGuide: setNoGuide, isCustom: isCustom, customGroups: function () { return E().custom; }, find: find, count: count, sample: sample,
     hideChannel: hideChannel, hideGroup: hideGroup, renameChannel: renameChannel,
-    createGroup: createGroup, renameGroup: renameGroup, setGroupName: setGroupName, providerName: providerName, deleteGroup: deleteGroup,
+    createGroup: createGroup, renameGroup: renameGroup, setGroupName: setGroupName, setSort: setSort, sortOf: sortOf, providerName: providerName, deleteGroup: deleteGroup,
     copyTo: copyTo, removeFrom: removeFrom, moveInGroup: moveInGroup, moveGroup: moveGroup,
     dataOf: dataOf, setOther: setOther, MIX: MIX, mixed: mixed, mixList: mixList, mixChanged: mixChanged, canGroup: canGroup, get mixRev() { return mixRev; }, dropOther: dropOther, clearOthers: clearOthers, partOf: partOf, maxConn: maxConn, get main() { return main; }, get multi() { return multi(); }, plName: plName,
     otherIds: function () { return others.map(function (x) { return x.id; }); },

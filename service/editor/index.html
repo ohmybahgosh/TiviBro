@@ -1956,7 +1956,7 @@ document.addEventListener('keydown', function (e) {
 });
 
 /* ---------- dropdowns that live in the page ---------- */
-var SORT_LABEL = { provider: 'Provider order', az: 'A to Z', za: 'Z to A', number: 'Channel number', custom: 'Your order (drag)' };
+var SORT_LABEL = { provider: 'Provider order', az: 'A to Z', za: 'Z to A', number: 'Channel number', custom: 'Your order (drag)', event: 'Next event first (on the TV)' };
 var ddReady = false;
 function setupDropdowns() {
   if (ddReady) return; ddReady = true;
@@ -2328,7 +2328,7 @@ function renderChannels(reset) {
   if (sd) {
     $('cSort').classList.toggle('hidden', !g);
     if (g) {
-      var opts = isCustom(g) ? ['custom', 'az', 'za', 'number'] : ['provider', 'custom', 'az', 'za', 'number'];
+      var opts = isCustom(g) ? ['custom', 'az', 'za', 'number', 'event'] : ['provider', 'custom', 'az', 'za', 'number', 'event'];
       sd.options(opts.map(function (v) { return { v: v, l: SORT_LABEL[v] }; }), E.groupSort[g] || (isCustom(g) ? 'custom' : 'provider'));
     }
   }
