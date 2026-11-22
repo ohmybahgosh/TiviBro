@@ -518,10 +518,30 @@ var Settings = (function () {
   function keysPage(ctx) {
     var out = [];
     var acts = Keymap.CONTEXT_ACTIONS[ctx];
+    // The other buttons on this screen that already do action a (a button and its long press are two).
+    function usedBy(a, btn) {
+      var out = [];
+      if (!a || a === 'none') return out;
+      Keymap.allButtons().forEach(function (b) {
+        [b[0], 'long:' + b[0]].forEach(function (k) { if (k !== btn && !Keymap.fixed(ctx, k) && Keymap.get(ctx, k) === a) out.push(k); });
+      });
+      return out;
+    }
+    /* One button's action on this screen.  The list says which actions another button already does, and picking one
+       of those asks first: keep both buttons doing it, or move it here (the other button then does nothing), so the
+       same action doesn't end up on two buttons by mistake. */
     function slot(btn, label) {
       return action(label, '', function () {
         UI.menu(label, acts.map(function (a) {
-          return { label: Keymap.ACTIONS[a], sub: Keymap.get(ctx, btn) === a ? 'current' : '', current: Keymap.get(ctx, btn) === a, action: function () { Keymap.set(ctx, btn, a); paint(); } };
+          var cur = Keymap.get(ctx, btn) === a, others = cur ? [] : usedBy(a, btn), names = others.map(function (k) { return Keymap.label(k); }).join(', ');
+          return { label: Keymap.ACTIONS[a], sub: cur ? 'current' : others.length ? T('already on {x}', { x: names }) : '', current: cur, action: function () {
+            if (!others.length) { Keymap.set(ctx, btn, a); paint(); return; }
+            UI.menu(T('{x} is already on {y}', { x: T(Keymap.ACTIONS[a]), y: names }), [
+              { label: 'Move it to ' + label, sub: names + ' will do nothing', action: function () { others.forEach(function (k) { Keymap.set(ctx, k, 'none'); }); Keymap.set(ctx, btn, a); paint(); U.toast(T('{x} moved to {y}', { x: T(Keymap.ACTIONS[a]), y: label })); } },
+              { label: 'Keep it on both', sub: 'either button does it', action: function () { Keymap.set(ctx, btn, a); paint(); } },
+              { label: 'Cancel', action: function () {} }
+            ]);
+          } };
         }));
       }, function () { var a = Keymap.get(ctx, btn); return Keymap.ACTIONS[a || 'none']; });
     }
@@ -2281,7 +2301,7 @@ var Settings = (function () {
     var out = [];
     function walk(secId, list, chain, trail, depth) {
       list = (list || []).filter(Boolean);
-      if (list.length > 80) return;                          // a list of your own things, not settings
+      if (list.length > 80 && depth > 0) return;             // a page of your own things (channels, groups), not settings; a section's own long list (Remote and buttons) is still read
       list.forEach(function (it) {
         if (it.head || it.info || it.preview || it.raw || !it.label) return;
         /* Only TiviBro's own settings: a row named after one of your channels, teams, sources or groups (a page

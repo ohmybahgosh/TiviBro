@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Buttons: no action on two buttons by mistake.**  In Settings > Remote and buttons, the list of actions for a button says which ones another button on that screen already does ("already on Yellow").  Picking one asks: move it to this button (the other then does nothing), or keep it on both.
+- **Search settings finds the Remote and buttons settings** (Quick menu buttons, the button for each action).  That section was too long and search skipped it.
+
 ## 0.6.0 (alpha 197, 2026-11-22)
 
 Pre-release: expect rough edges, and keep a backup before installing.
