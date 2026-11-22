@@ -1400,7 +1400,7 @@ I18n.add('ru', {
   "Could not open that movie:": "Не удалось открыть этот фильм:",
   "Could not read My media:": "Не удалось прочитать «Мои медиа»:",
   "Could not reload the list:": "Не удалось перезагрузить список:",
-  "Each library is one folder on a media server (DLNA / UPnP, WebDAV, Dropbox or Google Drive) holding movies or TV shows, like Plex's libraries.  Select one to scan it, fix what didn't match, choose whether it shows on Home, or remove it.": "Каждая библиотека — это папка на медиасервере (DLNA / UPnP, WebDAV, Dropbox или Google Drive) с фильмами или сериалами, как библиотеки Plex.  Выберите её, чтобы просканировать, исправить несовпадения, выбрать, показывать ли её на «Главная», или удалить.",
+  "Each library is one folder on a media server (DLNA / UPnP, a Windows share, WebDAV, Dropbox or Google Drive) holding movies or TV shows, like Plex's libraries.  Select one to scan it, fix what didn't match, choose whether it shows on Home, or remove it.": "Каждая библиотека — это папка на медиасервере (DLNA / UPnP, общая папка Windows, WebDAV, Dropbox или Google Drive) с фильмами или сериалами, как библиотеки Plex.  Выберите её, чтобы просканировать, исправить несовпадения, выбрать, показывать ли её на «Главная», или удалить.",
   "Easter movies": "Пасхальные фильмы",
   "Episodes TiviBro couldn't place, and shows without a match.  Opens TV shows on My media.": "Серии, которые TiviBro не смог определить, и сериалы без совпадений.  Открывает «Сериалы» в «Мои медиа».",
   "Episodes that need review": "Серии для проверки",

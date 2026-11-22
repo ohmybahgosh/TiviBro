@@ -1,6 +1,6 @@
 /* My media, helper side.  Finds and reads the viewer's own movie servers: DLNA (like a Fritz!Box, no
-   login), WebDAV (like premiumize, with a login) and Dropbox (signed in from the phone app, see
-   dropbox.js).  The app asks over /media/ routes, which need the
+   login), WebDAV (like premiumize, with a login), Windows and Samba shares (SMB, through smb.js) and
+   Dropbox (signed in from the phone app, see dropbox.js).  The app asks over /media/ routes, which need the
    helper's secret because a login goes through them (see proxy.js).
 
    Three things stay separate on purpose: a movie's id (from its stable path), its container, and the
@@ -25,6 +25,7 @@ var URL_ = require('url');
 var CA = require('./media-ca');
 var Dropbox = require('./dropbox');
 var Gdrive = require('./gdrive');
+var Smb = require('./smb');
 
 var REQUEST_MS = 8000, SCAN_MS = 120000, PAGE = 200, MAX_DEPTH = 12, MAX_FOLDERS = 3000, BODY_MAX = 16 * 1024 * 1024;
 var VIDEO = /\.(mkv|mp4|m4v|avi|mov|m2ts|ts|webm)$/i;
@@ -388,11 +389,77 @@ function scanWebdav(source, cb) {
     });
   })();
 }
+/* ---------- Windows and Samba shares (SMB) ----------
+   Folder by folder from the source's folder, like WebDAV: one run of the SMB program per folder (smb.js),
+   the same budget, time limit and checkpoint, so a big share pauses and goes on.  Ids are s: + the path
+   inside the share, which is also what a movie plays from. */
+function scanSmb(source, cb) {
+  var p = Smb.parts(source);
+  if (p instanceof Error || !p.share) return cb(Smb.failure(p instanceof Error ? p : { kind: 'noshare' }));
+  var saved = source._continuation || {};
+  var movies = saved.movies || [], errors = saved.errors || [], partial = !!saved.partial, folders = 0, paused = false, deadline = Date.now() + SCAN_MS, stop = null, skipped = newSkipped();
+  var queue = saved.queue || [{ path: p.folder, name: '', depth: 0, ancestors: [] }], visited = saved.visited || {}, discovered = saved.discovered || [];
+  var budget = source.scanFolderBudget > 0 && source.scanFolderBudget <= MAX_FOLDERS ? source.scanFolderBudget : MAX_FOLDERS;
+  function done() {
+    if (stop) return cb(Smb.failure(stop));
+    var result = { movies: movies, files: discovery(source) ? discovered : undefined, partial: partial, errors: errors, skipped: skipped };
+    if (paused) result._continuation = { queue: queue, visited: visited, movies: movies, discovered: discovered, errors: errors.filter(function (e) { return !/^stopped early/.test(e); }), partial: errors.some(function (e) { return !/^stopped early/.test(e); }) };
+    cb(result);
+  }
+  (function next() {
+    var c = queue.shift();
+    if (!c || stop) return done();
+    if ((source._control && source._control.paused) || Date.now() > deadline || folders >= budget) { queue.unshift(c); paused = true; partial = true; errors.push('stopped early, the library is very large'); return done(); }
+    if (visited[c.path.toLowerCase()]) return next();
+    visited[c.path.toLowerCase()] = true;
+    folders++;
+    Smb.list(source, c.path, function (e, entries) {
+      if (e) {
+        // The share itself failing (login, gone, unreachable) ends the scan; one folder failing doesn't.
+        if (c.depth === 0 || e.kind === 'login' || e.kind === 'unreachable' || e.kind === 'program') { stop = e; return done(); }
+        partial = true; errors.push(c.name + ': ' + (e.kind || e.message));
+        return next();
+      }
+      var files = [];
+      entries.forEach(function (it) {
+        if (it.dir) {
+          if (c.depth + 1 > (source.maxDepth || MAX_DEPTH)) { partial = true; errors.push('depth limit reached'); return; }
+          if (!isJunk(it.name) && (discovery(source) || !skipFolder(it.name, skipped))) queue.push({ path: it.path, name: it.name, depth: c.depth + 1, ancestors: c.ancestors.concat([it.name]) });
+          return;
+        }
+        if (discovery(source) ? VIDEO.test(it.name) : isMovieFile(it.name)) files.push({ file: it.name, size: it.size, path: it.path, modified: it.mtime });
+      });
+      (discovery(source) ? files : moviesOf(files, skipped, c.name)).forEach(function (f) {
+        var mod = f.modified ? new Date(f.modified).toUTCString() : undefined;
+        if (discovery(source)) {
+          var entry = observed(source, f.file, c.ancestors, { id: 's:' + f.path, size: f.size, ext: extOf(f.file), info: tokens(f.file), path: f.path, modified: mod });
+          discovered.push(entry);
+          if (entry.kind !== 'movie' || source.contentMode === 'shows') return;
+        }
+        var t = titleOf(discovery(source) ? safeMovieFolder(c.name, files) : c.name, f.file);
+        movies.push({ id: 's:' + f.path, title: t.title, year: t.year, file: f.file, size: f.size, ext: extOf(f.file), info: tokens(f.file), path: f.path, mt: f.modified || undefined });
+      });
+      next();
+    });
+  })();
+}
+// A share's movie plays from a localhost link the SMB program fills (media-stream.js), Range and all.
+function resolveSmb(source, path, cb) {
+  var p = Smb.parts(source), f = Smb.cleanPath(path);
+  if (p instanceof Error || !p.share || !f || f === '/') return cb(Smb.failure(p instanceof Error ? p : { kind: 'address' }));
+  var reader = Smb.reader(source, f);
+  reader.size(function (e) {
+    if (e) return cb(Smb.failure(e));
+    cb({ url: require('./media-stream').createReader(reader, extOf(f)) });
+  });
+}
+
 // Signed redirects stay direct.  Servers serving the authenticated file themselves
 // get a temporary localhost stream, shared by the player and subtitle Range reads.
 function resolve(source, path, cb) {
   if (source && source.type === 'dropbox') return resolveDropbox(source, path, cb);
   if (source && source.type === 'gdrive') return resolveGdrive(source, path, cb);
+  if (source && source.type === 'smb') return resolveSmb(source, path, cb);
   var base = webdavBase(source);
   if (!base || str(path).charAt(0) !== '/') return cb(failure('address'));
   var origin = base.origin;
@@ -573,6 +640,11 @@ function changeCheck(source, prev, cb) {
       out('dav:' + fingerprint(parsePropfind(body).map(function (x) { return samePath(x.href) + '|' + x.etag + '|' + x.modified + '|' + (x.dir ? 'd' : x.size); })));
     });
   }
+  // A share: its top folder's names, sizes and times (a new movie in a subfolder changes the folder's time).
+  if (type === 'smb') return Smb.list(source, '', function (e, entries) {
+    if (e) return cb(Smb.failure(e));
+    out('smb:' + fingerprint(entries.map(function (x) { return x.name + '|' + x.mtime + '|' + (x.dir ? 'd' : x.size); })));
+  });
   if (type === 'dlna') {
     var soap = '<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:GetSystemUpdateID xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1"></u:GetSystemUpdateID></s:Body></s:Envelope>';
     return request({ url: source.control, method: 'POST', body: soap, headers: { 'Content-Type': 'text/xml; charset="utf-8"', SOAPACTION: '"urn:schemas-upnp-org:service:ContentDirectory:1#GetSystemUpdateID"', 'Content-Length': Buffer.byteLength(soap) } }, function (e, status, h, body) {
@@ -590,6 +662,7 @@ function scan(source, cb) {
   if (type === 'webdav') return scanWebdav(source, cb);
   if (type === 'dropbox') return scanDropbox(source, cb);
   if (type === 'gdrive') return scanGdrive(source, cb);
+  if (type === 'smb') return scanSmb(source, cb);
   cb(failure('address'));
 }
 
@@ -645,7 +718,7 @@ function send(res, ALLOW, code, obj) {
   res.writeHead(code, h);
   res.end(JSON.stringify(obj));
 }
-function hostOf(source) { if (source && source.type === 'dropbox') return 'dropbox'; if (source && source.type === 'gdrive') return 'gdrive'; try { return URL_.parse(str(source && (source.control || source.address))).hostname || ''; } catch (e) { return ''; } }
+function hostOf(source) { if (source && source.type === 'dropbox') return 'dropbox'; if (source && source.type === 'gdrive') return 'gdrive'; if (source && source.type === 'smb') return str(source.server).replace(/:\d+$/, ''); try { return URL_.parse(str(source && (source.control || source.address))).hostname || ''; } catch (e) { return ''; } }
 /* The catalogue opens once, on first use.  A failure is not remembered: the next request tries again. */
 var catalogOpening = null, openCatalog = null, scanResults = {}, activeScanControls = {};
 var SCAN_KEEP_MS = 300000, SCAN_KEEP = 2;
@@ -806,13 +879,29 @@ function gdriveRequest(kind, q, res, ALLOW, log) {
   if (!Gdrive.validId(q.parent) || (q.driveId && !Gdrive.validId(q.driveId))) { var bad = new Error('folder'); bad.kind = 'address'; return answer(bad); }
   Gdrive.folders(key, str(q.parent), str(q.driveId), function (e, folders) { answer(e, { folders: folders }); });
 }
+/* A share before a library exists, for the add-a-share forms: shares (the disk shares on a server),
+   folders (one folder's folders) and check (sign in and open the share).  The login comes with each ask
+   and is never kept here or sent back. */
+function smbRequest(kind, q, res, ALLOW, log) {
+  var source = { type: 'smb', server: q.server, share: q.share, folder: '/', user: q.user, pass: q.pass, domain: q.domain };
+  function answer(e, out) {
+    log({ lv: e ? 'warn' : 'info', event: 'smb ' + kind, host: hostOf(source), count: out && (out.shares || out.folders) ? (out.shares || out.folders).length : undefined, error: e ? e.kind || 'other' : null });
+    send(res, ALLOW, 200, e ? Smb.failure(e) : out);
+  }
+  if (kind === 'shares') return Smb.shares(source, function (e, list) { answer(e, { shares: list }); });
+  if (kind === 'check') return Smb.check(source, function (e, r) { answer(e, r); });
+  Smb.list(source, q.path, function (e, entries) {
+    answer(e, e ? null : { folders: entries.filter(function (x) { return x.dir && !isJunk(x.name); }).map(function (x) { return { name: x.name, path: x.path }; }) });
+  });
+}
 function handle(req, res, ALLOW, log) {
   var route = req.url.split('?')[0];
   var libraryRoute = /^\/media\/library\/(query|detail|edit|migrate|progress|continue|chapters|source|adopt|resolve|status|sidecar)$/.exec(route);
   var subs = /^\/media\/subs\/(search|get|login)$/.exec(route), subscan = /^\/media\/subs\/(scan|lines)$/.exec(route);
   var dropbox = /^\/media\/dropbox\/(folders|account|revoke)$/.exec(route);
   var gdrive = /^\/media\/gdrive\/(places|folders)$/.exec(route);
-  if (req.method !== 'POST' || (!libraryRoute && !subs && !subscan && !dropbox && !gdrive && route !== '/media/scan/control' && route !== '/media/discover' && route !== '/media/scan' && route !== '/media/resolve' && route !== '/media/sidecar' && route !== '/media/sidecar/get' && route !== '/media/vformat' && route !== '/media/check' && route !== '/media/metadata' && route !== '/media/trakt')) return send(res, ALLOW, 404, { error: 'unknown media route' });
+  var smb = /^\/media\/smb\/(shares|folders|check)$/.exec(route);
+  if (req.method !== 'POST' || (!libraryRoute && !subs && !subscan && !dropbox && !gdrive && !smb && route !== '/media/scan/control' && route !== '/media/discover' && route !== '/media/scan' && route !== '/media/resolve' && route !== '/media/sidecar' && route !== '/media/sidecar/get' && route !== '/media/vformat' && route !== '/media/check' && route !== '/media/metadata' && route !== '/media/trakt')) return send(res, ALLOW, 404, { error: 'unknown media route' });
   var body = '', over = false, bodyBytes = 0, bodyLimit = libraryRoute || subscan ? 1048576 : 65536;   // subscan: a long movie's Cluster offsets
   if (req.setEncoding) req.setEncoding('utf8');
   req.on('data', function (c) { if (over) return; body += c; bodyBytes += Buffer.byteLength(c, 'utf8'); if (bodyBytes > bodyLimit) { over = true; send(res, ALLOW, 413, { error: 'too large' }); } });
@@ -823,6 +912,7 @@ function handle(req, res, ALLOW, log) {
     if (libraryRoute) return libraryRequest(libraryRoute[1], q, req, res, ALLOW, log);
     if (dropbox) return dropboxRequest(dropbox[1], q, res, ALLOW, log);
     if (gdrive) return gdriveRequest(gdrive[1], q, res, ALLOW, log);
+    if (smb) return smbRequest(smb[1], q, res, ALLOW, log);
     // Subtitle lines of an MKV whose index covers only the video, read from the player's own download (service/subscan.js).
     if (subscan) return require('./subscan')[subscan[1]](q, function (r) {
       if (subscan[1] === 'scan') log({ lv: r.error ? 'warn' : 'info', event: 'subtitles from the passing file', error: r.error || null });

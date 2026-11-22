@@ -1017,6 +1017,66 @@ var Media = (function () {
       UI.menu(here ? RAW(here.name) : 'Google Drive', items);
     }, function (e) { U.toast(why(e), 6000); });
   }
+  /* ---------- Windows and Samba shares (SMB, service/smb.js) ----------
+     A server and a login, then a share and a folder picked from lists the helper reads with that login.
+     The login (a secret, kept like a WebDAV password) is checked by scanning before anything is saved.
+     An empty user name signs in as a guest. */
+  /* What the viewer typed as the server: "nas", "192.168.1.20", "nas:4450", or a whole \\nas\Movies\Films or
+     smb://nas/Movies/Films, which also gives the share and folder.  { server, share, folder } or null. */
+  function smbAddress(text) {
+    var t = String(text || '').trim().replace(/^smb:\/\//i, '').replace(/\\/g, '/').replace(/^\/+/, '');
+    var bits = t.split('/').filter(function (x) { return x !== ''; });
+    if (!bits.length || !/^(?:[A-Za-z0-9][A-Za-z0-9._-]*|\[[0-9A-Fa-f:.]+\])(?::\d{1,5})?$/.test(bits[0])) return null;
+    return { server: bits[0], share: bits[1] || '', folder: '/' + bits.slice(2).join('/') };
+  }
+  function smbLogin(o) { return { server: o.server, share: o.share || '', user: String(o.user || '').trim(), pass: String(o.pass || ''), domain: String(o.domain || '').trim() }; }
+  // The disk shares on a server, the folders in one folder, for the pickers (TV, phone app, web editor).
+  function smbShares(o) { return ask('smb/shares', smbLogin(o), 40000); }
+  function smbFolders(o, folder) { var q = smbLogin(o); q.path = String(folder || '/'); return ask('smb/folders', q, 40000); }
+  function addSmb(o, name) {
+    var l = smbLogin(o);
+    if (!l.share) { U.toast('Pick a share first.', 5000); return Promise.resolve({ error: 'noshare', message: 'Pick a share first.' }); }
+    var folder = String(o.folder || '/'), where = '\\\\' + l.server.replace(/:\d+$/, '') + '\\' + l.share + (folder === '/' ? '' : folder.replace(/\//g, '\\'));
+    var source = { contentMode: 'automatic', type: 'smb', server: l.server, share: l.share, folder: folder, user: l.user, pass: l.pass, domain: l.domain, where: where,
+      name: String(name || '').trim().slice(0, 80) || (folder === '/' ? l.share : folder.split('/').pop()) };
+    U.toast('Checking ' + source.name + '…');
+    return scanSource(source).then(function (res) { return addScanned(source, res); }, function (e) { U.toast(why(e), 6000); return { error: 'helper', message: why(e) }; });
+  }
+  // The TV's own way in: server, user name and password typed with the remote, then the lists.
+  function askSmb() {
+    UI.prompt('Server name or address', '', function (text) {
+      var a = smbAddress(text);
+      if (!a) { if (String(text || '').trim()) U.toast('That isn\'t a server name or address.  Try its name (like NAS or DESKTOP-PC) or its IP address.', 7000); return; }
+      UI.prompt('User name (empty for a guest)', '', function (user) {
+        if (!String(user || '').trim()) return smbPick(smbLogin({ server: a.server, share: a.share }), a.share ? [a.folder] : null);
+        UI.prompt('Password', '', function (pass) { smbPick(smbLogin({ server: a.server, share: a.share, user: user, pass: pass }), a.share ? [a.folder] : null); });
+      }, 'On a Windows PC: the PC\'s user name or your Microsoft account email.');
+    }, 'Like NAS, DESKTOP-PC or 192.168.1.20.  Or a whole path: \\\\NAS\\Movies');
+  }
+  /* The share list (trail null), then folder by folder (trail: the folders opened, '/' first).  Each folder
+     can be added, opened or left with Up. */
+  function smbPick(login, trail) {
+    if (!trail) {
+      U.toast('Asking ' + login.server + ' for its shares…');
+      return smbShares(login).then(function (r) {
+        if (r.error) { U.toast(r.message, 8000); return; }
+        var items = (r.shares || []).map(function (sh) { return { label: RAW(sh.name), sub: sh.comment ? RAW(sh.comment) : 'Open this share', action: function () { smbPick(Object.assign({}, login, { share: sh.name }), ['/']); } }; });
+        if (!items.length) items.push({ label: 'No shares found', sub: 'Share a folder on the server, or check the user can see it' });
+        UI.menu(RAW(login.server), items);
+      }, function (e) { U.toast(why(e), 6000); });
+    }
+    var here = trail[trail.length - 1], label = here === '/' ? login.share : here.split('/').pop();
+    U.toast('Opening ' + label + '…');
+    smbFolders(login, here).then(function (r) {
+      if (r.error) { U.toast(r.message, 8000); return; }
+      var items = [{ label: 'Add ' + RAW(label), sub: '\\\\' + login.server + '\\' + login.share + (here === '/' ? '' : here.replace(/\//g, '\\')) + '  ·  movies and TV shows in it and its folders', action: function () {
+        addSmb(Object.assign({}, login, { folder: here })).then(function (res) { if (res && !res.error) U.toast(label + ' added: ' + (res.movies || 0) + ' movies and ' + (res.episodes || 0) + ' episodes so far.', 6000); });
+      } }];
+      (r.folders || []).forEach(function (f) { items.push({ label: RAW(f.name), sub: 'Open this folder', action: function () { smbPick(login, trail.concat([f.path])); } }); });
+      items.push({ label: 'Up', action: function () { if (trail.length > 1) smbPick(login, trail.slice(0, -1)); else smbPick(Object.assign({}, login, { share: '' }), null); } });
+      UI.menu(RAW(label), items);
+    }, function (e) { U.toast(why(e), 6000); });
+  }
   function gdriveHelp() { UI.menu('Google Drive', [{ label: 'Add it in the web editor (Settings > My media > Edit on a computer) or the TiviBro phone app (Settings > My media > Add media > Google Drive).' }, { label: 'It needs a Google Cloud service account that the drive or folder is shared with.  The web editor walks you through it.' }, { label: 'Done' }]); }
   function dropboxHelp() { UI.menu('Dropbox', [{ label: 'Sign in with the TiviBro phone app: Settings > My media > Add media > Dropbox.' }, { label: 'Done' }]); }
   function askAddress() {
@@ -1031,6 +1091,7 @@ var Media = (function () {
     UI.menu('Add media', [
       { label: 'Browse my network (DLNA / UPnP)', sub: 'Find a home media server with media sharing turned on', action: browseNetwork },
       { label: 'Add a WebDAV server', sub: 'Enter your media folder\'s address and login, or use the web editor', action: askAddress },
+      { label: 'Add a Windows or network share (SMB)', sub: 'A shared folder on a PC, a NAS or a router: its name and a login', action: askSmb },
       { label: 'Dropbox', sub: 'Sign in with the TiviBro phone app: Settings > My media > Add media > Dropbox.', action: dropboxHelp },
       { label: 'Google Drive', sub: MediaStore.gdriveKeys().length ? 'Pick a shared drive or folder with the key already on this TV' : 'Shared drives and folders: add the key in the web editor or the phone app', action: gdriveAdd }
     ]);
@@ -1754,7 +1815,7 @@ var Media = (function () {
   return {
     quickMarkMovie: quickMarkMovie, movieCard: movieCard,
     reviewCount: function () { return reviewCards.length; },      // how many need a look (the show options offer Needs review)
-    refreshShows:refreshSeries, playNow: function (m) { playNow(m); }, foundText: foundText, discover: discover, addServer: addServer, sourceDetailsNow: sourceDetailsNow, isScanning: function (id) { return !!scanning[id]; }, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); visitEnd(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress, addDropbox: addDropbox, dropboxFolders: dropboxFolders, addGdrive: addGdrive, gdrivePlaces: gdrivePlaces, gdriveFolders: gdriveFolders, gdriveKey: gdriveKey, signOut: signOut,
+    refreshShows:refreshSeries, playNow: function (m) { playNow(m); }, foundText: foundText, discover: discover, addServer: addServer, sourceDetailsNow: sourceDetailsNow, isScanning: function (id) { return !!scanning[id]; }, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); visitEnd(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress, addDropbox: addDropbox, dropboxFolders: dropboxFolders, addGdrive: addGdrive, gdrivePlaces: gdrivePlaces, addSmb: addSmb, smbShares: smbShares, smbFolders: smbFolders, smbAddress: smbAddress, gdriveFolders: gdriveFolders, gdriveKey: gdriveKey, signOut: signOut,
     rescanAll: rescanAll, newMedia: newMedia, newMediaSoon: newMediaSoon, guideLookup: guideLookup, movieById: movieById, tvByName: tvByName, tvSeason: tvSeason, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, libraryStats: libraryStats, removeLibrary: removeLibrary,
     // The web editor's Fix match: search TMDB by a typed title, then save the one picked.
     searchDetails: function (title) { if (!MediaStore.tmdbToken()) return Promise.reject(new Error('Add a TMDB API token first.')); return metadataRequest({ title: String(title || '').slice(0, 200) }).then(function (r) { return (r.matches || []).slice(0, 10).map(function (x) { return { id: x.id, title: x.title, year: x.year || '' }; }); }); },

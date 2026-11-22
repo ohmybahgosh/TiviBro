@@ -128,6 +128,7 @@ function log(entry) {
 }
 
 Ffmpeg.setLog(log);
+require('./smb').setLog(log);
 Ffmpeg.prepare();                         // a release carries the converter: onto the TV's storage, no download
 
 function target(reqUrl) {

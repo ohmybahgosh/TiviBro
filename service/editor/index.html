@@ -730,7 +730,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
 
     <!-- MY MEDIA -->
     <section class="page hidden" id="p-media">
-      <div class="phead"><div><h1>My media</h1><p>Your own movies and TV shows from a home media server or a WebDAV service.  Watch them in My media on the TV or in the phone app.</p></div></div>
+      <div class="phead"><div><h1>My media</h1><p>Your own movies and TV shows from a home media server, a Windows or network share, or a WebDAV service.  Watch them in My media on the TV or in the phone app.</p></div></div>
       <div class="scroll">
         <div class="card apponly"><h3>My media is in the app</h3><p>Add sources, change what they hold, rescan them and set your preferences in the phone app's own screen.</p><button type="button" class="primary" data-app="media">Open My media settings</button></div>
         <div class="webonly">
@@ -805,6 +805,24 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
             <div class="full row"><button type="submit" class="primary">Check and add server</button></div>
           </form>
           <div id="mediaMsg" aria-live="polite"></div>
+        </div>
+        <div class="card" style="margin-top:18px;max-width:760px" id="smbCard">
+          <h3>Add a Windows or network share (SMB)</h3>
+          <p>A shared folder on a Windows PC, a Mac, a NAS (Synology, QNAP, Unraid, TrueNAS) or a router with a USB drive.  The TV reads it directly: SMB 2 and 3, signed and encrypted where the server asks.  Old SMB1-only servers aren't supported.</p>
+          <form id="smbForm" class="form">
+            <label class="f full">Server name or address<input id="smbServer" type="text" placeholder="NAS, DESKTOP-PC, 192.168.1.20 or \\NAS\Movies" autocomplete="off" required></label>
+            <label class="f">User name<input id="smbUser" type="text" autocomplete="off" placeholder="empty for a guest"></label>
+            <label class="f">Password<input id="smbPass" type="password" autocomplete="new-password"></label>
+            <div class="full muted small">On a Windows PC: the PC's user name or your Microsoft account email, and its password.  Windows 11 doesn't allow guests.</div>
+            <div class="full row"><button type="submit" class="primary">Show the shares</button></div>
+          </form>
+          <div id="smbPick" class="hidden">
+            <div class="meta" id="smbWhere"></div>
+            <div id="smbFolders" class="row" style="flex-wrap:wrap;gap:6px;margin:8px 0"></div>
+            <div class="row"><button type="button" id="smbUp" class="ghost">Up</button><label class="f" style="flex:1">Library name<input id="smbName" type="text" maxlength="60"></label><button type="button" id="smbAdd" class="primary">Add this folder</button></div>
+          </div>
+          <div id="smbMsg" aria-live="polite"></div>
+          <p class="muted small">The login is kept on the TV like a password: never sent back to this page, logged or put in backups.</p>
         </div>
         <div class="card" style="margin-top:18px;max-width:760px" id="gdCard">
           <h3>Add Google Drive</h3>
@@ -3799,7 +3817,7 @@ function loadMedia() {
       var title = document.createElement('h3'); title.textContent = s.name; card.appendChild(title);
       var kind = s.contentMode === 'shows' ? 'TV shows' : s.contentMode === 'automatic' ? 'Movies and TV shows' : 'Movies';
       var detail = document.createElement('div'); detail.className = 'meta';
-      detail.textContent = kind + ' · ' + (s.type === 'dlna' ? 'DLNA / UPnP' : s.type === 'dropbox' ? 'Dropbox' + (s.root ? ' · ' + s.root : '') : s.type === 'gdrive' ? 'Google Drive' + (s.root ? ' · ' + s.root : '') : 'WebDAV') + (s.scanning ? ' · scanning…' : '');
+      detail.textContent = kind + ' · ' + (s.type === 'dlna' ? 'DLNA / UPnP' : s.type === 'dropbox' ? 'Dropbox' + (s.root ? ' · ' + s.root : '') : s.type === 'gdrive' ? 'Google Drive' + (s.root ? ' · ' + s.root : '') : s.type === 'smb' ? 'Windows share' + (s.root ? ' · ' + s.root : '') : 'WebDAV') + (s.scanning ? ' · scanning…' : '');
       card.appendChild(detail);
       var counts = document.createElement('div'); counts.className = 'muted small';
       var bits = [];
@@ -3988,6 +4006,46 @@ $('mediaAdd').onsubmit = function (e) {
   command('mediaAdd', args, 160000, cmdMsg('mediaMsg', 'Checking the login and looking for movies and TV shows…')).then(function (r) {
     msg('mediaMsg', 'ok', r.msg); loadMedia();
   }).catch(function (e) { msg('mediaMsg', 'bad', e.message); }).then(function () { button.disabled = false; });
+};
+
+/* ---------- a Windows or network share (SMB): the login stays in this page's memory until the folder is added ---------- */
+var smb = { login: null, trail: [] };   // trail: '' (the server's shares), then the share's folder paths opened, '/' first
+function smbHere() { return smb.trail[smb.trail.length - 1]; }
+function smbShow(list, shares) {
+  var box = $('smbFolders'), here = smbHere(); box.innerHTML = '';
+  $('smbPick').classList.remove('hidden');
+  $('smbWhere').textContent = shares ? 'Shares on ' + smb.login.server + ':' : '\\\\' + smb.login.server + '\\' + smb.login.share + (here === '/' ? '' : here.replace(/\//g, '\\'));
+  $('smbUp').classList.toggle('hidden', shares);
+  $('smbAdd').classList.toggle('hidden', shares);
+  if (!shares) $('smbName').value = here === '/' ? smb.login.share : here.split('/').pop();
+  if (!list.length) box.innerHTML = '<span class="muted small">' + (shares ? 'No shares found.  Share a folder on the server, or check this user can see it.' : 'No folders inside.  Add this one, or go up.') + '</span>';
+  list.forEach(function (f) { box.appendChild(gdButton(f.name, function () {
+    if (shares) { smb.login.share = f.name; smb.trail = ['/']; } else smb.trail.push(f.path);
+    smbOpen();
+  })); });
+}
+function smbOpen() {
+  var here = smbHere(), args = Object.assign({}, smb.login);
+  if (!here) return command('mediaSmbShares', args, 45000, cmdMsg('smbMsg', 'Asking ' + smb.login.server + ' for its shares…')).then(function (r) { msg('smbMsg', 'ok', ''); smbShow(r.data, true); }).catch(function (e) { msg('smbMsg', 'bad', e.message); });
+  args.path = here;
+  return command('mediaSmbFolders', args, 45000, cmdMsg('smbMsg', 'Opening ' + (here === '/' ? smb.login.share : here.split('/').pop()) + '…')).then(function (r) { msg('smbMsg', 'ok', ''); smbShow(r.data, false); }).catch(function (e) { msg('smbMsg', 'bad', e.message); smb.trail.pop(); });
+}
+$('smbForm').onsubmit = function (e) {
+  e.preventDefault();
+  var text = $('smbServer').value.trim().replace(/^smb:\/\//i, '').replace(/\\/g, '/').replace(/^\/+/, ''), bits = text.split('/').filter(function (x) { return x; });
+  smb.login = { server: bits[0] || '', share: bits[1] || '', user: $('smbUser').value, pass: $('smbPass').value };
+  smb.trail = bits[1] ? ['/' + bits.slice(2).join('/')] : [];
+  $('smbPass').value = '';
+  smbOpen();
+};
+$('smbUp').onclick = function () { smb.trail.pop(); if (!smb.trail.length) smb.login.share = ''; smbOpen(); };
+$('smbAdd').onclick = function () {
+  var here = smbHere(); if (!here) return;
+  var b = this, args = Object.assign({}, smb.login, { folder: here, name: $('smbName').value });
+  b.disabled = true;
+  command('mediaSmbAdd', args, 160000, cmdMsg('smbMsg', 'Checking the login and looking for movies and TV shows…')).then(function (r) {
+    msg('smbMsg', 'ok', r.msg + '  Add another folder, or you\'re done.'); loadMedia();
+  }).catch(function (e) { msg('smbMsg', 'bad', e.message); }).then(function () { b.disabled = false; });
 };
 
 /* ---------- Google Drive: the key stays in this page's memory only until the folder is added ---------- */

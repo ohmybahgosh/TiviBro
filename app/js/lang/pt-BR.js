@@ -1913,7 +1913,7 @@ I18n.add('pt-BR', {
   "Could not open that movie:": "Não foi possível abrir esse filme:",
   "Could not read My media:": "Não foi possível ler Minhas mídias:",
   "Could not reload the list:": "Não foi possível recarregar a lista:",
-  "Each library is one folder on a media server (DLNA / UPnP, WebDAV, Dropbox or Google Drive) holding movies or TV shows, like Plex's libraries.  Select one to scan it, fix what didn't match, choose whether it shows on Home, or remove it.": "Cada biblioteca é uma pasta em um servidor de mídia (DLNA / UPnP, WebDAV, Dropbox ou Google Drive) com filmes ou séries, como as bibliotecas do Plex.  Selecione uma para verificá-la, corrigir o que não foi reconhecido, escolher se aparece em Início ou removê-la.",
+  "Each library is one folder on a media server (DLNA / UPnP, a Windows share, WebDAV, Dropbox or Google Drive) holding movies or TV shows, like Plex's libraries.  Select one to scan it, fix what didn't match, choose whether it shows on Home, or remove it.": "Cada biblioteca é uma pasta em um servidor de mídia (DLNA / UPnP, uma pasta compartilhada do Windows, WebDAV, Dropbox ou Google Drive) com filmes ou séries, como as bibliotecas do Plex.  Selecione uma para verificá-la, corrigir o que não foi reconhecido, escolher se aparece em Início ou removê-la.",
   "Easter movies": "Filmes de Páscoa",
   "Episodes TiviBro couldn't place, and shows without a match.  Opens TV shows on My media.": "Episódios que o TiviBro não conseguiu encaixar e séries sem correspondência.  Abre Séries de TV em Minhas mídias.",
   "Episodes that need review": "Episódios para revisar",

@@ -378,7 +378,7 @@ var Phone = (function () {
       function sources() {
         return MediaStore.publicSources().map(function (s) {
           var row = { id: s.id, name: s.name, type: s.type, mode: s.contentMode || 'movies', movies: MediaStore.movies(s.id).length, episodes: s.episodeFiles || 0, scanning: Media.isScanning(s.id) ? 1 : 0 };
-          if (s.type === 'dropbox' || s.type === 'gdrive') { row.root = s.root || ''; row.account = s.account || ''; }
+          if (s.type === 'dropbox' || s.type === 'gdrive' || s.type === 'smb') { row.root = s.root || ''; row.account = s.account || ''; }
           return row;
         });
       }
@@ -416,6 +416,25 @@ var Phone = (function () {
           if (r && r.error === 'login') return { error: 'login', message: signIn };
           return r && !r.error ? { msg: 'Added: ' + plural(r.movies || 0, 'movie') + ' and ' + plural(r.episodes || 0, 'episode') + '.' + Media.leftOut(r.skipped) } : r;
         }), 'Signed in to Dropbox.  The TV is still looking through the folder.');
+      }
+      /* A Windows or network share (SMB): smbshares (the disk shares on a server), smbfolders (one folder's
+         folders) and addsmb (the folder picked).  The login comes with each ask and is never sent back. */
+      if (op === 'smbshares' || op === 'smbfolders' || op === 'addsmb') {
+        var at = Media.smbAddress(a.server);
+        if (!at) throw new Error('Enter the server\'s name or IP address, like NAS or 192.168.1.20.');
+        var login = { server: at.server, share: String(a.share || at.share || ''), user: String(a.user || '').slice(0, 300), pass: String(a.pass || '').slice(0, 400), domain: String(a.domain || '').slice(0, 100) };
+        if (op === 'smbshares') return Media.smbShares(login).then(function (r) {
+          if (r.error) throw new Error(r.message || 'The server didn\'t answer.');
+          return { shares: (r.shares || []).map(function (x) { return { name: String(x.name || ''), comment: String(x.comment || '') }; }) };
+        });
+        if (op === 'smbfolders') return Media.smbFolders(login, String(a.path || '/')).then(function (r) {
+          if (r.error) throw new Error(r.message || 'The server didn\'t answer.');
+          return { folders: (r.folders || []).map(function (f) { return { name: String(f.name || ''), path: String(f.path || '') }; }) };
+        });
+        login.folder = String(a.folder || at.folder || '/');
+        return waitFor(Media.addSmb(login, String(a.name || '').slice(0, 80)).then(function (r) {
+          return r && !r.error ? { msg: 'Added: ' + plural(r.movies || 0, 'movie') + ' and ' + plural(r.episodes || 0, 'episode') + '.' + Media.leftOut(r.skipped) } : r;
+        }), 'The share accepted the login.  The TV is still looking through the folder.');
       }
       /* Google Drive: the service account's key comes with each ask (gdplaces: its email, shared drives and
          shared folders; gdfolders: one folder's folders; addgdrive: the folder picked).  Never sent back. */

@@ -20,6 +20,7 @@ function fingerprint(directory, source) {
   var clean = {};
   ['type', 'address', 'control', 'user', 'contentMode', 'maxDepth'].forEach(function (k) { clean[k] = source[k] || ''; });
   if (source.type === 'dropbox') clean.root = String(source.root || '').toLowerCase();   // its folder (the refresh token, like a password, is left out)
+  if (source.type === 'smb') { clean.server = String(source.server || '').toLowerCase(); clean.share = String(source.share || '').toLowerCase(); clean.folder = String(source.folder || ''); clean.domain = String(source.domain || ''); }   // where on which share (the password is left out)
   if (source.type === 'gdrive') { clean.root = String(source.root || ''); clean.driveId = String(source.driveId || ''); }   // the folder's id (the key is left out)
   return crypto.createHmac('sha256', key(directory)).update(JSON.stringify(clean)).digest('hex');
 }

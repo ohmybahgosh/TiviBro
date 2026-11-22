@@ -96,6 +96,8 @@ var MediaStore = (function () {
     if (s.type === 'dropbox') { row.root = s.root || ''; row.account = s.account || ''; row.refresh = s.refresh; }
     // Google Drive: the folder's id, its shared drive's, where it is in words, the service account's email (display only) and its key, a secret like pass.
     if (s.type === 'gdrive') { row.root = s.root; row.driveId = s.driveId || ''; row.where = s.where || ''; row.account = s.account || ''; row.key = s.key; }
+    // A Windows or network share (SMB): the server, the share, the folder in it, where in words, and the domain.
+    if (s.type === 'smb') { row.server = s.server; row.share = s.share; row.folder = s.folder || '/'; row.where = s.where || ''; row.domain = s.domain || ''; }
     state.sources.push(row);
     save(); menu();
     return id;
@@ -125,6 +127,7 @@ var MediaStore = (function () {
       var out = { id: s.id, type: s.type, name: s.name, address: s.address || '', contentMode:s.contentMode||'movies',episodeFiles:state.sourceStats&&state.sourceStats[s.id]?state.sourceStats[s.id].episodeFiles:0, count: lib.filter(function (m) { return m.src === s.id; }).length };
       if (s.type === 'dropbox') { out.root = s.root || ''; out.account = s.account || ''; }
       if (s.type === 'gdrive') { out.root = s.where || ''; out.account = s.account || ''; }
+      if (s.type === 'smb') { out.root = s.where || ''; out.account = s.user || 'Guest'; }
       return out;
     });
   }

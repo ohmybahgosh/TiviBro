@@ -408,7 +408,7 @@ var WebEdit = (function () {
     mediaLibraryEdit:function (a) { return Media.request('library/edit',a,30000).then(function (r) { if(r.error)throw new Error(r.message);if(a.operation==='setWatched'&&!a.watched&&Media.watchedReset)Media.watchedReset(a.handle,r.revision);return {msg:'Library updated.',data:r}; }); },
     mediaTokenTest: function () { return Media.testTmdbToken().then(function (m) { return { msg: m }; }); },
     mediaList: function () {
-      return MediaStore.load().then(function () { return { msg: 'Media sources', data: MediaStore.publicSources().map(function (s) { var st = Media.libraryStats ? Media.libraryStats(s.id) : null; return { id: s.id, type: s.type, name: s.name, root: s.type === 'dropbox' || s.type === 'gdrive' ? s.root || '' : undefined, account: s.type === 'gdrive' ? s.account || '' : undefined, count: s.count,contentMode:s.contentMode||'movies',episodeFiles:s.episodeFiles||0,
+      return MediaStore.load().then(function () { return { msg: 'Media sources', data: MediaStore.publicSources().map(function (s) { var st = Media.libraryStats ? Media.libraryStats(s.id) : null; return { id: s.id, type: s.type, name: s.name, root: s.type === 'dropbox' || s.type === 'gdrive' || s.type === 'smb' ? s.root || '' : undefined, account: s.type === 'gdrive' ? s.account || '' : undefined, count: s.count,contentMode:s.contentMode||'movies',episodeFiles:s.episodeFiles||0,
         unmatched: st ? st.unmatched.length : 0, shows: st ? st.shows : 0, unmatchedShows: st ? st.unmatchedShows : 0, fourK: st ? st.fourK : 0, scanning: st ? st.scanning : false, homeOff: st ? st.homeOff : false }; }) }; });
     },
     // A library's name and Show on Home; its unmatched movies; Fix match (search, then save the pick).
@@ -446,6 +446,26 @@ var WebEdit = (function () {
       return Media.addAddress(clean(a.address), clean(a.user), clean(a.pass)).then(function (r) {
         if (r.error) throw new Error(r.message || 'Could not add that media source.');
         return { msg: 'Media source added: ' + (r.movies || 0) + ' movies.' + (Media.leftOut ? Media.leftOut(r.skipped) : '') };
+      });
+    },
+    /* A Windows or network share (SMB) from the web editor: the server and login with each ask (shares,
+       folders), then the folder picked.  The login is never sent back to the page. */
+    mediaSmbShares: function (a) {
+      var at = Media.smbAddress(clean(a.server));
+      if (!at) return Promise.reject(new Error('Enter the server\'s name or IP address, like NAS or 192.168.1.20.'));
+      return Media.smbShares({ server: at.server, user: clean(a.user), pass: String(a.pass || ''), domain: clean(a.domain) }).then(function (r) { if (r.error) throw new Error(r.message); return { msg: '', data: r.shares || [] }; });
+    },
+    mediaSmbFolders: function (a) {
+      var at = Media.smbAddress(clean(a.server));
+      if (!at) return Promise.reject(new Error('Enter the server\'s name or IP address.'));
+      return Media.smbFolders({ server: at.server, share: clean(a.share), user: clean(a.user), pass: String(a.pass || ''), domain: clean(a.domain) }, clean(a.path) || '/').then(function (r) { if (r.error) throw new Error(r.message); return { msg: '', data: r.folders || [] }; });
+    },
+    mediaSmbAdd: function (a) {
+      var at = Media.smbAddress(clean(a.server));
+      if (!at) return Promise.reject(new Error('Enter the server\'s name or IP address.'));
+      return Media.addSmb({ server: at.server, share: clean(a.share), folder: clean(a.folder) || '/', user: clean(a.user), pass: String(a.pass || ''), domain: clean(a.domain) }, clean(a.name)).then(function (r) {
+        if (r.error) throw new Error(r.message || 'Could not add that share.');
+        return { msg: 'Share added: ' + (r.movies || 0) + ' movies and ' + (r.episodes || 0) + ' episodes.' + (Media.leftOut ? Media.leftOut(r.skipped) : '') };
       });
     },
     /* Google Drive from the web editor: the service account's key with each ask, then the folder picked.

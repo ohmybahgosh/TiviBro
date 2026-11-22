@@ -1,0 +1,113 @@
+name: smb
+
+# Builds tivibro-smb, the small static SMB2/3 reader TiviBro's network helper uses for Windows and
+# network shares in My media (scripts/smb/tivibro-smb.c on libsmb2, LGPL-2.1), and tests it against a
+# throwaway Samba server (signing required, an encrypted share, wrong logins).  Manual only: run it from
+# the Actions tab.  It publishes a pre-release (never "latest") with the programs, their licence and the
+# exact source.  Then copy the SHA-256 of each .gz into service/smb.js.  See docs/SMB.md.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to create or update
+        required: true
+        default: smb-1-tb1
+
+permissions:
+  contents: write
+
+concurrency:
+  group: smb-${{ github.event.inputs.tag }}
+  cancel-in-progress: false
+
+env:
+  CACHE_DIR: ${{ github.workspace }}/.smb-cache
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install host tools
+        # Cross binutils for strip, qemu-user to run the ARM builds, Samba to test them against.
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends \
+            binutils-arm-linux-gnueabihf binutils-aarch64-linux-gnu qemu-user-static samba cmake
+
+      - name: Cache toolchain and sources
+        uses: actions/cache@v6
+        with:
+          path: |
+            ${{ env.CACHE_DIR }}/zig-0.*
+            ${{ env.CACHE_DIR }}/libsmb2
+          key: smb-toolchain-${{ hashFiles('scripts/smb/build.sh') }}
+          restore-keys: smb-toolchain-
+
+      - name: Build
+        run: bash scripts/smb/build.sh all "$RUNNER_TEMP/out"
+
+      - name: Test against Samba (under qemu)
+        run: sudo -E env "PATH=$PATH" bash scripts/smb/build.sh test all "$RUNNER_TEMP/out"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: smb
+          path: ${{ runner.temp }}/out/
+          if-no-files-found: error
+
+  release:
+    name: Publish ${{ github.event.inputs.tag }}
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.inputs.tag }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: smb
+          path: parts
+
+      - name: Assemble release files
+        run: |
+          set -euo pipefail
+          mkdir dist
+          for a in armv7 aarch64; do
+            gzip -9 -n -c "parts/tivibro-smb-$a" > "dist/tivibro-smb-$a.gz"
+          done
+          curl -fsSL --retry 3 -o dist/COPYING.LGPLv2.1 https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt
+          {
+            echo "tivibro-smb for TiviBro (My media from Windows and network shares), release $TAG"
+            echo "Built by .github/workflows/smb.yml from $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/tree/$GITHUB_SHA"
+            echo "Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            for a in armv7 aarch64; do
+              echo
+              echo "------------------------------------------------------------------------"
+              cat "parts/SOURCE-smb-$a.txt"
+            done
+          } > dist/SOURCE.txt
+          ( cd dist && sha256sum -- * > SHA256SUMS )
+          cat dist/SHA256SUMS
+
+      - name: Create or update the release
+        run: |
+          set -euo pipefail
+          cat > notes.md <<EOF
+          tivibro-smb: a small static SMB 2 and 3 reader (libsmb2, LGPL-2.1) that TiviBro's network helper runs
+          to read Windows and network shares in My media.  This is not an app release: TiviBro carries it.
+
+          Source and build: \`SOURCE.txt\`.  Licence: \`COPYING.LGPLv2.1\`.  Checksums: \`SHA256SUMS\`.  More: docs/SMB.md.
+          EOF
+          TITLE="SMB reader for TiviBro (Windows and network shares)"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "$TITLE" --notes-file notes.md --prerelease --latest=false
+            gh release upload "$TAG" dist/* --clobber
+          else
+            gh release create "$TAG" dist/* --target "$GITHUB_SHA" --title "$TITLE" --notes-file notes.md --prerelease --latest=false
+          fi

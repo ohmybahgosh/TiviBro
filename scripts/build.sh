@@ -19,6 +19,7 @@ cp "$ROOT/app/js/plshape.js" "$ROOT/service/editor/plshape.js"   # the helper sh
 rm -rf "$ROOT/service/guide-data" "$ROOT/service/power.json" "$ROOT/service/reminders.json" "$ROOT/service/helper-errors.json" "$ROOT/service/companion.json" "$ROOT/service/companion.json.tmp" "$ROOT"/service/alert-*.json                                # guides stored by a dev relay: not for the package     # the helper's guide reader matches with it
 cp "$ROOT/app/img/tmdb.svg" "$ROOT/service/editor/tmdb.svg"          # the web editor's TMDB credit (My media)
 bash "$ROOT/scripts/ffmpeg/bundle.sh"                              # the audio converter rides along (docs/FFMPEG.md)
+bash "$ROOT/scripts/smb/bundle.sh"                                 # and the reader for Windows shares (docs/SMB.md)
 mkdir -p "$ROOT/dist"
 echo "Packaging $APP_ID $VERSION ${MIN:+(dev, unminified)}"
 STAGE="$(mktemp -d)"; T="$(mktemp -d)"; trap 'rm -rf "$STAGE" "$T"' EXIT

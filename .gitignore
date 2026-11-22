@@ -8,6 +8,7 @@ _unpack/
 
 # build output and local releases
 service/ffmpeg-bundle/
+service/smb-bundle/
 dist/
 releases/
 *.ipk

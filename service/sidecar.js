@@ -76,6 +76,24 @@ function webdavList(source, dir, cb) {
 function dropboxList(source, dir, cb) {
   require('./dropbox').listFiles(source, dir, function (e, list) { cb(e ? [] : list.map(function (x) { return { name: x.name, dir: x.tag === 'folder', path: x.path_display }; })); });
 }
+function smbList(source, dir, cb) {
+  require('./smb').list(source, dir, function (e, list) { cb(e ? [] : list); });
+}
+// A subtitle file on a share: its first MAX bytes, read like a movie (smb.js reader).
+function smbText(source, path, cb) {
+  var r = require('./smb').reader(source, path);
+  r.size(function (e, st) {
+    if (e || !st || st.dir) return cb({ status: 404 });
+    if (!st.size) return cb(null, Buffer.concat([]));
+    r.open(0, Math.min(st.size, MAX) - 1, function (e2, stream) {
+      if (e2) return cb({ status: 0 });
+      var parts = [];
+      stream.on('data', function (d) { parts.push(d); });
+      stream.on('error', function () { cb({ status: 0 }); });
+      stream.on('end', function () { cb(null, Buffer.concat(parts)); });
+    });
+  });
+}
 function gdriveList(source, folderId, cb) {
   var G = require('./gdrive');
   G.get(source.key, 'files', { q: "'" + folderId + "' in parents and trashed=false", fields: 'files(id,name,mimeType)', pageSize: 300, supportsAllDrives: true, includeItemsFromAllDrives: true }, function (e, j) {
@@ -119,6 +137,9 @@ function lookup(source, path, cb) {
       gdriveList(source, j.parents[0], function (entries) { walk(function (x, then) { gdriveList(source, x.id, then); }, entries, finish); });
     });
   }
+  if (source.type === 'smb') {
+    return smbList(source, path.replace(/\/[^\/]*$/, ''), function (entries) { walk(function (x, then) { smbList(source, x.path, then); }, entries, finish); });
+  }
   if (source.type === 'webdav' || source.address) {
     return webdavList(source, path.replace(/\/[^\/]*$/, ''), function (entries) { walk(function (x, then) { webdavList(source, x.path, then); }, entries, finish); });
   }
@@ -141,6 +162,7 @@ function get(source, path, lang, cb) {
   if (source.type === 'dlna') { if (!/^https?:\/\//i.test(path) || !sameHost(path, source.control)) return cb({ error: 'address' }); return getText(path, {}, decode); }
   if (!SUB.test(path.replace(/\?.*$/, ''))) return cb({ error: 'not a subtitle file' });
   if (source.type === 'dropbox') return require('./dropbox').tempLink(source, path, function (e, url) { if (e) return cb({ error: e.message }); getText(url, {}, decode); });
+  if (source.type === 'smb') return smbText(source, path, decode);
   if (source.type === 'gdrive') {
     var G = require('./gdrive'), id = G.idOf(path);
     if (!id) return cb({ error: 'address' });
