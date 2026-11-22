@@ -150,7 +150,15 @@ const SRC = { type: 'smb', server: 'nas.local', share: 'Media', folder: '/', use
   ok('the bundled program, checked, unpacked onto the TV\'s storage and tried', !right.e && /smb-1-armv7$/.test(right.prog || '') && (fs.statSync(right.prog).mode & 0o777) === 0o700, right.e && right.e.message);
   const again = await p((f) => Smb.list(SRC, '/', (e, l) => f({ e, l })));
   ok('and used from then on', !again.e && again.l.length > 0, again.e && again.e.message);
+  // A 64-bit kernel under a 32-bit userland: the 64-bit build first; one that doesn't run there falls back.
   fs.unlinkSync(right.prog);
+  fs.writeFileSync(path.join(bundle, 'tivibro-smb-aarch64.gz'), zlib.gzipSync('#!/bin/sh\nexit 1\n'));
+  fs.copyFileSync(path.join(bundle, 'tivibro-smb-armv7.gz'), path.join(bundle, 'tivibro-smb-armv7.gz.keep'));
+  Smb._config({ reset: true });
+  Smb._config({ bundle, arch: null, archList: ['aarch64', 'armv7'], sums: { armv7: crypto.createHash('sha256').update(gz).digest('hex'), aarch64: crypto.createHash('sha256').update(fs.readFileSync(path.join(bundle, 'tivibro-smb-aarch64.gz'))).digest('hex') } });
+  const fall = await p((f) => Smb.program((e, prog) => f({ e, prog })));
+  ok('a 64-bit build that won\'t run falls back to the 32-bit one', !fall.e && /smb-1-armv7$/.test(fall.prog || ''), fall.e && fall.e.message);
+  fs.unlinkSync(fall.prog);
   Smb._config({ reset: true });
   Smb._config({ bundle: fs.mkdtempSync(path.join(os.tmpdir(), 'tb-smb-none-')), arch: 'armv7', sums: { armv7: 'a'.repeat(64) } });
   const none = await p((f) => Smb.check(SRC, (e) => f(e)));

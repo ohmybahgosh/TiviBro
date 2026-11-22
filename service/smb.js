@@ -25,9 +25,9 @@ var Storage = require('./storage');
 
 var VERSION = '1';
 /* The release the bundled programs come from (.github/workflows/smb.yml, scripts/smb/bundle.sh), and the
-   SHA-256 of each .gz there, filled in once it is published.  Empty: this build carries none. */
+   SHA-256 of each .gz there. */
 var TAG = 'smb-1-tb1';
-var SHA256 = { armv7: '', aarch64: '' };
+var SHA256 = { armv7: '1c3cdcb31d62b988876bca56400dec77e11330fe2b56f3d4fe9a6503aec02a3c', aarch64: '304e3b2a374d4a1365b8f54fb4978d10dd26bde8a0bd8110395ea6ec693be3dd' };
 var BUNDLE = path.join(__dirname, 'smb-bundle');
 var cfg = { sums: SHA256, bundle: BUNDLE, arch: null };
 var RUN_MS = 30000, OUT_MAX = 8 * 1024 * 1024, ERR_MAX = 4096, MAX_RUNS = 2, MAX_READS = 4;
@@ -63,7 +63,18 @@ function parts(source) {
 /* ---------- the program ---------- */
 
 function override() { return process.env.TIVIBRO_SMB || ''; }
-function thisArch() { return cfg.arch != null ? cfg.arch : require('./ffmpeg').arch(); }
+/* The builds to try, best first.  A TV with a 64-bit kernel under a 32-bit userland (a C2: uname says
+   aarch64, its Node is 32-bit) runs the static 64-bit build too, and that one has the ARMv8 AES
+   instructions, which makes the signing and encryption of every read several times cheaper.  If it
+   doesn't start there, the 32-bit build is used. */
+function arches() {
+  if (cfg.archList) return cfg.archList;
+  if (cfg.arch != null) return cfg.arch ? [cfg.arch] : [];
+  var a = require('./ffmpeg').arch(), m = '';
+  if (a !== 'armv7') return a ? [a] : [];
+  try { m = str(cp.execFileSync('uname', ['-m'], { timeout: 3000, stdio: ['ignore', 'pipe', 'ignore'] })).trim(); } catch (e) {}
+  return m === 'aarch64' ? ['aarch64', 'armv7'] : ['armv7'];
+}
 function nameFor(a) { return 'smb-' + VERSION + '-' + a; }
 function sha256(file, cb) {
   var h = crypto.createHash('sha256'), s = fs.createReadStream(file);
@@ -85,23 +96,31 @@ function program(cb) {
     else log({ lv: 'warn', event: 'smb program', e: e.message });
     list.forEach(function (f) { f(e, file); });
   }
-  var a = thisArch();
-  if (!a) return end(new Error('Windows shares need an LG TV (' + process.arch + ')'));
+  var list = arches();
+  if (!list.length) return end(new Error('Windows shares need an LG TV (' + process.arch + ')'));
   var dir; try { dir = Storage.sub('bin'); } catch (e) { return end(e); }
+  (function next(i, firstErr) {
+    if (i >= list.length) return end(firstErr);
+    prepareOne(dir, list[i], function (e, file) { if (!e) return end(null, file); next(i + 1, firstErr || e); });
+  })(0, null);
+}
+/* One build (a = armv7 or aarch64): the copy already on the TV's storage if it runs, else the bundled .gz,
+   checked against its SHA-256, unpacked, made runnable and tried.  cb(err, path). */
+function prepareOne(dir, a, cb) {
   var final = path.join(dir, nameFor(a)), gz = path.join(cfg.bundle, 'tivibro-smb-' + a + '.gz'), tmp = final + '.part';
-  try { fs.accessSync(final, fs.X_OK || 1); return tryRun(final, function (e) { if (!e) return end(null, final); rm(final); program2(); }); } catch (e) { program2(); }
-  function program2() {
+  try { fs.accessSync(final, fs.X_OK || 1); return tryRun(final, function (e) { if (!e) return cb(null, final); rm(final); unpack(); }); } catch (e) { unpack(); }
+  function unpack() {
     var want = str(cfg.sums[a]).toLowerCase();
-    if (!/^[0-9a-f]{64}$/.test(want)) return end(new Error('this TiviBro doesn\'t carry the program for Windows shares yet'));
+    if (!/^[0-9a-f]{64}$/.test(want)) return cb(new Error('this TiviBro doesn\'t carry the program for Windows shares yet'));
     sha256(gz, function (e, hex) {
-      if (e) return end(new Error('this TiviBro doesn\'t carry the program for Windows shares'));
-      if (hex !== want) return end(new Error('the program for Windows shares didn\'t match its checksum'));
+      if (e) return cb(new Error('this TiviBro doesn\'t carry the program for Windows shares'));
+      if (hex !== want) return cb(new Error('the program for Windows shares didn\'t match its checksum'));
       var out = fs.createWriteStream(tmp, { mode: parseInt('700', 8) }), z = zlib.createGunzip(), done = false;
       function fin(err) {
         if (done) return; done = true;
-        if (err) { rm(tmp); return end(err); }
-        try { fs.chmodSync(tmp, parseInt('700', 8)); fs.renameSync(tmp, final); } catch (e2) { rm(tmp); return end(e2); }
-        tryRun(final, function (e3) { if (e3) { rm(final); return end(e3); } log({ lv: 'info', event: 'smb program ready', arch: a }); end(null, final); });
+        if (err) { rm(tmp); return cb(err); }
+        try { fs.chmodSync(tmp, parseInt('700', 8)); fs.renameSync(tmp, final); } catch (e2) { rm(tmp); return cb(e2); }
+        tryRun(final, function (e3) { if (e3) { rm(final); return cb(e3); } log({ lv: 'info', event: 'smb program ready', arch: a }); cb(null, final); });
       }
       z.on('error', fin); out.on('error', fin); out.on('close', function () { fin(null); });
       fs.createReadStream(gz).on('error', fin).pipe(z).pipe(out);
@@ -253,5 +272,5 @@ function failure(e) {
 module.exports = {
   setLog: function (f) { logFn = f; }, VERSION: VERSION, TAG: TAG, SHA256: SHA256,
   check: check, shares: shares, list: list, stat: stat, reader: reader, failure: failure, parts: parts, cleanPath: cleanPath, program: program,
-  _config: function (o) { if (o.sums) cfg.sums = o.sums; if (o.bundle !== undefined) cfg.bundle = o.bundle; if (o.arch !== undefined) cfg.arch = o.arch; if (o.reset) { cfg = { sums: SHA256, bundle: BUNDLE, arch: null }; ready = ''; } if (o.runMs) RUN_MS = o.runMs; }
+  _config: function (o) { if (o.sums) cfg.sums = o.sums; if (o.bundle !== undefined) cfg.bundle = o.bundle; if (o.arch !== undefined) cfg.arch = o.arch; if (o.archList) cfg.archList = o.archList; if (o.reset) { cfg = { sums: SHA256, bundle: BUNDLE, arch: null }; ready = ''; } if (o.runMs) RUN_MS = o.runMs; }
 };

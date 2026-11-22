@@ -15,7 +15,9 @@ and 25) has no SMB client that handles what servers ask for today:
 So the helper runs `tivibro-smb`, a small static program on [libsmb2](https://github.com/sahlberg/libsmb2)
 (LGPL-2.1, the library VLC uses for SMB): SMB 2.0.2 to 3.1.1, NTLMv2, signing, and SMB 3 encryption for
 shares that require it.  It is about 200 KB per architecture and runs on every webOS TV from webOS 4 on,
-rooted or not, like the audio converter (docs/FFMPEG.md).
+rooted or not, like the audio converter (docs/FFMPEG.md).  A TV with a 64-bit kernel under a 32-bit userland
+(an LG C2) runs the 64-bit build, whose ARMv8 AES instructions make signing and encryption much cheaper;
+if it doesn't start, the 32-bit one is used.
 
 ## How the helper uses it (service/smb.js)
 
