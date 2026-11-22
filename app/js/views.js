@@ -1972,7 +1972,7 @@ var Views = (function () {
     var blocked = !!Store.edits.blockedChannels[c.k];
     var team = Teams.ofChannel(c), follow = team && Teams.follows(team.id);
     // A movie on now (Movies on now, or any channel the guide shows a matched movie on): its trailer from TMDB.
-    var nnM = Epg.nowNext ? Epg.nowNext(c) : null, onM = nnM && nnM.now && typeof Movies !== 'undefined' ? Movies.of(c, nnM.now) : null;
+    var nnM = Epg.nowNext ? Epg.nowNext(c) : null, onM = nnM && typeof Movies !== 'undefined' ? (nnM.now && Movies.of(c, nnM.now)) || (nnM.next && Movies.of(c, nnM.next)) : null;   // on now, or starting next (Movies on now lists both)
     return [
       onM && onM.id && typeof MediaMoviePage !== 'undefined' && typeof PalmServiceBridge !== 'undefined' && { label: 'Watch the trailer', sub: RAW(onM.title || ''), action: function () { movieTrailer(onM); } },
       // Another playlist not mixed into Favorites and your groups: neither is offered (one already a favorite can still be taken out).
@@ -2641,7 +2641,7 @@ var Views = (function () {
     pipUpdate: pipUpdate, pipStop: pipStop, pipFull: pipFull, pipRestart: pipRestart, get pipOn() { return pipOn(); },
     init: init, reload: reload, switchTab: switchTab, setZone: setZone, resume: resume, refreshLists: refreshLists,
     closeNav: closeNav, chanMenu: chanMenu, startChannel: startChannel, goFull: goFull, playCatchup: playCatchup, refreshVodMeta:function(){if(mode==='vod')osd(true);}, playVod: playVod,
-    manageVisibility: manageVisibility, canManage: canManage, PALETTES: PALETTES, PALETTE_NAMES: PALETTE_NAMES, palette: palette, kindColours: kindColours, emptyFor: emptyFor, QP_BUTTONS: QP_BUTTONS, qpOrder: qpOrder, openReminder: openReminder, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, bankedBack: bankedBack, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
+    manageVisibility: manageVisibility, canManage: canManage, PALETTES: PALETTES, PALETTE_NAMES: PALETTE_NAMES, palette: palette, kindColours: kindColours, emptyFor: emptyFor, QP_BUTTONS: QP_BUTTONS, qpOrder: qpOrder, movieTrailer: movieTrailer, openReminder: openReminder, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, bankedBack: bankedBack, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
     filterChanged: filterChanged,
     get group() { return curGroup; }, set group(g) { curGroup = g; },
     get full() { return full; }, get tab() { return tab; }, get zone() { return zone; }, get playing() { return playing; }, get vod() { return vod; }, runAction: runAction,
@@ -3514,6 +3514,9 @@ var Guide = (function () {
     }
     var shw = h.p && typeof Series !== 'undefined' ? Series.of(c, h.p) : null;
     if (shw) items.splice(Math.min(items.length, isPlaying(c) ? 1 : 2), 0, { label: 'About this show…', icon: 'info', sub: [shw.network, shw.seasons ? shw.seasons + (shw.seasons === 1 ? ' season' : ' seasons') : ''].filter(Boolean).join(', '), action: function () { showPanel(c, h.p, shw); } });
+    // A movie TiviBro has matched (Movies on now, discussion #36): its trailer, for the programme in focus, now or later.
+    var mvT = h.p && typeof Movies !== 'undefined' ? Movies.of(c, h.p) : null;
+    if (mvT && mvT.id && typeof MediaMoviePage !== 'undefined' && typeof PalmServiceBridge !== 'undefined') items.splice(Math.min(items.length, isPlaying(c) ? 1 : 2), 0, { label: 'Watch the trailer', icon: 'film', sub: RAW(mvT.title || ''), action: function () { Views.movieTrailer(mvT); } });
     items.push({ label: 'Jump to…', icon: 'jump', sub: 'a day and time', action: jumpMenu });
     if (Math.abs(focusT - now) > 60e3) items.push({ label: 'Jump to now', icon: 'now', sub: U.hhmm(now), action: function () { jumpNow(); flashJump(Date.now()); } });
     if (previewing()) items.push({ label: 'Stop the window', icon: 'stop', sub: L.name(previewing()), action: function () { Views.stopAll(); draw(); hints(); } });
