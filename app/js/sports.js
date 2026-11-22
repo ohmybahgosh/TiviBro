@@ -213,7 +213,14 @@ var Sports = (function () {
     if (best) return best;
     // A listing that names the game only in its description ("Live: College Football" on a local CBS station): the
     // channel is one of the game's own (channels(), from teams.js), so the score corner isn't shown over it.
-    list.forEach(function (g) { if (!best && g.state === 'in' && channels(g).some(function (x) { return x.c.k === c.k; })) best = g; });
+    /* The closest match wins: a description naming both teams ("The Detroit Lions host the Tampa Bay Buccaneers")
+       over one that names a team in passing ("...lost their last game to Chicago"), or the corner showed the
+       game being watched and left out the other. */
+    var bestR = Infinity;
+    list.forEach(function (g) {
+      if (g.state !== 'in') return;
+      channels(g).forEach(function (x) { if (x.c.k === c.k && x.r < bestR) { bestR = x.r; best = g; } });
+    });
     if (best) return best;
     var b = bare(Library.name(c));
     list.forEach(function (g) {

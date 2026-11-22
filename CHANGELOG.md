@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **The score corner no longer shows the game you're watching** on a channel whose listing also names another team in passing (a local station's "...lost their last game to Chicago" put up the Lions score on the Lions game).
+
 ## 0.6.0 (alpha 199, 2026-11-22)
 
 Pre-release: expect rough edges, and keep a backup before installing.

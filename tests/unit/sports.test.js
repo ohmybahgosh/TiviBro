@@ -66,6 +66,21 @@ Sports._store.nhl[Sports.dayKey(0)] = { at: Date.now(), games: [liveG] };
 global.Epg.nowNext = c => c.k === 'k6' ? { now: { t: 'NHL Hockey: ' + away + ' at ' + home, s: start, e: start + 3 * 3600e3 } } : null;
 ok('the game on the channel the guide says', Sports.gameOn(chans[5]) && Sports.gameOn(chans[5]).id === g.id);
 ok('no game on a movie channel', !Sports.gameOn(chans[4]));
+// Two games on now that both take in the station, one only by a team its listing names (a description that
+// mentions the other game's team in passing): the game the listing names both teams of is the one on it.
+{
+  const other = Object.assign({}, liveG, { id: 'x2', s: start, teams: [{ id: 'nhl:chi', abbr: 'CHI', full: 'Chicago Blackhawks', name: 'Blackhawks' }, { id: 'nhl:bos', abbr: 'BOS', full: 'Boston Bruins', name: 'Bruins', home: true }], nets: [] });
+  progs = { k6: [{ s: start, e: start + 3 * 3600e3, t: 'NHL Hockey: ' + away + ' at ' + home }, { s: start, e: start + 3 * 3600e3, t: 'NHL Hockey: Boston Bruins at Montreal Canadiens' }] };
+  Sports._store.nhl[Sports.dayKey(0)] = { at: Date.now(), games: [other, liveG] };
+  const saveNN = global.Epg.nowNext;
+  global.Epg.nowNext = c => c.k === 'k6' ? { now: { t: 'Live: NHL Hockey', s: start, e: start + 3 * 3600e3 } } : null;
+  Library.data.channels = chans.slice();                 // the guide looked at again (its games are kept two minutes per channel list)
+  const rk = (gg) => (Sports.channels(gg).find(x => x.c.k === 'k6') || {}).r;
+  ok('two games take in the station: the other only by one team', rk(other) === 1 && rk(liveG) === 0, { other: rk(other), mine: rk(liveG) });
+  ok('and the game on it is the one its listing names both teams of', (Sports.gameOn(chans[5]) || {}).id === g.id, (Sports.gameOn(chans[5]) || {}).id);
+  global.Epg.nowNext = saveNN; Library.data.channels = chans;
+  Sports._store.nhl[Sports.dayKey(0)] = { at: Date.now(), games: [liveG] };
+}
 // Close games near the end, for the alerts (sportslive.js).
 global.Sports = Sports;
 eval(fs.readFileSync(path.join(__dirname, '../../app/js/sportslive.js'), 'utf8') + ';global.SportsLive=SportsLive;');
