@@ -56,7 +56,7 @@ private fun plural(n: Int, word: String) = "$n $word" + if (n == 1) "" else "s"
 private data class MediaSrc(val id: String, val name: String, val type: String, val mode: String, val movies: Int, val episodes: Int, val scanning: Boolean, val root: String = "")
 
 /** A source's kind, as the TV's Settings say it. */
-private fun typeLabel(type: String) = when (type) { "dlna" -> "DLNA / UPnP"; "dropbox" -> "Dropbox"; "gdrive" -> "Google Drive"; else -> "WebDAV" }
+private fun typeLabel(type: String) = when (type) { "dlna" -> "DLNA / UPnP"; "dropbox" -> "Dropbox"; "gdrive" -> "Google Drive"; "smb" -> "Windows share"; else -> "WebDAV" }
 
 /** A Google Drive place or folder in the picker; driveId is its shared drive's. */
 private data class GdFolder(val name: String, val id: String, val driveId: String, val drive: Boolean = false)
@@ -85,12 +85,13 @@ private fun Choice(label: String, sub: String = "", onClick: () -> Unit) {
     HorizontalDivider(color = Line.copy(alpha = 0.35f), thickness = 0.5.dp)
 }
 
-/** Add media: a server on the network (the TV looks), a WebDAV folder with its login, or Dropbox (signed in here). */
+/** Add media: a server on the network (the TV looks), a Windows or network share (SMB) with its login, a WebDAV
+    folder with its login, Dropbox (signed in here) or Google Drive. */
 @Composable
 fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Unit) {
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
-    var step by remember { mutableStateOf("pick") }          // pick, servers, webdav, gdkey, gdpick
+    var step by remember { mutableStateOf("pick") }          // pick, servers, webdav, smb, smbpick, gdkey, gdpick
     var busy by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var servers by remember { mutableStateOf<List<Pair<Int, String>>?>(null) }
@@ -98,6 +99,13 @@ fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Un
     var user by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
     val premiumize = Regex("premiumize", RegexOption.IGNORE_CASE).containsMatchIn(address)
+    /* A Windows or network share: the server and login typed here (memory only until it's added), then the
+       share (empty: the server's share list) and the folders opened in it, "/" first. */
+    var smbServer by remember { mutableStateOf("") }
+    var smbShare by remember { mutableStateOf("") }
+    var smbTrail by remember { mutableStateOf(listOf<String>()) }
+    var smbList by remember { mutableStateOf<List<Pair<String, String>>?>(null) }
+    var smbName by remember { mutableStateOf("") }
     // Google Drive: the key (memory only), the account it is, and where the picker is.
     var gdKey by remember { mutableStateOf("") }
     var gdAccount by remember { mutableStateOf("") }
@@ -131,18 +139,35 @@ fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Un
             gdList = if (a == null) emptyList() else (0 until a.length()).map { a.getJSONObject(it).let { f -> GdFolder(f.optString("name"), f.optString("id"), here.driveId) } }
         }
     }
+    fun smbArgs(op: String) = JSONObject().put("op", op).put("server", smbServer).put("user", user).put("pass", pass)
+    /* The share list (share empty), or a folder's folders: what the TV reads from the server with the login. */
+    fun smbOpen(share: String, trail: List<String>) {
+        smbList = null
+        if (share.isEmpty()) run("Asking $smbServer for its shares…", smbArgs("smbshares")) { r ->
+            smbShare = ""; smbTrail = emptyList(); step = "smbpick"
+            val a = r.optJSONArray("shares")
+            smbList = if (a == null) emptyList() else (0 until a.length()).map { a.getJSONObject(it).let { x -> x.optString("name") to x.optString("name") } }
+        }
+        else run("Opening ${trail.lastOrNull()?.takeIf { it != "/" }?.substringAfterLast('/') ?: share}…", smbArgs("smbfolders").put("share", share).put("path", trail.last())) { r ->
+            smbShare = share; smbTrail = trail; step = "smbpick"
+            smbName = trail.last().takeIf { it != "/" }?.substringAfterLast('/') ?: share
+            val a = r.optJSONArray("folders")
+            smbList = if (a == null) emptyList() else (0 until a.length()).map { a.getJSONObject(it).let { f -> f.optString("name") to f.optString("path") } }
+        }
+    }
     fun look() { step = "servers"; servers = null; run("Looking for media servers on your network…", JSONObject().put("op", "discover")) { r ->
         val a = r.optJSONArray("servers"); servers = if (a == null) emptyList() else (0 until a.length()).map { a.getJSONObject(it).let { s -> s.optInt("i") to s.optString("name") } } } }
 
     AlertDialog(
         onDismissRequest = { if (busy == null) onDone(false) }, containerColor = Panel,
-        title = { Text(when (step) { "servers" -> "Media servers"; "webdav" -> "Add a WebDAV folder"; "gdkey" -> "Google Drive"; "gdpick" -> gdTrail.lastOrNull()?.name ?: "Google Drive"; else -> "Add media" }) },
+        title = { Text(when (step) { "servers" -> "Media servers"; "webdav" -> "Add a WebDAV folder"; "smb" -> "Add a Windows or network share"; "smbpick" -> if (smbShare.isEmpty()) smbServer else (smbTrail.lastOrNull()?.takeIf { it != "/" }?.substringAfterLast('/') ?: smbShare); "gdkey" -> "Google Drive"; "gdpick" -> gdTrail.lastOrNull()?.name ?: "Google Drive"; else -> "Add media" }) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 error?.let { Text(it, color = Bad, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 8.dp)) }
                 when (step) {
                     "pick" -> {
                         Choice("Browse my network (DLNA / UPnP)", "The TV looks for a home media server with media sharing turned on") { look() }
+                        Choice("Add a Windows or network share (SMB)", "A shared folder on a PC, Mac, NAS or router: its name and a login") { step = "smb" }
                         Choice("Add a WebDAV folder", "Your media folder's address and login, typed here") { step = "webdav" }
                         // The sign-in carries on in the browser and comes back to DropboxDialog (MainActivity).
                         Choice("Dropbox", "Sign in to Dropbox, then pick the folder with your movies and shows") { openDropbox(ctx, model, model.dropboxStart(id)); onDone(false) }
@@ -191,6 +216,30 @@ fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Un
                                 run("Adding $name…  A big library takes a while.", JSONObject().put("op", "adddlna").put("i", i)) { onDone(true) } } }
                         }
                     }
+                    "smb" -> {
+                        Text("The TV reads the share directly, with SMB 2 or 3.  Leave the user name empty for a guest; on a Windows PC, use the PC's user name or your Microsoft account email.  The login stays on the TV.",
+                            color = Muted, style = MaterialTheme.typography.bodySmall)
+                        Spacer(Modifier.size(8.dp))
+                        OutlinedTextField(smbServer, { smbServer = it.trim() }, label = { Text("Server name or address (NAS, 192.168.1.20)") }, singleLine = true, enabled = busy == null,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), modifier = Modifier.fillMaxWidth())
+                        OutlinedTextField(user, { user = it }, label = { Text("User name") }, singleLine = true, enabled = busy == null, modifier = Modifier.fillMaxWidth())
+                        SecretField(pass, { pass = it }, "Password", enabled = busy == null)
+                        busy?.let { Busy(it) }
+                    }
+                    "smbpick" -> {
+                        Text(if (smbShare.isEmpty()) "Pick a share:" else "\\\\" + smbServer + "\\" + smbShare + smbTrail.last().takeIf { it != "/" }.orEmpty().replace('/', '\\'), color = Muted, style = MaterialTheme.typography.bodySmall)
+                        val l = smbList
+                        when {
+                            busy != null -> Busy(busy!!)
+                            l == null -> {}
+                            l.isEmpty() -> Text(if (smbShare.isEmpty()) "No shares found.  Share a folder on the server, or check this user can see it." else "No folders inside.  Add this one, or go up.", color = Muted)
+                            else -> l.forEach { (name, path) -> Choice(name) { if (smbShare.isEmpty()) smbOpen(name, listOf("/")) else smbOpen(smbShare, smbTrail + path) } }
+                        }
+                        if (smbShare.isNotEmpty()) {
+                            Spacer(Modifier.size(8.dp))
+                            OutlinedTextField(smbName, { smbName = it.take(60) }, label = { Text("Library name") }, singleLine = true, enabled = busy == null, modifier = Modifier.fillMaxWidth())
+                        }
+                    }
                     "webdav" -> {
                         Text("Files can be in this folder or its subfolders.  Movies and TV shows are recognised from their names.  The login is checked before it is saved, and stays on the TV.",
                             color = Muted, style = MaterialTheme.typography.bodySmall)
@@ -210,6 +259,10 @@ fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Un
                     run("Checking the login…  A big folder takes a while.", JSONObject().put("op", "addwebdav").put("address", address).put("user", user).put("pass", pass)) { onDone(true) }
                 }) { Text("Add") }
                 "servers" -> if (busy == null && servers != null) TextButton(onClick = { look() }) { Text("Look again") }
+                "smb" -> TextButton(enabled = busy == null && smbServer.isNotBlank(), onClick = { smbOpen("", emptyList()) }) { Text("Show the shares") }
+                "smbpick" -> if (smbShare.isNotEmpty()) TextButton(enabled = busy == null, onClick = {
+                    run("Adding ${smbName.ifBlank { smbShare }}.  The TV looks through it, which takes a while for a big folder.", smbArgs("addsmb").put("share", smbShare).put("folder", smbTrail.last()).put("name", smbName.ifBlank { smbShare })) { pass = ""; onDone(true) }
+                }) { Text("Add this folder") }
                 "gdkey" -> TextButton(enabled = busy == null && gdKey.contains("private_key"), onClick = { gdOpen(emptyList()) }) { Text("Next") }
                 "gdpick" -> gdTrail.lastOrNull()?.let { here ->
                     TextButton(enabled = busy == null, onClick = {
@@ -225,11 +278,14 @@ fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Un
                 error = null
                 when {
                     step == "pick" -> onDone(false)
+                    step == "smbpick" && smbTrail.size > 1 -> smbOpen(smbShare, smbTrail.dropLast(1))
+                    step == "smbpick" && smbShare.isNotEmpty() -> smbOpen("", emptyList())
+                    step == "smbpick" -> step = "smb"
                     step == "gdpick" && gdTrail.isNotEmpty() -> gdOpen(gdTrail.dropLast(1))
                     step == "gdpick" -> { step = "gdkey"; if (gdKey.startsWith("saved:")) gdKey = "" }
                     else -> { step = "pick"; gdKey = ""; gdSaved = emptyList() }
                 }
-            }) { Text(if (step == "pick") "Close" else if (step == "gdpick" && gdTrail.isNotEmpty()) "Up" else "Back") }
+            }) { Text(if (step == "pick") "Close" else if ((step == "gdpick" && gdTrail.isNotEmpty()) || (step == "smbpick" && smbShare.isNotEmpty())) "Up" else "Back") }
         },
     )
 }
@@ -267,7 +323,7 @@ fun MediaSourceDialog(model: AppModel, id: String, sid: String, onDone: (changed
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 error?.let { Text(it, color = Bad, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 8.dp)) }
-                if (s != null) Text(typeLabel(s.type) + (if (s.type == "dropbox" && s.root.isNotBlank()) "  ·  " + s.root else "") + (if (s.mode != "shows") "  ·  " + plural(s.movies, "movie") else "") + (if (s.mode != "movies" || s.episodes > 0) "  ·  " + plural(s.episodes, "episode") else "") + (if (s.scanning) "  ·  scanning now" else ""),
+                if (s != null) Text(typeLabel(s.type) + (if ((s.type == "dropbox" || s.type == "smb") && s.root.isNotBlank()) "  ·  " + s.root else "") + (if (s.mode != "shows") "  ·  " + plural(s.movies, "movie") else "") + (if (s.mode != "movies" || s.episodes > 0) "  ·  " + plural(s.episodes, "episode") else "") + (if (s.scanning) "  ·  scanning now" else ""),
                     color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 6.dp))
                 when {
                     busy != null -> Busy(busy!!)
