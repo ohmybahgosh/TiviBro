@@ -1002,6 +1002,35 @@ var Settings = (function () {
     return out;
   }
 
+  /* ---------- rename groups: a name of your own for any group ---------- */
+  /* Rename groups (Settings > Channels and groups): every group, the shown ones first.  OK asks for the new name (the
+     phone types it); an empty name goes back to the provider's.  A renamed provider group says what the provider
+     calls it, so it can be found again.  Favorites keeps its name (it's translated). */
+  function renamePage() {
+    var out = [], gs = L.allGroups().filter(function (g) { return g.id !== L.FAV; });
+    var renamed = gs.filter(function (g) { return !L.isCustom(g.id) && L.providerName(g.id) && L.groupName(g.id) !== L.providerName(g.id); }).length;
+    out.push(info('Renamed', renamed + ' of ' + gs.length));
+    out.push(info('OK on a group to type its new name.  Leave the name empty to go back to the provider\'s.', ''));
+    function rows(list) {
+      list.forEach(function (g) {
+        var own = function () { return L.isCustom(g.id) ? '' : L.providerName(g.id); };
+        out.push(action(I18n.raw(L.groupName(g.id)), L.isCustom(g.id) ? 'your group' : (L.groupName(g.id) !== own() ? 'renamed, the provider calls it ' + own() : ''), function () {
+          UI.prompt('New name for ' + L.groupName(g.id), L.groupName(g.id), function (n) {
+            n = String(n || '').trim();
+            if (L.isCustom(g.id) && !n) return;
+            L.setGroupName(g.id, n === own() ? '' : n.slice(0, 80));
+            relist(); build();
+            U.toast(n ? 'Renamed to ' + n : 'Back to ' + own());
+          }, L.isCustom(g.id) ? 'Typing is easier from the phone app.' : 'Empty goes back to "' + own() + '".  Typing is easier from the phone app.');
+        }, function () { return '›'; }));
+      });
+    }
+    var shown = gs.filter(function (g) { return !g.hidden; }), hidden = gs.filter(function (g) { return g.hidden; });
+    if (shown.length) { out.push(head('Shown (' + shown.length + ')')); rows(shown); }
+    if (hidden.length) { out.push(head('Hidden (' + hidden.length + ')')); rows(hidden); }
+    return out;
+  }
+
   /* ---------- merge groups: tick several, then show them as one ---------- */
   var mergePick = {};                         // the groups ticked on the Merge groups page, by id
   /* Merge groups (Settings > Channels and groups): tick provider groups, then merge them into a new group (the first
@@ -1065,6 +1094,7 @@ var Settings = (function () {
     var s = S(), out = [], hid = L.hiddenItems();
     function apply() { Store.saveSettings(); relist(); build(); }
     out.push(page('Manage groups', 'Show or hide each group in one list, like TiviMate.  ' + hid.groups.length + ' hidden now.', 'Manage groups', manageGroups));
+    out.push(page('Rename groups', 'Give any group a name of your own, typed on the TV or the phone.', 'Rename groups', renamePage));
     var merged = L.allGroups().filter(function (g) { return L.mergedFrom(g.id).length; }).length;
     out.push(page('Merge groups', 'Tick several groups and show them as one: in a new group, one of them or another group.' + (merged ? '  ' + merged + ' merged now.' : ''), 'Merge groups', mergePage));
     out.push(toggle('Show hidden items in lists', 'Hidden groups and channels appear dimmed so you can unhide them from their menu.', function () { return s.showHidden; }, function (v) { s.showHidden = v; apply(); }));

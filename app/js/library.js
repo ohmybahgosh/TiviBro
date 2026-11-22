@@ -569,7 +569,9 @@ var Library = (function () {
     return g;
   }
   function renameGroup(id, n) { var g = custom(id); if (g && n && n.trim()) { g.name = n.trim(); commit(); } }
-  // A provider group's name of your own (Settings > Merge groups, into a new group); empty goes back to the provider's.
+  // A provider group's own name, as the provider (and the name clean-up) has it: what a rename of your own replaces.
+  function providerName(gid) { return isCustom(gid) ? '' : cleanGroupOf(gid, groupNames[gid] || ''); }
+  // A provider group's name of your own (Settings > Rename groups, Merge groups' new group); empty goes back to the provider's.
   function setGroupName(id, n) {
     if (isCustom(id)) return renameGroup(id, n);
     var e = E(); if (!e.groupRenames) e.groupRenames = {};
@@ -714,7 +716,7 @@ var Library = (function () {
     shownAnywhere: shownAnywhere, isBlocked: isBlocked, block: block, get data() { return data; }, dirty: dirty, name: name, groups: groups, channels: channels, groupName: groupName,
     noGuide: noGuide, setNoGuide: setNoGuide, isCustom: isCustom, customGroups: function () { return E().custom; }, find: find, count: count, sample: sample,
     hideChannel: hideChannel, hideGroup: hideGroup, renameChannel: renameChannel,
-    createGroup: createGroup, renameGroup: renameGroup, setGroupName: setGroupName, deleteGroup: deleteGroup,
+    createGroup: createGroup, renameGroup: renameGroup, setGroupName: setGroupName, providerName: providerName, deleteGroup: deleteGroup,
     copyTo: copyTo, removeFrom: removeFrom, moveInGroup: moveInGroup, moveGroup: moveGroup,
     dataOf: dataOf, setOther: setOther, MIX: MIX, mixed: mixed, mixList: mixList, mixChanged: mixChanged, canGroup: canGroup, get mixRev() { return mixRev; }, dropOther: dropOther, clearOthers: clearOthers, partOf: partOf, maxConn: maxConn, get main() { return main; }, get multi() { return multi(); }, plName: plName,
     otherIds: function () { return others.map(function (x) { return x.id; }); },

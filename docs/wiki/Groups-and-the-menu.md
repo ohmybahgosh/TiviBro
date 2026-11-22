@@ -6,6 +6,8 @@ Your groups sit right beside the guide: **Favorites** and your own groups first,
 
 **Merge groups.**  Providers often split one thing over several groups (four NHL groups).  **Hold OK** on a provider group > **Merge groups into this…** lists the other groups, the ones with a word in common first: tick them with **OK** and choose **Merge**.  Their channels show in that group, after its own, and new channels the provider adds to them come along.  **Split back into N groups** undoes it.  In the web editor (on the phone too), it's **⋯ > Merge groups into this…** on a group.  **Settings > Channels and groups > Merge groups** does several at once, on the TV or in the phone app: tick the groups, then choose **Into a new group…** (you name it), **Into one of them…** or **Into another group…**.  Groups merged now are listed there with **Split**.
 
+**Rename groups.**  **Settings > Channels and groups > Rename groups** lists every group: OK on one to type a name of your own (the phone app's keyboard is easiest).  A renamed group says what the provider calls it, and an empty name goes back to that.
+
 **My teams** sits near the top while a game is on or coming up.  Between games it moves down under your groups and **All channels**, still there to open (it says when the next game is).  In it, a channel that carries your team's game later, like a regional sports network, says **Next game 9:00pm: …** up to the game, the way team channels do.
 
 **Recently added** lists channels that are new in your playlist since it last loaded, newest first, and they carry a **NEW** tag in the lists for a week (change it, or turn it off, under **Settings > Channels and groups > Recently added channels**).
