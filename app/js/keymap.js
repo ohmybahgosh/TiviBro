@@ -114,6 +114,28 @@ var Keymap = (function () {
   }
   function fixed(context, btn) { return !!(FIXED[context] && FIXED[context][btn]); }
 
+  /* LG's Magic Remote (2021 on: numbers, the wheel, Back, the four colours, CH and volume) has no Play / Pause, Stop,
+     ◀◀ ▶▶, Record or Info.  What those do out of the box goes on Hold of a colour button instead, which a Magic
+     Remote has and which does nothing held otherwise: the recommended buttons for one (Settings > Remote and buttons). */
+  var MAGIC_MISSING = { playpause: 1, stop: 1, rew: 1, ff: 1, rec: 1, info: 1 };
+  var MAGIC = {
+    player: { 'long:red': 'record', 'long:yellow': 'playpause', 'long:blue': 'streaminfo' },
+    guide: { 'long:red': 'record', 'long:blue': 'details' },
+    list: { 'long:red': 'record' }
+  };
+  // The remote to recommend buttons for: chosen in Settings, else what TiviBro has seen on this TV.
+  function magicRemote() { var k = (Store.settings || {}).remoteKind; return k === 'magic' ? true : k === 'standard' ? false : remote().magic; }
+  function missing(btn) { return !!MAGIC_MISSING[String(btn).replace(/^long:/, '')]; }
+  function recommended(context, btn) {
+    if (magicRemote() && MAGIC[context] && MAGIC[context][btn]) return MAGIC[context][btn];
+    return (DEFAULTS[context] || {})[btn] || 'none';
+  }
+  // Puts the Magic Remote's recommended buttons in place (the others are left as they are).  The number set.
+  function useMagic() {
+    var n = 0;
+    Object.keys(MAGIC).forEach(function (c) { Object.keys(MAGIC[c]).forEach(function (b) { if (get(c, b) !== MAGIC[c][b]) { set(c, b, MAGIC[c][b]); n++; } }); });
+    return n;
+  }
   /* Which remote is in use.  webOS doesn't say, so TiviBro goes by what it has seen: the Magic Remote's
      pointer, and the Info button (key 457, which most Magic Remotes don't have).  Remembered on this TV. */
   function remote() {
@@ -145,8 +167,8 @@ var Keymap = (function () {
 
   return {
     BUTTONS: BUTTONS, ACTIONS: ACTIONS, SHORT: SHORT, CONTEXT_ACTIONS: CONTEXT_ACTIONS, DEFAULTS: DEFAULTS,
-    // What a button does out of the box on a screen (Settings marks it as the recommended one).
-    defaultOf: function (context, btn) { return (DEFAULTS[context] || {})[btn] || 'none'; },
+    // What a button should do on a screen: out of the box, or with a Magic Remote its colour-button stand-ins (MAGIC).
+    defaultOf: recommended, magicRemote: magicRemote, missing: missing, useMagic: useMagic, MAGIC: MAGIC,
     get: get, set: set, reset: reset, label: label, hasLong: hasLong, fixed: fixed, remote: remote, buttonsFor: buttonsFor, bufferHint: bufferHint,
     allButtons: allButtons, learn: learn, alias: alias,
     setContext: function (c) { ctx = c; }, get context() { return ctx; }

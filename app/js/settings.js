@@ -494,6 +494,15 @@ var Settings = (function () {
       ['prev', 'next'], ['Up: the channel above', 'Up: the channel below'],
       function () { return Keymap.get('player', 'up') === 'chnext' ? 'next' : 'prev'; },
       function (v) { Keymap.set('player', 'up', v === 'next' ? 'chnext' : 'chprev'); Keymap.set('player', 'down', v === 'next' ? 'chprev' : 'chnext'); }));
+    /* Which remote: what the recommended buttons follow.  A Magic Remote has no Play / Pause, Stop, ◀◀ ▶▶, Record or
+       Info, so what those do goes on Hold of a colour button (keymap.js MAGIC), one button away. */
+    var seen = Keymap.remote();
+    out.push(choice('Your remote', 'Detect it: TiviBro goes by what it has seen (' + (seen.magic ? 'a Magic Remote' : seen.info ? 'a standard remote, with Info' : 'nothing sure yet') + ').  The recommended buttons below follow it.',
+      ['auto', 'magic', 'standard'], ['Detect it', 'Magic Remote', 'Standard remote'],
+      function () { return S().remoteKind || 'auto'; }, function (v) { S().remoteKind = v === 'auto' ? '' : v; save(); build(); }));
+    if (Keymap.magicRemote()) out.push(action('Use the Magic Remote buttons', 'In fullscreen, Hold Red records, Hold Yellow pauses and Hold Blue shows stream info.  Hold Red records in the guide and lists too, and Hold Blue gives a show\'s details in the guide.  OK in fullscreen has them all as well.', function () {
+      var n = Keymap.useMagic(); build(); U.toast(n ? n + (n === 1 ? ' button set' : ' buttons set') + ' for a Magic Remote' : 'Already set for a Magic Remote');
+    }));
     // Each screen's buttons in place (they were four pages).
     out.push(head('In the player')); out = out.concat(keysPage('player'));
     out.push(head('In the guide')); out = out.concat(keysPage('guide'));
@@ -531,7 +540,8 @@ var Settings = (function () {
        of those asks first: keep both buttons doing it, or move it here (the other button then does nothing), so the
        same action doesn't end up on two buttons by mistake. */
     function slot(btn, label) {
-      return action(label, '', function () {
+      // A button a Magic Remote doesn't have says so (with one in use): its action is best kept on another button too.
+      return action(label, Keymap.magicRemote() && Keymap.missing(btn) ? 'Not on a Magic Remote' : '', function () {
         UI.menu(label, acts.map(function (a) {
           var cur = Keymap.get(ctx, btn) === a, others = cur ? [] : usedBy(a, btn), names = others.map(function (k) { return Keymap.label(k); }).join(', ');
           // Its own action out of the box is marked recommended, so a button changed by mistake is easy to put back.

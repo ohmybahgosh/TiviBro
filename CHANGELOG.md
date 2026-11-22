@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Buttons for a Magic Remote.**  Settings > Remote and buttons asks which remote you use (or detects it).  With a Magic Remote, which has no Play / Pause, Stop, ◀◀ ▶▶, Record or Info, those buttons are marked as missing, and Use the Magic Remote buttons puts what they do on Hold of a colour button: in fullscreen Hold Red records, Hold Yellow pauses and Hold Blue shows stream info; in the guide Hold Red records and Hold Blue gives a show's details.  The recommended action for each button follows the remote.
+
 ## 0.6.0 (alpha 198, 2026-11-22)
 
 Pre-release: expect rough edges, and keep a backup before installing.
