@@ -2115,8 +2115,8 @@ var Settings = (function () {
         var al = U.el('span', 'ar', '‹'), ar = U.el('span', 'ar', '›');
         d._sw = U.el('i', 'sw hidden'); d._t = U.el('span', '');
         [al, d._sw, d._t, ar].forEach(function (x) { d._v.appendChild(x); });
-        al.addEventListener('click', function (e) { e.stopPropagation(); zone = 'body'; sel = i; it.cycle(-1); });
-        ar.addEventListener('click', function (e) { e.stopPropagation(); zone = 'body'; sel = i; it.cycle(1); });
+        al.addEventListener('click', function (e) { e.stopPropagation(); zone = 'body'; sel = i; turn(it, -1); });
+        ar.addEventListener('click', function (e) { e.stopPropagation(); zone = 'body'; sel = i; turn(it, 1); });
       }
     }
     // Magic Remote: hover focuses a row, click is OK (or changes the value).
@@ -2127,6 +2127,9 @@ var Settings = (function () {
     return d;
   }
   var navKey = '';
+  /* A switch or choice changed with ◀ ▶ or OK: drawn again at once.  Not every setter redraws the page itself
+     (Closed captions only tells the player), and its switch stayed as it was until the focus moved (discussion #36). */
+  function turn(it, d) { it.cycle(d); if (UI.getHandler && UI.getHandler() === keys && !onHome) paint(); }
   function paint() {
     // The list on the left only changes with the page, its part or the language: rebuilding it on every move
     // made the page lay out again each time (slow on a TV).
@@ -2300,9 +2303,9 @@ var Settings = (function () {
     }
     else if (a === 'chup') { for (var j = 0; j < 8; j++) keys('up'); }
     else if (a === 'chdown') { for (var k = 0; k < 8; k++) keys('down'); }
-    else if (a === 'left') { if (it && it.cycle) it.cycle(-1); else { zone = 'nav'; navSel = parts.length > 1 ? grp : -1; paint(); } }
-    else if (a === 'right') { if (it && it.cycle) it.cycle(1); }
-    else if (a === 'ok') { if (it && it.action) it.action(); else if (it && it.cycle) it.cycle(1); }
+    else if (a === 'left') { if (it && it.cycle) turn(it, -1); else { zone = 'nav'; navSel = parts.length > 1 ? grp : -1; paint(); } }
+    else if (a === 'right') { if (it && it.cycle) turn(it, 1); }
+    else if (a === 'ok') { if (it && it.action) it.action(); else if (it && it.cycle) turn(it, 1); }
     else if (a === 'back') { if (cameFrom && stack.length <= cameDepth) { navBack(); return true; } zone = 'nav'; navSel = parts.length > 1 ? grp : -1; paint(); }
     return true;
   }

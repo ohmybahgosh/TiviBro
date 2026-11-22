@@ -1,19 +1,20 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 198, 2026-11-22)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 198
 
 - **Buttons: no action on two buttons by mistake.**  In Settings > Remote and buttons, the list of actions for a button says which ones another button on that screen already does ("already on Yellow").  Picking one asks: move it to this button (the other then does nothing), or keep it on both.
 - **Settings home: the arrows go where you'd expect** (discussion #36).  ▶ at the end of a line of sections goes on to the next line, ◀ at its start goes back to the line before, and ▲ ▼ go to the section right above or below.  ▶ used to stop at Remote and buttons, and ▼ from Language jumped to Parental controls.
 - **Watch the trailer from Movies on now and the guide** (discussion #36): Hold OK or Red on a movie on the Movies on now screen, Hold OK on a matched movie in the guide (on now or later), or on a channel in the Movies on now group.
+- **Switches in Settings change on screen at once** (discussion #36).  Some, like Closed captions, only showed their new position after moving to another row.
 - **Blue (Settings) on Movies on now, Movies and shows, and My media: Back comes back** to that screen instead of the Settings menu.
 - **Each button's recommended action is marked** in Settings > Remote and buttons, so a button changed by mistake is easy to put back.
 - **Search settings finds the Remote and buttons settings** (Quick menu buttons, the button for each action).  That section was too long and search skipped it.
 
-## 0.6.0 (alpha 197, 2026-11-22)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 197
+### In alpha 197
 
 - **The channel in Settings shows its picture again** (discussion #36).  In alpha 196 the box kept for it was drawn over the video, so it stayed black with the sound playing.
 - **Quick menu buttons in your order** (Settings > Remote and buttons > Quick menu buttons, discussion #36).  Hold OK on a button to move it (up one, down one, to the top or the bottom), or drag ≡ in the phone app.  Back to the usual order is one button.
