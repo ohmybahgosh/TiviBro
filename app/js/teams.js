@@ -384,7 +384,9 @@ var Teams = (function () {
     if (!c || !p) return null;
     list();                                          // My teams' own list, worked out already (no new search)
     var e = listCache && listCache.espn ? listCache.espn[c.k] : null;
-    return e && Math.abs(e.s - p.s) < 3 * 3600e3 ? e : null;
+    // Only the programme the game is in: it starts within ten minutes of ESPN's start, or runs through it (not the
+    // pregame show before it, which ended as the game began).
+    return e && e.s >= p.s - 10 * 60000 && e.s < p.e ? e : null;
   }
   /* ids: these teams instead of the ones you follow (the Sports screen: every team playing today). */
   /* late: also listings that ended this long ago (ms), for Sports: a game in overtime outlives its listing ("College
