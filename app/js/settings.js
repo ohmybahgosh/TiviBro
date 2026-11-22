@@ -2143,7 +2143,7 @@ var Settings = (function () {
   function paint() {
     // The list on the left only changes with the page, its part or the language: rebuilding it on every move
     // made the page lay out again each time (slow on a TV).
-    var key = [sec, stack.length, grp, navSel, zone, parts.length, typeof I18n !== 'undefined' ? I18n.lang() : '', pageTitle()].join('|');
+    var key = [sec, stack.length, grp, navSel, zone, parts.length, cameFrom, typeof I18n !== 'undefined' ? I18n.lang() : '', pageTitle()].join('|');
     if (key !== navKey || !nav.firstChild) { navKey = key; navList(); }
     nav.classList.toggle('active', zone === 'nav');
     rows();
@@ -2152,7 +2152,9 @@ var Settings = (function () {
      navSel -1 is back. */
   function navList() {
     nav.innerHTML = '';
-    var back = U.el('div', 'nav-back' + (zone === 'nav' && navSel < 0 ? ' on' : ''), '‹  ' + (stack.length ? (stack.length > 1 ? T(stack[stack.length - 2].title) : SECTIONS[sec] ? navTitle(SECTIONS[sec]) : T('Search settings')) : T('All settings')));
+    // Opened with Blue from another screen (openFrom): the way back names that screen.
+    var home = cameFrom && stack.length <= cameDepth ? T((Views.TAB_LABELS || {})[cameFrom] || 'Back') : '';
+    var back = U.el('div', 'nav-back' + (zone === 'nav' && navSel < 0 ? ' on' : ''), '‹  ' + (home || (stack.length ? (stack.length > 1 ? T(stack[stack.length - 2].title) : SECTIONS[sec] ? navTitle(SECTIONS[sec]) : T('Search settings')) : T('All settings'))));
     back.addEventListener('click', function () { navBack(); });
     nav.appendChild(back);
     nav.appendChild(U.el('div', 'nav-title', pageTitle()));
@@ -2175,8 +2177,10 @@ var Settings = (function () {
   function openFrom(id) {
     var from = Views.tab;
     Views.switchTab('settings');
+    cameFrom = from && from !== 'settings' ? from : ''; cameDepth = 99;
     section(id);
-    cameFrom = from && from !== 'settings' ? from : ''; cameDepth = stack.length;
+    cameDepth = stack.length;
+    paint();                                 // the way back named after that screen
   }
   function openGroup(i) { grp = U.clamp(i, 0, parts.length - 1); sel = firstIn(grp); navSel = grp; }
   function put(el, s) { s = s == null ? '' : String(s); if (el.textContent !== s) el.textContent = s; }
@@ -2316,7 +2320,7 @@ var Settings = (function () {
     else if (a === 'left') { if (it && it.cycle) turn(it, -1); else { zone = 'nav'; navSel = parts.length > 1 ? grp : -1; paint(); } }
     else if (a === 'right') { if (it && it.cycle) turn(it, 1); }
     else if (a === 'ok') { if (it && it.action) it.action(); else if (it && it.cycle) turn(it, 1); }
-    else if (a === 'back') { if (cameFrom && stack.length <= cameDepth) { navBack(); return true; } zone = 'nav'; navSel = parts.length > 1 ? grp : -1; paint(); }
+    else if (a === 'back') { zone = 'nav'; navSel = parts.length > 1 ? grp : -1; paint(); }
     return true;
   }
 

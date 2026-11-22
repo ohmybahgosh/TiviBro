@@ -382,6 +382,14 @@ const p152 = (async () => {
   ok('#152: the helper is asked once only', asked.length === 1, asked.length);
   ok('#152: a converted stream that fails too is not followed by the same file again', t2.logs.filter(l => /^Start /.test(l)).length - startsBefore <= 1, t2.logs.filter(l => /^Start /.test(l)).length - startsBefore);
 
+  // Issue #154: a refused MKV converted to MPEG-TS still has its own subtitles read (from the movie, not the stream).
+  const read = [], convTs = Object.assign({}, conv, { probe: () => Promise.resolve({ video: 'h264', audio: [{ codec: 'eac3', channels: 6 }], duration: 6000 }), fmtFor: () => 'ts' });
+  const t4 = setup({ convert: convTs, mkvSubs: { extract: (u, v, then) => { read.push(u); if (then) then(u); return { cancel() {} }; } } });
+  t4.P.play({ n: 'Refused TS', url: 'http://p/movie/u/p/154.mkv' }, { live: false });
+  for (let i = 0; i < 20 && !t4.logs.some(l => /through the audio converter/.test(l)); i++) { t4.video.error = { code: 4 }; (t4.video.l.error || []).forEach(f => f()); if (t4.last() && t4.last().h && t4.last().h.err) t4.last().h.err('MediaError', 'FormatUnsupported', {}); t4.run(3000); await new Promise(r => setImmediate(r)); }
+  for (let i = 0; i < 4; i++) { t4.run(500); await new Promise(r => setImmediate(r)); }
+  ok('#154: a movie converted to MPEG-TS still has its subtitles read from the movie itself', read.some(u => /154\.mkv$/.test(u)) && t4.logs.some(l => /read from the movie itself/.test(l)), JSON.stringify({ read, logs: t4.logs.slice(-4) }));
+
   // The converter turned off in Settings: the movie can't play as it is, so it asks; "Try it once" reads the file.
   const asked3 = [], panels = [];
   const conv3 = Object.assign({}, conv, { on: () => false, probe: u => { asked3.push(u); return Promise.resolve({ video: 'h264', audio: [{ codec: 'dts', channels: 6 }], duration: 6000 }); } });

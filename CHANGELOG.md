@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **My teams uses ESPN's schedule more:**
+  - The guide's top panel shows ESPN's word on a game of your teams: the score and period while it's on, Final after, and before it both teams' records and ESPN's start (with the guide's time if it says another).
+  - A game the guide doesn't name anywhere still shows up, on the channels ESPN says carry it (a national network, ESPN, a regional sports network).
+  - A reminder for a game goes by ESPN's start when the channel's listing starts earlier (a 12:55 lead-in for a 1:00 kick-off).
+- **Subtitles in movies played through the audio converter** (issue #154).  A movie whose sound is converted (DTS, or one the TV refused) showed none of its own subtitles, only OpenSubtitles.  They're read from the movie as the converter reads it, so nothing is downloaded twice.
+- **Blue to Settings from Movies, Shows or My media:** Back goes to the list on the left first, as everywhere in Settings, and its top row (‹ Movies) goes back to that screen.
 - **My teams leaves out replays.**  A listing like "NHL Hockey: Islanders at Red Wings" the day after the game was played is checked against ESPN's schedule: with no game for that team within a few hours, it isn't the game, and no reminder is set for it.  Old games shown again ("Orioles Classics: 1996") are left out too.
 - **Buttons for a Magic Remote.**  Settings > Remote and buttons asks which remote you use (or detects it).  With a Magic Remote, which has no Play / Pause, Stop, ◀◀ ▶▶, Record or Info, those buttons are marked as missing, and Use the Magic Remote buttons puts what they do on Hold of a colour button: in fullscreen Hold Red records, Hold Yellow pauses and Hold Blue shows stream info; in the guide Hold Red records and Hold Blue gives a show's details.  The recommended action for each button follows the remote.
 

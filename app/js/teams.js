@@ -342,18 +342,39 @@ var Teams = (function () {
      has within three days of the listing, so a stretch it hasn't read (or a league it doesn't cover) keeps the
      guide's word; a listing within three hours of one of the team's games is that game. */
   function notOnEspn(list) {
-    if (typeof Sports === 'undefined' || !Sports.all) return list;
-    var all; try { all = Sports.all(); } catch (e) { return list; }
-    if (!all || !all.length) return list;
+    var all = espnAll();
+    if (!all.length) return list;
     var byTeam = {};
-    all.forEach(function (g) { g.teams.forEach(function (t) { if (t.id) (byTeam[t.id] = byTeam[t.id] || []).push(g.s); }); });
+    all.forEach(function (g) { g.teams.forEach(function (t) { if (t.id) (byTeam[t.id] = byTeam[t.id] || []).push(g); }); });
     return list.filter(function (g) {
       var mine = g.team && byTeam[g.team.id];
       if (!mine) return true;
-      var near = mine.filter(function (s0) { return Math.abs(s0 - g.p.s) < 3 * 86400e3; });
+      var near = mine.filter(function (e) { return Math.abs(e.s - g.p.s) < 3 * 86400e3; });
       if (!near.length) return true;
-      return near.some(function (s0) { return Math.abs(s0 - g.p.s) < 3 * 3600e3; });
+      // The ESPN game it is (the closest), kept with it: its score, state and real start (espnOf).
+      var best = null;
+      near.forEach(function (e) { if (Math.abs(e.s - g.p.s) < 3 * 3600e3 && (!best || Math.abs(e.s - g.p.s) < Math.abs(best.s - g.p.s))) best = e; });
+      if (best) g.espn = best;
+      return !!best;
     });
+  }
+  // ESPN's games as the Sports screen has read them (Sports.all), or none.
+  function espnAll() {
+    if (typeof Sports === 'undefined' || !Sports.all) return [];
+    try { return Sports.all() || []; } catch (e) { return []; }
+  }
+  // ESPN's games on now or still to come before far (gone: the earliest end still counted), finals left out.
+  function espnGames(gone, far) {
+    if (typeof Sports === 'undefined' || !Sports.netChannels) return [];
+    return espnAll().filter(function (g) { return g.state !== 'post' && g.s + 3 * 3600e3 > gone && g.s <= far && g.teams.length === 2; });
+  }
+  /* The ESPN game a channel's listing is (My teams): its teams with scores and records, state and clock, and
+     its real start.  null when ESPN has none for it. */
+  function espnOf(c, p) {
+    if (!c || !p) return null;
+    list();                                          // My teams' own list, worked out already (no new search)
+    var e = listCache && listCache.espn ? listCache.espn[c.k] : null;
+    return e && Math.abs(e.s - p.s) < 3 * 3600e3 ? e : null;
   }
   /* ids: these teams instead of the ones you follow (the Sports screen: every team playing today). */
   /* late: also listings that ended this long ago (ms), for Sports: a game in overtime outlives its listing ("College
@@ -479,6 +500,18 @@ var Teams = (function () {
       if (schools) prove(ev.start);
       evHits.forEach(function (x) { take(c, { s: ev.start, e: ev.end, t: ev.title, ev: 1 }, x); });
     }
+    /* ESPN's schedule for the teams you follow (not the Sports screen's every team, ids): a game the guide doesn't
+       name anywhere still gets the channels ESPN says carry it (a national network, ESPN, a regional sports
+       network: Sports.netChannels), from its start for three hours. */
+    if (!ids) espnGames(gone, far).forEach(function (eg) {
+      eg.teams.forEach(function (t) {
+        var team = mineIds[t.id] && BY_ID[t.id];
+        if (!team || out.some(function (g) { return g.team.id === t.id && Math.abs(g.p.s - eg.s) < 3 * 3600e3; })) return;
+        var title = eg.teams.map(function (x) { return x.full || x.name; }).join(' at ');          // visitors first
+        curTag = ''; lastVs = {}; lastVs[team.league] = eg.teams.map(function (x) { return x.id; }).sort().join('/');
+        Sports.netChannels(eg).slice(0, 3).forEach(function (c) { take(c, { s: eg.s, e: eg.s + 3 * 3600e3, t: title, espn: 1 }, team); });
+      });
+    });
     // A game ESPN doesn't have then, for a team whose schedule it knows around then: a replay or a show about it.
     out = notOnEspn(out);
     if (schools) out = out.filter(function (g) {
@@ -667,9 +700,9 @@ var Teams = (function () {
     if (!groupOn()) return [];
     var now = Date.now();
     if (listCache && now - listCache.at < 60000 && listCache.of === Library.data.channels) return listCache.list;
-    var out = [], have = {}, first = {}, all = games();
-    all.forEach(function (g) { if (!have[g.c.k]) { have[g.c.k] = 1; out.push(g.c); } if (!first[g.c.k] || g.p.s < first[g.c.k].s) first[g.c.k] = g.p; });
-    listCache = { at: now, of: Library.data.channels, list: out, first: first, canon: canonOf(all) };
+    var out = [], have = {}, first = {}, esp = {}, all = games();
+    all.forEach(function (g) { if (!have[g.c.k]) { have[g.c.k] = 1; out.push(g.c); } if (!first[g.c.k] || g.p.s < first[g.c.k].s) { first[g.c.k] = g.p; esp[g.c.k] = g.espn || null; } });
+    listCache = { at: now, of: Library.data.channels, list: out, first: first, espn: esp, canon: canonOf(all) };
     return out;
   }
   /* One game on several channels reads differently on each ("Michigan Wolverines vs Oregon Ducks" at 3:30,
@@ -813,6 +846,6 @@ var Teams = (function () {
   return {
     LEAGUES: LEAGUES, get descGen() { return descGen; }, all: function () { return ALL; }, team: function (id) { return BY_ID[id]; }, named: named, norm: norm,
     leagues: leagues, inLeague: inLeague, hasChannel: hasChannel, teamChannels: teamChannels, ofChannel: ofChannel,
-    RULES: 3, recheck: recheck, isGame: isGame, matchup: matchup, aroundGame: aroundGame, SAME_GAME: SAME_GAME, CLOSE: CLOSE, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, list: list, uniform: uniform, gameTitle: gameTitle, gameOn: gameOn, dirty: dirty, nextGame: nextGame, emptyText: emptyText
+    RULES: 3, recheck: recheck, isGame: isGame, matchup: matchup, aroundGame: aroundGame, SAME_GAME: SAME_GAME, CLOSE: CLOSE, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, espnOf: espnOf, list: list, uniform: uniform, gameTitle: gameTitle, gameOn: gameOn, dirty: dirty, nextGame: nextGame, emptyText: emptyText
   };
 })();

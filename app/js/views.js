@@ -2641,7 +2641,7 @@ var Views = (function () {
     pipUpdate: pipUpdate, pipStop: pipStop, pipFull: pipFull, pipRestart: pipRestart, get pipOn() { return pipOn(); },
     init: init, reload: reload, switchTab: switchTab, setZone: setZone, resume: resume, refreshLists: refreshLists,
     closeNav: closeNav, chanMenu: chanMenu, startChannel: startChannel, goFull: goFull, playCatchup: playCatchup, refreshVodMeta:function(){if(mode==='vod')osd(true);}, playVod: playVod,
-    manageVisibility: manageVisibility, canManage: canManage, PALETTES: PALETTES, PALETTE_NAMES: PALETTE_NAMES, palette: palette, kindColours: kindColours, emptyFor: emptyFor, QP_BUTTONS: QP_BUTTONS, qpOrder: qpOrder, movieTrailer: movieTrailer, openReminder: openReminder, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, bankedBack: bankedBack, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
+    manageVisibility: manageVisibility, canManage: canManage, PALETTES: PALETTES, PALETTE_NAMES: PALETTE_NAMES, palette: palette, kindColours: kindColours, emptyFor: emptyFor, TAB_LABELS: TAB_LABELS, QP_BUTTONS: QP_BUTTONS, qpOrder: qpOrder, movieTrailer: movieTrailer, openReminder: openReminder, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, bankedBack: bankedBack, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
     filterChanged: filterChanged,
     get group() { return curGroup; }, set group(g) { curGroup = g; },
     get full() { return full; }, get tab() { return tab; }, get zone() { return zone; }, get playing() { return playing; }, get vod() { return vod; }, runAction: runAction,
@@ -3150,6 +3150,16 @@ var Guide = (function () {
     pvIdle.el.classList.toggle('nologo', !lg);
     pvIdle.h.style.display = c ? '' : 'none';
   }
+  /* ESPN's word on a game (Teams.espnOf): "DET 2 – 1 NYI · 2nd 12:31" while it's on, "Final" after, and before it
+     both teams with their records and ESPN's start, with the guide's if it says another time. */
+  function espnLine(eg, p) {
+    var a = eg.teams[0] || {}, b = eg.teams[1] || {};
+    if (eg.state === 'in') return 'ESPN   ' + a.abbr + ' ' + (a.score != null ? a.score : 0) + ' – ' + (b.score != null ? b.score : 0) + ' ' + b.abbr + (eg.detail ? '   ·   ' + eg.detail : '');
+    if (eg.state === 'post') return 'ESPN   ' + T('Final') + ':  ' + a.abbr + ' ' + a.score + ' – ' + b.score + ' ' + b.abbr;
+    var rec = function (t) { return (t.name || t.abbr) + (t.rec ? ' (' + t.rec + ')' : ''); };
+    var off = Math.abs(eg.s - p.s) > 10 * 60000 ? '   ·   ' + T('the guide says {x}', { x: U.hhmm(p.s) }) : '';
+    return 'ESPN   ' + rec(a) + ' at ' + rec(b) + '   ·   ' + T('starts {x}', { x: U.hhmm(eg.s) }) + off;
+  }
   function drawDetail() {
     detail.innerHTML = '';
     var c = zone === 'grid' || list.length ? list[sel] : null;
@@ -3189,6 +3199,9 @@ var Guide = (function () {
     var dq = L.versionTag(c);
     meta2.textContent = (Store.settings.showNumbers ? c.num + '  ' : '') + L.name(c) + (dq ? ' ' + dq : '') + '   ·   ' + L.groupName(c.g) + (c.arch ? '   ·   ↺ ' + T('catch-up {n} days', { n: c.arch }) : '');
     detail.appendChild(meta2);
+    // A game of a team you follow (My teams): what ESPN says of it, the score while it's on, and its real start.
+    var eg = h.p && typeof Teams !== 'undefined' && Teams.espnOf ? Teams.espnOf(c, h.p) : null;
+    if (eg) { var m4 = U.el('div', 'gd-meta gd-espn'); m4.textContent = espnLine(eg, h.p); detail.appendChild(m4); }
     // A movie (movies.js, TMDB): its poster at the right, a line with the year, genres and rating, and
     // TMDB's plot when the guide has little to say.
     var mv = h.p && typeof Movies !== 'undefined' ? Movies.of(c, h.p) : null, gd = h.p ? Epg.desc(c, h.p) : '';

@@ -28,7 +28,10 @@ var Watch = (function () {
       if (g.p.s <= now) return;
       var k = g.p.t.toLowerCase() + '|' + g.p.s;
       if (dup[k]) return;
-      dup[k] = 1; out.push({ c: g.c, p: g.p, w: 'team:' + g.team.id });
+      dup[k] = 1;
+      // ESPN's start when the guide says another (a channel's 12:55 lead-in for a 1:00 kick-off): the reminder is for the game.
+      var gp = g.espn && Math.abs(g.espn.s - g.p.s) > 5 * 60000 && Math.abs(g.espn.s - g.p.s) < 3 * 3600e3 ? { s: g.espn.s, e: g.p.e, t: g.p.t } : g.p;
+      out.push({ c: g.c, p: gp, w: 'team:' + g.team.id });
     });
     out.sort(function (a, b) { return a.p.s - b.p.s; });
     return out;

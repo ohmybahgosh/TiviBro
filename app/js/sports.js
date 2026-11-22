@@ -264,6 +264,12 @@ var Sports = (function () {
     want.forEach(function (w) { (m[w] || []).forEach(function (c) { if (out.indexOf(c) < 0) out.push(c); }); });
     return out;
   }
+  // The channels ESPN's broadcast networks for a game are (byNet), for My teams to add a game the guide doesn't name.
+  function netChannels(g) {
+    var out = [];
+    (g && g.nets || []).forEach(function (n) { byNet(n).forEach(function (c) { if (out.indexOf(c) < 0 && shown(c)) out.push(c); }); });
+    return out;
+  }
   /* The guide's games for every team playing in the next day and a half, worked out at most every two minutes:
      team id -> [{ c, p, pair }]. */
   var chanCache = null, BOOT = Date.now();
@@ -389,7 +395,7 @@ var Sports = (function () {
   // "Lions at Packers" (the guide's and reminders' way of naming a game).
   function title(g) { return g.teams.length === 2 ? g.teams[0].name + ' at ' + g.teams[1].name : g.name; }
 
-  return { rowOrder: rowOrder, setOrder: setOrder, rows: rows, follows: follows, reminded: reminded, remind: remind, loaded: loaded, refreshToday: refreshToday, byId: byId, summary: summary, gameOn: gameOn, hidesTeam: hidesTeam, hideTeam: hideTeam, hidden: hidden, reveal: reveal, followedLeagues: followedLeagues, _readSummary: readSummary,
+  return { netChannels: netChannels, rowOrder: rowOrder, setOrder: setOrder, rows: rows, follows: follows, reminded: reminded, remind: remind, loaded: loaded, refreshToday: refreshToday, byId: byId, summary: summary, gameOn: gameOn, hidesTeam: hidesTeam, hideTeam: hideTeam, hidden: hidden, reveal: reveal, followedLeagues: followedLeagues, _readSummary: readSummary,
     LEAGUES: LEAGUES, league: function (id) { return BY[id]; }, leagues: leagues, setLeagues: setLeagues, refresh: refresh, anyLive: anyLive, all: all, day: day, errOf: errOf,
     channels: channels, byNet: byNet, title: title, onChange: onChange, dayKey: dayKey, LIVE_MS: LIVE_MS, TODAY_MS: TODAY_MS, _game: game, _squash: squash, _bare: bare, _store: store };
 })();

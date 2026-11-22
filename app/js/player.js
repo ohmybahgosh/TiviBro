@@ -747,6 +747,7 @@ var Player = (function () {
       // The audio menu lists the movie's own tracks; another one is a new conversion from here.
       eng.audio = function () { return (conv.tracks || []).map(function (t, i) { return { id: i, label: trackLabel(t, i, conv.bad && conv.bad[i]), lang: t.lang || '', ch: t.channels || 0, on: i === conv.a }; }); };
       eng.setAudio = function (i) { var t = conv.tracks && conv.tracks[i]; if (!t || i === conv.a) return; switchConv(i, t); };
+      if (kind !== 'native') convSubs(eng, conv);
       if (cur.convNotice) { notice(cur.convNotice); cur.convNotice = ''; }
     }
     if (cur.noSound && !cur.warned) { cur.warned = true; Log.warn('player', 'No converter: ' + cur.noSound + ' sound will be silent'); notice(Convert.noSound(cur.noSound)); }
@@ -1505,6 +1506,21 @@ var Player = (function () {
 
   /* ---------- sound the TV can't play (convert.js) ---------- */
   function base() { return cur && cur.conv ? cur.conv.base || 0 : 0; }
+  /* The subtitles inside a movie that plays through the converter as MPEG-TS (issue #154: none showed, only
+     OpenSubtitles): the converter's output carries the picture and sound only, so the MKV reader looks at the
+     movie itself, as the TV player's path does, and the helper keeps the subtitle lines from the converter's own
+     reads of it as they pass through (proxy.js, subscan.js): nothing is downloaded twice.  The lines go by the
+     movie's time; video._tbOffset lines them up with the converted stream's clock. */
+  function convSubs(eng, conv) {
+    var item = cur.meta && cur.meta.item || {}, container = String(item.ext || item.container_extension || '').toLowerCase();
+    if (typeof MkvSubs === 'undefined' || !(/\.mkv(\?|#|$)/i.test(conv.src) || container === 'mkv')) return;
+    var pw = plWrap(), ua = pw.ua || (Net.uaFor ? Net.uaFor(pw.pl) : Net.ua), src = conv.src;
+    if ((/^https:/i.test(src) || ua || pw.hdr) && Net.active) src = Net.wrap(src, pw);
+    var subs = MkvSubs.extract(src, video, null, container), d0 = eng.destroy, r0 = eng.reanchor;
+    eng.destroy = function () { if (subs) subs.cancel(); subs = null; if (d0) return d0.apply(eng, arguments); };
+    eng.reanchor = function () { if (subs) { subs.cancel(); subs = MkvSubs.extract(src, video, null, container); } if (r0) return r0.apply(eng, arguments); };
+    Log.info('player', 'Subtitles: read from the movie itself while the converter plays it');
+  }
   function trackLabel(t, i, bad) {
     var ch = t.channels >= 8 ? ' 7.1' : t.channels >= 6 ? ' 5.1' : t.channels === 2 ? ' stereo' : '';
     var code = t.lang ? U.lang(t.lang) : '', name = code ? (U.LANGS.filter(function (l) { return l[0] === code; })[0] || [])[1] : '';
