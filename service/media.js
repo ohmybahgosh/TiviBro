@@ -809,10 +809,10 @@ function gdriveRequest(kind, q, res, ALLOW, log) {
 function handle(req, res, ALLOW, log) {
   var route = req.url.split('?')[0];
   var libraryRoute = /^\/media\/library\/(query|detail|edit|migrate|progress|continue|chapters|source|adopt|resolve|status|sidecar)$/.exec(route);
-  var subs = /^\/media\/subs\/(search|get|login)$/.exec(route);
+  var subs = /^\/media\/subs\/(search|get|login)$/.exec(route), subscan = /^\/media\/subs\/(scan|lines)$/.exec(route);
   var dropbox = /^\/media\/dropbox\/(folders|account|revoke)$/.exec(route);
   var gdrive = /^\/media\/gdrive\/(places|folders)$/.exec(route);
-  if (req.method !== 'POST' || (!libraryRoute && !subs && !dropbox && !gdrive && route !== '/media/scan/control' && route !== '/media/discover' && route !== '/media/scan' && route !== '/media/resolve' && route !== '/media/sidecar' && route !== '/media/sidecar/get' && route !== '/media/vformat' && route !== '/media/check' && route !== '/media/metadata' && route !== '/media/trakt')) return send(res, ALLOW, 404, { error: 'unknown media route' });
+  if (req.method !== 'POST' || (!libraryRoute && !subs && !subscan && !dropbox && !gdrive && route !== '/media/scan/control' && route !== '/media/discover' && route !== '/media/scan' && route !== '/media/resolve' && route !== '/media/sidecar' && route !== '/media/sidecar/get' && route !== '/media/vformat' && route !== '/media/check' && route !== '/media/metadata' && route !== '/media/trakt')) return send(res, ALLOW, 404, { error: 'unknown media route' });
   var body = '', over = false, bodyBytes = 0, bodyLimit = libraryRoute ? 1048576 : 65536;
   if (req.setEncoding) req.setEncoding('utf8');
   req.on('data', function (c) { if (over) return; body += c; bodyBytes += Buffer.byteLength(c, 'utf8'); if (bodyBytes > bodyLimit) { over = true; send(res, ALLOW, 413, { error: 'too large' }); } });
@@ -823,6 +823,11 @@ function handle(req, res, ALLOW, log) {
     if (libraryRoute) return libraryRequest(libraryRoute[1], q, req, res, ALLOW, log);
     if (dropbox) return dropboxRequest(dropbox[1], q, res, ALLOW, log);
     if (gdrive) return gdriveRequest(gdrive[1], q, res, ALLOW, log);
+    // Subtitle lines read by the helper from an MKV whose index covers only the video (service/subscan.js).
+    if (subscan) return require('./subscan')[subscan[1]](q, function (r) {
+      if (subscan[1] === 'scan') log({ lv: r.error ? 'warn' : 'info', event: 'subtitle pass', error: r.error || null });
+      send(res, ALLOW, 200, r);
+    });
     if (subs) return require('./subtitles')[subs[1]](q, function (r) {
       log({ lv: r.error ? 'warn' : 'info', event: 'subtitles ' + subs[1], results: r.results ? r.results.length : undefined, error: r.error || null });
       send(res, ALLOW, 200, r);

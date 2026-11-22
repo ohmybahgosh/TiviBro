@@ -155,6 +155,7 @@ var EmbedSubs = (function () {
     }
     var addedEls = [];        // <track> elements this call appended, so cancel() can undo them
     var liveTracks = [];      // the live TextTrack per track index, parallel to a rec's tracks/cues
+    var liveHave = {};        // lines already on this video's tracks (addLine), so the reader and the helper don't double them
     var wrapped = Net.wrap(url);
     var activeRequest = null, gateTimer = null, rejectGate = null, pump = null, retryTimer = null;
     var timedOut = false, deadline = null;     // the startup deadline (adapter.startupDeadlineMs)
@@ -349,7 +350,7 @@ var EmbedSubs = (function () {
     function replayCached(r) {
       for (var k = 0; k < r.cues.length; k++) {
         var list = r.cues[k];
-        for (var j = 0; j < list.length; j++) liveTracks[k].addCue(new VTTCue(list[j].s, list[j].e, list[j].text));
+        for (var j = 0; j < list.length; j++) { liveTracks[k].addCue(new VTTCue(list[j].s, list[j].e, list[j].text)); liveHave[lineKey({ track: k, s: list[j].s, text: list[j].text })] = 1; }
         if (typeof Subs !== 'undefined' && Subs.fresh) Subs.fresh(liveTracks[k]);    // a Line up or Timing done before the seek
       }
     }
@@ -374,7 +375,33 @@ var EmbedSubs = (function () {
     //   give up for this play.  The count and the wait carry over seeks (they live in the file's record);
     //   a new engine start begins afresh.  A new session that serves another size is a different file:
     //   subtitles stop there.  Bad data in an answer (a wrong range) backs off only that item.
+    /* A line, once on this video: from the reader or the helper's pass (both can find the same one), or replayed.
+       keep: whether it is also kept for replays (a reader item is kept whole or not at all, see MAX_TEXT_CHARS);
+       left out, it is kept while the file's text fits. */
+    function lineKey(c) { return c.track + '|' + Math.round(c.s * 100) + '|' + c.text; }
+    function addLine(c, keep) {
+      var k = lineKey(c);
+      if (liveHave[k] || !liveTracks[c.track]) return;
+      liveHave[k] = 1;
+      liveTracks[c.track].addCue(new VTTCue(c.s, c.e, c.text));
+      if (keep === undefined) keep = (rec.textChars || 0) + c.text.length <= MAX_TEXT_CHARS;
+      if (keep) { rec.textChars = (rec.textChars || 0) + c.text.length; rec.cues[c.track].push({ s: c.s, e: c.e, text: c.text }); }
+    }
+    /* The helper's pass (adapter.helper, mkvsubs.js): for a file the reader can only walk slowly, the helper reads
+       it through once and hands over every line; asked every 2 s while a track is shown, until it's done. */
+    var bgTimer = null;
+    function background() {
+      clearTimeout(bgTimer);
+      if (cancelled || !adapter.helper || !rec || !rec.index || (rec.bg && rec.bg.done)) return;
+      adapter.helper(rec, vnow(), ctx, function (found) {
+        if (cancelled) return;
+        if (found && found.length) { found.forEach(addLine); if (typeof Subs !== 'undefined' && Subs.fresh) liveTracks.forEach(function (t) { Subs.fresh(t); }); paint(); }
+        if (!(rec.bg && rec.bg.done)) bgTimer = setTimeout(background, 2000);
+      });
+    }
+    // Starts the helper's pass (background) and the reader: the format's work items near the picture, one at a time.
     function startPump() {
+      background();
       var busy = false, failures = {}, retryAt = {}, base = adapter.retryBaseMs || 1000;
       var R = rec.retry || (rec.retry = { refused: 0, pausedUntil: 0, fresh: false });
       // A seek's reader takes the session when it starts reading, not when it was made: the player
@@ -457,12 +484,7 @@ var EmbedSubs = (function () {
           var chars = 0;
           for (var f = 0; f < found.length; f++) chars += found[f].text.length;
           var keep = (rec.textChars || 0) + chars <= MAX_TEXT_CHARS;
-          if (keep) rec.textChars = (rec.textChars || 0) + chars;
-          for (f = 0; f < found.length; f++) {
-            var c = found[f];
-            liveTracks[c.track].addCue(new VTTCue(c.s, c.e, c.text));
-            if (keep) rec.cues[c.track].push({ s: c.s, e: c.e, text: c.text });
-          }
+          for (f = 0; f < found.length; f++) addLine(found[f], keep);
           if (typeof Subs !== 'undefined' && Subs.fresh) liveTracks.forEach(function (t) { Subs.fresh(t); });
           var keys = item.keys || [item.id];
           for (var k = 0; k < keys.length; k++) {
@@ -578,7 +600,7 @@ var EmbedSubs = (function () {
         cancelled = true;
         clearTimeout(timer);
         clearTimeout(gateTimer);
-        clearTimeout(retryTimer);
+        clearTimeout(retryTimer); clearTimeout(bgTimer);
         clearTimeout(deadline);
         if (rejectGate) { rejectGate(new Error('cancelled')); rejectGate = null; }
         if (activeRequest) activeRequest.abort();

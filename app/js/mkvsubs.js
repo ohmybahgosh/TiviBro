@@ -511,6 +511,49 @@ var MkvSubs = (function () {
       items.forEach(function (it) { it.id = it.off + ':' + it.tracks.join(','); });
       return items.sort(function (x, y) { return x.dist - y.dist || x.off - y.off; });
     },
+    /* The helper reads a scanned file through (service/subscan.js), every subtitle track at once, from the
+       Cluster at the picture to the end, then from the start: once a stretch is read its lines show at once,
+       seeks included, and the reader leaves it alone.  done(lines for EmbedSubs, or null). */
+    helper: function (rec, now, ctx, done) {
+      var ix = rec.index, bg = rec.bg || (rec.bg = { key: '', since: {}, done: false, busy: false });
+      if (!ix.scan || !rec.size || !rec.resolved || typeof Net === 'undefined' || !Net.port || !Net.ctlFetch) { bg.done = true; return done(null); }   // the reader alone
+      if (bg.busy) return done(null);
+      var on = false;
+      for (var i = 0; i < ix.perTrackCues.length; i++) if (ctx.demand(i)) on = true;
+      if (!on && !bg.key) return done(null);                      // nothing shown yet: no pass
+      var base = 'http://127.0.0.1:' + Net.port + '/media/subs/', pts = ix.perTrackCues[0].cues;
+      function post(route, body) {
+        return Net.ctlFetch(base + route, { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function (r) { return r.json(); });
+      }
+      bg.busy = true;
+      var step;
+      if (!bg.key) {
+        var at = pts[0];
+        for (var c = 0; c < pts.length; c++) if (pts[c].timeSec <= now) at = pts[c];
+        step = post('scan', { url: rec.resolved, size: rec.size, from: ix.segmentDataStart + at.clusterPos, first: ix.segmentDataStart + pts[0].clusterPos, scale: ix.timecodeScale,
+          tracks: ix.perTrackCues.map(function (t) { return t.track.number; }) }).then(function (j) { if (!j || j.error) throw new Error(j && j.error || 'no answer'); bg.key = j.key; return null; });
+      } else step = post('lines', { key: bg.key, since: bg.since }).then(function (j) {
+        if (!j || j.error) { if (j && j.error === 'gone') bg.key = ''; else bg.done = true; return null; }
+        var out = [], byNum = {};
+        ix.perTrackCues.forEach(function (t, k) { byNum[t.track.number] = k; });
+        Object.keys(j.lines || {}).forEach(function (num) {
+          var k = byNum[num], list = j.lines[num] || [], tr = k === undefined ? null : ix.perTrackCues[k].track;
+          bg.since[num] = (bg.since[num] || 0) + list.length;
+          if (!tr) return;
+          list.forEach(function (l) { var text = subtitleText(String(l[2] || ''), tr.codecId); if (text.trim()) out.push({ track: k, s: +l[0], e: +l[1], text: text }); });
+        });
+        // Read by the helper: the reader skips those Clusters.
+        (j.covered || []).forEach(function (r) {
+          pts.forEach(function (p) {
+            if (p.timeSec < r[0] || p.endSec > r[1]) return;
+            for (var k2 = 0; k2 < ix.perTrackCues.length; k2++) rec.fetched[k2 + ':' + (ix.segmentDataStart + p.clusterPos)] = true;
+          });
+        });
+        if (j.done) { bg.done = true; if (j.error) Log.warn('mkv', 'Subtitle pass stopped: ' + j.error); }
+        return out;
+      });
+      step.then(function (out) { bg.busy = false; done(out); }, function (e) { bg.busy = false; bg.done = true; Log.warn('mkv', 'Subtitle pass unavailable: ' + (e && e.message)); done(null); });
+    },
     complete: function (rec) {
       var ix = rec.index;
       return ix.perTrackCues.every(function (t, i) {
