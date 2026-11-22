@@ -113,7 +113,10 @@ function score(r, q) {
 function rank(list, q) {
   list.forEach(function (r, i) { r._s = score(r, q); r._i = i; });
   var good = list.filter(function (r) { return r._s > 0; });
-  if (good.length >= 3) list = good;
+  /* An episode: only ones for the asked show.  OpenSubtitles answers a show it doesn't know with other shows'
+     S01E02s, which were listed as if they were it; with none left, the search is asked again as words. */
+  if ((q.type === 'episode' || q._words) && words(q.query)) list = good;
+  else if (good.length >= 3) list = good;
   list.sort(function (a, b) { return b._s - a._s || a._i - b._i; });         // within a score, most downloaded first (as asked)
   return list.map(function (r) { delete r._s; delete r._i; return r; });
 }

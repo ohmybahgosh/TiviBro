@@ -112,11 +112,13 @@ const KEY = 'a'.repeat(32);
   calls.splice(before, 2);
   // An episode OpenSubtitles hasn't linked to its show: nothing by show + season + episode, so once more as words.
   const before3 = calls.length;
-  replies.push({ code: 200, body: { total_count: 0, data: [] } });
+  replies.push({ code: 200, body: { total_count: 2, data: [
+    { attributes: { language: 'en', release: 'Some.Other.Show.S01E02.720p', download_count: 900, feature_details: { title: 'Some Other Show', season_number: 1, episode_number: 2 }, files: [{ file_id: 5, file_name: 'x.srt' }] } },
+    { attributes: { language: 'en', release: 'Another.One.S01E02', download_count: 800, feature_details: { title: 'Another One', season_number: 1, episode_number: 2 }, files: [{ file_id: 6, file_name: 'y.srt' }] } }] } });
   replies.push({ code: 200, body: { total_count: 1, data: [{ attributes: { language: 'en', release: 'The.Altruists.S01E02.1080p.NF.WEB-DL', download_count: 50, files: [{ file_id: 77, file_name: 'x.srt' }] } }] } });
   out = await p('search', { key: KEY, query: 'The Altruists', type: 'episode', season: 1, episode: 2, langs: ['en'] });
   const asked3 = calls.slice(before3).map(c => c.o.path);
-  ok('an episode with no results is asked again as "show s01e02"', asked3.length === 2 && /season_number=1/.test(asked3[0]) && /query=the\+altruists\+s01e02/.test(asked3[1]) && !/season_number/.test(asked3[1]) && out.results.length === 1 && out.results[0].id === 77, JSON.stringify(asked3) + ' ' + JSON.stringify(out));
+  ok('an episode with only other shows\' results is asked again as "show s01e02", and they are dropped', asked3.length === 2 && /season_number=1/.test(asked3[0]) && /query=the\+altruists\+s01e02/.test(asked3[1]) && !/season_number/.test(asked3[1]) && out.results.length === 1 && out.results[0].id === 77, JSON.stringify(asked3) + ' ' + JSON.stringify(out));
   calls.splice(before3, 2);
   replies.push({ code: 200, body: { link: 'https://dl.opensubtitles.com/x/heat.srt', file_name: 'heat.srt', remaining: 4, reset_time: '23 hours' } });
   replies.push({ code: 200, body: 'Caf\xe9 au lait', latin1: true });
