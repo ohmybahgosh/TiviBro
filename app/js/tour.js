@@ -327,6 +327,7 @@ var Tour = (function () {
     return out;
   }
 
+  // The summary: what Apply will do in numbers, each choice with a way back to its step, and tips for afterwards.
   function doneRows() {
     var pl = plan(), out = [], cards = U.el('div', 'tour-stats');
     function card(v, l) { var d = U.el('div', 'tour-stat'); d.appendChild(U.el('b', '', v)); d.appendChild(U.el('span', '', cardLabel(v, l))); cards.appendChild(d); }
