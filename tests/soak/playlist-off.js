@@ -31,6 +31,16 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
       pg.rows.map((x) => x.label).join(' | '));
     pls = await sa('playlists', []);
     ok('the list says it is off', /^Off/.test(pls.rows.find((x) => /^Second provider/.test(x.label)).sub), pls.rows.find((x) => /^Second provider/.test(x.label)).sub);
+    // Each playlist's switch on the Playlists page too, under Playlists on or off, without opening it (discussion #36).
+    const hi = pls.rows.findIndex((x) => x.label === 'Playlists on or off'), sw = pls.rows.slice(hi + 1).find((x) => x.kind === 'toggle' && x.label === 'Second provider');
+    ok('the Playlists page has a Playlists on or off section with a switch for each playlist', hi >= 0 && sw && sw.on === false && pls.rows.slice(hi + 1).filter((x) => x.kind === 'toggle').length >= 2, pls.rows.map((x) => x.label + ':' + x.kind).join(' | '));
+    if (sw) await sa('playlists', [], sw.i, 'toggle', { on: true });
+    ok('and it turns that playlist on', await ev(() => !Store.settings.playlists.find((p) => p.id === 'p2').off));
+    pls = await sa('playlists', []);
+    const sw2 = pls.rows.find((x) => x.kind === 'toggle' && x.label === 'Second provider');
+    if (sw2) await sa('playlists', [], sw2.i, 'toggle', { on: false });
+    ok('and off again', await ev(() => !!Store.settings.playlists.find((p) => p.id === 'p2').off));
+    pls = await sa('playlists', []);
     // The one in use can't be turned off while it is the only one on.
     const first = pls.rows.find((x) => x.kind === 'page' && !/^Second provider/.test(x.label));
     pg = await sa('playlists', [first.i]);
@@ -45,6 +55,8 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     ok('the web editor shows it as Off, with Turn on and no Use on the TV for it', /Second provider\s*Off/.test(card) && /Turn on/.test(card), card.replace(/\s+/g, ' ').slice(0, 300));
     await ed.click('button[data-pl="on"][data-id="p2"]'); await ed.waitForTimeout(2500);
     ok('Turn on in the web editor turns it on again on the TV', await ev(() => !Store.settings.playlists.find((p) => p.id === 'p2').off));
+    // A draft left on the test TV by an earlier run asks what to do with it first: out of the way here.
+    await ed.evaluate(() => { if (typeof closeModal === 'function') closeModal(); });
     await ed.click('button[data-pl="off"][data-id="p2"]'); await ed.waitForTimeout(2500);
     ok('and Turn off turns it off', await ev(() => !!Store.settings.playlists.find((p) => p.id === 'p2').off));
     await ev(() => WebEdit.stop());

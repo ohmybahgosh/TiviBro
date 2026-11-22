@@ -1221,6 +1221,7 @@ I18n.add('es', {
   "Back  Movies on now": "Atrás  Películas ahora",
   "\"{x}\" isn't mixed into Favorites and your groups.  Settings > Playlists and accounts > {x} > Mix into the first playlist.": "\"{x}\" no está mezclada en Favoritos y tus grupos.  Configuración > Listas y cuentas > {x} > Mezclar con la primera lista.",
   "Mixing playlists": "Mezclar listas",
+  "Playlists on or off": "Activar o desactivar listas",
   "Where your other playlists' channels show up: All channels, Favorites and your groups, My teams, Events by time, Movies on now, Recently added and Search.": "Dónde aparecen los canales de tus otras listas: Todos los canales, Favoritos y tus grupos, Mis equipos, Eventos por hora, Películas ahora, Recién añadidos y Buscar.",
   "All mixed in": "Todas mezcladas",
   "Not mixed in": "Sin mezclar",

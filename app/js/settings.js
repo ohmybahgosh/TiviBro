@@ -583,6 +583,11 @@ var Settings = (function () {
     // From the phone app: its own Add a playlist form (AddPlaylistDialog), with the playlist type to pick.
     var addPl = phoneDoes('add-playlist', action('Add playlist…', 'Each playlist keeps its own groups, favorites, hidden items, guide and name rules.  Adding one from the phone app is easier: share your provider\'s link to it.', function () { App.setup('new'); }));
     out.push(addPl);
+    // Several playlists: each one's switch here too, without opening its page (discussion #36).
+    if (s.playlists.length > 1) {
+      out.push(head('Playlists on or off'));
+      s.playlists.forEach(function (raw) { var p = Store.normalize(raw); out.push(onSwitch(p, I18n.raw(p.name || (p.type === 'xtream' ? p.user : 'M3U')))); });
+    }
     // Several playlists on: where the others' channels show up (mixPage).
     if (mixable().length) out.push(page('Mixing playlists', 'Where your other playlists\' channels show up: All channels, Favorites and your groups, My teams, Events by time, Movies on now, Recently added and Search.',
       'Mixing playlists', mixOverview, function () { return mixSummary(); }));
@@ -597,6 +602,23 @@ var Settings = (function () {
     out.push(info(s.playlists.length > 1 ? 'Every playlist that is on is used at once: each has its own section in the group list, under its name.  The first playlist comes first, and your Favorites, your groups and reminders belong to it.  The guide, names and channels of the first playlist are under Guide, Channel and group names, and Channels and groups.'
       : 'The guide, names and channels of the playlist in use are under Guide, Channel and group names, and Channels and groups.', ''));
     return out;
+  }
+
+  /* A playlist's on/off switch: on its own page (Playlist on) and, with several playlists, under Playlists and
+     accounts > Playlists on or off, so a list can be switched without opening it (discussion #36).  Off keeps its login,
+     groups, favorites and names; the one in use being turned off hands over to the next one that is on. */
+  function onSwitch(p, label) {
+    return toggle(label, p.off ? 'Off: kept with everything you set, out of the way.  Turn it on to use it again.' : 'Turn it off to keep it, with its login and everything you set, without deleting it.',
+      function () { return !p.off; }, function (v) {
+        var s = S();
+        if (!v && p.id === s.active) {
+          var next = s.playlists.filter(function (x) { return x.id !== p.id && !x.off; })[0];
+          if (!next) { U.toast('This is the only playlist that is on.  Turn another one on (or add one) first.', 6000); return paint(); }
+          p.off = true; persist(p); stack = []; U.toast('"' + (p.name || 'Playlist') + '" is off.  Switching to "' + (next.name || 'the next playlist') + '".', 5000); App.switchPlaylist(next.id); return;
+        }
+        p.off = !v; persist(p); build();
+        App.playlistsChanged();          // its channels join the lists, or leave them
+      });
   }
 
   /* The DNS choices (Settings > Playlists and accounts > DNS, and the first setup screen, discussion #60). */
@@ -680,16 +702,7 @@ var Settings = (function () {
       : action('Use this playlist', '', function () { stack = []; App.switchPlaylist(p.id); }));
     /* Off (instead of Delete): its login, groups, favorites and names are all kept, but it is left out of
        everything (switching, the menus offering another playlist) until it is turned on again. */
-    out.push(toggle('Playlist on', p.off ? 'Off: kept with everything you set, out of the way.  Turn it on to use it again.' : 'Turn it off to keep it, with its login and everything you set, without deleting it.',
-      function () { return !p.off; }, function (v) {
-        if (!v && active) {
-          var next = s.playlists.filter(function (x) { return x.id !== p.id && !x.off; })[0];
-          if (!next) { U.toast('This is the only playlist that is on.  Turn another one on (or add one) first.', 6000); return paint(); }
-          p.off = true; persist(p); stack = []; U.toast('"' + (p.name || 'Playlist') + '" is off.  Switching to "' + (next.name || 'the next playlist') + '".', 5000); App.switchPlaylist(next.id); return;
-        }
-        p.off = !v; persist(p); build();
-        App.playlistsChanged();          // its channels join the lists, or leave them
-      }));
+    out.push(onSwitch(p, 'Playlist on'));
     out.push(action('Name', '', function () { UI.prompt('Playlist name', p.name, function (v) { if (v.trim()) { p.name = v.trim(); persist(p); build(); } }); }, function () { return I18n.raw(p.name); }));
     var stk = p.type === 'stalker';
     // On the phone: its own form (AddPlaylistDialog in edit mode), not the TV's setup screen.

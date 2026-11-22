@@ -1224,6 +1224,7 @@ I18n.add('ru', {
   "Back  Movies on now": "Назад  Фильмы в эфире",
   "\"{x}\" isn't mixed into Favorites and your groups.  Settings > Playlists and accounts > {x} > Mix into the first playlist.": "«{x}» не добавлен в Избранное и ваши группы.  Настройки > Плейлисты и аккаунты > {x} > Смешивать с первым плейлистом.",
   "Mixing playlists": "Смешивание плейлистов",
+  "Playlists on or off": "Включение и выключение плейлистов",
   "Where your other playlists' channels show up: All channels, Favorites and your groups, My teams, Events by time, Movies on now, Recently added and Search.": "Где показываются каналы других плейлистов: Все каналы, Избранное и ваши группы, Мои команды, События, Фильмы в эфире, Новые каналы и Поиск.",
   "All mixed in": "Все смешаны",
   "Not mixed in": "Не смешаны",

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Playlists on or off in one place.**  With several playlists, Settings > Playlists and accounts has a Playlists on or off section with a switch for each, so you don't have to open a playlist to turn it off or back on.
 - **The score corner no longer shows the game you're watching** on a channel whose listing also names another team in passing (a local station's "...lost their last game to Chicago" put up the Lions score on the Lions game).
 
 ## 0.6.0 (alpha 199, 2026-11-22)
