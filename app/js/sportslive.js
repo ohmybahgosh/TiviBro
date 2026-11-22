@@ -110,15 +110,23 @@ var SportsLive = (function () {
       if (g.state === 'in') said['i' + g.id] = 1;
       if (g.state === 'post' && said['i' + g.id] && !said['f' + g.id] && now - g.s < 6 * 3600e3) {
         said['f' + g.id] = 1;
-        U.toast(T('Final') + ':  ' + RAW(g.teams[0].name + ' ' + g.teams[0].score + ',  ' + g.teams[1].name + ' ' + g.teams[1].score), 8000);
+        if (!onScreen(g)) U.toast(T('Final') + ':  ' + RAW(g.teams[0].name + ' ' + g.teams[0].score + ',  ' + g.teams[1].name + ' ' + g.teams[1].score), 8000);
       }
     });
   }
+  /* True when the live channel playing now (fullscreen or preview) carries this game: it's one of the game's channels,
+     or its guide listing names both teams (the same test the score corner uses, so overtime counts too). */
+  function onScreen(g) {
+    var c = Views.mode === 'live' && Views.playing;
+    if (!c) return false;
+    if (Sports.channels(g).some(function (x) { return x.c.k === c.k; })) return true;
+    var on = Sports.gameOn(c);
+    return !!on && on.id === g.id;
+  }
   // "Watch it?" unless you're watching it already, or a question is up; it goes by itself after 15 seconds.
   function ask(g, text) {
-    if (UI.modalOpen) return;
+    if (UI.modalOpen || onScreen(g)) return;
     var cs = Sports.channels(g), c = cs[0] && cs[0].c;
-    if (Views.playing && cs.some(function (x) { return x.c.k === Views.playing.k; }) && Views.full) return;
     Log.info('sports', 'Alert: ' + text);
     if (!c) { U.toast(text, 8000); return; }
     var title = T('Close game');
