@@ -1032,6 +1032,8 @@ var Media = (function () {
   function smbLogin(o) { return { server: o.server, share: o.share || '', user: String(o.user || '').trim(), pass: String(o.pass || ''), domain: String(o.domain || '').trim() }; }
   // The disk shares on a server, the folders in one folder, for the pickers (TV, phone app, web editor).
   function smbShares(o) { return ask('smb/shares', smbLogin(o), 40000); }
+  // The SMB servers on the network (service/smb-discover.js): [{ name, server, via }].
+  function smbDiscover() { return ask('smb/discover', {}, 20000).then(function (r) { return (r && r.servers) || []; }); }
   function smbFolders(o, folder) { var q = smbLogin(o); q.path = String(folder || '/'); return ask('smb/folders', q, 40000); }
   function addSmb(o, name) {
     var l = smbLogin(o);
@@ -1042,16 +1044,30 @@ var Media = (function () {
     U.toast('Checking ' + source.name + '…');
     return scanSource(source).then(function (res) { return addScanned(source, res); }, function (e) { U.toast(why(e), 6000); return { error: 'helper', message: why(e) }; });
   }
-  // The TV's own way in: server, user name and password typed with the remote, then the lists.
+  /* The TV's own way in: the servers found on the network (or one typed), then a user name and password
+     typed with the remote, then the lists. */
   function askSmb() {
-    UI.prompt('Server name or address', '', function (text) {
-      var a = smbAddress(text);
-      if (!a) { if (String(text || '').trim()) U.toast('That isn\'t a server name or address.  Try its name (like NAS or DESKTOP-PC) or its IP address.', 7000); return; }
-      UI.prompt('User name (empty for a guest)', '', function (user) {
-        if (!String(user || '').trim()) return smbPick(smbLogin({ server: a.server, share: a.share }), a.share ? [a.folder] : null);
-        UI.prompt('Password', '', function (pass) { smbPick(smbLogin({ server: a.server, share: a.share, user: user, pass: pass }), a.share ? [a.folder] : null); });
-      }, 'On a Windows PC: the PC\'s user name or your Microsoft account email.');
-    }, 'Like NAS, DESKTOP-PC or 192.168.1.20.  Or a whole path: \\\\NAS\\Movies');
+    U.toast('Looking for shares on your network…');
+    smbDiscover().then(function (servers) { smbServers(servers); }, function () { smbServers([]); });
+  }
+  function smbServers(servers) {
+    var items = servers.map(function (s) { return { label: RAW(s.name), sub: s.name === s.server ? 'Sign in to it' : RAW(s.server), action: function () { smbAsk(smbAddress(s.server)); } }; });
+    items.push({ label: 'Type a server name or address', sub: servers.length ? 'One that isn\'t listed' : 'Nothing answered.  A PC needs file sharing (and network discovery) on', action: function () {
+      UI.prompt('Server name or address', '', function (text) {
+        var a = smbAddress(text);
+        if (!a) { if (String(text || '').trim()) U.toast('That isn\'t a server name or address.  Try its name (like NAS or DESKTOP-PC) or its IP address.', 7000); return; }
+        smbAsk(a);
+      }, 'Like NAS, DESKTOP-PC or 192.168.1.20.  Or a whole path: \\\\NAS\\Movies');
+    } });
+    if (servers.length) items.push({ label: 'Look again', action: askSmb });
+    UI.menu(servers.length ? 'Shares on your network' : 'No shares found', items);
+  }
+  // The login for a server (a = smbAddress), then its shares (or the share and folder it named).
+  function smbAsk(a) {
+    UI.prompt('User name (empty for a guest)', '', function (user) {
+      if (!String(user || '').trim()) return smbPick(smbLogin({ server: a.server, share: a.share }), a.share ? [a.folder] : null);
+      UI.prompt('Password', '', function (pass) { smbPick(smbLogin({ server: a.server, share: a.share, user: user, pass: pass }), a.share ? [a.folder] : null); }, '', true);
+    }, 'On a Windows PC: the PC\'s user name or your Microsoft account email.');
   }
   /* The share list (trail null), then folder by folder (trail: the folders opened, '/' first).  Each folder
      can be added, opened or left with Up. */
@@ -1815,7 +1831,7 @@ var Media = (function () {
   return {
     quickMarkMovie: quickMarkMovie, movieCard: movieCard,
     reviewCount: function () { return reviewCards.length; },      // how many need a look (the show options offer Needs review)
-    refreshShows:refreshSeries, playNow: function (m) { playNow(m); }, foundText: foundText, discover: discover, addServer: addServer, sourceDetailsNow: sourceDetailsNow, isScanning: function (id) { return !!scanning[id]; }, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); visitEnd(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress, addDropbox: addDropbox, dropboxFolders: dropboxFolders, addGdrive: addGdrive, gdrivePlaces: gdrivePlaces, addSmb: addSmb, smbShares: smbShares, smbFolders: smbFolders, smbAddress: smbAddress, gdriveFolders: gdriveFolders, gdriveKey: gdriveKey, signOut: signOut,
+    refreshShows:refreshSeries, playNow: function (m) { playNow(m); }, foundText: foundText, discover: discover, addServer: addServer, sourceDetailsNow: sourceDetailsNow, isScanning: function (id) { return !!scanning[id]; }, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); visitEnd(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress, addDropbox: addDropbox, dropboxFolders: dropboxFolders, addGdrive: addGdrive, gdrivePlaces: gdrivePlaces, addSmb: addSmb, smbDiscover: smbDiscover, smbShares: smbShares, smbFolders: smbFolders, smbAddress: smbAddress, gdriveFolders: gdriveFolders, gdriveKey: gdriveKey, signOut: signOut,
     rescanAll: rescanAll, newMedia: newMedia, newMediaSoon: newMediaSoon, guideLookup: guideLookup, movieById: movieById, tvByName: tvByName, tvSeason: tvSeason, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, libraryStats: libraryStats, removeLibrary: removeLibrary,
     // The web editor's Fix match: search TMDB by a typed title, then save the one picked.
     searchDetails: function (title) { if (!MediaStore.tmdbToken()) return Promise.reject(new Error('Add a TMDB API token first.')); return metadataRequest({ title: String(title || '').slice(0, 200) }).then(function (r) { return (r.matches || []).slice(0, 10).map(function (x) { return { id: x.id, title: x.title, year: x.year || '' }; }); }); },

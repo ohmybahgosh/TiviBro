@@ -76,6 +76,9 @@ put('Photos/a.jpg', 10);
   r = await ev(() => Media.smbShares({ server: 'nas', user: 'tv', pass: 'wrong' }));
   ok('a wrong password, in plain words', r.error === 'login' && /didn't accept that user name and password/.test(r.message), JSON.stringify(r));
 
+  // Looking on the network answers with a list (empty here: no SMB servers on the test machine's network).
+  r = await mm('smbdiscover');
+  ok('the phone can ask the TV to look for shares on its network', Array.isArray(r.servers), JSON.stringify(r));
   // The phone: shares, folders, add.
   r = await mm('smbshares', { server: 'nas', user: 'tv', pass: PASS });
   ok('the phone lists the shares', r.shares && r.shares.length === 2, JSON.stringify(r));

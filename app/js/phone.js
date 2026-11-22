@@ -417,8 +417,9 @@ var Phone = (function () {
           return r && !r.error ? { msg: 'Added: ' + plural(r.movies || 0, 'movie') + ' and ' + plural(r.episodes || 0, 'episode') + '.' + Media.leftOut(r.skipped) } : r;
         }), 'Signed in to Dropbox.  The TV is still looking through the folder.');
       }
-      /* A Windows or network share (SMB): smbshares (the disk shares on a server), smbfolders (one folder's
-         folders) and addsmb (the folder picked).  The login comes with each ask and is never sent back. */
+      /* A Windows or network share (SMB): smbdiscover (the servers on the network), smbshares (the disk shares
+         on a server), smbfolders (one folder's folders) and addsmb (the folder picked).  The login comes with each ask and is never sent back. */
+      if (op === 'smbdiscover') return Media.smbDiscover().then(function (list) { return { servers: list.map(function (x) { return { name: String(x.name || ''), server: String(x.server || '') }; }) }; });
       if (op === 'smbshares' || op === 'smbfolders' || op === 'addsmb') {
         var at = Media.smbAddress(a.server);
         if (!at) throw new Error('Enter the server\'s name or IP address, like NAS or 192.168.1.20.');

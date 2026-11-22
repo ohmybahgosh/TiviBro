@@ -3,7 +3,7 @@
 ## Unreleased
 
 - **Pick which teams show in the score corner.**  Settings > Sports and My teams > Teams in the corner: turn a team off and its games stay out of the corner while you watch, but still show in Sports and alerts.  Also in the phone app and the web editor.
-- **My media reads Windows and network shares (SMB).**  Add media > Add a Windows or network share: a PC, Mac, NAS or router's shared folder, by its name or address and a login (or as a guest), then pick the share and folder.  Also in the phone app (Add media > Add a Windows or network share) and the web editor.  SMB 2 and 3 with signing and encryption, so Windows 11 shares work; SMB1 isn't supported.  Movies play with seeking, subtitles beside them are found, and the login stays on the TV.
+- **My media reads Windows and network shares (SMB).**  Add media > Add a Windows or network share: a PC, Mac, NAS or router's shared folder, found on the network or by its name or address, and a login (or as a guest), then pick the share and folder.  Also in the phone app (Add media > Add a Windows or network share) and the web editor.  SMB 2 and 3 with signing and encryption, so Windows 11 shares work; SMB1 isn't supported.  Movies play with seeking, subtitles beside them are found, and the login stays on the TV.
 
 ## 0.6.0 (alpha 200, 2026-11-22)
 

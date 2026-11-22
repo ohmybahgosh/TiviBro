@@ -450,6 +450,9 @@ var WebEdit = (function () {
     },
     /* A Windows or network share (SMB) from the web editor: the server and login with each ask (shares,
        folders), then the folder picked.  The login is never sent back to the page. */
+    mediaSmbDiscover: function () {
+      return Media.smbDiscover().then(function (list) { return { msg: '', data: list.map(function (x) { return { name: x.name, server: x.server }; }) }; });
+    },
     mediaSmbShares: function (a) {
       var at = Media.smbAddress(clean(a.server));
       if (!at) return Promise.reject(new Error('Enter the server\'s name or IP address, like NAS or 192.168.1.20.'));

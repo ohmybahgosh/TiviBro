@@ -41,12 +41,22 @@ One short run for each thing it needs, answering in JSON lines:
 - **Errors** come back as a kind (login, denied, noshare, notfound, unreachable, timeout, signing, smb1)
   and are put into words for the viewer.
 
+## Finding servers (service/smb-discover.js)
+
+Add a share starts by looking: mDNS (`_smb._tcp`: Macs, Samba with Avahi, Synology and QNAP with Bonjour),
+WS-Discovery (Windows 10 and 11 with network discovery on, Samba with wsdd, Synology with Windows network
+discovery ticked; the name comes from the machine's metadata) and NetBIOS (older NAS boxes and routers), all
+at once for about three seconds.  Printers answer WS-Discovery too, so each address must take a connection
+on its SMB port to be listed, and the TV's own addresses are left out (an LG TV answers as LGTV).  A server
+that isn't found can always be typed.
+
 ## Adding a share
 
-- **TV:** Settings > My media > Add media > Add a Windows or network share (SMB): the server's name or
-  address, a user name (empty for a guest) and password, then pick a share and a folder.
-- **Phone app:** the `smbshares`, `smbfolders` and `addsmb` asks (app/js/phone.js).
-- **Web editor:** My media > Add a Windows or network share.
+- **TV:** Settings > My media > Add media > Add a Windows or network share (SMB): pick a server found on
+  the network (or type its name or address), a user name (empty for a guest) and password, then pick a
+  share and a folder.
+- **Phone app:** Look on my network, then the `smbshares`, `smbfolders` and `addsmb` asks (`smbdiscover` first; app/js/phone.js).
+- **Web editor:** My media > Add a Windows or network share (with Look on my network).
 
 A whole path works as the server too: `\\NAS\Movies\Films` or `smb://NAS/Movies/Films`.
 

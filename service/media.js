@@ -880,14 +880,16 @@ function gdriveRequest(kind, q, res, ALLOW, log) {
   Gdrive.folders(key, str(q.parent), str(q.driveId), function (e, folders) { answer(e, { folders: folders }); });
 }
 /* A share before a library exists, for the add-a-share forms: shares (the disk shares on a server),
-   folders (one folder's folders) and check (sign in and open the share).  The login comes with each ask
+   folders (one folder's folders), check (sign in and open the share) and discover (the SMB servers on the
+   network, no login).  The login comes with each ask
    and is never kept here or sent back. */
 function smbRequest(kind, q, res, ALLOW, log) {
   var source = { type: 'smb', server: q.server, share: q.share, folder: '/', user: q.user, pass: q.pass, domain: q.domain };
   function answer(e, out) {
-    log({ lv: e ? 'warn' : 'info', event: 'smb ' + kind, host: hostOf(source), count: out && (out.shares || out.folders) ? (out.shares || out.folders).length : undefined, error: e ? e.kind || 'other' : null });
+    log({ lv: e ? 'warn' : 'info', event: 'smb ' + kind, host: hostOf(source), count: out && (out.shares || out.folders || out.servers) ? (out.shares || out.folders || out.servers).length : undefined, error: e ? e.kind || 'other' : null });
     send(res, ALLOW, 200, e ? Smb.failure(e) : out);
   }
+  if (kind === 'discover') return require('./smb-discover').discover(function (r) { answer(null, r); });   // servers on the network (smb-discover.js)
   if (kind === 'shares') return Smb.shares(source, function (e, list) { answer(e, { shares: list }); });
   if (kind === 'check') return Smb.check(source, function (e, r) { answer(e, r); });
   Smb.list(source, q.path, function (e, entries) {
@@ -900,7 +902,7 @@ function handle(req, res, ALLOW, log) {
   var subs = /^\/media\/subs\/(search|get|login)$/.exec(route), subscan = /^\/media\/subs\/(scan|lines)$/.exec(route);
   var dropbox = /^\/media\/dropbox\/(folders|account|revoke)$/.exec(route);
   var gdrive = /^\/media\/gdrive\/(places|folders)$/.exec(route);
-  var smb = /^\/media\/smb\/(shares|folders|check)$/.exec(route);
+  var smb = /^\/media\/smb\/(shares|folders|check|discover)$/.exec(route);
   if (req.method !== 'POST' || (!libraryRoute && !subs && !subscan && !dropbox && !gdrive && !smb && route !== '/media/scan/control' && route !== '/media/discover' && route !== '/media/scan' && route !== '/media/resolve' && route !== '/media/sidecar' && route !== '/media/sidecar/get' && route !== '/media/vformat' && route !== '/media/check' && route !== '/media/metadata' && route !== '/media/trakt')) return send(res, ALLOW, 404, { error: 'unknown media route' });
   var body = '', over = false, bodyBytes = 0, bodyLimit = libraryRoute || subscan ? 1048576 : 65536;   // subscan: a long movie's Cluster offsets
   if (req.setEncoding) req.setEncoding('utf8');

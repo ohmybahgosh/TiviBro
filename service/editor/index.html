@@ -814,8 +814,9 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
             <label class="f">User name<input id="smbUser" type="text" autocomplete="off" placeholder="empty for a guest"></label>
             <label class="f">Password<input id="smbPass" type="password" autocomplete="new-password"></label>
             <div class="full muted small">On a Windows PC: the PC's user name or your Microsoft account email, and its password.  Windows 11 doesn't allow guests.</div>
-            <div class="full row"><button type="submit" class="primary">Show the shares</button></div>
+            <div class="full row"><button type="submit" class="primary">Show the shares</button><button type="button" id="smbLook" class="ghost">Look on my network</button></div>
           </form>
+          <div id="smbFound" class="row hidden" style="flex-wrap:wrap;gap:6px;margin:8px 0"></div>
           <div id="smbPick" class="hidden">
             <div class="meta" id="smbWhere"></div>
             <div id="smbFolders" class="row" style="flex-wrap:wrap;gap:6px;margin:8px 0"></div>
@@ -4037,6 +4038,15 @@ $('smbForm').onsubmit = function (e) {
   smb.trail = bits[1] ? ['/' + bits.slice(2).join('/')] : [];
   $('smbPass').value = '';
   smbOpen();
+};
+// The servers the TV finds on the network: picking one fills in the server.
+$('smbLook').onclick = function () {
+  var b = this; b.disabled = true;
+  command('mediaSmbDiscover', {}, 30000, cmdMsg('smbMsg', 'Looking for shares on the TV\'s network…')).then(function (r) {
+    var box = $('smbFound'); box.innerHTML = ''; box.classList.remove('hidden');
+    msg('smbMsg', 'ok', r.data.length ? 'Pick one, then enter its login:' : 'Nothing answered.  A PC needs file sharing (and network discovery) on.  You can still type its name or address.');
+    r.data.forEach(function (s) { box.appendChild(gdButton(s.name === s.server ? s.server : s.name + ' (' + s.server + ')', function () { $('smbServer').value = s.server; $('smbUser').focus(); })); });
+  }).catch(function (e) { msg('smbMsg', 'bad', e.message); }).then(function () { b.disabled = false; });
 };
 $('smbUp').onclick = function () { smb.trail.pop(); if (!smb.trail.length) smb.login.share = ''; smbOpen(); };
 $('smbAdd').onclick = function () {

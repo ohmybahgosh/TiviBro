@@ -106,6 +106,8 @@ fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Un
     var smbTrail by remember { mutableStateOf(listOf<String>()) }
     var smbList by remember { mutableStateOf<List<Pair<String, String>>?>(null) }
     var smbName by remember { mutableStateOf("") }
+    // The servers the TV found on its network (name to address), once asked.
+    var smbFound by remember { mutableStateOf<List<Pair<String, String>>?>(null) }
     // Google Drive: the key (memory only), the account it is, and where the picker is.
     var gdKey by remember { mutableStateOf("") }
     var gdAccount by remember { mutableStateOf("") }
@@ -155,6 +157,8 @@ fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Un
             smbList = if (a == null) emptyList() else (0 until a.length()).map { a.getJSONObject(it).let { f -> f.optString("name") to f.optString("path") } }
         }
     }
+    fun smbLook() { smbFound = null; run("The TV is looking for shares on its network…", JSONObject().put("op", "smbdiscover")) { r ->
+        val a = r.optJSONArray("servers"); smbFound = if (a == null) emptyList() else (0 until a.length()).map { a.getJSONObject(it).let { x -> x.optString("name") to x.optString("server") } } } }
     fun look() { step = "servers"; servers = null; run("Looking for media servers on your network…", JSONObject().put("op", "discover")) { r ->
         val a = r.optJSONArray("servers"); servers = if (a == null) emptyList() else (0 until a.length()).map { a.getJSONObject(it).let { s -> s.optInt("i") to s.optString("name") } } } }
 
@@ -220,6 +224,11 @@ fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Un
                         Text("The TV reads the share directly, with SMB 2 or 3.  Leave the user name empty for a guest; on a Windows PC, use the PC's user name or your Microsoft account email.  The login stays on the TV.",
                             color = Muted, style = MaterialTheme.typography.bodySmall)
                         Spacer(Modifier.size(8.dp))
+                        TextButton(enabled = busy == null, onClick = { smbLook() }) { Text("Look on my network") }
+                        smbFound?.let { found ->
+                            if (found.isEmpty()) Text("Nothing answered.  A PC needs file sharing (and network discovery) on.  You can still type its name or address.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                            found.forEach { (name, server) -> Choice(name, if (name == server) "Pick it, then enter its login" else server) { smbServer = server } }
+                        }
                         OutlinedTextField(smbServer, { smbServer = it.trim() }, label = { Text("Server name or address (NAS, 192.168.1.20)") }, singleLine = true, enabled = busy == null,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), modifier = Modifier.fillMaxWidth())
                         OutlinedTextField(user, { user = it }, label = { Text("User name") }, singleLine = true, enabled = busy == null, modifier = Modifier.fillMaxWidth())
