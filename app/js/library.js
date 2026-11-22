@@ -622,6 +622,8 @@ var Library = (function () {
   // Back to the provider's order (or the sort chosen for all groups).
   function resetOrder(gid) { var e = E(); if (e.chanOrder) delete e.chanOrder[gid]; if (e.groupSort && e.groupSort[gid] === 'custom') delete e.groupSort[gid]; commit(); }
   function hasOwnOrder(gid) { var e = E(); return !isCustom(gid) && !!(e.groupSort && e.groupSort[gid] === 'custom' && e.chanOrder && e.chanOrder[gid]); }
+  /* A group one place up (dir -1) or down (+1): your own groups among your own, a provider's among the groups of its
+     playlist (kept in edits.groupOrder, which then wins over the name or playlist order). */
   function moveGroup(id, dir) {
     var e = E();
     if (isCustom(id)) {
@@ -631,7 +633,8 @@ var Library = (function () {
     } else {
       // Only among its own playlist's groups: each playlist's groups show together.
       var mine = plOfKey(id), same = function (x) { return plOfKey(x) === mine; };
-      var all = (e.groupOrder && e.groupOrder.length) ? e.groupOrder.slice() : data.groups.map(function (g) { return g.id; });
+      // No order of your own yet: the one shown (sorted by name, say), so a move goes from what you see.
+      var all = (e.groupOrder && e.groupOrder.length) ? e.groupOrder.slice() : allGroups().filter(function (g) { return !isCustom(g.id); }).map(function (g) { return g.id; });
       var order = all.filter(same);
       data.groups.forEach(function (g) { if (same(g.id) && order.indexOf(g.id) < 0) order.push(g.id); });
       var a = order.indexOf(id), b = a + dir;

@@ -82,7 +82,8 @@ var Settings = (function () {
     return { label: label, sub: sub, value: function () { return get() ? 'On' : 'Off'; }, cycle: function () { set(!get()); }, toggle: true, get: get, set: set };
   }
   function action(label, sub, fn, value) { return { label: label, sub: sub, action: fn, value: value || function () { return ''; } }; }
-  function head(t) { return { head: true, label: t }; }
+  // A heading.  phone: its words on the phone and in the web editor, for one that names the remote's buttons.
+  function head(t, phone) { return phone != null ? { head: true, label: t, phoneLabel: phone } : { head: true, label: t }; }
   /* A reload or rescan while the channel plays in Settings' corner (views.js pip): on a TV short of memory
      (Player.memSafe) the channel stops first, as Settings always did, so the two never fill it together. */
   function heavy(fn) { return function () { if (Player.memSafe && Views.pipOn) Views.pipStop('a reload, on a TV short of memory'); return fn.apply(this, arguments); }; }
@@ -964,13 +965,15 @@ var Settings = (function () {
     out.push(action('Hide all groups', 'Then switch on just the ones you watch.', function () {
       UI.confirm('Hide all ' + all.length + ' groups?  You can switch them back on here.', 'Hide all', function () { L.hideGroups(all.map(function (g) { return g.id; }), true); relist(); build(); });
     }));
-    out.push(head('OK, ◀ or ▶ switches a group on or off'));
+    out.push(head('OK, ◀ or ▶ switches a group on or off', 'Switch a group on or off.  Drag ≡ to move it'));
     all.forEach(function (g) {
       out.push({ label: I18n.raw(g.name), sub: g.custom ? 'your group' : '',
         value: function () { return Store.edits.hiddenGroups[g.id] ? 'Hidden' : 'Shown'; },
         cycle: function () { set(g, !!Store.edits.hiddenGroups[g.id]); relist(); paint(); },
         // On the phone: a switch, on for shown.
-        toggle: true, get: function () { return !Store.edits.hiddenGroups[g.id]; }, set: function (v) { if (v === !!Store.edits.hiddenGroups[g.id]) { set(g, v); relist(); paint(); } } });
+        toggle: true, get: function () { return !Store.edits.hiddenGroups[g.id]; }, set: function (v) { if (v === !!Store.edits.hiddenGroups[g.id]) { set(g, v); relist(); paint(); } },
+        // On the phone and in the web editor: dragged up or down, by: how many places (op "move").
+        move: function (by) { for (var n = 0; n < Math.abs(by); n++) L.moveGroup(g.id, by < 0 ? -1 : 1); relist(); build(); } });
     });
     return out;
   }
@@ -2316,7 +2319,7 @@ var Settings = (function () {
   function rowData(it, n) {
     var v = '';
     try { v = it.value ? String(it.value() || '') : ''; } catch (e) {}
-    var r = { i: n, label: String(it.label || ''), sub: it.sub ? String(it.sub) : '' };
+    var r = { i: n, label: String(it.phoneLabel != null ? it.phoneLabel : it.label || ''), sub: it.sub ? String(it.sub) : '' };
     if (it.head) r.kind = 'head';
     else if (it.info) { r.kind = 'info'; r.value = v; }
     else if (it.toggle) { r.kind = 'toggle'; r.on = !!it.get(); }
@@ -2328,6 +2331,7 @@ var Settings = (function () {
     if (it.swatch) try { r.swatch = it.swatch() || ''; } catch (e) {}
     if (it.phone) { r.phone = it.phone; if (it.sid) r.sid = it.sid; if (it.epage) r.epage = it.epage; if (it.ptype) r.ptype = it.ptype; }
     if (it.tv) r.tv = 1;
+    if (it.move) r.move = 1;              // can be dragged to another place (op "move")
     if (it.go) r.go = it.go;                // a row that opens another section (link): the phone opens it there
     // The row's look (the Settings overhaul): its kind, whether it wants you, a tip or a jump, the first sentence.
     r.look = kindOf(it);
@@ -2463,6 +2467,7 @@ var Settings = (function () {
       if (op === 'toggle' && it2.toggle) { if (!!it2.get() !== (a.on !== false)) it2.set(a.on !== false); }
       else if (op === 'choice' && it2.values) { var v = it2.values[+a.v]; if (v === undefined) throw new Error('Not one of the choices'); if (it2.get() !== v) it2.set(v); }
       else if (op === 'cycle' && it2.cycle) it2.cycle(+a.dir < 0 ? -1 : 1);
+      else if (op === 'move' && it2.move) it2.move(Math.max(-500, Math.min(500, Math.round(+a.by) || 0)));
       else if (op === 'action' && it2.action && !it2.page) {
         if (it2.tv) { it2.action(); Store.saveSettings(); return { msg: 'On the TV\'s screen now', page: forPhone.page(secId, path) }; }
         var c2 = startCapture(); c2.from = { sec: secId, path: path, n: n };

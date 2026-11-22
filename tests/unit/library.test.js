@@ -31,6 +31,15 @@ ok('your own group can be sorted too', keys('c_x') === '4,1,3', keys('c_x'));
 edits.groupSort = {}; L.dirty();
 ok('your own group keeps your order', keys('c_x') === '4,1,3');
 
+// Moving a group when the list is sorted by name and nothing was moved yet: from the order shown (the phone's drag).
+L.set({ groups: [{ id: 'z', name: 'Zeta' }, { id: 'm', name: 'Mid' }, { id: 'a2', name: 'Alpha' }], channels: [{ k: 'z1', n: 'Z', g: 'z' }, { k: 'm1', n: 'M', g: 'm' }, { k: 'a1', n: 'A', g: 'a2' }] });
+ctx.Store.settings.sortGroups = 'name'; edits.groupOrder = []; L.dirty();
+const provOrder = () => L.allGroups().filter(g => ['z', 'm', 'a2'].indexOf(g.id) >= 0).map(g => g.id).join(',');
+ok('sorted by name before a move', provOrder() === 'a2,m,z', provOrder());
+L.moveGroup('z', -1);
+ok('a move goes from the order shown', provOrder() === 'a2,z,m', provOrder());
+ctx.Store.settings.sortGroups = 'playlist'; edits.groupOrder = []; L.dirty();
+
 // Other versions of a channel (backups when one stops working).
 L.set({ groups: [{ id: 'us', name: 'US | News' }, { id: 'uk', name: 'UK | News' }, { id: 'x', name: 'Backup' }], channels: [
   { k: 'a', n: 'US| CNN FHD', g: 'us', num: 1 }, { k: 'b', n: 'US| CNN HD', g: 'us', num: 2 }, { k: 'c', n: 'US| CNN SD', g: 'us', num: 3 },

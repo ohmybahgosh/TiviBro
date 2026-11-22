@@ -340,7 +340,7 @@ var Phone = (function () {
       return { group: gid, title: Library.groupName(gid), rows: all.map(function (c) { return { k: c.k, n: Library.name(c), num: c.num || '', logo: Views.logoOf(c) || '', on: Library.isHidden(c.k) ? 0 : 1, g: Epg.hasData(c) ? 1 : 0 }; }), loading: Epg.loading ? 1 : 0 };
     },
     /* TiviBro's Settings on the phone, page by page (see Settings.phone): the list of pages, one page, or a
-       change on it (op toggle, choice, cycle, action).  Locked with the TV's PIN when Settings is: the
+       change on it (op toggle, choice, cycle, move, action).  Locked with the TV's PIN when Settings is: the
        answer says so ({ locked }) and the phone asks for the PIN. */
     settings: function (a) {
       try { Parental.phoneOk(a.pin); } catch (e) { if (e.code === 'pin') return { locked: true, msg: e.message }; throw e; }

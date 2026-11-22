@@ -98,6 +98,16 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.material.icons.rounded.DragHandle
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.zIndex
+import kotlin.math.roundToInt
 import app.tivibro.phone.proto.TbException
 import app.tivibro.phone.proto.TvDialog
 import kotlinx.coroutines.launch
@@ -128,6 +138,8 @@ data class SetRow(
     /** A button's weight (settings.js actionTone): "go" does its job right now (Reload guide now), "danger" deletes
         or resets and asks first.  Blank for the rest; older TVs send none. */
     val tone: String = "",
+    /** Can be dragged to another place in its list (a group in Manage groups): op "move" with how many places. */
+    val move: Boolean = false,
 ) {
     companion object {
         fun from(j: JSONObject) = SetRow(
@@ -135,6 +147,7 @@ data class SetRow(
             j.optBoolean("on"), j.optJSONArray("options")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty(), j.optInt("cur", -1), j.optString("swatch"),
             j.optString("phone"), j.optString("sid"), j.optString("epage"), j.optInt("tv") == 1 || j.optBoolean("tv"), j.optString("ptype"),
             j.optString("look"), j.optInt("attn") == 1, j.optString("style"), j.optString("brief"), j.optString("go"), j.optString("tone"),
+            j.optInt("move") == 1,
         )
     }
 }
@@ -289,7 +302,8 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
                         onChoose = { v -> change("choice", r, JSONObject().put("v", v)) },
                         onCycle = { d -> change("cycle", r, JSONObject().put("dir", d)) },
                         onOpen = { found = ""; path = path + r.i },
-                        onAction = { if (r.go.isNotBlank() && sections?.any { it.first == r.go } != false) { path = emptyList(); sec = r.go } else press(r) })
+                        onAction = { if (r.go.isNotBlank() && sections?.any { it.first == r.go } != false) { path = emptyList(); sec = r.go } else press(r) },
+                        onMove = { by -> change("move", r, JSONObject().put("by", by)) })
                   } } }
                 }
               }
@@ -429,7 +443,8 @@ private fun segmented(r: SetRow) = r.options.size in 2..3 && r.options.sumOf { i
    a bar beside them, and a row that wants you (an update ready) in green.  The note under a name is its first
    sentence; tap "more" for all of it.  [lit]: a search hit, lit up for a moment. */
 @Composable
-private fun SettingRow(r: SetRow, lit: Boolean, onToggle: (Boolean) -> Unit, onPick: () -> Unit, onChoose: (Int) -> Unit, onCycle: (Int) -> Unit, onOpen: () -> Unit, onAction: () -> Unit) {
+private fun SettingRow(r: SetRow, lit: Boolean, onToggle: (Boolean) -> Unit, onPick: () -> Unit, onChoose: (Int) -> Unit, onCycle: (Int) -> Unit, onOpen: () -> Unit, onAction: () -> Unit,
+                       onMove: (Int) -> Unit = {}) {
     val look = r.look.ifBlank { if (r.kind == "info") (if (r.value.isBlank()) "note" else "status") else r.kind }
     if (r.kind == "info" && !r.attn) {
         if (look == "status") Row(Modifier.fillMaxWidth().background(Panel2.copy(alpha = 0.45f)).padding(16.dp, 10.dp)) {
@@ -452,9 +467,26 @@ private fun SettingRow(r: SetRow, lit: Boolean, onToggle: (Boolean) -> Unit, onP
     }
     var more by remember(r.i, r.label) { mutableStateOf(false) }
     val glow by animateColorAsState(if (lit) Accent2.copy(alpha = 0.16f) else Color.Transparent, tween(1800), label = "found")
-    val bg = when { r.attn -> Good.copy(alpha = 0.14f); r.tone == "go" && button -> Accent.copy(alpha = 0.08f); else -> glow }
-    Column(Modifier.fillMaxWidth().background(bg).let { if (click != null) it.clickable(onClick = click) else it }.padding(16.dp, 13.dp)) {
+    // Dragged by its handle (r.move): the row follows the finger, and on letting go it moves by as many rows as it
+    // travelled (rows of about its own height).  The TV sends the page back in its new order.
+    var dragY by remember(r.i, r.label) { mutableFloatStateOf(0f) }
+    var dragging by remember(r.i, r.label) { mutableStateOf(false) }
+    var rowH by remember { mutableIntStateOf(1) }
+    val bg = when { dragging -> Panel2; r.attn -> Good.copy(alpha = 0.14f); r.tone == "go" && button -> Accent.copy(alpha = 0.08f); else -> glow }
+    Column(Modifier.fillMaxWidth().onSizeChanged { rowH = maxOf(1, it.height) }.zIndex(if (dragging) 1f else 0f)
+        .graphicsLayer { translationY = dragY }.let { if (dragging) it.shadow(8.dp) else it }
+        .background(bg).let { if (click != null) it.clickable(onClick = click) else it }.padding(16.dp, 13.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            if (r.move) {
+                Icon(Icons.Rounded.DragHandle, "Drag to move", tint = if (dragging) Accent else Muted, modifier = Modifier.padding(end = 12.dp).size(26.dp)
+                    .pointerInput(r.i, r.label) {
+                        detectDragGestures(
+                            onDragStart = { dragging = true },
+                            onDragEnd = { val by = (dragY / rowH).roundToInt(); dragY = 0f; dragging = false; if (by != 0) onMove(by) },
+                            onDragCancel = { dragY = 0f; dragging = false },
+                        ) { ch, d -> ch.consume(); dragY += d.y }
+                    })
+            }
             Column(Modifier.weight(1f)) {
                 Text(r.label, fontWeight = if (r.attn || button) FontWeight.SemiBold else FontWeight.Medium,
                     color = when { r.attn -> Good; r.tone == "danger" -> Color(0xFFFF9A9D); else -> TextHi })
