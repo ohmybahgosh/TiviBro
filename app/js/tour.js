@@ -4,7 +4,7 @@
    only asks about what applies.  Nothing changes until the last screen; a restore point is saved
    first, so the web editor can undo it.  Run it again any time from Settings > Playlists and accounts >
    the playlist > Set-up tour.
-   Steps: welcome, countries, channel names, East and West, local channels, event channels, clutter,
+   Steps: welcome, countries, channel names, East and West, local channels, event channels, your teams, clutter,
    logos, look, and a summary with tips.
    Several playlists on: it works on one playlist at a time, the one whose page it was opened from
    (opts.pl; the first playlist when not given): its channels (Library.dataOf), names and event settings. */
@@ -102,6 +102,7 @@ var Tour = (function () {
     { id: 'feeds', title: 'East or West?', rail: 'East and West', lead: function () { return plural(st.sv.feeds.pairs, 'channel') + ' come twice, on East and on West (Pacific) time.  Keep the feed you watch.  Channels that only come in one feed are left alone.'; }, when: function () { return st.sv.feeds.pairs > 0; }, rows: feedRows },
     { id: 'locals', title: 'Your local channels', rail: 'Local channels', lead: function () { return 'Your provider carries ' + plural(st.sv.locals.chans.length, 'local station') + ' for ' + plural(st.sv.locals.cities.length, 'city', 'cities') + '.  Tick yours, or a few nearby: the other cities are hidden, and yours can go together in one Local channels group.  ◀ ▶ jump between letters.'; }, when: function () { return st.sv.locals.cities.length > 1; }, rows: localRows },
     { id: 'events', title: 'Sports and pay-per-view', rail: 'Sports and PPV', lead: function () { return 'Pay-per-view and sports passes put the game and its time in the channel name.  TiviBro reads it and builds the guide from it.  ' + plural(st.sv.events, 'event channel') + ' here.'; }, when: function () { return st.sv.events > 0; }, rows: eventRows },
+    { id: 'teams', title: 'Your teams', rail: 'Your teams', lead: 'TiviBro finds your teams\' games on your channels, puts them in a My teams group and keeps their scores in a corner while you watch something else.  Pick the teams after the tour in Settings > Sports, or hold OK on a team\'s channel.', when: function () { return typeof Teams !== 'undefined' && Teams.leagues && Teams.leagues().length > 0; }, rows: teamRows },
     { id: 'clutter', title: 'Clear the clutter', rail: 'Clutter', lead: 'Everything hidden stays one click away: Settings > Channels and groups, or hold OK on a channel.', rows: clutterRows },
     { id: 'logos', title: 'Channel logos', rail: 'Logos', lead: 'For channels with no logo, from two open projects, iptv-org and tv-logos, matched by guide id, name and country, and a local station\'s call sign.  TiviBro hosts no images: each logo loads from its project.', rows: logoRows },
     { id: 'guide', title: 'A guide for every channel', rail: 'Guide', lead: 'Channels your provider sends no guide for can get one from two free public guides, epg.pw and iptv-epg.org, matched by guide id, a local station\'s call sign or the name.  Your provider\'s guide always comes first.  TiviBro hosts nothing: the TV downloads the files from them.', rows: guideRows },
@@ -223,6 +224,17 @@ var Tour = (function () {
     return out;
   }
 
+  /* Your teams (teams.js, sportslive.js): the three switches people ask about most.  Teams themselves are picked
+     in Settings > Sports, where each league has its own list (too long for here). */
+  function teamRows() {
+    var sp = st.ch.sports, lgs = Teams.leagues(), out = [];
+    out.push(info('Leagues in this playlist', lgs.map(function (l) { return l.name; }).join(', ')));
+    out.push(toggle('A My teams group in the guide', 'Their games on now at the top, then the ones starting soon.', function () { return sp.group; }, function (v) { sp.group = v; draw(); }));
+    out.push(toggle('Scores in a corner while you watch', 'A live game of one of your teams, while you watch something else full screen.  Never over the game itself.', function () { return sp.bar; }, function (v) { sp.bar = v; draw(); }));
+    out.push(toggle('Close game alerts', 'Near the end of a close game: switch to it?  And the final score.', function () { return sp.alerts; }, function (v) { sp.alerts = v; draw(); }));
+    return out;
+  }
+
   var DUPES = ['off', 'fhd', 'best', 'hd', 'sd'], DUPE_L = ['Keep them all', 'Keep Full HD', 'Keep the best (4K first)', 'Keep HD (lighter)', 'Keep SD (slow internet)'];
   function clutterRows() {
     var sv = st.sv, ch = st.ch, out = [], S_ = S();
@@ -329,6 +341,8 @@ var Tour = (function () {
     [['Hold OK on a channel', 'Favorites, other versions, reminders, hide, block, assign a guide.'],
       ['OK while watching', 'The quick menu: audio, subtitles, quality, picture, sleep timer, from start.'],
       ['Catch-up', 'Channels marked ↺ replay the last days: go back in the guide and press OK.'],
+      ['The phone app', 'A remote with a keyboard, the guide, your teams\' scores and every setting: Settings > Phone app and web editor > Pair the TiviBro app.'],
+      ['Your teams', 'Settings > Sports: pick them by league.  Their games go in My teams.'],
       ['The web editor', 'Edit on phone in the side menu: Smart clean-up, renaming, your own groups, guide matching, backups.'],
       ['Run this again', 'Settings > Playlists and accounts > ' + (P().name || 'the playlist') + ' > Set-up tour.']].forEach(function (x) {
       var d = U.el('div', 'tour-tip'); d.appendChild(U.el('b', '', x[0])); d.appendChild(U.el('span', '', x[1])); tips.appendChild(d);
@@ -353,6 +367,7 @@ var Tour = (function () {
       out.push(['locals', 'Local channels', !cs.length ? 'Every city' : (cs.length > 3 ? plural(cs.length, 'city', 'cities') : cs.join(', ')) + (ch.cityGroup ? ' in Local channels' + (ch.cityHideNets ? ', network groups hidden' : '') : '')]);
     }
     if (has('events')) out.push(['events', 'Sports and PPV', st.ch.events.on === false ? 'Off' : 'Read from names' + (st.ch.events.group !== false ? ', Events by time' : '') + (ch.names.hideIdle ? ', nothing-on hidden' : '')]);
+    if (has('teams')) { var sp = ch.sports, on = [sp.group && 'My teams group', sp.bar && 'scores corner', sp.alerts && 'alerts'].filter(Boolean); out.push(['teams', 'Your teams', on.length ? on.join(', ') : 'All off']); }
     var cl = [];
     if (sv.dividers.length && ch.dividers) cl.push('dividers');
     if (ch.empty) cl.push('empty groups');
@@ -570,6 +585,7 @@ var Tour = (function () {
         if (!lg) { lg = { id: 'c_' + Date.now().toString(36), name: 'Local channels', items: [] }; E.custom.push(lg); }
         pl.cityKeep.forEach(function (k) { if (lg.items.indexOf(k) < 0) lg.items.push(k); });
       }
+      if (steps().some(function (x) { return x.id === 'teams'; })) { var sp = st.ch.sports, s0 = S(); s0.teamsGroup = sp.group; s0.sportsBar = sp.bar; s0.sportsAlerts = sp.alerts; Store.saveSettings(); if (Teams.dirty) Teams.dirty(); }
       p.names = st.ch.names; p.events = st.ch.events; if (!st.only) p.tour = Date.now();
       Store.upsertPlaylist(p); Store.saveEdits();
       Names.invalidate(); Events.reset(); Library.dirty();
@@ -652,7 +668,8 @@ var Tour = (function () {
     // Pre-ticked: the TV's own country when the playlist has it, otherwise every country.
     st.sv.countries.forEach(function (x) { cc[x.p] = inList ? x.p === region : true; });
     st.ch = { cc: cc, ccNone: true, names: clone(p.names || Names.defaults()), events: clone(p.events || {}), feed: st.sv.feeds.pairs ? 'east' : 'both', feedGroups: true,
-      cities: {}, cityNone: true, cityGroup: true, cityHideNets: true, dividers: true, empty: true, dupes: st.sv.dupeSets ? 'fhd' : 'off', words: '' };
+      cities: {}, cityNone: true, cityGroup: true, cityHideNets: true, dividers: true, empty: true, dupes: st.sv.dupeSets ? 'fhd' : 'off', words: '',
+      sports: { group: S().teamsGroup !== false, bar: S().sportsBar !== false, alerts: S().sportsAlerts !== false } };
     if (!opts.first) fromCurrent();
     st.only = opts.only || '';
     if (st.only) neutral(st.only);
