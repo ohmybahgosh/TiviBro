@@ -151,6 +151,14 @@ main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;position
 .ssw i::before{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#c9d1ea;transition:.15s} .ssw input:checked + i{background:var(--accent)} .ssw input:checked + i::before{left:23px;background:#fff}
 .ssw input:focus-visible + i{outline:2px solid var(--accent2);outline-offset:2px}
 .setmenu{display:flex;flex-direction:column;gap:4px;max-height:60vh;overflow:auto} .setmenu button{text-align:left;padding:10px 12px} .setmenu button small{display:block;color:var(--muted);font-weight:400;margin-top:2px} .setmenu button.on{outline:2px solid var(--accent)}
+.wsteps{list-style:none;margin:0 0 18px;padding:0;display:flex;gap:10px;flex-wrap:wrap;counter-reset:w}
+.wsteps li{flex:1 1 220px;display:flex;flex-direction:column;gap:2px;padding:12px 14px 12px 50px;border:1px solid var(--line);border-radius:14px;position:relative;counter-increment:w;color:var(--muted)}
+.wsteps li::before{content:counter(w);position:absolute;left:14px;top:13px;width:26px;height:26px;border-radius:50%;background:var(--raised);color:var(--text);font-weight:700;display:flex;align-items:center;justify-content:center}
+.wsteps li b{color:var(--text)} .wsteps li span{font-size:13px}
+.wsteps li.on{border-color:var(--accent);background:var(--accbg)} .wsteps li.on::before{background:var(--accent);color:var(--accent-ink)}
+.wcard{display:flex;flex-direction:column;align-items:flex-start} .wcard > p{flex:1}
+.wico{width:40px;height:40px;border-radius:12px;background:var(--accbg);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:10px}
+a.btnlink{display:inline-block;padding:8px 14px;border-radius:9px;border:1px solid var(--accline);background:var(--accbg);color:#cfe0ff;text-decoration:none;font-weight:600}
 .setq{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:0 12px;width:min(380px,100%)}
 .setq:focus-within{border-color:var(--accent)} .setq svg{width:17px;height:17px;fill:none;stroke:var(--muted);stroke-width:2;flex:none}
 .setq input{border:0!important;background:none!important;padding:10px 0!important;flex:1;outline:none}
@@ -913,13 +921,19 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
 
     <!-- WELCOME (fresh TV) -->
     <section class="page hidden" id="p-welcome">
-      <div class="phead"><div><h1>Welcome to TiviBro</h1><p>This TV has no playlist yet.  Pick how you want to start.</p></div></div>
+      <div class="phead"><div><h1>Welcome to TiviBro</h1><p>This TV has no playlist yet.  Three steps, about five minutes.</p></div></div>
       <div class="scroll">
-        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(340px,1fr))">
-          <div class="card"><h3>Add your playlist</h3><p>Starting fresh?  Enter your Xtream Codes login or M3U address here with a real keyboard.  The TV tests it before saving.</p><button class="primary" data-go="playlists">Add a playlist</button></div>
-          <div class="card"><h3>Restore a backup</h3><p>Moving from another TV, or reinstalled TiviBro?  Load your backup file and its passphrase.  Logins, groups, favorites and settings all come back.</p><button class="primary" data-go="backups">Restore a backup</button></div>
+        <ol class="wsteps">
+          <li class="on"><b>Bring in your channels</b><span>A new playlist, or a backup from another TV</span></li>
+          <li><b>Tidy them up on the TV</b><span>The TV walks you through countries, names and groups</span></li>
+          <li><b>Make it yours</b><span>Your teams, favorites and the phone app</span></li>
+        </ol>
+        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+          <div class="card wcard"><span class="wico">＋</span><h3>Add your playlist</h3><p>Your Xtream Codes login, M3U address or Stalker portal, typed here with a real keyboard.  The TV checks it before saving.</p><button class="primary" data-go="playlists">Add a playlist</button></div>
+          <div class="card wcard"><span class="wico">↺</span><h3>Restore a backup</h3><p>Moving from another TV, or reinstalled TiviBro?  Your logins, groups, favorites, teams and settings all come back.</p><button class="primary" data-go="backups">Restore a backup</button></div>
+          <div class="card wcard"><span class="wico">▣</span><h3>Get the phone app</h3><p>A remote with a keyboard, the guide and your teams' scores on your phone, and this editor too.  Android, free.</p><a class="btnlink" href="https://tivibro.app/apk" target="_blank" rel="noopener">Download for Android</a></div>
         </div>
-        <div class="note" style="margin-top:16px">Keep TiviBro open on the TV while you do this.  The TV moves on by itself when you finish.</div>
+        <div class="note" style="margin-top:16px">Keep TiviBro open on the TV while you do this.  The TV moves on to step two by itself when your channels are in.</div>
       </div>
     </section>
 
