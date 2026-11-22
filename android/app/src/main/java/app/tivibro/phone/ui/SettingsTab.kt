@@ -101,13 +101,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.zIndex
-import kotlin.math.roundToInt
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.rememberUpdatedState
 import app.tivibro.phone.proto.TbException
 import app.tivibro.phone.proto.TvDialog
 import kotlinx.coroutines.launch
@@ -294,17 +297,22 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
               LazyColumn(contentPadding = PaddingValues(16.dp, 4.dp, 16.dp, 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 cards.forEachIndexed { n, (head, rows) ->
                   if (head.isNotBlank()) item(key = "h$n") { SetHead(head) }
-                  item(key = "c$n") { SetCard { rows.forEachIndexed { k, r ->
-                    if (k > 0) HorizontalDivider(color = Line.copy(alpha = 0.45f), thickness = 0.5.dp)
-                    SettingRow(r, lit = lit.isNotBlank() && r.label == lit,
+                  // One row as the TV sent it, with what each kind of tap does.
+                  @Composable fun one(r: SetRow, drag: RowDrag?) = SettingRow(r, lit = lit.isNotBlank() && r.label == lit,
                         onToggle = { v -> change("toggle", r, JSONObject().put("on", v)) },
                         onPick = { picking = r },
                         onChoose = { v -> change("choice", r, JSONObject().put("v", v)) },
                         onCycle = { d -> change("cycle", r, JSONObject().put("dir", d)) },
                         onOpen = { found = ""; path = path + r.i },
                         onAction = { if (r.go.isNotBlank() && sections?.any { it.first == r.go } != false) { path = emptyList(); sec = r.go } else press(r) },
-                        onMove = { by -> change("move", r, JSONObject().put("by", by)) })
-                  } } }
+                        drag = drag)
+                  item(key = "c$n") { SetCard {
+                    if (rows.any { it.move }) MovableRows(rows, onMove = { r, by -> change("move", r, JSONObject().put("by", by)) }) { r, d -> one(r, d) }
+                    else rows.forEachIndexed { k, r ->
+                      if (k > 0) HorizontalDivider(color = Line.copy(alpha = 0.45f), thickness = 0.5.dp)
+                      one(r, null)
+                    }
+                  } }
                 }
               }
             }
@@ -426,6 +434,54 @@ private fun SectionRow(id: String, title: String, sub: String = "", onClick: () 
     }
 }
 /** A page's rows in cards: each heading starts one; rows before the first heading get a card with no heading. */
+/** A row that can be dragged in its card: whether it is the one lifted now, and what its handle reports. */
+private class RowDrag(val lifted: Boolean, val onStart: () -> Unit, val onDrag: (Float) -> Unit, val onEnd: () -> Unit, val onCancel: () -> Unit)
+
+/* A card whose rows can be dragged into a new order (rows with r.move: the groups in Manage groups).  The lifted row
+   follows the finger above the others, and the rows between where it was and where it would land slide out of the
+   way by its height, so you see the gap it will drop into.  It lands past a neighbour once it is over that
+   neighbour's middle.  On letting go the card shows the new order at once and onMove(row, places) tells the TV,
+   which sends the page back in that order. */
+@Composable
+private fun MovableRows(rows: List<SetRow>, onMove: (SetRow, Int) -> Unit, row: @Composable (SetRow, RowDrag?) -> Unit) {
+    var order by remember(rows) { mutableStateOf(rows) }
+    var from by remember(rows) { mutableStateOf(-1) }
+    var dy by remember(rows) { mutableFloatStateOf(0f) }
+    val heights = remember(rows) { mutableStateMapOf<Int, Int>() }        // each place's height, as last drawn
+    fun h(k: Int) = heights[k] ?: 1
+    // Where the lifted row would land now (worked out again on letting go, from the latest finger position).
+    fun landing(): Int {
+        if (from < 0) return -1
+        var t = from; var acc = 0f
+        if (dy > 0) while (t + 1 < order.size && order[t + 1].move && dy > acc + h(t + 1) / 2f) { acc += h(t + 1); t++ }
+        else while (t - 1 >= 0 && order[t - 1].move && -dy > acc + h(t - 1) / 2f) { acc += h(t - 1); t-- }
+        return t
+    }
+    val to = landing()
+    order.forEachIndexed { k, r ->
+        key(r.i) {
+            val gap = if (from >= 0) h(from).toFloat() else 0f
+            val room = when { from < 0 || k == from -> 0f; k in (from + 1)..to -> -gap; k in to until from -> gap; else -> 0f }
+            // Sliding while a row is dragged; at once when it drops, as the order itself changes then.
+            val shift by animateFloatAsState(room, if (from < 0) snap() else tween(140), label = "make room")
+            val lifted = k == from
+            Column(Modifier.onSizeChanged { heights[k] = maxOf(1, it.height) }.zIndex(if (lifted) 1f else 0f)
+                .graphicsLayer { translationY = if (lifted) dy else shift }) {
+                if (k > 0) HorizontalDivider(color = Line.copy(alpha = 0.45f), thickness = 0.5.dp)
+                row(r, if (!r.move) null else RowDrag(lifted,
+                    onStart = { from = k; dy = 0f },
+                    onDrag = { dy += it },
+                    onEnd = {
+                        val t = landing(); val by = t - from
+                        if (from >= 0 && by != 0) { order = order.toMutableList().apply { add(t, removeAt(from)) }; onMove(r, by) }
+                        from = -1; dy = 0f
+                    },
+                    onCancel = { from = -1; dy = 0f }))
+            }
+        }
+    }
+}
+
 private fun cardsOf(rows: List<SetRow>): List<Pair<String, List<SetRow>>> {
     val out = mutableListOf<Pair<String, MutableList<SetRow>>>()
     rows.forEach { r ->
@@ -444,7 +500,7 @@ private fun segmented(r: SetRow) = r.options.size in 2..3 && r.options.sumOf { i
    sentence; tap "more" for all of it.  [lit]: a search hit, lit up for a moment. */
 @Composable
 private fun SettingRow(r: SetRow, lit: Boolean, onToggle: (Boolean) -> Unit, onPick: () -> Unit, onChoose: (Int) -> Unit, onCycle: (Int) -> Unit, onOpen: () -> Unit, onAction: () -> Unit,
-                       onMove: (Int) -> Unit = {}) {
+                       drag: RowDrag? = null) {
     val look = r.look.ifBlank { if (r.kind == "info") (if (r.value.isBlank()) "note" else "status") else r.kind }
     if (r.kind == "info" && !r.attn) {
         if (look == "status") Row(Modifier.fillMaxWidth().background(Panel2.copy(alpha = 0.45f)).padding(16.dp, 10.dp)) {
@@ -467,24 +523,22 @@ private fun SettingRow(r: SetRow, lit: Boolean, onToggle: (Boolean) -> Unit, onP
     }
     var more by remember(r.i, r.label) { mutableStateOf(false) }
     val glow by animateColorAsState(if (lit) Accent2.copy(alpha = 0.16f) else Color.Transparent, tween(1800), label = "found")
-    // Dragged by its handle (r.move): the row follows the finger, and on letting go it moves by as many rows as it
-    // travelled (rows of about its own height).  The TV sends the page back in its new order.
-    var dragY by remember(r.i, r.label) { mutableFloatStateOf(0f) }
-    var dragging by remember(r.i, r.label) { mutableStateOf(false) }
-    var rowH by remember { mutableIntStateOf(1) }
+    // Dragged by its handle (r.move, in MovableRows): lifted above the others while it follows the finger.  The
+    // gesture outlives recompositions, so it calls the newest callbacks.
+    val dragging = drag?.lifted == true
+    val dragNow by rememberUpdatedState(drag)
     val bg = when { dragging -> Panel2; r.attn -> Good.copy(alpha = 0.14f); r.tone == "go" && button -> Accent.copy(alpha = 0.08f); else -> glow }
-    Column(Modifier.fillMaxWidth().onSizeChanged { rowH = maxOf(1, it.height) }.zIndex(if (dragging) 1f else 0f)
-        .graphicsLayer { translationY = dragY }.let { if (dragging) it.shadow(8.dp) else it }
+    Column(Modifier.fillMaxWidth().let { if (dragging) it.shadow(8.dp) else it }
         .background(bg).let { if (click != null) it.clickable(onClick = click) else it }.padding(16.dp, 13.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            if (r.move) {
+            if (drag != null) {
                 Icon(Icons.Rounded.DragHandle, "Drag to move", tint = if (dragging) Accent else Muted, modifier = Modifier.padding(end = 12.dp).size(26.dp)
                     .pointerInput(r.i, r.label) {
                         detectDragGestures(
-                            onDragStart = { dragging = true },
-                            onDragEnd = { val by = (dragY / rowH).roundToInt(); dragY = 0f; dragging = false; if (by != 0) onMove(by) },
-                            onDragCancel = { dragY = 0f; dragging = false },
-                        ) { ch, d -> ch.consume(); dragY += d.y }
+                            onDragStart = { dragNow?.onStart?.invoke() },
+                            onDragEnd = { dragNow?.onEnd?.invoke() },
+                            onDragCancel = { dragNow?.onCancel?.invoke() },
+                        ) { ch, d -> ch.consume(); dragNow?.onDrag?.invoke(d.y) }
                     })
             }
             Column(Modifier.weight(1f)) {

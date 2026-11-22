@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Manage groups lists the groups you show first**, then the hidden ones, each under its own heading with a count.  With most groups hidden, the ones you watch are together at the top.
+- **Phone app: dragging a group shows where it lands.**  The other groups slide aside to open a gap as you drag, and the list shows the new order as soon as you let go.  A group moves among the shown (or hidden) ones even when hidden groups sit between them.
+- **TV Settings text is bigger:** the parts of a page on the left, and the settings and their notes.
+
 ## 0.6.0 (alpha 195, 2026-11-22)
 
 Pre-release: expect rough edges, and keep a backup before installing.

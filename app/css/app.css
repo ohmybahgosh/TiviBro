@@ -249,6 +249,12 @@ body.guide1 .gp .gs{display:none}
 .set-nav .nav-find::after{content:"";position:absolute;left:38px;top:50%;width:3px;height:10px;margin-top:2px;background:currentColor;transform:rotate(-45deg);border-radius:2px}
 .set-nav.active div.on{background:var(--accent);color:var(--on-accent)}
 /* A page's list (settings.js navList): back, the page's name, then its parts. */
+/* With a page's parts only in the list (no long list of sections since the Settings home), they can be bigger. */
+.set-nav div:not(.nav-back):not(.nav-title){font-size:31px;line-height:38px;padding:10px 24px}
+/* The settings themselves a little bigger than the rest of the app (26 px), for the same reason. */
+#viewSettings .opt .ol{font-size:29px}
+#viewSettings .opt .ol small{font-size:23px}
+#viewSettings .opt .ov{font-size:27px}
 .set-nav .nav-back{color:var(--muted);font-size:24px}
 .set-nav .nav-title{font-size:34px;font-weight:700;color:var(--text);line-height:1.2;white-space:normal;padding:10px 22px 14px;margin-bottom:6px;border-bottom:2px solid rgba(255,255,255,.08);border-radius:0}
 .set-body{flex:1;overflow:hidden;position:relative}

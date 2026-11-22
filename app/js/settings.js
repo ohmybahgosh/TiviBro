@@ -956,6 +956,23 @@ var Settings = (function () {
   }
 
   /* ---------- manage groups: one switch per group ---------- */
+  /* Group g moved by places within the list it's shown in (Manage groups: the shown or the hidden ones).  The groups
+     it passes in that list may have others between them in the real order (hidden ones among shown, your groups and
+     a playlist's), so it goes one step at a time (Library.moveGroup) until it is past the group it was dropped on. */
+  function moveAmong(g, list, by) {
+    var i = list.indexOf(g), j = Math.max(0, Math.min(list.length - 1, i + by));
+    if (i < 0 || i === j) return;
+    var target = list[j].id, dir = j < i ? -1 : 1;
+    function at(id) { var a = L.allGroups(); for (var n = 0; n < a.length; n++) if (a[n].id === id) return n; return -1; }
+    for (var step = 0; step < 2000; step++) {
+      var a = at(g.id), b = at(target);
+      if (a < 0 || b < 0 || (dir < 0 ? a <= b : a >= b)) break;
+      L.moveGroup(g.id, dir);
+      if (at(g.id) === a) break;            // can't go further (the start of its own playlist's groups, say)
+    }
+    relist(); build();
+  }
+  // Manage groups: show all, hide all, then a switch per group, the shown ones first (and draggable on the phone).
   function manageGroups() {
     var out = [], all = L.allGroups();
     function set(g, show) { L.hideGroup(g.id, !show); }
@@ -965,16 +982,23 @@ var Settings = (function () {
     out.push(action('Hide all groups', 'Then switch on just the ones you watch.', function () {
       UI.confirm('Hide all ' + all.length + ' groups?  You can switch them back on here.', 'Hide all', function () { L.hideGroups(all.map(function (g) { return g.id; }), true); relist(); build(); });
     }));
-    out.push(head('OK, ◀ or ▶ switches a group on or off', 'Switch a group on or off.  Drag ≡ to move it'));
-    all.forEach(function (g) {
-      out.push({ label: I18n.raw(g.name), sub: g.custom ? 'your group' : '',
-        value: function () { return Store.edits.hiddenGroups[g.id] ? 'Hidden' : 'Shown'; },
-        cycle: function () { set(g, !!Store.edits.hiddenGroups[g.id]); relist(); paint(); },
-        // On the phone: a switch, on for shown.
-        toggle: true, get: function () { return !Store.edits.hiddenGroups[g.id]; }, set: function (v) { if (v === !!Store.edits.hiddenGroups[g.id]) { set(g, v); relist(); paint(); } },
-        // On the phone and in the web editor: dragged up or down, by: how many places (op "move").
-        move: function (by) { for (var n = 0; n < Math.abs(by); n++) L.moveGroup(g.id, by < 0 ? -1 : 1); relist(); build(); } });
-    });
+    /* The groups shown first, then the hidden ones, each in their own order: with most groups hidden, the ones you
+       watch are together at the top instead of spread among the rest.  A group switched on or off moves to the
+       other list when the page is drawn again. */
+    var on = all.filter(function (g) { return !Store.edits.hiddenGroups[g.id]; }), off = all.filter(function (g) { return !!Store.edits.hiddenGroups[g.id]; });
+    function rows(list) {
+      list.forEach(function (g) {
+        out.push({ label: I18n.raw(g.name), sub: g.custom ? 'your group' : '',
+          value: function () { return Store.edits.hiddenGroups[g.id] ? 'Hidden' : 'Shown'; },
+          cycle: function () { set(g, !!Store.edits.hiddenGroups[g.id]); relist(); paint(); },
+          // On the phone: a switch, on for shown.
+          toggle: true, get: function () { return !Store.edits.hiddenGroups[g.id]; }, set: function (v) { if (v === !!Store.edits.hiddenGroups[g.id]) { set(g, v); relist(); paint(); } },
+          // On the phone and in the web editor: dragged up or down by places in this list (op "move").
+          move: function (by) { moveAmong(g, list, by); } });
+      });
+    }
+    if (on.length) { out.push(head('Shown (' + on.length + '): OK, ◀ or ▶ hides a group', 'Shown (' + on.length + '): drag ≡ to move a group')); rows(on); }
+    if (off.length) { out.push(head('Hidden (' + off.length + '): OK, ◀ or ▶ shows a group', 'Hidden (' + off.length + ')')); rows(off); }
     return out;
   }
 
