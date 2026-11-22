@@ -52,7 +52,7 @@ const entry = {
   iconUri: icon,
   manifestUrl: dl + manifestName,
   manifest: manifest,
-  shortDescription: (pre ? 'Test build ' + full + ': ' : '') + 'The IPTV player LG TVs never got',
+  shortDescription: (pre ? 'Test build ' + full + ': ' : '') + 'The ultimate IPTV player for LG webOS',
   // The Homebrew Channel's details page: screenshots and the formatted description (site/hb/description.html).
   fullDescriptionUrl: 'https://tivibro.app/hb/description.html',
   requirements: { webosRelease: '>=4.0' },

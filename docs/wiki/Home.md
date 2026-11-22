@@ -1,6 +1,6 @@
 <p align="center"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/logos/clean/tivibro-wordmark.png" width="380" alt="tiviBro"></p>
 
-<p align="center"><b>The IPTV player LG TVs never got.</b><br>A free, guide-first IPTV player for LG webOS, built to feel like TiviMate and go further.<br><a href="https://tivibro.app">tivibro.app</a></p>
+<p align="center"><b>The ultimate IPTV player for LG webOS.</b><br>A free, guide-first IPTV player for LG webOS, built to feel like TiviMate and go further.<br><a href="https://tivibro.app">tivibro.app</a></p>
 
 <p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/guide.mp4"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/guide.gif" width="100%" alt="The TiviBro guide"></a></p>
 
