@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 195, 2026-11-22)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 195
 
 - **Sports has its own place in Settings.**  Your teams, the scores corner, alerts and the My teams group are in **Settings > Sports** on the TV, the phone and the web editor.
 - **Web editor, redone.**  Settings come in cards where a switch, a choice, a button that does something now and a red button that deletes all look different.  A search box finds any setting and opens its page.  The page list is grouped, with Sports in it.  Groups and channels drag with a finger on phones and tablets, and Alt + ↑ ↓ moves a group.  The welcome page for a new TV is three short steps.
@@ -18,11 +22,7 @@
 - **A new TMDB token works at once** (discussion #36).  Trailers for titles that had none are looked up again as soon as you add or change the token, without restarting TiviBro.
 - **Quieter when the network helper stops:** the web editor's checks wait longer after each failure (up to a minute) instead of trying, and logging, every 2 seconds.  The log also says when a kept channel list starts opening, to tell where a TV short of memory closes (issue #153).
 
-## 0.6.0 (alpha 194, 2026-11-21)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 194
+### In alpha 194
 
 - **Sports finds the same channels as My teams**, including a local station that names the game only in its description (a CBS affiliate's "College Football").  Your teams' score corner no longer shows over that game while you watch it.
 - **Where the scores go** (Settings > Channels and groups > My teams) picks the corner for your teams' scores; top right unless you change it.
