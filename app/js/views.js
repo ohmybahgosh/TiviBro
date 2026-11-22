@@ -73,7 +73,7 @@ var Views = (function () {
     tabs = home() === 'live' ? ['live', 'guide'] : channelsInMenu() ? ['guide', 'live'] : ['guide'];
     // Movies on now (onnow.js): in the menu while a TMDB token is saved and movie details are on.
     if (typeof Movies !== 'undefined' && Movies.on()) tabs.push('onnow');
-    // Sports (sportshub.js): scores and your channels for today's games, unless turned off in Settings > Channels and groups > My teams.
+    // Sports (sportshub.js): scores and your channels for today's games, unless turned off in Settings > Sports.
     if (typeof SportsHub !== 'undefined' && Store.settings.sportsTab !== false) tabs.push('sports');
     // Movies and Shows: an Xtream login's, or an M3U list's own (Vod.m3u: kept by the network helper);
     // several playlists on: any of them (Vod.offered).
@@ -2098,13 +2098,13 @@ var Views = (function () {
     add('guide', { label: 'TV guide', icon: 'guide', run: function () { closePanel(); leaveTo('guide'); } });
     if (c && L.versions(c).length) add('versions', { label: 'Other versions', icon: 'versions', v: versionsSummary(c), run: function () { closePanel(); versionsMenu(c); } });
     if (c && mode === 'live' && typeof Multiview !== 'undefined') add('multi', { label: 'Multiview', icon: 'multi', v: 'more channels', run: function () { closePanel(); Multiview.again(c, lastPlayed); } });
-    /* Your teams' score corner, on or off from here (the same switch as Settings > Channels and groups > My teams),
+    /* Your teams' score corner, on or off from here (the same switch as Settings > Sports),
        while one of their games is on: the corner can sit over something you want to see. */
     var teamLive = typeof Sports !== 'undefined' && typeof Teams !== 'undefined' && Teams.follows && Sports.all().some(function (g) { return g.state === 'in' && g.teams.some(function (t) { return t.id && Teams.follows(t.id); }); });
     if (teamLive) add('scores', { label: 'Scores', icon: 'scores', v: Store.settings.sportsBar === false ? 'off' : 'on', run: function () {
       Store.settings.sportsBar = Store.settings.sportsBar === false; Store.saveSettings();
       if (typeof SportsLive !== 'undefined' && SportsLive.refresh) SportsLive.refresh();
-      U.toast(Store.settings.sportsBar ? 'Your teams\' scores show in the corner' : 'Scores corner off.  OK > Scores, or Settings > Channels and groups > My teams, turns it back on.', 5000);
+      U.toast(Store.settings.sportsBar ? 'Your teams\' scores show in the corner' : 'Scores corner off.  OK > Scores, or Settings > Sports, turns it back on.', 5000);
       renderPanel();
     } });
     var tracks = Player.audioTracks();
@@ -2455,8 +2455,8 @@ var Views = (function () {
         (Store.loaded ? Store.loaded() : [Store.playlist]).forEach(function (p) { p.events = Object.assign({}, p.events, { group: false }); Store.upsertPlaylist(p); });
         Events.reset(); refreshLists(); U.toast('Events by time is off');
       } },
-      g.id === L.TEAMS && { label: 'Choose teams…', sub: 'Settings > Channels and groups > My teams', action: function () { Settings.openTeams(); } },
-      g.id === L.TEAMS && { label: 'Turn off My teams', sub: 'back on in Settings > Channels and groups > My teams', action: function () {
+      g.id === L.TEAMS && { label: 'Choose teams…', sub: 'Settings > Sports', action: function () { Settings.openTeams(); } },
+      g.id === L.TEAMS && { label: 'Turn off My teams', sub: 'back on in Settings > Sports', action: function () {
         Store.settings.teamsGroup = false; Store.saveSettings(); refreshLists(); U.toast('My teams is off');
       } },
       g.id === L.RECENT && { label: 'Clear recent channels', action: function () { Store.edits.recent = []; Store.saveEdits(); L.dirty(); refreshLists(); } },

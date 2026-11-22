@@ -12,12 +12,12 @@ var Settings = (function () {
      under an Advanced heading instead of behind another row.  PAGES: old ids that are pages now (none left);
      ALIAS: old ids, so links, older phone apps and tests still land somewhere sensible. */
   var SECTIONS = [['language', 'Language'], ['playlists', 'Playlists and accounts'], ['connect', 'Phone app and web editor'], ['guide', 'Guide'], ['channels', 'Channels and groups'],
-    ['names', 'Channel and group names'], ['playback', 'Playback'], ['audio', 'Audio and subtitles'], ['recording', 'Recording and live pause'], ['remote', 'Remote and buttons'],
+    ['sports', 'Sports'], ['names', 'Channel and group names'], ['playback', 'Playback'], ['audio', 'Audio and subtitles'], ['recording', 'Recording and live pause'], ['remote', 'Remote and buttons'],
     ['vod', 'Movies and shows'], ['media', 'My media'], ['reminders', 'Reminders and watchlist'], ['parental', 'Parental controls'], ['look', 'Appearance'], ['keys', 'API keys'],
     ['backups', 'Backups and restore points'], ['about', 'System']];
   var PAGES = {};
   var ALIAS = { lang: 'language', groups: 'channels', updates: 'about', diag: 'about', system: 'about', phone: 'connect', editor: 'connect', watchlist: 'reminders', apikeys: 'keys', tokens: 'keys', subtitles: 'audio',
-    movies: 'vod', shows: 'vod', libraries: 'media', accounts: 'playlists', appearance: 'look', trakt: 'media', buttons: 'remote', livepause: 'recording' };
+    movies: 'vod', shows: 'vod', libraries: 'media', accounts: 'playlists', appearance: 'look', trakt: 'media', buttons: 'remote', livepause: 'recording', teams: 'sports', scores: 'sports' };
   var sec = 1, zone = 'nav', sel = 0, items = [], scrollEl = null, rowEls = [];
   // Phone app: test builds only while the Android app is in the works (release builds show the web editor alone).
   function phoneOK() { return /alpha|beta/i.test(TIVIBRO_VERSION); }
@@ -991,7 +991,7 @@ var Settings = (function () {
       return out;
     }
     out.push(page('Groups in the list', 'All channels, Recent, Favorites, Movies on now, events by time and new channels: which show, and how.', 'Groups in the list', inList));
-    out.push(page('My teams', 'A group with your teams\' own channels and every channel showing one of their games.  For now the NFL, NBA, NHL, MLB, WNBA and MLS only.', 'My teams', teamsPage, function () { var n = Teams.followed().length; return n ? n + ' ›' : '›'; }));
+    out.push(link('My teams', 'Your teams, their scores while you watch, alerts and the My teams group: Settings > Sports.', 'sports', function () { var n = Teams.followed().length; return n ? n + ' ›' : '›'; }));
     out.push(page('Event channels', 'Pay-per-view and league pass channels whose names carry the game and its time: read into the guide.', 'Event channels', function () { return eventsPage(Store.playlist); }, function () { var ev = Store.playlist.events; return ev && ev.on === false ? 'Off' : 'On'; }));
     out.push(action('Reset watch time', 'Clears the "Most watched" statistics.', function () { UI.confirm('Reset watch time for every channel?', 'Reset', function () { Store.edits.watch = {}; Store.saveEdits(); relist(); U.toast('Watch time reset'); }); }));
     // Lists that can run to hundreds of rows (your groups, what's hidden) are pages of their own, so this
@@ -1063,25 +1063,40 @@ var Settings = (function () {
   }
 
   /* ---------- My teams (app/js/teams.js) ---------- */
+  /* Sports (app/js/teams.js, sports.js, sportslive.js): your teams first, then what shows while you watch,
+     then the My teams group in the guide, then the Sports screen.  Its own section so it's easy to find on the
+     TV, the phone and the web editor (it used to be a page inside Channels and groups). */
   function teamsPage() {
     var s = S(), out = [], lgs = Teams.leagues(), mine = Teams.followed();
     function apply() { Teams.dirty(); Store.saveSettings(); relist(); paint(); }
+    out.push(head('Your teams'));
+    if (!lgs.length) out.push(info('No NFL, NBA, NHL, MLB, WNBA, MLS, college football or college basketball channels found in this playlist.', ''));
+    lgs.forEach(function (lg) {
+      var n = Teams.inLeague(lg.id).filter(function (x) { return Teams.follows(x.id); }).length;
+      out.push(page(lg.name, lg.own ? lg.own + ' teams have their own channel' : 'Games only, no team channels', I18n.raw(I18n.t('{x} teams', { x: I18n.t(lg.name) })), function () { return leaguePage(lg.id); },
+        function () { return n ? n + ' followed ›' : '›'; }));
+    });
+    mine.forEach(function (x) {
+      out.push(action(I18n.raw(x.name), x.league.toUpperCase() + (Teams.hasChannel(x.id) ? '' : '   ·   no channel of its own here, games only'), function () {
+        Teams.follow(x.id, false); U.toast('Stopped following the ' + x.name); relist(); build();
+      }, function () { return 'Unfollow'; }));
+    });
     out.push(info('The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools) and men\'s college basketball (those schools and the main Division I ones without FBS football).  Other college sports, women\'s college games, junior and minor league teams, and other countries\' leagues, aren\'t in it yet.', ''));
-    out.push(toggle('Show the My teams group', 'Near the top of the guide: their games on now at the top, then the ones starting within the time below.  A team\'s own channel is there while it shows a game.',
-      function () { return s.teamsGroup !== false; }, function (v) { s.teamsGroup = v; apply(); }));
+    out.push(head('While you watch'));
     out.push(toggle('My teams\' scores while watching', 'While you watch something else full screen, a live game of a team you follow shows its score in a corner of the screen, kept up to date (several take turns).  Not the game you\'re watching: its broadcast has its own.',
       function () { return s.sportsBar !== false; }, function (v) { s.sportsBar = v; Store.saveSettings(); paint(); }));
     if (s.sportsBar !== false) out.push(choice('Where the scores go', 'The corner of the screen.  Pick one your channels\' own logos and scores don\'t use.', ['tl', 'tr', 'bl', 'br'], ['Top left', 'Top right', 'Bottom left', 'Bottom right'],
       function () { return /^(tl|tr|bl|br)$/.test(s.sportsBarAt || '') ? s.sportsBarAt : 'tr'; }, function (v) { s.sportsBarAt = v; Store.saveSettings(); paint(); }));
-    out.push(toggle('Alerts for my teams', 'A close game near the end asks whether to switch to it, and a final score says so, wherever you are in TiviBro.',
+    out.push(toggle('Alerts for my teams', 'A close game near the end asks whether to switch to it, and a final score says so, wherever you are in TiviBro.  Never for the game you\'re watching.',
       function () { return s.sportsAlerts !== false; }, function (v) { s.sportsAlerts = v; Store.saveSettings(); paint(); }));
     if (mine.length) out.push(page('Hide scores', (s.sportsHide || []).length ? (s.sportsHide || []).length + ' team(s): no scores anywhere until you show them' : 'For a team you\'ll watch later: no scores anywhere until you show them', 'Hide scores', function () {
       return [info('A team\'s scores stay hidden in Sports, the corner while you watch and alerts.  On a game\'s page, Show the score shows that one.', '')].concat(mine.map(function (t) {
         return toggle(I18n.raw(t.name), '', function () { return Sports.hidesTeam(t.id); }, function (v) { Sports.hideTeam(t.id, v); paint(); });
       }));
     }));
-    out.push(toggle('Sports in the menu', 'A screen of today\'s games with their scores and team logos (from ESPN), your teams first, and which of your channels has each one.  Blue on it picks the leagues.',
-      function () { return s.sportsTab !== false; }, function (v) { s.sportsTab = v; Store.saveSettings(); Views.buildTabs(); paint(); }));
+    out.push(head('In the guide'));
+    out.push(toggle('Show the My teams group', 'Near the top of the guide: their games on now at the top, then the ones starting within the time below.  A team\'s own channel is there while it shows a game.',
+      function () { return s.teamsGroup !== false; }, function (v) { s.teamsGroup = v; apply(); }));
     out.push(choice('Games starting within', 'How soon a game has to start to be in the group.', [3, 6, 12, 24], ['3 hours', '6 hours', '12 hours', '24 hours'],
       function () { return +s.teamsAhead || 6; }, function (v) { s.teamsAhead = v; apply(); }));
     out.push(toggle('Remind me before their games', 'Like the watchlist: how far ahead it looks, and a reminder or just a message, are set in Settings > Reminders and watchlist > Watchlist.',
@@ -1090,21 +1105,9 @@ var Settings = (function () {
         if (!v) { Store.edits.reminders = Store.edits.reminders.filter(function (r) { return !/^team:/.test(r.w || ''); }); Store.saveEdits(); }
         Store.saveSettings(); if (v) Watch.scan(false); paint();
       }));
-    out.push(head('Leagues'));
-    if (!lgs.length) out.push(info('No NFL, NBA, NHL, MLB, WNBA, MLS, college football or college basketball channels found in this playlist.', ''));
-    lgs.forEach(function (lg) {
-      var n = Teams.inLeague(lg.id).filter(function (x) { return Teams.follows(x.id); }).length;
-      out.push(page(lg.name, lg.own ? lg.own + ' teams have their own channel' : 'Games only, no team channels', I18n.raw(I18n.t('{x} teams', { x: I18n.t(lg.name) })), function () { return leaguePage(lg.id); },
-        function () { return n ? n + ' followed ›' : '›'; }));
-    });
-    if (mine.length) {
-      out.push(head('Following'));
-      mine.forEach(function (x) {
-        out.push(action(I18n.raw(x.name), x.league.toUpperCase() + (Teams.hasChannel(x.id) ? '' : '   ·   no channel of its own here, games only'), function () {
-          Teams.follow(x.id, false); U.toast('Stopped following the ' + x.name); relist(); build();
-        }, function () { return 'Unfollow'; }));
-      });
-    }
+    out.push(head('Sports screen'));
+    out.push(toggle('Sports in the menu', 'A screen of today\'s games with their scores and team logos (from ESPN), your teams first, and which of your channels has each one.  Blue on it picks the leagues.',
+      function () { return s.sportsTab !== false; }, function (v) { s.sportsTab = v; Store.saveSettings(); Views.buildTabs(); paint(); }));
     return out;
   }
   function leaguePage(lg) {
@@ -1123,7 +1126,7 @@ var Settings = (function () {
   function openTeams() {
     Views.switchTab('settings');
     if (Views.tab !== 'settings') return;
-    section('channels'); push('My teams', teamsPage);
+    section('sports');
   }
 
   /* ---------- the guide: how it's built, then the playlist in use's guide settings ---------- */
@@ -1844,7 +1847,7 @@ var Settings = (function () {
     return top.concat([page('Fix a problem', 'Channels freeze, no guide, no sound, TiviBro closed or is slow: what to try first.', 'Fix a problem', fixes)].concat(about(),
       [head('Backups'), link('Backups and restore points', 'Everything saved, to put back on this TV or another one.', 'backups')]));
   }
-  var BY_ID = { language: language, playlists: playlists, guide: guide, channels: groups, names: names, reminders: reminders, playback: playback, audio: audioSubs, vod: vodSettings, media: media, keys: apiKeys, remote: remote, recording: recordingPage, look: look, parental: parental, backups: backups, connect: connect, about: about };
+  var BY_ID = { sports: teamsPage, language: language, playlists: playlists, guide: guide, channels: groups, names: names, reminders: reminders, playback: playback, audio: audioSubs, vod: vodSettings, media: media, keys: apiKeys, remote: remote, recording: recordingPage, look: look, parental: parental, backups: backups, connect: connect, about: about };
   var SEC_FNS = { playlists: playlistsSection, channels: channelsSection, playback: playbackSection, about: systemSection };
   var FNS = SECTIONS.map(function (x) { return SEC_FNS[x[0]] || BY_ID[x[0]]; });
   // An old section that is now a page: its section, and the row's place in it (or -1).
@@ -1930,6 +1933,14 @@ var Settings = (function () {
     if (it.values || it.cycle) return 'choice';
     if (it.page || it.phonePage) return 'page';
     return 'action';
+  }
+  /* How an action row looks on the phone and in the web editor, from its English label: 'go' for one that
+     does its job right now (Reload guide now, Check for updates), 'danger' for one that deletes, clears or
+     resets.  Labels are English before translation, so this works in every language. */
+  function actionTone(label) {
+    if (/^(Delete|Clear|Remove|Reset|Forget|Erase|Unpair|Sign out|Log out|Stop following|Start learning again)\b/i.test(label)) return 'danger';
+    if (/\bnow$|^(Check for updates|Install|Reload|Refresh|Update|Scan|Sync|Back up)\b/i.test(label)) return 'go';
+    return '';
   }
   // A note's first sentence (sentences end with ".  "), for under the name.
   function brief(t) { t = String(t || ''); var i = t.indexOf('.  '); return i > 0 && i < t.length - 3 ? t.slice(0, i + 1) : t; }
@@ -2152,6 +2163,9 @@ var Settings = (function () {
     r.look = kindOf(it);
     if (it.attn) r.attn = 1;
     if (it.cls === 'tip' || it.cls === 'jump' || it.cls === 'adv-row') r.style = it.cls;
+    // Buttons that do something right away look like buttons on the phone and in the web editor: a "now"
+    // (Reload guide now) is the main one on its page; one that deletes or resets is red and asks first.
+    if (r.look === 'action' && !it.go) { var t = actionTone(r.label); if (t) r.tone = t; }
     if (r.sub) { var b1 = brief(r.sub); if (b1 !== r.sub) r.brief = b1; }
     return r;
   }

@@ -15,7 +15,7 @@ For now it covers the main North American leagues (NFL, NBA, NHL, MLB, WNBA and 
 
 A game on several channels keeps a row for each channel, and they all show it the same way: the two teams in full, the visitors first ("Michigan Wolverines at Oregon Ducks"), at the time most of those channels give.
 
-Choose your teams in **Settings > Channels and groups > My teams**.  It lists the leagues in your playlist (NFL, NBA, NHL, MLB, WNBA, MLS, College Football, College Basketball); open one and switch on your teams.  Teams with their own channel say so.  Or **hold OK** on a team's channel and choose **Follow the Detroit Red Wings** (in the phone app: press and hold the channel).  Your teams are kept in the settings, so they stay when you switch playlists.
+Choose your teams in **Settings > Sports**.  It lists the leagues in your playlist (NFL, NBA, NHL, MLB, WNBA, MLS, College Football, College Basketball); open one and switch on your teams.  Teams with their own channel say so.  Or **hold OK** on a team's channel and choose **Follow the Detroit Red Wings** (in the phone app: press and hold the channel).  Your teams are kept in the settings, so they stay when you switch playlists.
 
 **Remind me before their games** (off at first) sets reminders for their games the way the [watchlist](Watchlist) does: one per game, at its earliest start in the guide, however many channels carry it.  Overtime blocks and replays later that night get none.  Unfollowing a team takes its reminders with it.
 

@@ -706,7 +706,7 @@ I18n.add('es', {
   "Set up OpenSubtitles, step 1 of 3: a free account": "Configurar OpenSubtitles, paso 1 de 3: una cuenta gratis",
   "Set up OpenSubtitles, step 2 of 3: a key for TiviBro": "Configurar OpenSubtitles, paso 2 de 3: una clave para TiviBro",
   "Set up OpenSubtitles, step 3 of 3: paste the API key": "Configurar OpenSubtitles, paso 3 de 3: pega la clave API",
-  "Settings > Channels and groups > My teams": "Configuración > Canales y grupos > Mis equipos",
+  "Settings > Sports": "Configuración > Deportes",
   "Shared with the web editor.  Refreshes saved movie and show matches in this language.  Missing translations fall back to English.": "Compartido con el editor web.  Actualiza las coincidencias guardadas de películas y series en este idioma.  Las traducciones que faltan se muestran en inglés.",
   "Show all groups": "Mostrar todos los grupos",
   "Show details are already being fetched.": "Los detalles de la serie ya se están buscando.",
@@ -900,7 +900,7 @@ I18n.add('es', {
   "add what you were doing; scan a code with your phone": "agrega qué estabas haciendo; escanea un código con tu teléfono",
   "and the reminders it set": "y los recordatorios que creó",
   "back on in Settings > Channels and groups": "vuelve a activarlo en Configuración > Canales y grupos",
-  "back on in Settings > Channels and groups > My teams": "vuelve a activarlo en Configuración > Canales y grupos > Mis equipos",
+  "back on in Settings > Sports": "vuelve a activarlo en Configuración > Deportes",
   "catch-up on": "catch-up en",
   "change its place in": "cambiar su lugar en",
   "choose a time": "elige una hora",
@@ -2029,5 +2029,11 @@ I18n.add('es', {
   "With both a USB drive and a network share, where new recordings go.": "Con una unidad USB y un recurso de red, dónde van las grabaciones nuevas.",
   "Record to a WebDAV share on your network (a NAS, Nextcloud): no USB drive or root needed.  Choose one of your My media WebDAV libraries.": "Graba en un recurso WebDAV de tu red (un NAS, Nextcloud): sin unidad USB ni root.  Elige una de tus bibliotecas WebDAV de Mis medios.",
   "On a network share, a recording can be watched once its first 10 minutes are up there.  Yellow goes to the channel live.": "En un recurso de red, una grabación se puede ver cuando sus primeros 10 minutos ya están allí.  Amarillo va al canal en directo.",
-  "while it records, up to 10 minutes behind": "mientras graba, hasta 10 minutos de retraso"
+  "while it records, up to 10 minutes behind": "mientras graba, hasta 10 minutos de retraso",
+  "Sports": "Deportes",
+  "Your teams": "Tus equipos",
+  "While you watch": "Mientras ves",
+  "In the guide": "En la guía",
+  "Sports screen": "Pantalla de deportes",
+  "Your teams, their scores while you watch, alerts and the My teams group: Settings > Sports.": "Tus equipos, sus marcadores mientras ves, alertas y el grupo Mis equipos: Configuración > Deportes."
 });

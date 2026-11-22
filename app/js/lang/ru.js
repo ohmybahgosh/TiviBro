@@ -714,7 +714,7 @@ I18n.add('ru', {
   "Set up OpenSubtitles, step 1 of 3: a free account": "Настройка OpenSubtitles, шаг 1 из 3: бесплатный аккаунт",
   "Set up OpenSubtitles, step 2 of 3: a key for TiviBro": "Настройка OpenSubtitles, шаг 2 из 3: ключ для TiviBro",
   "Set up OpenSubtitles, step 3 of 3: paste the API key": "Настройка OpenSubtitles, шаг 3 из 3: вставьте ключ API",
-  "Settings > Channels and groups > My teams": "Настройки > Каналы и группы > Мои команды",
+  "Settings > Sports": "Настройки > Спорт",
   "Shared with the web editor.  Refreshes saved movie and show matches in this language.  Missing translations fall back to English.": "Общий с веб-редактором.  Обновляет сохранённые совпадения фильмов и сериалов на этом языке.  Без перевода используется английский.",
   "Show all groups": "Показать все группы",
   "Show details are already being fetched.": "Описание сериала уже загружается.",
@@ -911,7 +911,7 @@ I18n.add('ru', {
   "add what you were doing; scan a code with your phone": "опишите, что вы делали; отсканируйте код телефоном",
   "and the reminders it set": "и поставленные им напоминания",
   "back on in Settings > Channels and groups": "снова включить: Настройки > Каналы и группы",
-  "back on in Settings > Channels and groups > My teams": "снова включить: Настройки > Каналы и группы > Мои команды",
+  "back on in Settings > Sports": "снова включить: Настройки > Спорт",
   "catch-up on": "архив канала",
   "change its place in": "изменить место в",
   "choose a time": "выбрать время",
@@ -2032,5 +2032,11 @@ I18n.add('ru', {
   "With both a USB drive and a network share, where new recordings go.": "Если есть и USB-накопитель, и сетевая папка: куда идут новые записи.",
   "Record to a WebDAV share on your network (a NAS, Nextcloud): no USB drive or root needed.  Choose one of your My media WebDAV libraries.": "Запись в папку WebDAV в вашей сети (NAS, Nextcloud): без USB-накопителя и root.  Выберите одну из библиотек WebDAV в «Моих медиа».",
   "On a network share, a recording can be watched once its first 10 minutes are up there.  Yellow goes to the channel live.": "В сетевой папке запись можно смотреть, когда там будут первые 10 минут.  Жёлтая кнопка открывает канал в прямом эфире.",
-  "while it records, up to 10 minutes behind": "во время записи, с отставанием до 10 минут"
+  "while it records, up to 10 minutes behind": "во время записи, с отставанием до 10 минут",
+  "Sports": "Спорт",
+  "Your teams": "Ваши команды",
+  "While you watch": "Во время просмотра",
+  "In the guide": "В телегиде",
+  "Sports screen": "Экран спорта",
+  "Your teams, their scores while you watch, alerts and the My teams group: Settings > Sports.": "Ваши команды, счёт во время просмотра, оповещения и группа «Мои команды»: Настройки > Спорт."
 });

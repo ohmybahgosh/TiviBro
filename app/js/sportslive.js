@@ -4,7 +4,7 @@
      you're watching (its broadcast has its own score), and never for a team whose scores you hide;
    - alerts for the teams you follow, wherever you are in TiviBro: a close game near the end ("Pistons trail the
      Raptors 102 to 105, 2:10 4th") asks whether to switch to it, and a final score says so.
-   Each is a switch in Settings > Channels and groups > My teams.  Looks every 30 seconds while TiviBro is on
+   Each is a switch in Settings > Sports.  Looks every 30 seconds while TiviBro is on
    screen, and only asks ESPN again when what's loaded is old (30 seconds while a game is live, else 5 minutes). */
 var SportsLive = (function () {
   'use strict';
@@ -41,7 +41,7 @@ var SportsLive = (function () {
   function drawBug(g) {
     var b = el();
     b.innerHTML = '';
-    // Which corner (Settings > Channels and groups > My teams > Where the scores go): top right unless picked.
+    // Which corner (Settings > Sports > Where the scores go): top right unless picked.
     var at = /^(tl|tr|bl|br)$/.test(Store.settings.sportsBarAt || '') ? Store.settings.sportsBarAt : 'tr';
     ['tl', 'tr', 'bl', 'br'].forEach(function (k) { b.classList.toggle('at-' + k, k === at); });
     var top = U.el('div', 'sp-btop');

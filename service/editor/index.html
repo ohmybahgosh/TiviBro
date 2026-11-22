@@ -91,6 +91,8 @@ aside{width:250px;flex:none;background:var(--side);border-right:1px solid var(--
 .plpill{margin:12px 6px 16px;padding:10px 12px;border-radius:var(--r);background:var(--panel);border:1px solid var(--line);font-size:13px}
 .plpill b{display:block;font-size:15px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 nav.side{display:flex;flex-direction:column;gap:3px}
+nav.side .navh{padding:14px 12px 4px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+body.setup nav.side .navh{display:none}
 nav.side button{display:flex;align-items:center;gap:12px;text-align:left;background:none;border:none;padding:10px 12px;border-radius:10px;color:var(--muted)}
 nav.side button svg{width:19px;height:19px;flex:none;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 nav.side button:hover{background:var(--panel);color:var(--text)}
@@ -110,34 +112,50 @@ main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;position
 .phead h1{margin:0;font-size:24px}
 .phead p{margin:4px 0 0;color:var(--muted)}
 .scroll{flex:1;overflow:auto;padding:0 28px 40px}
-.setwrap{display:flex;gap:20px;align-items:flex-start}
-.setsecs{flex:none;width:230px;display:flex;flex-direction:column;gap:2px;position:sticky;top:0}
-.setsecs button{text-align:left;background:none;border:0;padding:9px 12px;border-radius:10px;color:var(--text);font-size:14px}
-.setsecs button:hover{background:var(--raised)} .setsecs button.on{background:var(--accent);color:var(--accent-ink)}
-.setsecs button.attn::after{content:'';display:inline-block;width:9px;height:9px;border-radius:50%;background:#3ddc97;margin-left:8px}
-.setmain{flex:1;min-width:0;max-width:880px}
-.settrail{margin-bottom:10px;color:var(--muted)} .settrail button{font-weight:600}
-.srow{display:flex;align-items:center;gap:16px;padding:12px 14px;border-bottom:1px solid var(--line)}
+/* Settings: the TV's own rows (settings.js rowData), drawn as cards.  Each heading starts a card.  The row kinds
+   look different on purpose: a switch, a value you pick, a page that opens (›), a button that does something now
+   (filled), and a button that deletes or resets (red, asks first). */
+.setwrap{display:flex;gap:28px;align-items:flex-start}
+.setsecs{flex:none;width:220px;display:flex;flex-direction:column;gap:2px;position:sticky;top:0}
+.setsecs button{text-align:left;background:none;border:0;padding:9px 12px;border-radius:10px;color:var(--muted);font-size:14px}
+.setsecs button:hover{background:var(--panel);color:var(--text)} .setsecs button.on{background:var(--raised);color:var(--text);font-weight:600;box-shadow:inset 3px 0 0 var(--accent)}
+.setsecs button.attn::after{content:'';display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--ok);margin-left:8px}
+.setmain{flex:1;min-width:0;max-width:760px}
+.settrail{margin-bottom:12px;color:var(--muted);font-size:14px} .settrail button{font-weight:600}
+.scard{background:var(--panel);border:1px solid var(--line);border-radius:16px;margin:0 0 18px;overflow:hidden}
+.scard.loose{background:none;border:0;border-radius:0;overflow:visible}
+.shead{padding:4px 4px 8px;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#7da2ff}
+.srow{display:flex;align-items:center;gap:16px;padding:14px 18px;border-top:1px solid #222a47}
+.scard > .srow:first-child{border-top:0}
 .srow .sl{flex:1;min-width:0} .srow .sl b{display:block;font-weight:500} .srow .sl small{display:block;color:var(--muted);font-size:13px;margin-top:3px}
-.srow .sv{flex:none;color:var(--muted);text-align:right;max-width:45%}
-.srow.click{cursor:pointer} .srow.click:hover{background:var(--raised)}
-.srow.k-head{border:0;padding:22px 14px 6px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#7da2ff;border-bottom:1px solid var(--line)}
-.srow.k-head:empty{padding:6px 0;border:0}
-.srow.k-page .sv::after{content:'  ›';font-size:18px;color:var(--text)}
-.srow.k-action .sl b{color:#7da2ff;font-weight:600}
-.srow.k-status{background:rgba(255,255,255,.03);border-bottom:0;padding:7px 14px} .srow.k-status .sl b{color:var(--muted);font-weight:400} .srow.k-status .sv{color:var(--text)}
-.srow.k-note{border:0;padding:6px 14px} .srow.k-note .sl{border-left:3px solid var(--line);padding-left:12px} .srow.k-note .sl b{font-weight:400;color:var(--muted);font-size:14px}
+.srow .sv{flex:none;color:var(--muted);text-align:right;max-width:45%;display:flex;align-items:center;gap:6px;justify-content:flex-end}
+.srow.click{cursor:pointer} .srow.click:hover{background:var(--panel2)}
+.srow.k-page .sv::after,.srow.jump .sv::after{content:'';width:8px;height:8px;border-right:2px solid var(--dim);border-top:2px solid var(--dim);transform:rotate(45deg);margin:0 4px 0 6px}
+.srow.k-status{background:rgba(255,255,255,.02)} .srow.k-status .sl b{color:var(--muted);font-weight:400} .srow.k-status .sv{color:var(--text)}
+.srow.k-note .sl{border-left:3px solid var(--line);padding-left:12px} .srow.k-note .sl b{font-weight:400;color:var(--muted);font-size:14px}
 .srow.tip .sl{border-left-color:#7da2ff} .srow.tip .sl b{color:var(--text)}
-.srow.jump .sv::after{content:'  ›';font-size:18px;color:var(--text)}
-.srow.attn{border:2px solid #3ddc97;border-radius:12px;background:rgba(61,220,151,.1);margin:8px 0} .srow.attn .sl b{color:#3ddc97}
-.srow .badge{background:#3ddc97;color:#0b0e1a;font-weight:800;border-radius:999px;padding:3px 12px;font-size:12px;letter-spacing:.1em}
-.srow.adv-row{border:1px dashed var(--line);border-radius:12px;margin-top:8px}
+.srow.attn{background:rgba(61,220,151,.1);box-shadow:inset 3px 0 0 var(--ok)} .srow.attn .sl b{color:var(--ok)}
+.srow .badge{background:var(--ok);color:var(--ink);font-weight:800;border-radius:999px;padding:3px 12px;font-size:12px;letter-spacing:.1em}
+.srow.adv-row .sl b{color:var(--muted)}
 .srow .tvonly{font-style:italic}
 .srow select{min-width:180px}
-.ssw{position:relative;display:inline-block;width:46px;height:26px} .ssw input{opacity:0;width:0;height:0} .ssw i{position:absolute;inset:0;border-radius:999px;background:var(--raised);transition:.15s;cursor:pointer}
-.ssw i::before{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.15s} .ssw input:checked + i{background:#3ddc97} .ssw input:checked + i::before{left:23px}
+.srow .sbtn{border-radius:10px;padding:8px 16px;font-weight:600;border:1px solid var(--accline);background:var(--accbg);color:#cfe0ff}
+.srow .sbtn.go{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.srow .sbtn.danger{background:none;border-color:rgba(229,72,77,.55);color:#ff9a9d}
+.srow.tone-danger .sl b{color:#ff9a9d}
+.srow.tone-go{background:linear-gradient(90deg,rgba(91,140,255,.10),transparent 70%)}
+.sseg{display:inline-flex;background:var(--ink);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px;flex-wrap:wrap;justify-content:flex-end}
+.sseg button{background:none;border:0;border-radius:7px;padding:5px 12px;font-size:13px;color:var(--muted)}
+.sseg button.on{background:var(--accent);color:var(--accent-ink);font-weight:700}
+.ssw{position:relative;display:inline-block;width:46px;height:26px} .ssw input{opacity:0;width:0;height:0} .ssw i{position:absolute;inset:0;border-radius:999px;background:var(--line);transition:.15s;cursor:pointer}
+.ssw i::before{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#c9d1ea;transition:.15s} .ssw input:checked + i{background:var(--accent)} .ssw input:checked + i::before{left:23px;background:#fff}
+.ssw input:focus-visible + i{outline:2px solid var(--accent2);outline-offset:2px}
 .setmenu{display:flex;flex-direction:column;gap:4px;max-height:60vh;overflow:auto} .setmenu button{text-align:left;padding:10px 12px} .setmenu button small{display:block;color:var(--muted);font-weight:400;margin-top:2px} .setmenu button.on{outline:2px solid var(--accent)}
-@media (max-width:760px){.setwrap{flex-direction:column}.setsecs{position:static;width:100%;flex-direction:row;flex-wrap:wrap}.setsecs button{padding:6px 10px}}
+.setlegend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--dim);margin:2px 4px 18px}
+.setlegend span{display:inline-flex;align-items:center;gap:6px}
+.setlegend i{display:inline-block;width:22px;height:12px;border-radius:4px;background:var(--line)}
+.setlegend i.tg{border-radius:999px;background:var(--accent)} .setlegend i.go{background:var(--accent)} .setlegend i.pk{background:var(--panel2);border:1px solid var(--line)} .setlegend i.dg{background:none;border:1px solid #ff9a9d}
+@media (max-width:760px){.setlegend{display:none}.setwrap{flex-direction:column;gap:12px}.setsecs{position:static;width:100%;flex-direction:row;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px}.setsecs button{padding:7px 12px;white-space:nowrap;border:1px solid var(--line);border-radius:999px}.setsecs button.on{box-shadow:none;background:var(--accent);color:var(--accent-ink)}.srow{padding:13px 14px}.srow .sv{max-width:55%}}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
 .card h3{margin:0 0 4px;font-size:16px}
 .card > p{margin:0 0 14px;color:var(--muted);font-size:14px}
@@ -191,7 +209,11 @@ body.setup .nosetup{display:none!important}
 .g{display:flex;align-items:center;gap:8px;padding:6px 10px 6px 6px;margin:0 6px;border-radius:9px;cursor:pointer;user-select:none}
 .g:hover{background:var(--panel)} .g.sel{background:var(--raised)}
 .g.off .gname{color:var(--dim)}
-.g .grip{cursor:grab;color:var(--dim);padding:0 3px}
+.g .grip,.c .grip{cursor:grab;color:var(--dim);padding:0 3px;touch-action:none}
+/* A row being dragged with a finger: a copy follows it, the row itself fades. */
+.ghostrow{position:fixed;z-index:60;pointer-events:none;background:var(--raised)!important;border:1.5px solid var(--accent);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.55);transform:rotate(-1deg);opacity:.95}
+.g.dragging,.c.dragging{opacity:.35}
+.c.drop-before{box-shadow:inset 0 3px 0 var(--accent2)} .c.drop-after{box-shadow:inset 0 -3px 0 var(--accent2)}
 .g .gname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .g .gname em{font-style:normal;color:var(--accent);font-size:11px;margin-left:6px}
 .g .gname em.e{color:var(--muted)}
@@ -385,7 +407,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
   body.gc-chans .gc .chans{display:flex}
   #gcBack{display:inline-flex}
   .ph{padding:10px 12px}
-  .g{padding:9px 8px 9px 4px} .g .grip{display:none}
+  .g{padding:9px 8px 9px 4px}
   .c{padding:0 8px;gap:6px} .c .num{display:none} .c img,.c .noimg{width:40px}
   .c .tools [data-ren],.c .tools [data-add],.c .tools [data-rm]{display:none}
   .c .tools [data-more]{display:inline-block}
@@ -410,7 +432,6 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
   #p-gc .phead p,#p-gc .phead .note{display:none}
   body.gc-chans #p-gc .phead{display:none}
   .gc .groups{min-width:0;width:100%} #gSearch{width:100%}
-  .c .grip{display:none}
   .card button,.card .row > button{white-space:normal;text-align:left}
   #kwText{flex:1 1 100%}
   /* Lists that are tables on a computer become stacked rows. */
@@ -439,7 +460,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
 }
 @media (max-width:360px){ .changebar{gap:6px} .changebar button{padding:6px 8px;font-size:13px} .changebar .lbl{font-size:13px} }
 /* Touch screens have no hover: show the row actions that otherwise appear under the mouse. */
-@media (hover:none){ .g .acts{display:flex} .g .grip{display:none} }
+@media (hover:none){ .g .acts{display:flex} .g .grip,.c .grip{padding:10px 8px;margin:-10px 0;font-size:18px} }
 .tried{margin-top:8px}.tried summary{cursor:pointer;color:var(--muted,#9aa3b8)}.tried pre{white-space:pre-wrap;word-break:break-all;font-size:12px;line-height:1.45;max-height:260px;overflow:auto;margin:6px 0 0;padding:8px;border-radius:6px;background:rgba(0,0,0,.25)}
 .shelf-list{list-style:none;padding:0;margin:8px 0 10px;max-width:560px}.shelf-list li{display:flex;align-items:center;gap:10px;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.08)}.shelf-list li span{flex:1}.shelf-list li button{padding:4px 12px;min-width:0}
 .shelf-list li.shelf-tab{display:block;border-bottom:0;padding:14px 8px 4px;font-weight:700;color:var(--accent,#5b8cff);font-size:13px;letter-spacing:.06em;text-transform:uppercase}
@@ -466,17 +487,21 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
     <button id="navToggle" type="button" aria-label="Pages" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span class="navlbl"><small>Menu</small><span id="navCur">Overview</span></span><svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
     <nav class="side" id="nav">
       <button data-page="welcome" class="hidden"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9H6v-9H3z"/></svg><span>Welcome</span></button>
+      <div class="navh">Your channels</div>
       <button data-page="home"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Overview</span></button>
       <button data-page="playlists"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span>Playlists</span></button>
       <button data-page="guide"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg><span>Guide</span></button>
       <button data-page="gc"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span>Channels and groups</span></button>
       <button data-page="names"><svg viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/></svg><span>Channel and group names</span></button>
+      <div class="navh">On the TV</div>
+      <button data-page="settings" data-sub="sports" id="navSports"><svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg><span>Sports</span></button>
+      <button data-page="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Settings</span></button>
       <button data-page="watch"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg><span>Reminders and watchlist</span></button>
       <button data-page="tools"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/><path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8z"/></svg><span>Smart clean-up</span><em class="badge hidden" id="toolsBadge"></em></button>
       <button data-page="media"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m10 8 6 4-6 4zM3 8h3M3 16h3M18 8h3M18 16h3"/></svg><span>My media</span></button>
       <button data-page="backups"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span>Backups and restore points</span><em class="badge hidden" id="histBadge"></em></button>
+      <div class="navh">Help</div>
       <button data-page="report"><svg viewBox="0 0 24 24"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17v.01"/></svg><span>Report a problem</span></button>
-      <button data-page="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Settings</span></button>
       <button data-page="help"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg><span>Help</span></button>
       <button class="mobonly" data-act="logout"><svg viewBox="0 0 24 24"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg><span>Log out</span></button>
     </nav>
@@ -930,7 +955,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
     <!-- SETTINGS: the TV's own Settings, page by page (Settings.phone), drawn here -->
     <section class="page hidden" id="p-settings">
       <div class="phead"><div><h1>Settings</h1><p>Everything in the TV's Settings, the same sections and pages.  Changes apply on the TV at once.</p></div></div>
-      <div class="scroll"><div class="setwrap"><nav id="setSecs" class="setsecs"></nav><div class="setmain"><div id="setTrail" class="settrail"></div><div id="setRows" class="setrows"><p class="muted">Loading…</p></div></div></div></div>
+      <div class="scroll"><div class="setwrap"><nav id="setSecs" class="setsecs"></nav><div class="setmain"><div id="setTrail" class="settrail"></div><div class="setlegend" aria-hidden="true"><span><i class="tg"></i>On or off</span><span><i class="pk"></i>Pick one</span><span><i class="go"></i>Does it now</span><span><i class="dg"></i>Deletes, asks first</span></div><div id="setRows" class="setrows"><p class="muted">Loading…</p></div></div></div></div>
     </section>
 
     <section class="page hidden" id="p-help">
@@ -977,7 +1002,7 @@ var dT = 0, dFirst = 0, dLast = '', dSeq = 0, dAck = 0, dAt = 0, draftsCache = n
 var FAV = 'c_fav', ALL = '__all';
 var FIELDS = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'custom', 'groupOrder', 'epgMap', 'groupAdd', 'groupRemove', 'groupSort', 'chanOrder', 'watchlist', 'toolSkip', 'guideSkip', 'noGuide', 'groupMerge'];
 var byKey = new Map(), byGroup = new Map(), guideName = new Map();
-var TOUCH = !!(window.matchMedia && matchMedia('(hover: none)').matches);   // phones and tablets: no hover, no drag and drop
+var TOUCH = !!(window.matchMedia && matchMedia('(hover: none)').matches);   // phones and tablets: no hover; dragging is by the ⠿ handle (fingerDrag)
 /* Inside the TiviBro phone app (EditorScreen.kt injects window.TiviBroApp).  Older apps have no open():
    then My media and Backups stay as they are in a browser. */
 var INAPP = !!(window.TiviBroApp && typeof window.TiviBroApp.open === 'function');
@@ -1602,8 +1627,9 @@ function show(p, sub) {
   if (!document.getElementById('p-' + p)) p = 'home';
   if (!goingBack && page && page !== p) { pageStack.push(page); if (pageStack.length > 30) pageStack.shift(); }
   page = p;
-  document.querySelectorAll('#nav button').forEach(function (b) { b.classList.toggle('on', b.dataset.page === p); });
-  var nb = document.querySelector('#nav button[data-page="' + p + '"] span'); if (nb) $('navCur').textContent = nb.textContent;
+  // Sports is a section of Settings with its own place in the list: only one of the two is lit.
+  document.querySelectorAll('#nav button').forEach(function (b) { b.classList.toggle('on', b.dataset.page === p && (b.dataset.sub || '') === (p === 'settings' && sub === 'sports' ? 'sports' : '')); });
+  var nb = document.querySelector('#nav button.on span') || document.querySelector('#nav button[data-page="' + p + '"] span'); if (nb) $('navCur').textContent = nb.textContent;
   if (typeof navOpen === 'function') navOpen(false);
   document.querySelectorAll('.page').forEach(function (s) { s.classList.toggle('hidden', s.id !== 'p-' + p); });
   if (p === 'gc') renderChannels(); if (p === 'guide') renderGuide(); if (p === 'watch') { renderWatch(); loadReminders(); } if (p === 'names') renderNamesPage(); if (p === 'home') renderHome();
@@ -1627,7 +1653,7 @@ window.addEventListener('hashchange', function () { if (D && !/^#[kt]=/.test(loc
 $('nav').addEventListener('click', function (e) {
   var b = e.target.closest('button'); if (!b) return;
   if (b.dataset.act === 'logout') { document.body.classList.remove('navopen'); $('logout').click(); return; }
-  if (b.dataset.page) show(b.dataset.page);
+  if (b.dataset.page) show(b.dataset.page, b.dataset.sub);
 });
 // Tablets show the pages as icons only: the name comes up as a tooltip and for screen readers.
 document.querySelectorAll('#nav button').forEach(function (b) { var t = b.querySelector('span'); if (t) { b.title = t.textContent; b.setAttribute('aria-label', t.textContent); } });
@@ -1751,6 +1777,10 @@ function setOpen(sub) {
 }
 function drawSecs() {
   var n = $('setSecs'); n.innerHTML = '';
+  if (page === 'settings') {
+    document.querySelectorAll('#nav button[data-page="settings"]').forEach(function (b) { b.classList.toggle('on', (b.dataset.sub || '') === (ST.sec === 'sports' ? 'sports' : '')); });
+    var lit = document.querySelector('#nav button.on span'); if (lit) $('navCur').textContent = lit.textContent;
+  }
   ST.secs.forEach(function (x) {
     var b = document.createElement('button'); b.type = 'button'; b.textContent = x.title; b.className = (x.id === ST.sec ? 'on' : '') + (/update ready/.test(x.title) ? ' attn' : '');
     b.onclick = function () { ST.sec = x.id; ST.path = []; drawSecs(); setLoad(); history.replaceState(null, '', '#settings/' + x.id); };
@@ -1780,6 +1810,8 @@ function setDialog(d) {
       [['Cancel', 'ghost', function () { answer({ cancel: true }); }], [d.ok || 'OK', 'primary', function () { answer({ value: $('sdIn').value }); }]]);
   } else modal(d.title || 'Are you sure?', '', null, [['Cancel', 'ghost', function () { answer({ cancel: true }); }], [d.ok || 'OK', 'primary', function () { answer({}); }]]);
 }
+/* One settings page from the TV (settings.js forPhone.page): the trail, then the rows in cards.  A heading
+   starts a new card; notes before the first heading sit loose above them. */
 function setDraw(pg) {
   var t = $('setTrail'); t.innerHTML = '';
   (pg.trail || [pg.title]).forEach(function (name, n, all) {
@@ -1787,30 +1819,71 @@ function setDraw(pg) {
     b.onclick = function () { ST.path = ST.path.slice(0, n); setLoad(); };
     t.appendChild(b); if (n < all.length - 1) t.appendChild(document.createTextNode(' › '));
   });
-  var box = $('setRows'); box.innerHTML = '';
+  var box = $('setRows'), card = null; box.innerHTML = '';
+  function newCard(title) {
+    if (title) { var h = document.createElement('div'); h.className = 'shead'; h.textContent = title; box.appendChild(h); }
+    card = document.createElement('div'); card.className = 'scard'; box.appendChild(card); return card;
+  }
   (pg.rows || []).forEach(function (r) {
-    var look = r.look || (r.kind === 'info' ? (r.value ? 'status' : 'note') : r.kind), d = document.createElement('div');
-    d.className = 'srow k-' + look + (r.attn ? ' attn' : '') + (r.style ? ' ' + r.style : '');
-    if (r.kind === 'head') { d.textContent = r.label; box.appendChild(d); return; }
-    var l = document.createElement('div'); l.className = 'sl';
-    l.innerHTML = '<b>' + esc(r.label) + '</b>' + (r.sub ? '<small>' + esc(r.sub) + '</small>' : '') + (r.tv ? '<small class="tvonly">On the TV: look at the TV\'s screen</small>' : '');
-    d.appendChild(l);
-    var v = document.createElement('div'); v.className = 'sv';
-    if (r.kind === 'info') v.textContent = r.value || '';
-    else if (r.kind === 'toggle') { var lab = document.createElement('label'); lab.className = 'ssw'; lab.innerHTML = '<input type="checkbox"' + (r.on ? ' checked' : '') + '><i></i>'; lab.querySelector('input').onchange = function (e) { setChange(r, 'toggle', { on: e.target.checked }); }; v.appendChild(lab); }
-    else if (r.kind === 'choice') { var sel = document.createElement('select'); (r.options || []).forEach(function (o, n) { var op = document.createElement('option'); op.value = n; op.textContent = o; if (n === r.cur) op.selected = true; sel.appendChild(op); }); sel.onchange = function () { setChange(r, 'choice', { v: +sel.value }); }; v.appendChild(sel); }
-    else if (r.kind === 'cycle') { ['‹', '›'].forEach(function (c, n) { var b = document.createElement('button'); b.type = 'button'; b.className = 'ghost'; b.textContent = c; b.onclick = function () { setChange(r, 'cycle', { dir: n ? 1 : -1 }); }; v.appendChild(b); if (!n) { var sp = document.createElement('span'); sp.textContent = r.value || ''; v.appendChild(sp); } }); }
-    else if (r.kind === 'page') { v.textContent = String(r.value || '').replace(/\s*›$/, ''); d.classList.add('click'); d.onclick = function () { ST.path = ST.path.concat([r.i]); setLoad(); }; }
-    else if (r.kind === 'action') {
-      if (r.attn && r.value) { var bd = document.createElement('span'); bd.className = 'badge'; bd.textContent = r.value; v.appendChild(bd); } else v.textContent = String(r.value || '').replace(/\s*›$/, '');
-      d.classList.add('click');
-      d.onclick = function () {
-        // A row that opens another section (the TV's link()): open it here.
-        if (r.go && ST.secs && ST.secs.some(function (x) { return x.id === r.go; })) { ST.sec = r.go; ST.path = []; drawSecs(); setLoad(); history.replaceState(null, '', '#settings/' + r.go); return; }
-        if (r.phone === 'editor' && r.epage && document.getElementById('p-' + r.epage)) show(r.epage); else setChange(r, 'action'); };
-    }
-    d.appendChild(v); box.appendChild(d);
+    if (r.kind === 'head') { if (r.label) newCard(r.label); else card = null; return; }
+    if (!card) newCard('');
+    card.appendChild(setRow(r));
   });
+  // A card with nothing in it (a heading at the very end): gone.
+  box.querySelectorAll('.scard').forEach(function (c) { if (!c.children.length) { var h = c.previousElementSibling; if (h && h.className === 'shead') h.remove(); c.remove(); } });
+}
+// A choice with a few short options is a row of buttons (all visible, one click); longer ones are a list.
+function setSeg(r) {
+  var opts = r.options || [];
+  return opts.length > 1 && opts.length <= 4 && opts.join('').length <= 34;
+}
+/* One row.  The value side shows what kind of row it is: a switch, a value to pick, a page (›), or a
+   button.  r.tone (settings.js actionTone) makes a button the main one (go) or a red one (danger). */
+function setRow(r) {
+  var look = r.look || (r.kind === 'info' ? (r.value ? 'status' : 'note') : r.kind), d = document.createElement('div');
+  d.className = 'srow k-' + look + (r.attn ? ' attn' : '') + (r.style ? ' ' + r.style : '') + (r.tone ? ' tone-' + r.tone : '');
+  var l = document.createElement('div'); l.className = 'sl';
+  l.innerHTML = '<b>' + esc(r.label) + '</b>' + (r.sub ? '<small>' + esc(r.sub) + '</small>' : '') + (r.tv ? '<small class="tvonly">On the TV: look at the TV\'s screen</small>' : '');
+  d.appendChild(l);
+  var v = document.createElement('div'); v.className = 'sv';
+  if (r.kind === 'info') v.textContent = r.value || '';
+  else if (r.kind === 'toggle') {
+    var lab = document.createElement('label'); lab.className = 'ssw'; lab.innerHTML = '<input type="checkbox" aria-label="' + esc(r.label) + '"' + (r.on ? ' checked' : '') + '><i></i>';
+    lab.querySelector('input').onchange = function (e) { setChange(r, 'toggle', { on: e.target.checked }); }; v.appendChild(lab);
+    d.classList.add('click'); d.onclick = function (e) { if (!lab.contains(e.target)) lab.querySelector('input').click(); };
+  } else if (r.kind === 'choice' && setSeg(r)) {
+    var seg = document.createElement('div'); seg.className = 'sseg'; seg.setAttribute('role', 'radiogroup');
+    r.options.forEach(function (o, n) { var b = document.createElement('button'); b.type = 'button'; b.textContent = o; b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', n === r.cur); if (n === r.cur) b.className = 'on'; b.onclick = function () { if (n !== r.cur) setChange(r, 'choice', { v: n }); }; seg.appendChild(b); });
+    v.appendChild(seg);
+  } else if (r.kind === 'choice') {
+    var sel = document.createElement('select'); sel.setAttribute('aria-label', r.label);
+    (r.options || []).forEach(function (o, n) { var op = document.createElement('option'); op.value = n; op.textContent = o; if (n === r.cur) op.selected = true; sel.appendChild(op); });
+    sel.onchange = function () { setChange(r, 'choice', { v: +sel.value }); }; v.appendChild(sel);
+  } else if (r.kind === 'cycle') {
+    ['‹', '›'].forEach(function (c, n) { var b = document.createElement('button'); b.type = 'button'; b.className = 'ghost'; b.textContent = c; b.setAttribute('aria-label', n ? 'Next' : 'Previous'); b.onclick = function () { setChange(r, 'cycle', { dir: n ? 1 : -1 }); }; v.appendChild(b); if (!n) { var sp = document.createElement('span'); sp.textContent = r.value || ''; v.appendChild(sp); } });
+  } else if (r.kind === 'page') {
+    v.textContent = String(r.value || '').replace(/\s*›$/, ''); d.classList.add('click'); d.tabIndex = 0;
+    d.onclick = function () { ST.path = ST.path.concat([r.i]); setLoad(); };
+  } else if (r.kind === 'action') setAction(r, d, v);
+  d.appendChild(v);
+  d.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target === d) { e.preventDefault(); d.click(); } });
+  return d;
+}
+// An action row: a jump to another section, a page-like row (its value ends in ›), or a real button.
+function setAction(r, d, v) {
+  function run() {
+    // A row that opens another section (the TV's link()): open it here.
+    if (r.go && ST.secs && ST.secs.some(function (x) { return x.id === r.go; })) { ST.sec = r.go; ST.path = []; drawSecs(); setLoad(); history.replaceState(null, '', '#settings/' + r.go); return; }
+    if (r.phone === 'editor' && r.epage && document.getElementById('p-' + r.epage)) show(r.epage); else setChange(r, 'action');
+  }
+  var val = String(r.value || ''), opens = r.go || /›$/.test(val);
+  if (r.attn && val) { var bd = document.createElement('span'); bd.className = 'badge'; bd.textContent = val; v.appendChild(bd); d.classList.add('click'); d.onclick = run; return; }
+  if (opens && !r.tone) { v.textContent = val.replace(/\s*›$/, ''); d.classList.add('click', 'jump'); d.tabIndex = 0; d.onclick = run; return; }
+  if (val && !/›$/.test(val)) { var sp = document.createElement('span'); sp.textContent = val; v.appendChild(sp); }
+  var b = document.createElement('button'); b.type = 'button'; b.className = 'sbtn' + (r.tone ? ' ' + r.tone : '');
+  b.textContent = r.tone === 'go' ? r.label.replace(/\s+now$/i, '') : r.tone === 'danger' ? (r.label.split(' ')[0]) : (/›$/.test(val) ? 'Open' : 'Go');
+  b.onclick = function (e) { e.stopPropagation(); run(); };
+  v.appendChild(b);
 }
 
 /* ---------- keyboard ---------- */
@@ -2023,7 +2096,11 @@ function clearDrops() { document.querySelectorAll('.drop-before,.drop-after').fo
 $('glist').addEventListener('drop', function (e) {
   var r = e.target.closest('.g'); if (!r || !dragId) return;
   e.preventDefault();
-  var before = r.classList.contains('drop-before'), target = r.dataset.id, id = dragId; clearDrops(); dragId = null;
+  var before = r.classList.contains('drop-before'), id = dragId; clearDrops(); dragId = null;
+  dropGroup(id, r.dataset.id, before);
+});
+// A group dropped before or after another (mouse or finger): your groups among your groups, provider groups among provider groups.
+function dropGroup(id, target, before) {
   if (target === id) return;
   mut('Moved group ' + groupLabel(id), function () {
     if (isCustom(id)) {
@@ -2034,7 +2111,51 @@ $('glist').addEventListener('drop', function (e) {
       var t = ids.indexOf(target); ids.splice(before ? t : t + 1, 0, id); E.groupOrder = ids;
     }
   });
-});
+}
+/* Dragging with a finger or a pen (touch screens have no HTML drag and drop): press the ⠿ handle and move.
+   A copy of the row follows, the list scrolls by itself near its top and bottom, and a line shows where it
+   lands.  The mouse keeps using drag and drop.  opts: list (the scrolling box), row (selector), key(row),
+   can(row) whether it can be picked up, ok(key, row) whether it can land there, drop(key, row, before). */
+function fingerDrag(opts) {
+  opts.list.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse' || !e.target.closest('.grip')) return;
+    var row = e.target.closest(opts.row); if (!row || !opts.can(row)) return;
+    e.preventDefault();
+    var key = opts.key(row), r0 = row.getBoundingClientRect(), dy = e.clientY - r0.top, lastY = e.clientY, target = null, before = false;
+    var ghost = row.cloneNode(true); ghost.classList.add('ghostrow'); ghost.style.cssText += ';left:' + r0.left + 'px;width:' + r0.width + 'px;height:' + r0.height + 'px';
+    document.body.appendChild(ghost); row.classList.add('dragging');
+    if (navigator.vibrate) navigator.vibrate(12);
+    function find() {
+      clearDrops(); target = null;
+      var el = document.elementFromPoint(r0.left + Math.min(40, r0.width / 3), lastY), t = el && el.closest(opts.row);
+      if (!t || !opts.list.contains(t) || !opts.ok(key, t)) return;
+      var b = t.getBoundingClientRect(); before = lastY < b.top + b.height / 2; target = t;
+      t.classList.add(before ? 'drop-before' : 'drop-after');
+    }
+    function at() { ghost.style.top = (lastY - dy) + 'px'; }
+    // What scrolls: the list itself, or (phones, where the page scrolls as a whole) the nearest box that does.
+    var sc = opts.list;
+    while (sc && sc !== document.body && !(sc.scrollHeight > sc.clientHeight + 2 && /auto|scroll/.test(getComputedStyle(sc).overflowY))) sc = sc.parentElement;
+    if (!sc || sc === document.body) sc = document.scrollingElement;
+    var tick = setInterval(function () {              // near the top or bottom of what's on screen: scroll, and look again
+      var b = sc === document.scrollingElement ? { top: 0, bottom: innerHeight } : sc.getBoundingClientRect();
+      var top = Math.max(0, b.top), bot = Math.min(innerHeight, b.bottom), sp = lastY < top + 48 ? -14 : lastY > bot - 48 ? 14 : 0;
+      if (sp) { var was = sc.scrollTop; sc.scrollTop += sp; if (sc.scrollTop !== was) find(); }
+    }, 30);
+    function move(ev) { if (ev.pointerId !== e.pointerId) return; ev.preventDefault(); lastY = ev.clientY; at(); find(); }
+    function end(ev) {
+      if (ev.pointerId !== e.pointerId) return;
+      clearInterval(tick); ghost.remove(); row.classList.remove('dragging');
+      document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', end); document.removeEventListener('pointercancel', end);
+      var t = target; clearDrops();
+      if (t && ev.type === 'pointerup') opts.drop(key, t, before);
+    }
+    at();
+    document.addEventListener('pointermove', move, { passive: false }); document.addEventListener('pointerup', end); document.addEventListener('pointercancel', end);
+  });
+}
+fingerDrag({ list: $('glist'), row: '.g', key: function (r) { return r.dataset.id; }, can: function (r) { return r.dataset.id !== ALL; },
+  ok: function (id, r) { return r.dataset.id !== ALL && isCustom(r.dataset.id) === isCustom(id); }, drop: function (id, r, before) { dropGroup(id, r.dataset.id, before); } });
 /* Group order without dragging (phones and tablets can't drag): the ⋯ on a group.  Your groups move
    among your groups, provider groups among provider groups, as with dragging. */
 function groupIds(id) { return isCustom(id) ? E.custom.map(function (g) { return g.id; }) : providerGroups().map(function (g) { return g.id; }); }
@@ -2149,7 +2270,7 @@ function renderChannels(reset) {
   list = currentList();
   var g = realGroup();
   $('cTitle').textContent = query ? 'Search: "' + query + '"' : groupLabel(curGroup);
-  $('cCount').textContent = plural(list.length, 'channel') + (canDrag() && !TOUCH ? '  ·  drag ⠿ to reorder' : '');
+  $('cCount').textContent = plural(list.length, 'channel') + (canDrag() ? '  ·  drag ⠿ to reorder' : '');
   var sd = $('cSort')._dd;
   if (sd) {
     $('cSort').classList.toggle('hidden', !g);
@@ -2165,7 +2286,7 @@ function renderChannels(reset) {
     if (out || add) note = [add ? plural(add, 'channel') + ' copied or moved in' : '', out ? plural(out, 'channel') + ' taken out' : ''].filter(Boolean).join('  ·  ') + '  <button class="ghost small" id="gReset">Put this group back the way the provider has it</button>';
   }
   if (g && isCustom(g) && E.groupSort[g] && E.groupSort[g] !== 'custom') note = 'Sorted ' + SORT_LABEL[E.groupSort[g]].toLowerCase() + '.  Set the order to "Your order" to drag channels.';
-  if (g && isProv(g) && E.groupSort[g] === 'custom') note = (note ? note + '<br>' : '') + 'Your order: ' + (TOUCH ? 'use ⋯ on a channel to move it.' : 'drag ⠿ or use ⋯ on a channel.') + '  Channels the provider adds later go to the end.';
+  if (g && isProv(g) && E.groupSort[g] === 'custom') note = (note ? note + '<br>' : '') + 'Your order: drag ⠿ or use ⋯ on a channel.' + '  Channels the provider adds later go to the end.';
   $('gNote').innerHTML = note; $('gNote').classList.toggle('hidden', !note);
   $('cspacer').style.height = (list.length * ROW) + 'px';
   if (reset) $('clist').scrollTop = 0;
@@ -2253,14 +2374,25 @@ var dragK = null;
 $('cspacer').addEventListener('dragstart', function (e) { var r = e.target.closest('.c'); if (!r) return; dragK = r.dataset.k; e.dataTransfer.effectAllowed = 'move'; });
 $('cspacer').addEventListener('dragover', function (e) { if (dragK && e.target.closest('.c')) e.preventDefault(); });
 $('cspacer').addEventListener('drop', function (e) {
-  var r = e.target.closest('.c'), g = realGroup(); if (!r || !dragK || !g || !canDrag()) return;
+  var r = e.target.closest('.c'); if (!r || !dragK || !realGroup() || !canDrag()) return;
   e.preventDefault();
   var b = r.getBoundingClientRect(), after = e.clientY > b.top + b.height / 2, k = dragK; dragK = null;
-  if (r.dataset.k === k) return;
+  dropChannel(k, r.dataset.k, !after);
+});
+// A channel dropped before or after another in a group in your own order (mouse or finger).
+function dropChannel(k, onto, before) {
+  var g = realGroup(); if (!g || onto === k) return;
   mut('Reordered ' + groupLabel(g), function () {
-    var now = channelsOf(g).map(function (c) { return c.k; }).filter(function (x) { return x !== k; }), t = now.indexOf(r.dataset.k);
-    placeIn(g, k, Math.min(after ? t + 1 : t, now.length));
+    var now = channelsOf(g).map(function (c) { return c.k; }).filter(function (x) { return x !== k; }), t = now.indexOf(onto);
+    placeIn(g, k, Math.min(before ? t : t + 1, now.length));
   });
+}
+fingerDrag({ list: $('clist'), row: '.c', key: function (r) { return r.dataset.k; }, can: function () { return canDrag(); },
+  ok: function () { return true; }, drop: function (k, r, before) { dropChannel(k, r.dataset.k, before); } });
+// Keyboard: Alt + ↑ ↓ moves the open group up or down (your groups among yours, provider groups among theirs).
+document.addEventListener('keydown', function (e) {
+  if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') || page !== 'gc' || curGroup === ALL || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+  e.preventDefault(); moveGroup(curGroup, e.key === 'ArrowUp' ? 'up' : 'down');
 });
 function bulkBar() {
   var n = sel.size; $('bulk').classList.toggle('hidden', !n); $('selCount').textContent = n + ' selected';
