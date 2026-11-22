@@ -110,6 +110,14 @@ const KEY = 'a'.repeat(32);
   ok('search: one request per language, each with its own results', asked2.length === 2 && asked2.some(a => /languages=en&/.test(a)) && asked2.some(a => /languages=es&/.test(a)) &&
     out.results.filter(r => r.lang === 'en').length === 40 && out.results.filter(r => r.lang === 'es').length === 3 && out.perLang.en === 40 && out.perLang.es === 3, JSON.stringify(asked2) + ' ' + JSON.stringify(out.perLang));
   calls.splice(before, 2);
+  // An episode OpenSubtitles hasn't linked to its show: nothing by show + season + episode, so once more as words.
+  const before3 = calls.length;
+  replies.push({ code: 200, body: { total_count: 0, data: [] } });
+  replies.push({ code: 200, body: { total_count: 1, data: [{ attributes: { language: 'en', release: 'The.Altruists.S01E02.1080p.NF.WEB-DL', download_count: 50, files: [{ file_id: 77, file_name: 'x.srt' }] } }] } });
+  out = await p('search', { key: KEY, query: 'The Altruists', type: 'episode', season: 1, episode: 2, langs: ['en'] });
+  const asked3 = calls.slice(before3).map(c => c.o.path);
+  ok('an episode with no results is asked again as "show s01e02"', asked3.length === 2 && /season_number=1/.test(asked3[0]) && /query=the\+altruists\+s01e02/.test(asked3[1]) && !/season_number/.test(asked3[1]) && out.results.length === 1 && out.results[0].id === 77, JSON.stringify(asked3) + ' ' + JSON.stringify(out));
+  calls.splice(before3, 2);
   replies.push({ code: 200, body: { link: 'https://dl.opensubtitles.com/x/heat.srt', file_name: 'heat.srt', remaining: 4, reset_time: '23 hours' } });
   replies.push({ code: 200, body: 'Caf\xe9 au lait', latin1: true });
   out = await p('get', { key: KEY, token: 'tok', id: 11 });

@@ -284,12 +284,12 @@ ok('switching to a track mid-line reads the line still on screen (it started bef
     return fetchCallCount === 0 && video.children.length === 0;
   })());
 
-  ok('a file whose Cues does not index the subtitle track adds nothing, no scan attempted', await (async () => {
+  // mkvmerge indexes only the video by default: the subtitle lines are found by reading the Clusters the
+  // video's cue points name, whole (a WEB-DL episode with 35 subtitle tracks and none indexed).
+  ok('a file whose Cues index only the video still gets its subtitles, from the clusters', await (async () => {
     const video = { children: [], appendChild(el) { this.children.push(el); } };
-    fetchCallCount = 0;
     MkvSubs.extract('http://p/movie/u/p/novideosubs.mkv', video);
-    const settled = await waitForAsync(() => video.children.length === 0);
-    return settled && fetchCallCount === 3;
+    return waitForAsync(() => video.children.length === 1 && video.children[0].track.cues.length === 1 && video.children[0].track.cues[0].text === 'Hi there');
   })());
 
   ok("cancel() before the async fetches resolve prevents any <track> from being added", await (async () => {

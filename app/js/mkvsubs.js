@@ -155,7 +155,7 @@ var MkvSubs = (function () {
               else if (qidr.value === 0xB2) duration = bytesToUint(buf, qvstart, qvend);   // CueDuration
               q = qvend;
             }
-            if (track === trackNumber && clusterPos !== null) {
+            if ((trackNumber === null || track === trackNumber) && clusterPos !== null) {
               var cue = { timeSec: cueTime * timecodeScale / 1e9, clusterPos: clusterPos };
               if (relativePos !== null) cue.relativePos = relativePos;
               if (duration !== null) cue.endSec = (cueTime + duration) * timecodeScale / 1e9;
@@ -222,7 +222,7 @@ var MkvSubs = (function () {
     return { track: tv.value, relTimecode: rel, payloadStart: tv.next + 3 };
   }
 
-  function readClusterBlocks(buf, offset, end, trackNumber, timecodeScale) {
+  function readClusterBlocks(buf, offset, end, trackNumber, timecodeScale, raw) {
     var cues = [];
     var clusterTimecode = 0;
     var pos = offset;
@@ -238,7 +238,7 @@ var MkvSubs = (function () {
         var hdr = readBlockHeader(buf, cstart, cend);
         if (hdr && hdr.track === trackNumber) {
           var startSec = (clusterTimecode + hdr.relTimecode) * timecodeScale / 1e9;
-          cues.push({ startSec: startSec, endSec: startSec + 2, text: utf8Decode(buf, hdr.payloadStart, cend) });
+          cues.push({ startSec: startSec, endSec: startSec + 2, text: utf8Decode(buf, hdr.payloadStart, cend, raw) });
         }
       } else if (idr.value === BLOCKGROUP) {
         var blockHdr = null, blockEnd = 0, duration = null;
@@ -256,7 +256,7 @@ var MkvSubs = (function () {
         if (blockHdr && blockHdr.track === trackNumber) {
           var bStart = (clusterTimecode + blockHdr.relTimecode) * timecodeScale / 1e9;
           var bEnd = duration !== null ? bStart + duration * timecodeScale / 1e9 : bStart + 2;
-          cues.push({ startSec: bStart, endSec: bEnd, text: utf8Decode(buf, blockHdr.payloadStart, blockEnd) });
+          cues.push({ startSec: bStart, endSec: bEnd, text: utf8Decode(buf, blockHdr.payloadStart, blockEnd, raw) });
         }
       }
       pos = cend;
@@ -379,6 +379,25 @@ var MkvSubs = (function () {
     });
   }
 
+  /* A whole Cluster in one read, for a file whose Cues index only the video (see MKV.discover): its subtitle
+     blocks sit between the video and audio blocks with nothing pointing at them, so the Cluster is read in
+     full and walked in memory.  One read instead of hundreds of small ones; capped so a broken size can't
+     ask for the whole file. */
+  var MAX_SCAN_CLUSTER = 24 * 1024 * 1024;
+  function readWholeCluster(range, off, trackNumbers, scale) {
+    return range(off, off + 15).then(function (head) {
+      var id = readId(head, 0), sz = readVint(head, id.next);
+      if (id.value !== 0x1F43B675 || sz.value === null || sz.value > MAX_SCAN_CLUSTER) throw new Error('invalid cluster');
+      return range(off, off + sz.next + sz.value - 1).then(function (all) {
+        var out = [];
+        trackNumbers.forEach(function (n) {
+          readClusterBlocks(all, sz.next, all.length, n, scale, true).forEach(function (c) { out.push({ track: n, startSec: c.startSec, endSec: c.endSec, text: c.text }); });
+        });
+        return out;
+      });
+    });
+  }
+
   // Discover the small track/index metadata immediately; only cue reads wait for
   // playback buffer. Keep the delay override for tests and diagnostics.
   var startupDelayMs = 0;
@@ -449,8 +468,18 @@ var MkvSubs = (function () {
           var trkCues = readCuesForTrack(cuesBuf, cuesContentStart, cuesContentEnd, trk.number, timecodeScale);
           if (trkCues.length) perTrackCues.push({ track: trk, cues: trkCues });
         }
-        if (!perTrackCues.length) return null;
-        return { perTrackCues: perTrackCues, timecodeScale: timecodeScale, segmentDataStart: segmentDataStart };
+        if (perTrackCues.length) return { perTrackCues: perTrackCues, timecodeScale: timecodeScale, segmentDataStart: segmentDataStart };
+        /* No cue for any subtitle track: mkvmerge indexes only the video unless told otherwise, so most
+           WEB-DL episodes are like this (a Netflix one with English, SDH and 33 more languages showed none).
+           Every subtitle line is still inside the Clusters the video's cue points name: each Cluster
+           becomes a "cue" for every subtitle track, running to the next one, and is read whole (scan). */
+        var all = readCuesForTrack(cuesBuf, cuesContentStart, cuesContentEnd, null, timecodeScale), seen = {}, pts = [];
+        all.forEach(function (c) { if (!seen[c.clusterPos]) { seen[c.clusterPos] = 1; pts.push({ timeSec: c.timeSec, clusterPos: c.clusterPos }); } });
+        pts.sort(function (a, b) { return a.timeSec - b.timeSec; });
+        if (!pts.length) return null;
+        pts.forEach(function (c, k) { c.endSec = k + 1 < pts.length ? pts[k + 1].timeSec : c.timeSec + 30; });
+        for (var t = 0; t < subTracks.length; t++) perTrackCues.push({ track: subTracks[t], cues: pts });
+        return { perTrackCues: perTrackCues, timecodeScale: timecodeScale, segmentDataStart: segmentDataStart, scan: true };
       });
     },
     describe: function (index) {
@@ -504,6 +533,15 @@ var MkvSubs = (function () {
     },
     read: function (rec, item, range, alive) {
       var ix = rec.index, off = item.off, positions = [], indexed = true;
+      if (ix.scan) return readWholeCluster(range, off, item.tracks.map(function (i) { return ix.perTrackCues[i].track.number; }), ix.timecodeScale).then(function (found) {
+        var out = [];
+        if (!alive()) return out;
+        item.tracks.forEach(function (i) {
+          var tr = ix.perTrackCues[i].track;
+          found.forEach(function (f) { if (f.track !== tr.number) return; var text = subtitleText(f.text, tr.codecId); if (text.trim()) out.push({ track: i, s: f.startSec, e: f.endSec, text: text }); });
+        });
+        return out;
+      });
       var perTrackCues = item.tracks.map(function (i) { return ix.perTrackCues[i]; });
       perTrackCues.forEach(function (t) { t.cues.forEach(function (c) {
         if (ix.segmentDataStart + c.clusterPos !== off) return;

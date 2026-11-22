@@ -133,6 +133,15 @@ function search(q, cb) {
       if (errs.length === langs.length) return cb({ error: 'search', message: errs[0].message });
       var out = [], counts = {};
       langs.forEach(function (x) { (got[x] || []).forEach(function (r) { out.push(r); }); counts[x || 'any'] = (got[x] || []).length; });
+      /* Nothing for an episode asked as show + season + episode: OpenSubtitles files some new shows' episodes
+         without the show linked (a 2025 Netflix series came back empty while Plex found several).  Asked once
+         more as words, "the altruists s01e02", the way their release names are written. */
+      if (!out.length && !q._words && q.type === 'episode' && +q.season > 0 && +q.episode > 0) {
+        var again = {}; Object.keys(q).forEach(function (k) { again[k] = q[k]; });
+        var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+        again.query = str(q.query, 100) + ' s' + pad(+q.season) + 'e' + pad(+q.episode); again.season = 0; again.episode = 0; again.type = ''; again._words = true;
+        return search(again, function (r) { if (r && r.results) { r.results = r.results.filter(function (x) { return !x.season || (x.season === +q.season && x.episode === +q.episode); }); } cb(r); });
+      }
       cb({ results: out, total: total, perLang: counts });
     });
   });
