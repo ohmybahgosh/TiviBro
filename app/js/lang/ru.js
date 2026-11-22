@@ -2087,5 +2087,21 @@ I18n.add('ru', {
   "Logos and numbers": "Логотипы и номера",
   "Clock and info panel": "Часы и инфопанель",
   "Posters": "Постеры",
-  "Shelves": "Полки"
+  "Shelves": "Полки",
+  "Merge groups": "Объединение групп",
+  "Rename groups": "Переименование групп",
+  "Sort each group": "Сортировка в группах",
+  "Sort channels…": "Сортировать каналы…",
+  "Next event first": "Сначала ближайшие события",
+  "Up one": "На одну вверх",
+  "Down one": "На одну вниз",
+  "To the top": "В начало",
+  "To the bottom": "В конец",
+  "Back to the usual order": "Вернуть обычный порядок",
+  "In this order": "В этом порядке",
+  "Into a new group…": "В новую группу…",
+  "Into one of them…": "В одну из них…",
+  "Into another group…": "В другую группу…",
+  "Clear the ticks": "Снять отметки",
+  "Merged now": "Сейчас объединены"
 });

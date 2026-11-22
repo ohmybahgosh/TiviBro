@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **The channel in Settings shows its picture again** (discussion #36).  In alpha 196 the box kept for it was drawn over the video, so it stayed black with the sound playing.
+- **Quick menu buttons in your order** (Settings > Remote and buttons > Quick menu buttons, discussion #36).  Hold OK on a button to move it (up one, down one, to the top or the bottom), or drag ≡ in the phone app.  Back to the usual order is one button.
+- **Stream info is in the Options menu** (Red in fullscreen) too.
+- **Watch the trailer of a movie on now:** Hold OK on a channel showing a movie TiviBro knows (Movies on now, or any channel whose guide has one) and pick Watch the trailer.  Needs a TMDB token.
+- **Hold OK moves a group** in Settings > Channels and groups > Manage groups on the TV, like the drag in the phone app.
+
 ## 0.6.0 (alpha 196, 2026-11-22)
 
 Pre-release: expect rough edges, and keep a backup before installing.

@@ -262,7 +262,8 @@ body.guide1 .gp .gs{display:none}
    right (the help panel's column, which moves down under it), on a page and on the home alike, so it is never drawn
    over the settings nor squeezed beside them.  The home's sections make room for it. */
 .set-main{flex:1;min-width:0;display:flex;flex-direction:column}
-.set-now{display:none;position:absolute;top:84px;right:56px;width:400px;flex-direction:column;gap:14px;z-index:1}
+/* No z-index: the picture (#stage, z-index 1) is drawn over the box saved for it, never under it (it was all black, sound only). */
+.set-now{display:none;position:absolute;top:84px;right:56px;width:400px;flex-direction:column;gap:14px}
 #viewSettings.pip .set-now{display:flex}
 .set-now .set-preview{width:400px;height:225px}
 #viewSettings.pip.home .set-home{padding-right:454px}

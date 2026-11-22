@@ -2084,5 +2084,21 @@ I18n.add('es', {
   "Logos and numbers": "Logotipos y números",
   "Clock and info panel": "Reloj y panel de información",
   "Posters": "Pósteres",
-  "Shelves": "Estantes"
+  "Shelves": "Estantes",
+  "Merge groups": "Combinar grupos",
+  "Rename groups": "Renombrar grupos",
+  "Sort each group": "Ordenar cada grupo",
+  "Sort channels…": "Ordenar canales…",
+  "Next event first": "Próximo evento primero",
+  "Up one": "Subir uno",
+  "Down one": "Bajar uno",
+  "To the top": "Al principio",
+  "To the bottom": "Al final",
+  "Back to the usual order": "Volver al orden habitual",
+  "In this order": "En este orden",
+  "Into a new group…": "En un grupo nuevo…",
+  "Into one of them…": "En uno de ellos…",
+  "Into another group…": "En otro grupo…",
+  "Clear the ticks": "Quitar las marcas",
+  "Merged now": "Combinados ahora"
 });

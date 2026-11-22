@@ -498,10 +498,7 @@ var Settings = (function () {
     out.push(head('In the player')); out = out.concat(keysPage('player'));
     out.push(head('In the guide')); out = out.concat(keysPage('guide'));
     out.push(head('On the Channels screen')); out = out.concat(keysPage('list'));
-    out.push(head('Quick menu buttons'));
-    out.push(info('Which buttons show when you press OK in fullscreen.  Buttons only appear when they apply, e.g. Audio needs two or more tracks.', ''));
-    (function () { var off = S().qpHidden || (S().qpHidden = {});
-      Views.QP_BUTTONS.forEach(function (b) { out.push(toggle(b[1], '', function () { return !off[b[0]]; }, function (v) { if (v) delete off[b[0]]; else off[b[0]] = 1; save(); })); }); })();
+    out.push(page('Quick menu buttons', 'Which buttons show when you press OK in fullscreen, and in what order.', 'Quick menu buttons', quickButtons));
     out.push(head('Extra buttons'));
     out.push(tvOnly(action('Learn a button', 'For keys the app does not know yet.  Press this, then press the button.  Some buttons belong to the TV (Home, Live TV, the TV\'s own Guide, Input, Settings): webOS acts on them before TiviBro hears them, so they leave TiviBro and can\'t be learned.', function () {
       U.toast('Press the button to learn', 5000);
@@ -997,8 +994,33 @@ var Settings = (function () {
           move: function (by) { moveAmong(g, list, by); } });
       });
     }
-    if (on.length) { out.push(head('Shown (' + on.length + '): OK, ◀ or ▶ hides a group', 'Shown (' + on.length + '): drag ≡ to move a group')); rows(on); }
-    if (off.length) { out.push(head('Hidden (' + off.length + '): OK, ◀ or ▶ shows a group', 'Hidden (' + off.length + ')')); rows(off); }
+    var tip = info('OK shows or hides a group.  Hold OK on one to move it.', ''); tip.phoneLabel = 'Switch a group on or off.  Drag ≡ to move it.';
+    out.push(tip);
+    if (on.length) { out.push(head('Shown (' + on.length + ')')); rows(on); }
+    if (off.length) { out.push(head('Hidden (' + off.length + ')')); rows(off); }
+    return out;
+  }
+
+  /* Quick menu buttons (Settings > Remote and buttons): each one on or off, in the order they show when you press OK
+     in fullscreen.  Hold OK on one (or drag ≡ on the phone) moves it, so the one you use most can come first
+     (discussion #36: Stream info, last). */
+  function quickButtons() {
+    var out = [], off = S().qpHidden || (S().qpHidden = {}), order = Views.qpOrder();
+    var name = {}; Views.QP_BUTTONS.forEach(function (b) { name[b[0]] = b[1]; });
+    var tip = info('OK turns a button on or off.  Hold OK on one to move it.  Buttons only appear when they apply: Audio needs two or more tracks, Record a USB drive or share.', '');
+    tip.phoneLabel = 'Switch a button on or off.  Drag ≡ to move it.  Buttons only appear when they apply: Audio needs two or more tracks, Record a USB drive or share.';
+    out.push(tip);
+    out.push(head('In this order'));
+    order.forEach(function (id, i) {
+      var it = toggle(name[id], '', function () { return !off[id]; }, function (v) { if (v) delete off[id]; else off[id] = 1; save(); });
+      it.move = function (by) {
+        var o = Views.qpOrder(), a = o.indexOf(id), b = Math.max(0, Math.min(o.length - 1, a + by));
+        if (a < 0 || a === b) return;
+        o.splice(b, 0, o.splice(a, 1)[0]); S().qpOrder = o; save(); build();
+      };
+      out.push(it);
+    });
+    out.push(action('Back to the usual order', '', function () { S().qpOrder = []; save(); build(); U.toast('Quick menu buttons in the usual order'); }));
     return out;
   }
 
@@ -2202,7 +2224,18 @@ var Settings = (function () {
   function lastFocusable() { var G = parts[grp] || { start: 0, end: items.length }; for (var i = G.end - 1; i >= G.start; i--) if (focusable(i)) return i; return -1; }
   function focusable(i) { var it = items[i]; return !!(it && !it.head && !it.info && !it.preview); }
 
+  // Move a row (Hold OK on it): one place up or down, or to the top or bottom of its list.
+  function moveMenu(it) {
+    UI.menu(T('Move'), [
+      { label: 'Up one', action: function () { it.move(-1); } },
+      { label: 'Down one', action: function () { it.move(1); } },
+      { label: 'To the top', action: function () { it.move(-1000); } },
+      { label: 'To the bottom', action: function () { it.move(1000); } }
+    ], null, { sub: it.label });
+  }
   function keys(a) {
+    // Hold OK on a row that can be moved (a group in Manage groups, a quick menu button): where to.
+    if (a === 'hold' && !onHome && zone === 'body' && items[sel] && items[sel].move) { moveMenu(items[sel]); return true; }
     // The channel playing in the corner (views.js pip): Hold OK goes back to it in fullscreen.
     if (a === 'hold' && Views.pipOn) { Views.pipFull(); return true; }
     if (onHome) return homeKeys(a);

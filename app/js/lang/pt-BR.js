@@ -2594,5 +2594,21 @@ I18n.add('pt-BR', {
   "Logos and numbers": "Logos e números",
   "Clock and info panel": "Relógio e painel de informações",
   "Posters": "Pôsteres",
-  "Shelves": "Prateleiras"
+  "Shelves": "Prateleiras",
+  "Merge groups": "Mesclar grupos",
+  "Rename groups": "Renomear grupos",
+  "Sort each group": "Ordenar cada grupo",
+  "Sort channels…": "Ordenar canais…",
+  "Next event first": "Próximo evento primeiro",
+  "Up one": "Subir um",
+  "Down one": "Descer um",
+  "To the top": "Para o topo",
+  "To the bottom": "Para o fim",
+  "Back to the usual order": "Voltar à ordem habitual",
+  "In this order": "Nesta ordem",
+  "Into a new group…": "Em um grupo novo…",
+  "Into one of them…": "Em um deles…",
+  "Into another group…": "Em outro grupo…",
+  "Clear the ticks": "Limpar as marcas",
+  "Merged now": "Mesclados agora"
 });

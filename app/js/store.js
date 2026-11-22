@@ -81,6 +81,7 @@ var Store = (function () {
     remindAction: 'ask',        // ask | switch
     remindTimeout: 10,          // seconds the reminder question (and the TV's alert) stays up
     qpHidden: {},               // quick menu buttons switched off
+    qpOrder: [],                // quick menu buttons in your order (ids); empty for the usual one
     newDays: 7,                 // days a channel stays in Recently added (0 = no such group)
     audioLang: '',              // preferred audio language ('' = the stream's own choice), see U.lang
     audioFallback: '',          // when the preferred audio language is missing, try this one ('' = keep the track playing)

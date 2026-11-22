@@ -1971,7 +1971,10 @@ var Views = (function () {
     var fav = L.isFav(c.k);
     var blocked = !!Store.edits.blockedChannels[c.k];
     var team = Teams.ofChannel(c), follow = team && Teams.follows(team.id);
+    // A movie on now (Movies on now, or any channel the guide shows a matched movie on): its trailer from TMDB.
+    var nnM = Epg.nowNext ? Epg.nowNext(c) : null, onM = nnM && nnM.now && typeof Movies !== 'undefined' ? Movies.of(c, nnM.now) : null;
     return [
+      onM && onM.id && typeof MediaMoviePage !== 'undefined' && typeof PalmServiceBridge !== 'undefined' && { label: 'Watch the trailer', sub: RAW(onM.title || ''), action: function () { movieTrailer(onM); } },
       // Another playlist not mixed into Favorites and your groups: neither is offered (one already a favorite can still be taken out).
       (fav || L.canGroup(c)) && { label: fav ? 'Remove from Favorites' : 'Add to Favorites', action: function () { var on = L.toggleFav(c.k); if (on == null) return; U.toast(on ? 'Added to Favorites' : 'Removed from Favorites'); refreshLists(true); } },
       team && { label: RAW(T(follow ? 'Stop following the {x}' : 'Follow the {x}', { x: team.name })), sub: follow ? '' : 'in My teams, with its games', action: function () {
@@ -2040,6 +2043,15 @@ var Views = (function () {
       { label: 'HLS', sub: 'copes better with a weak connection', current: on === 'hls', action: function () { use('hls'); } },
       { label: 'MPEG-TS', sub: 'usually switches channels faster', current: on === 'ts', action: function () { use('ts'); } }
     ], null, { sub: RAW(L.name(c)) });
+  }
+  // A movie's TMDB trailer on YouTube (Hold OK on a channel showing it), or a word when TMDB has none.
+  function movieTrailer(m) {
+    var back = UI.getHandler();                  // the screen the menu was opened on gets the remote back after
+    U.toast('Looking for the trailer…', 4000);
+    MediaMoviePage.trailerFor(m.id, function (t) {
+      if (!t) { U.toast('TMDB has no trailer for ' + (m.title || 'this movie')); return; }
+      MediaMoviePage.watchTrailer(t, function () { if (back) UI.setHandler(back); }, m.title || '');
+    });
   }
   function chanMenu(c, gid) {
     if (!c) return;
@@ -2119,7 +2131,20 @@ var Views = (function () {
     add('info', { label: 'Stream info', icon: 'info', run: function () { closePanel(); streamInfo(); } });
     add('reconnect', { label: 'Reconnect', icon: 'reconnect', run: function () { closePanel(); Player.retryNow(); U.toast('Reconnecting'); } });
     if (!a.length) a.push({ id: 'list', label: 'Channel guide', icon: 'list', run: function () { closePanel(); openOverlay(); } });
-    return a;
+    return qpOrdered(a);
+  }
+  /* The quick buttons in your order (Settings > Remote and buttons > Quick menu buttons, discussion #36: Stream info
+     used often but last).  qpOrder lists button ids; one it doesn't name keeps its usual place among the rest. */
+  function qpOrder() {
+    var o = (Store.settings.qpOrder || []).filter(function (id) { return QP_BUTTONS.some(function (b) { return b[0] === id; }); });
+    QP_BUTTONS.forEach(function (b) { if (o.indexOf(b[0]) < 0) o.push(b[0]); });
+    return o;
+  }
+  function qpOrdered(a) {
+    if (!(Store.settings.qpOrder || []).length) return a;
+    var o = qpOrder();
+    return a.map(function (x, i) { return { x: x, i: i, p: o.indexOf(x.id) }; })
+      .sort(function (p, q) { return p.p - q.p || p.i - q.i; }).map(function (y) { return y.x; });
   }
   /* Closed captions: one switch for every channel, like a TV's CC button.  OK on it in the quick menu
      turns them on or off and leaves the menu open, so you can see what changed. */
@@ -2438,6 +2463,7 @@ var Views = (function () {
     if (subs.length || mode === 'vod') items.push({ label: 'Subtitles', sub: (subs.filter(function (t) { return t.mode === 'showing'; })[0] || {}).label || subtitleStatus(), action: subtitleMenu });
     if (mode !== 'vod') items.push({ label: 'Closed captions', sub: ccLabel(), action: ccToggle });
     items.push({ label: 'Sleep timer', sub: sleepAt ? 'stops at ' + U.hhmm(sleepAt) : 'off', action: sleepMenu });
+    items.push({ label: 'Stream info', sub: 'and the buffer', action: function () { streamInfo(); } });
     items.push({ label: 'Reconnect stream', action: function () { Player.retryNow(); } });
     UI.menu(mode === 'vod' && vod ? RAW(vod.meta.title) : playing ? RAW(L.name(playing)) : 'Player', items);
   }
@@ -2615,7 +2641,7 @@ var Views = (function () {
     pipUpdate: pipUpdate, pipStop: pipStop, pipFull: pipFull, pipRestart: pipRestart, get pipOn() { return pipOn(); },
     init: init, reload: reload, switchTab: switchTab, setZone: setZone, resume: resume, refreshLists: refreshLists,
     closeNav: closeNav, chanMenu: chanMenu, startChannel: startChannel, goFull: goFull, playCatchup: playCatchup, refreshVodMeta:function(){if(mode==='vod')osd(true);}, playVod: playVod,
-    manageVisibility: manageVisibility, canManage: canManage, PALETTES: PALETTES, PALETTE_NAMES: PALETTE_NAMES, palette: palette, kindColours: kindColours, emptyFor: emptyFor, QP_BUTTONS: QP_BUTTONS, openReminder: openReminder, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, bankedBack: bankedBack, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
+    manageVisibility: manageVisibility, canManage: canManage, PALETTES: PALETTES, PALETTE_NAMES: PALETTE_NAMES, palette: palette, kindColours: kindColours, emptyFor: emptyFor, QP_BUTTONS: QP_BUTTONS, qpOrder: qpOrder, openReminder: openReminder, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, bankedBack: bankedBack, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
     filterChanged: filterChanged,
     get group() { return curGroup; }, set group(g) { curGroup = g; },
     get full() { return full; }, get tab() { return tab; }, get zone() { return zone; }, get playing() { return playing; }, get vod() { return vod; }, runAction: runAction,

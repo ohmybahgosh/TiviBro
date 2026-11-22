@@ -41,6 +41,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await ev(() => Views.switchTab('settings')); await page.waitForTimeout(1200);
   const st = await ev(() => ({ pip: Views.pipOn, stage: document.getElementById('stage').getBoundingClientRect().toJSON(), slot: document.getElementById('setPreview').getBoundingClientRect().toJSON(), t0: document.getElementById('video').currentTime, info: document.querySelector('.set-now-info').innerText }));
   ok('Settings: the channel keeps playing in the top corner', st.pip && Math.abs(st.stage.left - st.slot.left) < 2 && Math.abs(st.stage.top - st.slot.top) < 2 && st.stage.width === st.slot.width, JSON.stringify(st));
+  ok('the picture is drawn on top, not hidden under the box kept for it (it showed black, sound only)', await ev(() => { const r = document.getElementById('stage').getBoundingClientRect(); return !!document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2).closest('#stage'); }));
   ok('with its name and what is on beside it', /Now playing/.test(st.info) && st.info.split('\n').length >= 2, st.info);
   const after = await audit();
   ok('no setting cut off with the picture there (none more than without it)', after.bad.length <= before.bad.length && after.bad.every((x) => before.bad.indexOf(x) >= 0), JSON.stringify(after.bad.filter((x) => before.bad.indexOf(x) < 0)));
