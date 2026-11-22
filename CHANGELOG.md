@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 199, 2026-11-22)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 199
 
 - **My teams uses ESPN's schedule more:**
   - The guide's top panel shows ESPN's word on a game of your teams: the score and period while it's on, Final after, and before it both teams' records and ESPN's start (with the guide's time if it says another).
@@ -12,11 +16,7 @@
 - **Guide: Right no longer sticks on an event channel's "Starts 1:00pm" block** when the guide lists it twice (from the morning and again from noon).  It goes on to the game.
 - **Buttons for a Magic Remote.**  Settings > Remote and buttons asks which remote you use (or detects it).  With a Magic Remote, which has no Play / Pause, Stop, ◀◀ ▶▶, Record or Info, those buttons are marked as missing, and Use the Magic Remote buttons puts what they do on Hold of a colour button: in fullscreen Hold Red records, Hold Yellow pauses and Hold Blue shows stream info; in the guide Hold Red records and Hold Blue gives a show's details.  The recommended action for each button follows the remote.
 
-## 0.6.0 (alpha 198, 2026-11-22)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 198
+### In alpha 198
 
 - **Buttons: no action on two buttons by mistake.**  In Settings > Remote and buttons, the list of actions for a button says which ones another button on that screen already does ("already on Yellow").  Picking one asks: move it to this button (the other then does nothing), or keep it on both.
 - **Settings home: the arrows go where you'd expect** (discussion #36).  ▶ at the end of a line of sections goes on to the next line, ◀ at its start goes back to the line before, and ▲ ▼ go to the section right above or below.  ▶ used to stop at Remote and buttons, and ▼ from Language jumped to Parental controls.
