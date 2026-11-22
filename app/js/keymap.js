@@ -145,6 +145,8 @@ var Keymap = (function () {
 
   return {
     BUTTONS: BUTTONS, ACTIONS: ACTIONS, SHORT: SHORT, CONTEXT_ACTIONS: CONTEXT_ACTIONS, DEFAULTS: DEFAULTS,
+    // What a button does out of the box on a screen (Settings marks it as the recommended one).
+    defaultOf: function (context, btn) { return (DEFAULTS[context] || {})[btn] || 'none'; },
     get: get, set: set, reset: reset, label: label, hasLong: hasLong, fixed: fixed, remote: remote, buttonsFor: buttonsFor, bufferHint: bufferHint,
     allButtons: allButtons, learn: learn, alias: alias,
     setContext: function (c) { ctx = c; }, get context() { return ctx; }

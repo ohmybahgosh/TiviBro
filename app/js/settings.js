@@ -534,7 +534,10 @@ var Settings = (function () {
       return action(label, '', function () {
         UI.menu(label, acts.map(function (a) {
           var cur = Keymap.get(ctx, btn) === a, others = cur ? [] : usedBy(a, btn), names = others.map(function (k) { return Keymap.label(k); }).join(', ');
-          return { label: Keymap.ACTIONS[a], sub: cur ? 'current' : others.length ? T('already on {x}', { x: names }) : '', current: cur, action: function () {
+          // Its own action out of the box is marked recommended, so a button changed by mistake is easy to put back.
+          var rec = Keymap.defaultOf && Keymap.defaultOf(ctx, btn) === a && a !== 'none';
+          var notes = [cur ? T('current') : '', rec ? T('recommended') : '', others.length ? T('already on {x}', { x: names }) : ''].filter(Boolean).join(', ');
+          return { label: Keymap.ACTIONS[a], sub: notes, current: cur, action: function () {
             if (!others.length) { Keymap.set(ctx, btn, a); paint(); return; }
             UI.menu(T('{x} is already on {y}', { x: T(Keymap.ACTIONS[a]), y: names }), [
               { label: 'Move it to ' + label, sub: names + ' will do nothing', action: function () { others.forEach(function (k) { Keymap.set(ctx, k, 'none'); }); Keymap.set(ctx, btn, a); paint(); U.toast(T('{x} moved to {y}', { x: T(Keymap.ACTIONS[a]), y: label })); } },
@@ -2416,7 +2419,7 @@ var Settings = (function () {
     ids.filter(function (id) { return TILES.indexOf(id) < 0; }).forEach(function (id) {
       var i = -1; SECTIONS.forEach(function (x, k) { if (x[0] === id) i = k; });
       var c = U.el('div', 'sh-chip', navTitle(SECTIONS[i])); chips.appendChild(c);
-      hitems.push({ el: c, row: row + Math.floor(col / 6), col: col % 6, go: function () { goSection(id); } }); col++;
+      hitems.push({ el: c, chip: true, row: row + Math.floor(col / 6), col: col % 6, go: function () { goSection(id); } }); col++;
     });
     homeEl.appendChild(chips);
     hitems.forEach(function (h, n) { h.el.addEventListener('click', function () { hsel = n; homePaint(); h.go(); }); h.el.addEventListener('mousemove', function () { if (UI.pointer && hsel !== n) { hsel = n; homePaint(); } }); });
@@ -2435,16 +2438,26 @@ var Settings = (function () {
     if (typeof Views !== 'undefined' && Views.pipUpdate) try { Views.pipUpdate(); } catch (e) {}
   }
   function goSection(id) { homeShow(false); for (var i = 0; i < SECTIONS.length; i++) if (SECTIONS[i][0] === id && shown(i)) { sec = i; stack = []; sel = 0; zone = 'body'; build(); return; } }
-  // The remote on the home: arrows move between rows (to the nearest column), OK opens, Back goes to the menu bar.
+  /* The remote on the home: arrows move by where things are on the screen (the chips wrap to as many lines as
+     their words need, discussion #36: ▶ stopped at the end of a line and ▼ jumped to the wrong chip), OK opens,
+     Back goes to the menu bar.  ▶ at the end of a line of chips goes on to the next line, ◀ at its start back. */
   function homeKeys(a) {
     var h = hitems[hsel]; if (!h) return true;
+    var at = hitems.map(function (x, n) { var r = x.el.getBoundingClientRect(); return { n: n, top: Math.round(r.top), cx: r.left + r.width / 2 }; });
+    var me = at[hsel], line = at.filter(function (x) { return Math.abs(x.top - me.top) < 12; }).sort(function (p, q) { return p.cx - q.cx; });
     if (a === 'left' || a === 'right') {
-      var same = hitems.map(function (x, n) { return n; }).filter(function (n) { return hitems[n].row === h.row; }), k = same.indexOf(hsel) + (a === 'left' ? -1 : 1);
-      if (k >= 0 && k < same.length) hsel = same[k]; else if (a === 'left') Views.tabBar(function () { UI.setHandler(keys); homePaint(); });
+      var k = line.map(function (x) { return x.n; }).indexOf(hsel) + (a === 'left' ? -1 : 1), nx = a === 'left' ? hsel - 1 : hsel + 1;
+      if (k >= 0 && k < line.length) hsel = line[k].n;
+      else if (h.chip && hitems[nx] && hitems[nx].chip) hsel = nx;                 // the next or last line of chips
+      else if (a === 'left') Views.tabBar(function () { UI.setHandler(keys); homePaint(); });
     } else if (a === 'up' || a === 'down') {
-      var r = h.row + (a === 'up' ? -1 : 1), best = -1;
-      hitems.forEach(function (x, n) { if (x.row === r && (best < 0 || Math.abs(x.col - h.col) < Math.abs(hitems[best].col - h.col))) best = n; });
-      if (best >= 0) hsel = best; else if (a === 'up') Views.tabBar(function () { UI.setHandler(keys); homePaint(); });
+      var tops = at.map(function (x) { return x.top; }).filter(function (t, i, l) { return l.indexOf(t) === i && (a === 'up' ? t < me.top - 11 : t > me.top + 11); })
+        .sort(function (p, q) { return a === 'up' ? q - p : p - q; });
+      if (tops.length) {
+        var best = null;
+        at.forEach(function (x) { if (Math.abs(x.top - tops[0]) < 12 && (!best || Math.abs(x.cx - me.cx) < Math.abs(best.cx - me.cx))) best = x; });
+        hsel = best.n;
+      } else if (a === 'up') Views.tabBar(function () { UI.setHandler(keys); homePaint(); });
     } else if (a === 'ok') { h.go(); return true; }
     else if (a === 'yellow' || a === 'search') { homeShow(false); openFind(); return true; }
     else if (a === 'back') { Views.tabBar(function () { UI.setHandler(keys); homePaint(); }); return true; }

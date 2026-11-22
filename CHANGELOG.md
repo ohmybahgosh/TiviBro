@@ -3,6 +3,8 @@
 ## Unreleased
 
 - **Buttons: no action on two buttons by mistake.**  In Settings > Remote and buttons, the list of actions for a button says which ones another button on that screen already does ("already on Yellow").  Picking one asks: move it to this button (the other then does nothing), or keep it on both.
+- **Settings home: the arrows go where you'd expect** (discussion #36).  ▶ at the end of a line of sections goes on to the next line, ◀ at its start goes back to the line before, and ▲ ▼ go to the section right above or below.  ▶ used to stop at Remote and buttons, and ▼ from Language jumped to Parental controls.
+- **Each button's recommended action is marked** in Settings > Remote and buttons, so a button changed by mistake is easy to put back.
 - **Search settings finds the Remote and buttons settings** (Quick menu buttons, the button for each action).  That section was too long and search skipped it.
 
 ## 0.6.0 (alpha 197, 2026-11-22)
