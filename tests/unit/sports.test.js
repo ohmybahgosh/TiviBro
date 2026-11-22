@@ -8,7 +8,11 @@ eval(fs.readFileSync(path.join(__dirname, '../../app/js/events.js'), 'utf8') + '
 let fail = 0;
 const ok = (name, c, x) => { if (!c) { fail++; console.log('FAIL ' + name + (x !== undefined ? '  ' + JSON.stringify(x) : '')); } else console.log('PASS ' + name); };
 const fx = JSON.parse(fs.readFileSync(path.join(__dirname, '../fixtures/espn-nhl-scoreboard.json'), 'utf8'));
-const ev = fx.events[0], start = Date.parse(ev.date);
+// The fixture's game moved to later today (up to two hours from now, before midnight): the guide is searched
+// from now on, so a fixed date passed or failed by the time of day the tests ran.
+const ev = fx.events[0], midnight = new Date(); midnight.setHours(24, 0, 0, 0);
+ev.date = new Date(Math.floor(Math.min(Date.now() + 2 * 3600e3, midnight.getTime() - 120e3) / 60000) * 60000).toISOString().replace(/:00\.000Z$/, 'Z');
+const start = Date.parse(ev.date);
 let progs = {};
 global.Epg = { xml: false, epgId: () => '', onUpdate() {}, findDesc: () => Promise.resolve([]), search(test) { const out = []; Object.keys(progs).forEach(k => progs[k].forEach(p => { if (test(p.t)) out.push({ key: k, p }); })); return out; } };
 const groups = [{ id: 'g1', name: 'US Sports' }, { id: 'g2', name: 'US Locals' }, { id: 'g3', name: 'Movies' }];

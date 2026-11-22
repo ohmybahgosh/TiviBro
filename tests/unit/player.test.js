@@ -54,6 +54,7 @@ function setup(opts) {
   if (opts.mkvSubs) ctx.MkvSubs = opts.mkvSubs;
   if (opts.convert) ctx.Convert = opts.convert;
   if (opts.library) ctx.Library = opts.library;
+  if (opts.ui) { ctx.UI = opts.ui; ctx.U.el = (tag, cls, text) => ({ tag, cls, text }); }
   // What playback learns (playmemo.js), in a localStorage that can outlive one setup (an app restart).
   if (opts.memo) {
     const ls = opts.memo;
@@ -380,6 +381,17 @@ const p152 = (async () => {
   ok('#152: refused again, the error says what the file holds', /^error: .*picture is H\.264 and its sound DTS/.test(ls), ls);
   ok('#152: the helper is asked once only', asked.length === 1, asked.length);
   ok('#152: a converted stream that fails too is not followed by the same file again', t2.logs.filter(l => /^Start /.test(l)).length - startsBefore <= 1, t2.logs.filter(l => /^Start /.test(l)).length - startsBefore);
+
+  // The converter turned off in Settings: the movie can't play as it is, so it asks; "Try it once" reads the file.
+  const asked3 = [], panels = [];
+  const conv3 = Object.assign({}, conv, { on: () => false, probe: u => { asked3.push(u); return Promise.resolve({ video: 'h264', audio: [{ codec: 'dts', channels: 6 }], duration: 6000 }); } });
+  const t3 = setup({ convert: conv3, ui: { panel: (title, body, buttons, back) => panels.push({ title, buttons, back }) } });
+  t3.P.play({ n: 'Refused off', url: 'http://p/movie/u/p/153.mkv' }, { live: false });
+  for (let i = 0; i < 20 && !panels.length; i++) { t3.video.error = { code: 4 }; (t3.video.l.error || []).forEach(f => f()); if (t3.last() && t3.last().h && t3.last().h.err) t3.last().h.err('MediaError', 'FormatUnsupported', {}); t3.run(3000); await new Promise(r => setImmediate(r)); }
+  ok('#152: with the converter off, a refused movie asks before trying it', panels.length === 1 && !asked3.length && panels[0].buttons.map(b => b.label).join() === 'Try it once,Turn the converter on,Not now', panels.map(p => p.buttons.map(b => b.label)));
+  panels[0].buttons[0].action();
+  for (let i = 0; i < 5; i++) await new Promise(r => setImmediate(r));
+  ok('#152: "Try it once" reads the file and plays it through the converter', asked3.length === 1 && t3.logs.some(l => /through the audio converter/.test(l)), t3.logs.slice(-4));
 })();
 
 t = setup();

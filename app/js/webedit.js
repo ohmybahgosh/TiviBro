@@ -741,7 +741,18 @@ var WebEdit = (function () {
     return l.slice(-20).map(function (x) { return Log.redact ? Log.redact(x) : x; });
   }
   var busyAt = 0;
+  /* Looks that failed in a row (the network helper stopped, issue #153: one every 2 seconds for hours, each in the
+     log): wait longer after each, up to a minute, and say so in the log the first time and then every 20th. */
+  var fails = 0, quietUntil = 0;
+  function failed(e) {
+    fails++;
+    quietUntil = Date.now() + Math.min(60000, 2000 * Math.pow(2, Math.min(fails, 5)));
+    if (fails === 1 || fails % 20 === 0) Log.warn('webedit', 'Editor check failed' + (fails > 1 ? ' (' + fails + ' times in a row)' : '') + ': ' + e.message);
+  }
+  /* Every 2 seconds while the editor is on: brings in what the editor sent (a draft, its edits, commands from the
+     page), pushes the TV's own changes out, and reads whether the editor still runs and who has it open. */
   function tick() {
+    if (Date.now() < quietUntil) return;
     // Something in the last look still hasn't finished after 3 minutes (a stored draft or backup that
     // never answered): look again rather than stop for good (issue #50).
     if (busy && Date.now() - busyAt > 180000) { Log.warn('webedit', 'The last look at the editor never finished; looking again'); busy = false; }
@@ -756,7 +767,8 @@ var WebEdit = (function () {
       status = s;
       if (!s.running && on) { on = false; clearInterval(timer); U.toast('The web editor stopped'); }
       if (onStatus && (before !== s.clients || !s.running)) onStatus(s);
-    }).catch(function (e) { Log.warn('webedit', 'Editor check failed: ' + e.message); })
+      if (fails) { Log.info('webedit', 'Editor checks work again after ' + fails + ' failed'); fails = 0; quietUntil = 0; }
+    }).catch(failed)
       .then(function () { busy = false; });
   }
 

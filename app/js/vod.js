@@ -832,7 +832,22 @@ var Vod = (function () {
   /* A provider's show with no trailer of its own: TMDB's, with your token (series.js finds the show). */
   var tmdbTr = {}, tmdbTrP = {};
   var saidNoToken = false;
+  /* The TMDB token as of the last trailer look-up.  One added or changed since (Settings > API keys, the phone or
+     the web editor) clears what was found without it, so titles with no trailer look again without a restart
+     (discussion #36: trailers only showed up after restarting the app). */
+  var trTok = null;
+  function tokenCheck() {
+    var t = typeof MediaStore !== 'undefined' && MediaStore.tmdbToken ? MediaStore.tmdbToken() : '';
+    if (t === trTok) return;
+    if (trTok !== null) {
+      tmdbTr = {}; tmdbTrP = {}; tmdbMv = {}; trSaid = {}; saidNoToken = false;
+      info.forEach(function (m, k) { if (m && !m.trailer) info.delete(k); });
+      Log.info('vod', 'TMDB token ' + (t ? 'changed' : 'removed') + ': trailers will be looked up again');
+    }
+    trTok = t;
+  }
   function tmdbOn() {
+    tokenCheck();
     var on = typeof MediaMoviePage !== 'undefined' && typeof MediaStore !== 'undefined' && MediaStore.tmdbToken && !!MediaStore.tmdbToken() && typeof Media !== 'undefined';
     // Said once in the log, so a report shows why a title has no trailer (discussion #36).
     if (!on && !saidNoToken) { saidNoToken = true; Log.info('vod', 'Trailers: no TMDB token, so only the provider\'s own trailers show'); }
@@ -870,6 +885,7 @@ var Vod = (function () {
   }
   function fetchInfo() {
     var it = itemsVL.current();
+    tokenCheck();
     if (it && !it.ep && kind === 'series') showTrailer(it, true);
     if (!it || it.ep || kind !== 'movie' || info.has(key(it))) return;
     loadInfo(it, function () { if (itemsVL.current() === it) showInfo(); });
@@ -1195,6 +1211,7 @@ var Vod = (function () {
       var tv = typeof Series !== 'undefined' ? Series.show(it.name, it.year, 'strong') : null;
       return { plot: it.plot && it.plot.length >= 40 ? it.plot : (tv && tv.plot) || it.plot || '', genre: tv && tv.genre, year: it.year || (tv && tv.year), rating: tv && tv.rating, backdrop: tv && (tv.backdropHd || tv.backdrop) || '', logo: tv && tv.logo || '', cast: tv && tv.cast };
     }
+    tokenCheck();
     var k = key(it), m = info.get(k);
     if (m === undefined && then) loadInfo(it, then);
     if (!m) return { plot: it.plot || '' };

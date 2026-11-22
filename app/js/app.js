@@ -774,6 +774,8 @@ var App = (function () {
 
   function open(p) {
     loading('Loading ' + (p.name || 'channels') + '…');
+    // Said before the read, so a report from a TV that closed while reading a big list shows it was then (issue #153).
+    Log.info('app', 'Opening the channel list kept from the last load');
     return Store.bigGet(cacheKey(p)).then(function (cached) {
       if (cached && cached.sig === Source.sig(p) && cached.channels && cached.channels.length) {
         Log.info('app', 'Opened ' + cached.channels.length + ' channels kept from the last load');

@@ -914,7 +914,12 @@ var Player = (function () {
     // A movie that was playing here a moment ago is not a format the TV can't decode (issue #34).
     if (isFile() && cur.everPlayed) return state('error', CLOSED);
     // A movie the TV's player refused outright: one more try through the helper's converter (issue #152).
-    if (isFile() && !cur.conv && !cur.rescued && !cur.lastHttp && window.Convert && Convert.on() && /^https?:/i.test(cur.origUrl || cur.url)) { cur.rescued = true; return rescue(myToken); }
+    // With the converter turned off in Settings, the movie can't play as it is anyway: ask before trying it once.
+    if (isFile() && !cur.conv && !cur.rescued && !cur.lastHttp && window.Convert && /^https?:/i.test(cur.origUrl || cur.url)) {
+      cur.rescued = true;
+      if (Convert.on()) return rescue(myToken);
+      if (window.UI && UI.panel) return askRescue(myToken);
+    }
     var dr = cur.ch && cur.ch.drm;
     if (dr && !cur.lastHttp) return state('error', 'This channel is protected (' + ({ widevine: 'Widevine', playready: 'PlayReady', clearkey: 'ClearKey' }[dr.type] || dr.type) + '), and this TV could not play it' + (cur.dashWhy ? ': ' + cur.dashWhy : '') + '.  It plays in apps the provider supports.');
     if (oneConnBusy()) return state('error', oneConnBusy());
@@ -1448,6 +1453,15 @@ var Player = (function () {
      that fails too, the error names what the file holds, so it's clear what the TV couldn't play. */
   function rescue(my) {
     var url = cur.origUrl || cur.url;
+    // A login that allows one connection can still be counting the TV player's for a few seconds: one more look then.
+    var oneConn = typeof Library !== 'undefined' && Library.maxConn && Library.maxConn((plWrap().pl || {}).id) === 1;
+    function probe() {
+      return Convert.probe(url).catch(function (e) {
+        if (!oneConn || my !== token) throw e;
+        Log.info('player', 'Could not check the file yet (' + (e && e.message || e) + '); this login allows one connection, looking again in 3 s');
+        return new Promise(function (r) { setTimeout(r, 3000); }).then(function () { return Convert.probe(url); });
+      });
+    }
     state('loading', T('Checking what this video is made of…'));
     Convert.status(true).then(function (s) {
       if (my !== token || !cur) return;
@@ -1457,7 +1471,7 @@ var Player = (function () {
         'The audio converter (2 MB, kept on the TV\'s storage) can repack it into a form the TV plays, turning the sound into Dolby Digital.  Get it and try again?');
     }, function () { giveUp(my); });
     function look() {
-      Convert.probe(url).then(function (info) {
+      probe().then(function (info) {
         if (my !== token || !cur) return;
         var aud = (info && info.audio) || [], vid = (info && info.video) || '';
         if (!vid && !aud.length) { Log.warn('player', 'The helper could not read this file either'); return giveUp(my); }
@@ -1473,6 +1487,20 @@ var Player = (function () {
         });
       }).catch(function (e) { if (my !== token || !cur) return; Log.warn('player', 'Could not check the file: ' + (e && e.message || e)); giveUp(my); });
     }
+  }
+
+  /* The TV refused a movie while Settings > Audio and subtitles has the converter off (issue #152): it can't play
+     as it is, so ask whether to try it through the converter this once (or turn it back on for good). */
+  function askRescue(my) {
+    Log.info('player', 'The TV refused this movie and the audio converter is off in Settings: asking before trying it');
+    var body = U.el('p', 'panel-text', T('This TV\'s player couldn\'t open this video.  Often the sound is one the TV can\'t play, or the file is packed in a way it doesn\'t read.  The audio converter can repack it for this TV, but it is turned off in Settings > Audio and subtitles.'));
+    var done = false;
+    function go(fn) { return function () { if (done) return; done = true; if (my !== token || !cur) return; fn(); }; }
+    UI.panel(T('This video won\'t play as it is'), body, [
+      { label: 'Try it once', action: go(function () { rescue(my); }) },
+      { label: 'Turn the converter on', action: go(function () { Store.settings.convertAudio = 'auto'; try { Store.saveSettings(); } catch (e) {} rescue(my); }) },
+      { label: 'Not now', action: go(function () { giveUp(my); }) }
+    ], go(function () { giveUp(my); }));
   }
 
   /* ---------- sound the TV can't play (convert.js) ---------- */

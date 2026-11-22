@@ -13,6 +13,9 @@
 - **Turn your teams' score corner off from fullscreen:** OK > **Scores**, while one of your teams is playing.  The same switch as in Settings, so it stays off until you turn it back on.
 - **A game in overtime keeps its channels.**  When a game runs past its listing (a local station's "College Football" ends on the hour while the game goes on), Sports still lists that channel for the game and your teams' score corner stays off it.
 - **No score alerts for the game you're watching.**  A close-game alert or a final score no longer pops up over the game itself, overtime included.
+- **A refused movie gets its converter try even with the converter off** (issue #152).  With Settings > Audio and subtitles > Convert audio set to Off, a movie the TV won't open now asks whether to try it through the converter once (or turn it back on), instead of stopping at "will not play".  On logins that allow one connection, the file is looked at again after a few seconds if the TV's player was still holding the connection.
+- **A new TMDB token works at once** (discussion #36).  Trailers for titles that had none are looked up again as soon as you add or change the token, without restarting TiviBro.
+- **Quieter when the network helper stops:** the web editor's checks wait longer after each failure (up to a minute) instead of trying, and logging, every 2 seconds.  The log also says when a kept channel list starts opening, to tell where a TV short of memory closes (issue #153).
 
 ## 0.6.0 (alpha 194, 2026-11-21)
 
