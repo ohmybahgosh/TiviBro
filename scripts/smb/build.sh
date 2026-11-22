@@ -140,11 +140,13 @@ EOF
 }
 
 # ---------------------------------------------------------------- test against a throwaway Samba
+# qemu-user's runner for an ARM arch: qemu-arm-static on older hosts, qemu-arm on newer ones (Ubuntu 26.04).
+qemu_for() { command -v "qemu-$1-static" || command -v "qemu-$1" || die "test needs qemu-user (qemu-$1)"; }
 run_for() {   # run_for <arch> <args...>: the built program, through qemu-user for ARM
   local arch="$1"; shift
   case "$arch" in
-    armv7) qemu-arm-static "$OUT_DIR/tivibro-smb-armv7" "$@" ;;
-    aarch64) qemu-aarch64-static "$OUT_DIR/tivibro-smb-aarch64" "$@" ;;
+    armv7) "$(qemu_for arm)" "$OUT_DIR/tivibro-smb-armv7" "$@" ;;
+    aarch64) "$(qemu_for aarch64)" "$OUT_DIR/tivibro-smb-aarch64" "$@" ;;
     host) "$OUT_DIR/tivibro-smb-host" "$@" ;;
   esac
 }
