@@ -552,15 +552,30 @@ var Library = (function () {
     return list;
   }
 
-  /* Next event first, a group's own sort (merged MLB, NFL or PPV groups, where most channels are off air): channels
-     whose names carry an event (Events.of) on now first, then the ones starting soonest, then the rest in the
-     order they came, and last the ones with nothing on (an event long over, or a name that says so). */
+  /* Next event first, a group's own sort (merged MLB, NFL, NCAA or PPV groups, where most channels are off air): what's
+     on now first, then what starts soonest, then channels with no guide at all, and last the ones with nothing coming
+     (only "No event today" in the guide, an event long over, or a name that says so).  An event comes from the
+     channel's name (Events.of), else from its guide: the first real programme that hasn't ended, not the "Starts …"
+     or "Next game …" lines TiviBro fills in around a game (up: 1), nor a placeholder like "No event today". */
+  var NOTHING = /^\s*(no (live )?(event|game|programm?e|program|stream|broadcast)s?\b|off ?air|offline|stream offline|to be announced|tba|tbd|coming soon|closed)/i;
+  function nextEvent(c, now) {
+    var ev = typeof Events !== 'undefined' ? Events.of(c) : null;
+    if (ev) return ev.end > now ? { s: ev.start, e: ev.end } : null;
+    var list = typeof Epg !== 'undefined' && Epg.request ? Epg.request(c) : null;
+    if (!list || !list.length) return undefined;                // no guide: unknown
+    for (var i = 0; i < list.length; i++) {
+      var p = list[i];
+      if (p.e <= now || p.up || NOTHING.test(p.t || '') || (typeof Names !== 'undefined' && Names.idle && Names.idle(p.t || ''))) continue;
+      return { s: p.s, e: p.e };
+    }
+    return null;
+  }
   function byEvent(list) {
     var now = Date.now();
     return list.map(function (c, i) {
-      var ev = typeof Events !== 'undefined' ? Events.of(c) : null, r = 2, t = 0;
-      if (ev && ev.end > now) { r = ev.start <= now ? 0 : 1; t = ev.start; }
-      else if ((ev && ev.end <= now) || (typeof Names !== 'undefined' && Names.idle && Names.idle(c.n))) r = 3;
+      var nx = nextEvent(c, now), r = 2, t = 0;
+      if (nx) { r = nx.s <= now ? 0 : 1; t = nx.s; }
+      else if (nx === null || (typeof Names !== 'undefined' && Names.idle && Names.idle(c.n))) r = 3;
       return { c: c, r: r, t: t, i: i };
     }).sort(function (a, b) { return a.r - b.r || a.t - b.t || a.i - b.i; }).map(function (x) { return x.c; });
   }

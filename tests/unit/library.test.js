@@ -55,7 +55,19 @@ ctx.Store.settings.sortGroups = 'playlist'; edits.groupOrder = []; L.dirty();
   const order = L.channels('ppv').map(c => c.k).join(',');
   ok('next event first: on now, soonest, later, then the rest, the long-over one last', order === 'p5,p4,p2,p3,p1', order);
   ok('the sort is kept for the group', L.sortOf('ppv') === 'event');
+  // Channels named only "NCAAF 45": the guide says what's on, around TiviBro's own "Starts …" lines and placeholders.
+  const H = 3600e3, g2 = {
+    n1: [{ s: now - 2 * H, e: now + 10 * H, t: 'No EVENT Today' }],
+    n3: [{ s: now - 2 * H, e: now + 3 * H, t: 'Starts 3:30pm: Iowa at Michigan', up: 1 }, { s: now + 3 * H, e: now + 6 * H, t: 'Iowa at Michigan' }],
+    n4: [{ s: now - H, e: now + 2 * H, t: 'Ohio State at Michigan State' }] };
+  ctx.Epg = { request: c => g2[c.k] || null };
+  L.set({ groups: [{ id: 'nc', name: 'NCAA' }], channels: ['n1', 'n2', 'n3', 'n4'].map(k => ({ k, n: 'NCAAF ' + k, g: 'nc' })) });
+  L.setSort('nc', 'event');
+  const nc = L.channels('nc').map(c => c.k).join(',');
+  ok('from the guide: on now, then coming up, then no guide, "No event today" last', nc === 'n4,n3,n2,n1', nc);
+  delete ctx.Epg;
   L.setSort('ppv', '');
+  L.set({ groups: [{ id: 'ppv', name: 'PPV' }], channels: [1, 2, 3, 4, 5].map(i => ({ k: 'p' + i, n: 'PPV 0' + i, g: 'ppv' })) });
   ok('back to the usual order', L.channels('ppv').map(c => c.k).join(',') === 'p1,p2,p3,p4,p5', L.channels('ppv').map(c => c.k).join(','));
 }
 

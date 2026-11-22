@@ -258,14 +258,17 @@ body.guide1 .gp .gs{display:none}
 .set-nav .nav-back{color:var(--muted);font-size:24px}
 .set-nav .nav-title{font-size:34px;font-weight:700;color:var(--text);line-height:1.2;white-space:normal;padding:10px 22px 14px;margin-bottom:6px;border-bottom:2px solid rgba(255,255,255,.08);border-radius:0}
 .set-body{flex:1;overflow:hidden;position:relative}
-/* Settings with the channel still playing (views.js pip): the picture in the top corner, what's on beside it,
-   the settings below at full width, so no row is narrower or hidden behind the picture. */
+/* Settings with the channel still playing (views.js pip): the picture and what's on, in a 400 px column at the top
+   right (the help panel's column, which moves down under it), on a page and on the home alike, so it is never drawn
+   over the settings nor squeezed beside them.  The home's sections make room for it. */
 .set-main{flex:1;min-width:0;display:flex;flex-direction:column}
-.set-now{display:none;flex:none;height:252px;margin-bottom:20px;gap:32px;align-items:stretch}
+.set-now{display:none;position:absolute;top:84px;right:56px;width:400px;flex-direction:column;gap:14px;z-index:1}
 #viewSettings.pip .set-now{display:flex}
-.set-now-info{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;padding:0 0 8px 24px;overflow:hidden}
+.set-now .set-preview{width:400px;height:225px}
+#viewSettings.pip.home .set-home{padding-right:454px}
+.set-now-info{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-start;padding:0 6px;overflow:hidden}
 .set-now-info .sn-l{color:var(--muted);font-size:22px}
-.set-now-info .sn-c{font-size:34px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.set-now-info .sn-c{font-size:28px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .set-now-info .sn-p{color:var(--muted);font-size:24px;margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 /* Search's corner picture: right of the 1300 px search column. */
 .srch-now{display:none;position:fixed;right:56px;top:84px;width:400px}
@@ -1199,7 +1202,7 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .set-main{position:relative;padding-right:430px}
 .set-help{position:absolute;right:0;top:0;width:400px;max-height:100%;box-sizing:border-box;padding:26px 28px;border-radius:20px;background:var(--panel);border:2px solid rgba(255,255,255,.06);color:var(--text);font-size:23px;line-height:1.45;overflow:hidden}
 .set-help.empty{display:none}
-#viewSettings.pip .set-help{top:272px;max-height:calc(100% - 272px)}
+#viewSettings.pip .set-help{top:392px;max-height:calc(100% - 392px)}
 .set-help .sh-k{font-size:18px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
 .set-help b{display:block;font-size:28px;font-weight:700;line-height:1.25;margin-bottom:12px}
 .set-help p{margin:0 0 14px;color:#c7cee6}

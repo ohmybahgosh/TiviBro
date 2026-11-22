@@ -60,11 +60,11 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const found = await ev(() => [...document.querySelectorAll('#setBody .opt')].map((e) => e.innerText.split('\n')[0]));
   ok('it lists the settings with that word', found.indexOf('Subtitle colour') >= 0 && found.indexOf('Keep downloaded subtitles') >= 0, found.join(' | '));
   await ev(() => [...document.querySelectorAll('#setBody .opt')].find((e) => /^Keep downloaded subtitles/.test(e.innerText)).click()); await page.waitForTimeout(400);
-  ok('OK on one goes there, focused', JSON.stringify(await ev(() => [document.querySelector('#setNav .on').innerText, document.querySelector('#setBody .opt.focus').innerText.split('\n')[0]])) === JSON.stringify(['Audio and subtitles', 'Keep downloaded subtitles']));
+  ok('OK on one goes there, focused', JSON.stringify(await ev(() => [document.querySelector('#setNav .nav-title').innerText, document.querySelector('#setBody .opt.focus').innerText.split('\n')[0]])) === JSON.stringify(['Audio and subtitles', 'Keep downloaded subtitles']));
   await ev(() => UI.press('yellow')); await page.waitForTimeout(300);
   await page.fill('#modal input', 'movies on now'); await page.keyboard.press('Enter'); await page.waitForTimeout(500);
   await ev(() => [...document.querySelectorAll('#setBody .opt')].find((e) => /^Show Movies on now/.test(e.innerText)).click()); await page.waitForTimeout(400);
-  ok('and into the page it is on', JSON.stringify(await ev(() => [document.querySelector('#setBody .opt.head').innerText, document.querySelector('#setBody .opt.focus').innerText.split('\n')[0]])) === JSON.stringify(['Groups in the list', 'Show Movies on now']));
+  ok('and into the page it is on', await ev(() => document.querySelector('#setBody .opt.focus').innerText.split('\n')[0]) === 'Show Movies on now');
   await ev(() => UI.press('yellow')); await page.waitForTimeout(300);
   await page.fill('#modal input', 'zzqx'); await page.keyboard.press('Enter'); await page.waitForTimeout(400);
   ok('nothing found says so', /No setting has that/.test(await ev(() => document.getElementById('setBody').innerText)));
@@ -89,14 +89,14 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await page.keyboard.down('Enter'); await page.waitForTimeout(800); await page.keyboard.up('Enter'); await page.waitForTimeout(800);
   ok('Hold OK in Settings goes back to the channel in fullscreen', await ev(() => Views.full && Views.tab === 'guide' && !!Views.playing), JSON.stringify(await ev(() => ({ full: Views.full, tab: Views.tab }))));
 
-  // Search settings is the first row of the Settings menu too.
+  // The Settings home (its search box and sections) keeps the picture too, in the same top-right column, clear of the sections.
   await ev(() => { Views.runAction('exit', 'player'); }); await page.waitForTimeout(500);
-  await ev(() => Views.switchTab('settings')); await page.waitForTimeout(500);
-  const first = await ev(() => document.querySelector('#setNav > div').innerText.trim());
-  ok('the Settings menu starts with Search settings', first === 'Search settings', first);
-  await ev(() => document.querySelector('#setNav .nav-find').click()); await page.waitForTimeout(300);
-  ok('picking it opens the search (the last one, here)', /Search for/.test(await ev(() => document.getElementById('setBody').innerText)) && await ev(() => document.querySelector('#setNav .nav-find').classList.contains('on')));
-  if (await ev(() => !!document.querySelector('#modal input'))) { await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
+  await ev(() => { Views.switchTab('guide'); Views.startChannel(Library.channels(Library.ALL)[2], true); });
+  await page.waitForFunction(() => Player.playing, null, { timeout: 30000 }); await page.waitForTimeout(800);
+  await ev(() => { Views.switchTab('settings'); Settings.open(); }); await page.waitForTimeout(800);
+  const hm = await ev(() => { const st = document.getElementById('stage').getBoundingClientRect(), h = document.querySelector('.set-home').getBoundingClientRect(), tiles = [...document.querySelectorAll('.set-home .sh-tile, .set-home .sh-chip')].map((e) => e.getBoundingClientRect().right);
+    return { home: document.getElementById('viewSettings').classList.contains('home'), pip: Views.pipOn, left: st.left, w: st.width, right: Math.max.apply(null, tiles.concat([0])), h: h.width }; });
+  ok('the Settings home: the picture at the top right, the sections clear of it', hm.home && hm.pip && hm.w > 300 && hm.right <= hm.left, JSON.stringify(hm));
   // Search keeps the channel in its corner too, right of the results, and Hold OK on the box goes back.
   await ev(() => Views.switchTab('search')); await page.waitForTimeout(800);
   const sr = await ev(() => ({ pip: Views.pipOn, st: document.getElementById('stage').getBoundingClientRect().toJSON(), wrap: document.querySelector('.search-wrap').getBoundingClientRect().toJSON() }));

@@ -2378,6 +2378,8 @@ var Settings = (function () {
     if (on) homeBuild(); else if (homeEl) homeEl.classList.add('hidden');
     if (homeEl && on) homeEl.classList.remove('hidden');
     $('viewSettings').classList.toggle('home', on);
+    // The corner picture keeps its place between the home and a page, laid out again with the new screen.
+    if (typeof Views !== 'undefined' && Views.pipUpdate) try { Views.pipUpdate(); } catch (e) {}
   }
   function goSection(id) { homeShow(false); for (var i = 0; i < SECTIONS.length; i++) if (SECTIONS[i][0] === id && shown(i)) { sec = i; stack = []; sel = 0; zone = 'body'; build(); return; } }
   // The remote on the home: arrows move between rows (to the nearest column), OK opens, Back goes to the menu bar.
