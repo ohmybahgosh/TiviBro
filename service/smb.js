@@ -27,7 +27,7 @@ var VERSION = '2';
 /* The release the bundled programs come from (.github/workflows/smb.yml, scripts/smb/bundle.sh), and the
    SHA-256 of each .gz there. */
 var TAG = 'smb-1-tb2';
-var SHA256 = { armv7: '1c3cdcb31d62b988876bca56400dec77e11330fe2b56f3d4fe9a6503aec02a3c', aarch64: '304e3b2a374d4a1365b8f54fb4978d10dd26bde8a0bd8110395ea6ec693be3dd' };
+var SHA256 = { armv7: '26387ede8e1585d18fe97c27f1b5e046171629ed69a623442ff692f7f6091ef8', aarch64: 'f57f1a4b583427c05f2fda9400e0f0f60a5b67c7bb064cb3b21c495bb23fc10f' };
 var BUNDLE = path.join(__dirname, 'smb-bundle');
 var cfg = { sums: SHA256, bundle: BUNDLE, arch: null };
 var RUN_MS = 30000, OUT_MAX = 8 * 1024 * 1024, ERR_MAX = 4096, MAX_RUNS = 2, MAX_READS = 4;
