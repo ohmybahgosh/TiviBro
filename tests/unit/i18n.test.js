@@ -12,7 +12,7 @@ function load(nav, settings, extra) {
   const vm = require('vm');
   vm.createContext(ctx);
   vm.runInContext(fs.readFileSync(path.join(APP, 'i18n.js'), 'utf8') + ';this.I18n = I18n;', ctx);
-  ['es', 'es-ES', 'pt-BR', 'pt-PT', 'ru'].forEach((l) => vm.runInContext(fs.readFileSync(path.join(APP, 'lang', l + '.js'), 'utf8'), ctx));
+  ['es', 'es-ES', 'fr', 'pt-BR', 'pt-PT', 'ru'].forEach((l) => vm.runInContext(fs.readFileSync(path.join(APP, 'lang', l + '.js'), 'utf8'), ctx));
   return ctx.I18n;
 }
 
@@ -64,7 +64,7 @@ ok('Spanish plural rule', [0, 1, 2].map((n) => I.plural('es', n)).join('') === '
 // Every translation keeps the placeholders of its English, and no key is an empty translation.
 const dicts = {};
 const fake = { add(code, d) { dicts[code] = Object.assign(dicts[code] || {}, d); } };
-['es', 'pt-BR', 'ru'].forEach((l) => new Function('I18n', fs.readFileSync(path.join(APP, 'lang', l + '.js'), 'utf8'))(fake));
+['es', 'fr', 'pt-BR', 'ru'].forEach((l) => new Function('I18n', fs.readFileSync(path.join(APP, 'lang', l + '.js'), 'utf8'))(fake));
 Object.keys(dicts).forEach((code) => {
   const bad = [];
   Object.keys(dicts[code]).forEach((k) => {
