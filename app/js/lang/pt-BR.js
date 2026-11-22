@@ -2549,5 +2549,15 @@ I18n.add('pt-BR', {
   "Your teams": "Seus times",
   "While you watch": "Enquanto assiste",
   "Sports screen": "Tela de esportes",
-  "Your teams, their scores while you watch, alerts and the My teams group: Settings > Sports.": "Seus times, os placares enquanto assiste, alertas e o grupo Meus times: Configurações > Esportes."
+  "Your teams, their scores while you watch, alerts and the My teams group: Settings > Sports.": "Seus times, os placares enquanto assiste, alertas e o grupo Meus times: Configurações > Esportes.",
+  "Leagues in this playlist": "Ligas nesta lista",
+  "A My teams group in the guide": "Um grupo Meus times no guia",
+  "Their games on now at the top, then the ones starting soon.": "Os jogos ao vivo no topo, depois os que começam em breve.",
+  "Scores in a corner while you watch": "Placares num canto enquanto assiste",
+  "A live game of one of your teams, while you watch something else full screen.  Never over the game itself.": "Um jogo ao vivo de um dos seus times, enquanto assiste outra coisa em tela cheia.  Nunca sobre o próprio jogo.",
+  "Close game alerts": "Alertas de jogo apertado",
+  "Near the end of a close game: switch to it?  And the final score.": "No fim de um jogo apertado: mudar para ele?  E o placar final.",
+  "The phone app": "O app do celular",
+  "Settings > Sports: pick them by league.  Their games go in My teams.": "Configurações > Esportes: escolha por liga.  Os jogos vão para Meus times.",
+  "Never for the game you're watching.": "Nunca do jogo que você está assistindo."
 });

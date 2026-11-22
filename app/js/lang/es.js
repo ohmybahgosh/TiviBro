@@ -2035,5 +2035,15 @@ I18n.add('es', {
   "While you watch": "Mientras ves",
   "In the guide": "En la guía",
   "Sports screen": "Pantalla de deportes",
-  "Your teams, their scores while you watch, alerts and the My teams group: Settings > Sports.": "Tus equipos, sus marcadores mientras ves, alertas y el grupo Mis equipos: Configuración > Deportes."
+  "Your teams, their scores while you watch, alerts and the My teams group: Settings > Sports.": "Tus equipos, sus marcadores mientras ves, alertas y el grupo Mis equipos: Configuración > Deportes.",
+  "Leagues in this playlist": "Ligas en esta lista",
+  "A My teams group in the guide": "Un grupo Mis equipos en la guía",
+  "Their games on now at the top, then the ones starting soon.": "Sus partidos en curso arriba, luego los que empiezan pronto.",
+  "Scores in a corner while you watch": "Marcadores en una esquina mientras ves",
+  "A live game of one of your teams, while you watch something else full screen.  Never over the game itself.": "Un partido en vivo de uno de tus equipos, mientras ves otra cosa a pantalla completa.  Nunca sobre el propio partido.",
+  "Close game alerts": "Alertas de partidos reñidos",
+  "Near the end of a close game: switch to it?  And the final score.": "Al final de un partido reñido: ¿cambiar a él?  Y el resultado final.",
+  "The phone app": "La app del teléfono",
+  "Settings > Sports: pick them by league.  Their games go in My teams.": "Configuración > Deportes: elígelos por liga.  Sus partidos van a Mis equipos.",
+  "Never for the game you're watching.": "Nunca del partido que estás viendo."
 });

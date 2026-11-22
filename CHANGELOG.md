@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **Sports has its own place in Settings.**  Your teams, the scores corner, alerts and the My teams group are in **Settings > Sports** on the TV, the phone and the web editor.
+- **Web editor, redone.**  Settings come in cards where a switch, a choice, a button that does something now and a red button that deletes all look different.  A search box finds any setting and opens its page.  The page list is grouped, with Sports in it.  Groups and channels drag with a finger on phones and tablets, and Alt + ↑ ↓ moves a group.  The welcome page for a new TV is three short steps.
+- **Phone app, redone.**  Settings are grouped cards with icons and a search.  Reload guide now and other buttons look like buttons, and choices with a few options are one tap.  The remote has a channel number pad with Last channel.  First run walks you through pairing in three steps.  Tablets and foldables get a comfortable width.
+- **Set-up tour:** a Your teams step, and tips for the phone app and Settings > Sports.
 - **Turn your teams' score corner off from fullscreen:** OK > **Scores**, while one of your teams is playing.  The same switch as in Settings, so it stays off until you turn it back on.
 - **A game in overtime keeps its channels.**  When a game runs past its listing (a local station's "College Football" ends on the hour while the game goes on), Sports still lists that channel for the game and your teams' score corner stays off it.
 - **No score alerts for the game you're watching.**  A close-game alert or a final score no longer pops up over the game itself, overtime included.

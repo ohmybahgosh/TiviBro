@@ -2038,5 +2038,15 @@ I18n.add('ru', {
   "While you watch": "Во время просмотра",
   "In the guide": "В телегиде",
   "Sports screen": "Экран спорта",
-  "Your teams, their scores while you watch, alerts and the My teams group: Settings > Sports.": "Ваши команды, счёт во время просмотра, оповещения и группа «Мои команды»: Настройки > Спорт."
+  "Your teams, their scores while you watch, alerts and the My teams group: Settings > Sports.": "Ваши команды, счёт во время просмотра, оповещения и группа «Мои команды»: Настройки > Спорт.",
+  "Leagues in this playlist": "Лиги в этом плейлисте",
+  "A My teams group in the guide": "Группа «Мои команды» в телегиде",
+  "Their games on now at the top, then the ones starting soon.": "Сначала идущие матчи, потом те, что скоро начнутся.",
+  "Scores in a corner while you watch": "Счёт в углу во время просмотра",
+  "A live game of one of your teams, while you watch something else full screen.  Never over the game itself.": "Идущий матч вашей команды, пока вы смотрите что-то другое на весь экран.  Никогда поверх самого матча.",
+  "Close game alerts": "Оповещения о напряжённых матчах",
+  "Near the end of a close game: switch to it?  And the final score.": "В конце напряжённого матча: переключиться?  И итоговый счёт.",
+  "The phone app": "Приложение для телефона",
+  "Settings > Sports: pick them by league.  Their games go in My teams.": "Настройки > Спорт: выберите по лиге.  Их матчи попадут в «Мои команды».",
+  "Never for the game you're watching.": "Никогда для матча, который вы смотрите."
 });
