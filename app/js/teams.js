@@ -344,19 +344,29 @@ var Teams = (function () {
   function notOnEspn(list) {
     var all = espnAll();
     if (!all.length) return list;
+    var byTeam = espnByTeam(all);
+    return list.filter(function (g) { var e = espnSays(g.team, g.p.s, byTeam); if (e && e !== true) g.espn = e; return !!e; });
+  }
+  function espnByTeam(all) {
     var byTeam = {};
     all.forEach(function (g) { g.teams.forEach(function (t) { if (t.id) (byTeam[t.id] = byTeam[t.id] || []).push(g); }); });
-    return list.filter(function (g) {
-      var mine = g.team && byTeam[g.team.id];
-      if (!mine) return true;
-      var near = mine.filter(function (e) { return Math.abs(e.s - g.p.s) < 3 * 86400e3; });
-      if (!near.length) return true;
-      // The ESPN game it is (the closest), kept with it: its score, state and real start (espnOf).
-      var best = null;
-      near.forEach(function (e) { if (Math.abs(e.s - g.p.s) < 3 * 3600e3 && (!best || Math.abs(e.s - g.p.s) < Math.abs(best.s - g.p.s))) best = e; });
-      if (best) g.espn = best;
-      return !!best;
+    return byTeam;
+  }
+  /* What ESPN says of a team's game starting at s: the ESPN game it is (within three hours), true when ESPN can't
+     tell (that day not read, a league it doesn't cover), false when it rules it out: it has that team's games
+     within three days but none then, or that day's scoreboard read with no game for the team (the replay the
+     morning after, before the days around were read). */
+  function espnSays(team, s, byTeam) {
+    if (!team) return true;
+    var mine = byTeam[team.id] || [], best = null, near = false;
+    mine.forEach(function (e) {
+      var d = Math.abs(e.s - s);
+      if (d < 3 * 86400e3) near = true;
+      if (d < 3 * 3600e3 && (!best || d < Math.abs(best.s - s))) best = e;
     });
+    if (best) return best;
+    if (near) return false;
+    return typeof Sports !== 'undefined' && Sports.covered && Sports.covered(team.league, s) ? false : true;
   }
   // ESPN's games as the Sports screen has read them (Sports.all), or none.
   function espnAll() {
@@ -629,7 +639,9 @@ var Teams = (function () {
        NHL Network's afternoon encores), or an event channel gone Offline with nothing in its guide: looked for
        elsewhere, and dropped when it's nowhere (issue: reminders for games that weren't on). */
     if (c && !cur && !l) return null;
-    if (c && cur && !cur.rp && matchup(cur.t, c.n) === was) return null;
+    // Still there, unless it is an old game shown again or ESPN rules it out (a replay with no replay flag).
+    var ruled = cur && (oldGame(cur.t) || !espnSays(team, cur.s, espnByTeam(espnAll())));
+    if (c && cur && !cur.rp && !ruled && matchup(cur.t, c.n) === was) return null;
     // Elsewhere now: the same two teams within 12 hours of when it was set for.
     var far = Math.max(r.s - now, 0) + SAME_GAME, found = null;
     games(far, true).forEach(function (g) {
