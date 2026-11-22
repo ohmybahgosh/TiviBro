@@ -330,6 +330,31 @@ var Teams = (function () {
      channel showing a game (a league pass, a sports network, the other team's feed), so one that doesn't
      work has others next to it; one: just one channel per game (a Favorite, else the first found), for
      reminders.  Games on now first, then by start, a game's channels together. */
+  /* A game from another season, shown again: "MLB: Orioles Classics: 1996: Orioles vs. Tigers" (a reminder for it was
+     set in November).  "Classic(s)" or a year two or more before this one. */
+  function oldGame(t) {
+    if (/\bclassics?\b/i.test(t || '')) return true;
+    var m = /\b(19[3-9]\d|20\d\d)\b/.exec(t || '');
+    return !!m && +m[1] < new Date().getFullYear() - 1;
+  }
+  /* Listings ESPN's schedule rules out (Sports.all): "NHL Hockey: Islanders at Red Wings" at noon the day after
+     the game was played (a replay on MSG with no replay flag) went into My teams.  Only for a team whose games ESPN
+     has within three days of the listing, so a stretch it hasn't read (or a league it doesn't cover) keeps the
+     guide's word; a listing within three hours of one of the team's games is that game. */
+  function notOnEspn(list) {
+    if (typeof Sports === 'undefined' || !Sports.all) return list;
+    var all; try { all = Sports.all(); } catch (e) { return list; }
+    if (!all || !all.length) return list;
+    var byTeam = {};
+    all.forEach(function (g) { g.teams.forEach(function (t) { if (t.id) (byTeam[t.id] = byTeam[t.id] || []).push(g.s); }); });
+    return list.filter(function (g) {
+      var mine = g.team && byTeam[g.team.id];
+      if (!mine) return true;
+      var near = mine.filter(function (s0) { return Math.abs(s0 - g.p.s) < 3 * 86400e3; });
+      if (!near.length) return true;
+      return near.some(function (s0) { return Math.abs(s0 - g.p.s) < 3 * 3600e3; });
+    });
+  }
   /* ids: these teams instead of the ones you follow (the Sports screen: every team playing today). */
   /* late: also listings that ended this long ago (ms), for Sports: a game in overtime outlives its listing ("College
      Football" until 7:00 on a local station while the game goes on), and the channel is still the game's. */
@@ -419,7 +444,7 @@ var Teams = (function () {
         p = { s: g.start, e: g.start + 3 * 3600e3, t: g.title, ev: 1 };
       }
       // A replay of a game already played (the guide says it was shown before) isn't the game.
-      if (!c || p.e <= gone || p.s > far || p.rp) return;
+      if (!c || p.e <= gone || p.s > far || p.rp || oldGame(p.t)) return;
       var ctx = c.n + ' | ' + (gname[c.g] || '');
       curTag = tagOf(p.t + ' | ' + ctx);
       // The same title on the same channel (every airing): worked out once.
@@ -433,7 +458,7 @@ var Teams = (function () {
     descHits(dwords).forEach(function (r) {
       var c = Library.find(r.key) || byEpg[r.key], p = r.p;
       if (c && Library.mixed && !Library.mixed(c, 'teams')) c = byEpg[r.key] || null;     // a playlist not mixed into My teams
-      if (!c || p.e <= gone || p.s > to || p.rp || !SPORTY.test(p.t) || /\breplay\b/i.test(p.t)) return;
+      if (!c || p.e <= gone || p.s > to || p.rp || !SPORTY.test(p.t) || /\breplay\b/i.test(p.t) || oldGame(p.t)) return;
       // A description is loose talk: the team by its full name, or the league named ("NFL Football"), so a
       // college game between the Tigers and the Cardinals isn't the Detroit Tigers.
       var ctx = p.t + ' | ' + c.n + ' | ' + (gname[c.g] || '');
@@ -454,6 +479,8 @@ var Teams = (function () {
       if (schools) prove(ev.start);
       evHits.forEach(function (x) { take(c, { s: ev.start, e: ev.end, t: ev.title, ev: 1 }, x); });
     }
+    // A game ESPN doesn't have then, for a team whose schedule it knows around then: a replay or a show about it.
+    out = notOnEspn(out);
     if (schools) out = out.filter(function (g) {
       if (!g.team.schools || g.tag) return true;
       return sportOf(g, proof[g.team.abbr] || []) !== (g.team.league === 'ncaab' ? 'f' : 'b');
