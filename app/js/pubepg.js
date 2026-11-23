@@ -173,9 +173,10 @@ var PubEpg = (function () {
     var m = /\(([KW][A-Z]{2,3})(?:(?:-(?:DT|LD|TV|CD)|DT)(\d)?)?\b/.exec(up) ||
       new RegExp('\\b' + NET + '\\s+(?:EAST\\s+|WEST\\s+|\\d+\\s+)?([KW][A-Z]{2,3})(?:(?:-(?:DT|LD|TV|CD)|DT)(\\d)?)?\\b').exec(up) ||
       /(?:^|\s)([KW][A-Z]{2,3})(?:-(?:DT|LD|CD)|DT)(\d)?\b/.exec(up) ||
-      // "ABC | DETROIT | WXYZ": a call sign on its own between separators, after a network name.
-      new RegExp('^\\s*' + NET + '\\b.*(?:^|[|:\\u2013-]\\s*)([KW][A-Z]{2,3})(?:(?:-(?:DT|LD|TV|CD)|DT)(\\d)?)?\\s*$').exec(full);
-    if (m && !/^(WEST|WWE|KIDS|WILD|WOW)$/.test(m[1])) out.push(['cs:' + m[1] + (m[2] && m[2] !== '1' ? ':' + m[2] : ''), 1]);
+      /* A call sign as the last word of a name that starts with a network: "ABC | DETROIT | WXYZ" and
+         "CW | DETROIT 50 WKBD" (the channel number before it).  The network as a "CW |" prefix is not a country here. */
+      new RegExp('^\\s*' + NET + '\\b.*(?:[|:\\u2013-]\\s*|\\s)([KW][A-Z]{2,3})(?:(?:-(?:DT|LD|TV|CD)|DT)(\\d)?)?\\s*$').exec(full);
+    if (m && !/^(WEST|WWE|KIDS|WILD|WOW|WIRE|WAVE|WORK|KISS|WISE)$/.test(m[1])) out.push(['cs:' + m[1] + (m[2] && m[2] !== '1' ? ':' + m[2] : ''), 1]);
     var s = raw.toLowerCase().replace(/&/g, ' and ').replace(/\+/g, ' plus ').replace(/\[[^\]]*\]|\([^)]*\)/g, ' ');
     var t = s.replace(/\b(hd|fhd|uhd|4k|sd|hevc|h265|raw|east|eastern|west|pacific|backup|us|usa|uk|ca|network|channel|tv|the)\b/g, ' ').replace(/[^a-z0-9]+/g, '');
     // "USA Network" is all stop words: keep it whole.

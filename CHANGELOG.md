@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Settings stays where you are when a page redraws: Look again now on Public guide fill-in sent the focus to another part of the Guide page while the guide reloaded.
+- Public guide fill-in finds local stations named like "CW | DETROIT 50 WKBD" by their call sign again.  iptv-epg.org, which matched them by guide id, has gone offline (it answers 403), and the call sign after the channel number wasn't read.
 - Live pause on a network share says so: the messages and the channel menu's Recordings line said "USB drive" wherever it was.
 
 ## 0.6.0 (alpha 202, 2026-11-23)

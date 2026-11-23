@@ -10,7 +10,8 @@ const K = s => P.keys(s).keys.map(x => x[0]);
 
 t('local stations match by call sign, in every style', () => {
   [['ABC (WOTV) Battle Creek MI', 'cs:WOTV'], ['US - ABC WOTV Grand Rapids Battle Creek MI', 'cs:WOTV'], ['WOTV-DT', 'cs:WOTV'], ['ABC | DETROIT | WXYZ', 'cs:WXYZ'],
-    ['US - CBS WBZ Boston', 'cs:WBZ'], ['CBS (WBZ) Boston MA', 'cs:WBZ'], ['US - ABC East WABC', 'cs:WABC'], ['CW (WISH-TV) Indianapolis IN', 'cs:WISH'], ['WBMA-LD', 'cs:WBMA']]
+    ['US - CBS WBZ Boston', 'cs:WBZ'], ['CBS (WBZ) Boston MA', 'cs:WBZ'], ['US - ABC East WABC', 'cs:WABC'], ['CW (WISH-TV) Indianapolis IN', 'cs:WISH'], ['WBMA-LD', 'cs:WBMA'],
+    ['CW | DETROIT 50 WKBD', 'cs:WKBD'], ['FOX | DETROIT 2 WJBK', 'cs:WJBK'], ['CW | ALBANY 15 WCWN', 'cs:WCWN']]
     .forEach(([s, k]) => assert.ok(K(s).indexOf(k) >= 0, s + ' -> ' + K(s)));
 });
 t('subchannels stay apart from the main station', () => {
@@ -19,7 +20,7 @@ t('subchannels stay apart from the main station', () => {
   assert.ok(K('KCOP-DT').indexOf('cs:KCOP') >= 0);
 });
 t('words are not call signs', () => {
-  ['DIGI WORLD', 'KBS World 24', 'Pink World Cinema', 'Oxygen (West)', 'WWE Network', 'KIDS TV', 'Weather Channel'].forEach(s => assert.ok(!K(s).some(k => /^cs:/.test(k)), s + ' -> ' + K(s)));
+  ['DIGI WORLD', 'KBS World 24', 'PBS KIDS', 'FOX | NEWS WIRE', 'CW | KIDS', 'Pink World Cinema', 'Oxygen (West)', 'WWE Network', 'KIDS TV', 'Weather Channel'].forEach(s => assert.ok(!K(s).some(k => /^cs:/.test(k)), s + ' -> ' + K(s)));
 });
 t('names match across the projects\' styles, keeping East and West apart', () => {
   assert.strictEqual(K('A&E (East) US').pop(), K('US - A&amp;E Network').pop());
