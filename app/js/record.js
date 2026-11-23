@@ -197,8 +197,9 @@ var Record = (function () {
   function chOf(r) { var all = L.data && L.data.channels || []; for (var i = 0; i < all.length; i++) if (all[i].k === r.key) return all[i]; return null; }
   // fromAt: a point in it (the live timeline going back past what's kept), else resume or from the start.
   function watch(r, fromStart, onExit, fromAt) {
-    // Recording to a network share: its first part (10 minutes) has to be up there before it can be watched.
-    if (r.status === 'recording' && r.where === 'share' && !(r.parts > 1)) { U.toast(T('On a network share, a recording can be watched once its first 10 minutes are up there.  Yellow goes to the channel live.'), 6000); return; }
+    // Recording to a WebDAV share: its first part (10 minutes) has to be up there before it can be watched.  A Windows
+    // share is read as it's written, so it plays at once.
+    if (r.status === 'recording' && r.where === 'share' && r.net !== 'smb' && !(r.parts > 1)) { U.toast(T('On a network share, a recording can be watched once its first 10 minutes are up there.  Yellow goes to the channel live.'), 6000); return; }
     var url = base() + '/record/file/' + r.id + '/rec.' + (r.kind === 'mp4' || r.kind === 'mkv' ? r.kind : 'ts');
     var p0 = posOf(r.id), at = fromAt != null ? Math.max(0, fromAt) : !fromStart && p0 && p0.t > 30 && (!r.dur || !(U.isWatchedAt || function (p, d) { return d > 0 && (p >= d * 0.9 || p > d - 60); })(p0.t, r.dur)) ? p0.t : 0;
     if (at && fromAt == null) U.toast(T('Resuming at {t}', { t: hms(at) }), 2500);

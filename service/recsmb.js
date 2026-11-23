@@ -42,8 +42,9 @@ function mkdirs(t, rel, cb) { Smb.mkdirs(src(t), full(t, rel), function (e) { cb
 /* A part written as it comes: write(buf), end(cb), abort(); onFail(err) once if the share stops taking it. */
 function upload(t, rel, onFail) { return Smb.writer(src(t), full(t, rel), function (e) { if (onFail) onFail(said(e)); }); }
 function put(t, rel, buf, type, cb) { Smb.put(src(t), full(t, rel), buf, function (e) { cb(said(e)); }); }
-function move(t, from, to, cb) { Smb.move(src(t), full(t, from), full(t, to), function (e) { cb(said(e)); }); }
-function del(t, rel, cb) { Smb.remove(src(t), [full(t, rel)], function (e, stayed) { cb(said(e) || (stayed && stayed.length ? new Error('the share kept it') : null)); }); }
+// Moving or deleting a file a player is still reading fails on the server (the read holds it open): reads stop first.
+function move(t, from, to, cb) { Smb.stopReads(full(t, from)); setTimeout(function () { Smb.move(src(t), full(t, from), full(t, to), function (e) { cb(said(e)); }); }, 300); }
+function del(t, rel, cb) { Smb.stopReads(full(t, rel)); setTimeout(function () { Smb.remove(src(t), [full(t, rel)], function (e, stayed) { cb(said(e) || (stayed && stayed.length ? new Error('the share kept it') : null)); }); }, 300); }
 // Several at once (old live-pause pieces): one run.
 function delMany(t, rels, cb) { Smb.remove(src(t), rels.map(function (r) { return full(t, r); }), function (e) { if (cb) cb(said(e)); }); }
 // The names in a folder; null when it can't tell.

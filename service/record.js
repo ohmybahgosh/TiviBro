@@ -139,7 +139,7 @@ function lengthOf(r) {
 function pub(r) {
   return { id: r.id, title: r.title, channel: r.channel, start: r.start, end: r.end, status: r.status, bytes: r.bytes || 0, parts: (r.parts || []).length,
     kind: r.kind || '', error: r.error || '', drive: r.driveName || '', startedAt: r.startedAt || 0, gaps: r.gaps || 0, dur: lengthOf(r), endedAt: r.endedAt || 0, logo: r.logo || '', key: r.key || '', desc: r.desc || '', ep: r.ep || '', meta: r.meta || null,
-    where: isDav(r) ? 'share' : r.parts && r.parts.length ? 'usb' : '', conv: r.conv ? { running: !!r.conv.running, pct: r.conv.pct || 0, done: r.conv.done || '', error: r.conv.error || '' } : null, folder: r.parts && r.parts[0] ? path.dirname(r.parts[0]).split(FOLDER).pop().replace(/^\//, '') : '' };
+    where: isDav(r) ? 'share' : r.parts && r.parts.length ? 'usb' : '', net: isDav(r) && /^smb:/.test(String(r.davAddr || '')) ? 'smb' : '', conv: r.conv ? { running: !!r.conv.running, pct: r.conv.pct || 0, done: r.conv.done || '', error: r.conv.error || '' } : null, folder: r.parts && r.parts[0] ? path.dirname(r.parts[0]).split(FOLDER).pop().replace(/^\//, '') : '' };
 }
 /* The drive's room (df), looked at every 30 s at most: free and total MB. */
 var spaceAt = 0, spaceWas = null;
@@ -748,8 +748,8 @@ function serveFile(req, res, ALLOW, r, part) {
 }
 /* ---------- the agent (rooted TVs) ---------- */
 /* Raised whenever record-agent.js or what it runs changes in a way an old agent would miss (2: it keeps the helper up
-   for the phone app; 3: recordings filed for media servers, Convert to MP4; 4: recording to a WebDAV share).  The version can't tell: every alpha is 0.6.0 to the helper. */
-var AGENT_REV = 4;
+   for the phone app; 3: recordings filed for media servers, Convert to MP4; 4: recording to a WebDAV share; 5: to a Windows share, and live pause there).  The version can't tell: every alpha is 0.6.0 to the helper. */
+var AGENT_REV = 5;
 function agentUp(cb) {
   var r = http.get({ hostname: '127.0.0.1', port: AGENT_PORT, path: '/record/ping', headers: { 'X-TiviBro-Ctl': agentKey() } }, function (res) {
     var b = ''; res.on('data', function (d) { b += d; });

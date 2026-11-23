@@ -275,8 +275,10 @@ function tree(source, depth, cb) {
   });
 }
 
-// The reads running now (cat runs), oldest first.
-var reads = [];
+// The reads running now (cat runs), oldest first.  A read nobody has taken anything from for READ_IDLE_MS (a player
+// that stopped without closing its connection, as the TV's own player can) is stopped: it holds the file open on the
+// server, and Windows and Samba then refuse to rename or delete it (a recording being filed or deleted).
+var reads = [], READ_IDLE_MS = +(process.env.TIVIBRO_SMB_READ_IDLE_MS || 120000);
 /* A movie for media-stream.js: size(cb) once, then open(start, end, cb(err, stream, stop)) for each
    range the player asks.  Reads don't wait behind scans; at most MAX_READS at once (a player, its
    subtitle reader and a seek preview), the oldest stopped to make room. */
@@ -295,8 +297,10 @@ function reader(source, file) {
         while (reads.length >= MAX_READS) { try { reads.shift().kill('SIGKILL'); } catch (x) {} }
         var child, err = '';
         try { child = cp.spawn(prog, ['cat', p.server, p.share, f, String(start), String(end - start + 1)], { stdio: ['pipe', 'pipe', 'pipe'] }); } catch (e2) { return cb(e2); }
-        reads.push(child);
-        child.on('close', function () { var i = reads.indexOf(child); if (i >= 0) reads.splice(i, 1); });
+        child._file = f; reads.push(child);
+        var last = Date.now(), idle = setInterval(function () { if (Date.now() - last > READ_IDLE_MS) { try { child.kill('SIGKILL'); } catch (x) {} } }, Math.min(15000, READ_IDLE_MS));
+        child.stdout.on('data', function () { last = Date.now(); });
+        child.on('close', function () { clearInterval(idle); var i = reads.indexOf(child); if (i >= 0) reads.splice(i, 1); });
         child.on('error', function () {});
         child.stderr.on('data', function (d) { if (err.length < ERR_MAX) err += d; });
         child.on('exit', function (code) { if (code) log({ lv: 'warn', event: 'smb read', e: errorFrom(code, err).kind }); });
@@ -391,6 +395,12 @@ function writer(source, file, onFail) {
   };
 }
 
+// Stops every read of file (a path inside the share), before it's renamed or deleted: an open read refuses both.
+function stopReads(file) {
+  var f = cleanPath(file);
+  reads.slice().forEach(function (c) { if (c._file === f) { try { c.kill('SIGKILL'); } catch (x) {} } });
+}
+
 // What a failure says to the viewer, by kind.
 var MESSAGES = {
   login: 'The share didn\'t accept that user name and password.  On a Windows PC, use the PC\'s account (or Microsoft account email) and its password.',
@@ -414,7 +424,7 @@ function failure(e) {
 
 module.exports = {
   setLog: function (f) { logFn = f; }, VERSION: VERSION, TAG: TAG, SHA256: SHA256,
-  check: check, shares: shares, list: list, stat: stat, tree: tree, reader: reader, put: put, writer: writer, mkdirs: mkdirs, remove: remove, move: move, space: space,
+  check: check, shares: shares, list: list, stat: stat, tree: tree, reader: reader, put: put, writer: writer, stopReads: stopReads, mkdirs: mkdirs, remove: remove, move: move, space: space,
   binDir: function (d) { cfg.dir = d; ready = ''; }, movedTo: movedTo, hostKey: hostKey, failure: failure, parts: parts, cleanPath: cleanPath, program: program,
   _config: function (o) { if (o.sums) cfg.sums = o.sums; if (o.bundle !== undefined) cfg.bundle = o.bundle; if (o.arch !== undefined) cfg.arch = o.arch; if (o.archList) cfg.archList = o.archList; if (o.reset) { cfg = { sums: SHA256, bundle: BUNDLE, arch: null, dir: '', locate: cfg.locate }; ready = ''; } if (o.runMs) RUN_MS = o.runMs; if (o.locate !== undefined) cfg.locate = o.locate; if (o.forget) { moved = {}; lastLook = {}; } }
 };
