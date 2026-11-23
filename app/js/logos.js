@@ -6,6 +6,8 @@
    project keeps it:
      "Cleaned up"      worldwide-tv-logos, each channel's own logo made transparent and trimmed, its white version
                        for dark screens (the default; falls back to the set, then the original)
+     "Cleaned up, in colour"  the same logos in their own colours (the project publishes both: name.png for
+                       light screens, name.white.png for dark ones), for a light theme or a colourful guide
      "Matching set"    tv-logo/tv-logos, one style for dark screens (falls back to cleaned up, then the original)
      "Original logos"  iptv-org/database, each channel's own logo (falls back to cleaned up, then the set)
    The index is kept on the TV for a week. */
@@ -18,7 +20,8 @@ var Logos = (function () {
 
   function S() { return Store.settings; }
   function mode() { return S().logoLib || 'off'; }                 // off | fill | all
-  function style() { var v = S().logoStyle; return v === 'original' || v === 'set' ? v : 'clean'; }
+  var STYLES = ['clean', 'colour', 'set', 'original'];
+  function style() { var v = S().logoStyle; return STYLES.indexOf(v) > 0 ? v : 'clean'; }
   function base() { var b = S().logoBase || BASE; return /\/$/.test(b) ? b : b + '/'; }
   function cc(code) { code = String(code || '').toUpperCase(); return code === 'GB' ? 'UK' : code; }
 
@@ -71,7 +74,7 @@ var Logos = (function () {
         memo.clear();
         status = { state: 'ready', countries: order.slice(), entries: n, at: Date.now(), error: '' };
         Log.info('logos', 'Logo library ready: ' + order.join(', ') + ' (' + n + ' names)');
-        if (typeof Views !== 'undefined' && Views.refreshLists) Views.refreshLists(true);
+        if (typeof Views !== 'undefined' && Views.logosChanged) Views.logosChanged();
       });
     }).catch(function (e) {
       if (my !== gen) return;
@@ -119,10 +122,22 @@ var Logos = (function () {
     if (!e) return '';
     var set = e[3] && index ? index.tvlogos + e[3] : '', orig = e[2] || '', clean = e[4] && index && index.wtl ? index.wtl + e[4] : '';
     st = st || style();
+    // The colour version is the white one's name without ".white" (the index keeps the white one where there is one).
+    if (st === 'colour') return clean.replace(/\.white\.png$/, '.png') || orig || set;
     return st === 'set' ? set || clean || orig : st === 'original' ? orig || clean || set : clean || set || orig;
   }
   function url(c) { return mode() === 'off' ? '' : urlOf(match(c)); }
 
+  /* A few of these channels the library knows, for the preview of each style in Settings: ones whose logo differs
+     between the styles first, so the difference shows. */
+  function samples(channels, n) {
+    var out = [], other = [];
+    for (var i = 0; i < channels.length && out.length < n; i++) {
+      var e = match(channels[i]); if (!e) continue;
+      (e[4] && (e[3] || e[2]) ? out : other).push(channels[i]);
+    }
+    return out.concat(other).slice(0, n);
+  }
   // How many of these channels the library has a logo for, and how many of those had none before.
   function coverage(channels, own) {
     var n = 0, filled = 0;
@@ -130,6 +145,6 @@ var Logos = (function () {
     return { found: n, filled: filled, total: channels.length };
   }
 
-  return { load: load, url: url, match: match, urlOf: urlOf, coverage: coverage, mode: mode, style: style,
+  return { load: load, url: url, match: match, urlOf: urlOf, coverage: coverage, mode: mode, style: style, samples: samples, STYLES: STYLES,
     get status() { return status; }, get loading() { return loading; }, get ready() { return status.state === 'ready'; }, BASE: BASE };
 })();

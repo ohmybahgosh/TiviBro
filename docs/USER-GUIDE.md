@@ -118,10 +118,10 @@ Channels are matched by their guide id ("CNN.us"), then by their cleaned name in
 Turn it on in the set-up tour or in **Settings > Appearance > Logo library**:
 
 - **Off**: only the playlist's and the guide's logos.
-- **Fill in missing logos**: the library's logo for channels that have none.
+- **Fill in missing logos**: the library's logo for channels that have none, or whose own logo doesn't load.  Channels with a logo of their own keep it, so a style change only shows on the filled-in ones.
 - **Use for every channel it knows**: the library's logo everywhere it has one, so the whole list matches.
 
-**Logo library style** picks **Cleaned up** (Worldwide TV Logos, the default), **Matching set** (tv-logos) or **Original logos** (iptv-org); each falls back to the others.  On a real 9,800-channel playlist it found logos for about 3,600 channels.
+**Logo library style** picks **Cleaned up** (Worldwide TV Logos, the default, in white where a logo needs it on a dark screen), **Cleaned up, in colour** (the same logos in their own colours), **Matching set** (tv-logos) or **Original logos** (iptv-org); each falls back to the others.  With the row focused, the panel beside it shows a few of your channels in each style.  The guide and the channel lists change at once.  On a real 9,800-channel playlist it found logos for about 3,600 channels.
 
 ### The remote
 
@@ -1337,7 +1337,7 @@ Which screen TiviBro opens on, where the lists start, colours, sizes and what's 
 | **Panels over video** | Solid · **Normal** · See-through | How see-through the info panel, quick menu and channel guide are in fullscreen. |
 | **Channel logos** | **From the playlist** · From the guide | Which logo to use when both have one. |
 | **Logo library** | **Off** · Fill in missing logos · Use for every channel it knows | Logos from Worldwide TV Logos, tv-logos and iptv-org for channels with none, or for every channel.  See [Channel logos](#channel-logos).  The set-up tour offers *Fill in missing logos*. |
-| **Logo library style** *(library on)* | **Cleaned up** · Matching set · Original logos | Each channel's own logo, cleaned up and in white for dark screens (Worldwide TV Logos); one style for dark screens (tv-logos); or each channel's own logo as iptv-org has it.  Each falls back to the others. |
+| **Logo library style** *(library on)* | **Cleaned up** · Cleaned up, in colour · Matching set · Original logos | Each channel's own logo, cleaned up and in white for dark screens (Worldwide TV Logos); the same logos in their own colours; one style for dark screens (tv-logos); or each channel's own logo as iptv-org has it.  Each falls back to the others.  The panel beside the row previews each style with your channels. |
 | **Logo library status** *(library on)* | | How many names it has, and for which countries. |
 | **Numbers** | **TV font** · Even width · Fixed width, slashed zero | Even width gives every digit the same width, so channel numbers and times line up and the buffer info stays steady.  Fixed width also crosses the zero. |
 | **Show clock** | **On** · Off | The clock in the top right corner. |

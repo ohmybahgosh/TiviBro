@@ -1646,13 +1646,15 @@ var Settings = (function () {
     out.push(choice('Focus style', 'How the selected item stands out.  Outline adds a white ring, easier to spot from across the room.', ['fill', 'ring'], ['Filled', 'Filled with outline'], function () { return s.focusStyle || 'fill'; }, function (v) { s.focusStyle = v; Views.applyLook(); save(); }));
     out.push(choice('Text size', 'Guide and channel lists.', ['s', 'm', 'l'], ['Small', 'Medium', 'Large'], function () { return s.textSize || 'm'; }, function (v) { s.textSize = v; Views.applyLook(); save(); }));
     out.push(choice('Panels over video', 'How see-through the info panel, quick menu and channel guide are in fullscreen.', ['l', 'm', 'h'], ['Solid', 'Normal', 'See-through'], function () { return s.overlay || 'm'; }, function (v) { s.overlay = v; Views.applyLook(); save(); }));
-    out.push(choice('Channel logos', 'Which logo to use when both the playlist and the guide have one.', ['playlist', 'guide'], ['From the playlist', 'From the guide'], function () { return s.logoPref === 'guide' ? 'guide' : 'playlist'; }, function (v) { s.logoPref = v; save(); relist(); }));
-    out.push(choice('Logo library', 'Logos from three open projects, Worldwide TV Logos, tv-logos and iptv-org, matched to your channels by guide id, name and country.  TiviBro hosts no images: each logo loads from its project.',
+    out.push(choice('Channel logos', 'Which logo to use when both the playlist and the guide have one.', ['playlist', 'guide'], ['From the playlist', 'From the guide'], function () { return s.logoPref === 'guide' ? 'guide' : 'playlist'; }, function (v) { s.logoPref = v; save(); Views.logosChanged(); }));
+    out.push(choice('Logo library', 'Logos from three open projects, Worldwide TV Logos, tv-logos and iptv-org, matched to your channels by guide id, name and country.  Fill in missing logos only changes channels with no logo of their own (or one that doesn\'t load).  Use for every channel it knows gives them all the library\'s style.  TiviBro hosts no images: each logo loads from its project.',
       ['off', 'fill', 'all'], ['Off', 'Fill in missing logos', 'Use for every channel it knows'], function () { return s.logoLib || 'off'; },
-      function (v) { s.logoLib = v; save(true); Logos.load(L.data).then(function () { build(); }); relist(); }));
+      function (v) { s.logoLib = v; save(true); Views.logosChanged(); Logos.load(L.data).then(function () { Views.logosChanged(); build(); }); }));
     if (s.logoLib && s.logoLib !== 'off') {
-      out.push(choice('Logo library style', 'Cleaned up: each channel\'s own logo, transparent and trimmed, in white where it needs to be for dark screens (Worldwide TV Logos).  Matching set: one style for dark screens (tv-logos).  Original: each channel\'s own logo as iptv-org has it.  Each falls back to the others.',
-        ['clean', 'set', 'original'], ['Cleaned up', 'Matching set', 'Original logos'], function () { return s.logoStyle === 'original' || s.logoStyle === 'set' ? s.logoStyle : 'clean'; }, function (v) { s.logoStyle = v; save(); relist(); }));
+      var sty = choice('Logo library style', 'Cleaned up: each channel\'s own logo, trimmed, in white where it needs it for dark screens (Worldwide TV Logos).  In colour: the same logos in their own colours.  Matching set: one style (tv-logos).  Original: as iptv-org has it.  Some of your channels in each, beside.',
+        Logos.STYLES, ['Cleaned up', 'Cleaned up, in colour', 'Matching set', 'Original logos'], function () { return Logos.style(); }, function (v) { s.logoStyle = v; save(); Views.logosChanged(); });
+      sty.extra = logoPreview;
+      out.push(sty);
       var ls = Logos.status;
       out.push(info('Logo library status', ls.state === 'ready' ? ls.entries + ' names for ' + ls.countries.join(', ') : ls.state === 'loading' ? 'loading' : ls.state === 'error' ? 'not reachable: ' + ls.error : 'off'));
     }
@@ -2344,6 +2346,26 @@ var Settings = (function () {
   }
   // A note's first sentence (sentences end with ".  "), for under the name.
   function brief(t) { t = String(t || ''); var i = t.indexOf('.  '); return i > 0 && i < t.length - 3 ? t.slice(0, i + 1) : t; }
+  /* Logo library style's preview, in the panel beside the page: a few of your channels in each style, the one
+     chosen marked, on the guide's own background.  Their logos load from the projects as the row is focused. */
+  function logoPreview() {
+    var ch = Logos.samples(L.channels(L.ALL), 4), names = { clean: 'Cleaned up', colour: 'Cleaned up, in colour', set: 'Matching set', original: 'Original logos' };
+    if (!ch.length) return U.el('p', 'lp-none', T(Logos.ready ? 'None of your channels is in the library yet.' : 'The preview shows once the library has loaded.'));
+    var box = U.el('div', 'logo-prev');
+    Logos.STYLES.forEach(function (st) {
+      var line = U.el('div', 'lp-line' + (st === Logos.style() ? ' on' : ''));
+      line.appendChild(U.el('div', 'lp-name', T(names[st])));
+      var strip = U.el('div', 'lp-strip');
+      ch.forEach(function (c) {
+        var u = Logos.urlOf(Logos.match(c), st), im = U.el('img');
+        im.onerror = function () { if (!Net.retryImage(this)) this.style.visibility = 'hidden'; };
+        if (u) im.src = u; else im.style.visibility = 'hidden';
+        strip.appendChild(im);
+      });
+      line.appendChild(strip); box.appendChild(line);
+    });
+    return box;
+  }
   /* The panel beside the page: the focused setting's name, its whole note, and what the remote does on it,
      so the rows can stay short and anyone can tell what a press will do. */
   function help(e) {
@@ -2351,13 +2373,15 @@ var Settings = (function () {
     var on = e && zone === 'body' && e._title;
     h.classList.toggle('empty', !on);
     if (!on) { if (h._t !== '') { h.innerHTML = ''; h._t = ''; } return; }
-    var key = e._title + '|' + (e._help || '') + '|' + e._how;
+    var it = items[rowEls.indexOf(e)], extra = it && it.extra;
+    var key = e._title + '|' + (e._help || '') + '|' + e._how + (extra ? '|' + (it.get ? it.get() : it.value && it.value()) + Logos.status.at : '');
     if (h._t === key) return;
     h._t = key; h.innerHTML = '';
     h.appendChild(U.el('div', 'sh-k', T('About this')));
     h.appendChild(U.el('b', '', e._title));
     if (e._help) h.appendChild(U.el('p', '', e._help));
     if (e._how) h.appendChild(U.el('div', 'sh-how', e._how));
+    if (extra) try { h.appendChild(extra()); } catch (x) {}
   }
   // What the remote does on a row, in plain words, for the panel.
   function howTo(k, tone, it) {

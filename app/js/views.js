@@ -129,6 +129,11 @@ var Views = (function () {
 
   // Logo choice (Settings > Appearance): the playlist's logo or the guide's, falling back to the other,
   // and the logo library (logos.js) for channels with neither, or for every channel it knows.
+  /* Bumped when the logo settings change (logosChanged): a row keeps the logo it drew while the address is the same,
+     and a logo that failed and stands in from the library (logoFailed) has the same address, so the rows look
+     at this too, or a new library style never reached them. */
+  var logoRev = 0;
+  function logosChanged() { logoRev++; refreshLists(true); }      // the guide draws its rows again as it shows (and now, if it's showing)
   function ownLogo(c) { var g = Epg.icon(Epg.epgId(c)); return Store.settings.logoPref === 'guide' ? (g || c.logo) : (c.logo || g); }
   function logoOf(c) {
     var lib = Logos.mode();
@@ -177,10 +182,10 @@ var Views = (function () {
     row._num.style.display = showNum ? '' : 'none';
     row._c = c;
     var lg = logoOf(c);
-    if (row._logo !== lg) {
-      row._logo = lg;
+    if (row._logo !== lg + '#' + logoRev) {
+      row._logo = lg + '#' + logoRev; row._img._alt = '';
       row._img.style.visibility = lg ? '' : 'hidden';
-      if (lg) row._img.src = lg; else row._img.removeAttribute('src');
+      if (lg) { row._img.removeAttribute('src'); row._img.src = lg; } else row._img.removeAttribute('src');
     }
     var locked = !Parental.blockedOk(c);
     txt(row._n, L.name(c));
@@ -2672,7 +2677,7 @@ var Views = (function () {
     pipUpdate: pipUpdate, pipStop: pipStop, pipFull: pipFull, pipRestart: pipRestart, get pipOn() { return pipOn(); },
     init: init, reload: reload, switchTab: switchTab, setZone: setZone, resume: resume, refreshLists: refreshLists,
     closeNav: closeNav, chanMenu: chanMenu, startChannel: startChannel, goFull: goFull, playCatchup: playCatchup, refreshVodMeta:function(){if(mode==='vod')osd(true);}, playVod: playVod,
-    manageVisibility: manageVisibility, canManage: canManage, PALETTES: PALETTES, PALETTE_NAMES: PALETTE_NAMES, palette: palette, kindColours: kindColours, emptyFor: emptyFor, TAB_LABELS: TAB_LABELS, QP_BUTTONS: QP_BUTTONS, qpOrder: qpOrder, movieTrailer: movieTrailer, openReminder: openReminder, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, bankedBack: bankedBack, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
+    manageVisibility: manageVisibility, canManage: canManage, PALETTES: PALETTES, PALETTE_NAMES: PALETTE_NAMES, palette: palette, kindColours: kindColours, emptyFor: emptyFor, TAB_LABELS: TAB_LABELS, QP_BUTTONS: QP_BUTTONS, qpOrder: qpOrder, movieTrailer: movieTrailer, openReminder: openReminder, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, bankedBack: bankedBack, logoOf: logoOf, ownLogo: ownLogo, logosChanged: logosChanged, get logoRev() { return logoRev; }, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
     filterChanged: filterChanged,
     get group() { return curGroup; }, set group(g) { curGroup = g; },
     get full() { return full; }, get tab() { return tab; }, get zone() { return zone; }, get playing() { return playing; }, get vod() { return vod; }, runAction: runAction,
@@ -3047,7 +3052,7 @@ var Guide = (function () {
       r.dEl.style.display = dead ? '' : 'none';         // not playing lately (issue #37)
     }
     r.img._c = c;
-    if (r.img._src !== lg) { r.img._src = lg; r.img.style.visibility = lg ? '' : 'hidden'; if (lg) r.img.src = lg; }
+    if (r.img._src !== lg + '#' + Views.logoRev) { r.img._src = lg + '#' + Views.logoRev; r.img._alt = ''; r.img.style.visibility = lg ? '' : 'hidden'; if (lg) { r.img.removeAttribute('src'); r.img.src = lg; } }
     var locked = !Parental.blockedOk(c);
     var l = locked ? [] : progsOf(c), t1 = t0 + WIN, n = 0, nowT = Date.now();
     var segs = [];

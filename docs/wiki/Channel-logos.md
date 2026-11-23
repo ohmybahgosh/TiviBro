@@ -16,10 +16,10 @@ Channels are matched by their guide id ("CNN.us"), then by their cleaned name in
 Turn it on in the set-up tour or in **Settings > Appearance > Logo library**:
 
 - **Off**: only the playlist's and the guide's logos.
-- **Fill in missing logos**: the library's logo for channels that have none.
+- **Fill in missing logos**: the library's logo for channels that have none, or whose own logo doesn't load.  Channels with a logo of their own keep it, so a style change only shows on the filled-in ones.
 - **Use for every channel it knows**: the library's logo everywhere it has one, so the whole list matches.
 
-**Logo library style** picks **Cleaned up** (Worldwide TV Logos, the default), **Matching set** (tv-logos) or **Original logos** (iptv-org); each falls back to the others.  On a real 9,800-channel playlist it found logos for about 3,600 channels.
+**Logo library style** picks **Cleaned up** (Worldwide TV Logos, the default, in white where a logo needs it on a dark screen), **Cleaned up, in colour** (the same logos in their own colours), **Matching set** (tv-logos) or **Original logos** (iptv-org); each falls back to the others.  With the row focused, the panel beside it shows a few of your channels in each style.  The guide and the channel lists change at once.  On a real 9,800-channel playlist it found logos for about 3,600 channels.
 
 ---
 

@@ -137,6 +137,20 @@ var SportsHub = (function () {
     } else row = Math.min(row, rows.length - 1);
     draw();
   }
+  /* Only the cards that can be on screen are painted (the rest keep their place, hidden): a row of 40 games is
+     18,000 px wide, and the TV drew every card of every row as the page slid, which made ▲ ▼ and ◀ ▶ lag.  Rows
+     out of sight are hidden whole.  Classes change only where the window moved. */
+  var NEAR = 3, AHEAD = 6;
+  function paintOnly(el, tr, ri) {
+    var off = ri < row - 1 || ri > row + 3;
+    if (el.classList.contains('sp-far') !== off) el.classList.toggle('sp-far', off);
+    if (off) return;
+    var p = pos[rows[ri].id] || 0, a = Math.max(0, p - 2 - NEAR), b = Math.max(0, p - 2) + AHEAD, win = a + ':' + b;
+    if (tr._win === win) return;
+    tr._win = win;
+    var cards = tr.children;
+    for (var i = 0; i < cards.length; i++) { var far = i < a || i > b; if (cards[i]._far !== far) { cards[i]._far = far; cards[i].classList.toggle('sp-far', far); } }
+  }
   function current() { var r = rows[row]; return r && r.items[pos[r.id] || 0]; }
   var hs = null;
   function draw() {
@@ -150,6 +164,7 @@ var SportsHub = (function () {
       var r = rows[ri], x = 'translateX(' + (-Math.max(0, (pos[r.id] || 0) - 2) * CARD) + 'px)', tr = el.querySelector('.sp-track');
       if (tr.style.transform !== x) tr.style.transform = x;
       if (el.classList.contains('active') !== (ri === row)) el.classList.toggle('active', ri === row);
+      paintOnly(el, tr, ri);
     });
     // Shelf heights read once per redraw (reading them on every press makes the TV lay the page out again).
     if (!hs || hs.length !== shelves.length) hs = [].map.call(shelves, function (x) { return x.offsetHeight; });

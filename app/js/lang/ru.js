@@ -2274,5 +2274,12 @@ I18n.add('ru', {
   "as sent": "как есть",
   "when the sound and the lips don't match": "когда звук не совпадает с губами",
   "Playing through the converter so its sound can be moved": "Воспроизведение через конвертер, чтобы можно было сдвинуть звук",
-  "Audio sync (sound ahead of or behind the picture)": "Синхронизация звука (звук опережает или отстаёт)"
+  "Audio sync (sound ahead of or behind the picture)": "Синхронизация звука (звук опережает или отстаёт)",
+  "Cleaned up, in colour": "Очищенные, в цвете",
+  "None of your channels is in the library yet.": "Ни одного вашего канала пока нет в библиотеке.",
+  "The preview shows once the library has loaded.": "Предпросмотр появится, когда библиотека загрузится.",
+  "Cleaned up: each channel's own logo, trimmed, in white where it needs it for dark screens (Worldwide TV Logos).  In colour: the same logos in their own colours.  Matching set: one style (tv-logos).  Original: as iptv-org has it.  Some of your channels in each, beside.": "Очищенные: собственный логотип каждого канала, обрезанный, белый там, где это нужно для тёмного экрана (Worldwide TV Logos).  В цвете: те же логотипы в своих цветах.  Единый набор: один стиль (tv-logos).  Оригинальные: как в iptv-org.  Рядом — несколько ваших каналов в каждом стиле.",
+  "Logos from three open projects, Worldwide TV Logos, tv-logos and iptv-org, matched to your channels by guide id, name and country.  Fill in missing logos only changes channels with no logo of their own (or one that doesn't load).  Use for every channel it knows gives them all the library's style.  TiviBro hosts no images: each logo loads from its project.": "Логотипы из трёх открытых проектов: Worldwide TV Logos, tv-logos и iptv-org, подобранные к вашим каналам по id гида, названию и стране.  «Дополнять недостающие» меняет только каналы без своего логотипа (или с незагружающимся).  «Для всех известных каналов» даёт всем стиль библиотеки.  TiviBro не хранит изображения: каждый логотип загружается из своего проекта.",
+  "Cleaned up: each channel's own logo, made for dark screens.  In colour: the same, in their own colours.  Matching set: one style for all.  Original: each channel's own logo as it is.": "Очищенные: собственный логотип каждого канала для тёмного экрана.  В цвете: те же, в своих цветах.  Единый набор: один стиль для всех.  Оригинальные: логотип канала как есть.",
+  "cleaned up, in colour": "очищенные, в цвете"
 });

@@ -1530,6 +1530,8 @@ body.mv-open #osd,body.mv-open #clock,body.mv-open .qpanel{display:none!importan
 .sp-card.focus{box-shadow:0 0 0 5px var(--accent),0 16px 36px rgba(0,0,0,.45);transform:scale(1.04)}
 body.focus-ring .sp-card.focus{box-shadow:0 0 0 5px var(--accent),0 0 0 9px #fff}
 .sp-card.post{opacity:.82}.sp-card.post.focus{opacity:1}
+/* Out of sight (sportshub.js paintOnly): kept in place, not painted. */
+.sp-shelf.sp-far,.sp-card.sp-far{visibility:hidden}
 .sp-team{display:flex;align-items:center;gap:18px;height:64px}
 .sp-logo{flex:none;width:58px;height:58px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:var(--muted)}
 .sp-logo img{max-width:58px;max-height:58px;object-fit:contain}
@@ -1678,3 +1680,12 @@ body:not(.full) .sp-bug,body.mv-open .sp-bug{display:none}
 .avs-how{font-size:22px;line-height:1.4;margin-top:18px;color:#ddd}
 .avs-keys{font-size:20px;margin-top:10px;color:#9aa;white-space:pre}
 .avs-note{font-size:20px;min-height:26px;margin-top:8px;color:var(--accent)}
+/* Logo library style's preview (settings.js logoPreview): each style's logos on the guide's own background. */
+.logo-prev{margin-top:14px;display:flex;flex-direction:column;gap:6px}
+.lp-line{padding:6px 12px;border-radius:10px;background:var(--panel, rgba(0,0,0,.35));border:2px solid transparent}
+.lp-line.on{border-color:var(--accent)}
+.lp-name{font-size:17px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.lp-line.on .lp-name{color:var(--text, #fff)}
+.lp-strip{display:flex;gap:12px;align-items:center;height:38px;overflow:hidden}
+.lp-strip img{height:34px;width:66px;flex:none;object-fit:contain}
+.lp-none{color:var(--muted)}

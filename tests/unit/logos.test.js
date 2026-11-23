@@ -53,6 +53,10 @@ const data = {
   ok('original style', u('1') === 'https://example.org/cnn.png' && u('7') === INDEX.tvlogos + 'united-states/a-and-e-us.png', u('1') + ' ' + u('7'));
   Store.settings.logoStyle = '';
   ok('cleaned up by default: Worldwide TV Logos\' white version, the others standing in where it has none', u('1') === INDEX.wtl + 'us/CNN.us.white.png' && u('7') === INDEX.tvlogos + 'united-states/a-and-e-us.png' && u('2') === 'https://example.org/espn2.png', u('1') + ' ' + u('7') + ' ' + u('2'));
+  Store.settings.logoStyle = 'colour';
+  ok('in colour: the same Worldwide TV Logos logo without ".white", the others standing in', u('1') === INDEX.wtl + 'us/CNN.us.png' && u('2') === 'https://example.org/espn2.png', u('1') + ' ' + u('2'));
+  Store.settings.logoStyle = '';
+  ok('samples for the preview: ones with a cleaned-up logo first', Logos.samples(data.channels, 2)[0].k === '1', JSON.stringify(Logos.samples(data.channels, 2).map(c => c.k)));
   const cov = Logos.coverage(data.channels, c => c.k === '1');
   ok('coverage', cov.found === 7 && cov.filled === 6 && cov.total === 13, JSON.stringify(cov));
   ok('cached on the TV', !!Store._db['logos:US'] && Store._db['logos:US'].base === 'https://logos.test/');

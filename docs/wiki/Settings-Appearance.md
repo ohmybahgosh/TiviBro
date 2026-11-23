@@ -30,7 +30,7 @@ Which screen TiviBro opens on, where the lists start, colours, sizes and what's 
 | **Panels over video** | Solid · **Normal** · See-through | How see-through the info panel, quick menu and channel guide are in fullscreen. |
 | **Channel logos** | **From the playlist** · From the guide | Which logo to use when both have one. |
 | **Logo library** | **Off** · Fill in missing logos · Use for every channel it knows | Logos from Worldwide TV Logos, tv-logos and iptv-org for channels with none, or for every channel.  See [Channel logos](Channel-logos).  The set-up tour offers *Fill in missing logos*. |
-| **Logo library style** *(library on)* | **Cleaned up** · Matching set · Original logos | Each channel's own logo, cleaned up and in white for dark screens (Worldwide TV Logos); one style for dark screens (tv-logos); or each channel's own logo as iptv-org has it.  Each falls back to the others. |
+| **Logo library style** *(library on)* | **Cleaned up** · Cleaned up, in colour · Matching set · Original logos | Each channel's own logo, cleaned up and in white for dark screens (Worldwide TV Logos); the same logos in their own colours; one style for dark screens (tv-logos); or each channel's own logo as iptv-org has it.  Each falls back to the others.  The panel beside the row previews each style with your channels. |
 | **Logo library status** *(library on)* | | How many names it has, and for which countries. |
 | **Numbers** | **TV font** · Even width · Fixed width, slashed zero | Even width gives every digit the same width, so channel numbers and times line up and the buffer info stays steady.  Fixed width also crosses the zero. |
 | **Show clock** | **On** · Off | The clock in the top right corner. |
