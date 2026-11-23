@@ -1694,7 +1694,7 @@ I18n.add('ru', {
   "Skip intro": "Пропустить заставку",
   "Skip recap": "Пропустить пересказ",
   "Next movie": "Следующий фильм",
-  "Up next": "Далее", "Play now": "Смотреть сейчас", "Season {x}, episode {y}": "Сезон {x}, серия {y}", "Episode {n}": "Серия {n}", "Playing in {n} seconds": ["Начнётся через {n} секунду", "Начнётся через {n} секунды", "Начнётся через {n} секунд"], "An episode is missing": "Не хватает серии", "Up next countdown": "Отсчёт до следующей",
+  "Up next": "Далее", "Play in {n}": "Смотреть через {n}", "Back to episodes": "К сериям", "Play now": "Смотреть сейчас", "Season {x}, episode {y}": "Сезон {x}, серия {y}", "Episode {n}": "Серия {n}", "Playing in {n} seconds": ["Начнётся через {n} секунду", "Начнётся через {n} секунды", "Начнётся через {n} секунд"], "An episode is missing": "Не хватает серии", "Up next countdown": "Отсчёт до следующей",
   "Fetching details": "Загрузка сведений",
   "Fetching details: {x} to go": "Загрузка сведений: осталось {x}",
   "Fetching details: {n} movies to go": ["Загрузка сведений: остался {n} фильм", "Загрузка сведений: осталось {n} фильма", "Загрузка сведений: осталось {n} фильмов"],

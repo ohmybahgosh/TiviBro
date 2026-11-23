@@ -86,7 +86,7 @@ var Series = (function () {
 
   // What is kept of a show: enough for the details, small enough for thousands.
   function lite(m) {
-    return { id: m.id, title: m.title, year: m.year, poster: m.poster, backdrop: m.backdrop, plot: String(m.plot || '').slice(0, 600), genre: m.genre, rating: m.rating,
+    return { id: m.id, title: m.title, year: m.year, poster: m.poster, backdrop: m.backdrop, backdropHd: m.backdropHd || '', logo: m.logo || '', plot: String(m.plot || '').slice(0, 600), genre: m.genre, rating: m.rating,
       network: m.network || '', status: m.status || '', cast: String(m.cast || '').split(', ').slice(0, 5).join(', '),
       seasons: (m.seasons || []).filter(function (x) { return x && x.number > 0; }).length };
   }
@@ -117,7 +117,10 @@ var Series = (function () {
       } else {
         // A strong ask (the guide gave a season and episode, or the provider says it's a show) replaces an
         // earlier weak miss.
-        shows[job.k] = { at: Date.now(), s: job.st, m: m ? lite(m) : 0, v: VER };
+        // A miss when asking again for an older match's logo keeps the match (now known to have none to add).
+        var had = shows[job.k];
+        if (!m && had && had.m) { had.m.logo = had.m.logo || ''; }
+        else shows[job.k] = { at: Date.now(), s: job.st, m: m ? lite(m) : 0, v: VER };
       }
       save(); changed();
     }, function (e) {
@@ -141,6 +144,9 @@ var Series = (function () {
     if (!ct.t || !norm(ct.t)) return null;
     cc = /^[A-Z]{2}$/.test(cc || '') ? cc : '';
     var k = keyOf(ct.t, y) + (cc ? '|' + cc : ''), hit = shows[k];
+    // A match kept before shows kept their logo art (Up next shows it): used as it is, and asked again in the
+    // background for the logo.
+    if (hit && hit.m && hit.m.logo === undefined && !queued[k] && later.length < LATER) { queued[k] = 1; later.push({ k: k, t: ct.t, y: y, st: hit.s || strength || 'weak', cc: cc }); pump(); }
     if (hit && (hit.m || hit.s === 'strong' || strength !== 'strong')) return hit.m || null;
     var job = { k: k, t: ct.t, y: y, st: strength || 'weak', cc: cc };
     if (!bg) want(job);

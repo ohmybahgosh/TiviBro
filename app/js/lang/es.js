@@ -1691,7 +1691,7 @@ I18n.add('es', {
   "Skip intro": "Saltar intro",
   "Skip recap": "Saltar resumen",
   "Next movie": "Siguiente película",
-  "Up next": "A continuación", "Play now": "Reproducir ya", "Season {x}, episode {y}": "Temporada {x}, episodio {y}", "Episode {n}": "Episodio {n}", "Playing in {n} seconds": ["Empieza en {n} segundo", "Empieza en {n} segundos"], "An episode is missing": "Falta un episodio", "Up next countdown": "Cuenta atrás de A continuación",
+  "Up next": "A continuación", "Play in {n}": "Reproducir en {n}", "Back to episodes": "Volver a los episodios", "Play now": "Reproducir ya", "Season {x}, episode {y}": "Temporada {x}, episodio {y}", "Episode {n}": "Episodio {n}", "Playing in {n} seconds": ["Empieza en {n} segundo", "Empieza en {n} segundos"], "An episode is missing": "Falta un episodio", "Up next countdown": "Cuenta atrás de A continuación",
   "Fetching details": "Obteniendo detalles",
   "Fetching details: {x} to go": "Obteniendo detalles: faltan {x}",
   "Fetching details: {n} movies to go": ["Obteniendo detalles: falta {n} película", "Obteniendo detalles: faltan {n} películas"],

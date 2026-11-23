@@ -1506,10 +1506,10 @@ var Media = (function () {
     var go = function () { clearTimeout(queueTimer); queueTimer = null; if (queue === q) playQueued(q.at + 1); };
     var stop = function () { clearTimeout(queueTimer); queueTimer = null; if (queue === q) queue = null; };
     if (now) return go();
-    // Up next (upnext.js): the next movie's backdrop, its name, year and plot, counting down.
-    var md = next.metadata || {};
-    UpNext.show({ kicker: 'Next in the collection', image: md.backdrop ? wrap(md.backdrop) : md.poster ? wrap(md.poster) : '', still: !!md.backdrop,
-      show: md.collection || '', line: T('{x} of {y}', { x: q.at + 2, y: q.list.length }) + (next.year || md.year ? '   ·   ' + (next.year || md.year) : ''), title: nameOf(next),
+    // Up next (upnext.js, full screen): the next movie's backdrop, its title as artwork (or in type), year and plot, counting down.
+    var md = next.metadata || {}, bd = md.backdropHd || md.backdrop || md.poster;
+    UpNext.show({ kicker: 'Next in the collection', image: bd ? wrap(bd) : '', logo: md.logo ? wrap(md.logo) : '',
+      show: nameOf(next), line: T('{x} of {y}', { x: q.at + 2, y: q.list.length }) + (next.year || md.year ? '   ·   ' + (next.year || md.year) : '') + (md.runtime ? '   ·   ' + md.runtime : ''),
       desc: String(md.plot || '').slice(0, 400), play: go, cancel: stop, cancelLabel: 'Stop here' });
   }
   function playFrom(m, fromStart, back) {

@@ -857,26 +857,34 @@ body.noguidenames .gch,body.noguidenames .guide-group{width:260px}
 .modal-box.panel .modal-body > *{flex:0 1 auto;min-height:0;overflow:hidden}
 .modal-box.panel .modal-body > .mbtns{flex:none;overflow:visible}
 .mbtns .btn{margin:24px 18px 0 0}
-/* Up next (upnext.js): a card in the bottom right corner, as on Plex, over a corner shade rather than the whole dim. */
-.modal.upnext{align-items:flex-end;justify-content:flex-end;padding:0 64px 64px 0;box-sizing:border-box;background:linear-gradient(140deg,rgba(7,9,18,0) 35%,rgba(7,9,18,.88))}
-.modal.upnext .modal-box{width:1000px;padding:26px 30px 24px}
-.modal.upnext .modal-title{font-size:20px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-text);padding:0 0 14px}
-.modal.upnext .mbtns .btn{margin:20px 16px 0 0}
-.un-card{display:flex;gap:28px;align-items:flex-start}
-.un-art{flex:none;width:400px;height:225px;border-radius:14px;overflow:hidden;background:rgba(255,255,255,.06)}
-.un-art img{display:block;width:100%;height:100%;object-fit:cover}
-.un-words{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
-.un-show{font-size:22px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.un-line{font-size:21px;font-weight:600;color:var(--accent-text)}
-.un-title{font-size:32px;font-weight:700;line-height:1.15;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
-.un-desc{font-size:20px;line-height:1.35;color:var(--muted);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
-.un-count{display:flex;align-items:center;gap:14px;margin-top:10px;position:relative;min-height:44px}
-.un-count svg{flex:none;width:44px;height:44px;transform:rotate(-90deg)}
-.un-count circle{fill:none;stroke-width:4}
-.un-track{stroke:rgba(255,255,255,.14)}
+/* Up next (upnext.js), full screen: the next one's picture behind a shade, the show's logo (or its title) and the
+   episode on the left, the buttons along the bottom.  The box and its body are left unpositioned (and the box's
+   rise is off), so the picture and the words place themselves on the whole screen. */
+.modal.upnext{display:block;background:#05070f;animation:unIn .25s ease-out}
+@keyframes unIn{from{opacity:0}to{opacity:1}}
+.modal.upnext .modal-box,.modal.upnext .modal-box.enter{position:static;width:auto;max-height:none;padding:0;background:none;box-shadow:none;border-radius:0;animation:none}
+.modal.upnext .modal-body,.modal-box.panel .modal-body > .un-screen{position:static;overflow:visible}
+.modal.upnext .modal-sub{display:none}
+.modal.upnext .modal-title{position:absolute;left:108px;top:84px;z-index:2;padding:0;font-size:22px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-text)}
+.un-bg{position:absolute;top:0;right:0;bottom:0;left:0;background:radial-gradient(1300px 900px at 78% 32%,#2a3a66 0%,#141c36 45%,#05070f 82%)}
+.un-bgimg{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;object-fit:cover}
+.un-shade{position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(90deg,rgba(5,7,15,.95) 0%,rgba(5,7,15,.8) 40%,rgba(5,7,15,.1) 78%),linear-gradient(0deg,rgba(5,7,15,.96) 0%,rgba(5,7,15,.6) 30%,rgba(5,7,15,0) 55%)}
+.un-words{position:absolute;left:108px;top:200px;width:930px;z-index:2;display:flex;flex-direction:column;gap:22px}
+.un-name{min-height:60px}
+.un-logo{display:block;max-width:840px;max-height:240px;object-fit:contain;object-position:left center;filter:drop-shadow(0 6px 30px rgba(0,0,0,.5))}
+.un-showtitle{font-size:86px;line-height:1.02;font-weight:800;letter-spacing:-1px;color:#fff;text-shadow:0 6px 34px rgba(0,0,0,.5);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.un-line{font-size:28px;font-weight:600;color:var(--accent-text)}
+.un-title{font-size:66px;line-height:1.08;font-weight:800;color:#fff;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.un-desc{font-size:27px;line-height:1.45;color:#c3cbe3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.modal.upnext .mbtns{position:absolute;left:108px;bottom:84px;z-index:2;display:flex;align-items:center}
+.modal.upnext .mbtns .btn{display:flex;align-items:center;height:96px;margin:0 24px 0 0;padding:0 46px;box-sizing:border-box;border-radius:999px;font-size:30px;font-weight:600;background:rgba(255,255,255,.07);border:3px solid rgba(255,255,255,.25);color:#f2f4fa}
+.modal.upnext .mbtns .btn.focus{background:#f2f4fa;border-color:#f2f4fa;color:#05070f;font-weight:700}
+.modal.upnext .mbtns .btn.un-has-ring{padding-left:14px}
+.un-ring{flex:none;width:72px;height:72px;margin-right:20px;transform:rotate(-90deg)}
+.un-ring circle{fill:none;stroke-width:4}
+.un-track{stroke:rgba(127,140,180,.35)}
 .un-left{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset 1s linear}
-.un-n{position:absolute;left:0;top:0;width:44px;line-height:44px;text-align:center;font-size:18px;font-weight:700}
-.un-in{font-size:20px;color:var(--muted)}
+.un-tri{fill:currentColor;transform:rotate(90deg);transform-origin:24px 24px}
 
 /* Embedded MKV cues render in the DOM: old webOS errors on source-less tracks. */
 .mkv-captions,.subs-captions{position:absolute;left:6%;right:6%;bottom:7%;text-align:center;color:#fff;font:42px sans-serif;white-space:pre-line;text-shadow:2px 2px 3px #000,-2px -2px 3px #000;z-index:10;pointer-events:none}

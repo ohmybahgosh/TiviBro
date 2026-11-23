@@ -1065,15 +1065,16 @@ var Vod = (function () {
     open(kind, true);
     if (nx) upNext(nx, playNext);
   }
-  // The Up next card for a provider's episode: its picture and summary (TMDB's where the provider has none), or the
-  // show's cover and no summary for one not seen yet with Hide spoilers on.
+  /* Up next for a provider's episode (upnext.js, full screen): its picture and summary (TMDB's where the provider has
+     none) with the show's logo art from TMDB (with your token; else its name in type), or the show's backdrop and no
+     summary for one not seen yet with Hide spoilers on. */
   function upNext(nx, playNext) {
     var s = series || {}, tv = typeof Series !== 'undefined' && s.name ? Series.show(s.name, s.year, 'strong') : null, te = tv ? Series.episode(tv, nx.season, nx.num) : null;
     var spoil = !!(Store.settings.noSpoilers && !isWatched(idOf(nx)) && !resumeOf(idOf(nx)));
     var still = spoil ? '' : (nx.cover && nx.cover !== s.cover ? nx.cover : (te && te.still) || '');
     var title = String(nx.label || '').replace(/^S\d+ E\S*\s+/, '') || (!spoil && te && te.t) || '';
-    UpNext.show({ image: still || (tv && tv.backdrop) || s.cover || '', still: !!still, show: s.name || '', line: T('Season {x}, episode {y}', { x: nx.season, y: nx.num || '?' }),
-      title: title, desc: spoil ? '' : String(nx.plotEp || (te && te.plot) || '').slice(0, 400), play: playNext, cancel: function () {}, cancelLabel: 'Return to episodes' });
+    UpNext.show({ image: still || (tv && (tv.backdropHd || tv.backdrop)) || s.cover || '', logo: (tv && tv.logo) || '', show: (tv && tv.title) || s.name || '', line: T('Season {x}, episode {y}', { x: nx.season, y: nx.num || '?' }),
+      title: title, desc: spoil ? '' : String(nx.plotEp || (te && te.plot) || '').slice(0, 400), play: playNext, cancel: function () {}, cancelLabel: 'Back to episodes' });
   }
 
   /* Yellow: watched or not watched in one press, for a movie or an episode (no menu to open and close each time). */

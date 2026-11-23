@@ -219,8 +219,11 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     vm.createContext(ctx2);
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js/series.js'), 'utf8') + ';this.Series = Series;', ctx2);
     ctx2.Series.show('Severance'); await wait(30);
-    const sev = ctx2.Series.show('Severance'), ax = ctx2.Series.show('Ax Men'); await wait(60);
-    ok('an older miss is asked again with today\'s matching; an older match is kept', !!sev && sev.title === 'Severance' && ax === null && asks2.indexOf('Ax Men') >= 0 && asks2.indexOf('Severance') < 0, JSON.stringify({ sev, asks2 }));
+    const sev = ctx2.Series.show('Severance'), ax = ctx2.Series.show('Ax Men'); await wait(600);
+    ok('an older miss is asked again with today\'s matching; an older match is kept', !!sev && sev.title === 'Severance' && ax === null && asks2.indexOf('Ax Men') >= 0, JSON.stringify({ sev, asks2 }));
+    await wait(800);
+    const sev2 = ctx2.Series.show('Severance'); await wait(800); ctx2.Series.show('Severance');
+    ok('an older match is asked again once in the background for its logo art, and a miss then keeps it', !!sev2 && sev2.title === 'Severance' && asks2.filter((x) => x === 'Severance').length === 1, JSON.stringify({ sev2, asks2 }));
   }
   console.log(fails ? fails + ' FAILED' : 'all TMDB series checks passed');
   process.exit(fails ? 1 : 0);

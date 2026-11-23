@@ -200,14 +200,15 @@ var MediaSeries = (function () {
     });
     return true;
   }
-  /* The Up next card for an episode: its own still and summary, or (not seen yet, with Hide spoilers on) the show's
-     art and no summary.  A missing episode before it only asks: no countdown. */
+  /* Up next for an episode (upnext.js, full screen): its own still and summary behind and beside the show's logo
+     art, or (not seen yet, with Hide spoilers on) the show's backdrop and no summary.  A missing episode before
+     it only asks: no countdown. */
   function upNext(ep, showRecord, gap, play, cancel) {
     var em = ep.metadata || {}, sm = (showRecord && showRecord.metadata) || {}, hide = !!Store.settings.noSpoilers && ep.watchState !== 'watched';
     var still = !hide && em.still, number = ep.airDate && ep.order === 'date' ? ep.airDate : ep.absoluteNumber != null && ep.order === 'absolute' ? T('Episode {n}', { n: ep.absoluteNumber }) : T('Season {x}, episode {y}', { x: ep.season, y: ep.number });
-    UpNext.show({ kicker: gap ? 'An episode is missing' : 'Up next', auto: !gap, image: still || sm.backdrop || sm.poster || em.poster || '', still: !!still,
+    UpNext.show({ kicker: gap ? 'An episode is missing' : 'Up next', auto: !gap, image: still || sm.backdropHd || sm.backdrop || sm.poster || em.poster || '', logo: sm.logo || '',
       show: (showRecord && (sm.title || showRecord.title)) || '', line: number, title: em.title || ep.title || '', desc: hide ? '' : String(em.plot || '').slice(0, 400),
-      play: play, cancel: cancel, cancelLabel: 'Return to episodes' });
+      play: play, cancel: cancel, cancelLabel: 'Back to episodes' });
   }
   function episodeLabel(item) {
     if (item.kind !== 'episode') return item.metadata && item.metadata.title || item.title || item.label;
