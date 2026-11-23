@@ -68,7 +68,7 @@ var Diag = (function () {
 
   // The QR code to the web editor's Report a problem page (Settings > System, the menu, after a crash).
   function openReport(keepOn) {
-    WebEdit.showJoin('report', null, { keepOn: !!keepOn, title: 'Report a problem', lead: 'Scan the code with your phone\'s camera (or open the address on a computer).  Describe what happened there; the TV adds its version, model and log, with logins and server names taken out, and your phone opens a GitHub issue ready to send.' });
+    WebEdit.showJoin('report', null, { keepOn: !!keepOn, title: I18n.t('Report a problem'), lead: I18n.t('Scan the code with your phone\'s camera (or open the address on a computer).  Describe what happened there; the TV adds its version, model and log, with logins and server names taken out, and your phone opens a GitHub issue ready to send.') });
   }
 
   /* Send a crash report straight from the TV, no phone needed: through the same relay as the web

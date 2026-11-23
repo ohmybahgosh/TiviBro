@@ -1422,7 +1422,7 @@ var Epg = (function () {
     var m = Store.edits.epgMap;
     if (id) m[ch.k] = id; else delete m[ch.k];
     Store.saveEdits();
-    if (id && !cache.has(id) && xmlMode) { U.toast('Loading guide for this channel'); return init(Library, !PUB_ID.test(id)); }
+    if (id && !cache.has(id) && xmlMode) { U.toast(I18n.t('Loading guide for this channel')); return init(Library, !PUB_ID.test(id)); }
     emit(null);
   }
 

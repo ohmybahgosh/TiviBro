@@ -280,7 +280,7 @@ var Settings = (function () {
     // Not set up yet: the step-by-step setup (subs.js setup()), which also comes to the phone app.
     if (!Subs.configured) out.push(action('Set up OpenSubtitles (step by step)', 'Free, about two minutes: an account, a key for TiviBro, and you\'re done.  Easiest with the TiviBro phone app open on this page.', function () { Subs.setup(0, function () { build(); }); }, function () { return 'Not set up'; }));
     else out.push(action('OpenSubtitles API key saved', 'Select to replace it.  It stays on this TV, out of backups.', function () {
-      UI.prompt('OpenSubtitles API key', '', function (k) { try { Subs.setKey(k); U.toast(k.trim() ? 'API key saved' : 'API key removed'); build(); } catch (e) { U.toast(e.message, 7000); } }, 'Empty removes it.  Typing is easier from the phone app.', true);
+      UI.prompt('OpenSubtitles API key', '', function (k) { try { Subs.setKey(k); U.toast(k.trim() ? 'API key saved' : 'API key removed'); build(); } catch (e) { U.toast(e.message, 7000); } }, I18n.t('Empty removes it.  Typing is easier from the phone app.'), true);
     }, function () { return Subs.configured ? 'Saved' : 'Not set'; }));
     if (Subs.configured) out.push(action('Test OpenSubtitles key', 'Asks OpenSubtitles now whether the saved key (and your sign-in) work.', function () { U.toast('Checking with OpenSubtitles…'); Subs.test().then(function (m) { U.toast(m, 7000); live(); }, function (e) { U.toast(e.message, 8000); }); }));
     if (Subs.configured) out.push(action(Subs.user ? 'Signed in as ' + Subs.user : 'Sign in (optional)', 'Without an account OpenSubtitles allows 5 downloads a day; with a free one, 20.', function () {
@@ -289,8 +289,8 @@ var Settings = (function () {
         UI.prompt('Password for ' + u.trim(), '', function (p) {
           U.toast('Signing in…');
           Subs.signIn(u, p).then(function (n) { U.toast('Signed in' + (n ? ': ' + n + ' downloads a day' : '')); build(); }, function (e) { U.toast(e.message, 6000); build(); });
-        }, 'Kept on this TV only, to sign in again each day.', true);
-      }, 'Empty signs out.');
+        }, T('Kept on this TV only, to sign in again each day.'), true);
+      }, T('Empty signs out.'));
     }, function () { return Subs.user ? (Subs.allowed ? Subs.allowed + ' a day' : 'Signed in') : '5 a day'; }));
     if (Subs.configured) out.push(action('Remove OpenSubtitles key', 'Downloaded subtitles stay where they are.', function () { Subs.setKey(''); Subs.signIn('', ''); U.toast('OpenSubtitles key removed'); build(); }));
     return out;
@@ -308,7 +308,7 @@ var Settings = (function () {
   function tmdbRows() {
     var hasToken = MediaStore.preferences().tmdbConfigured;
     return [
-      phoneDoes('tmdb-token', action(hasToken ? 'TMDB API token saved' : 'Add TMDB API token', hasToken ? 'Token saved on this TV.  Select to replace it, or use the web editor.' : 'Create your own free API key or Read Access Token at themoviedb.org/settings/api.  The web editor is easier for pasting it.  It gives My media its posters and details, and finds the movies in your guide.', function () { UI.prompt(hasToken ? 'Replace TMDB API token' : 'TMDB API key or Read Access Token', '', function (token) { if (!token.trim()) return; U.toast('Checking TMDB access…'); Media.setTmdbToken(token).then(function () { U.toast('TMDB token saved on this TV'); if (typeof Movies !== 'undefined') Movies.poke(); live(); }, function (e) { U.toast(e.message, 6000); }); }, 'The token stays on this TV and is excluded from backups.', true); }, function () { return MediaStore.preferences().tmdbConfigured ? 'Saved' : 'Not set'; })),
+      phoneDoes('tmdb-token', action(hasToken ? 'TMDB API token saved' : 'Add TMDB API token', hasToken ? 'Token saved on this TV.  Select to replace it, or use the web editor.' : 'Create your own free API key or Read Access Token at themoviedb.org/settings/api.  The web editor is easier for pasting it.  It gives My media its posters and details, and finds the movies in your guide.', function () { UI.prompt(hasToken ? 'Replace TMDB API token' : 'TMDB API key or Read Access Token', '', function (token) { if (!token.trim()) return; U.toast('Checking TMDB access…'); Media.setTmdbToken(token).then(function () { U.toast('TMDB token saved on this TV'); if (typeof Movies !== 'undefined') Movies.poke(); live(); }, function (e) { U.toast(e.message, 6000); }); }, T('The token stays on this TV and is excluded from backups.'), true); }, function () { return MediaStore.preferences().tmdbConfigured ? 'Saved' : 'Not set'; })),
       hasToken && action('Test TMDB token', 'Asks TMDB now whether the saved token works.', function () { U.toast('Checking the TMDB token…'); Media.testTmdbToken().then(function (m) { U.toast(m, 5000); }, function (e) { U.toast(e.message, 7000); }); }),
       hasToken && action('Remove TMDB token', 'Saved movie details remain available.', function () { Media.setTmdbToken('').then(function () { if (typeof Movies !== 'undefined') Movies.poke(); live(); }); })
     ].filter(Boolean);
@@ -503,11 +503,11 @@ var Settings = (function () {
       });
     });
     out.push(head('Lists other people made'),
-      action('Search lists by name', 'Christmas, A24, Oscar winners, 80s horror…  Each result says what it holds.', function () { UI.prompt('Search Trakt lists', '', function (q) { if (q.trim()) traktLook('Looking for "' + q.trim() + '"', function () { return Trakt.search(q, true); }); }, 'Typing is easier from the phone app or the web editor.'); }),
+      action('Search lists by name', 'Christmas, A24, Oscar winners, 80s horror…  Each result says what it holds.', function () { UI.prompt('Search Trakt lists', '', function (q) { if (q.trim()) traktLook('Looking for "' + q.trim() + '"', function () { return Trakt.search(q, true); }); }, T('Typing is easier from the phone app or the web editor.')); }),
       action('Popular lists', 'The lists most liked on Trakt.', function () { traktLook('Looking up popular lists', function () { return Trakt.browse('popular', true); }); }),
       action('Trending lists', 'Lists people are liking this week.', function () { traktLook('Looking up trending lists', function () { return Trakt.browse('trending', true); }); }),
       action('Paste a list\'s link', 'Like Radarr and Sonarr: a trakt.tv/users/NAME/lists/LIST link, or NAME/LIST.  The list must be public, or yours.', function () {
-        UI.prompt('Trakt list link or NAME/LIST', '', function (v) { if (!v.trim()) return; U.toast('Looking up the list…'); Trakt.addTyped(v).then(traktAdded, traktErr); }, 'For example trakt.tv/users/garycrawfordgc/lists/latest-releases.  Typing is easier from the phone app or the web editor.');
+        UI.prompt('Trakt list link or NAME/LIST', '', function (v) { if (!v.trim()) return; U.toast('Looking up the list…'); Trakt.addTyped(v).then(traktAdded, traktErr); }, T('For example trakt.tv/users/garycrawfordgc/lists/latest-releases.  Typing is easier from the phone app or the web editor.'));
       }));
     return out;
   }
@@ -701,7 +701,7 @@ var Settings = (function () {
       var doh = /^https:\/\/[^\s\/?#]+(\/\S*)?$/i.test(v), parts = v.split(/[\s,;]+/).filter(Boolean);
       if (!doh && !(parts.length && parts.length <= 3 && parts.every(function (x) { return v4(x) || v6(x); }))) { U.toast('That isn\'t a DNS address (192.168.1.1, 2001:de4::101) or an https:// link', 6000); return; }
       s.dnsServer = doh ? v : parts.join(', '); s.dns = 'custom'; save(); Net.setDns(); after();
-    }, 'Like 192.168.1.1, 2001:de4::101 or https://dns.example/dns-query');
+    }, T('Like 192.168.1.1, 2001:de4::101 or https://dns.example/dns-query'));
   }
   /* A setting that changes the guide reloads it, but not on every press (discussion #36: stepping Keep past days
      from 1 to 7 started six guide downloads).  It waits until you've moved off that row (or left Settings) and a
@@ -1020,7 +1020,7 @@ var Settings = (function () {
   function listSection(out, title, kind, arr, changed, hint) {
     out.push(head(title + ' (' + arr.length + ')'));
     out.push(action('Add a ' + kind + '…', hint, function () {
-      UI.prompt('Add a ' + kind, '', function (v) { if (v.trim()) { arr.push(/prefix/.test(kind) ? v.replace(/^\s+/, '') : v.replace(/\s+$/, '')); changed(true); } }, 'Spaces count.  Shown with · in the list.');
+      UI.prompt('Add a ' + kind, '', function (v) { if (v.trim()) { arr.push(/prefix/.test(kind) ? v.replace(/^\s+/, '') : v.replace(/\s+$/, '')); changed(true); } }, T('Spaces count.  Shown with · in the list.'));
     }));
     arr.forEach(function (e, i) {
       out.push(action(show(e), '', function () {
@@ -1155,7 +1155,7 @@ var Settings = (function () {
             L.setGroupName(g.id, n === own() ? '' : n.slice(0, 80));
             relist(); build();
             U.toast(n ? 'Renamed to ' + n : 'Back to ' + own());
-          }, L.isCustom(g.id) ? 'Typing is easier from the phone app.' : 'Empty goes back to "' + own() + '".  Typing is easier from the phone app.');
+          }, L.isCustom(g.id) ? T('Typing is easier from the phone app.') : T('Empty goes back to "{x}".  Typing is easier from the phone app.', { x: own() }));
         }, function () { return '›'; }));
       });
     }
@@ -1207,7 +1207,7 @@ var Settings = (function () {
     if (!ticked.length) out.push(info('Tick the groups to merge below, then choose here where they go.', ''));
     else {
       out.push(action('Into a new group…', 'Name it, and the ticked groups show as that one group.', function () {
-        UI.prompt('Name for the merged group', '', function (n) { if (n && n.trim()) mergeTicked(ticked[0], ticked, n.trim()); }, 'Typing is easier from the phone app.');
+        UI.prompt('Name for the merged group', '', function (n) { if (n && n.trim()) mergeTicked(ticked[0], ticked, n.trim()); }, T('Typing is easier from the phone app.'));
       }));
       if (ticked.length > 1) out.push(action('Into one of them…', 'Pick which ticked group the others go into.', function () {
         UI.menu('Merge into', ticked.map(function (g) { return { label: I18n.raw(nameOf(g)), action: function () { mergeTicked(g, ticked, ''); } }; }));
@@ -1541,7 +1541,7 @@ var Settings = (function () {
   function watchlist() {
     var s = S(), out = [], words = Watch.list();
     out.push(action('Add a show, team or name…', 'Matched as whole words in programme titles: "Cars" does not find "Oscars".  Yellow in Search adds what you typed.', function () {
-      UI.prompt('Look for', '', function (v) { if (Watch.add(v)) build(); }, 'For example Yankees, Bluey, Premier League or Gordon Ramsay');
+      UI.prompt('Look for', '', function (v) { if (Watch.add(v)) build(); }, T('For example Yankees, Bluey, Premier League or Gordon Ramsay'));
     }));
     out.push(choice('Look ahead', 'How far into the guide to look.', [6, 12, 24, 48], ['6 hours', '12 hours', '24 hours', '2 days'], function () { return +s.watchAhead || 24; }, function (v) { s.watchAhead = v; save(); Watch.scan(true); build(); }));
     out.push(choice('When something is found', '', ['remind', 'tell'], ['Set a reminder', 'Just tell me'], function () { return s.watchAction === 'tell' ? 'tell' : 'remind'; }, function (v) { s.watchAction = v; save(); }));
@@ -1674,7 +1674,7 @@ var Settings = (function () {
       function () { return !!Filter.conf().adult; }, function (v) { Filter.setAdult(v); Views.filterChanged(); build(); }));
     out.push(action('Add a word or call sign…', 'Hides every channel and group with it in the name, as a whole word: "WXYZ", "Shopping".', function () {
       UI.prompt('Hide channels and groups with this word', '', function (w) { if (!w.trim()) return; Filter.addWord(w); Views.filterChanged(); build(); U.toast(Filter.last.channels + ' channels and ' + Filter.last.groups + ' groups left out now', 5000); },
-        'A word, a call sign or a few words together.  Upper or lower case doesn\'t matter.');
+        T('A word, a call sign or a few words together.  Upper or lower case doesn\'t matter.'));
     }, function () { return '›'; }));
     // What the filter hides by name: a page of its own when there's more than a few (it can be a long list).
     var fl = function () { var g = Filter.conf(), o = [];

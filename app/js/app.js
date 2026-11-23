@@ -592,7 +592,7 @@ var App = (function () {
         return Store.bigGet(cacheKey(p)).then(function (cached) {
           if (gen !== startGen) return;
           if (cached && cached.sig === Source.sig(p) && cached.channels && cached.channels.length) { if (useOther(p, cached)) changed = true; }
-          else if (otherQ.indexOf(p.id) < 0) { otherQ.push(p.id); U.toast('Loading the channels of ' + (p.name || 'the playlist'), 4000); }
+          else if (otherQ.indexOf(p.id) < 0) { otherQ.push(p.id); U.toast(I18n.t('Loading the channels of') + ' ' + (p.name || I18n.t('the playlist')), 4000); }
         });
       });
     });
@@ -781,7 +781,7 @@ var App = (function () {
   }
 
   function open(p) {
-    loading('Loading ' + (p.name || 'channels') + '…');
+    loading(I18n.t('Loading {x}…', { x: p.name || I18n.t('channels') }));
     // Said before the read, so a report from a TV that closed while reading a big list shows it was then (issue #153).
     Log.info('app', 'Opening the channel list kept from the last load');
     return Store.bigGet(cacheKey(p)).then(function (cached) {
