@@ -1085,4 +1085,21 @@ I18n.add('fr', {
   "The token stays on this TV and is excluded from backups.": 'Le jeton reste sur cette TV et n\'est pas inclus dans les sauvegardes.',
   "Typing is easier from the phone app or the web editor.": 'Taper est plus facile depuis l\'appli téléphone ou l\'éditeur web.',
   "Typing is easier from the phone app.": 'Taper est plus facile depuis l\'appli téléphone.',
+
+  // Fullscreen info panel (osd/osdMore/osdLegend): programme kind tags, the summary box and the button legend.
+  "No guide information for this channel.": 'Aucune information de guide pour cette chaîne.',
+  "Series": 'Série', "Documentary": 'Documentaire', "New": 'Nouveau',
+  "Summary hidden, a new episode (Hide spoilers is on).": 'Résumé masqué, nouvel épisode (Masquer les spoilers est activé).',
+  "The guide has no summary for this programme.": 'Le guide n\'a pas de résumé pour ce programme.',
+  "paused": 'en pause',
+  "ends {x}": 'se termine à {x}',
+  "Keep pressing ◀ ▶ to jump further": 'Continuez à appuyer sur ◀ ▶ pour aller plus loin',
+  "Left and right skip {n}s": 'Gauche et droite avancent/reculent de {n} s',
+  "Yellow or Back returns to live": 'Jaune ou Retour revient au direct',
+  "Next chapter": 'Chapitre suivant',
+  "Skip {n}s": 'Sauter {n} s',
+  "Skip 10 min": 'Sauter 10 min',
+  "Skip 5 min": 'Sauter 5 min',
+  "Watch from here": 'Regarder à partir d\'ici',
+  "Pause, record, more": 'Pause, enregistrer, plus',
 });

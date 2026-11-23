@@ -1102,19 +1102,19 @@ var Views = (function () {
   function osdMore() {
     var box = $('osdMore'), c = playing; if (!box) return; box.innerHTML = '';
     var nn = c && Epg.nowNext(c), p = nn && nn.now;
-    if (!p) { box.appendChild(U.el('p', 'om-desc', 'No guide information for this channel.')); return; }
+    if (!p) { box.appendChild(U.el('p', 'om-desc', T('No guide information for this channel.'))); return; }
     var mv = typeof Movies !== 'undefined' ? Movies.of(c, p) : null, sh = !mv && typeof Series !== 'undefined' ? Series.of(c, p) : null;
     var se = sh && p.ep ? Series.episode(sh, p.ep) : null, gd = Epg.desc(c, p) || '';
-    var meta = mv ? ['Movie', mv.year, U.runtime(mv.runtime), mv.genre, mv.rating ? '★ ' + mv.rating + ' TMDB' : '']
-      : sh ? ['Series', p.ep, se && se.t, sh.network, sh.genre, sh.rating ? '★ ' + sh.rating + ' TMDB' : '']
-      : [{ s: 'Sports', n: 'News', c: 'Kids', d: 'Documentary' }[p.k] || '', p.mv ? 'Movie' : '', p.y, p.ep, p.n ? 'New' : ''];
+    var meta = mv ? [T('Movie'), mv.year, U.runtime(mv.runtime), mv.genre, mv.rating ? '★ ' + mv.rating + ' TMDB' : '']
+      : sh ? [T('Series'), p.ep, se && se.t, sh.network, sh.genre, sh.rating ? '★ ' + sh.rating + ' TMDB' : '']
+      : [T({ s: 'Sports', n: 'News', c: 'Kids', d: 'Documentary' }[p.k] || ''), p.mv ? T('Movie') : '', p.y, p.ep, p.n ? T('New') : ''];
     if ((!gd || gd.length < 60) && mv && mv.plot) gd = mv.plot;
     if ((!gd || gd.length < 60) && sh) gd = (se && se.plot) || sh.plot || gd;
     var now = Date.now(), spoil = Store.settings.noSpoilers && !p.up && (p.n || (p.s > now && !!(sh || mv || p.ep) && p.k !== 'n' && p.k !== 's'));
-    if (spoil && gd) gd = 'Summary hidden, a new episode (Hide spoilers is on).';
+    if (spoil && gd) gd = T('Summary hidden, a new episode (Hide spoilers is on).');
     var line = meta.filter(Boolean).join('   ·   ');
     if (line) box.appendChild(U.el('div', 'om-meta', line));
-    box.appendChild(U.el('p', 'om-desc', gd || 'The guide has no summary for this programme.'));
+    box.appendChild(U.el('p', 'om-desc', gd || T('The guide has no summary for this programme.')));
   }
   function osd(show, ch) {
     if (!full) return;
@@ -1126,17 +1126,17 @@ var Views = (function () {
       var m = vod.meta;
       $('osdNum').textContent = ''; $('osdName').textContent = m.title; $('osdGroup').textContent = m.sub || '';
       var d = Player.duration, pos = vs.pending != null ? vs.pending : Player.position, jump = vs.pending != null ? vs.pending - Player.position : 0;
-      $('osdNow').textContent = fmtDur(pos) + ' / ' + (d ? fmtDur(d) : '--:--') + (vs.pending != null ? '   (' + (jump < 0 ? '−' : '+') + fmtDur(Math.abs(jump)) + ')' : Player.paused ? '   paused' : '') + (d ? '   ends ' + U.hhmm(Date.now() + (d - pos) * 1000) : '');
+      $('osdNow').textContent = fmtDur(pos) + ' / ' + (d ? fmtDur(d) : '--:--') + (vs.pending != null ? '   (' + (jump < 0 ? '−' : '+') + fmtDur(Math.abs(jump)) + ')' : Player.paused ? '   ' + T('paused') : '') + (d ? '   ' + I18n.t('ends {x}', { x: U.hhmm(Date.now() + (d - pos) * 1000) }) : '');
       $('osdBar').style.width = d ? Math.round(100 * pos / d) + '%' : '0';
-      $('osdNext').textContent = [Player.media, 'Keep pressing ◀ ▶ to jump further'].filter(Boolean).join('    ');
+      $('osdNext').textContent = [Player.media, T('Keep pressing ◀ ▶ to jump further')].filter(Boolean).join('    ');
       // A picture of the movie where the seek will land (seekprev.js).
       if (typeof SeekPrev !== 'undefined') SeekPrev.show(vs.pending != null ? vs.pending : hoverT, d, vs.pending != null ? vs.dir : 0);
     } else if (mode === 'catchup' && cu) {
       var c0 = cu.c, dur = (cu.p.e - cu.p.s) / 1000, at = cu.pending != null ? cu.pending : cu.off + Player.position;
-      $('osdNum').textContent = Store.settings.showNumbers ? c0.num : ''; $('osdName').textContent = L.name(c0); $('osdGroup').textContent = 'Catch-up';
+      $('osdNum').textContent = Store.settings.showNumbers ? c0.num : ''; $('osdName').textContent = L.name(c0); $('osdGroup').textContent = T('Catch-up');
       $('osdNow').textContent = U.hhmm(cu.p.s + at * 1000) + '   ' + cu.p.t + '   (' + fmtDur(at) + ' / ' + fmtDur(dur) + ')';
       $('osdBar').style.width = Math.round(100 * U.clamp(at / dur, 0, 1)) + '%';
-      $('osdNext').textContent = 'Left and right skip ' + Store.settings.skip + 's    Yellow or Back returns to live';
+      $('osdNext').textContent = I18n.t('Left and right skip {n}s', { n: Store.settings.skip }) + '    ' + T('Yellow or Back returns to live');
     } else {
       var c = ch || playing;
       if (!c) return;
@@ -1149,7 +1149,7 @@ var Views = (function () {
       if (nn && nn.now) {
         $('osdNow').textContent = (nn.now.up || nn.now.ended ? '' : T('{x} to {y}', { x: U.hhmm(nn.now.s), y: U.hhmm(nn.now.e) }) + '   ') + nn.now.t;
         $('osdBar').style.width = nn.now.up || nn.now.ended ? '0' : Math.round(100 * (Date.now() - nn.now.s) / (nn.now.e - nn.now.s)) + '%';
-      } else { $('osdNow').textContent = Search.extra(c) || (nn && !Library.noGuide(c) ? 'No guide information' : ''); $('osdBar').style.width = '0'; }
+      } else { $('osdNow').textContent = Search.extra(c) || (nn && !Library.noGuide(c) ? T('No guide information') : ''); $('osdBar').style.width = '0'; }
       $('osdNext').textContent = nn && nn.next ? T('Next') + '  ' + U.hhmm(nn.next.s) + '  ' + nn.next.t : '';
       // Behind live (live pause's copy on the drive, or a channel's own window): how far, and where in what's kept.
       var win = behindLive();
