@@ -1,16 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 207, 2026-11-23)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 207
 
 - **German.**  TiviBro in German on the TV, in the web editor and in the phone app, picked from the TV's, the browser's or the phone's language, or in Settings > Language.
 - **A warning before your subscription ends.**  The TV says so 3 days before a playlist's subscription ends, and once it has ended, at most once a day.  Settings > Playlists and accounts > Warn before a subscription ends picks 1, 3, 7 or 14 days, or Off.
 - Settings in the phone app no longer brings TiviBro to the TV's screen over another app (YouTube, say).  When TiviBro isn't on screen it says so, with a button to open it.
 
-## 0.6.0 (alpha 206, 2026-11-23)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 206
+### In alpha 206
 
 - **A busy network helper is no longer restarted (issue #166).**  On a 1 GB TV, reading a big movie or show list keeps the helper from answering for half a minute; TiviBro restarted it then, ran without it for the rest of the session, and the next starts could hang on "Starting…".  Now it waits, asks webOS after two minutes whether the helper still runs, and starts it again only when it doesn't (or when the helper itself exits).
 - **The web editor and the phone app in your language.**  Spanish (Latin American or Spain's), French, Portuguese (Brazil's or Portugal's) and Russian, like the TV.  The web editor follows the browser's language, or pick one at the bottom of its menu; the phone app follows the phone's (on Android 13 and later, also its own language in the phone's settings) and opens the web editor in it.  What the TV sends them (Settings pages, messages, errors) comes in that language too, even when the TV itself is in another.
