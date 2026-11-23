@@ -2133,13 +2133,30 @@ var Settings = (function () {
     if (back) { for (var i = G.end - 1; i >= G.start; i--) if (focusable(i)) return i; return G.end - 1; }
     for (var j = G.start; j < G.end; j++) if (focusable(j)) return j; return G.start;
   }
+  // Back to the part titled was.title, on the row with the same label, else as far down the part as before.
+  function keepPlace(was) {
+    for (var g = 0; g < parts.length; g++) {
+      if (parts[g].title !== was.title) continue;
+      var G = parts[g];
+      for (var r = G.start; r < G.end; r++) if (items[r] && items[r].label === was.label && focusable(r)) { sel = r; return; }
+      sel = Math.min(G.start + Math.max(0, was.off), G.end - 1);
+      return;
+    }
+  }
   function pageTitle() { var top = stack[stack.length - 1]; return top ? T(top.title) : sec < 0 ? T('Search settings') : navTitle(SECTIONS[sec]); }
+  var lastKey = '';
   function build() {
-    var top = stack[stack.length - 1];
+    var top = stack[stack.length - 1], key = top ? 'p:' + top.title : 's:' + sec;
+    /* The same page drawn again (the guide loading, a value changed): what's focused now, so it stays in the same
+       part and on the same row though rows above it came or went.  Look again now on Public guide fill-in reloads
+       the guide, and its page lost rows meanwhile, which put the focus back in the first part. */
+    var was = key === lastKey && parts[grp] ? { title: parts[grp].title, label: items[sel] && items[sel].label, off: sel - parts[grp].start } : null;
+    lastKey = key;
     items = top ? shape(top.fn, top.title) : sec < 0 ? findPage() : shape(FNS[sec], SECTIONS[sec][1]);
     items = items.filter(Boolean);
     parts = sec < 0 && !top ? [{ title: '', start: 0, end: items.length }] : groupsOf(items);
     if (!parts.length) parts = [{ title: '', start: 0, end: items.length }];
+    if (was && was.title) keepPlace(was);
     sel = U.clamp(sel, 0, Math.max(0, items.length - 1));
     grp = groupOf(sel);
     var G = parts[grp];
