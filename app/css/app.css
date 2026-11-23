@@ -611,6 +611,9 @@ body:not(.nav-hidden) #viewGuide .guide-groups{left:96px}
 .qp-row-title{font-size:22px;color:var(--muted);margin:0 0 12px}
 .qp-actions{display:flex;gap:14px;flex-wrap:nowrap;margin-bottom:28px}
 .qp-act{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-width:150px;height:96px;padding:0 18px;border-radius:14px;background:var(--panel);font-size:21px;text-align:center}
+/* One line for the name: a longer one (French, Russian) makes the button wider, not two lines that pushed the
+   value ("30s", "until 8:30pm") out of the button. */
+.qp-act{flex:none}.qp-act>span:nth-child(2){white-space:nowrap}
 .qp-act .v{font-size:18px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}
 .qp-act.focus{background:var(--accent);color:var(--on-accent)}
 .qp-act.focus .v{color:var(--on-accent-dim)}

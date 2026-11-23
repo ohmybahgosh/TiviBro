@@ -736,7 +736,8 @@ var Phone = (function () {
     if (m < 1) return I18n.t('just now');
     if (m < 60) return I18n.t('{n} min ago', { n: m });
     var h = Math.round(m / 60);
-    return h < 24 ? I18n.t('{n} hours ago', { n: h }) : new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    if (h < 24) return h === 1 ? I18n.t('an hour ago') : I18n.t('{n} hours ago', { n: h });
+    return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   }
 
   /* Pair a phone: a QR code for the TiviBro phone app (it carries the code), and the code to type.

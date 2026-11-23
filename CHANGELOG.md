@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **French.**  TiviBro in French, picked from the TV's language or in Settings > Language.  The quick menu, the info panel in fullscreen, Search, phone pairing and the web editor's QR screen are translated in every language now.  Thanks to NassimDIB.
 - Options (Red) in fullscreen lists Stream info, Sleep timer, Audio sync and the other player rows in the order you gave the quick menu buttons.
 - Audio sync says why when a channel can only play on the TV's own player, which can't move the sound (a format TiviBro's own player can't take, or one that only played on the TV's).
 

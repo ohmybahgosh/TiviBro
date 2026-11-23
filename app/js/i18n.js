@@ -28,7 +28,7 @@ var I18n = (function () {
   function base(loc) {
     var m = /^([a-z]{2,3})/i.exec(String(loc || '').trim());
     if (!m) return '';
-    var c = m[1].toLowerCase(), three = { spa: 'es', rus: 'ru', eng: 'en', por: 'pt' };
+    var c = m[1].toLowerCase(), three = { spa: 'es', rus: 'ru', eng: 'en', por: 'pt', fra: 'fr', fre: 'fr' };
     return three[c] || c;
   }
   /* The TV's language, best first.  settingsservice's answer (tv) is the TV menu's own setting; the others
@@ -103,7 +103,7 @@ var I18n = (function () {
     return { rx: new RegExp('^' + src + '$'), names: names, v: v, lit: lit, auto: names.indexOf('n') >= 0 || lit >= 14 };
   }
 
-  /* Plural forms (CLDR): Spanish one/other, Russian one/few/many. */
+  /* Plural forms (CLDR): Spanish one/other, French one/other (0 and 1 singular), Russian one/few/many. */
   function plural(code, n) {
     n = Math.abs(+String(n).replace(/[^\d.-]/g, '')) || 0;
     if (code === 'ru') {
@@ -112,6 +112,7 @@ var I18n = (function () {
       return m10 === 1 && m100 !== 11 ? 0 : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? 1 : 2;
     }
     if (code === 'pt-BR') return Math.floor(n) <= 1 ? 0 : 1;     // Portuguese: 0 and 1 are singular ("0 hora", "1 hora")
+    if (code === 'fr') return n < 2 ? 0 : 1;                      // French: 0 and 1 are singular ("0 heure", "1,5 heure")
     return n === 1 ? 0 : 1;
   }
   function pick(code, v, vars) {
