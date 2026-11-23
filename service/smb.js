@@ -29,8 +29,8 @@ var Storage = require('./storage');
 var VERSION = '3';
 /* The release the bundled programs come from (.github/workflows/smb.yml, scripts/smb/bundle.sh), and the
    SHA-256 of each .gz there. */
-var TAG = 'smb-1-tb2';
-var SHA256 = { armv7: '26387ede8e1585d18fe97c27f1b5e046171629ed69a623442ff692f7f6091ef8', aarch64: 'f57f1a4b583427c05f2fda9400e0f0f60a5b67c7bb064cb3b21c495bb23fc10f' };
+var TAG = 'smb-1-tb3';
+var SHA256 = { armv7: '487c720f4a68a2be77268ecbad76bebf2323e765c4930f76ae8263402e2b878f', aarch64: '49dac1562de38f911f66e3083539aaf1312adc1f0942bc3630813a86c294637f' };
 var BUNDLE = path.join(__dirname, 'smb-bundle');
 var cfg = { sums: SHA256, bundle: BUNDLE, arch: null, dir: '' };
 var RUN_MS = 30000, OUT_MAX = 8 * 1024 * 1024, ERR_MAX = 4096, MAX_RUNS = 2, MAX_READS = 4;

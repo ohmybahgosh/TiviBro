@@ -11,7 +11,7 @@ on:
       tag:
         description: Release tag to create or update
         required: true
-        default: smb-1-tb2
+        default: smb-1-tb3
 
 permissions:
   contents: write
