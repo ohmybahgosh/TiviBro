@@ -707,11 +707,11 @@ var Player = (function () {
       if ((earlyNet || type === 'media') && kind !== 'native' && !st.started && !(isFile() && cur.everPlayed)) {
         // A fetch the demuxer could not make is about the host (CORS etc.), so remember it for
         // the host.  A codec problem is about this one channel only.
-        // Not when the fetch went through the helper: then it is the helper that didn't answer (it is started
-        // again, Net.restart), and pinning the provider to the TV player would move every channel there for the
-        // rest of the session.  This channel tries the next pipeline all the same.
+        // Not when the fetch went through the helper: then it may be the helper that didn't answer (Net.suspect
+        // counts it; a helper gone for good is started again), and pinning the provider to the TV player would
+        // move every channel there for the rest of the session.  This channel tries the next pipeline all the same.
         if (earlyNet && !Net.active) fallbackHosts[hostOf(url)] = 'native';
-        else if (earlyNet) Net.ping(3000).then(function (ok) { if (!ok) Net.restart('a stream could not reach it'); });
+        else if (earlyNet) Net.suspect('a stream could not reach it');
         var alt = nextEngine(kind);
         if (alt) { Log.info('player', 'Trying the ' + ENGINE_NAMES[alt] + ' after a ' + type + ' error'); useEngine(alt); return start(myToken); }
         return giveUp(myToken);

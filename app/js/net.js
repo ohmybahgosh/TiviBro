@@ -99,10 +99,44 @@ var Net = (function () {
     });
   }
 
-  /* The helper carries every stream, so it must not stay gone: while it runs it is asked how it is every
-     15 s (and the moment its subscription drops).  Two pings in a row unanswered: start it again, and tell
-     whoever listens (the player starts the channel again through it). */
-  var misses = 0, restarting = false, restartListeners = [];
+  /* The helper carries every stream, so it must not stay gone.  When its subscription drops (it exited:
+     webOS stopped it, or its own watchdog found it stuck, service/watchdog.js) it is started again at once,
+     and whoever listens is told (the player starts the channel again through it).
+     Pings every 15 s only watch it.  A helper that misses some is usually busy, not gone: on a 1 GB TV,
+     reading a 65,000-show list holds it for half a minute.  Restarting a busy helper (issue #166) left it
+     answering nobody, TiviBro ran without it for the rest of the session, and the next starts hung on the
+     splash until webOS let go of the old one.  So missed pings only count; after two minutes of them webOS
+     is asked whether it still runs (status), and only no answer there starts it again. */
+  var misses = 0, restarting = false, probing = false, restartListeners = [];
+  var PROBE_AFTER = 8;            // missed pings (15 s apart) before webOS is asked: two minutes
+  function missed(why) {
+    misses++;
+    if (misses === 2) Log.warn('net', 'The network helper is busy or slow (' + why + '); waiting for it');
+    if (misses >= PROBE_AFTER) probe(why);
+  }
+  // webOS asked whether the helper still runs, without touching TiviBro's subscription: alive, keep waiting.
+  function probe(why) {
+    if (probing || restarting || typeof PalmServiceBridge === 'undefined') return;
+    probing = true;
+    var b = null, done = false, t = setTimeout(function () { end(false); }, 15000);
+    function end(alive) {
+      if (done) return;
+      done = true; probing = false; clearTimeout(t);
+      try { if (b) b.cancel(); } catch (e) {}
+      if (alive) { misses = 2; Log.info('net', 'The network helper still runs (webOS says so); waiting for it'); }
+      else restart(why + ', and webOS did not answer for it');
+    }
+    try {
+      b = new PalmServiceBridge();
+      b.onservicecallback = function (msg) { var r = {}; try { r = JSON.parse(msg); } catch (e) {} end(!!(r.returnValue && r.port)); };
+      b.call('luna://app.tivibro.tv.service/status', '{}');
+    } catch (e) { end(false); }
+  }
+  // Something that goes through the helper failed (a stream): one ping, and a miss counts like the timer's.
+  function suspect(why) {
+    if (!port || restarting) return;
+    ping(3000).then(function (ok) { if (ok) misses = 0; else missed(why); });
+  }
   function ping(ms) {
     if (!port) return Promise.resolve(false);
     return Promise.race([
@@ -148,7 +182,11 @@ var Net = (function () {
   }
   setInterval(function () {
     if (state !== 'on' || restarting || !bridge || document.hidden) return;
-    ping(4000).then(function (ok) { if (ok) misses = 0; else if (++misses >= 2) restart('no answer to two pings'); });
+    ping(4000).then(function (ok) {
+      if (!ok) return missed('no answer to its pings');
+      if (misses >= 2) Log.info('net', 'The network helper answers again');
+      misses = 0;
+    });
   }, 15000);
 
   /* The helper's secret for its control routes (web editor, phone app, channel lists, My media).  webOS can
@@ -280,7 +318,7 @@ var Net = (function () {
   }
 
   return {
-    start: start, wrap: wrap, unwrap: unwrap, ping: ping, restart: restart, onRestart: function (f) { restartListeners.push(f); }, retryImage: retryImage, get ua() { return ua(); }, uaFor: uaFor,
+    start: start, wrap: wrap, unwrap: unwrap, ping: ping, restart: restart, suspect: suspect, onRestart: function (f) { restartListeners.push(f); }, retryImage: retryImage, get ua() { return ua(); }, uaFor: uaFor,
     // Guides: the helper unzips .gz on every TV.  Without it, only browsers with DecompressionStream can.
     get canUnzip() { return !!useRelay() || typeof DecompressionStream !== 'undefined'; },
     xfer: function (id) { return port ? 'http://127.0.0.1:' + port + '/xfer/' + id : ''; },

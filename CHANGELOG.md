@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **A busy network helper is no longer restarted (issue #166).**  On a 1 GB TV, reading a big movie or show list keeps the helper from answering for half a minute; TiviBro restarted it then, ran without it for the rest of the session, and the next starts could hang on "Starting…".  Now it waits, asks webOS after two minutes whether the helper still runs, and starts it again only when it doesn't (or when the helper itself exits).
 - **The web editor and the phone app in your language.**  Spanish (Latin American or Spain's), French, Portuguese (Brazil's or Portugal's) and Russian, like the TV.  The web editor follows the browser's language, or pick one at the bottom of its menu; the phone app follows the phone's (on Android 13 and later, also its own language in the phone's settings) and opens the web editor in it.  What the TV sends them (Settings pages, messages, errors) comes in that language too, even when the TV itself is in another.
 - A playlist's page in Settings opens again (alpha 204 and 205 stopped at an error).
 
