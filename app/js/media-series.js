@@ -345,7 +345,12 @@ var MediaSeries = (function () {
       });
     },back);
   }
-  function excluded(){page('Excluded files',{kind:'extra',limit:60},correct,Media.restore);}
+  // Excluded files, from My media or from Settings: back returns where it was opened (Settings has the remote again,
+  // not My media's hidden screen behind it).
+  function excluded(back){
+    var inSettings=typeof Settings!=='undefined'&&Settings.regain&&!document.getElementById('viewSettings').classList.contains('hidden');
+    page('Excluded files',{kind:'extra',limit:60},correct,back||(inSettings?Settings.regain:Media.restore));
+  }
   function correct(item, back) {
     var detected = item.detected || {};
     function folder(fields,reset){

@@ -15,6 +15,7 @@
 - [Multiview: two channels side by side](Multiview-two-channels-side-by-side)
 - [DASH channels and protected channels](DASH-channels-and-protected-channels)
 - [Sound the TV can't play](Sound-the-TV-cant-play)
+- [Audio sync: sound ahead of or behind the picture](Audio-sync-sound-ahead-of-or-behind-the-picture)
 - [Other versions of a channel](Other-versions-of-a-channel)
 - [Event channels: pay-per-view and sports passes](Event-channels-pay-per-view-and-sports-passes)
 - [My teams](My-teams)

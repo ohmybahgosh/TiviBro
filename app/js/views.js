@@ -884,6 +884,7 @@ var Views = (function () {
       case 'audio': audioMenu(); return;
       case 'cc': ccToggle(); return;
       case 'subs': subtitleMenu(); return;
+      case 'sync': audioSync(); return;
       case 'sleep': sleepMenu(); return;
       case 'reconnect': Player.retryNow(); return;
       case 'buffer': peekMeter(); return;
@@ -2075,7 +2076,7 @@ var Views = (function () {
      ◀ ▶ move along a row, ▲ ▼ switch rows, OK picks, Back closes.  Clickable with the pointer. */
   var qp = null;                  // { row, col, rows: [[items]], timer }
   // Quick menu buttons.  Each can be switched off in Settings > Remote and buttons > Quick menu buttons.
-  var QP_BUTTONS = [['pause', 'Pause and rewind'], ['rec', 'Record'], ['list', 'Channel guide'], ['start', 'Watch from start'], ['fav', 'Favorite'], ['guide', 'TV guide'], ['versions', 'Other versions'], ['multi', 'Multiview'], ['scores', 'My teams\' scores'], ['audio', 'Audio track'],
+  var QP_BUTTONS = [['pause', 'Pause and rewind'], ['rec', 'Record'], ['list', 'Channel guide'], ['start', 'Watch from start'], ['fav', 'Favorite'], ['guide', 'TV guide'], ['versions', 'Other versions'], ['multi', 'Multiview'], ['scores', 'My teams\' scores'], ['audio', 'Audio track'], ['sync', 'Audio sync'],
     ['subs', 'Subtitles'], ['cc', 'Closed captions'], ['quality', 'Video quality'], ['picture', 'Aspect'], ['sleep', 'Sleep timer'],
     ['info', 'Stream info'], ['reconnect', 'Reconnect']];
   // Line icons for the quick actions, drawn like the side menu's (24 x 24, stroked).
@@ -2089,6 +2090,7 @@ var Views = (function () {
     guide: '<path d="M3 5h18M3 12h18M3 19h18M9 3v18"/>',
     versions: '<rect x="3" y="7" width="13" height="10" rx="2"/><path d="M19 9v8a2 2 0 0 1-2 2H8"/><path d="M21 11v6"/>',
     audio: '<path d="M9 18V6l11-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+    sync: '<path d="M3 12h3l2-5 3 10 2-7 2 4h6"/>',
     subs: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 15h4M13 15h4M7 11h2M11 11h6"/>',
     cc: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10.5 9.6a2.6 2.6 0 1 0 0 4.8M17 9.6a2.6 2.6 0 1 0 0 4.8"/>',
     quality: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9v6M11 9v6M7 12h4M14 9h2a3 3 0 0 1 0 6h-2z"/>',
@@ -2133,6 +2135,7 @@ var Views = (function () {
     } });
     var tracks = Player.audioTracks();
     if (tracks.length > 1) add('audio', { label: 'Audio', icon: 'audio', v: (tracks.filter(function (t) { return t.on; })[0] || {}).label || '', run: function () { closePanel(); audioMenu(); } });
+    if (c || mode === 'vod') add('sync', { label: 'Audio sync', icon: 'sync', v: syncLabel(), run: function () { closePanel(); audioSync(); } });
     // Live captions (CEA-608) have their own switch; Subtitles is for real subtitle tracks.
     var subs = subtitleTracks().filter(function (t) { return mode === 'vod' || t.kind === 'subtitles'; });
     if (subs.length || mode === 'vod') add('subs', { label: 'Subtitles', icon: 'subs', v: (subs.filter(function (t) { return t.mode === 'showing'; })[0] || {}).label || subtitleStatus(), run: function () { closePanel(); subtitleMenu(); } });
@@ -2460,6 +2463,19 @@ var Views = (function () {
     }, 1000);
   }
 
+  /* Audio sync (avsync.js): the panel over the picture that moves the sound later or earlier, kept for this channel
+     or this movie.  The OSD steps aside while it's open so the lips stay in sight. */
+  function audioSync() {
+    if (typeof AvSync === 'undefined') return;
+    if (full) osd(false);
+    AvSync.open();
+  }
+  // The quick button's and the Options row's value: "as sent", or "+120 ms" / "−80 ms".
+  function syncLabel() {
+    var v = typeof AvSync !== 'undefined' ? AvSync.wanted() : 0;
+    return v ? (v > 0 ? '+' : '\u2212') + Math.abs(v) + ' ms' : 'as sent';
+  }
+
   function playerMenu() {
     var items = [];
     if (mode === 'live' && playing) items = items.concat(chanItems(playing, curGroup));
@@ -2467,6 +2483,7 @@ var Views = (function () {
     if (mode === 'vod' && vod) items.push({ label: 'Restart from beginning', action: function () { if (vod.meta.local && Media.seeking) Media.seeking(0); Player.seek(-1e7); } });
     var tracks = Player.audioTracks();
     if (tracks.length > 1) items.push({ label: 'Audio track', sub: (tracks.filter(function (t) { return t.on; })[0] || {}).label, action: audioMenu });
+    items.push({ label: 'Audio sync', sub: syncLabel() + '  ·  when the sound and the lips don\'t match', action: audioSync });
     items.push({ label: 'Aspect', sub: Player.aspectName(Player.displayFor(aspectTarget())), action: pictureMenu });
     if (Player.qualities().length > 1) items.push({ label: 'Video quality', sub: qualityLabel(), action: qualityMenu });
     if (mode === 'vod' && typeof SeekPrev !== 'undefined' && SeekPrev.chapters.length > 1) items.push({ label: 'Chapters', sub: SeekPrev.chapters.length + ' in this ' + (vod && vod.meta && vod.meta.item && vod.meta.item.kind === 'episode' || vod && vod.meta && vod.meta.seriesKey ? 'episode' : 'movie') + '  ·  CH+ CH− go from one to the next', action: function () { SeekPrev.openChapters(function (t) { vs.pending = t; vodSeekCommit(); }); } });

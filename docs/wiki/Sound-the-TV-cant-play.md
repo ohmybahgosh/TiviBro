@@ -17,4 +17,4 @@ Live channels with sound the TV can't play are converted the same way, when the 
 
 ---
 
-← [DASH channels and protected channels](DASH-channels-and-protected-channels)  ·  [Home](Home)  ·  [Other versions of a channel](Other-versions-of-a-channel) →
+← [DASH channels and protected channels](DASH-channels-and-protected-channels)  ·  [Home](Home)  ·  [Audio sync: sound ahead of or behind the picture](Audio-sync-sound-ahead-of-or-behind-the-picture) →

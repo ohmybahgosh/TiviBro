@@ -22,7 +22,7 @@ var Keymap = (function () {
     rewind: 'Rewind (live pause or catch-up), else last channel', record: 'Record this programme, or stop recording it', recordings: 'Recordings', forward: 'Forward (live pause or catch-up)', timeline: 'Timeline: move back and forth in what\'s kept', restart: 'Watch from start', playpause: 'Play / pause',
     guide: 'TV guide', search: 'Search', settings: 'Settings', editor: 'Edit on a phone or computer (QR code)', live: 'Channels screen', exit: 'Leave fullscreen',
     fav: 'Add or remove favorite', favorites: 'Open Favorites', recents: 'Open Recent channels',
-    picture: 'Change the aspect', audio: 'Audio track', cc: 'Closed captions on or off', subs: 'Subtitles menu', sleep: 'Sleep timer',
+    picture: 'Change the aspect', audio: 'Audio track', cc: 'Closed captions on or off', subs: 'Subtitles menu', sync: 'Audio sync (sound ahead of or behind the picture)', sleep: 'Sleep timer',
     movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect stream', buffer: 'Show buffer info', streaminfo: 'Stream info and buffer',
     full: 'Watch fullscreen (the channel in the window, else the highlighted one)', now: 'Jump to now', jump: 'Jump to a day and time', details: 'About this show (a series), else the options menu', groups: 'Open the groups', stopwin: 'Stop the window'
   };
@@ -31,12 +31,12 @@ var Keymap = (function () {
     panel: 'Quick menu', list: 'Channel guide', osd: 'Info', menu: 'Options', chnext: 'Channel below', chprev: 'Channel above', last: 'Last channel',
     rewind: 'Rewind', forward: 'Forward', timeline: 'Timeline', record: 'Record', recordings: 'Recordings', restart: 'Watch from start', playpause: 'Pause', guide: 'Guide', search: 'Search', settings: 'Settings', editor: 'Phone editor',
     live: 'Channels', exit: 'Exit fullscreen', fav: 'Favorite', favorites: 'Favorites', recents: 'Recent',
-    picture: 'Aspect', audio: 'Audio track', cc: 'Captions', subs: 'Subtitles', sleep: 'Sleep timer', movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect', buffer: 'Buffer info', streaminfo: 'Stream info',
+    picture: 'Aspect', audio: 'Audio track', cc: 'Captions', subs: 'Subtitles', sync: 'Audio sync', sleep: 'Sleep timer', movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect', buffer: 'Buffer info', streaminfo: 'Stream info',
     full: 'Fullscreen', now: 'Now', jump: 'Jump to', details: 'Details', groups: 'Groups', stopwin: 'Stop window'
   };
   var CONTEXT_ACTIONS = {
     player: ['none', 'panel', 'list', 'osd', 'menu', 'chnext', 'chprev', 'last', 'rewind', 'restart', 'playpause', 'forward', 'timeline', 'record', 'recordings', 'guide', 'search', 'settings', 'editor', 'exit',
-      'fav', 'favorites', 'recents', 'picture', 'audio', 'cc', 'subs', 'sleep', 'reconnect', 'buffer', 'streaminfo'],
+      'fav', 'favorites', 'recents', 'picture', 'audio', 'sync', 'cc', 'subs', 'sleep', 'reconnect', 'buffer', 'streaminfo'],
     list: ['none', 'menu', 'last', 'guide', 'search', 'settings', 'editor', 'fav', 'favorites', 'recents', 'movies', 'shows', 'playpause', 'record', 'recordings'],
     guide: ['none', 'full', 'menu', 'details', 'groups', 'now', 'jump', 'last', 'stopwin', 'live', 'search', 'settings', 'editor', 'fav', 'favorites', 'recents', 'movies', 'shows', 'record', 'recordings']
   };

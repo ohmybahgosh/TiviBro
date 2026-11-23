@@ -477,6 +477,10 @@ var App = (function () {
      On a TV with 1 GB of memory, or one that closed TiviBro while playing this week (Player.memSafe),
      the limit is lower and background loads wait until nothing plays. */
   var startGen = 0, otherQ = [];
+  /* Playlists whose last load failed: { at, msg } by id, for Settings > Playlists and accounts' Not responding
+     (discussion #36).  Cleared by the next load that works. */
+  var loadFail = {};
+  function failed(p, e) { if (p && p.id && !(e && e.kind === 'stopped')) loadFail[p.id] = { at: Date.now(), msg: String(e && e.message || 'no answer').slice(0, 160) }; }
   function memSafe() { return !!(window.Player && Player.memSafe); }
   // Startup on a TV short of memory (1 GB or less, or memory-safe after closes) with more than 8,000 channels: when the
   // guide and the logo library load (ms after start), or null for everything at once as usual.
@@ -512,7 +516,7 @@ var App = (function () {
             Log.info('app', 'Added ' + cached.channels.length + ' channels of ' + (p.name || 'another playlist') + ' kept from its last load');
             if (plDue(p, cached.at, true)) otherQ.push(p.id);
           } else { otherQ.push(p.id); fresh = true; }       // never loaded on this TV: soon
-        }).catch(function (e) { Log.warn('app', 'Could not open ' + (p.name || 'another playlist') + ': ' + (e && e.message || e)); });
+        }).catch(function (e) { failed(p, e); Log.warn('app', 'Could not open ' + (p.name || 'another playlist') + ': ' + (e && e.message || e)); });
       });
     });
     return chain.then(function () {
@@ -624,10 +628,12 @@ var App = (function () {
       Views.refreshLists(true);
       Settings.live();
       if (manual) U.toast(Library.count() + ' channels loaded');
+      delete loadFail[p.id];
       bigList(p);
       busyEnd(10000);
     }).catch(function (e) {
       busyEnd(0);
+      failed(p, e);
       if (e && e.kind === 'stopped') U.toast('Stopped reloading.  The channels from the last load are still here.', 5000);
       else if (manual) U.toast(e.message || 'Reload failed', 4000);
     }).then(function () { reloading = null; if (window.Settings && Settings.live) Settings.live(); });
@@ -660,11 +666,13 @@ var App = (function () {
         Views.refreshLists(true);
         if (noteVod(p, data)) Views.buildTabs();
         checkVod(p);                                  // its movies and shows join Movies and Shows
+        delete loadFail[p.id];
         if (manual) U.toast((p.name || 'Playlist') + ': ' + data.channels.length + ' channels loaded');
         Epg.init(Library);
       });
     }).then(function () { busyEnd(10000); }, function (e) {
       busyEnd(0);
+      failed(p, e);
       // Back from its kept copy (only that: no new load, so a failing provider can't loop).
       if (freed) Store.bigGet(cacheKey(p)).then(function (c) {
         if (gen === startGen && !p.off && c && c.channels && c.channels.length && useOther(p, c)) { Views.refreshLists(true); Epg.init(Library); }
@@ -799,6 +807,7 @@ var App = (function () {
       busyEnd(0);
       if (e && e.kind === 'stopped') return;           // askStop has already moved on
       Log.error('app', 'Could not open playlist "' + (p.name || p.id) + '": ' + (e && e.message));
+      failed(p, e);
       // Other playlists are on: one of them can be first for now (nothing plays by itself).
       var others = Store.others();
       if (others.length && !ready) {
@@ -966,7 +975,7 @@ var App = (function () {
     else if (wasPlaying) { wasPlaying = false; Player.resume(); }
   });
 
-  return { boot: boot, setup: setup, refresh: refresh, stopReload: stopReload, playlistsChanged: playlistsChanged,
+  return { loadFailure: function (id) { return loadFail[id] || null; }, boot: boot, setup: setup, refresh: refresh, stopReload: stopReload, playlistsChanged: playlistsChanged,
     // Another playlist's login changed (web editor): open it again from its new copy.
     reopenOther: function (id) { dropOther(id); return playlistsChanged(); }, get reloading() { return !!reloading; }, openPlaylistSettings: openPlaylistSettings, bigList: bigList, switchPlaylist: switchPlaylist, tourNext: function () { tourNext = true; } };
 })();

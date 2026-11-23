@@ -118,6 +118,19 @@ Caps._model('OLED65C2PUA');
   r = await Convert.plan({ url: 'http://prov.invalid/movie/4.mkv', media: { audio: ['dts'] } });
   ok('plan: no network helper, nothing to do', r === null, r);
   // Dolby Vision profile 7: as 8.1 through the converter on a TV with Dolby Vision, when the converter can.
+// Audio sync on a movie whose sound plays here: through the converter as MPEG-TS, the sound copied, when MSE takes it.
+{
+  const probe0 = Caps.probe; ctx.mpegts = {};
+  Caps.probe = () => ({ mse: { ac3: true, aac: true, h264: true, dts: false }, tv: {} });
+  const info = { video: 'h264', duration: 600, audio: [T(0, 'aac', 2, 'eng', true), T(1, 'ac3', 6, 'eng')] };
+  let r = Convert._forSync(info, { action: 'play' }, Caps.probe(), 'http://x/m.mkv');
+  ok('sync: the default track, copied, as MPEG-TS', r && r.conv.fmt === 'ts' && r.conv.a === 0 && r.conv.codec === 'aac' && r.conv.src === 'http://x/m.mkv', r);
+  r = Convert._forSync(info, { action: 'track', a: 1 }, Caps.probe(), 'http://x/m.mkv');
+  ok('sync: the track chosen', r && r.conv.a === 1 && r.conv.codec === 'ac3', r);
+  r = Convert._forSync({ video: 'h264', audio: [T(0, 'dts', 6, 'eng', true)] }, { action: 'play' }, Caps.probe(), 'u');
+  ok('sync: not with sound MSE can\'t take', r === null, r);
+  Caps.probe = probe0; delete ctx.mpegts;
+}
 ok('profile 7, a converter that can, a TV with Dolby Vision: as 8.1', Convert._dv81({ dv: 7, p81: true }, { tv: { dv8: true } }));
 ok('...not with an older converter', !Convert._dv81({ dv: 7, p81: false }, { tv: { dv8: true } }));
 ok('...not on a TV without Dolby Vision', !Convert._dv81({ dv: 7, p81: true }, { tv: {} }));

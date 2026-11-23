@@ -149,11 +149,15 @@ var Player = (function () {
        buffering; the TV's player plays it, and seeks in it.  One still recording keeps the MPEG-TS player (it grows). */
     if (cur && !cur.live && !cur.timeshift && !isHls && cur.meta && cur.meta.item && cur.meta.item.recording && !cur.meta.item.growing && s !== 'mse') return 'native';
     if (isDash(url)) return mse() && s !== 'native' ? 'dash' : 'native';
-    if (s === 'native' || !mse() || fallbackHosts[hostOf(url)] === 'native') return 'native';
+    // Audio sync on this channel (avsync.js) needs TiviBro's own player: the TV's has no way to move the sound.
+    if ((s === 'native' && !syncing()) || !mse() || fallbackHosts[hostOf(url)] === 'native') return 'native';
     if (isHls) return window.Hls && Hls.isSupported() ? 'hls' : 'native';
     if (window.mpegts && mpegts.getFeatureList().mseLivePlayback) return 'ts';
     return 'native';
   }
+
+  // Is a sound delay set for what plays (Audio sync)?
+  function syncing() { return !!(window.AvSync && AvSync.wanted()); }
 
   /* ---------- engines ---------- */
   /* The playlist a stream belongs to: with several playlists on, its User-Agent goes with every
@@ -1409,6 +1413,8 @@ var Player = (function () {
       tshift: !!opts.tshift, tsFrom: opts.tsFrom != null ? opts.tsFrom : -1,
       knownDur: +(opts.dur || (opts.meta && opts.meta.dur)) || 0,      // a recording's length (an MPEG-TS file says none)
       media: opts.media || (opts.meta && opts.meta.media) || null, opts: opts };
+    // Audio sync: the delay kept for this channel, or this movie or episode, before the player is chosen.
+    if (window.AvSync) AvSync.use(AvSync.keyFor(ch, opts), (opts.meta && opts.meta.title) || (ch && ch.n) || '');
     // keepTrying: a channel known to work here (back from its backups during an outage) retries
     // like one that has played, instead of giving up after the first round.
     if (opts.keepTrying) cur.everPlayed = true;
@@ -1429,7 +1435,7 @@ var Player = (function () {
     // and the cushion it earned.
     else if (cur.live && !cur.timeshift && !cur.tshift && window.PlayMemo && Store.settings.engine !== 'native') {
       var memo = PlayMemo.get(ch);
-      if (!want && memo.engine && memo.engine !== cur.usual && engineOk(memo.engine)) { Log.info('player', 'Starting with the ' + (memo.engine === 'hls' ? 'HLS version' : ENGINE_NAMES[memo.engine]) + ', which played this channel last time'); useEngine(memo.engine); }
+      if (!want && memo.engine && memo.engine !== cur.usual && engineOk(memo.engine) && !(memo.engine === 'native' && syncing())) { Log.info('player', 'Starting with the ' + (memo.engine === 'hls' ? 'HLS version' : ENGINE_NAMES[memo.engine]) + ', which played this channel last time'); useEngine(memo.engine); }
       if (memo.boost && !cur.preview) { cur.boost = memo.boost; cur.boostAt = Date.now(); }
     }
     // The player this channel starts on (its chosen format, or what played it before): Try again starts there too.
@@ -1439,7 +1445,7 @@ var Player = (function () {
       var my = token, item = cur.meta && cur.meta.item || {};
       teardown(); st = null;
       state('loading');
-      Convert.plan({ url: cur.url, media: cur.media, title: (cur.meta && cur.meta.title) || '', container: item.ext || item.container_extension || '' })
+      Convert.plan({ url: cur.url, media: cur.media, title: (cur.meta && cur.meta.title) || '', container: item.ext || item.container_extension || '', sync: syncing() })
         .then(function (r) { applyPlan(r, my); }, function () { if (my === token) start(my); });
       return;
     }
@@ -1543,7 +1549,7 @@ var Player = (function () {
     function again() {
       if (my !== token || !cur) return;
       var at = Math.max(0, position());
-      Convert.plan({ url: cur.url, media: cur.media, title: (cur.meta && cur.meta.title) || '', container: item.ext || item.container_extension || '' }).then(function (r) {
+      Convert.plan({ url: cur.url, media: cur.media, title: (cur.meta && cur.meta.title) || '', container: item.ext || item.container_extension || '', sync: syncing() }).then(function (r) {
         if (my !== token || !cur) return;
         if (!r || r.offer) return silent();
         Log.info('player', 'Sound: ' + what + ' found while playing; restarting at ' + Math.round(at) + 's with the converter');
@@ -1574,7 +1580,7 @@ var Player = (function () {
       return Convert.offer(r.offer, r.guessed, function (got) {
         if (my !== token || !cur) return;
         if (!got) { cur.noSound = r.offer; return start(my); }
-        Convert.plan({ url: cur.url, media: cur.media, title: (cur.meta && cur.meta.title) || '' }).then(function (r2) { applyPlan(r2 && r2.offer ? null : r2, my); });
+        Convert.plan({ url: cur.url, media: cur.media, title: (cur.meta && cur.meta.title) || '', sync: syncing() }).then(function (r2) { applyPlan(r2 && r2.offer ? null : r2, my); });
       });
     }
     if (r && r.conv) useConv(r.conv, r.notice);
@@ -1811,6 +1817,18 @@ var Player = (function () {
     start(token);
   }
 
+  /* Audio sync changed (avsync.js): the stream starts again so the new delay is heard at once, not after what's
+     already buffered plays out.  Live TV on the player the delay needs; a movie or catch-up from where it was,
+     asking the converter again (a movie's sound only moves through it as MPEG-TS). */
+  function resync() {
+    if (!cur) return;
+    if (cur.live && !cur.timeshift) { cur.usual = pickEngine(cur.origUrl || cur.url); if (cur.firstKind === 'native' && syncing()) cur.firstKind = null; return retryNow(); }
+    var o = {}, k;
+    for (k in cur.opts) o[k] = cur.opts[k];
+    o.startAt = Math.max(0.1, position());
+    play(cur.ch, o);
+  }
+
   // The helper started again after it stopped answering (net.js): what was playing through it starts again.
   if (typeof Net !== 'undefined' && Net.onRestart) Net.onRestart(function () { if (cur && Net.active) { Log.info('player', 'The network helper is back: starting the stream again'); retryNow(); } });
 
@@ -1844,7 +1862,7 @@ var Player = (function () {
 
   return {
     _test: { reconnect: function (why) { reconnect(token, why || 'test'); }, get holding() { return holding; }, get kind() { return st && st.kind; } },
-    PRESETS: PRESETS, memorySafe: memorySafe, get converting() { return !!(cur && cur.conv); }, vodHls: function (u) { return vodHls(u); }, get userPaused() { return !!(st && st.userPaused); }, get memSafe() { return memSafe() ? (typeof Store !== 'undefined' && Store.settings && Store.settings.memSafe === 'on' ? 'turned on in Settings' : safeWhy || (navigator.deviceMemory ? 'this TV has 1 GB of memory or less' : 'an HD or Full HD TV, with about 1 GB of memory')) : ''; }, bind: bind, play: play, _dashProtection: dashProtection, heardAudio: heardAudio, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, retryNow: retryNow, get startStatus() { return startStatus(); }, on: on,
+    PRESETS: PRESETS, memorySafe: memorySafe, get converting() { return !!(cur && cur.conv); }, vodHls: function (u) { return vodHls(u); }, get userPaused() { return !!(st && st.userPaused); }, get memSafe() { return memSafe() ? (typeof Store !== 'undefined' && Store.settings && Store.settings.memSafe === 'on' ? 'turned on in Settings' : safeWhy || (navigator.deviceMemory ? 'this TV has 1 GB of memory or less' : 'an HD or Full HD TV, with about 1 GB of memory')) : ''; }, bind: bind, play: play, _dashProtection: dashProtection, heardAudio: heardAudio, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, retryNow: retryNow, resync: resync, get startStatus() { return startStatus(); }, on: on,
     seek: seek, seekTo: seekTo, liveWindow: liveWindow, get tshift() { return !!(cur && cur.tshift); }, liveSeek: liveSeek, applyDisplay: applyDisplay, suspend: suspend, resume: resume,
     audioTracks: function () { return eng && eng.audio ? eng.audio() : []; }, describeTrack: describeTrack,
     qualities: function () { return eng && eng.levels ? eng.levels() : []; },

@@ -226,6 +226,15 @@ var Settings = (function () {
     out.push(link('OpenSubtitles key and sign-in', Subs.configured ? (Subs.user ? 'Key saved, signed in as ' + Subs.user : 'Key saved') : 'Not set up yet', 'keys', function () { return Subs.configured ? 'Saved' : 'Not set up'; }));
     out.push(choice('Keep downloaded subtitles', 'A movie or episode you come back to gets its subtitles and timing again, without another download.  Kept on this TV only.', [0, 1, 3, 7], ['Off', '1 day', '3 days', 'A week'],
       function () { return s.keepSubs === 0 ? 0 : +s.keepSubs > 0 ? +s.keepSubs : 7; }, function (v) { s.keepSubs = v; if (!v) Subs.forgetKept(); save(); }));
+    // Audio sync (avsync.js): last on the page, so the rows above keep their places for the phone app.
+    if (typeof AvSync !== 'undefined') {
+      out.push(head('Audio sync'));
+      var how = info('Sound ahead of or behind the picture', AvSync.count() ? '' : 'None set');
+      how.sub = 'While it plays: OK > Audio sync, or Options (Red) > Audio sync.  ◀ ▶ move the sound 20 ms at a time, ▲ ▼ 100 ms, while you watch someone talk.  Kept for that channel, movie or episode.  The Red, Green or Yellow button can open it too (Remote and buttons).';
+      out.push(how);
+      var n = AvSync.count();
+      if (n) out.push(action(I18n.raw(I18n.t('Forget audio sync for {n} channels and movies', { n: n })), 'Every one plays its sound as sent again.', function () { AvSync.forgetAll(); U.toast('Audio sync forgotten'); build(); }));
+    }
     return out;
   }
 
@@ -372,7 +381,7 @@ var Settings = (function () {
     if (st.kind !== 'shows' && st.waiting) out.push(action('Not looked up yet', 'Movies TMDB hasn\'t been asked about yet (a lookup that stopped, or no token then).  OK looks them up now; it also happens by itself.', heavy(function () { Media.lookUpWaiting(id); }), function () { return String(st.waiting); }));
     if (st.kind !== 'shows') out.push(page('Unmatched movies', 'Movies TMDB didn\'t recognise.  Fix match searches by the title you type.', 'Unmatched in ' + I18n.raw(s.name), function () { return unmatched(id); }, function () { var x = Media.libraryStats(id); return String(x.unmatched.length - (x.waiting || 0)); }));
     if (st.kind !== 'movies') out.push(action('Shows that need review', 'Episodes TiviBro couldn\'t place, and shows without a match.  Opens TV shows on My media.', function () { MediaSeries.review(); }, function () { return st.unmatchedShows ? String(st.unmatchedShows) : ''; }));
-    out.push(action('Excluded files', 'Trailers, extras and samples left out.  Include one back from here.', function () { MediaSeries.excluded(); }, function () { return '›'; }),
+    out.push(action('Excluded files', 'Trailers, extras and samples left out.  Include one back from here.', function () { MediaSeries.excluded(regain); }, function () { return '›'; }),
       head('Remove'),
       action('Remove library', 'Takes it off My media.  Your files stay where they are.', function () { Media.removeLibrary(s); }));
     return out.filter(Boolean);
@@ -606,8 +615,14 @@ var Settings = (function () {
     s.playlists.forEach(function (raw) {
       var p = Store.normalize(raw), active = p.id === s.active, part = !active && L.partOf(p.id);
       var use = active ? (multi && L.main ? 'first, ' + L.main.channels.length + ' channels' : 'in use, ' + L.count() + ' channels') : part ? 'on, ' + part.channels.length + ' channels' : '';
-      out.push(page(I18n.raw(p.name || (p.type === 'xtream' ? p.user : 'M3U')), [p.off ? 'Off' : '', Store.expiry(p), p.type === 'xtream' ? 'Xtream Codes' : p.type === 'stalker' ? 'Stalker portal' : 'M3U playlist', use].filter(Boolean).join('   '),
+      var down = notResponding(p);
+      out.push(page(I18n.raw(p.name || (p.type === 'xtream' ? p.user : 'M3U')), [p.off ? 'Off' : '', down ? 'Not responding' : '', Store.expiry(p), p.type === 'xtream' ? 'Xtream Codes' : p.type === 'stalker' ? 'Stalker portal' : 'M3U playlist', use].filter(Boolean).join('   '),
         p.name ? I18n.raw(p.name) : 'Playlist', function () { return playlistPage(p); }));
+      // Not responding: marked in red, with its delete right under it (discussion #36).
+      if (down) {
+        out[out.length - 1].attn = true;
+        out.push(action(I18n.raw(I18n.t('Delete {x}…', { x: p.name || 'this playlist' })), I18n.raw(I18n.t('Not responding: {x}.  Or open it above to change its login or address.', { x: I18n.t(down.why) })), function () { deletePlaylist(p); }));
+      }
     });
     // From the phone app: its own Add a playlist form (AddPlaylistDialog), with the playlist type to pick.
     var addPl = phoneDoes('add-playlist', action('Add playlist…', 'Each playlist keeps its own groups, favorites, hidden items, guide and name rules.  Adding one from the phone app is easier: share your provider\'s link to it.', function () { App.setup('new'); }));
@@ -633,6 +648,28 @@ var Settings = (function () {
     return out;
   }
 
+  /* Deleting a playlist, after asking: from its own page, or from the row beside one that isn't responding (discussion
+     #36).  The only playlist: TiviBro starts again on the screen that adds one, as on a new TV. */
+  function deletePlaylist(p) {
+    var s = S(), only = s.playlists.length < 2, active = p.id === s.active;
+    UI.confirm('Delete ' + (p.name || 'this playlist') + '?' + (only ? '  It is your only one.' : ''), 'Delete', function () {
+      stack = [];
+      Store.removePlaylist(p.id);
+      if (only) { if (window.Views && Views.stopAll) Views.stopAll(); setTimeout(function () { location.reload(); }, 1500); return; }      // after the settings are written (300 ms)
+      if (active) App.switchPlaylist(Store.settings.active); else { App.playlistsChanged(); build(); }
+    });
+  }
+  /* A playlist that isn't responding (discussion #36): its last load failed (app.js loadFailure), or its server keeps
+     failing right now (provstatus.js).  { why } in plain words, or null.  An off playlist isn't asked. */
+  function notResponding(p) {
+    if (p.off) return null;
+    var f = typeof App !== 'undefined' && App.loadFailure ? App.loadFailure(p.id) : null;
+    if (f) return { why: f.msg || 'Its last load failed' };
+    if (typeof ProvStatus === 'undefined' || !ProvStatus.now) return null;
+    var hosts = [p.server, p.m3u, p.portal, p.url].map(ProvStatus.hostOf).filter(Boolean);
+    var hit = ProvStatus.now().filter(function (d) { return hosts.indexOf(d.host) >= 0; })[0];
+    return hit ? { why: hit.title } : null;
+  }
   /* A playlist's on/off switch: on its own page (Playlist on) and, with several playlists, under Playlists and
      accounts > Playlists on or off, so a list can be switched without opening it (discussion #36).  Off keeps its login,
      groups, favorites and names; the one in use being turned off hands over to the next one that is on. */
@@ -783,15 +820,7 @@ var Settings = (function () {
     out.push(head(''));
     /* The only playlist too (an expired one, discussion #36): TiviBro then starts again on the screen that
        adds a playlist, as on a new TV. */
-    var only = s.playlists.length < 2;
-    out.push(action('Delete this playlist', only ? 'It is your only playlist: removes it with its groups, favorites, hidden items and cached data, and TiviBro starts again on the screen that adds a playlist.' : 'Removes its groups, favorites, hidden items and cached data.  Turning it off (above) keeps them instead.', function () {
-      UI.confirm('Delete ' + (p.name || 'this playlist') + '?' + (only ? '  It is your only one.' : ''), 'Delete', function () {
-        stack = [];
-        Store.removePlaylist(p.id);
-        if (only) { if (window.Views && Views.stopAll) Views.stopAll(); setTimeout(function () { location.reload(); }, 1500); return; }      // after the settings are written (300 ms)
-        if (active) App.switchPlaylist(Store.settings.active); else { App.playlistsChanged(); build(); }
-      });
-    }));
+    out.push(action('Delete this playlist', only ? 'It is your only playlist: removes it with its groups, favorites, hidden items and cached data, and TiviBro starts again on the screen that adds a playlist.' : 'Removes its groups, favorites, hidden items and cached data.  Turning it off (above) keeps them instead.', function () { deletePlaylist(p); }));
     return out;
   }
 
@@ -808,6 +837,14 @@ var Settings = (function () {
     var offs = [], offl = [];
     for (var m = -720; m <= 720; m += 30) { offs.push(m); offl.push((m > 0 ? '+' : m < 0 ? '-' : '') + Math.floor(Math.abs(m) / 60) + ':' + U.pad(Math.abs(m) % 60)); }
     if (p.providerEpg !== 'off') out.push(choice('Provider guide time offset', 'Use when every programme is too early or too late.', offs, offl, function () { return +p.epgOffset; }, function (v) { p.epgOffset = v; persist(p, true); paint(); }));
+    // The full guide's time zone, worked out from the provider's per-channel times (epg.js tzCheck, discussion #36).
+    if (xc && p.providerEpg === 'xmltv') {
+      var fix = +p.epgXmlFix || 0, fixText = Math.floor(Math.abs(fix) / 60) + ':' + U.pad(Math.abs(fix) % 60);
+      out.push(toggle('Fix the guide\'s time zone', p.epgTzAuto === false ? 'Off: the full guide\'s times are used as they come.'
+        : fix ? I18n.raw(I18n.t('On: the full guide was {x} {y}, and is corrected.', { x: fixText, y: I18n.t(fix < 0 ? 'ahead' : 'behind') }))
+        : 'On: compares the full guide with your provider\'s per-channel times as you browse, and moves it when it is hours off (a guide in the server\'s time zone).  Your own offset still applies on top.',
+        function () { return p.epgTzAuto !== false; }, function (v) { p.epgTzAuto = v; if (!v) p.epgXmlFix = 0; persist(p, true); build(); }));
+    }
     var srcRows = sourcesPage(p);
     out.push(choice('Reload guide', '', REFRESH, REFRESH_L, function () { return +p.epgRefresh; }, function (v) { p.epgRefresh = v; persist(p); paint(); }));
     out.push(choice('Keep past days', 'For catch-up browsing.  More days use more TV memory.', [1, 2, 3, 5, 7], ['1 day', '2 days', '3 days', '5 days', '7 days'], function () { return +p.epgDays; }, function (v) { p.epgDays = v; persist(p, true); paint(); }));
@@ -2835,7 +2872,9 @@ var Settings = (function () {
   };
 
   // Drawn again in a new language (I18n.onChange in app.js).
+  // Settings has the remote again after something opened from it (My media's Excluded files) gave it away.
+  function regain() { UI.setHandler(keys); build(); }
   function redraw() { if (!document.getElementById('viewSettings').classList.contains('hidden')) build(); }
-  return { capturing: function () { return !!cap; }, dns: { ids: DNS_IDS, names: DNS_NAMES, ask: askDns }, open: open, openFrom: openFrom, redraw: redraw, assignGuide: assignGuide, section: section, openPlaylist: openPlaylist, openTeams: openTeams, live: live, reset: function () { stack = []; sel = 0; }, phone: forPhone,
+  return { capturing: function () { return !!cap; }, dns: { ids: DNS_IDS, names: DNS_NAMES, ask: askDns }, open: open, openFrom: openFrom, redraw: redraw, regain: regain, assignGuide: assignGuide, section: section, openPlaylist: openPlaylist, openTeams: openTeams, live: live, reset: function () { stack = []; sel = 0; }, phone: forPhone,
     LOOK: { ACCENTS: ACCENTS, ACCENT_NAMES: ACCENT_NAMES, THEMES: THEMES, THEME_NAMES: THEME_NAMES, THEME_INK: THEME_INK } };
 })();

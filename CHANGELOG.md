@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **Audio sync.**  Sound ahead of or behind the picture: OK > Audio sync moves it 20 ms (◀ ▶) or 100 ms (▲ ▼) at a time while you watch, with plain hints for which way to go.  Kept per channel, movie or episode.
+- **Fix the guide's time zone.**  An Xtream provider whose full guide is hours off (its own time zone marked as UTC) is found and corrected by itself.  Settings > Guide shows by how much, and can turn it off.
+- **Not responding playlists** are marked in Settings > Playlists, with a Delete row right under them.
+- Closing Excluded files from a library's settings goes back to Settings, instead of leaving the remote stuck on the side menu.
+
 ## 0.6.0 (alpha 203, 2026-11-23)
 
 Pre-release: expect rough edges, and keep a backup before installing.

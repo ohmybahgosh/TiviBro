@@ -74,3 +74,4 @@
 .nogap .sp-chrow > * + *{margin-left:16px}
 .nogap .sp-bt > * + *{margin-left:10px}
 .nogap .mv-g-row > * + *{margin-left:20px}
+.nogap .avs-bar > * + *{margin-left:18px}

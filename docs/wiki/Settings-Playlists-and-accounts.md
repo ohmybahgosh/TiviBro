@@ -49,6 +49,7 @@ On a playlist's page:
 | **Set-up tour** *(playlist in use, on the TV)* | | Runs the [set-up tour](The-set-up-tour) again: countries, names, East or West, your city, event channels, clutter, logos and look.  Shows when you last applied it. |
 | **Channel and group names ›** | | This playlist's name rules: the same page as [Settings: Channel and group names](Settings-Channel-and-group-names). |
 | **Event channels ›** | | This playlist's [event channels](Event-channels-pay-per-view-and-sports-passes) (see [Settings: Channels and groups](Settings-Channels-and-groups)). |
+| **Not responding** | | A playlist whose server didn't answer on the last load is marked **Not responding** in the list, with a **Delete…** row under it, so a dead one goes in two presses.  Open it instead to change its login or address. |
 | **Delete this playlist** | | Removes the playlist with its groups, favorites, hidden items and cached data.  **Playlist on** (off) keeps them instead.  Your only playlist can be deleted too (an expired one, say): TiviBro then starts again on the screen that adds a playlist. |
 
 ---

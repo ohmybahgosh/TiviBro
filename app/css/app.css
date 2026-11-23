@@ -1667,3 +1667,14 @@ body:not(.full) .sp-bug,body.mv-open .sp-bug{display:none}
 .mv-g-pos{position:absolute;right:10px;bottom:-34px;font-size:18px;color:#8f98aa}
 .mv-g-hints{position:absolute;left:40px;bottom:24px;font-size:21px;color:#aeb5c3;white-space:pre}
 .mv-hints .mv-k.blue::before{content:'';display:inline-block;width:16px;height:16px;border-radius:50%;margin-right:10px;vertical-align:-1px;background:#3d79d6}
+/* Audio sync (avsync.js): along the bottom, over the picture, so the lips stay in sight. */
+.avsync{position:fixed;left:50%;bottom:60px;transform:translateX(-50%);width:1200px;z-index:30;padding:26px 40px 22px;border-radius:22px;background:rgba(12,14,18,.9);color:#fff;box-shadow:0 12px 36px rgba(0,0,0,.6);text-align:center}
+.avs-title{font-size:24px;font-weight:600;color:#bbb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.avs-val{font-size:46px;font-weight:800;margin:6px 0 14px}
+.avs-bar{display:flex;align-items:center;gap:18px;font-size:22px;color:#aaa}
+.avs-track{position:relative;flex:1;height:10px;border-radius:5px;background:rgba(255,255,255,.18)}
+.avs-zero{position:absolute;left:50%;top:-8px;width:2px;height:26px;background:rgba(255,255,255,.55)}
+.avs-dot{position:absolute;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(0,0,0,.4);transition:left .15s}
+.avs-how{font-size:22px;line-height:1.4;margin-top:18px;color:#ddd}
+.avs-keys{font-size:20px;margin-top:10px;color:#9aa;white-space:pre}
+.avs-note{font-size:20px;min-height:26px;margin-top:8px;color:var(--accent)}

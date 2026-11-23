@@ -336,6 +336,17 @@ The conversion uses the **audio converter**, a small program (about 2 MB) that c
 
 Live channels with sound the TV can't play are converted the same way, when the stream says what its sound is.
 
+### Audio sync: sound ahead of or behind the picture
+
+Some channels and files arrive with the sound a little early or late, so lips and words don't match.  While it plays, open **OK > Audio sync** (or **Options (Red) > Audio sync**).  A bar along the bottom keeps the picture in view and says what's set, "Sound 120 ms later" or "Sound 80 ms earlier".
+
+- Watch someone talking, a close-up of a news reader is best.  **Hear the words before the lips move?**  Press **▶**: the sound comes later.  **Lips move before you hear them?**  Press **◀**: the sound comes earlier.
+- **◀ ▶** move it 20 ms at a time, **▲ ▼** 100 ms.  **Yellow** puts it back to how it's sent.  **OK** or **Back** closes the bar.
+- A second after your last press the stream starts again with the new timing, so you hear the change at once.  Keep going until a "p" or "b" lands as the lips close.
+- It's kept for that channel, or that movie or episode, and used every time it plays.  **Settings > Audio and subtitles > Forget audio sync** clears them all.
+- Audio sync needs TiviBro's own player, so a channel with a delay plays on it even if **Playback > Player** is the TV's.  A movie file plays through the [audio converter](#sound-the-tv-cant-play) with its picture and sound copied.  A stream whose sound and picture come in one piece can't be moved apart, and the bar says so.
+- To open it with one button, give **Audio sync** to Red, Green or Yellow in **Settings > Remote and buttons**.
+
 ### Other versions of a channel
 
 Many playlists carry the same channel several times: in Full HD, HD and SD, in two groups, or as a backup copy.  TiviBro recognises them by name and treats them as versions of one channel.
@@ -862,6 +873,7 @@ On a playlist's page:
 | **Set-up tour** *(playlist in use, on the TV)* | | Runs the [set-up tour](#the-set-up-tour) again: countries, names, East or West, your city, event channels, clutter, logos and look.  Shows when you last applied it. |
 | **Channel and group names ›** | | This playlist's name rules: the same page as [Settings: Channel and group names](#settings-channel-and-group-names). |
 | **Event channels ›** | | This playlist's [event channels](#event-channels-pay-per-view-and-sports-passes) (see [Settings: Channels and groups](#settings-channels-and-groups)). |
+| **Not responding** | | A playlist whose server didn't answer on the last load is marked **Not responding** in the list, with a **Delete…** row under it, so a dead one goes in two presses.  Open it instead to change its login or address. |
 | **Delete this playlist** | | Removes the playlist with its groups, favorites, hidden items and cached data.  **Playlist on** (off) keeps them instead.  Your only playlist can be deleted too (an expired one, say): TiviBro then starts again on the screen that adds a playlist. |
 
 ### Settings: Phone app and web editor
@@ -958,6 +970,7 @@ With public guides on, if the provider guide fails, the guide status says it is 
 |---|---|---|
 | **Provider guide** | Xtream: **Per channel** · Full XMLTV file · Off.  M3U: **From playlist** · Off | *Per channel* asks for each channel's programmes as you browse: light and fast.  *Full XMLTV file* downloads the provider's whole guide: days ahead, guide search and manual matching, but often 20 to 200 MB.  *Off* uses only your own guide sources. |
 | **Provider guide time offset** | −12:00 to +12:00 in half hours, **0:00** | Use it when every programme from the provider guide is too early or too late. |
+| **Fix the guide's time zone** | **On** · Off | Xtream Codes playlists with the full guide.  Some providers send it in their server's own time zone but marked as UTC, so every programme is hours off.  TiviBro compares it with the provider's own per-channel listings as you browse, and once two channels (or three programmes) agree on the same shift, corrects the whole guide and says so.  The row then shows by how much.  Off undoes it. |
 | **Guide sources ›** | | Extra XMLTV guides (`.xml` or `.xml.gz`), used after the provider guide: they fill channels it doesn't have, and take over one it has only where their programmes agree with it (the same titles at the same times), so a guide with more days but the wrong schedule doesn't win.  **OK** on one to edit its address, give it its own time offset, move it up or down (the first one wins when two cover a channel) or remove it.  **Add guide source…** adds one.  The [web editor](#the-programme-guide) has a list of free guides by region, and after a guide load each source there says how many of your channels it matched. |
 | **Reload guide** | Same choices as the channel list, **Every 12 hours** | How often the guide is downloaded again.  When your provider adds channels with guide ids (or, with matching by name, names) the stored guide doesn't cover, it's also downloaded again right after the channel list, so they get their programmes without waiting. |
 | **Keep past days** | 1 · **2** · 3 · 5 · 7 days | How far back the guide keeps programmes, for catch-up browsing.  More days use more TV memory. |
@@ -1114,6 +1127,7 @@ Which audio track plays, sound the TV can't play, subtitles and captions, and su
 | **Set up OpenSubtitles (step by step)** | | The free key from opensubtitles.com, step by step (see [Subtitles for movies and shows](#movies-and-shows)).  Kept on this TV, out of backups.  Once set up the row reads **OpenSubtitles API key saved**, to replace the key; an empty key removes it. |
 | **Sign in (optional)** | | Shows once a key is saved.  Your OpenSubtitles account: 20 downloads a day instead of 5.  Kept on this TV only.  In the phone app the username and then the password are asked on the phone. |
 | **Keep downloaded subtitles** | Off · 1 day · 3 days · **A week** | Under **Subtitles from OpenSubtitles**.  A movie or episode you come back to gets its subtitles and timing again, without another download.  Kept on this TV only. |
+| **Forget audio sync for N channels and movies** | | Under **Audio sync**, once one is set.  Every channel, movie and episode plays its sound as sent again.  See [Audio sync](#audio-sync-sound-ahead-of-or-behind-the-picture). |
 
 **Subtitles in MKV and MP4 movies and episodes.**  Open **Subtitles** from the player menu to choose a language or **Off**.  The menu has two parts: **Settings** at the top (**Find subtitles…**, **Timing** and **Line up with another track…**), then the subtitles the video has, under **In this movie** or **In this episode** with how many there are.  It opens on the subtitle that is on, so switching language is a press or two even in a movie with dozens of languages.  The menu is available as soon as playback starts and shows **Finding subtitles…** while tracks are discovered.  The automatic subtitle language setting above also applies.  Supported embedded SRT, ASS/SSA and WebVTT tracks appear with their language names, and your selection survives seeking and reconnects.  Only the selected subtitle track is shown, even if another track becomes active while subtitles load.  ASS/SSA and WebVTT show as plain text.  My media uses the file's known type even when its signed playback link has no extension.  Files without supported tracks show an unavailable message; bitmap subtitles are not supported.  Some MKV files do not index their subtitle tracks and cannot expose them here.  **Find subtitles** offers another way to add them.
 

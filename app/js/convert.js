@@ -134,10 +134,12 @@ var Convert = (function () {
     if (!on() || !base() || !o || !o.url || !/^https?:/i.test(o.url)) return Promise.resolve(null);
     var m = o.media || {}, known = m.audio && m.audio.length ? m.audio : null, c = Caps.probe();
     var bad = known && known.every(function (a) { return Caps.unplayable(a, m.channels || 0, c); });
-    if (known && !bad) return Promise.resolve(null);                   // the movie's own sound plays here
+    /* o.sync: Audio sync moves this movie's sound (avsync.js), which only TiviBro's own player can do, so the file
+       goes through the converter as MPEG-TS even when the TV plays its sound as it is (the sound copied). */
+    if (known && !bad && !o.sync) return Promise.resolve(null);       // the movie's own sound plays here
     var hint = !known && HINT.test((o.title || '') + ' ' + decodeURIComponentSafe(o.url));
     var fileLike = FILE.test(o.url) || /^(mkv|mp4|m4v|mov|avi|ts|m2ts|webm)$/i.test(o.container || '');
-    if (!bad && !hint && !fileLike) return Promise.resolve(null);
+    if (!bad && !hint && !fileLike && !o.sync) return Promise.resolve(null);
     return status().then(function (s) {
       // A release carries the converter: unpacking it takes a second, so nothing is asked.
       if (s.state !== 'ready' && s.bundled && s.state !== 'failed') return get().catch(function () { return s; });
@@ -164,6 +166,7 @@ var Convert = (function () {
               notice: d.action === 'convert' ? 'Dolby Vision 7 as 8.1, and ' + (NAMES[d.codec] || d.codec.toUpperCase()) + ' audio converted' : 'Dolby Vision 7 played as 8.1' };
           });
         }
+        if ((d.action === 'play' || d.action === 'track') && o.sync) { var sy = forSync(info, d, c, o.url); if (sy) return ensureKey().then(function () { return sy; }); }
         if (d.action === 'play') return null;
         if (d.action === 'track') return { track: d.a, tracks: info.audio, bad: d.bad, dur: info.duration, video: info.video || '' };
         return ensureKey().then(function () {
@@ -172,6 +175,14 @@ var Convert = (function () {
         });
       });
     }).catch(function (e) { if (typeof Log !== 'undefined') Log.warn('convert', 'Could not check the sound: ' + e.message); return null; });
+  }
+  /* A movie whose sound plays here, with Audio sync on it: through the converter as MPEG-TS, the picture and the
+     chosen sound copied, when TiviBro's own player (MSE) takes both.  null: it can't, and plays as it is. */
+  function forSync(info, d, c, url) {
+    var a = d.a != null ? d.a : Math.max(0, info.audio.map(function (x) { return !!x.def; }).indexOf(true)), t = info.audio[a] || {};
+    if (fmtFor(info.video) !== 'ts' || !t.codec || !c.mse || !c.mse[t.codec]) return null;
+    return { conv: { src: url, a: a, fmt: 'ts', video: info.video || '', codec: t.codec, channels: t.channels || 0, rate: t.rate || 0, tracks: info.audio, bad: d.bad || [], dur: info.duration || 0, sync: true },
+      notice: 'Playing through the converter so its sound can be moved' };
   }
   // Profile 7 as 8.1: the file is profile 7, the converter can (ffmpeg-7.1-tb3), the TV has Dolby Vision, and it isn't off.
   function dv81(info, c) { return !!(info && info.dv === 7 && info.p81 && c && c.tv && c.tv.dv8 && settings().dv7 !== 'off'); }
@@ -215,6 +226,6 @@ var Convert = (function () {
   }
   function noSound(what) { return what + ' sound, which this TV can\'t play.  Settings > Audio and subtitles can get the audio converter, or pick another audio track.'; }
 
-  return { fmtFor: fmtFor, on: on, status: status, get: get, remove: remove, describe: describe, decide: decide, link: link, plan: plan, planLive: planLive, offer: offer, noSound: noSound,
+  return { _forSync: forSync, fmtFor: fmtFor, on: on, status: status, get: get, remove: remove, describe: describe, decide: decide, link: link, plan: plan, planLive: planLive, offer: offer, noSound: noSound,
     probe: probe, ensureKey: ensureKey, NAMES: NAMES, _dv81: dv81, get key() { return key; }, _reset: function () { key = ''; st = null; probes = {}; } };
 })();

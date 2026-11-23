@@ -203,6 +203,7 @@ var Epg = (function () {
   function vote(ch, list) {
     var id = own(ch, matched[ch.k] || ch.epg || ''), x = id && cache.get(id);
     if (!x || !list || !list.length || !(typeof PubEpg !== 'undefined' && PubEpg.alike)) return;
+    if (id === ch.epg) tzCheck(ch, list, x.list);
     var v = PubEpg.alike(list, x.list, Date.now()) ? 'x' : 'p', was = votes[ch.k];
     votes[ch.k] = [v, Date.now(), id];
     if (!was || was[0] !== v) { if (v === 'p') Log.info('epg', Library.name(ch) + ': the guide source\'s listings differ from the provider\'s; using the provider\'s'); emit(ch.k); emit(id); }
@@ -212,6 +213,42 @@ var Epg = (function () {
       if (ks.length > 4000) ks.sort(function (p, q) { return votes[p][1] - votes[q][1]; }).slice(0, ks.length - 4000).forEach(function (k) { delete votes[k]; });
       try { localStorage.setItem('tivibro.guideVotes', JSON.stringify(votes)); } catch (e) {}
     }, 1000);
+  }
+  /* The guide's time zone, worked out (discussion #36): an Xtream provider's full XMLTV file often has its times in
+     the server's own zone but marked UTC, so every programme is hours off, while its per-channel listings carry true
+     times (start_timestamp).  When a channel's two agree on titles but not on times, by the same whole quarter
+     hours on two channels (or three programmes of one), the full guide is moved by that much: kept as the playlist's
+     epgXmlFix (minutes), on top of its own time offset.  Settings > Guide > Fix the guide's time zone (on unless
+     switched off).  Checked as the guide is browsed, with the votes below; a provider that fixes its file is
+     followed back the same way. */
+  var tzSeen = {};
+  function tzNorm(t) { return String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, ''); }
+  // One channel's short guide (short) against the full guide's programmes for it (xml): a shift to note, or to apply.
+  function tzCheck(ch, short, xml) {
+    var p = PL(ch);
+    if (!p || p.type !== 'xtream' || p.providerEpg !== 'xmltv' || p.epgTzAuto === false || !short.length || !xml.length) return;
+    var ds = [];
+    short.forEach(function (a) {
+      var n = tzNorm(a.t); if (n.length < 3) return;
+      xml.forEach(function (b) { if (tzNorm(b.t) === n && Math.abs(b.s - a.s) < 14 * 3600e3) ds.push(Math.round((b.s - a.s) / 60000)); });
+    });
+    if (!ds.length) return;
+    // This channel's answer: one shift for all its matched programmes, else none.
+    var d = ds[0];
+    if (!ds.every(function (x) { return Math.abs(x - d) <= 1; })) return;
+    var seen = tzSeen[p.id] || (tzSeen[p.id] = {});
+    seen[ch.k] = { d: d, n: ds.length };
+    var keys = Object.keys(seen), agree = keys.filter(function (k) { return Math.abs(seen[k].d - d) <= 1; });
+    var sure = agree.length >= 2 || ds.length >= 3;
+    if (!sure || keys.length !== agree.length) return;
+    var q = Math.round(d / 15) * 15;
+    if (Math.abs(d - q) > 1 || !q) return;                       // already right (0), or not a whole quarter hour
+    p.epgXmlFix = (+p.epgXmlFix || 0) - q;
+    Log.info('epg', 'The provider\'s full guide was ' + (q > 0 ? q + ' minutes ahead' : -q + ' minutes behind') + ' its per-channel times; corrected (' + p.epgXmlFix + ' min)');
+    tzSeen[p.id] = {};
+    Store.upsertPlaylist(p);
+    if (typeof U !== 'undefined' && U.toast) U.toast(I18n.t('The guide\'s times were off by {x}; TiviBro corrected them.', { x: Math.floor(Math.abs(q) / 60) + ':' + U.pad(Math.abs(q) % 60) }), 7000);
+    setTimeout(function () { init(Library, true); }, 500);
   }
   // Is this channel's XMLTV guide still to be checked against the provider's (no vote, an old one, another id)?
   function toVote(ch, id) {
@@ -571,7 +608,8 @@ var Epg = (function () {
       var prov = part ? part.epgUrl : Library.data.epgUrl;
       // First: your provider's guide is the one to go by; your sources fill what it lacks, and take over a
       // channel only where they agree with it (alike, in the worker and the helper).
-      if (prov) list.unshift({ url: prov, offset: +p.epgOffset || 0, provider: true });
+      // The time zone fix found for its full guide (tzCheck) goes on top of your own offset.
+      if (prov) list.unshift({ url: prov, offset: (+p.epgOffset || 0) + (p.epgTzAuto === false ? 0 : +p.epgXmlFix || 0), provider: true });
     }
     return list;
   }
