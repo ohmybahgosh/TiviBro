@@ -1,21 +1,21 @@
 # Changelog
 
-## Unreleased
-
-- **Load a subtitle file.**  The Subtitles menu has Load a subtitle file…: a .srt, .vtt, .ass or .ssa from a USB drive (rooted TVs) or a My media library on a share, Dropbox or Google Drive, for movies, episodes and live channels.  The phone app sends one from the phone (the subtitles button next to what's playing), and the web editor's Overview from a computer.
-- Translations: Spanish, Portuguese and Russian are complete again, settings, sports and My media's share forms included.
-- Find subtitles searches by name once you change the title, season and episode, or year (an episode has a Year row now too), and there's a Search by name instead row.  A search by the TMDB id that finds nothing tries once more by name.  For revivals filed as their own show on OpenSubtitles, such as Twin Peaks (2017).
-- **Settings where you'd look for them.**  A few settings are now in a second place too, the same setting in both: logos and channel numbers under Guide, live pause and the rewind buffer under Playback (with how long the info panel stays and which way Up and Down change channel), Hide channels with nothing on and Hide adult channels under Channels and groups (with a Channels screen part), Sports guides under Sports, team game reminders under Reminders, and Skip intro and Up next beside Up next in Movies and shows and My media.  The phone app and the web editor show them in both places too.
-- **Into a section, the list on the left has the focus.**  From the Settings home, a link, Fix a problem or Search, ◀ goes back instead of changing the first setting on the page.  ▶ or OK goes on to the setting, which is marked.
-- Settings stays where you are when a page redraws: Look again now on Public guide fill-in sent the focus to another part of the Guide page while the guide reloaded.
-- Public guide fill-in finds local stations named like "CW | DETROIT 50 WKBD" by their call sign again.  iptv-epg.org, which matched them by guide id, has gone offline (it answers 403), and the call sign after the channel number wasn't read.
-- Live pause on a network share says so: the messages and the channel menu's Recordings line said "USB drive" wherever it was.
-
-## 0.6.0 (alpha 202, 2026-11-23)
+## 0.6.0 (alpha 203, 2026-11-23)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 202
+### New in alpha 203
+
+- **Load a subtitle file.**  Subtitles > Load a subtitle file… picks a .srt, .vtt, .ass or .ssa from a USB drive (rooted TVs) or a My media library on a share, Dropbox or Google Drive.  The phone app sends one from the phone (the subtitles button next to what's playing), the web editor's Overview from a computer.
+- **Find subtitles searches by name** once you change the title, season and episode or year (episodes have a Year row now), or with Search by name instead.  A TMDB id search that finds nothing tries by name too.  For revivals such as Twin Peaks (2017).
+- **Settings where you'd look for them.**  Logos under Guide, live pause under Playback, hiding channels under Channels and groups, Sports guides under Sports, team reminders under Reminders, Skip intro beside Up next.  The same settings, also in their usual place, on the TV, phone and web editor.
+- **Into a settings section, the list on the left has the focus**, so ◀ goes back instead of changing a setting.  ▶ or OK goes to the marked setting.
+- **Public guide fill-in finds "CW | DETROIT 50 WKBD"-style locals by call sign** again (iptv-epg.org has gone offline).
+- Look again now on Public guide fill-in stays put while the guide reloads.
+- Live pause on a network share says so instead of "USB drive".
+- Spanish, Portuguese and Russian are complete again.
+
+### In alpha 202
 
 - **Record and pause live TV to a network share, on any TV.**  A Windows or Samba share (a PC, Mac, NAS or router) now works for recordings as WebDAV did, and live pause goes to the share too: hours on a TV without root instead of 10 minutes.  Choose a My media library in Settings > Recording and live pause > Network share.  The rewind buffer works there as well, a recording on a Windows share plays while it records, and the Recordings screen shows the share's free room.  (A recording on a Windows share plays from its start while it records; a player that stopped reading no longer keeps it from being filed or deleted.)
 - **Logo library: Worldwide TV Logos.**  A third source, with each channel's own logo cleaned up (transparent, trimmed, current branding) and in white where it needs to be on a dark screen.  It's the new default style, **Cleaned up**, with tv-logos and iptv-org standing in where it has none.
