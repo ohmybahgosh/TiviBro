@@ -13,7 +13,10 @@ const SHOTS = path.join(__dirname, '..', '.shots');
 let fails = 0;
 const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undefined ? '  ' + String(x).slice(0, 400) : '')); if (!c) fails++; };
 // Words that say a sentence is still English (the mock channel names use none of them).
-const ENGLISH = /\b(the|your|you|and|with|from|this|that|these|channels?|groups?|guide|playlists?|settings|press|click|send|hidden|shown|nothing|every|when)\b/i;
+const WORDS = ['the', 'your', 'you', 'and', 'with', 'from', 'this', 'that', 'these', 'channels?', 'groups?', 'guide', 'playlists?', 'settings', 'press', 'click', 'send', 'hidden', 'shown', 'nothing', 'every', 'when'];
+// English words a language uses too: "guide" in French, "Guide" and "Playlist" in German (TV-Guide).
+const SAME = { fr: ['guide'], de: ['guide', 'playlists?'] };
+const english = (lang) => '\\b(' + WORDS.filter((w) => (SAME[lang] || []).indexOf(w) < 0).join('|') + ')\\b';
 
 (async () => {
   require('fs').mkdirSync(SHOTS, { recursive: true });
@@ -53,7 +56,7 @@ const ENGLISH = /\b(the|your|you|and|with|from|this|that|these|channels?|groups?
           out.push(t.slice(0, 120));
         }
         return out;
-      }, lang === 'fr' ? ENGLISH.source.replace('|guide|', '|') : ENGLISH.source);   // "guide" is French too
+      }, english(lang));
       if (found.length) left[p] = found;
     }
     // Help, every section.

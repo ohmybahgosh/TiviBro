@@ -40,7 +40,7 @@ Restoring a backup onto a fresh TV, start to finish:
 
 ### Language
 
-TiviBro shows in your TV's own language: the language of the TV's menus (on webOS, the TV's **Menu Language** setting), read when TiviBro starts and again whenever you change it on the TV.  English, Spanish (Latin American, and Spain's), French, Portuguese (Brazil's, and Portugal's) and Russian are in so far.  Anything not translated yet shows in English.  A TV in a language TiviBro doesn't have yet gets English.
+TiviBro shows in your TV's own language: the language of the TV's menus (on webOS, the TV's **Menu Language** setting), read when TiviBro starts and again whenever you change it on the TV.  English, German, Spanish (Latin American, and Spain's), French, Portuguese (Brazil's, and Portugal's) and Russian are in so far.  Anything not translated yet shows in English.  A TV in a language TiviBro doesn't have yet gets English.
 
 If it picked the wrong one, choose another:
 
@@ -49,7 +49,7 @@ If it picked the wrong one, choose another:
 
 The web editor and the phone app have the same languages.  The web editor follows your browser's language; **Language** at the bottom of its menu picks another.  The phone app follows the phone's language (on Android 13 and later, Settings > Apps > TiviBro > Language picks one for it alone), and opens the web editor in that language too.  Each gets the TV's Settings pages and messages in its own language, whatever the TV is in.
 
-The first time TiviBro starts in a language other than English, a message says which language it chose and where to change it.  In Spanish, French, Portuguese and Russian, times are on the 24-hour clock (19:30) unless the TV's region says otherwise.
+The first time TiviBro starts in a language other than English, a message says which language it chose and where to change it.  In every language but English, times are on the 24-hour clock (19:30) unless the TV's region says otherwise.
 
 ### The set-up tour
 

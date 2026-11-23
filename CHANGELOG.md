@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **German.**  TiviBro in German on the TV, in the web editor and in the phone app, picked from the TV's, the browser's or the phone's language, or in Settings > Language.
 - **A warning before your subscription ends.**  The TV says so 3 days before a playlist's subscription ends, and once it has ended, at most once a day.  Settings > Playlists and accounts > Warn before a subscription ends picks 1, 3, 7 or 14 days, or Off.
 - Settings in the phone app no longer brings TiviBro to the TV's screen over another app (YouTube, say).  When TiviBro isn't on screen it says so, with a button to open it.
 

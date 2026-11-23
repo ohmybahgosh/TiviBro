@@ -20,7 +20,8 @@ class I18nTest {
         assertEquals("pt-PT", I18n.codeFor(Locale("pt", "PT")))
         assertEquals("pt-BR", I18n.codeFor(Locale("pt")))
         assertEquals("ru", I18n.codeFor(Locale("ru", "RU")))
-        assertEquals("en", I18n.codeFor(Locale("de", "DE")))
+        assertEquals("de", I18n.codeFor(Locale("de", "AT")))
+        assertEquals("en", I18n.codeFor(Locale("ko", "KR")))
     }
 
     @Test fun englishFillsPlaceholders() {

@@ -23,7 +23,7 @@ let I = load({ language: 'es-MX', languages: ['es-MX', 'en-US'] });
 ok('Automatic: the browser\'s language when the TV hasn\'t said', I.lang() === 'es' && I.locale() === 'es-MX');
 I._setTV('ru-RU');
 ok('the TV menu\'s language (settingsservice) comes first', I.lang() === 'ru');
-I._setTV('de-DE');
+I._setTV('ko-KR');
 ok('a language TiviBro doesn\'t have is English', I.lang() === 'en' && I.detected().supported === false);
 I = load({ language: 'en-US' }, {}, { webOSSystem: { locale: 'ru-RU' } });
 ok('webOSSystem.locale before the browser\'s', I.lang() === 'ru');
@@ -80,7 +80,7 @@ Object.keys(dicts).forEach((code) => {
 // A language for one asker (the web editor or the phone app): within() and the messages that go out later.
 I = load({ language: 'en-US' });
 ok('within: the asker\'s language, then the TV\'s again', I.within('es', () => I.t('Settings')) === 'Configuración' && I.t('Settings') === 'Settings');
-ok('within a language TiviBro doesn\'t have: the TV\'s', I.within('de', () => I.t('Settings')) === 'Settings');
+ok('within a language TiviBro doesn\'t have: the TV\'s', I.within('ko', () => I.t('Settings')) === 'Settings');
 const m = I.msg('Restore point "{x}" saved on the TV', { x: 'Mine' });
 ok('msg: the English, filled', String(m) === 'Restore point "Mine" saved on the TV' && JSON.stringify({ m }) === '{"m":"Restore point \\"Mine\\" saved on the TV"}');
 ok('say: in the asker\'s language when it goes out', I.say(m, 'es') === 'Punto de restauración "Mine" guardado en la TV');
