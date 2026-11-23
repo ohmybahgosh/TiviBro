@@ -1,17 +1,17 @@
 # Changelog
 
-## Unreleased
-
-- **The network helper no longer stays stuck until the TV is turned off and on (issue #153).**  It checks on itself while TiviBro uses it and starts over when it stops answering, and TiviBro keeps asking for it (after 30 s, then 1, 2 and every 5 minutes) instead of trying once.
-- **French.**  TiviBro in French, picked from the TV's language or in Settings > Language.  The quick menu, the info panel in fullscreen, Search, phone pairing and the web editor's QR screen are translated in every language now.  Thanks to NassimDIB.
-- Options (Red) in fullscreen lists Stream info, Sleep timer, Audio sync and the other player rows in the order you gave the quick menu buttons.
-- Audio sync says why when a channel can only play on the TV's own player, which can't move the sound (a format TiviBro's own player can't take, or one that only played on the TV's).
-
-## 0.6.0 (alpha 204, 2026-11-23)
+## 0.6.0 (alpha 205, 2026-11-23)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 204
+### New in alpha 205
+
+- **French.**  TiviBro in French, picked from the TV's language or in Settings > Language.  The quick menu, the info panel in fullscreen, Search, phone pairing and the web editor's QR screen are translated in every language now.  Thanks to NassimDIB.
+- **The network helper no longer stays stuck until the TV is turned off and on (issue #153).**  It checks on itself while TiviBro uses it and starts over when it stops answering, and TiviBro keeps asking for it (after 30 s, then 1, 2 and every 5 minutes) instead of trying once.
+- Options (Red) in fullscreen lists Stream info, Sleep timer, Audio sync and the other player rows in the order you gave the quick menu buttons.
+- Audio sync says why when a channel can only play on the TV's own player, which can't move the sound (a format TiviBro's own player can't take, or one that only played on the TV's).
+
+### In alpha 204
 
 - **Audio sync.**  Sound ahead of or behind the picture: OK > Audio sync moves it 20 ms (◀ ▶) or 100 ms (▲ ▼) at a time while you watch, with plain hints for which way to go.  Kept per channel, movie or episode.
 - **Fix the guide's time zone.**  An Xtream provider whose full guide is hours off (its own time zone marked as UTC) is found and corrected by itself.  Settings > Guide shows by how much, and can turn it off.
