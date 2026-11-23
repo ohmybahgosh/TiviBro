@@ -52,10 +52,20 @@ function params(sys, items, fixes) {
   return { model: MODEL, max_tokens: 16000, system: sys, messages: [{ role: 'user', content: (fixes ? 'These failed a check before; fix them.\n' : '') +
     JSON.stringify(items.map((x) => Object.assign({ key: x.key, where: x.where.join('; ').slice(0, 120) }, x.plural ? { plural: x.plural } : {}, x.note ? { note: x.note } : {}, fixes ? { problem: fixes[x.key] } : {})), null, 1) }] };
 }
+/* The JSON object in an answer: from its first { to the } that closes it (strings skipped), so text or a
+   second object after it doesn't spoil it.  An answer cut short (max_tokens) has none: an error. */
 function parse(msg) {
-  const text = (msg.content || []).map((c) => c.text || '').join(''), m = /\{[\s\S]*\}/.exec(text);
-  if (!m) throw new Error('no JSON in the answer');
-  return JSON.parse(m[0]);
+  const text = (msg.content || []).map((c) => c.text || '').join(''), a = text.indexOf('{');
+  if (a < 0) throw new Error('no JSON in the answer' + (msg.stop_reason === 'max_tokens' ? ' (cut short)' : ''));
+  let depth = 0, inStr = false;
+  for (let i = a; i < text.length; i++) {
+    const c = text[i];
+    if (inStr) { if (c === '\\') i++; else if (c === '"') inStr = false; continue; }
+    if (c === '"') inStr = true;
+    else if (c === '{') depth++;
+    else if (c === '}' && --depth === 0) return JSON.parse(text.slice(a, i + 1));
+  }
+  throw new Error('the JSON in the answer is not finished' + (msg.stop_reason === 'max_tokens' ? ' (cut short)' : ''));
 }
 const usage = { in: 0, cached: 0, out: 0 };
 function count(msg) { const u = msg.usage || {}; usage.in += u.input_tokens || 0; usage.cached += u.cache_read_input_tokens || 0; usage.out += u.output_tokens || 0; }
@@ -109,11 +119,14 @@ function results(text) {
     const got = ri > 0 ? results(require('fs').readFileSync(argv[ri + 1], 'utf8')) : await batched(sys, batches);
     batches.forEach((b, i) => take(b, got[i] || {}));
   }
-  // Once more, one by one, for what failed: then it's left for a person.
-  for (const r of retry) {
-    const got = await now(params(sys, r.items, r.fixes)), res = L.importAll(code, got, false);
+  // Once more, 20 at a time (a whole lost request is 80), for what failed: then it's left for a person.
+  for (const r of retry) for (let i = 0; i < r.items.length; i += 20) {
+    const part = r.items.slice(i, i + 20);
+    let got = {};
+    try { got = await now(params(sys, part, r.fixes)); } catch (e) { console.log('  a retry failed: ' + e.message); }
+    const res = L.importAll(code, got, false);
     written += res.tv + res.ed;
-    left = left.concat(res.bad, r.items.filter((x) => !(x.key in got)).map((x) => ({ key: x.key, why: 'missing from the answer twice' })));
+    left = left.concat(res.bad, part.filter((x) => !(x.key in got)).map((x) => ({ key: x.key, why: 'missing from the answer twice' })));
   }
   console.log('Done: ' + written + ' written.  Tokens: ' + usage.in + ' in, ' + usage.cached + ' more read from the cache, ' + usage.out + ' out.' + (left.length ? '  Left (fix by hand, then i18n-import.js):' : ''));
   left.forEach((b) => console.log('  ' + JSON.stringify(b.key).slice(0, 90) + ': ' + b.why));
