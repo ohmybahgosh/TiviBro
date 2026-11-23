@@ -2501,7 +2501,21 @@ var Views = (function () {
     items.push({ label: 'Sleep timer', sub: sleepAt ? 'stops at ' + U.hhmm(sleepAt) : 'off', action: sleepMenu });
     items.push({ label: 'Stream info', sub: 'and the buffer', action: function () { streamInfo(); } });
     items.push({ label: 'Reconnect stream', action: function () { Player.retryNow(); } });
-    UI.menu(mode === 'vod' && vod ? RAW(vod.meta.title) : playing ? RAW(L.name(playing)) : 'Player', items);
+    UI.menu(mode === 'vod' && vod ? RAW(vod.meta.title) : playing ? RAW(L.name(playing)) : 'Player', qpSlots(items));
+  }
+  /* Options (Red) in the order of the quick menu buttons too (discussion #36: Stream info moved to the front there
+     stayed near the end here).  The rows that are also quick buttons trade places among themselves; the channel's
+     own rows and the movie-only ones (Restart, Chapters, Playback speed) keep theirs. */
+  var QP_OF_ROW = { 'Audio track': 'audio', 'Audio sync': 'sync', 'Aspect': 'picture', 'Video quality': 'quality', 'Subtitles': 'subs',
+    'Closed captions': 'cc', 'Sleep timer': 'sleep', 'Stream info': 'info', 'Reconnect stream': 'reconnect' };
+  function qpSlots(items) {
+    if (!(Store.settings.qpOrder || []).length) return items;
+    var o = qpOrder(), at = [], mine = [];
+    items.forEach(function (it, i) { if (it && QP_OF_ROW[it.label]) { at.push(i); mine.push(it); } });
+    mine.sort(function (a, b) { return o.indexOf(QP_OF_ROW[a.label]) - o.indexOf(QP_OF_ROW[b.label]); });
+    var out = items.slice();
+    at.forEach(function (i, n) { out[i] = mine[n]; });
+    return out;
   }
 
   function groupMenu(g) {
