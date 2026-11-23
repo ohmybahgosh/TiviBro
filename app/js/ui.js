@@ -172,8 +172,8 @@ var UI = (function () {
   // Magic Remote: clicking outside the box is the same as Back.
   modal.addEventListener('click', function (e) { if (e.target === modal && modalH) dispatch('back', null); });
 
-  function close() { if (mSubStop) { mSubStop(); mSubStop = null; } modal.classList.add('hidden'); modal.querySelector('.modal-box').classList.remove('wide', 'panel'); modalH = null; mBody.innerHTML = ''; if (onClose) { var f = onClose; onClose = null; f(); } }
-  var onClose = null;
+  function close() { if (mSubStop) { mSubStop(); mSubStop = null; } modal.classList.add('hidden'); modal.querySelector('.modal-box').classList.remove('wide', 'panel'); if (mLook) { modal.classList.remove(mLook); mLook = ''; } modalH = null; mBody.innerHTML = ''; if (onClose) { var f = onClose; onClose = null; f(); } }
+  var onClose = null, mLook = '';     // mLook: a panel's own look (opts.look, on the overlay: Up next's card)
 
   /* Up to M_VIS rows show.  Rows that wrap onto two or three lines (long subtitle names, discussion
      #36) make fewer fit: the list then starts lower until the focused row is whole, and a last row
@@ -269,6 +269,7 @@ var UI = (function () {
      opening with a short rise. */
   var mSub = null, mSubStop = null;
   function heading(title, sub) {
+    if (mLook) { modal.classList.remove(mLook); mLook = ''; }      // a menu after a panel with its own look: the usual box
     mTitle.textContent = T(title); mTitle._en = title;
     if (!mSub) { mSub = U.el('div', 'modal-sub'); mTitle.parentNode.insertBefore(mSub, mTitle.nextSibling); }
     if (mSubStop) { mSubStop(); mSubStop = null; }
@@ -400,10 +401,12 @@ var UI = (function () {
   }
 
   /* A box with your own content and a row of buttons (◀ ▶ between them, OK presses one).
-     buttons: [{ label, action }]; the first is focused.  Back closes it and calls onBack. */
+     buttons: [{ label, action }]; the first is focused.  Back closes it and calls onBack.
+     opts.look: a class for the overlay while it's open, for a panel drawn its own way (upnext.js). */
   var mBox = modal.querySelector('.modal-box');
   function panel(title, body, buttons, onBack, opts) {
     heading(title, opts && opts.sub);
+    if (opts && opts.look) { mLook = opts.look; modal.classList.add(mLook); }
     mBody.innerHTML = '';
     mBox.classList.add('wide');
     // Long text gives way to the buttons, which always show whole at the bottom (discussion #36).

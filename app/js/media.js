@@ -9,6 +9,7 @@ var Media = (function () {
   'use strict';
   // A name, never translated (app/js/i18n.js); plain text where there's no I18n (unit tests).
   var RAW = function (s) { return typeof I18n !== 'undefined' ? I18n.raw(s) : s; };
+  var T = function (s, v) { return typeof I18n !== 'undefined' ? I18n.t(s, v) : String(s).replace(/\{([a-z]+)\}/g, function (a, k) { return v && v[k] != null ? v[k] : a; }); };
   var $ = U.$;
   var built = false, playingMeta = null, scanning = {}, scanRuns = {}, pausedScans = {}, playToken = 0, loaded = null, progressTimer = null;
 
@@ -1504,11 +1505,11 @@ var Media = (function () {
     if (!next) { queue = null; U.toast('That was the last movie of the collection.', 4000); return; }
     var go = function () { clearTimeout(queueTimer); queueTimer = null; if (queue === q) playQueued(q.at + 1); };
     var stop = function () { clearTimeout(queueTimer); queueTimer = null; if (queue === q) queue = null; };
-    UI.menu('Next in the collection', [{ label: 'Play ' + nameOf(next), sub: (q.at + 2) + ' of ' + q.list.length, action: go }, { label: 'Stop here', action: stop }], stop);
-    if (Store.settings.autoNext !== false) {
-      U.toast(nameOf(next) + ' in 10 seconds.  Back cancels.', 10000);
-      queueTimer = setTimeout(function () { queueTimer = null; if (queue !== q) return; UI.close(); go(); }, 10000);
-    }
+    // Up next (upnext.js): the next movie's backdrop, its name, year and plot, counting down.
+    var md = next.metadata || {};
+    UpNext.show({ kicker: 'Next in the collection', image: md.backdrop ? wrap(md.backdrop) : md.poster ? wrap(md.poster) : '', still: !!md.backdrop,
+      show: md.collection || '', line: T('{x} of {y}', { x: q.at + 2, y: q.list.length }) + (next.year || md.year ? '   ·   ' + (next.year || md.year) : ''), title: nameOf(next),
+      desc: String(md.plot || '').slice(0, 400), play: go, cancel: stop, cancelLabel: 'Stop here' });
   }
   function playFrom(m, fromStart, back) {
     if (back) m.returnTo = function () { m.returnTo = null; back(); };

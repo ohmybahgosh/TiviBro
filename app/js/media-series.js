@@ -4,6 +4,7 @@ var MediaSeries = (function () {
   'use strict';
   // A name, never translated (app/js/i18n.js); plain text where there's no I18n (unit tests).
   var RAW = function (s) { return typeof I18n !== 'undefined' ? I18n.raw(s) : s; };
+  var T = function (s, v) { return typeof I18n !== 'undefined' ? I18n.t(s, v) : String(s).replace(/\{([a-z]+)\}/g, function (a, k) { return v && v[k] != null ? v[k] : a; }); };
   var generation = 0, nextTimer = null, pageFocus = {};
   var fetchingMetadata = false, metadataToken = '', metadataLanguage = '', queuedMetadata = false;
   /* What to look a show up by.  Sonarr and Plex name its folder "Show (2019)", sometimes with its IDs
@@ -183,23 +184,27 @@ var MediaSeries = (function () {
         request('query',{kind:'episode',show:file.showId,after:file.episodeHandle,excludeFile:file.segmented ? null : file.id,skipWatched:file.sequenceIntent!=='sequential',limit:1},function (r) {
           var next = r.items[0];
           if (!next || (file.season === 0 && next.season !== 0) || (file.season !== 0 && next.season === 0)) return finish();
-          var gap = next.gapBefore === true;
-          var expected = generation, start = function () { clearTimeout(nextTimer); nextTimer = null; next.originPage=finish;showEpisode(next,finish); };
-          UI.menu(gap ? 'An episode is missing' : 'Next episode',[
-            {label:'Play '+episodeLabel(next),action:function () { clearTimeout(nextTimer); request('detail',{kind:'episode',handle:next.handle},function (detail) { launch(detail); }); }},
-            {label:'Return to episodes',action:function () { clearTimeout(nextTimer); nextTimer = null; finish(); }}
-          ],function () { clearTimeout(nextTimer); nextTimer = null; finish(); });
-          if (!gap && Store.settings.autoNext !== false) {
-            U.toast('Next episode in 5 seconds.  Back cancels.',5000);
-            nextTimer = setTimeout(function () {
-              nextTimer = null; if (expected !== generation) return;
-              UI.close(); request('detail',{kind:'episode',handle:next.handle},function (detail) { launch(detail); });
-            },5000);
-          }
+          var gap = next.gapBefore === true, expected = generation;
+          var go = function (showRecord) {
+            if (expected !== generation) return;          // moved on meanwhile (another episode, another screen)
+            upNext(next, showRecord, gap, function () { request('detail',{kind:'episode',handle:next.handle},function (detail) { launch(detail); }); }, finish);
+          };
+          /* Up next (upnext.js): the next episode's still, its show, number, title and summary, counting down.  The
+             show's own record for its name and art; without it (an error) the card still comes, from the episode. */
+          Media.request('library/detail', { kind: 'show', handle: file.showId }, 15000).then(function (r) { go(r && !r.error ? r : null); }, function () { go(null); });
         });
       });
     });
     return true;
+  }
+  /* The Up next card for an episode: its own still and summary, or (not seen yet, with Hide spoilers on) the show's
+     art and no summary.  A missing episode before it only asks: no countdown. */
+  function upNext(ep, showRecord, gap, play, cancel) {
+    var em = ep.metadata || {}, sm = (showRecord && showRecord.metadata) || {}, hide = !!Store.settings.noSpoilers && ep.watchState !== 'watched';
+    var still = !hide && em.still, number = ep.airDate && ep.order === 'date' ? ep.airDate : ep.absoluteNumber != null && ep.order === 'absolute' ? T('Episode {n}', { n: ep.absoluteNumber }) : T('Season {x}, episode {y}', { x: ep.season, y: ep.number });
+    UpNext.show({ kicker: gap ? 'An episode is missing' : 'Up next', auto: !gap, image: still || sm.backdrop || sm.poster || em.poster || '', still: !!still,
+      show: (showRecord && (sm.title || showRecord.title)) || '', line: number, title: em.title || ep.title || '', desc: hide ? '' : String(em.plot || '').slice(0, 400),
+      play: play, cancel: cancel, cancelLabel: 'Return to episodes' });
   }
   function episodeLabel(item) {
     if (item.kind !== 'episode') return item.metadata && item.metadata.title || item.title || item.label;
@@ -408,5 +413,5 @@ var MediaSeries = (function () {
   function setWatched(r, on, then) {
     edit(r,'setWatched',{watched:on},function (res) { if (res && res.revision) r.revision=res.revision; r.watchState=on?'watched':''; if (typeof Trakt !== 'undefined' && Trakt.markEpisode) Trakt.markEpisode(r.handle,on); afterMark(); if (then) then(on); });
   }
-  return {setWatched:setWatched,showQuery:showQuery,fetchDetails:fetchDetails,excluded:excluded,resume:function(card){request('detail',{kind:'episode',handle:card.continueEpisode},function(ep){ep.originPage=function(){};/* back to the shelf it was started from: Next up reopened the season's episodes, the show and the TV shows list, one menu after another */var v=ep.versions.filter(function(version){return version.handle===card.continueFile;})[0]||(card.nextUp?preferredVersion(ep):null);if(v)playVersion(v,ep);else showEpisode(ep,open);});},showItem:show,markItems:markItems,markShow:markShow,correct:correct,playEpisode:function(item,back){request('detail',{kind:'episode',handle:item.handle},function(r){r.originPage=back;var v=preferredVersion(r);if(v)playVersion(v,r);else showEpisode(item,back);});},episodeMenu:showEpisode,showDetail:function(handle,done){request('detail',{kind:'show',handle:handle},done);},episodes:function(q,done){request('query',q,done);},recordCompletion:recordCompletion,phone:phone,open:open,review:review,completed:completed,leave:function () { generation++; if (Media.cancelPending) Media.cancelPending(); clearTimeout(nextTimer); nextTimer = null; }};
+  return {setWatched:setWatched,showQuery:showQuery,fetchDetails:fetchDetails,excluded:excluded,resume:function(card){request('detail',{kind:'episode',handle:card.continueEpisode},function(ep){ep.originPage=function(){};/* back to the shelf it was started from: Next up reopened the season's episodes, the show and the TV shows list, one menu after another */var v=ep.versions.filter(function(version){return version.handle===card.continueFile;})[0]||(card.nextUp?preferredVersion(ep):null);if(v)playVersion(v,ep);else showEpisode(ep,open);});},showItem:show,markItems:markItems,markShow:markShow,correct:correct,playEpisode:function(item,back){request('detail',{kind:'episode',handle:item.handle},function(r){r.originPage=back;var v=preferredVersion(r);if(v)playVersion(v,r);else showEpisode(item,back);});},episodeMenu:showEpisode,showDetail:function(handle,done){request('detail',{kind:'show',handle:handle},done);},episodes:function(q,done){request('query',q,done);},recordCompletion:recordCompletion,phone:phone,open:open,review:review,completed:completed,leave:function () { generation++; if (Media.cancelPending) Media.cancelPending(); clearTimeout(nextTimer); nextTimer = null; if (typeof UpNext !== 'undefined') UpNext.stop(); }};
 })();

@@ -86,6 +86,12 @@ var SportsLive = (function () {
     var off = S().sportsBarOff || [];
     return g.teams.some(function (t) { return t.id && Teams.follows && Teams.follows(t.id) && !Sports.hidesTeam(t.id) && off.indexOf(t.id) < 0; });
   }
+  /* A final score is said for a game with a followed team that isn't turned off in Settings > Sports and My teams >
+     Final scores (sportsFinalOff), so a team you'd rather not hear about stays quiet while the others still do. */
+  function finalSaid(g) {
+    var off = S().sportsFinalOff || [];
+    return g.teams.some(function (t) { return t.id && Teams.follows && Teams.follows(t.id) && !Sports.hidesTeam(t.id) && off.indexOf(t.id) < 0; });
+  }
   function mineIn(g) { return g.teams.filter(function (t) { return t.id && Teams.follows && Teams.follows(t.id) && !Sports.hidesTeam(t.id); })[0]; }
   function lookAlerts() {
     if (!alertsOn() || typeof Teams === 'undefined' || !Teams.followed().length) return;
@@ -116,7 +122,7 @@ var SportsLive = (function () {
       if (g.state === 'in') said['i' + g.id] = 1;
       if (g.state === 'post' && said['i' + g.id] && !said['f' + g.id] && now - g.s < 6 * 3600e3) {
         said['f' + g.id] = 1;
-        if (!onScreen(g)) U.toast(T('Final') + ':  ' + RAW(g.teams[0].name + ' ' + g.teams[0].score + ',  ' + g.teams[1].name + ' ' + g.teams[1].score), 8000);
+        if (!onScreen(g) && finalSaid(g)) U.toast(T('Final') + ':  ' + RAW(g.teams[0].name + ' ' + g.teams[0].score + ',  ' + g.teams[1].name + ' ' + g.teams[1].score), 8000);
       }
     });
   }
@@ -161,5 +167,5 @@ var SportsLive = (function () {
     document.addEventListener('keyup', function () { setTimeout(function () { if (!watching()) hideBug(); else lookBar(); }, 300); });
     if (Sports.onChange) Sports.onChange(function () { if (watching()) lookBar(); });
   }
-  return { start: start, tick: tick, refresh: function () { lookBar(); }, _close: close, _inCorner: inCorner };
+  return { start: start, tick: tick, refresh: function () { lookBar(); }, _close: close, _inCorner: inCorner, _finalSaid: finalSaid };
 })();

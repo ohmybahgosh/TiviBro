@@ -13,6 +13,7 @@ var Vod = (function () {
   'use strict';
   // A name, never translated (app/js/i18n.js); plain text where there's no I18n (unit tests).
   var RAW = function (s) { return typeof I18n !== 'undefined' ? I18n.raw(s) : s; };
+  var T = function (s, v) { return typeof I18n !== 'undefined' ? I18n.t(s, v) : String(s).replace(/\{([a-z]+)\}/g, function (a, k) { return v && v[k] != null ? v[k] : a; }); };
   var $ = U.$;
   var kind = 'movie', built = false, zone = 'items';
   var catsVL, itemsVL;
@@ -1045,17 +1046,34 @@ var Vod = (function () {
     }
     playingMeta = null;
   }
-  // force: Next episode chosen at the credits (skipper.js), whatever Play the next one automatically says.
+  /* An episode ended: the next one, as on Plex (upnext.js), with its picture, number, title and summary, counting
+     down (or waiting, with Play the next one automatically off).  force: Next episode chosen at the credits
+     (skipper.js): straight to it. */
   function ended(force) {
-    var m = playingMeta;
-    if (m && m.item && m.item.ep && episodes && (force || Store.settings.autoNext !== false)) {
-      mark(m.id, true);
-      var i = episodes.indexOf(m.item);
-      if (i >= 0 && episodes[i + 1]) { playingMeta = null; U.toast('Next episode'); if (episodes[i + 1].season !== m.item.season) showSeason(episodes[i + 1]); else itemsVL.setItems(itemsVL.items, Math.max(0, itemsVL.items.indexOf(episodes[i + 1]))); play(episodes[i + 1], true); return; }
-    }
+    var m = playingMeta, nx = null;
+    if (m && m.item && m.item.ep && episodes) { var i = episodes.indexOf(m.item); nx = i >= 0 ? episodes[i + 1] : null; }
+    if (nx) mark(m.id, true);
+    var playNext = function () {
+      if (!episodes || episodes.indexOf(nx) < 0) return;          // left the show meanwhile
+      playingMeta = null;
+      if (nx.season !== m.item.season) showSeason(nx); else itemsVL.setItems(itemsVL.items, Math.max(0, itemsVL.items.indexOf(nx)));
+      play(nx, true);
+    };
+    if (nx && force) return playNext();
     stopped();
     Views.stopAll();
     open(kind, true);
+    if (nx) upNext(nx, playNext);
+  }
+  // The Up next card for a provider's episode: its picture and summary (TMDB's where the provider has none), or the
+  // show's cover and no summary for one not seen yet with Hide spoilers on.
+  function upNext(nx, playNext) {
+    var s = series || {}, tv = typeof Series !== 'undefined' && s.name ? Series.show(s.name, s.year, 'strong') : null, te = tv ? Series.episode(tv, nx.season, nx.num) : null;
+    var spoil = !!(Store.settings.noSpoilers && !isWatched(idOf(nx)) && !resumeOf(idOf(nx)));
+    var still = spoil ? '' : (nx.cover && nx.cover !== s.cover ? nx.cover : (te && te.still) || '');
+    var title = String(nx.label || '').replace(/^S\d+ E\S*\s+/, '') || (!spoil && te && te.t) || '';
+    UpNext.show({ image: still || (tv && tv.backdrop) || s.cover || '', still: !!still, show: s.name || '', line: T('Season {x}, episode {y}', { x: nx.season, y: nx.num || '?' }),
+      title: title, desc: spoil ? '' : String(nx.plotEp || (te && te.plot) || '').slice(0, 400), play: playNext, cancel: function () {}, cancelLabel: 'Return to episodes' });
   }
 
   /* Yellow: watched or not watched in one press, for a movie or an episode (no menu to open and close each time). */

@@ -97,6 +97,10 @@ ok('the corner: a followed team\'s game', SportsLive._inCorner(det) && !SportsLi
 Store.settings.sportsBarOff = ['nhl:det'];
 ok('the corner: not a team turned off for it', !SportsLive._inCorner(det));
 Store.settings.sportsBarOff = [];
+ok('a final score pops up for a followed team\'s game', SportsLive._finalSaid(det) && !SportsLive._finalSaid(other));
+Store.settings.sportsFinalOff = ['nhl:det'];
+ok('but not for a team turned off in Final scores', !SportsLive._finalSaid(det) && SportsLive._inCorner(det));
+Store.settings.sportsFinalOff = [];
 ok('a final is not a close game', !SportsLive._close({ lg: 'nba', state: 'post', period: 4, clock: '0:00', teams: two(102, 105) }));
 console.log(fail ? fail + ' failures' : 'all sports tests passed');
 process.exit(fail ? 1 : 0);

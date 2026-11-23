@@ -367,7 +367,14 @@ var Settings = (function () {
   // One setting, in Movies and shows and in My media: the next episode, or the next movie of a collection you play.
   function autoNextRow() {
     var s = S();
-    return toggle('Play the next one automatically', 'When an episode ends, the next one starts after 5 seconds; when a movie of a collection you play ends, the next movie after 10.  Back cancels it.', function () { return s.autoNext !== false; }, function (v) { s.autoNext = v; save(); });
+    return toggle('Play the next one automatically', 'When an episode ends, Up next shows the next one (its picture, title and summary) and starts it when the countdown ends; the same for the next movie of a collection you play.  Back cancels it.  Off: Up next waits for OK.', function () { return s.autoNext !== false; }, function (v) { s.autoNext = v; save(); paint(); });
+  }
+  // How long Up next counts down (upnext.js), with Play the next one automatically on.
+  function upNextRow() {
+    var s = S();
+    if (s.autoNext === false) return null;
+    return choice('Up next countdown', 'Seconds before the next episode or movie starts by itself.', [5, 10, 15, 20], ['5 seconds', '10 seconds', '15 seconds', '20 seconds'],
+      function () { return [5, 10, 15, 20].indexOf(+s.upNextSecs) >= 0 ? +s.upNextSecs : 10; }, function (v) { s.upNextSecs = v; save(); });
   }
   function mediaDisplay() {
     var names = { en: 'English', nl: 'Dutch', de: 'German', fr: 'French', es: 'Spanish', it: 'Italian' };
@@ -386,6 +393,7 @@ var Settings = (function () {
       toggle('Mark what\'s new', 'A small dot by what came in since your last visit, and a shelf of them.  Gone once you open it.', function () { return S().mediaNew !== false; }, function (v) { S().mediaNew = v; save(); Media.refresh(); }),
       toggle('Open where you left off', 'My media opens on the tab, and the library grid, you were last on.  Off: always on Home.', function () { return S().mediaResume !== false; }, function (v) { S().mediaResume = v; save(); }),
       autoNextRow(),
+      upNextRow(),
       toggle('Favorites also in lists', 'On: a favorite movie or show is in Favorites and also in Movies or TV shows.  Off: only in Favorites.', function () { return MediaStore.preferences().favoritesInLists; }, function (v) { Media.updatePreferences({ favoritesInLists: v }); paint(); }),
       choice('Metadata language', 'Shared with the web editor.  Refreshes saved movie and show matches in this language.  Missing translations fall back to English.', Object.keys(names), Object.keys(names).map(function (k) { return names[k]; }), function () { return MediaStore.preferences().language; }, function (v) { Media.updatePreferences({ language: v }); paint(); })
     ].filter(Boolean);
@@ -1317,6 +1325,17 @@ var Settings = (function () {
     }));
     out.push(toggle('Alerts for my teams', 'A close game near the end asks whether to switch to it, and a final score says so, wherever you are in TiviBro.  Never for the game you\'re watching.',
       function () { return s.sportsAlerts !== false; }, function (v) { s.sportsAlerts = v; Store.saveSettings(); paint(); }));
+    /* Which followed teams' final scores pop up (sportsFinalOff: the ones that don't).  The close-game question
+       and everything else stay as they are. */
+    if (s.sportsAlerts !== false && mine.length) out.push(page('Final scores', (s.sportsFinalOff || []).length ? T('{x} of {y} teams', { x: mine.length - mine.filter(function (t) { return (s.sportsFinalOff || []).indexOf(t.id) >= 0; }).length, y: mine.length }) : T('All your teams'), 'Final scores', function () {
+      return [info('Turn a team off and its final score no longer pops up when the game ends.  Close-game alerts, Sports and the corner still have it.', '')].concat(mine.map(function (t) {
+        return toggle(I18n.raw(t.name), t.league.toUpperCase(), function () { return (s.sportsFinalOff || []).indexOf(t.id) < 0; }, function (v) {
+          var l = (s.sportsFinalOff || []).filter(function (id) { return id !== t.id; });
+          if (!v) l.push(t.id);
+          s.sportsFinalOff = l; Store.saveSettings(); paint();
+        });
+      }));
+    }));
     if (mine.length) out.push(page('Hide scores', (s.sportsHide || []).length ? (s.sportsHide || []).length + ' team(s): no scores anywhere until you show them' : 'For a team you\'ll watch later: no scores anywhere until you show them', 'Hide scores', function () {
       return [info('A team\'s scores stay hidden in Sports, the corner while you watch and alerts.  On a game\'s page, Show the score shows that one.', '')].concat(mine.map(function (t) {
         return toggle(I18n.raw(t.name), '', function () { return Sports.hidesTeam(t.id); }, function (v) { Sports.hideTeam(t.id, v); paint(); });
@@ -1409,6 +1428,7 @@ var Settings = (function () {
     out.push(action('Arrange the Movies home', 'Move its shelves up or down, switch them off, and pin categories.  Red on the Movies home too.', function () { Vod.arrange('movie'); }));
     out.push(action('Arrange the Shows home', 'Move its shelves up or down, switch them off, and pin categories.  Red on the Shows home too.', function () { Vod.arrange('series'); }));
     out.push(autoNextRow());
+    if (upNextRow()) out.push(upNextRow());
     out.push(toggle('Hide spoilers', 'In the guide, new episodes and episodes or movies that haven\'t aired yet (not news or sport), and on the Shows screen, episodes you haven\'t started, keep only their title, season and episode, and when they air: no summary, episode title or picture from the episode.',
       function () { return !!s.noSpoilers; }, function (v) { s.noSpoilers = v; save(); if (window.Guide && Guide.draw) Guide.draw(); }));
     out.push(head('Details from TMDB'));
