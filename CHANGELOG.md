@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Live pause on a network share says so: the messages and the channel menu's Recordings line said "USB drive" wherever it was.
+
 ## 0.6.0 (alpha 202, 2026-11-23)
 
 Pre-release: expect rough edges, and keep a backup before installing.

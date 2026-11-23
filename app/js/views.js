@@ -1511,7 +1511,7 @@ var Views = (function () {
     if (r && r.status === 'recording') UI.confirm(T('Stop recording "{x}"?', { x: r.title }), 'Stop recording', function () { Record.stop(r.id).then(function () { U.toast(T('Recording stopped')); }); });
     else Record.now(c, p);
   }
-  /* ---------- live pause (to a USB drive) ----------
+  /* ---------- live pause (to a USB drive, a network share or the TV's storage) ----------
      Pause on a live channel, fullscreen, with a USB drive in (Settings > Recording and live pause > Pause live TV): the recording
      agent starts keeping the channel on the drive (timeshift.js), the player lets go of its own connection (one
      connection to the provider, as before), and Play picks up where it was paused from the drive's copy.  From
@@ -1519,6 +1519,15 @@ var Views = (function () {
      live.  Changing channel, catch-up, a movie or stopping lets the copy go (deleted). */
   var tsh = null;
   function tsOn() { return Store.settings.livePause !== false && typeof Record !== 'undefined' && Record.canPause(); }
+  /* Where live pause keeps the channel, for the log and messages: 'usb', 'share' (the network share chosen for
+     recordings) or 'tv' (the TV's own storage).  r is the helper's answer to a start, which says; without one, the
+     same order the helper uses: a USB drive first, then the share. */
+  function tsPlace(r) {
+    if (r) return r.share ? 'share' : r.small ? 'tv' : 'usb';
+    if (Record.space) return 'usb';
+    return Record.pauseShare ? 'share' : 'tv';
+  }
+  var TS_PLACE = { usb: 'the USB drive', share: 'the network share', tv: 'the TV\'s storage' };
   /* Rewind buffer (Settings > Playback): minutes kept while watching fullscreen, 0 when off.  The channel then
      plays from its copy on the drive the whole time (a few seconds behind live), so ◀ goes back without pausing
      first.  The first piece is cut a second in (timeshift.js), and the drive's playlist waits for it, so a channel
@@ -1536,7 +1545,7 @@ var Views = (function () {
           function (e) { if (tsh === my && e && e.gone) backFromPause(); });
       }, 10000);
       Player.play(c, { url: my.url, tshift: true, tsFrom: -1 });
-      Log.info('player', 'Playing ' + L.name(c) + ' from the rewind buffer on the USB drive');
+      Log.info('player', 'Playing ' + L.name(c) + ' from the rewind buffer on ' + TS_PLACE[tsPlace(r)]);
     }, function (e) {
       // No drive or no agent: straight from the provider, as without the buffer.
       Log.warn('player', 'Rewind buffer didn\'t start: ' + (e && e.message || e));
@@ -1590,12 +1599,15 @@ var Views = (function () {
         Record.tsPing(tsh.id).then(function (st) { if (tsh && st && st.error) { U.toast(T('Live pause stopped: {e}', { e: st.error }), 6000); backFromPause(); } },
           function (e) { if (tsh && e && e.gone) backFromPause(); });
       }, 10000);
-      Log.info('player', 'Paused to the USB drive (' + L.name(c) + ')');
+      Log.info('player', 'Paused to ' + TS_PLACE[tsPlace(r)] + ' (' + L.name(c) + ')');
       if (tsh.resume) tsResume();
     }, function (e) {
       // It didn't start: back to the channel, live, with why.
-      Log.warn('player', 'Live pause to the USB drive didn\'t start: ' + (e && e.message || e));
-      if (tsh && tsh.c === c) { tsEnd(); U.toast(T('Couldn\'t pause to the USB drive: {e}', { e: e && e.message || '' }), 5000); if (playing && playing.k === c.k) startChannel(c, false, function () { osd(true); }); }
+      var where = tsPlace();
+      Log.warn('player', 'Live pause to ' + TS_PLACE[where] + ' didn\'t start: ' + (e && e.message || e));
+      // Whole sentences, one for each place, so each translates as a sentence.
+      var said = where === 'usb' ? 'Couldn\'t pause to the USB drive: {e}' : where === 'share' ? 'Couldn\'t pause to the network share: {e}' : 'Couldn\'t pause live TV: {e}';
+      if (tsh && tsh.c === c) { tsEnd(); U.toast(T(said, { e: e && e.message || '' }), 5000); if (playing && playing.k === c.k) startChannel(c, false, function () { osd(true); }); }
     });
     return true;
   }
@@ -3519,7 +3531,11 @@ var Guide = (function () {
     // Recording to a USB drive (record.js): the programme on now or later.
     var recIt = typeof Record !== 'undefined' ? Record.menuItem(c, h.p) : null;
     if (recIt) items.push(recIt);
-    if (typeof Record !== 'undefined' && Record.recs.length) items.push({ label: 'Recordings…', icon: 'film', sub: 'on the USB drive', action: function () { Record.open(); } });
+    // Where new recordings go: the share when one is chosen and there's no drive (or Record to says the share).
+    if (typeof Record !== 'undefined' && Record.recs.length) {
+      var onShare = !!Record.share && (!Record.space || Store.settings.recTo === 'share');
+      items.push({ label: 'Recordings…', icon: 'film', sub: onShare ? 'on the network share' : 'on the USB drive', action: function () { Record.open(); } });
+    }
     if (h.p && h.p.s > now) items.push(hasReminder(c, h.p) ? { label: 'Cancel reminder', icon: 'belloff', sub: U.hhmm(h.p.s), action: function () { toggleReminder(c, h.p); } }
       : { label: 'Remind me', icon: 'bell', sub: U.hhmm(h.p.s), action: function () { toggleReminder(c, h.p); } });
     if (h.p && h.p.t && !h.p.up && !h.p.ended) {
