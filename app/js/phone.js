@@ -697,14 +697,12 @@ var Phone = (function () {
   function forget(id) { return call('/companion/forget', { id: id }).then(set); }
 
   function ago(t) {
-    if (!t) return 'never';
+    if (!t) return I18n.t('never');
     var m = Math.round((Date.now() - t) / 60000);
-    if (m < 1) return 'just now';
-    if (m < 60) return m + ' min ago';
+    if (m < 1) return I18n.t('just now');
+    if (m < 60) return I18n.t('{n} min ago', { n: m });
     var h = Math.round(m / 60);
-    if (h < 24) return h + (h === 1 ? ' hour ago' : ' hours ago');
-    var d = new Date(t);
-    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    return h < 24 ? I18n.t('{n} hours ago', { n: h }) : new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   }
 
   /* Pair a phone: a QR code for the TiviBro phone app (it carries the code), and the code to type.
@@ -713,12 +711,12 @@ var Phone = (function () {
     Parental.gate('settings', null, function () {
       var wrap = U.el('div', 'pair'), qr = U.el('div', 'join-qr pair-qr'), side = U.el('div', 'pair-side');
       var steps = U.el('ol', 'pair-steps');
-      ['Open the TiviBro app on your Android phone', 'Tap Add a TV, then Scan the code', 'Or type the code below'].forEach(function (t) { steps.appendChild(U.el('li', '', t)); });
-      var codeL = U.el('div', 'remote-l', 'Pairing code'), code = U.el('div', 'pair-code', '…');
-      var left = U.el('div', 'pair-left', ''), stat = U.el('div', 'pair-stat', 'Getting a code…');
+      ['Open the TiviBro app on your Android phone', 'Tap Add a TV, then Scan the code', 'Or type the code below'].forEach(function (t) { steps.appendChild(U.el('li', '', I18n.t(t))); });
+      var codeL = U.el('div', 'remote-l', I18n.t('Pairing code')), code = U.el('div', 'pair-code', '…');
+      var left = U.el('div', 'pair-left', ''), stat = U.el('div', 'pair-stat', I18n.t('Getting a code…'));
       side.appendChild(steps); side.appendChild(codeL); side.appendChild(code); side.appendChild(left); side.appendChild(stat);
       wrap.appendChild(qr); wrap.appendChild(side);
-      var lead = U.el('p', 'edit-join-lead', 'Your phone and this TV must be on the same network.  The code only works while this screen is open.');
+      var lead = U.el('p', 'edit-join-lead', I18n.t('Your phone and this TV must be on the same network.  The code only works while this screen is open.'));
       var box = U.el('div'); box.appendChild(lead); box.appendChild(wrap);
       var shown = '', done = false, opening = false;
 
@@ -729,7 +727,7 @@ var Phone = (function () {
           done = true;
           wrap.classList.add('ok');
           stat.className = 'pair-stat ok';
-          stat.textContent = '✓  Paired with ' + p.paired.name + '.  You can close this screen.';
+          stat.textContent = '✓  ' + I18n.t('Paired with {x}.  You can close this screen.', { x: p.paired.name });
           left.textContent = '';
           return;
         }
@@ -746,12 +744,12 @@ var Phone = (function () {
           try { var q = qrcode(0, 'M'); q.addData(p.link); q.make(); qr.innerHTML = q.createSvgTag({ cellSize: 6, margin: 2, scalable: true }); } catch (e) { Log.warn('phone', 'QR code: ' + e.message); }
         }
         var secs = Math.max(0, Math.round(p.left / 1000));
-        left.textContent = 'Works for ' + Math.floor(secs / 60) + ':' + ('0' + secs % 60).slice(-2);
+        left.textContent = I18n.t('Works for {x}', { x: Math.floor(secs / 60) + ':' + ('0' + secs % 60).slice(-2) });
         stat.className = 'pair-stat';
-        stat.textContent = p.tries ? 'A phone tried a wrong code (' + p.tries + ' of 5).  Waiting for your phone…' : 'Waiting for your phone…';
+        stat.textContent = p.tries ? I18n.t('A phone tried a wrong code ({n} of 5).  Waiting for your phone…', { n: p.tries }) : I18n.t('Waiting for your phone…');
       }
 
-      UI.panel('Pair a phone', box, [{ label: 'Done' }]);
+      UI.panel(I18n.t('Pair a phone'), box, [{ label: I18n.t('Done') }]);
       UI.onClose = function () {
         clearInterval(fast); fast = null;
         if (!done) call('/companion/pair', { open: false }).then(set).catch(function () {});

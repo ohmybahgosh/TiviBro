@@ -725,7 +725,7 @@ var WebEdit = (function () {
           .then(function (r) { return call('/editor/result', { id: c.id, ok: true, msg: r && r.msg, data: r && r.data }); },
             function (e) {
               Log.warn('webedit', '"' + c.type + '" failed: ' + (e && e.message));
-              if (c.type === 'addPlaylist' || c.type === 'restore') activity('That didn\'t work: ' + String((e && e.message) || 'it failed').replace(/([^.!?])$/, '$1.') + '  Fix it on your phone or computer and send it again.', 'err');
+              if (c.type === 'addPlaylist' || c.type === 'restore') activity(I18n.t('That didn\'t work: {x}  Fix it on your phone or computer and send it again.', { x: String((e && e.message) || 'it failed').replace(/([^.!?])$/, '$1.') }), 'err');
               // Adding a playlist: what the TV tried, for the "What the TV tried" box (issue #87).
               var tried = c.type === 'addPlaylist' ? triedLog(seen) : null;
               return call('/editor/result', { id: c.id, ok: false, msg: (e && e.message) || 'failed', data: tried ? { log: tried } : undefined }); })
@@ -765,7 +765,7 @@ var WebEdit = (function () {
     }).then(function () { return call('/editor/status'); }).then(function (s) {
       var before = status && status.clients;
       status = s;
-      if (!s.running && on) { on = false; clearInterval(timer); U.toast('The web editor stopped'); }
+      if (!s.running && on) { on = false; clearInterval(timer); U.toast(I18n.t('The web editor stopped')); }
       if (onStatus && (before !== s.clients || !s.running)) onStatus(s);
       if (fails) { Log.info('webedit', 'Editor checks work again after ' + fails + ' failed'); fails = 0; quietUntil = 0; }
     }).catch(failed)
@@ -848,14 +848,14 @@ var WebEdit = (function () {
   function drawJoin(qr, txt, page, s, waiting, connected) {
     qr.innerHTML = ''; txt.innerHTML = '';
     var addrs = status && status.ips && status.ips.length ? status.ips.map(function (ip) { return 'http://' + ip + ':' + status.port; }) : [];
-    if (!addrs.length) { txt.appendChild(U.el('div', 'msg err', 'No network address found.  Check that the TV is connected to your network.')); return; }
+    if (!addrs.length) { txt.appendChild(U.el('div', 'msg err', I18n.t('No network address found.  Check that the TV is connected to your network.'))); return; }
     try {
       var q = qrcode(0, 'M'); q.addData(addrs[0] + '/#k=' + password() + (page ? '/' + page : '')); q.make();
       qr.innerHTML = q.createSvgTag({ cellSize: 9, margin: 2, scalable: true });
     } catch (e) { Log.warn('webedit', 'QR code: ' + e.message); }
-    txt.appendChild(U.el('div', 'remote-l', 'Address'));
+    txt.appendChild(U.el('div', 'remote-l', I18n.t('Address')));
     addrs.forEach(function (a) { txt.appendChild(U.el('div', 'remote-v', a.replace(/^http:\/\//, ''))); });
-    txt.appendChild(U.el('div', 'remote-l', 'Password'));
+    txt.appendChild(U.el('div', 'remote-l', I18n.t('Password')));
     txt.appendChild(U.el('div', 'remote-v', password()));
     txt.appendChild(U.el('div', 'remote-s', s && s.clients ? connected : waiting));
     setTimeout(showBanner, 0);
@@ -868,14 +868,14 @@ var WebEdit = (function () {
     Parental.gate('settings', null, function () {
       var body = U.el('div', 'edit-join'), qr = U.el('div', 'join-qr'), txt = U.el('div', 'join-txt'), wasOn = on;
       body.appendChild(qr); body.appendChild(txt);
-      txt.appendChild(U.el('div', 'remote-s', 'Starting the editor…'));
-      var lead = U.el('p', 'edit-join-lead', opts.lead || ('Scan the code with your phone\'s camera, or open the address on a computer on the same network.  Rename, hide, sort and clean up with a real keyboard; changes show up here as you send them.' + (/alpha|beta/i.test(TIVIBRO_VERSION) ? '  Pairing the TiviBro app is different: Settings > Phone app and web editor > Pair the TiviBro app.' : '')));
+      txt.appendChild(U.el('div', 'remote-s', I18n.t('Starting the editor…')));
+      var lead = U.el('p', 'edit-join-lead', opts.lead || (I18n.t('Scan the code with your phone\'s camera, or open the address on a computer on the same network.  Rename, hide, sort and clean up with a real keyboard; changes show up here as you send them.') + (/alpha|beta/i.test(TIVIBRO_VERSION) ? '  ' + I18n.t('Pairing the TiviBro app is different: Settings > Phone app and web editor > Pair the TiviBro app.') : '')));
       var wrap = U.el('div'); wrap.appendChild(lead); wrap.appendChild(body);
-      function show(s) { if (!wrap.parentNode) return; drawJoin(qr, txt, page || '', s, 'Waiting for a phone or computer…', 'Connected.  The editor keeps running until you turn it off or close TiviBro.'); }
+      function show(s) { if (!wrap.parentNode) return; drawJoin(qr, txt, page || '', s, I18n.t('Waiting for a phone or computer…'), I18n.t('Connected.  The editor keeps running until you turn it off or close TiviBro.')); }
       // keepOn: the screen underneath needs the editor (the first screen's own QR code), so no Turn off.
-      var btns = [{ label: 'Done' }];
-      if (!opts.keepOn) btns.push({ label: 'Turn the editor off', action: function () { stop().then(function () { U.toast('Web editor is off'); if (after) after(); }); } });
-      UI.panel(opts.title || 'Web editor in a browser', wrap, btns);
+      var btns = [{ label: I18n.t('Done') }];
+      if (!opts.keepOn) btns.push({ label: I18n.t('Turn the editor off'), action: function () { stop().then(function () { U.toast(I18n.t('Web editor is off')); if (after) after(); }); } });
+      UI.panel(opts.title || I18n.t('Web editor in a browser'), wrap, btns);
       var prev = onStatus;
       UI.onClose = function () { if (onStatus === show) onStatus = prev; if (after) after(); };
       onStatus = show;
@@ -898,7 +898,7 @@ var WebEdit = (function () {
         .then(function (r) { return { msg: r && r.msg }; }, function (e) {
           // The phone app's Add a playlist: what the TV tried, like the web editor's (issue #87).
           if (type === 'addPlaylist' && e && typeof e === 'object') e.tried = triedLog(seen);
-          if (type === 'addPlaylist' || type === 'restore') activity('That didn\'t work: ' + String((e && e.message) || 'it failed').replace(/([^.!?])$/, '$1.') + '  Fix it on your phone and send it again.', 'err');
+          if (type === 'addPlaylist' || type === 'restore') activity(I18n.t('That didn\'t work: {x}  Fix it on your phone and send it again.', { x: String((e && e.message) || 'it failed').replace(/([^.!?])$/, '$1.') }), 'err');
           throw e;
         });
     },

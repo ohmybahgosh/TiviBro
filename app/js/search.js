@@ -94,7 +94,7 @@ var Search = (function () {
       row._t = U.el('span', 'tag');
       row.appendChild(row._img); row.appendChild(box); row.appendChild(row._t);
     }
-    if (it.hist) { row._img.style.visibility = 'hidden'; row._n.textContent = it.hist; row._s.textContent = 'Recent search'; row._t.textContent = ''; return; }
+    if (it.hist) { row._img.style.visibility = 'hidden'; row._n.textContent = it.hist; row._s.textContent = I18n.t('Recent search'); row._t.textContent = ''; return; }
     if (it.v) {
       var v = it.v, img = v.cover || '';
       row._img.style.visibility = img ? '' : 'hidden';
@@ -102,7 +102,7 @@ var Search = (function () {
       row._n.textContent = v.name;
       var rt = Math.round(parseFloat(v.rating) * 10) / 10;
       row._s.textContent = [v.year, rt > 0 ? '★ ' + rt : '', v.q].filter(Boolean).join('   ');
-      row._t.textContent = it.vkind === 'series' ? 'show' : 'movie';
+      row._t.textContent = it.vkind === 'series' ? I18n.t('show') : I18n.t('movie');
       return;
     }
     var c = it.c, lg = c.logo || Epg.icon(Epg.epgId(c));
@@ -111,16 +111,16 @@ var Search = (function () {
     if (it.raw) {
       row._n.textContent = it.raw;
       row._s.textContent = L.name(c) + '   ' + L.groupName(c.g);
-      row._t.textContent = 'in the name';
+      row._t.textContent = I18n.t('in the name');
     } else if (it.p) {
       var now = Date.now(), p = it.p;
       row._n.textContent = p.t;
       row._s.textContent = U.day(p.s) + ' ' + U.hhmm(p.s) + '   ' + L.name(c) + (it.inDesc ? '   ·   ' + it.inDesc : '');
-      row._t.textContent = p.s <= now && p.e > now ? 'on now' : p.e <= now ? 'replay' : hasReminder(c, p) ? 'reminder set' : 'upcoming';
+      row._t.textContent = I18n.t(p.s <= now && p.e > now ? 'on now' : p.e <= now ? 'replay' : hasReminder(c, p) ? 'reminder set' : 'upcoming');
     } else {
       row._n.textContent = L.name(c);
       row._s.textContent = L.groupName(c.g);
-      row._t.textContent = 'channel';
+      row._t.textContent = I18n.t('channel');
     }
   }
 
@@ -129,11 +129,11 @@ var Search = (function () {
     v.innerHTML = '';
     var wrap = U.el('div', 'search-wrap');
     input = U.el('input', 'search-input');
-    input.type = 'text'; input.placeholder = 'Channel, movie, show, team or name'; input.spellcheck = false;
+    input.type = 'text'; input.placeholder = I18n.t('Channel, movie, show, team or name'); input.spellcheck = false;
     wrap.appendChild(input);
     chipBox = U.el('div', 'search-chips');
     FILTERS.forEach(function (f) {
-      var b = U.el('span', 'schip', f[1]); b.setAttribute('data-f', f[0]);
+      var b = U.el('span', 'schip', I18n.t(f[1])); b.setAttribute('data-f', f[0]);
       b.addEventListener('click', function () { zone = 'chips'; setFilter(f[0]); paint(); });
       chipBox.appendChild(b);
     });
@@ -251,7 +251,7 @@ var Search = (function () {
     var vst = Vod.searchState;
     vl.empty = filter === 'channels' ? 'No channel has that name.' :
       filter === 'movies' ? (vst === 'loading' ? 'Loading your movies and shows…' : vst === 'none' ? 'This provider has no movies or shows.' : 'No movie or show has that name.') :
-      'Nothing found.  Programmes are searchable once the guide has loaded them' + (Epg.xml ? '.' : ' (add an XMLTV guide in Settings > Guide to search every channel).');
+      (Epg.xml ? 'Nothing found.  Programmes are searchable once the guide has loaded them.' : 'Nothing found.  Programmes are searchable once the guide has loaded them (add an XMLTV guide in Settings > Guide to search every channel).');
     vl.setItems(out, 0);
     if (zone === 'list' && !out.length) { zone = 'chips'; paint(); }
     if (filter !== 'channels' && filter !== 'movies') inDescriptions(q, out);
@@ -315,15 +315,15 @@ var Search = (function () {
     if (!p || (p.s <= now && p.e > now)) { Views.startChannel(c, false, Views.goFull); return; }
     if (p.e <= now) { Views.playCatchup(c, p, 0); return; }
     var r = Store.edits.reminders, i = r.findIndex(function (x) { return x.k === c.k && x.s === p.s; });
-    if (i < 0) { r.push({ k: c.k, s: p.s, e: p.e, t: p.t }); U.toast('Reminder set for ' + U.day(p.s).toLowerCase() + ' ' + U.hhmm(p.s)); Log.info('remind', 'Reminder set: ' + p.t + ' at ' + U.hhmm(p.s) + ' (Search)'); }
-    else { r.splice(i, 1); U.toast('Reminder cancelled'); }
+    if (i < 0) { r.push({ k: c.k, s: p.s, e: p.e, t: p.t }); U.toast(I18n.t('Reminder set for') + ' ' + U.day(p.s).toLowerCase() + ' ' + U.hhmm(p.s)); Log.info('remind', 'Reminder set: ' + p.t + ' at ' + U.hhmm(p.s) + ' (Search)'); }
+    else { r.splice(i, 1); U.toast(I18n.t('Reminder cancelled')); }
     Store.saveEdits();
     vl.refresh(); hints();
   }
 
   function addWatch() {
     var q = input.value.trim();
-    if (q.length < 2) { U.toast('Type a show, team or name first'); return; }
+    if (q.length < 2) { U.toast(I18n.t('Type a show, team or name first')); return; }
     remember(q);
     Watch.add(q);
   }

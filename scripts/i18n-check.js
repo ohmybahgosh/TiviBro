@@ -19,9 +19,10 @@ const RULES = [
   // Settings and the tour: the label, and the line under it.
   new RegExp(`\\b(?:toggle|choice|action|page|tvOnly\\(action|phoneDoes\\('\\w+', action)\\(\\s*${STR}(?:\\s*,\\s*${STR})?`, 'g'),
   new RegExp(`\\b(?:head|info)\\(\\s*${STR}`, 'g'),
-  new RegExp(`\\b(?:label|sub|title|hint)\\s*:\\s*${STR}`, 'g'),
+  new RegExp(`\\b(?:label|sub|title|hint|empty)\\s*:\\s*${STR}`, 'g'),
   new RegExp(`\\b(?:U|UI)\\.(?:toast|menu|confirm|prompt|panel|pin|notify)\\(\\s*${STR}(?:\\s*,\\s*${STR})?`, 'g'),
   new RegExp(`\\bI18n\\.t\\(\\s*${STR}`, 'g'),
+  new RegExp(`\\bT\\(\\s*${STR}`, 'g'),           // the local I18n.t shorthand several files define
   new RegExp(`\\[\\s*'[a-z]*'\\s*,\\s*${STR}\\s*\\]`, 'g'),       // hints: ['ok', 'Play']
   new RegExp(`\\btel\\(\\s*'[a-z]+'\\s*,\\s*'[^']*'\\s*,\\s*${STR}`, 'g')            // tel('div', 'cls', 'Words'): the pages' own elements
 ];

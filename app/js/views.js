@@ -582,8 +582,8 @@ var Views = (function () {
     } else {
       // No guide: what the provider wrote in the channel name (often the game or show) is the next best thing.
       var ex = Search.extra(c);
-      if (ex) { now.firstChild.textContent = ex; now.appendChild(U.el('small', '', L.name(c) + '   from the channel name, no guide information')); }
-      else now.appendChild(U.el('small', '', Library.noGuide(c) ? '' : nn ? 'No guide information' : 'Loading guide'));
+      if (ex) { now.firstChild.textContent = ex; now.appendChild(U.el('small', '', L.name(c) + '   ' + T('from the channel name, no guide information'))); }
+      else now.appendChild(U.el('small', '', Library.noGuide(c) ? '' : nn ? T('No guide information') : T('Loading guide')));
     }
     if (nn && nn.next) next.textContent = T('Next') + '  ' + U.hhmm(nn.next.s) + '  ' + nn.next.t;
   }
@@ -1833,7 +1833,7 @@ var Views = (function () {
     if (s === 'playing' || s === 'error' || s === 'idle') stage.classList.remove('blank');
     spin.classList.toggle('hidden', !(s === 'loading' || s === 'buffering'));
     // "Tuning" is a channel's word: a movie, an episode, a recording or My media is "Loading".
-    spinText.textContent = s === 'loading' ? (msg || (mode === 'vod' ? 'Loading' : 'Tuning')) : (msg || 'Buffering');
+    spinText.textContent = s === 'loading' ? (msg || (mode === 'vod' ? T('Loading') : T('Tuning'))) : (msg || T('Buffering'));
     spinPlain = s === 'buffering' && (!msg || msg === 'Buffering');
     verr.classList.toggle('hidden', s !== 'error');
     if (s === 'error') verr.textContent = msg;
@@ -1861,7 +1861,7 @@ var Views = (function () {
   }
   function onStats(x) {
     // A plain refill shows how far along it is, so a long one doesn't look stuck.
-    if (spinPlain && x.state === 'buffering' && x.target) spinText.textContent = 'Buffering  ' + Math.min(99, Math.round(100 * x.ahead / x.target)) + '%';
+    if (spinPlain && x.state === 'buffering' && x.target) spinText.textContent = T('Buffering  {n}%', { n: Math.min(99, Math.round(100 * x.ahead / x.target)) });
     var m = Store.settings.meter, peek = full && Date.now() < peekUntil;
     if (!peek && (m === 'off' || (!full && m !== 'always'))) { meter.classList.add('hidden'); return; }
     var ratio = x.target ? x.ahead / Math.max(x.target * 2, 4) : 0;
@@ -3049,10 +3049,10 @@ var Guide = (function () {
       if (gid === L.TEAMS) edge += p.up ? ' tm-soon' : now ? ' tm-live' : '';
       // A narrow one (a short filler) whose title won't fit on a line: the title gets both lines, without the times.
       cell(r, n++, 'gp' + (now ? ' now' : past ? ' past' : '') + (focus && p.s <= focusT && p.e > focusT ? ' focus' : '') + (mv ? ' mv' : '') + (kind ? ' k-' + kind : '') + edge + (w < 240 && p.t.length * 12 > w - 40 ? ' nar' : '') + recCls(c, p), a, w,
-        (hasReminder(c, p) ? '◷ ' : '') + p.t, past && cuMark, p.up ? 'until ' + Events.when(p.e) : U.hhmm(p.s) + ' – ' + U.hhmm(p.e), now ? U.clamp(Math.round(w * (nowT - from) / Math.max(1, Math.min(p.e, t1) - from)), 0, w) : -1, p.s);
+        (hasReminder(c, p) ? '◷ ' : '') + p.t, past && cuMark, p.up ? T('until {x}', { x: Events.when(p.e) }) : U.hhmm(p.s) + ' – ' + U.hhmm(p.e), now ? U.clamp(Math.round(w * (nowT - from) / Math.max(1, Math.min(p.e, t1) - from)), 0, w) : -1, p.s);
     });
     // Nothing to show: still loading (a soft shimmer), or no information (quiet, as TiviMate has it).
-    if (!n) cell(r, n++, 'gp none' + (!locked && !Library.noGuide(c) ? (l ? ' nodata' : ' loading') : '') + (focus ? ' focus' : ''), 0, PXW, locked ? 'Locked' : Library.noGuide(c) ? Library.name(c) : l ? 'No information' : 'Loading…', false, null, -1, '');
+    if (!n) cell(r, n++, 'gp none' + (!locked && !Library.noGuide(c) ? (l ? ' nodata' : ' loading') : '') + (focus ? ' focus' : ''), 0, PXW, locked ? T('Locked') : Library.noGuide(c) ? Library.name(c) : l ? T('No information') : T('Loading…'), false, null, -1, '');
     for (var j = n; j < r.cells.length; j++) if (!r.cells[j].off) { r.cells[j].d.style.display = 'none'; r.cells[j].off = true; }
   }
   // Programme cells are kept per row and reused, so scrolling the guide creates no new elements.

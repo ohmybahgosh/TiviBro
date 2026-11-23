@@ -1327,7 +1327,7 @@ var Player = (function () {
       grow(p);
       Log.info('player', 'Buffer ran dry (' + st.refills + ' times this stream); refilling to ' + refillGoal().toFixed(1) + 's');
       video.pause();
-      state('buffering', 'Buffering');
+      state('buffering');
       return;
     }
     /* 4. Clock stopped with data in hand: decoder problem.  Nudge, recover, then reconnect.  With a second or
