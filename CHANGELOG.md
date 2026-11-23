@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 202, 2026-11-23)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 202
 
 - **Record and pause live TV to a network share, on any TV.**  A Windows or Samba share (a PC, Mac, NAS or router) now works for recordings as WebDAV did, and live pause goes to the share too: hours on a TV without root instead of 10 minutes.  Choose a My media library in Settings > Recording and live pause > Network share.  The rewind buffer works there as well, a recording on a Windows share plays while it records, and the Recordings screen shows the share's free room.  (A recording on a Windows share plays from its start while it records; a player that stopped reading no longer keeps it from being filed or deleted.)
 - **Logo library: Worldwide TV Logos.**  A third source, with each channel's own logo cleaned up (transparent, trimmed, current branding) and in white where it needs to be on a dark screen.  It's the new default style, **Cleaned up**, with tv-logos and iptv-org standing in where it has none.
@@ -9,11 +13,7 @@
 - **Final scores, team by team.**  Settings > Sports and My teams > Final scores turns off the final score message for the teams you pick; close-game alerts and the rest stay.
 - **Settings home: every tile has its own icon.**  Guide, Audio and subtitles, Movies and shows and My media showed a plain square.
 
-## 0.6.0 (alpha 201, 2026-11-22)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 201
+### In alpha 201
 
 - **Pick which teams show in the score corner.**  Settings > Sports and My teams > Teams in the corner: turn a team off and its games stay out of the corner while you watch, but still show in Sports and alerts.  Also in the phone app and the web editor.
 - **My media reads Windows and network shares (SMB).**  Add media > Add a Windows or network share: a PC, Mac, NAS or router's shared folder, found on the network or by its name or address, and a login (or as a guest), then pick the share and folder.  Also in the phone app (Add media > Add a Windows or network share) and the web editor.  SMB 2 and 3 with signing and encryption, so Windows 11 shares work; SMB1 isn't supported.  Movies play with seeking, subtitles beside them are found, and the login stays on the TV.
