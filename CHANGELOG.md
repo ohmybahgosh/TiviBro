@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 204, 2026-11-23)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 204
 
 - **Audio sync.**  Sound ahead of or behind the picture: OK > Audio sync moves it 20 ms (◀ ▶) or 100 ms (▲ ▼) at a time while you watch, with plain hints for which way to go.  Kept per channel, movie or episode.
 - **Fix the guide's time zone.**  An Xtream provider whose full guide is hours off (its own time zone marked as UTC) is found and corrected by itself.  Settings > Guide shows by how much, and can turn it off.
@@ -10,11 +14,7 @@
 - Logo library styles show on TVs that had the library on before alpha 202: its lists were kept for a week from before Worldwide TV Logos was added.
 - Closing Excluded files from a library's settings goes back to Settings, instead of leaving the remote stuck on the side menu.
 
-## 0.6.0 (alpha 203, 2026-11-23)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 203
+### In alpha 203
 
 - **Load a subtitle file.**  Subtitles > Load a subtitle file… picks a .srt, .vtt, .ass or .ssa from a USB drive (rooted TVs) or a My media library on a share, Dropbox or Google Drive.  The phone app sends one from the phone (the subtitles button next to what's playing), the web editor's Overview from a computer.
 - **Find subtitles searches by name** once you change the title, season and episode or year (episodes have a Year row now), or with Search by name instead.  A TMDB id search that finds nothing tries by name too.  For revivals such as Twin Peaks (2017).
