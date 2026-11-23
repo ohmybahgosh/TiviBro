@@ -164,7 +164,7 @@ var MediaMoviePage = (function () {
       tip.classList.remove('fade'); clearTimeout(tr && tr.t); if (tr) tr.t = setTimeout(function () { tip.classList.add('fade'); }, 4000);
       return true;
     });
-    UI.hints([['', 'Back  ' + what, 'back'], ['yellow', 'YouTube app']]);
+    UI.hints([['', I18n.t('Back  {x}', { x: I18n.t(what) }), 'back'], ['yellow', 'YouTube app']]);
   }
   function youtubeApp(id) {
     try {

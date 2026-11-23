@@ -626,7 +626,7 @@ var Views = (function () {
   }
   function hintsFor() {
     if (tab !== 'live') return;
-    if (pick) UI.hints([['', 'OK  select or unselect'], ['red', 'Actions (' + pick.size + ' selected)'], ['', 'Back  done']]);
+    if (pick) UI.hints([['', 'OK  select or unselect'], ['red', I18n.t('Actions ({n} selected)', { n: pick.size })], ['', 'Back  done']]);
     else if (lvis) UI.hints([['', 'OK  tick or untick', 'ok'], ['', 'CH +/−  a page', 'chup'], ['', 'Back  save and finish', 'back'], ['red', 'All, none, no guide']]);
     else {
       var h = [['', zone === 'groups' ? 'OK  open group' : 'OK  watch fullscreen', 'ok'], ['', 'Hold OK  options', 'hold'], ['', zone === 'groups' ? 'Back or ◀  menu bar' : 'Back or ◀  groups', 'back']];
@@ -3297,7 +3297,7 @@ var Guide = (function () {
     var pv = previewing();
     if (zone === 'groups') {
       UI.hints([['', '▲ ▼  choose a group'], ['', 'OK or ▶  its channels', 'ok'], ['', '◀  menu', 'left'], ['', 'Hold OK  group options', 'hold'],
-        pv ? ['', 'Play ▶  watch ' + L.name(pv), 'playpause'] : null, ['', 'Back  menu', 'back']].filter(Boolean));
+        pv ? ['', I18n.t('Play ▶  watch {x}', { x: L.name(pv) }), 'playpause'] : null, ['', 'Back  menu', 'back']].filter(Boolean));
       return;
     }
     var g = function (b) { var x = Keymap.get('guide', b); return x && x !== 'none' ? x : ''; };
