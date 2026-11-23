@@ -4,6 +4,7 @@
      node scripts/i18n-fill.js de                   everything missing, through the Message Batches API
      node scripts/i18n-fill.js de --now             the same, one request after another (no waiting for a batch)
      node scripts/i18n-fill.js de --max 200         at most 200 texts this time
+     node scripts/i18n-fill.js de --size 20         texts a request (40)
      node scripts/i18n-fill.js de --results r.jsonl  a finished batch's results file (its results_url), not asked again
    The key comes from ANTHROPIC_API_KEY (never commit it); I18N_MODEL picks the model (claude-sonnet-5-5).
 
@@ -18,7 +19,9 @@
 const cp = require('child_process'), path = require('path');
 const L = require('./i18n-lib.js');
 const argv = process.argv.slice(2), code = argv[0], mi = argv.indexOf('--max'), max = mi > 0 ? +argv[mi + 1] : Infinity;
-const KEY = process.env.ANTHROPIC_API_KEY, MODEL = process.env.I18N_MODEL || 'claude-sonnet-5-5', BATCH = 80, API = 'https://api.anthropic.com/v1';
+// Texts a request (--size): long help texts in a wordy language can fill an answer, so not too many.
+const si = argv.indexOf('--size'), BATCH = si > 0 ? +argv[si + 1] : 40;
+const KEY = process.env.ANTHROPIC_API_KEY, MODEL = process.env.I18N_MODEL || 'claude-sonnet-5-5', API = 'https://api.anthropic.com/v1';
 const HEAD = { 'content-type': 'application/json', 'x-api-key': KEY, 'anthropic-version': '2023-06-01' };
 if (!KEY) { console.error('ANTHROPIC_API_KEY is not set.  Without it: node scripts/i18n-todo.js <code> > todo.json, translate, node scripts/i18n-import.js <code> done.json'); process.exit(1); }
 
@@ -49,7 +52,7 @@ function system(todo, g) {
     '\n\nEach message gives texts as JSON ("where" says where the text shows; "plural" how many forms a list needs; "problem" what was wrong with an earlier try).  Answer with only one JSON object, English text to translation, nothing else.' }];
 }
 function params(sys, items, fixes) {
-  return { model: MODEL, max_tokens: 16000, system: sys, messages: [{ role: 'user', content: (fixes ? 'These failed a check before; fix them.\n' : '') +
+  return { model: MODEL, max_tokens: 32000, system: sys, messages: [{ role: 'user', content: (fixes ? 'These failed a check before; fix them.\n' : '') +
     JSON.stringify(items.map((x) => Object.assign({ key: x.key, where: x.where.join('; ').slice(0, 120) }, x.plural ? { plural: x.plural } : {}, x.note ? { note: x.note } : {}, fixes ? { problem: fixes[x.key] } : {})), null, 1) }] };
 }
 /* The JSON object in an answer: from its first { to the } that closes it (strings skipped), so text or a
@@ -112,7 +115,11 @@ function results(text) {
     batch.forEach((x) => { if (!(x.key in got)) fixes[x.key] = 'missing from the answer'; });
     if (Object.keys(fixes).length) retry.push({ items: batch.filter((x) => x.key in fixes), fixes });
   }
-  if (argv.includes('--now')) for (let i = 0; i < batches.length; i++) { take(batches[i], await now(params(sys, batches[i]))); console.log('  ' + (i + 1) + '/' + batches.length + ', ' + written + ' written'); }
+  if (argv.includes('--now')) for (let i = 0; i < batches.length; i++) {
+    // A request that fails (an answer cut short) leaves its texts for the retries below.
+    let got = {}; try { got = await now(params(sys, batches[i])); } catch (e) { console.log('  request ' + (i + 1) + ': ' + e.message); }
+    take(batches[i], got); console.log('  ' + (i + 1) + '/' + batches.length + ', ' + written + ' written');
+  }
   else {
     // A finished batch's results kept in a file (the same texts in the same order): read, not asked again.
     const ri = argv.indexOf('--results');
