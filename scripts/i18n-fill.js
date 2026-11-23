@@ -4,6 +4,7 @@
      node scripts/i18n-fill.js de                   everything missing, through the Message Batches API
      node scripts/i18n-fill.js de --now             the same, one request after another (no waiting for a batch)
      node scripts/i18n-fill.js de --max 200         at most 200 texts this time
+     node scripts/i18n-fill.js de --results r.jsonl  a finished batch's results file (its results_url), not asked again
    The key comes from ANTHROPIC_API_KEY (never commit it); I18N_MODEL picks the model (claude-sonnet-5-5).
 
    Cost: the rules, plural forms and the whole glossary go first as the system prompt, marked for prompt
@@ -71,8 +72,12 @@ async function batched(sys, batches) {
     const c = s.request_counts || {};
     console.log('  ' + (c.succeeded || 0) + ' done, ' + (c.processing || 0) + ' working, ' + ((c.errored || 0) + (c.expired || 0)) + ' failed');
   }
-  const out = {}, lines = (await (await fetch(s.results_url, { headers: HEAD })).text()).split('\n').filter(Boolean);
-  for (const line of lines) {
+  return results((await (await fetch(s.results_url, { headers: HEAD })).text()));
+}
+// A batch's results (JSON lines): { batch number: translations }.
+function results(text) {
+  const out = {};
+  for (const line of text.split('\n').filter(Boolean)) {
     const r = JSON.parse(line), i = +r.custom_id.slice(1);
     if (r.result.type !== 'succeeded') { console.log('  request ' + i + ': ' + r.result.type); continue; }
     count(r.result.message);
@@ -98,7 +103,12 @@ async function batched(sys, batches) {
     if (Object.keys(fixes).length) retry.push({ items: batch.filter((x) => x.key in fixes), fixes });
   }
   if (argv.includes('--now')) for (let i = 0; i < batches.length; i++) { take(batches[i], await now(params(sys, batches[i]))); console.log('  ' + (i + 1) + '/' + batches.length + ', ' + written + ' written'); }
-  else { const got = await batched(sys, batches); batches.forEach((b, i) => take(b, got[i] || {})); }
+  else {
+    // A finished batch's results kept in a file (the same texts in the same order): read, not asked again.
+    const ri = argv.indexOf('--results');
+    const got = ri > 0 ? results(require('fs').readFileSync(argv[ri + 1], 'utf8')) : await batched(sys, batches);
+    batches.forEach((b, i) => take(b, got[i] || {}));
+  }
   // Once more, one by one, for what failed: then it's left for a person.
   for (const r of retry) {
     const got = await now(params(sys, r.items, r.fixes)), res = L.importAll(code, got, false);
