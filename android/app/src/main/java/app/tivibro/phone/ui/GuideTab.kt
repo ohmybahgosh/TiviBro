@@ -4,6 +4,8 @@
    or set a reminder that the TV keeps (the TV's own reminders, also while TiviBro is closed). */
 package app.tivibro.phone.ui
 
+import app.tivibro.phone.tr
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
@@ -79,13 +81,13 @@ private fun time(t: Long): String = DateFormat.getTimeInstance(DateFormat.SHORT)
 private fun dayStart(t: Long): Long = Calendar.getInstance().apply { timeInMillis = t; set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }.timeInMillis
 private fun dayName(t: Long, now: Long): String {
     val d = ((dayStart(t) - dayStart(now)) / 86_400_000L).toInt()
-    return when (d) { 0 -> "Today"; 1 -> "Tomorrow"; -1 -> "Yesterday"; else -> SimpleDateFormat("EEE d MMM", Locale.getDefault()).format(Date(t)) }
+    return when (d) { 0 -> tr("Today"); 1 -> tr("Tomorrow"); -1 -> tr("Yesterday"); else -> SimpleDateFormat("EEE d MMM", Locale.getDefault()).format(Date(t)) }
 }
 
 /** The times to pick from: Now, then every hour for a day and a half. */
 private fun times(now: Long): List<Pair<Long?, String>> {
     val c = Calendar.getInstance().apply { timeInMillis = now; set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0); add(Calendar.HOUR_OF_DAY, 1) }
-    val out = mutableListOf<Pair<Long?, String>>(null to "Now")
+    val out = mutableListOf<Pair<Long?, String>>(null to tr("Now"))
     for (i in 0 until 36) {
         val t = c.timeInMillis
         val h = c.get(Calendar.HOUR_OF_DAY)
@@ -120,7 +122,7 @@ fun GuideTab(model: AppModel, id: String, lineup: Lineup?, lineupNote: String, p
                 val p = model.guide(id, group, at, page * PAGE, PAGE)
                 p.rows.forEach { rows[it.key] = it }
             } catch (e: TbException) { error = e.message; asked.remove(page) }
-            catch (e: Exception) { error = "The TV didn't answer.  Is it on, and on the same network?"; asked.remove(page) }
+            catch (e: Exception) { error = tr("The TV didn't answer.  Is it on, and on the same network?"); asked.remove(page) }
         }
     }
     LaunchedEffect(at, group) { state.scrollToItem(0); load(0) }
@@ -131,10 +133,10 @@ fun GuideTab(model: AppModel, id: String, lineup: Lineup?, lineupNote: String, p
                 items(choices, key = { it.first ?: 0L }) { (t, label) -> GroupChip(label, at == t) { at = t } }
             }
             // Every reminder set on the TV, to see or cancel (RemindersScreen.kt).
-            if (onReminders != null) IconButton(onClick = onReminders) { Icon(Icons.Rounded.NotificationsActive, "Your reminders", tint = Accent) }
+            if (onReminders != null) IconButton(onClick = onReminders) { Icon(Icons.Rounded.NotificationsActive, tr("Your reminders"), tint = Accent) }
         }
         LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(vertical = 6.dp)) {
-            item { GroupChip("All", group.isBlank()) { group = "" } }
+            item { GroupChip(tr("All"), group.isBlank()) { group = "" } }
             items(lineup.groups, key = { it.id }) { g -> GroupChip(g.name, group == g.id) { group = g.id } }
         }
         error?.let { Text(it, color = Bad, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(16.dp, 4.dp)) }
@@ -155,9 +157,9 @@ fun GuideTab(model: AppModel, id: String, lineup: Lineup?, lineupNote: String, p
 fun LineupWaiting(note: String, onOpen: () -> Unit, onRetry: () -> Unit) {
     Column(Modifier.fillMaxSize().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
         when (note) {
-            "closed" -> { Text("TiviBro is closed on the TV.", textAlign = TextAlign.Center); Spacer(Modifier.height(16.dp)); Button(onClick = onOpen) { Text("Open TiviBro") } }
-            "none" -> { Text("The TV didn't send its channel list.", textAlign = TextAlign.Center); Spacer(Modifier.height(16.dp)); Button(onClick = onRetry) { Text("Try again") } }
-            else -> { CircularProgressIndicator(); Spacer(Modifier.height(16.dp)); Text("Getting the channel list from the TV…", color = Muted) }
+            "closed" -> { Text(tr("TiviBro is closed on the TV."), textAlign = TextAlign.Center); Spacer(Modifier.height(16.dp)); Button(onClick = onOpen) { Text(tr("Open TiviBro")) } }
+            "none" -> { Text(tr("The TV didn't send its channel list."), textAlign = TextAlign.Center); Spacer(Modifier.height(16.dp)); Button(onClick = onRetry) { Text(tr("Try again")) } }
+            else -> { CircularProgressIndicator(); Spacer(Modifier.height(16.dp)); Text(tr("Getting the channel list from the TV…"), color = Muted) }
         }
     }
 }
@@ -172,22 +174,22 @@ private fun GuideChannelRow(c: Chan, row: GuideRow?, playing: Boolean, at: Long,
     val first = progs?.firstOrNull { it.end > at }
     val after = progs?.filter { it.start >= (first?.end ?: Long.MAX_VALUE) }?.take(2).orEmpty()
     Row(
-        Modifier.fillMaxWidth().combinedClickable(onClickLabel = if (first != null) "Details" else "Schedule", onLongClickLabel = "Channel options", onLongClick = onLong,
+        Modifier.fillMaxWidth().combinedClickable(onClickLabel = if (first != null) tr("Details") else tr("Schedule"), onLongClickLabel = tr("Channel options"), onLongClick = onLong,
             onClick = { if (first != null) onDetails(first) else onSchedule() }).background(if (playing) Panel else Color.Transparent).padding(16.dp, 12.dp),
         verticalAlignment = Alignment.Top,
     ) {
-        Box(Modifier.clickable(onClickLabel = "Schedule", onClick = onSchedule)) { Logo(c.logo, c.number, 44.dp) }
+        Box(Modifier.clickable(onClickLabel = tr("Schedule"), onClick = onSchedule)) { Logo(c.logo, c.number, 44.dp) }
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text((if (c.number.isNotBlank()) c.number + "  " else "") + c.name, color = if (playing) Accent else Muted, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (c.dead || row?.dead == true) NotPlayingTag()
             when {
                 row == null || progs == null -> Text("…", color = Muted)
-                first == null -> Text("No guide information", color = Muted, style = MaterialTheme.typography.bodyMedium)
+                first == null -> Text(tr("No guide information"), color = Muted, style = MaterialTheme.typography.bodyMedium)
                 else -> {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(first.title, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                        if (first.reminder) { Spacer(Modifier.width(6.dp)); Icon(Icons.Rounded.NotificationsActive, "Reminder set", tint = Accent, modifier = Modifier.size(14.dp)) }
+                        if (first.reminder) { Spacer(Modifier.width(6.dp)); Icon(Icons.Rounded.NotificationsActive, tr("Reminder set"), tint = Accent, modifier = Modifier.size(14.dp)) }
                     }
                     Text(time(first.start) + " – " + time(first.end), color = Muted, style = MaterialTheme.typography.labelSmall)
                     first.movie?.let { mv -> Text(mv.facts, color = Accent, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) }
@@ -209,7 +211,7 @@ private fun GuideChannelRow(c: Chan, row: GuideRow?, playing: Boolean, at: Long,
             AsyncImage(model = url, contentDescription = first.title, contentScale = ContentScale.Crop, modifier = Modifier.width(48.dp).height(72.dp).clip(RoundedCornerShape(6.dp)))
         }
         IconButton(onClick = onPlay) {
-            Icon(Icons.Rounded.PlayArrow, if (playing) "On the TV now" else "Watch " + c.name + " on TV", tint = if (playing) Accent else Muted)
+            Icon(Icons.Rounded.PlayArrow, if (playing) tr("On the TV now") else tr("Watch {x} on TV", "x" to c.name), tint = if (playing) Accent else Muted)
         }
     }
 }
@@ -226,7 +228,7 @@ private fun ScheduleSheet(model: AppModel, id: String, c: Chan, at: Long?, playi
     val scope = rememberCoroutineScope()
     val now = System.currentTimeMillis()
     LaunchedEffect(c.k) {
-        try { sch = model.schedule(id, c.k) } catch (e: TbException) { error = e.message } catch (e: Exception) { error = "The TV didn't answer." }
+        try { sch = model.schedule(id, c.k) } catch (e: TbException) { error = e.message } catch (e: Exception) { error = tr("The TV didn't answer.") }
     }
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = Panel) {
         Column(Modifier.fillMaxHeight(0.92f)) {
@@ -237,13 +239,13 @@ private fun ScheduleSheet(model: AppModel, id: String, c: Chan, at: Long?, playi
                     Text(c.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     if ((sch?.catchupDays ?: 0) > 0) Text("Catch-up ${sch!!.catchupDays} days", color = Muted, style = MaterialTheme.typography.labelSmall)
                 }
-                Button(onClick = onPlay, enabled = !playing) { Icon(Icons.Rounded.PlayArrow, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text(if (playing) "On the TV" else "Watch on TV") }
+                Button(onClick = onPlay, enabled = !playing) { Icon(Icons.Rounded.PlayArrow, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text(if (playing) tr("On the TV") else tr("Watch on TV")) }
             }
             val s = sch
             when {
                 error != null -> Text(error!!, color = Bad, modifier = Modifier.padding(16.dp))
                 s == null -> Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-                s.progs.isEmpty() -> Text("No guide information for this channel.", color = Muted, modifier = Modifier.padding(16.dp))
+                s.progs.isEmpty() -> Text(tr("No guide information for this channel."), color = Muted, modifier = Modifier.padding(16.dp))
                 else -> {
                     val days = remember(s) { s.progs.map { dayStart(it.start) }.distinct() }
                     var day by remember(s) { mutableStateOf(dayStart(at ?: now).takeIf { it in days } ?: days.first()) }
@@ -265,8 +267,8 @@ private fun ScheduleSheet(model: AppModel, id: String, c: Chan, at: Long?, playi
                                 onWatch = if (p.on(now)) onPlay else null,
                                 onRemind = if (p.start > now) ({
                                     scope.launch {
-                                        try { reminders[p.start] = model.remind(id, c.k, p.start, !set); model.say(if (!set) "Reminder set on the TV for ${time(p.start)}" else "Reminder removed") }
-                                        catch (e: Exception) { model.say(e.message ?: "The TV didn't answer.") }
+                                        try { reminders[p.start] = model.remind(id, c.k, p.start, !set); model.say(if (!set) tr("Reminder set on the TV for {x}", "x" to (time(p.start))) else tr("Reminder removed")) }
+                                        catch (e: Exception) { model.say(e.message ?: tr("The TV didn't answer.")) }
                                     }
                                     Unit
                                 }) else null)
@@ -301,9 +303,9 @@ private fun ProgrammeRow(p: Programme, now: Long, reminder: Boolean, onClick: ()
                 }
             }
             when {
-                onWatch != null -> IconButton(onClick = onWatch) { Icon(Icons.Rounded.PlayArrow, "Watch on TV", tint = Accent) }
+                onWatch != null -> IconButton(onClick = onWatch) { Icon(Icons.Rounded.PlayArrow, tr("Watch on TV"), tint = Accent) }
                 onRemind != null -> IconButton(onClick = onRemind) {
-                    Icon(if (reminder) Icons.Rounded.NotificationsActive else Icons.Rounded.Notifications, if (reminder) "Remove the reminder" else "Remind me", tint = if (reminder) Accent else Muted)
+                    Icon(if (reminder) Icons.Rounded.NotificationsActive else Icons.Rounded.Notifications, if (reminder) tr("Remove the reminder") else tr("Remind me"), tint = if (reminder) Accent else Muted)
                 }
             }
         }

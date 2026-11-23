@@ -3,6 +3,8 @@
    the TV (op "answer" in SettingsTab.kt), which may ask the next one (a username, then a password). */
 package app.tivibro.phone.ui
 
+import app.tivibro.phone.tr
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -50,9 +52,9 @@ fun TvQuestion(d: TvDialog, onAnswer: (JSONObject) -> Unit) {
         "menu" -> MenuQuestion(d, onAnswer)
         else -> AlertDialog(
             onDismissRequest = { onAnswer(d.cancel()) }, containerColor = Panel,
-            title = { Text(d.title.ifBlank { "Are you sure?" }) },
+            title = { Text(d.title.ifBlank { tr("Are you sure?") }) },
             confirmButton = { TextButton(onClick = { onAnswer(d.yes()) }) { Text(d.ok.ifBlank { "OK" }) } },
-            dismissButton = { TextButton(onClick = { onAnswer(d.cancel()) }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { onAnswer(d.cancel()) }) { Text(tr("Cancel")) } },
         )
     }
 }
@@ -63,7 +65,7 @@ private fun PromptQuestion(d: TvDialog, onAnswer: (JSONObject) -> Unit) {
     var see by remember(d.id) { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = { onAnswer(d.cancel()) }, containerColor = Panel,
-        title = { Text(d.title.ifBlank { "Type it here" }) },
+        title = { Text(d.title.ifBlank { tr("Type it here") }) },
         text = {
             OutlinedTextField(
                 value = t, onValueChange = { t = it.take(4000) }, singleLine = true,
@@ -71,12 +73,12 @@ private fun PromptQuestion(d: TvDialog, onAnswer: (JSONObject) -> Unit) {
                 visualTransformation = if (d.secret && !see) PasswordVisualTransformation() else VisualTransformation.None,
                 keyboardOptions = KeyboardOptions(keyboardType = if (d.secret) KeyboardType.Password else KeyboardType.Text, imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { onAnswer(d.answer(t)) }),
-                trailingIcon = if (d.secret) ({ IconButton(onClick = { see = !see }) { Icon(if (see) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility, if (see) "Hide" else "Show") } }) else null,
+                trailingIcon = if (d.secret) ({ IconButton(onClick = { see = !see }) { Icon(if (see) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility, if (see) tr("Hide") else tr("Show")) } }) else null,
                 modifier = Modifier.fillMaxWidth(),
             )
         },
         confirmButton = { TextButton(onClick = { onAnswer(d.answer(t)) }) { Text(d.ok.ifBlank { "OK" }) } },
-        dismissButton = { TextButton(onClick = { onAnswer(d.cancel()) }) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = { onAnswer(d.cancel()) }) { Text(tr("Cancel")) } },
     )
 }
 
@@ -84,13 +86,13 @@ private fun PromptQuestion(d: TvDialog, onAnswer: (JSONObject) -> Unit) {
 private fun MenuQuestion(d: TvDialog, onAnswer: (JSONObject) -> Unit) {
     AlertDialog(
         onDismissRequest = { onAnswer(d.cancel()) }, containerColor = Panel,
-        title = { Text(d.title.ifBlank { "Choose one" }) },
+        title = { Text(d.title.ifBlank { tr("Choose one") }) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                if (d.items.isEmpty()) Text("Nothing to choose from.", color = Muted)
+                if (d.items.isEmpty()) Text(tr("Nothing to choose from."), color = Muted)
                 d.items.forEachIndexed { n, item ->
                     Row(Modifier.fillMaxWidth().clickable { onAnswer(d.choose(n)) }.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                        if (item.current) Icon(Icons.Rounded.Check, "Current", tint = Accent, modifier = Modifier.size(20.dp)) else Spacer(Modifier.size(20.dp))
+                        if (item.current) Icon(Icons.Rounded.Check, tr("Current"), tint = Accent, modifier = Modifier.size(20.dp)) else Spacer(Modifier.size(20.dp))
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
                             Text(item.label, color = if (item.current) Accent else TextHi, fontWeight = if (item.current) FontWeight.SemiBold else FontWeight.Normal)
@@ -102,6 +104,6 @@ private fun MenuQuestion(d: TvDialog, onAnswer: (JSONObject) -> Unit) {
             }
         },
         confirmButton = {},
-        dismissButton = { TextButton(onClick = { onAnswer(d.cancel()) }) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = { onAnswer(d.cancel()) }) { Text(tr("Cancel")) } },
     )
 }

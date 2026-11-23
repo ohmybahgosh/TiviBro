@@ -6,6 +6,7 @@
    Turn on is used; without it, or with Bluetooth off, only Wake-on-LAN runs. */
 package app.tivibro.phone.ble
 
+
 import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothManager

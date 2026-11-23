@@ -1,5 +1,7 @@
 package app.tivibro.phone.ui
 
+import app.tivibro.phone.tr
+
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -38,7 +40,7 @@ fun SecretField(
         visualTransformation = if (shown) VisualTransformation.None else PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false, imeAction = if (last) ImeAction.Done else ImeAction.Next),
         keyboardActions = KeyboardActions(onDone = { onDone?.invoke() }),
-        trailingIcon = { IconButton(onClick = { shown = !shown }) { Icon(if (shown) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility, if (shown) "Hide" else "Show") } },
+        trailingIcon = { IconButton(onClick = { shown = !shown }) { Icon(if (shown) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility, if (shown) tr("Hide") else tr("Show")) } },
         modifier = modifier.fillMaxWidth(),
     )
 }
@@ -46,9 +48,9 @@ fun SecretField(
 /** A new passphrase for a backup file: typed twice, at least 8 characters (passphraseOk says when it's ready). */
 @Composable
 fun NewPassphrase(pass: String, onPass: (String) -> Unit, again: String, onAgain: (String) -> Unit) {
-    SecretField(pass, onPass, "Passphrase", note = "8 or more characters", error = if (pass.isNotEmpty() && pass.length < 8) "At least 8 characters" else null, last = false)
-    SecretField(again, onAgain, "Type it again", error = if (again.isNotEmpty() && again != pass) "Doesn't match" else null,
-        note = if (again.isNotEmpty() && again == pass && pass.length >= 8) "They match" else null)
+    SecretField(pass, onPass, tr("Passphrase"), note = tr("8 or more characters"), error = if (pass.isNotEmpty() && pass.length < 8) tr("At least 8 characters") else null, last = false)
+    SecretField(again, onAgain, tr("Type it again"), error = if (again.isNotEmpty() && again != pass) "Doesn't match" else null,
+        note = if (again.isNotEmpty() && again == pass && pass.length >= 8) tr("They match") else null)
 }
 
 fun passphraseOk(pass: String, again: String) = pass.length >= 8 && pass == again

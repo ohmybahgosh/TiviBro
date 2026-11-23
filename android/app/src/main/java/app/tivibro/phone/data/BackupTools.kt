@@ -5,6 +5,8 @@
    the original backup is never changed. */
 package app.tivibro.phone.data
 
+import app.tivibro.phone.tr
+
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -14,7 +16,7 @@ object BackupTools {
 
     fun playlists(b: JSONObject): List<Pair<String, String>> {
         val l = b.optJSONObject("settings")?.optJSONArray("playlists") ?: return emptyList()
-        return (0 until l.length()).mapNotNull { i -> l.optJSONObject(i)?.let { p -> p.optString("id") to p.optString("name").ifBlank { p.optString("user").ifBlank { "Playlist" } } } }
+        return (0 until l.length()).mapNotNull { i -> l.optJSONObject(i)?.let { p -> p.optString("id") to p.optString("name").ifBlank { p.optString("user").ifBlank { tr("Playlist") } } } }
     }
 
     // The same provider login, whatever id each TV gave it.
@@ -66,17 +68,18 @@ object BackupTools {
 
     /** The settings the phone can change in a backup, with their choices (value to label). */
     data class Choice(val key: String, val label: String, val values: List<Pair<Any, String>>, val default: Any, val path: List<String> = listOf(key))
-    val CHOICES = listOf(
+    // A getter, not a list made once: the names come out in the app's language each time (tr).
+    val CHOICES get() = listOf(
         // Each with the TV's own default (app/js/store.js DEFAULTS), for a backup that never changed it.
-        Choice("startTab", "Start screen", listOf("guide" to "Guide", "live" to "Channels screen"), "guide"),
-        Choice("textSize", "Text size", listOf("s" to "Small", "m" to "Medium", "l" to "Large"), "m"),
-        Choice("guideRows", "Guide row size", listOf("m" to "Normal", "l" to "Bigger", "xl" to "Biggest"), "m"),
-        Choice("showClock", "Clock", listOf(true to "On", false to "Off"), true),
-        Choice("showNumbers", "Channel numbers", listOf(true to "On", false to "Off"), true),
-        Choice("cc", "Closed captions", listOf(true to "On", false to "Off"), false),
-        Choice("adult", "Hide adult channels", listOf(true to "On", false to "Off"), false, listOf("filter", "adult")),
-        Choice("updateAuto", "Check for updates automatically", listOf(true to "On", false to "Off"), true),
-        Choice("exitTwice", "Press Back twice to exit", listOf(true to "On", false to "Off"), true),
+        Choice("startTab", tr("Start screen"), listOf("guide" to tr("Guide"), "live" to tr("Channels screen")), "guide"),
+        Choice("textSize", tr("Text size"), listOf("s" to tr("Small"), "m" to tr("Medium"), "l" to tr("Large")), "m"),
+        Choice("guideRows", tr("Guide row size"), listOf("m" to tr("Normal"), "l" to tr("Bigger"), "xl" to tr("Biggest")), "m"),
+        Choice("showClock", tr("Clock"), listOf(true to tr("On"), false to tr("Off")), true),
+        Choice("showNumbers", tr("Channel numbers"), listOf(true to tr("On"), false to tr("Off")), true),
+        Choice("cc", tr("Closed captions"), listOf(true to tr("On"), false to tr("Off")), false),
+        Choice("adult", tr("Hide adult channels"), listOf(true to tr("On"), false to tr("Off")), false, listOf("filter", "adult")),
+        Choice("updateAuto", tr("Check for updates automatically"), listOf(true to tr("On"), false to tr("Off")), true),
+        Choice("exitTwice", tr("Press Back twice to exit"), listOf(true to tr("On"), false to tr("Off")), true),
     )
 
     fun get(b: JSONObject, c: Choice): Any? {

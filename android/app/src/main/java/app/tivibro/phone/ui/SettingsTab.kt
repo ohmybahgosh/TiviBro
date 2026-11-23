@@ -8,6 +8,8 @@
    Locked with the TV's PIN when its Settings are. */
 package app.tivibro.phone.ui
 
+import app.tivibro.phone.tr
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -203,7 +205,7 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
                 val r = model.ask(id, "settings", a, seal = true, timeoutMs = timeoutMs, tries = tries)
                 if (r.optBoolean("locked")) { askPin = r.optString("msg"); pin = "" } else then(r)
             } catch (e: TbException) { error = e.message }
-            catch (e: Exception) { error = "The TV didn't answer.  Is it on, and on the same network?" }
+            catch (e: Exception) { error = tr("The TV didn't answer.  Is it on, and on the same network?") }
             busy = false
         }
     }
@@ -252,7 +254,7 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
 
     Column(Modifier.fillMaxSize()) {
         if (sec != null) Row(Modifier.fillMaxWidth().padding(4.dp, 2.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { if (path.isNotEmpty()) path = path.dropLast(1) else { sec = null; page = null } }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") }
+            IconButton(onClick = { if (path.isNotEmpty()) path = path.dropLast(1) else { sec = null; page = null } }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, tr("Back")) }
             Text(page?.title ?: sections?.firstOrNull { it.first == sec }?.second ?: "", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
             if (busy) CircularProgressIndicator(Modifier.size(18.dp).padding(end = 4.dp), strokeWidth = 2.dp, color = Accent)
             Spacer(Modifier.width(12.dp))
@@ -261,12 +263,12 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
         when {
             sec == null -> {
                 val l = sections
-                if (l == null) Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { if (error == null) CircularProgressIndicator() else Button(onClick = { loadSections() }) { Text("Try again") } }
+                if (l == null) Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { if (error == null) CircularProgressIndicator() else Button(onClick = { loadSections() }) { Text(tr("Try again")) } }
                 else LazyColumn(contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     item { SearchBox(query, { query = it }) }
                     val h = hits
                     if (h != null) {
-                        item { Text(if (h.isEmpty()) "No setting has that in its name or its note." else "${h.size} setting${if (h.size == 1) "" else "s"}", color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(4.dp, 4.dp)) }
+                        item { Text(if (h.isEmpty()) tr("No setting has that in its name or its note.") else "${h.size} setting${if (h.size == 1) "" else "s"}", color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(4.dp, 4.dp)) }
                         if (h.isNotEmpty()) item {
                             SetCard { h.forEachIndexed { n, x ->
                                 if (n > 0) HorizontalDivider(color = Line.copy(alpha = 0.5f), thickness = 0.5.dp)
@@ -295,12 +297,12 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
                         val rest = l.filter { s0 -> SECTION_GROUPS.none { s0.first in it.second } }
                         item(key = "c-more") { SetCard {
                             rest.forEach { (sid, t) -> SectionRow(sid, t) { path = emptyList(); sec = sid }; HorizontalDivider(color = Line.copy(alpha = 0.5f), thickness = 0.5.dp, modifier = Modifier.padding(start = 64.dp)) }
-                            SectionRow("log", "TiviBro log", "What TiviBro on the TV did and what went wrong") { showLog = true }
+                            SectionRow("log", tr("TiviBro log"), tr("What TiviBro on the TV did and what went wrong")) { showLog = true }
                         } }
                     }
                 }
             }
-            page == null -> Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { if (error == null) CircularProgressIndicator() else Button(onClick = { loadPage() }) { Text("Try again") } }
+            page == null -> Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { if (error == null) CircularProgressIndicator() else Button(onClick = { loadPage() }) { Text(tr("Try again")) } }
             else -> {
               // The rows are read later by the list, after Back may have cleared the page: keep this page's.
               val cards = cardsOf(page?.rows.orEmpty())
@@ -341,7 +343,7 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
         when (r.phone) {
             "media-add" -> MediaAddDialog(model, id, done)
             "media-source" -> MediaSourceDialog(model, id, r.sid, done)
-            "tmdb-token" -> TmdbTokenDialog(model, id, r.value == "Saved", done)
+            "tmdb-token" -> TmdbTokenDialog(model, id, r.value == "Saved" || r.value == tr("Saved"), done)   // the TV answers in the app's language
             "add-playlist" -> AddPlaylistDialog(model, id, done)
             "edit-playlist" -> EditPlaylistDialog(model, id, r.sid, r.ptype, r.value, done)
         }
@@ -361,7 +363,7 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { picking = null }) { Text("Close") } },
+            confirmButton = { TextButton(onClick = { picking = null }) { Text(tr("Close")) } },
         )
     }
     askPin?.let { why ->
@@ -377,8 +379,8 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword))
                 }
             },
-            confirmButton = { TextButton(onClick = { pin = t; askPin = null; if (sec == null) loadSections() else loadPage() }, enabled = t.length == 4) { Text("Unlock") } },
-            dismissButton = { TextButton(onClick = { askPin = null }) { Text("Cancel") } },
+            confirmButton = { TextButton(onClick = { pin = t; askPin = null; if (sec == null) loadSections() else loadPage() }, enabled = t.length == 4) { Text(tr("Unlock")) } },
+            dismissButton = { TextButton(onClick = { askPin = null }) { Text(tr("Cancel")) } },
         )
     }
 }
@@ -393,11 +395,12 @@ private data class SetHit(val label: String, val sub: String, val trail: String,
 
 /* The TV's sections in four groups on the phone's Settings home, each with an icon and a colour, so the one
    you want is quick to spot.  Ids the TV sends that aren't here go in a last card (newer TVs). */
-private val SECTION_GROUPS = listOf(
-    "Watching" to listOf("guide", "sports", "playback", "audio", "recording", "reminders"),
-    "Channels and library" to listOf("playlists", "channels", "names", "vod", "media"),
-    "Look and control" to listOf("look", "remote", "language", "parental"),
-    "System" to listOf("connect", "keys", "backups", "about"),
+// A getter, not a list made once: the names come out in the app's language each time (tr).
+private val SECTION_GROUPS get() = listOf(
+    tr("Watching") to listOf("guide", "sports", "playback", "audio", "recording", "reminders"),
+    tr("Channels and library") to listOf("playlists", "channels", "names", "vod", "media"),
+    tr("Look and control") to listOf("look", "remote", "language", "parental"),
+    tr("System") to listOf("connect", "keys", "backups", "about"),
 )
 private fun sectionIcon(id: String): Pair<ImageVector, Color> = when (id) {
     "guide" -> Icons.Rounded.CalendarViewWeek to Accent
@@ -424,9 +427,9 @@ private fun sectionIcon(id: String): Pair<ImageVector, Color> = when (id) {
 
 @Composable
 private fun SearchBox(q: String, set: (String) -> Unit) {
-    OutlinedTextField(q, set, singleLine = true, placeholder = { Text("Search all settings") }, shape = RoundedCornerShape(14.dp),
+    OutlinedTextField(q, set, singleLine = true, placeholder = { Text(tr("Search all settings")) }, shape = RoundedCornerShape(14.dp),
         leadingIcon = { Icon(Icons.Rounded.Search, null, tint = Muted) },
-        trailingIcon = { if (q.isNotEmpty()) IconButton(onClick = { set("") }) { Icon(Icons.Rounded.Close, "Clear") } },
+        trailingIcon = { if (q.isNotEmpty()) IconButton(onClick = { set("") }) { Icon(Icons.Rounded.Close, tr("Clear")) } },
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search), modifier = Modifier.fillMaxWidth())
 }
 /** A heading above a card: small capitals in the accent colour. */
@@ -572,7 +575,7 @@ private fun SettingRow(r: SetRow, lit: Boolean, onToggle: (Boolean) -> Unit, onP
         .background(bg).let { if (click != null) it.clickable(onClick = click) else it }.padding(16.dp, 13.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (drag != null) {
-                Icon(Icons.Rounded.DragHandle, "Drag to move", tint = if (dragging) Accent else Muted, modifier = Modifier.padding(end = 12.dp).size(26.dp)
+                Icon(Icons.Rounded.DragHandle, tr("Drag to move"), tint = if (dragging) Accent else Muted, modifier = Modifier.padding(end = 12.dp).size(26.dp)
                     .pointerInput(r.i, r.label) {
                         detectDragGestures(
                             onDragStart = { dragNow?.onStart?.invoke() },
@@ -592,7 +595,7 @@ private fun SettingRow(r: SetRow, lit: Boolean, onToggle: (Boolean) -> Unit, onP
                 if (r.tv) Row(Modifier.padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.Tv, null, tint = Muted, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("On the TV: look at the TV's screen", color = Muted, style = MaterialTheme.typography.labelSmall)
+                    Text(tr("On the TV: look at the TV's screen"), color = Muted, style = MaterialTheme.typography.labelSmall)
                 }
                 if ((r.kind == "page" || r.kind == "action") && !r.attn && !button && r.value.isNotBlank() && r.value != "›") Text(r.value.removeSuffix("›").trim(), color = Muted, style = MaterialTheme.typography.bodyMedium)
             }
@@ -612,9 +615,9 @@ private fun SettingRow(r: SetRow, lit: Boolean, onToggle: (Boolean) -> Unit, onP
                 r.kind == "page" || r.style == "jump" || r.go.isNotBlank() -> Icon(Icons.Rounded.ChevronRight, null, tint = Muted)
                 r.kind == "action" && !button && (r.phone == "log" || r.phone in SCREENS || r.value.endsWith("›")) -> Icon(Icons.Rounded.ChevronRight, null, tint = Muted)
                 r.kind == "cycle" -> {
-                    IconButton(onClick = { onCycle(-1) }) { Icon(Icons.Rounded.ChevronLeft, "Previous") }
+                    IconButton(onClick = { onCycle(-1) }) { Icon(Icons.Rounded.ChevronLeft, tr("Previous")) }
                     Text(r.value)
-                    IconButton(onClick = { onCycle(1) }) { Icon(Icons.Rounded.ChevronRight, "Next") }
+                    IconButton(onClick = { onCycle(1) }) { Icon(Icons.Rounded.ChevronRight, tr("Next")) }
                 }
             }
         }

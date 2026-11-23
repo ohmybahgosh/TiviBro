@@ -195,6 +195,45 @@ var I18n = (function () {
     listeners.forEach(function (f) { try { f(lang()); } catch (e) {} });
   }
   function onChange(f) { listeners.push(f); }
+  /* Text for someone else: the phone app and the web editor ask in their own language (a.lang), which can
+     differ from the TV's.  fn runs with that language and the TV's goes back after.  fn must be synchronous:
+     a promise it returns resolves after the TV's language is back. */
+  function within(code, fn) {
+    code = String(code || '');
+    if (code !== 'en' && !(has(code) && dicts[code])) return fn();
+    var keep = { cur: cur, cache: cache, n: cacheN };
+    cur = code; cache = {}; cacheN = 0;
+    try { return fn(); } finally { cur = keep.cur; cache = keep.cache; cacheN = keep.n; }
+  }
+
+  /* Messages the TV sends to the web editor and the phone app (webedit.js, phone.js).  An answer often comes
+     after some waiting, when within() is long over, so msg() makes the English text and keeps its key and
+     values, and say() puts it in the asker's language as it goes out.  With no language (an older editor or
+     phone app) it stays English, as it always was. */
+  function msg(s, vars) { var o = new String(vars ? pick('en', s, vars) : s); o.key = s; o.vars = vars; return o; }
+  /** Messages and text put one after the other, each translated on its own by say(). */
+  function join() { var parts = [].slice.call(arguments), o = new String(parts.join('')); o.parts = parts; return o; }
+  /** A message from msg() or join(), an error (one with msg()'s key, else its message) or plain text, in the
+   *  language code. */
+  function say(m, code) {
+    if (m == null || m === '') return m;
+    if (!code) return textOf(m);
+    return within(code, function () { return said(m); });
+  }
+  // An error's message (from any window: instanceof Error isn't enough), else the text.
+  function textOf(m) { return String(typeof m === 'object' && !(m instanceof String) && m.message != null ? m.message : m); }
+  // say() in the language already set: its parts, its key with its values (messages in turn), or the text as a key.
+  function said(m) {
+    if (m == null) return '';
+    if (m.parts) return m.parts.map(said).join('');
+    if (m.key != null) {
+      var v = {};
+      for (var k in m.vars || {}) { var x = m.vars[k]; v[k] = x != null && (x.key != null || x.parts) ? said(x) : x; }
+      return t(m.key, m.vars ? v : undefined);
+    }
+    var text = textOf(m);
+    return /\S/.test(text) ? text.replace(/^(\s*)([\s\S]*?)(\s*)$/, function (a, b, c, d) { return b + t(c) + d; }) : text;
+  }
 
   /* The TV's menu language from settingsservice, and again whenever it's changed there. */
   function askTV() {
@@ -230,7 +269,7 @@ var I18n = (function () {
       return false;
     },
     t: t, raw: raw, add: add, lang: lang, locale: locale, set: set, setting: function () { return chosen() || 'auto'; }, detected: detected, base: base,
-    plural: plural, page: page, onChange: onChange, variant: variant, askTV: askTV, name: name, langs: langs, has: has, changed: changed,
+    plural: plural, page: page, onChange: onChange, within: within, msg: msg, join: join, say: say, variant: variant, askTV: askTV, name: name, langs: langs, has: has, changed: changed,
     misses: function () { return Object.keys(misses); }, _dicts: dicts, _setTV: function (l) { tv = l; changed(); }
   };
 })();

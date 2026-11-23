@@ -6,6 +6,8 @@
    the TV like any other.  Nothing reaches the network: the page is served from inside the app. */
 package app.tivibro.phone.ui
 
+import app.tivibro.phone.tr
+
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
@@ -59,7 +61,7 @@ private class OfflineBridge(val tvId: String, val read: () -> String, val onSave
 fun OfflineEditorScreen(title: String, tvId: String, copy: () -> java.io.File, extras: () -> String, onKeep: (String, String) -> Unit, onBack: () -> Unit) {
     var saved by remember { mutableStateOf<String?>(null) }
     var asking by remember { mutableStateOf(false) }
-    var label by remember { mutableStateOf("Edited on the phone") }
+    var label by remember { mutableStateOf(tr("Edited on the phone")) }
     var web by remember { mutableStateOf<WebView?>(null) }
 
     fun leave() { if (saved != null) asking = true else onBack() }
@@ -72,8 +74,8 @@ fun OfflineEditorScreen(title: String, tvId: String, copy: () -> java.io.File, e
     Scaffold(
         containerColor = Ink,
         topBar = {
-            TopAppBar(title = { Text(title) }, navigationIcon = { IconButton(onClick = { leave() }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") } },
-                actions = { if (saved != null) TextButton(onClick = { asking = true }) { Text("Keep") } },
+            TopAppBar(title = { Text(title) }, navigationIcon = { IconButton(onClick = { leave() }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, tr("Back")) } },
+                actions = { if (saved != null) TextButton(onClick = { asking = true }) { Text(tr("Keep")) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Ink))
         },
     ) { pad ->
@@ -121,7 +123,7 @@ fun OfflineEditorScreen(title: String, tvId: String, copy: () -> java.io.File, e
                         }
                     }
                     // Signed in the way the phone app opens the TV's editor (#t=…), here with no TV to ask.
-                    loadUrl("https://$ORIGIN/#t=" + "0".repeat(48) + "/home")
+                    loadUrl(app.tivibro.phone.I18n.editorUrl("https://$ORIGIN/#t=" + "0".repeat(48) + "/home"))
                     web = this
                 }
             })
@@ -131,18 +133,18 @@ fun OfflineEditorScreen(title: String, tvId: String, copy: () -> java.io.File, e
     if (asking) {
         AlertDialog(
             onDismissRequest = { asking = false }, containerColor = Panel,
-            title = { Text("Keep your changes as a new backup?") },
+            title = { Text(tr("Keep your changes as a new backup?")) },
             text = {
                 Column {
-                    Text("The backup you opened stays as it was.  Restore the new one on the TV from Backups when you're ready.", color = Muted, style = MaterialTheme.typography.bodySmall)
-                    OutlinedTextField(label, { label = it.take(80) }, singleLine = true, label = { Text("Name") }, modifier = Modifier.padding(top = 12.dp))
+                    Text(tr("The backup you opened stays as it was.  Restore the new one on the TV from Backups when you're ready."), color = Muted, style = MaterialTheme.typography.bodySmall)
+                    OutlinedTextField(label, { label = it.take(80) }, singleLine = true, label = { Text(tr("Name")) }, modifier = Modifier.padding(top = 12.dp))
                 }
             },
-            confirmButton = { TextButton(onClick = { asking = false; saved?.let { onKeep(it, label) }; saved = null; onBack() }) { Text("Keep") } },
+            confirmButton = { TextButton(onClick = { asking = false; saved?.let { onKeep(it, label) }; saved = null; onBack() }) { Text(tr("Keep")) } },
             dismissButton = {
                 Column {
-                    TextButton(onClick = { asking = false; saved = null; onBack() }) { Text("Throw away", color = Bad) }
-                    TextButton(onClick = { asking = false }) { Text("Keep editing") }
+                    TextButton(onClick = { asking = false; saved = null; onBack() }) { Text(tr("Throw away"), color = Bad) }
+                    TextButton(onClick = { asking = false }) { Text(tr("Keep editing")) }
                 }
             },
         )

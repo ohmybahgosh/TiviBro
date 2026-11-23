@@ -3,6 +3,8 @@
    details with seasons and episodes).  Plain JVM code, read from the TV's JSON. */
 package app.tivibro.phone.proto
 
+import app.tivibro.phone.tr
+
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -29,7 +31,7 @@ data class Programme(val title: String, val start: Long, val end: Long, val desc
 /** Everything the TV knows about one programme (ask "prog"), for the phone's details sheet. */
 data class ProgTmdb(val series: Boolean, val poster: String, val backdrop: String, val plot: String, val year: String, val genre: String, val rating: String,
                     val runtime: String, val network: String, val epTitle: String, val epPlot: String, val epStill: String) {
-    val facts get() = listOf(if (series) "Series" else "Movie", year, runtime, network, genre, if (rating.isNotBlank()) "★ $rating" else "").filter { it.isNotBlank() }.joinToString("  ·  ")
+    val facts get() = listOf(if (series) tr("Series") else tr("Movie"), year, runtime, network, genre, if (rating.isNotBlank()) "★ $rating" else "").filter { it.isNotBlank() }.joinToString("  ·  ")
 }
 data class Showing(val key: String, val channel: String, val start: Long, val end: Long)
 data class ProgDetail(val prog: Programme, val key: String, val channel: String, val catchupDays: Int, val fromStart: Boolean, val tmdb: ProgTmdb?,
@@ -53,8 +55,8 @@ data class ProgDetail(val prog: Programme, val key: String, val channel: String,
 /** A guide programme the TV found to be a movie (TMDB, with its token): poster, year, genres, rating. */
 /** TMDB's facts for a guide programme: a movie, or a TV show ([series], with its [network]). */
 data class ProgMovie(val poster: String, val year: String, val genre: String, val rating: String, val series: Boolean = false, val network: String = "") {
-    val facts get() = (if (series) listOf("Series", if (year.isNotBlank()) "since $year" else "", network, genre, if (rating.isNotBlank()) "★ $rating" else "")
-        else listOf("Movie", year, genre, if (rating.isNotBlank()) "★ $rating" else "")).filter { it.isNotBlank() }.joinToString("  ·  ")
+    val facts get() = (if (series) listOf(tr("Series"), if (year.isNotBlank()) "since $year" else "", network, genre, if (rating.isNotBlank()) "★ $rating" else "")
+        else listOf(tr("Movie"), year, genre, if (rating.isNotBlank()) "★ $rating" else "")).filter { it.isNotBlank() }.joinToString("  ·  ")
 }
 
 /** Movies on now: one movie, and the channels showing it ([OnNowChan]). */
@@ -200,7 +202,7 @@ data class SportGame(val id: String, val league: String, val start: Long, val st
     val live get() = state == "in"
     val mine get() = teams.any { it.mine }
     /** "Lions at Packers", as the guide says it. */
-    val title get() = if (teams.size == 2) teams[0].name + " at " + teams[1].name else name
+    val title get() = if (teams.size == 2) tr("{x} at {y}", "x" to teams[0].name, "y" to teams[1].name) else name
     companion object {
         fun from(j: JSONObject) = SportGame(j.optString("id"), j.optString("league"), j.optLong("s"), j.optString("state"), j.optString("detail"), j.optInt("hidden") == 1,
             j.optString("name"), j.optJSONArray("teams").list { SportTeam.from(it) },

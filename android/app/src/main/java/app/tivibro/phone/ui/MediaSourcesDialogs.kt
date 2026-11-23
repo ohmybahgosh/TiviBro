@@ -7,6 +7,9 @@
    longer than about 25 seconds carries on on the TV, and the answer says so. */
 package app.tivibro.phone.ui
 
+import app.tivibro.phone.tr
+import app.tivibro.phone.trn
+
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -51,24 +54,27 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 /** One media source as the TV sends it. */
-private fun plural(n: Int, word: String) = "$n $word" + if (n == 1) "" else "s"
+// "3 movies", "1 episode" in the app's language.
+private fun movies(n: Int) = trn(n, "{n} movie", "{n} movies")
+private fun episodes(n: Int) = trn(n, "{n} episode", "{n} episodes")
 
 private data class MediaSrc(val id: String, val name: String, val type: String, val mode: String, val movies: Int, val episodes: Int, val scanning: Boolean, val root: String = "")
 
 /** A source's kind, as the TV's Settings say it. */
-private fun typeLabel(type: String) = when (type) { "dlna" -> "DLNA / UPnP"; "dropbox" -> "Dropbox"; "gdrive" -> "Google Drive"; "smb" -> "Windows share"; else -> "WebDAV" }
+private fun typeLabel(type: String) = when (type) { "dlna" -> "DLNA / UPnP"; "dropbox" -> "Dropbox"; "gdrive" -> "Google Drive"; "smb" -> tr("Windows share"); else -> "WebDAV" }
 
 /** A Google Drive place or folder in the picker; driveId is its shared drive's. */
 private data class GdFolder(val name: String, val id: String, val driveId: String, val drive: Boolean = false)
 
-private val MODES = listOf("automatic" to "Movies and TV shows", "movies" to "Movies only", "shows" to "TV shows only")
+// A getter, not a list made once: the names come out in the app's language each time (tr).
+private val MODES get() = listOf("automatic" to tr("Movies and TV shows"), "movies" to tr("Movies only"), "shows" to tr("TV shows only"))
 
 /** Asks the TV; the answer's msg is said, errors come back as text. */
 private suspend fun myMedia(model: AppModel, id: String, args: JSONObject): Pair<JSONObject?, String?> = try {
     val r = model.ask(id, "mymedia", args, seal = true, timeoutMs = 70_000, tries = 1)
     r.optString("msg").takeIf { it.isNotBlank() }?.let { model.say(it) }
     r to null
-} catch (e: TbException) { null to e.message } catch (e: Exception) { null to "The TV didn't answer.  Is it on, and on the same network?" }
+} catch (e: TbException) { null to e.message } catch (e: Exception) { null to tr("The TV didn't answer.  Is it on, and on the same network?") }
 
 @Composable
 private fun Busy(text: String) = Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -124,7 +130,7 @@ fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Un
     val pickKey = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             val text = runCatching { ctx.contentResolver.openInputStream(uri)?.use { it.readBytes().takeIf { b -> b.size <= 20_000 }?.toString(Charsets.UTF_8) } }.getOrNull()
-            if (text == null) error = "Couldn't read that file." else gdKey = text.replace("\r", "").replace("\n", "")
+            if (text == null) error = tr("Couldn't read that file.") else gdKey = text.replace("\r", "").replace("\n", "")
         }
     }
 
@@ -135,12 +141,12 @@ fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Un
     fun gdOpen(trail: List<GdFolder>) {
         val here = trail.lastOrNull()
         gdList = null
-        if (here == null) run("Asking Google Drive…", JSONObject().put("op", "gdplaces").put("key", gdKey)) { r ->
+        if (here == null) run(tr("Asking Google Drive…"), JSONObject().put("op", "gdplaces").put("key", gdKey)) { r ->
             gdAccount = r.optString("account"); gdTrail = trail; step = "gdpick"
             val a = r.optJSONArray("places")
             gdList = if (a == null) emptyList() else (0 until a.length()).map { a.getJSONObject(it).let { p -> GdFolder(p.optString("name"), p.optString("id"), p.optString("driveId"), p.optString("kind") == "drive") } }
         }
-        else run("Opening ${here.name}…", JSONObject().put("op", "gdfolders").put("key", gdKey).put("parent", here.id).put("driveId", here.driveId)) { r ->
+        else run(tr("Opening {x}…", "x" to here.name), JSONObject().put("op", "gdfolders").put("key", gdKey).put("parent", here.id).put("driveId", here.driveId)) { r ->
             gdTrail = trail; gdName = here.name; step = "gdpick"
             val a = r.optJSONArray("folders")
             gdList = if (a == null) emptyList() else (0 until a.length()).map { a.getJSONObject(it).let { f -> GdFolder(f.optString("name"), f.optString("id"), here.driveId) } }
@@ -150,7 +156,7 @@ fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Un
     /* The share list (share empty), or a folder's folders: what the TV reads from the server with the login. */
     fun smbOpen(share: String, trail: List<String>) {
         smbList = null
-        if (share.isEmpty()) run("Asking $smbServer for its shares…", smbArgs("smbshares")) { r ->
+        if (share.isEmpty()) run(tr("Asking {x} for its shares…", "x" to smbServer), smbArgs("smbshares")) { r ->
             smbShare = ""; smbTrail = emptyList(); step = "smbpick"
             val a = r.optJSONArray("shares")
             smbList = if (a == null) emptyList() else (0 until a.length()).map { a.getJSONObject(it).let { x -> x.optString("name") to x.optString("name") } }
@@ -162,57 +168,57 @@ fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Un
             smbList = if (a == null) emptyList() else (0 until a.length()).map { a.getJSONObject(it).let { f -> f.optString("name") to f.optString("path") } }
         }
     }
-    fun smbLook() { smbFound = null; run("The TV is looking for shares on its network…", JSONObject().put("op", "smbdiscover")) { r ->
+    fun smbLook() { smbFound = null; run(tr("The TV is looking for shares on its network…"), JSONObject().put("op", "smbdiscover")) { r ->
         val a = r.optJSONArray("servers"); smbFound = if (a == null) emptyList() else (0 until a.length()).map { a.getJSONObject(it).let { x -> x.optString("name") to x.optString("server") } } } }
-    fun look() { step = "servers"; servers = null; run("Looking for media servers on your network…", JSONObject().put("op", "discover")) { r ->
+    fun look() { step = "servers"; servers = null; run(tr("Looking for media servers on your network…"), JSONObject().put("op", "discover")) { r ->
         val a = r.optJSONArray("servers"); servers = if (a == null) emptyList() else (0 until a.length()).map { a.getJSONObject(it).let { s -> s.optInt("i") to s.optString("name") } } } }
 
     AlertDialog(
         onDismissRequest = { if (busy == null) onDone(false) }, containerColor = Panel,
-        title = { Text(when (step) { "servers" -> "Media servers"; "webdav" -> "Add a WebDAV folder"; "smb" -> "Add a Windows or network share"; "smbpick" -> if (smbShare.isEmpty()) smbServer else (smbTrail.lastOrNull()?.takeIf { it != "/" }?.substringAfterLast('/') ?: smbShare); "gdkey" -> "Google Drive"; "gdpick" -> gdTrail.lastOrNull()?.name ?: "Google Drive"; else -> "Add media" }) },
+        title = { Text(when (step) { "servers" -> tr("Media servers"); "webdav" -> tr("Add a WebDAV folder"); "smb" -> tr("Add a Windows or network share"); "smbpick" -> if (smbShare.isEmpty()) smbServer else (smbTrail.lastOrNull()?.takeIf { it != "/" }?.substringAfterLast('/') ?: smbShare); "gdkey" -> "Google Drive"; "gdpick" -> gdTrail.lastOrNull()?.name ?: tr("Google Drive"); else -> tr("Add media") }) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 error?.let { Text(it, color = Bad, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 8.dp)) }
                 when (step) {
                     "pick" -> {
-                        Choice("Browse my network (DLNA / UPnP)", "The TV looks for a home media server with media sharing turned on") { look() }
-                        Choice("Add a Windows or network share (SMB)", "A shared folder on a PC, Mac, NAS or router: its name and a login") { step = "smb" }
-                        Choice("Add a WebDAV folder", "Your media folder's address and login, typed here") { step = "webdav" }
+                        Choice(tr("Browse my network (DLNA / UPnP)"), tr("The TV looks for a home media server with media sharing turned on")) { look() }
+                        Choice(tr("Add a Windows or network share (SMB)"), tr("A shared folder on a PC, Mac, NAS or router: its name and a login")) { step = "smb" }
+                        Choice(tr("Add a WebDAV folder"), tr("Your media folder's address and login, typed here")) { step = "webdav" }
                         // The sign-in carries on in the browser and comes back to DropboxDialog (MainActivity).
-                        Choice("Dropbox", "Sign in to Dropbox, then pick the folder with your movies and shows") { openDropbox(ctx, model, model.dropboxStart(id)); onDone(false) }
-                        Choice("Google Drive", "Shared drives and folders, with a Google Cloud service account key") {
+                        Choice(tr("Dropbox"), tr("Sign in to Dropbox, then pick the folder with your movies and shows")) { openDropbox(ctx, model, model.dropboxStart(id)); onDone(false) }
+                        Choice(tr("Google Drive"), tr("Shared drives and folders, with a Google Cloud service account key")) {
                             step = "gdkey"
-                            run("Asking the TV…", JSONObject().put("op", "sources")) { r -> val a = r.optJSONArray("gdAccounts"); gdSaved = if (a == null) emptyList() else (0 until a.length()).map { a.optString(it) }.filter { it.isNotBlank() } }
+                            run(tr("Asking the TV…"), JSONObject().put("op", "sources")) { r -> val a = r.optJSONArray("gdAccounts"); gdSaved = if (a == null) emptyList() else (0 until a.length()).map { a.optString(it) }.filter { it.isNotBlank() } }
                         }
                     }
                     "gdkey" -> {
                         gdSaved.forEach { acct ->
-                            Choice("Use the key already on the TV", acct) { gdKey = "saved:$acct"; gdOpen(emptyList()) }
+                            Choice(tr("Use the key already on the TV"), acct) { gdKey = "saved:$acct"; gdOpen(emptyList()) }
                         }
                         if (gdSaved.isNotEmpty()) Spacer(Modifier.size(8.dp))
-                        Text("Google doesn't let TVs sign in to read Drive folders, so TiviBro uses a service account: a free robot account that only sees what you share with it.",
+                        Text(tr("Google doesn't let TVs sign in to read Drive folders, so TiviBro uses a service account: a free robot account that only sees what you share with it."),
                             color = Muted, style = MaterialTheme.typography.bodySmall)
                         Spacer(Modifier.size(6.dp))
-                        Text("1. In Google Cloud (console.cloud.google.com), make a project and turn on the Google Drive API.\n2. Under Service accounts, create one, then Keys > Add key > JSON.\n3. Share your shared drive or folder with the service account's email, as a Viewer.\n4. Choose the .json key file here.  The web editor has the same steps with links.",
+                        Text(tr("1. In Google Cloud (console.cloud.google.com), make a project and turn on the Google Drive API.\n2. Under Service accounts, create one, then Keys > Add key > JSON.\n3. Share your shared drive or folder with the service account's email, as a Viewer.\n4. Choose the .json key file here.  The web editor has the same steps with links."),
                             color = Muted, style = MaterialTheme.typography.bodySmall)
                         Spacer(Modifier.size(8.dp))
-                        TextButton(enabled = busy == null, onClick = { pickKey.launch(arrayOf("application/json", "application/octet-stream", "text/plain")) }) { Text(if (gdKey.isBlank()) "Choose the key file" else "Key chosen.  Choose another") }
-                        SecretField(gdKey, { gdKey = it }, "Or paste the key", enabled = busy == null, note = "Kept on the TV like a password, never in backups.")
+                        TextButton(enabled = busy == null, onClick = { pickKey.launch(arrayOf("application/json", "application/octet-stream", "text/plain")) }) { Text(if (gdKey.isBlank()) tr("Choose the key file") else tr("Key chosen.  Choose another")) }
+                        SecretField(gdKey, { gdKey = it }, tr("Or paste the key"), enabled = busy == null, note = tr("Kept on the TV like a password, never in backups."))
                         busy?.let { Busy(it) }
                     }
                     "gdpick" -> {
                         val here = gdTrail.lastOrNull()
-                        Text(if (here == null) "Signed in as $gdAccount.  Pick a shared drive or folder:" else gdTrail.joinToString(" / ") { it.name }, color = Muted, style = MaterialTheme.typography.bodySmall)
+                        Text(if (here == null) tr("Signed in as {x}.  Pick a shared drive or folder:", "x" to gdAccount) else gdTrail.joinToString(" / ") { it.name }, color = Muted, style = MaterialTheme.typography.bodySmall)
                         val l = gdList
                         when {
                             busy != null -> Busy(busy!!)
                             l == null -> {}
-                            l.isEmpty() -> Text(if (here == null) "Nothing is shared with $gdAccount yet.  Share your drive or folder with that email as a Viewer, then look again." else "No folders inside.  Add this one, or go up.", color = Muted)
-                            else -> l.forEach { f -> Choice((if (here == null) (if (f.drive) "Shared drive: " else "Folder: ") else "") + f.name) { gdOpen(gdTrail + f) } }
+                            l.isEmpty() -> Text(if (here == null) tr("Nothing is shared with {x} yet.  Share your drive or folder with that email as a Viewer, then look again.", "x" to gdAccount) else tr("No folders inside.  Add this one, or go up."), color = Muted)
+                            else -> l.forEach { f -> Choice((if (here == null) (if (f.drive) tr("Shared drive: ") else "Folder: ") else "") + f.name) { gdOpen(gdTrail + f) } }
                         }
                         if (here != null) {
                             Spacer(Modifier.size(8.dp))
-                            OutlinedTextField(gdName, { gdName = it.take(60) }, label = { Text("Library name") }, singleLine = true, enabled = busy == null, modifier = Modifier.fillMaxWidth())
+                            OutlinedTextField(gdName, { gdName = it.take(60) }, label = { Text(tr("Library name")) }, singleLine = true, enabled = busy == null, modifier = Modifier.fillMaxWidth())
                         }
                     }
                     "servers" -> {
@@ -220,55 +226,55 @@ fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Un
                         when {
                             busy != null -> Busy(busy!!)
                             l == null -> {}
-                            l.isEmpty() -> Text("No media servers answered.  Is media sharing on, and is the server on the TV's network?", color = Muted)
-                            else -> l.forEach { (i, name) -> Choice(name, "Add it and look for movies and shows") {
-                                run("Adding $name…  A big library takes a while.", JSONObject().put("op", "adddlna").put("i", i)) { onDone(true) } } }
+                            l.isEmpty() -> Text(tr("No media servers answered.  Is media sharing on, and is the server on the TV's network?"), color = Muted)
+                            else -> l.forEach { (i, name) -> Choice(name, tr("Add it and look for movies and shows")) {
+                                run(tr("Adding {x}…  A big library takes a while.", "x" to name), JSONObject().put("op", "adddlna").put("i", i)) { onDone(true) } } }
                         }
                     }
                     "smb" -> {
-                        Text("The TV reads the share directly, with SMB 2 or 3.  Leave the user name empty for a guest; on a Windows PC, use the PC's user name or your Microsoft account email.  The login stays on the TV.",
+                        Text(tr("The TV reads the share directly, with SMB 2 or 3.  Leave the user name empty for a guest; on a Windows PC, use the PC's user name or your Microsoft account email.  The login stays on the TV."),
                             color = Muted, style = MaterialTheme.typography.bodySmall)
                         Spacer(Modifier.size(8.dp))
-                        TextButton(enabled = busy == null, onClick = { smbLook() }) { Text("Look on my network") }
+                        TextButton(enabled = busy == null, onClick = { smbLook() }) { Text(tr("Look on my network")) }
                         smbFound?.let { found ->
-                            if (found.isEmpty()) Text("Nothing answered.  A PC needs file sharing (and network discovery) on.  You can still type its name or address.", color = Muted, style = MaterialTheme.typography.bodySmall)
-                            found.forEach { (name, server) -> Choice(name, if (name == server) "Pick it, then enter its login" else server) {
+                            if (found.isEmpty()) Text(tr("Nothing answered.  A PC needs file sharing (and network discovery) on.  You can still type its name or address."), color = Muted, style = MaterialTheme.typography.bodySmall)
+                            found.forEach { (name, server) -> Choice(name, if (name == server) tr("Pick it, then enter its login") else server) {
                                 smbServer = server; smbName0 = name; smbSaved = ""
-                                run("Asking the TV…", JSONObject().put("op", "smbsaved").put("server", server).put("name0", name)) { r ->
+                                run(tr("Asking the TV…"), JSONObject().put("op", "smbsaved").put("server", server).put("name0", name)) { r ->
                                     val a = r.optJSONArray("saved")
-                                    smbSavedList = if (a == null) emptyList() else (0 until a.length()).map { a.getJSONObject(it).let { x -> x.optString("id") to ("Sign in as " + x.optString("user").ifBlank { "a guest" } + " (saved with " + x.optString("name") + ")") } }
+                                    smbSavedList = if (a == null) emptyList() else (0 until a.length()).map { a.getJSONObject(it).let { x -> x.optString("id") to tr("Sign in as {x} (saved with {y})", "x" to x.optString("user").ifBlank { tr("a guest") }, "y" to x.optString("name")) } }
                                 }
                             } }
                         }
-                        smbSavedList.forEach { (sid, label) -> Choice(label, "The TV uses the login it already has") { smbSaved = sid; smbOpen("", emptyList()) } }
-                        OutlinedTextField(smbServer, { smbServer = it.trim(); smbSaved = ""; smbSavedList = emptyList() }, label = { Text("Server name or address (NAS, 192.168.1.20)") }, singleLine = true, enabled = busy == null,
+                        smbSavedList.forEach { (sid, label) -> Choice(label, tr("The TV uses the login it already has")) { smbSaved = sid; smbOpen("", emptyList()) } }
+                        OutlinedTextField(smbServer, { smbServer = it.trim(); smbSaved = ""; smbSavedList = emptyList() }, label = { Text(tr("Server name or address (NAS, 192.168.1.20)")) }, singleLine = true, enabled = busy == null,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), modifier = Modifier.fillMaxWidth())
-                        OutlinedTextField(user, { user = it }, label = { Text("User name") }, singleLine = true, enabled = busy == null, modifier = Modifier.fillMaxWidth())
-                        SecretField(pass, { pass = it }, "Password", enabled = busy == null)
+                        OutlinedTextField(user, { user = it }, label = { Text(tr("User name")) }, singleLine = true, enabled = busy == null, modifier = Modifier.fillMaxWidth())
+                        SecretField(pass, { pass = it }, tr("Password"), enabled = busy == null)
                         busy?.let { Busy(it) }
                     }
                     "smbpick" -> {
-                        Text(if (smbShare.isEmpty()) "Pick a share:" else "\\\\" + smbServer + "\\" + smbShare + smbTrail.last().takeIf { it != "/" }.orEmpty().replace('/', '\\'), color = Muted, style = MaterialTheme.typography.bodySmall)
+                        Text(if (smbShare.isEmpty()) tr("Pick a share:") else "\\\\" + smbServer + "\\" + smbShare + smbTrail.last().takeIf { it != "/" }.orEmpty().replace('/', '\\'), color = Muted, style = MaterialTheme.typography.bodySmall)
                         val l = smbList
                         when {
                             busy != null -> Busy(busy!!)
                             l == null -> {}
-                            l.isEmpty() -> Text(if (smbShare.isEmpty()) "No shares found.  Share a folder on the server, or check this user can see it." else "No folders inside.  Add this one, or go up.", color = Muted)
+                            l.isEmpty() -> Text(if (smbShare.isEmpty()) tr("No shares found.  Share a folder on the server, or check this user can see it.") else tr("No folders inside.  Add this one, or go up."), color = Muted)
                             else -> l.forEach { (name, path) -> Choice(name) { if (smbShare.isEmpty()) smbOpen(name, listOf("/")) else smbOpen(smbShare, smbTrail + path) } }
                         }
                         if (smbShare.isNotEmpty()) {
                             Spacer(Modifier.size(8.dp))
-                            OutlinedTextField(smbName, { smbName = it.take(60) }, label = { Text("Library name") }, singleLine = true, enabled = busy == null, modifier = Modifier.fillMaxWidth())
+                            OutlinedTextField(smbName, { smbName = it.take(60) }, label = { Text(tr("Library name")) }, singleLine = true, enabled = busy == null, modifier = Modifier.fillMaxWidth())
                         }
                     }
                     "webdav" -> {
-                        Text("Files can be in this folder or its subfolders.  Movies and TV shows are recognised from their names.  The login is checked before it is saved, and stays on the TV.",
+                        Text(tr("Files can be in this folder or its subfolders.  Movies and TV shows are recognised from their names.  The login is checked before it is saved, and stays on the TV."),
                             color = Muted, style = MaterialTheme.typography.bodySmall)
                         Spacer(Modifier.size(8.dp))
-                        OutlinedTextField(address, { address = it.trim() }, label = { Text("Folder address (https://…)") }, singleLine = true, enabled = busy == null,
+                        OutlinedTextField(address, { address = it.trim() }, label = { Text(tr("Folder address (https://…)")) }, singleLine = true, enabled = busy == null,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), modifier = Modifier.fillMaxWidth())
-                        OutlinedTextField(user, { user = it }, label = { Text(if (premiumize) "Customer ID" else "User name or customer ID") }, singleLine = true, enabled = busy == null, modifier = Modifier.fillMaxWidth())
-                        SecretField(pass, { pass = it }, if (premiumize) "API key" else "Password or API key", enabled = busy == null)
+                        OutlinedTextField(user, { user = it }, label = { Text(if (premiumize) tr("Customer ID") else tr("User name or customer ID")) }, singleLine = true, enabled = busy == null, modifier = Modifier.fillMaxWidth())
+                        SecretField(pass, { pass = it }, if (premiumize) tr("API key") else tr("Password or API key"), enabled = busy == null)
                         busy?.let { Busy(it) }
                     }
                 }
@@ -277,19 +283,19 @@ fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Un
         confirmButton = {
             when (step) {
                 "webdav" -> TextButton(enabled = busy == null && address.startsWith("http", ignoreCase = true), onClick = {
-                    run("Checking the login…  A big folder takes a while.", JSONObject().put("op", "addwebdav").put("address", address).put("user", user).put("pass", pass)) { onDone(true) }
-                }) { Text("Add") }
-                "servers" -> if (busy == null && servers != null) TextButton(onClick = { look() }) { Text("Look again") }
-                "smb" -> TextButton(enabled = busy == null && smbServer.isNotBlank(), onClick = { smbOpen("", emptyList()) }) { Text("Show the shares") }
+                    run(tr("Checking the login…  A big folder takes a while."), JSONObject().put("op", "addwebdav").put("address", address).put("user", user).put("pass", pass)) { onDone(true) }
+                }) { Text(tr("Add")) }
+                "servers" -> if (busy == null && servers != null) TextButton(onClick = { look() }) { Text(tr("Look again")) }
+                "smb" -> TextButton(enabled = busy == null && smbServer.isNotBlank(), onClick = { smbOpen("", emptyList()) }) { Text(tr("Show the shares")) }
                 "smbpick" -> if (smbShare.isNotEmpty()) TextButton(enabled = busy == null, onClick = {
-                    run("Adding ${smbName.ifBlank { smbShare }}.  The TV looks through it, which takes a while for a big folder.", smbArgs("addsmb").put("share", smbShare).put("folder", smbTrail.last()).put("name", smbName.ifBlank { smbShare })) { pass = ""; onDone(true) }
-                }) { Text("Add this folder") }
-                "gdkey" -> TextButton(enabled = busy == null && gdKey.contains("private_key"), onClick = { gdOpen(emptyList()) }) { Text("Next") }
+                    run(tr("Adding {x}.  The TV looks through it, which takes a while for a big folder.", "x" to (smbName.ifBlank { smbShare })), smbArgs("addsmb").put("share", smbShare).put("folder", smbTrail.last()).put("name", smbName.ifBlank { smbShare })) { pass = ""; onDone(true) }
+                }) { Text(tr("Add this folder")) }
+                "gdkey" -> TextButton(enabled = busy == null && gdKey.contains("private_key"), onClick = { gdOpen(emptyList()) }) { Text(tr("Next")) }
                 "gdpick" -> gdTrail.lastOrNull()?.let { here ->
                     TextButton(enabled = busy == null, onClick = {
-                        run("Adding ${here.name}.  The TV looks through it, which takes a while for a big folder.", JSONObject().put("op", "addgdrive").put("key", gdKey).put("root", here.id).put("driveId", here.driveId)
+                        run(tr("Adding {x}.  The TV looks through it, which takes a while for a big folder.", "x" to here.name), JSONObject().put("op", "addgdrive").put("key", gdKey).put("root", here.id).put("driveId", here.driveId)
                             .put("where", gdTrail.joinToString(" / ") { it.name }).put("name", gdName.ifBlank { here.name })) { gdKey = ""; onDone(true) }
-                    }) { Text("Add this folder") }
+                    }) { Text(tr("Add this folder")) }
                 }
                 else -> {}
             }
@@ -306,7 +312,7 @@ fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Un
                     step == "gdpick" -> { step = "gdkey"; if (gdKey.startsWith("saved:")) gdKey = "" }
                     else -> { step = "pick"; gdKey = ""; gdSaved = emptyList() }
                 }
-            }) { Text(if (step == "pick") "Close" else if ((step == "gdpick" && gdTrail.isNotEmpty()) || (step == "smbpick" && smbShare.isNotEmpty())) "Up" else "Back") }
+            }) { Text(if (step == "pick") tr("Close") else if ((step == "gdpick" && gdTrail.isNotEmpty()) || (step == "smbpick" && smbShare.isNotEmpty())) tr("Up") else tr("Back")) }
         },
     )
 }
@@ -316,7 +322,7 @@ fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Un
 fun MediaSourceDialog(model: AppModel, id: String, sid: String, onDone: (changed: Boolean) -> Unit) {
     val scope = rememberCoroutineScope()
     var src by remember { mutableStateOf<MediaSrc?>(null) }
-    var busy by remember { mutableStateOf<String?>("Asking the TV…") }
+    var busy by remember { mutableStateOf<String?>(tr("Asking the TV…")) }
     var error by remember { mutableStateOf<String?>(null) }
     var step by remember { mutableStateOf("menu") }          // menu, mode, remove, details, login
     var changed by remember { mutableStateOf(false) }
@@ -337,59 +343,59 @@ fun MediaSourceDialog(model: AppModel, id: String, sid: String, onDone: (changed
         src = a?.let { (0 until it.length()).map { n -> it.getJSONObject(n) }.firstOrNull { s -> s.optString("id") == sid } }?.let { s ->
             MediaSrc(s.optString("id"), s.optString("name"), s.optString("type"), s.optString("mode"), s.optInt("movies"), s.optInt("episodes"), s.optInt("scanning") == 1,
                 s.optString("root").ifBlank { s.optString("folder") }) }
-        if (src == null) error = e ?: "That media source is gone from the TV."
+        if (src == null) error = e ?: tr("That media source is gone from the TV.")
     }
 
     val s = src
     AlertDialog(
         onDismissRequest = { if (busy == null) onDone(changed) }, containerColor = Panel,
-        title = { Text(s?.name ?: "Media source") },
+        title = { Text(s?.name ?: tr("Media source")) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 error?.let { Text(it, color = Bad, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 8.dp)) }
-                if (s != null) Text(typeLabel(s.type) + (if ((s.type == "dropbox" || s.type == "smb") && s.root.isNotBlank()) "  ·  " + s.root else "") + (if (s.mode != "shows") "  ·  " + plural(s.movies, "movie") else "") + (if (s.mode != "movies" || s.episodes > 0) "  ·  " + plural(s.episodes, "episode") else "") + (if (s.scanning) "  ·  scanning now" else ""),
+                if (s != null) Text(typeLabel(s.type) + (if ((s.type == "dropbox" || s.type == "smb") && s.root.isNotBlank()) "  ·  " + s.root else "") + (if (s.mode != "shows") "  ·  " + movies(s.movies) else "") + (if (s.mode != "movies" || s.episodes > 0) "  ·  " + episodes(s.episodes) else "") + (if (s.scanning) tr("  ·  scanning now") else ""),
                     color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 6.dp))
                 when {
                     busy != null -> Busy(busy!!)
                     s == null -> {}
                     step == "mode" -> MODES.forEach { (k, label) ->
-                        Row(Modifier.fillMaxWidth().clickable { run("Changing it and scanning again…", JSONObject().put("op", "mode").put("mode", k)) }.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(selected = s.mode == k, onClick = { run("Changing it and scanning again…", JSONObject().put("op", "mode").put("mode", k)) }); Text(label)
+                        Row(Modifier.fillMaxWidth().clickable { run(tr("Changing it and scanning again…"), JSONObject().put("op", "mode").put("mode", k)) }.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(selected = s.mode == k, onClick = { run(tr("Changing it and scanning again…"), JSONObject().put("op", "mode").put("mode", k)) }); Text(label)
                         }
                     }
-                    step == "remove" -> Text("Remove ${s.name} from My media?  Your files stay where they are.")
+                    step == "remove" -> Text(tr("Remove {x} from My media?  Your files stay where they are.", "x" to s.name))
                     step == "login" -> {
-                        Text("The TV checks the new login with the server before saving it.  The library and its matches stay.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                        Text(tr("The TV checks the new login with the server before saving it.  The library and its matches stay."), color = Muted, style = MaterialTheme.typography.bodySmall)
                         Spacer(Modifier.size(8.dp))
-                        OutlinedTextField(newUser, { newUser = it }, label = { Text("User name (empty for a guest)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                        SecretField(newPass, { newPass = it }, "Password")
+                        OutlinedTextField(newUser, { newUser = it }, label = { Text(tr("User name (empty for a guest)")) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                        SecretField(newPass, { newPass = it }, tr("Password"))
                     }
                     step == "details" -> Text(when (s.mode) {
-                        "shows" -> "Fetch show details from TMDB?  Show names and years, or saved show IDs, are sent to TMDB with the TV's token.  Your source logins are never sent."
-                        "automatic" -> "Fetch movie and show details from TMDB?  Titles and years, or saved IDs, are sent to TMDB with the TV's token.  Your source logins are never sent."
-                        else -> "Fetch movie details from TMDB?  Titles and years, or saved movie IDs, are sent to TMDB with the TV's token.  Your source logins are never sent."
+                        "shows" -> tr("Fetch show details from TMDB?  Show names and years, or saved show IDs, are sent to TMDB with the TV's token.  Your source logins are never sent.")
+                        "automatic" -> tr("Fetch movie and show details from TMDB?  Titles and years, or saved IDs, are sent to TMDB with the TV's token.  Your source logins are never sent.")
+                        else -> tr("Fetch movie details from TMDB?  Titles and years, or saved movie IDs, are sent to TMDB with the TV's token.  Your source logins are never sent.")
                     })
                     else -> {
-                        Choice("Rescan", "Look for added or removed movies and episodes") { run("Scanning ${s.name}…", JSONObject().put("op", "rescan")) }
-                        Choice("Restart scan", "Start over from the top of the folder") { run("Scanning ${s.name} from the start…", JSONObject().put("op", "rescan").put("restart", true)) }
-                        Choice("Content: " + (MODES.firstOrNull { it.first == s.mode }?.second ?: "Movies only"), "What to look for in this source") { step = "mode" }
-                        Choice(when (s.mode) { "shows" -> "Fetch show details"; "automatic" -> "Fetch movie and show details"; else -> "Fetch movie details" }, "TMDB, with the token saved on the TV") { step = "details" }
-                        if (s.type == "smb" || s.type == "webdav") Choice("Change login", "When its password changed") { step = "login" }
-                        Choice("Remove", "Your files stay where they are") { step = "remove" }
+                        Choice(tr("Rescan"), tr("Look for added or removed movies and episodes")) { run("Scanning ${s.name}…", JSONObject().put("op", "rescan")) }
+                        Choice(tr("Restart scan"), tr("Start over from the top of the folder")) { run(tr("Scanning {x} from the start…", "x" to s.name), JSONObject().put("op", "rescan").put("restart", true)) }
+                        Choice("Content: " + (MODES.firstOrNull { it.first == s.mode }?.second ?: tr("Movies only")), tr("What to look for in this source")) { step = "mode" }
+                        Choice(when (s.mode) { "shows" -> tr("Fetch show details"); "automatic" -> tr("Fetch movie and show details"); else -> tr("Fetch movie details") }, tr("TMDB, with the token saved on the TV")) { step = "details" }
+                        if (s.type == "smb" || s.type == "webdav") Choice(tr("Change login"), tr("When its password changed")) { step = "login" }
+                        Choice(tr("Remove"), tr("Your files stay where they are")) { step = "remove" }
                     }
                 }
             }
         },
         confirmButton = {
             when (step) {
-                "remove" -> TextButton(enabled = busy == null, onClick = { run("Removing…", JSONObject().put("op", "remove")) }) { Text("Remove", color = Bad) }
-                "details" -> TextButton(enabled = busy == null, onClick = { run("Fetching details…", JSONObject().put("op", "details")) }) { Text("Fetch details") }
-                "login" -> TextButton(enabled = busy == null, onClick = { run("Checking the login with the server…", JSONObject().put("op", "login").put("user", newUser).put("pass", newPass)) }) { Text("Check and save") }
+                "remove" -> TextButton(enabled = busy == null, onClick = { run(tr("Removing…"), JSONObject().put("op", "remove")) }) { Text(tr("Remove"), color = Bad) }
+                "details" -> TextButton(enabled = busy == null, onClick = { run(tr("Fetching details…"), JSONObject().put("op", "details")) }) { Text(tr("Fetch details")) }
+                "login" -> TextButton(enabled = busy == null, onClick = { run(tr("Checking the login with the server…"), JSONObject().put("op", "login").put("user", newUser).put("pass", newPass)) }) { Text(tr("Check and save")) }
                 else -> {}
             }
         },
         dismissButton = {
-            TextButton(enabled = busy == null, onClick = { if (step == "menu") onDone(changed) else { step = "menu"; error = null } }) { Text(if (step == "menu") "Close" else "Back") }
+            TextButton(enabled = busy == null, onClick = { if (step == "menu") onDone(changed) else { step = "menu"; error = null } }) { Text(if (step == "menu") tr("Close") else tr("Back")) }
         },
     )
 }
@@ -404,22 +410,22 @@ fun TmdbTokenDialog(model: AppModel, id: String, saved: Boolean, onDone: (change
     fun send(token: String) { busy = true; error = null; scope.launch { val (r, e) = myMedia(model, id, JSONObject().put("op", "token").put("token", token)); busy = false; if (r != null) onDone(true) else error = e } }
     AlertDialog(
         onDismissRequest = { if (!busy) onDone(false) }, containerColor = Panel,
-        title = { Text(if (saved) "Replace TMDB token" else "Add TMDB token") },
+        title = { Text(if (saved) tr("Replace TMDB token") else tr("Add TMDB token")) },
         text = {
             Column {
-                Text("Your own free API key or Read Access Token, from themoviedb.org/settings/api.  It gives My media its posters and details, and finds the movies on your channels.  The TV checks it, and keeps it out of backups.",
+                Text(tr("Your own free API key or Read Access Token, from themoviedb.org/settings/api.  It gives My media its posters and details, and finds the movies on your channels.  The TV checks it, and keeps it out of backups."),
                     color = Muted, style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.size(8.dp))
-                SecretField(t, { t = it.trim() }, "API key or Read Access Token", enabled = !busy)
+                SecretField(t, { t = it.trim() }, tr("API key or Read Access Token"), enabled = !busy)
                 error?.let { Text(it, color = Bad, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 6.dp)) }
-                if (busy) Busy("Checking it with TMDB…")
+                if (busy) Busy(tr("Checking it with TMDB…"))
             }
         },
-        confirmButton = { TextButton(enabled = !busy && t.length >= 24, onClick = { send(t) }) { Text("Save") } },
+        confirmButton = { TextButton(enabled = !busy && t.length >= 24, onClick = { send(t) }) { Text(tr("Save")) } },
         dismissButton = {
             Row {
-                if (saved) TextButton(enabled = !busy, onClick = { send("") }) { Text("Remove", color = Bad) }
-                TextButton(enabled = !busy, onClick = { onDone(false) }) { Text("Cancel") }
+                if (saved) TextButton(enabled = !busy, onClick = { send("") }) { Text(tr("Remove"), color = Bad) }
+                TextButton(enabled = !busy, onClick = { onDone(false) }) { Text(tr("Cancel")) }
             }
         },
     )
@@ -431,7 +437,7 @@ fun openDropbox(ctx: Context, model: AppModel, url: String) {
     try { CustomTabsIntent.Builder().setShowTitle(true).build().launchUrl(ctx, uri) }
     catch (e: ActivityNotFoundException) {
         try { ctx.startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-        catch (e2: ActivityNotFoundException) { model.dropboxEnd(); model.say("There is no web browser on this phone to sign in to Dropbox with.") }
+        catch (e2: ActivityNotFoundException) { model.dropboxEnd(); model.say(tr("There is no web browser on this phone to sign in to Dropbox with.")) }
     }
 }
 
@@ -439,8 +445,8 @@ fun openDropbox(ctx: Context, model: AppModel, url: String) {
 private fun dropboxError(m: String?): String {
     val t = m.orEmpty()
     return when {
-        t.isBlank() -> "That didn't work.  Look at the TV for more."
-        t.contains("Unknown My media request") -> "TiviBro on the TV is too old for Dropbox.  Update it, then try again."
+        t.isBlank() -> tr("That didn't work.  Look at the TV for more.")
+        t.contains("Unknown My media request") -> tr("TiviBro on the TV is too old for Dropbox.  Update it, then try again.")
         else -> t
     }
 }
@@ -458,11 +464,11 @@ fun DropboxDialog(model: AppModel, step: DropboxStep, onDone: (added: Boolean) -
     var error by remember { mutableStateOf<String?>(null) }
     var attempt by remember { mutableIntStateOf(0) }
     val ready = step.stage == "ready"
-    val here = if (path.isEmpty()) "Whole Dropbox" else path.substringAfterLast('/')
+    val here = if (path.isEmpty()) tr("Whole Dropbox") else path.substringAfterLast('/')
 
     LaunchedEffect(ready, path, attempt) {
         if (!ready) return@LaunchedEffect
-        busy = "Asking the TV for your Dropbox folders…"; error = null; folders = null
+        busy = tr("Asking the TV for your Dropbox folders…"); error = null; folders = null
         try {
             val r = model.dropboxFolders(step.tv, path)
             r.optString("account").takeIf { it.isNotBlank() }?.let { account = it }
@@ -470,19 +476,19 @@ fun DropboxDialog(model: AppModel, step: DropboxStep, onDone: (added: Boolean) -
             folders = if (a == null) emptyList() else (0 until a.length()).mapNotNull { a.optJSONObject(it) }.map { it.optString("name") to it.optString("path") }
         } catch (e: CancellationException) { throw e }
         catch (e: TbException) { error = dropboxError(e.message) }
-        catch (e: Exception) { error = "The TV didn't answer.  Is it on, and on the same network?" }
+        catch (e: Exception) { error = tr("The TV didn't answer.  Is it on, and on the same network?") }
         busy = null
     }
     fun add() {
-        busy = "Adding " + (if (path.isEmpty()) "your whole Dropbox" else here) + ".  The TV looks through it, which takes a while for a big folder."; error = null
+        busy = "Adding " + (if (path.isEmpty()) tr("your whole Dropbox") else here) + ".  The TV looks through it, which takes a while for a big folder."; error = null
         scope.launch {
             try {
-                val msg = model.dropboxAdd(step.tv, path, if (path.isEmpty()) "Dropbox" else here)
+                val msg = model.dropboxAdd(step.tv, path, if (path.isEmpty()) tr("Dropbox") else here)
                 if (msg.isNotBlank()) model.say(msg)
                 model.dropboxEnd(); onDone(true)
             } catch (e: CancellationException) { throw e }
             catch (e: TbException) { error = dropboxError(e.message) }
-            catch (e: Exception) { error = "The TV didn't answer.  Is it on, and on the same network?" }
+            catch (e: Exception) { error = tr("The TV didn't answer.  Is it on, and on the same network?") }
             busy = null
         }
     }
@@ -490,30 +496,30 @@ fun DropboxDialog(model: AppModel, step: DropboxStep, onDone: (added: Boolean) -
 
     AlertDialog(
         onDismissRequest = { if (busy == null && step.stage != "exchanging") close() }, containerColor = Panel,
-        title = { Text(if (ready) here else "Dropbox") },
+        title = { Text(if (ready) here else tr("Dropbox")) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 val err = error ?: step.error
                 err?.let { Text(it, color = Bad, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 8.dp)) }
                 when (step.stage) {
-                    "waiting" -> Text("Sign in to Dropbox in the browser and allow TiviBro.  Dropbox then brings you back here to pick a folder.  TiviBro only reads your files: it never changes or deletes anything.",
+                    "waiting" -> Text(tr("Sign in to Dropbox in the browser and allow TiviBro.  Dropbox then brings you back here to pick a folder.  TiviBro only reads your files: it never changes or deletes anything."),
                         color = Muted, style = MaterialTheme.typography.bodySmall)
-                    "exchanging" -> Busy("Finishing the Dropbox sign-in…")
+                    "exchanging" -> Busy(tr("Finishing the Dropbox sign-in…"))
                     "failed" -> {}
                     else -> {
-                        if (account.isNotBlank()) Text("Signed in as $account", color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 4.dp))
-                        Text("Pick the folder with your movies and TV shows.  Subfolders are included.  The sign-in is kept on the TV, not on this phone.",
+                        if (account.isNotBlank()) Text(tr("Signed in as {x}", "x" to account), color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 4.dp))
+                        Text(tr("Pick the folder with your movies and TV shows.  Subfolders are included.  The sign-in is kept on the TV, not on this phone."),
                             color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 6.dp))
                         if (busy != null) Busy(busy!!)
                         else {
                             if (path.isNotEmpty()) {
                                 val up = path.substringBeforeLast('/', "")
-                                Choice("Up", "Back to " + (if (up.isEmpty()) "the whole Dropbox" else up.substringAfterLast('/'))) { path = up }
+                                Choice(tr("Up"), tr("Back to {x}", "x" to if (up.isEmpty()) tr("the whole Dropbox") else up.substringAfterLast('/'))) { path = up }
                             }
                             val l = folders
                             when {
-                                l == null -> if (error != null) TextButton(onClick = { attempt++ }) { Text("Try again") }
-                                l.isEmpty() -> Text("No folders in here.", color = Muted, modifier = Modifier.padding(vertical = 8.dp))
+                                l == null -> if (error != null) TextButton(onClick = { attempt++ }) { Text(tr("Try again")) }
+                                l.isEmpty() -> Text(tr("No folders in here."), color = Muted, modifier = Modifier.padding(vertical = 8.dp))
                                 else -> l.forEach { (name, p) -> Choice(name) { path = p } }
                             }
                         }
@@ -523,14 +529,14 @@ fun DropboxDialog(model: AppModel, step: DropboxStep, onDone: (added: Boolean) -
         },
         confirmButton = {
             when (step.stage) {
-                "waiting" -> TextButton(onClick = { openDropbox(ctx, model, step.url) }) { Text("Open Dropbox again") }
-                "failed" -> TextButton(onClick = { openDropbox(ctx, model, model.dropboxStart(step.tv)) }) { Text("Try again") }
-                "ready" -> TextButton(enabled = busy == null && folders != null, onClick = { add() }) { Text("Use this folder") }
+                "waiting" -> TextButton(onClick = { openDropbox(ctx, model, step.url) }) { Text(tr("Open Dropbox again")) }
+                "failed" -> TextButton(onClick = { openDropbox(ctx, model, model.dropboxStart(step.tv)) }) { Text(tr("Try again")) }
+                "ready" -> TextButton(enabled = busy == null && folders != null, onClick = { add() }) { Text(tr("Use this folder")) }
                 else -> {}
             }
         },
         dismissButton = {
-            TextButton(enabled = busy == null && step.stage != "exchanging", onClick = { close() }) { Text(if (step.stage == "failed") "Close" else "Cancel") }
+            TextButton(enabled = busy == null && step.stage != "exchanging", onClick = { close() }) { Text(if (step.stage == "failed") tr("Close") else tr("Cancel")) }
         },
     )
 }

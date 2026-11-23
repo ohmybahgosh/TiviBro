@@ -5,6 +5,8 @@
    Nothing here is logged: the code, the verifier and the token are secrets. */
 package app.tivibro.phone.proto
 
+import app.tivibro.phone.tr
+
 import org.json.JSONObject
 import java.io.IOException
 import java.net.HttpURLConnection
@@ -62,8 +64,8 @@ object Dropbox {
 
     /** What to say for an error Dropbox put in the redirect. */
     fun redirectError(error: String): String =
-        if (error == "access_denied") "Dropbox sign-in was cancelled.  Nothing was added."
-        else "Dropbox didn't finish the sign-in.  Try again."
+        if (error == "access_denied") tr("Dropbox sign-in was cancelled.  Nothing was added.")
+        else tr("Dropbox didn't finish the sign-in.  Try again.")
 
     /** The form sent to swap the code for tokens. */
     fun exchangeForm(code: String, verifier: String): String =
@@ -75,12 +77,12 @@ object Dropbox {
         if (status == 200) {
             val r = j?.optString("refresh_token").orEmpty()
             if (r.isNotBlank()) return r
-            throw TbException("Dropbox didn't send a lasting sign-in.  Try again.", "dropbox")
+            throw TbException(tr("Dropbox didn't send a lasting sign-in.  Try again."), "dropbox")
         }
         val err = j?.optString("error").orEmpty()
         throw TbException(when (err) {
-            "invalid_grant" -> "Dropbox didn't accept that sign-in (it may have taken too long).  Sign in again."
-            "invalid_client", "unauthorized_client" -> "Dropbox didn't accept TiviBro's sign-in.  Update the TiviBro phone app and try again."
+            "invalid_grant" -> tr("Dropbox didn't accept that sign-in (it may have taken too long).  Sign in again.")
+            "invalid_client", "unauthorized_client" -> tr("Dropbox didn't accept TiviBro's sign-in.  Update the TiviBro phone app and try again.")
             else -> "Dropbox said no (${if (err.isNotBlank()) err else "error $status"}).  Try again in a minute."
         }, "dropbox")
     }
@@ -103,7 +105,7 @@ object Dropbox {
                 st to (stream?.use { it.bufferedReader().readText() } ?: "")
             } finally { c.disconnect() }
         } catch (e: IOException) {
-            throw TbException("Couldn't reach Dropbox.  Is the phone online?", "unreachable")
+            throw TbException(tr("Couldn't reach Dropbox.  Is the phone online?"), "unreachable")
         }
         return refreshFrom(status, text)
     }

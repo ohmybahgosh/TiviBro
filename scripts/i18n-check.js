@@ -23,6 +23,9 @@ const RULES = [
   new RegExp(`\\b(?:U|UI)\\.(?:toast|menu|confirm|prompt|panel|pin|notify)\\(\\s*${STR}(?:\\s*,\\s*${STR})?`, 'g'),
   new RegExp(`\\bI18n\\.t\\(\\s*${STR}`, 'g'),
   new RegExp(`\\bT\\(\\s*${STR}`, 'g'),           // the local I18n.t shorthand several files define
+  // webedit.js's messages and errors for the editor and the phone, translated as they're sent (I18n.msg, I18n.say)
+  new RegExp(`\\b(?:M|fail)\\(\\s*${STR}`, 'g'),
+  new RegExp(`\\bMN\\([^,]+,\\s*${STR}\\s*,\\s*${STR}`, 'g'),
   new RegExp(`\\[\\s*'[a-z]*'\\s*,\\s*${STR}\\s*\\]`, 'g'),       // hints: ['ok', 'Play']
   new RegExp(`\\btel\\(\\s*'[a-z]+'\\s*,\\s*'[^']*'\\s*,\\s*${STR}`, 'g')            // tel('div', 'cls', 'Words'): the pages' own elements
 ];

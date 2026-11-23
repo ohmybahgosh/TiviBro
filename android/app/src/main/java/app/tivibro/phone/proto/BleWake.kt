@@ -3,6 +3,8 @@
    ble/BleWaker.kt, the TV side in service/blewake.js. */
 package app.tivibro.phone.proto
 
+import app.tivibro.phone.tr
+
 import java.security.SecureRandom
 import java.util.Random
 import java.util.UUID
@@ -111,9 +113,9 @@ class TvSeen {
         if (on || ad == null) return on
         val f = first
         when {
-            !ad.wakeOff -> { on = true; why = "its wake-up service is on" }
+            !ad.wakeOff -> { on = true; why = tr("its wake-up service is on") }
             f == null -> first = ad.update
-            ad.update != f -> { on = true; why = "its advertisement changed (state ${f} to ${ad.update})" }
+            ad.update != f -> { on = true; why = tr("its advertisement changed (state {x} to {y})", "x" to f, "y" to ad.update) }
         }
         return on
     }

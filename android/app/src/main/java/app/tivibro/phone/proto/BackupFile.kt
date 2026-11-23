@@ -4,6 +4,8 @@
    or without the app. */
 package app.tivibro.phone.proto
 
+import app.tivibro.phone.tr
+
 import org.json.JSONObject
 import java.security.SecureRandom
 import javax.crypto.Cipher
@@ -38,12 +40,12 @@ object BackupFile {
     fun open(file: JSONObject, pass: String): JSONObject {
         if (file.optString("kind") == "backup") return file
         val iter = file.optInt("iter", ITER)
-        if (file.optString("kdf") != "pbkdf2-sha256" || file.optString("cipher") != "aes-256-gcm" || iter < 10_000 || iter > 5_000_000) throw TbException("This backup uses a format this version can't read.")
+        if (file.optString("kdf") != "pbkdf2-sha256" || file.optString("cipher") != "aes-256-gcm" || iter < 10_000 || iter > 5_000_000) throw TbException(tr("This backup uses a format this version can't read."))
         return runCatching {
             val c = Cipher.getInstance("AES/GCM/NoPadding")
             c.init(Cipher.DECRYPT_MODE, SecretKeySpec(key(pass, unb64(file.getString("salt")), iter), "AES"), GCMParameterSpec(128, unb64(file.getString("iv"))))
             JSONObject(String(c.doFinal(unb64(file.getString("data")) + unb64(file.getString("tag"))), Charsets.UTF_8))
-        }.getOrElse { throw TbException("Wrong passphrase, or the file was changed.") }
+        }.getOrElse { throw TbException(tr("Wrong passphrase, or the file was changed.")) }
     }
 
     /** A plain or sealed TiviBro backup? */

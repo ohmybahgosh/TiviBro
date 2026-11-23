@@ -3,6 +3,8 @@
    ones from the Guide (tap a channel, then the bell next to a programme) or On now. */
 package app.tivibro.phone.ui
 
+import app.tivibro.phone.tr
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -64,7 +66,7 @@ private fun dayOf(t: Long): Long = Calendar.getInstance().apply { timeInMillis =
 /** "Today", "Tomorrow" or "Sat 8 Nov", and the time. */
 private fun whenOf(t: Long): Pair<String, String> {
     val d = ((dayOf(t) - dayOf(System.currentTimeMillis())) / 86_400_000L).toInt()
-    val day = when (d) { 0 -> "Today"; 1 -> "Tomorrow"; else -> SimpleDateFormat("EEE d MMM", Locale.getDefault()).format(Date(t)) }
+    val day = when (d) { 0 -> tr("Today"); 1 -> tr("Tomorrow"); else -> SimpleDateFormat("EEE d MMM", Locale.getDefault()).format(Date(t)) }
     return day to DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(t))
 }
 
@@ -85,8 +87,8 @@ fun RemindersScreen(model: AppModel, id: String, name: String, snack: SnackbarHo
                 val (msg, l) = model.reminders(id, op, r?.k.orEmpty(), r?.start ?: 0)
                 list = l
                 if (op != "list" && msg.isNotBlank()) model.say(msg)
-            } catch (e: TbException) { error = e.message ?: "The TV said no" }
-            catch (e: Exception) { error = "$name didn't answer.  Is it on, and on the same network?" }
+            } catch (e: TbException) { error = e.message ?: tr("The TV said no") }
+            catch (e: Exception) { error = tr("{x} didn't answer.  Is it on, and on the same network?", "x" to name) }
             busy = false
         }
     }
@@ -98,15 +100,15 @@ fun RemindersScreen(model: AppModel, id: String, name: String, snack: SnackbarHo
             TopAppBar(
                 title = {
                     Column {
-                        Text("Reminders", maxLines = 1)
+                        Text(tr("Reminders"), maxLines = 1)
                         Text(name, color = Muted, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") } },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, tr("Back")) } },
                 actions = {
                     if (busy) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = Accent)
-                    if (!list.isNullOrEmpty()) TextButton(onClick = { clearing = true }, enabled = !busy) { Text("Cancel all", color = Bad) }
-                    IconButton(onClick = { attempt++ }, enabled = !busy) { Icon(Icons.Rounded.Refresh, "Look again") }
+                    if (!list.isNullOrEmpty()) TextButton(onClick = { clearing = true }, enabled = !busy) { Text(tr("Cancel all"), color = Bad) }
+                    IconButton(onClick = { attempt++ }, enabled = !busy) { Icon(Icons.Rounded.Refresh, tr("Look again")) }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Ink),
             )
@@ -117,19 +119,19 @@ fun RemindersScreen(model: AppModel, id: String, name: String, snack: SnackbarHo
             l == null && error != null -> Column(Modifier.padding(pad).fillMaxSize().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 Text(error ?: "", textAlign = TextAlign.Center)
                 Spacer(Modifier.height(16.dp))
-                Button(onClick = { attempt++ }) { Text("Try again") }
+                Button(onClick = { attempt++ }) { Text(tr("Try again")) }
             }
             l == null -> Box(Modifier.padding(pad).fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             l.isEmpty() -> Column(Modifier.padding(pad).fillMaxSize().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                Text("No reminders", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(tr("No reminders"), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(8.dp))
-                Text("Set one from the Guide: tap a channel, then the bell next to a programme.  Words and teams on your watchlist set them too.",
+                Text(tr("Set one from the Guide: tap a channel, then the bell next to a programme.  Words and teams on your watchlist set them too."),
                     color = Muted, textAlign = TextAlign.Center)
             }
             else -> LazyColumn(Modifier.padding(pad).fillMaxSize(), contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 error?.let { e -> item { Text(e, color = Bad, style = MaterialTheme.typography.bodySmall) } }
                 item {
-                    Text("TiviBro on the TV tells you when these start, also while it is closed.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                    Text(tr("TiviBro on the TV tells you when these start, also while it is closed."), color = Muted, style = MaterialTheme.typography.bodySmall)
                 }
                 items(l, key = { it.k + "@" + it.start }) { r -> ReminderRow(r, enabled = !busy) { run("cancel", r) } }
             }
@@ -138,10 +140,10 @@ fun RemindersScreen(model: AppModel, id: String, name: String, snack: SnackbarHo
 
     if (clearing) AlertDialog(
         onDismissRequest = { clearing = false }, containerColor = Panel,
-        title = { Text("Cancel all reminders?") },
-        text = { Text("Every reminder on $name goes, also the ones your watchlist set.  Your watchlist itself stays and sets new ones as programmes come up.") },
-        confirmButton = { TextButton(onClick = { clearing = false; run("clear") }) { Text("Cancel all", color = Bad) } },
-        dismissButton = { TextButton(onClick = { clearing = false }) { Text("Keep them") } },
+        title = { Text(tr("Cancel all reminders?")) },
+        text = { Text(tr("Every reminder on {x} goes, also the ones your watchlist set.  Your watchlist itself stays and sets new ones as programmes come up.", "x" to name)) },
+        confirmButton = { TextButton(onClick = { clearing = false; run("clear") }) { Text(tr("Cancel all"), color = Bad) } },
+        dismissButton = { TextButton(onClick = { clearing = false }) { Text(tr("Keep them")) } },
     )
 }
 
@@ -154,18 +156,18 @@ private fun ReminderRow(r: Reminder, enabled: Boolean, onCancel: () -> Unit) {
                 Text(time, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false)  // "10:00 PM" whole: 76 dp cut off its PM
                 // Started already: a Live badge, as on the TV.
                 if (r.live) Surface(color = Bad, shape = MaterialTheme.shapes.small, modifier = Modifier.padding(top = 2.dp)) {
-                    Text("Live", color = TextHi, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(8.dp, 1.dp))
+                    Text(tr("Live"), color = TextHi, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(8.dp, 1.dp))
                 }
                 else Text(day, color = Muted, style = MaterialTheme.typography.labelSmall, maxLines = 1)
             }
             Logo(r.logo, "", 40.dp)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(r.title.ifBlank { "Programme" }, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(r.title.ifBlank { tr("Programme") }, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(r.channel, color = Muted, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 if (r.from.isNotBlank()) Text(r.from, color = Accent, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            IconButton(onClick = onCancel, enabled = enabled) { Icon(Icons.Rounded.Close, "Cancel this reminder", tint = Muted) }
+            IconButton(onClick = onCancel, enabled = enabled) { Icon(Icons.Rounded.Close, tr("Cancel this reminder"), tint = Muted) }
         }
     }
 }

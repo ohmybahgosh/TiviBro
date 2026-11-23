@@ -381,6 +381,7 @@ function create(opts) {
     var args = j.args && typeof j.args === 'object' ? j.args : {};
     if (j.noOpen && !appOpen()) return reply(200, { ok: true, closed: true });
     var cmd = { type: 'ask', what: j.what, args: args };
+    if (typeof j.lang === 'string' && /^[A-Za-z]{2}(-[A-Za-z]{2})?$/.test(j.lang)) cmd.lang = j.lang;   // the phone's language: TiviBro answers in it
     var how = queue(cmd, p.name);
     var w = asks[cmd.id] = { reply: reply };
     w.timer = setTimeout(function () { delete asks[cmd.id]; reply(200, { ok: true, pending: true, state: how, busy: busyNow() }); }, ASKS[j.what]);

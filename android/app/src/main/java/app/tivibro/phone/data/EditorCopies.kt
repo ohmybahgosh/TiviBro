@@ -7,6 +7,8 @@
    list of 186,000 channels gets through too, and is written to storage as it comes, never held whole. */
 package app.tivibro.phone.data
 
+import app.tivibro.phone.tr
+
 import android.content.Context
 import org.json.JSONObject
 import android.util.Base64
@@ -36,7 +38,7 @@ class EditorCopies(context: Context) {
         val tmp = File(dir(tvId), safe(pid) + ".part")
         val raw = tmp.outputStream().buffered(256 * 1024)
         val gz = m.optBoolean("gz")
-        incoming = Incoming(tvId, pid, m.optString("name").ifBlank { "Playlist" }, n, gz, tmp, if (gz) raw else GZIPOutputStream(raw))
+        incoming = Incoming(tvId, pid, m.optString("name").ifBlank { tr("Playlist") }, n, gz, tmp, if (gz) raw else GZIPOutputStream(raw))
         true
     }.getOrElse { drop(); false }
 

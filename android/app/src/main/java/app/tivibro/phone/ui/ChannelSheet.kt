@@ -4,6 +4,8 @@
    made by TiviBro on the TV (ask "chan" in app/js/phone.js), the same as from the TV's own menus. */
 package app.tivibro.phone.ui
 
+import app.tivibro.phone.tr
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -79,14 +81,14 @@ fun ChannelSheet(
     LaunchedEffect(c.k) {
         try { info = model.chanEdit(id, c.k, "info") }
         catch (e: TbException) { error = e.message }
-        catch (e: Exception) { error = "The TV didn't answer.  Is it on, and on the same network?" }
+        catch (e: Exception) { error = tr("The TV didn't answer.  Is it on, and on the same network?") }
     }
     fun change(op: String, args: JSONObject = JSONObject(), close: Boolean = false) {
         busy = true
         scope.launch {
             try { info = model.chanEdit(id, c.k, op, args); if (close) onDismiss() }
-            catch (e: TbException) { model.say(e.message ?: "The TV said no") }
-            catch (e: Exception) { model.say("The TV didn't answer.  Is it on, and on the same network?") }
+            catch (e: TbException) { model.say(e.message ?: tr("The TV said no")) }
+            catch (e: Exception) { model.say(tr("The TV didn't answer.  Is it on, and on the same network?")) }
             busy = false
         }
     }
@@ -98,64 +100,64 @@ fun ChannelSheet(
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
                     Text((if (c.number.isNotBlank()) c.number + "  " else "") + (info?.name ?: c.name), fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    info?.let { i -> Text(i.group + (if (i.renamed) "   ·   was " + i.provider else ""), color = Muted, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                    info?.let { i -> Text(i.group + (if (i.renamed) "   ·   " + tr("was {x}", "x" to i.provider) else ""), color = Muted, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                 }
                 if (busy) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = Accent)
             }
-            Option(Icons.Rounded.PlayArrow, if (playing) "On the TV now" else "Watch on TV") { onPlay(); onDismiss() }
-            onSchedule?.let { s -> Option(Icons.Rounded.CalendarMonth, "Schedule and reminders") { onDismiss(); s() } }
+            Option(Icons.Rounded.PlayArrow, if (playing) tr("On the TV now") else tr("Watch on TV")) { onPlay(); onDismiss() }
+            onSchedule?.let { s -> Option(Icons.Rounded.CalendarMonth, tr("Schedule and reminders")) { onDismiss(); s() } }
             // Record to the TV's USB drive: what's on now, to its end (an hour when the guide says nothing).
-            Option(Icons.Rounded.FiberManualRecord, "Record now", sub = c.now?.takeIf { val t = System.currentTimeMillis(); it.start <= t && it.end > t }?.let { "\"" + it.title + "\" until its end" } ?: "For an hour, to the TV's USB drive") {
+            Option(Icons.Rounded.FiberManualRecord, tr("Record now"), sub = c.now?.takeIf { val t = System.currentTimeMillis(); it.start <= t && it.end > t }?.let { tr("\"{x}\" until its end", "x" to it.title) } ?: tr("For an hour, to the TV's USB drive")) {
                 busy = true
                 scope.launch {
-                    try { val l = model.recordings(id, "now", k = c.k); model.say(l.msg.ifBlank { "Recording on the TV" }); onDismiss() }
-                    catch (e: TbException) { model.say(if ((e.message ?: "").contains("unknown question", true)) "Update TiviBro on the TV to record from here." else e.message ?: "The TV said no") }
-                    catch (e: Exception) { model.say("The TV didn't answer.  Is it on, and on the same network?") }
+                    try { val l = model.recordings(id, "now", k = c.k); model.say(l.msg.ifBlank { tr("Recording on the TV") }); onDismiss() }
+                    catch (e: TbException) { model.say(if ((e.message ?: "").contains("unknown question", true)) tr("Update TiviBro on the TV to record from here.") else e.message ?: tr("The TV said no")) }
+                    catch (e: Exception) { model.say(tr("The TV didn't answer.  Is it on, and on the same network?")) }
                     busy = false
                 }
             }
-            Option(if (fav) Icons.Rounded.Star else Icons.Rounded.StarOutline, if (fav) "Remove from Favorites" else "Add to Favorites") {
+            Option(if (fav) Icons.Rounded.Star else Icons.Rounded.StarOutline, if (fav) tr("Remove from Favorites") else tr("Add to Favorites")) {
                 fav = !fav; model.favorite(id, c.k, fav)
             }
             info?.team?.let { t ->
-                Option(Icons.Rounded.EmojiEvents, if (t.on) "Stop following the " + t.name else "Follow the " + t.name,
-                    sub = if (t.on) "In My teams" else "My teams: its games on now and starting soon") {
+                Option(Icons.Rounded.EmojiEvents, if (t.on) tr("Stop following the {x}", "x" to t.name) else tr("Follow the {x}", "x" to t.name),
+                    sub = if (t.on) tr("In My teams") else tr("My teams: its games on now and starting soon")) {
                     change("follow", JSONObject().put("on", !t.on))
                 }
             }
             HorizontalDivider(color = Line, modifier = Modifier.padding(vertical = 6.dp))
-            Text("Your groups", color = Muted, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(20.dp, 6.dp))
+            Text(tr("Your groups"), color = Muted, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(20.dp, 6.dp))
             val i = info
             when {
                 error != null -> Text(error ?: "", color = Bad, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(20.dp, 4.dp))
-                i == null -> Text("Asking the TV…", color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(20.dp, 4.dp))
+                i == null -> Text(tr("Asking the TV…"), color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(20.dp, 4.dp))
                 else -> {
                     i.groups.filter { it.id != "c_fav" }.forEach { g ->
-                        Option(if (g.has) Icons.Rounded.Check else null, g.name, sub = if (g.has) "In this group: tap to take it out" else null) {
+                        Option(if (g.has) Icons.Rounded.Check else null, g.name, sub = if (g.has) tr("In this group: tap to take it out") else null) {
                             change("group", JSONObject().put("group", g.id).put("on", !g.has))
                         }
                     }
-                    Option(Icons.Rounded.Add, "New group with this channel…") { newGroup = true }
+                    Option(Icons.Rounded.Add, tr("New group with this channel…")) { newGroup = true }
                     HorizontalDivider(color = Line, modifier = Modifier.padding(vertical = 6.dp))
-                    Option(Icons.Rounded.Edit, "Rename…", sub = if (i.renamed) "Provider's name: " + i.provider else null) { renaming = true }
-                    Option(Icons.Rounded.VisibilityOff, "Hide on the TV", sub = "Bring it back in the TV's Settings > Channels and groups") { hiding = true }
-                    Option(Icons.Rounded.Checklist, "Show or hide channels…", sub = "Tick the channels to keep in this group") { managing = true }
+                    Option(Icons.Rounded.Edit, tr("Rename…"), sub = if (i.renamed) "Provider's name: " + i.provider else null) { renaming = true }
+                    Option(Icons.Rounded.VisibilityOff, tr("Hide on the TV"), sub = tr("Bring it back in the TV's Settings > Channels and groups")) { hiding = true }
+                    Option(Icons.Rounded.Checklist, tr("Show or hide channels…"), sub = tr("Tick the channels to keep in this group")) { managing = true }
                 }
             }
         }
     }
 
-    if (renaming) NameDialog("Rename channel", info?.name ?: c.name, "Rename", extra = if (info?.renamed == true) "Use the provider's name" else null,
+    if (renaming) NameDialog(tr("Rename channel"), info?.name ?: c.name, tr("Rename"), extra = if (info?.renamed == true) tr("Use the provider's name") else null,
         onExtra = { renaming = false; change("rename", JSONObject().put("name", "")) },
         onDismiss = { renaming = false }) { n -> renaming = false; change("rename", JSONObject().put("name", n)) }
-    if (newGroup) NameDialog("New group", "", "Create", onDismiss = { newGroup = false }) { n -> newGroup = false; change("newgroup", JSONObject().put("name", n)) }
+    if (newGroup) NameDialog(tr("New group"), "", tr("Create"), onDismiss = { newGroup = false }) { n -> newGroup = false; change("newgroup", JSONObject().put("name", n)) }
     if (managing) VisibilityScreen(model, id, group, c.k) { managing = false; onDismiss() }
     if (hiding) AlertDialog(
         onDismissRequest = { hiding = false }, containerColor = Panel,
-        title = { Text("Hide " + (info?.name ?: c.name) + "?") },
-        text = { Text("It leaves the TV's lists and the guide.  Bring it back in the TV's Settings > Channels and groups, or in the web editor.") },
-        confirmButton = { TextButton(onClick = { hiding = false; change("hide", JSONObject().put("on", true), close = true) }) { Text("Hide") } },
-        dismissButton = { TextButton(onClick = { hiding = false }) { Text("Cancel") } },
+        title = { Text(tr("Hide {x}?", "x" to (info?.name ?: c.name))) },
+        text = { Text(tr("It leaves the TV's lists and the guide.  Bring it back in the TV's Settings > Channels and groups, or in the web editor.")) },
+        confirmButton = { TextButton(onClick = { hiding = false; change("hide", JSONObject().put("on", true), close = true) }) { Text(tr("Hide")) } },
+        dismissButton = { TextButton(onClick = { hiding = false }) { Text(tr("Cancel")) } },
     )
 }
 
@@ -185,6 +187,6 @@ private fun NameDialog(title: String, start: String, ok: String, extra: String? 
             }
         },
         confirmButton = { TextButton(onClick = { onOk(t.trim()) }, enabled = t.isNotBlank()) { Text(ok) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel")) } },
     )
 }

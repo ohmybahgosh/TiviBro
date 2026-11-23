@@ -2,6 +2,8 @@
    where the 12-character code from the TV is typed. */
 package app.tivibro.phone.ui
 
+import app.tivibro.phone.tr
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -76,7 +78,7 @@ import kotlinx.coroutines.launch
 private fun Bar(title: String, onBack: () -> Unit, actions: @Composable () -> Unit = {}) {
     TopAppBar(
         title = { Text(title) },
-        navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") } },
+        navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, tr("Back")) } },
         actions = { actions() },
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Ink),
     )
@@ -101,23 +103,23 @@ fun AddScreen(
     LaunchedEffect(Unit) { onSearch() }
     Scaffold(containerColor = Ink, topBar = { Bar("Add a TV", onBack) }, snackbarHost = { SnackbarHost(snack) }) { pad ->
         Column(Modifier.padding(pad).fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp).imePadding()) {
-            Text("On the TV, open TiviBro: Settings, Phone app and web editor, Pair the TiviBro app.", color = Muted, style = MaterialTheme.typography.bodyLarge)
+            Text(tr("On the TV, open TiviBro: Settings, Phone app and web editor, Pair the TiviBro app."), color = Muted, style = MaterialTheme.typography.bodyLarge)
             Spacer(Modifier.height(20.dp))
             Button(onClick = onScan, modifier = Modifier.fillMaxWidth().height(56.dp)) {
-                Icon(Icons.Rounded.QrCodeScanner, null); Spacer(Modifier.width(10.dp)); Text("Scan the code on the TV")
+                Icon(Icons.Rounded.QrCodeScanner, null); Spacer(Modifier.width(10.dp)); Text(tr("Scan the code on the TV"))
             }
             Spacer(Modifier.height(28.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("TVs on this network", style = MaterialTheme.typography.titleSmall, color = Muted, modifier = Modifier.weight(1f))
+                Text(tr("TVs on this network"), style = MaterialTheme.typography.titleSmall, color = Muted, modifier = Modifier.weight(1f))
                 if (found == null) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-                else IconButton(onClick = onSearch) { Icon(Icons.Rounded.Refresh, "Search again") }
+                else IconButton(onClick = onSearch) { Icon(Icons.Rounded.Refresh, tr("Search again")) }
             }
             Spacer(Modifier.height(6.dp))
             Surface(color = Panel, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth()) {
                 Column {
                     when {
-                        found == null -> Text("Looking…", color = Muted, modifier = Modifier.padding(18.dp))
-                        found.isEmpty() -> Text("No TV answered.  Check that the TV is on, TiviBro's phone app connection is on, and the phone is on the same Wi-Fi.", color = Muted, modifier = Modifier.padding(18.dp))
+                        found == null -> Text(tr("Looking…"), color = Muted, modifier = Modifier.padding(18.dp))
+                        found.isEmpty() -> Text(tr("No TV answered.  Check that the TV is on, TiviBro's phone app connection is on, and the phone is on the same Wi-Fi."), color = Muted, modifier = Modifier.padding(18.dp))
                         else -> found.forEachIndexed { i, f ->
                             if (i > 0) HorizontalDivider(color = Line)
                             Row(Modifier.fillMaxWidth().clickable { onPick(f.host, f.port, f.id, f.name) }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -134,27 +136,27 @@ fun AddScreen(
                 }
             }
             Spacer(Modifier.height(20.dp))
-            if (!manual) TextButton(onClick = { manual = true }) { Text("Enter the TV's address instead") }
+            if (!manual) TextButton(onClick = { manual = true }) { Text(tr("Enter the TV's address instead")) }
             else {
                 OutlinedTextField(
                     value = addr, onValueChange = { addr = it.trim(); addrErr = null }, singleLine = true,
-                    label = { Text("TV address, like 192.168.1.20") }, isError = addrErr != null,
-                    supportingText = { Text(addrErr ?: "Shown on the TV under Settings, Phone app and web editor, Address") },
+                    label = { Text(tr("TV address, like 192.168.1.20")) }, isError = addrErr != null,
+                    supportingText = { Text(addrErr ?: tr("Shown on the TV under Settings, Phone app and web editor, Address")) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Go),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(8.dp))
                 Button(enabled = !checking && addr.isNotBlank(), onClick = {
                     val hp = splitHostPort(addr)
-                    if (hp == null) { addrErr = "That doesn't look like an address."; return@Button }
+                    if (hp == null) { addrErr = tr("That doesn't look like an address."); return@Button }
                     checking = true
                     scope.launch {
                         try { val (id, name) = hello(hp.first, hp.second); onPick(hp.first, hp.second, id, name) }
                         catch (e: TbException) { addrErr = e.message }
-                        catch (e: Exception) { addrErr = "No TiviBro answered at ${hp.first}." }
+                        catch (e: Exception) { addrErr = tr("No TiviBro answered at {x}.", "x" to hp.first) }
                         checking = false
                     }
-                }, modifier = Modifier.fillMaxWidth()) { Text(if (checking) "Checking…" else "Next") }
+                }, modifier = Modifier.fillMaxWidth()) { Text(if (checking) tr("Checking…") else tr("Next")) }
             }
         }
     }
@@ -167,9 +169,9 @@ fun CodeScreen(name: String, busy: Boolean, error: String?, onBack: () -> Unit, 
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
     val code = Crypto.normCode(v.text)
-    Scaffold(containerColor = Ink, topBar = { Bar("Pair with $name", onBack) }) { pad ->
+    Scaffold(containerColor = Ink, topBar = { Bar(tr("Pair with {x}", "x" to name), onBack) }) { pad ->
         Column(Modifier.padding(pad).fillMaxSize().padding(24.dp).imePadding(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Type the code shown on the TV.  It is under Settings, Phone app and web editor, Pair the TiviBro app.", color = Muted, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
+            Text(tr("Type the code shown on the TV.  It is under Settings, Phone app and web editor, Pair the TiviBro app."), color = Muted, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
             Spacer(Modifier.height(28.dp))
             OutlinedTextField(
                 value = v,
@@ -189,10 +191,10 @@ fun CodeScreen(name: String, busy: Boolean, error: String?, onBack: () -> Unit, 
             if (error != null) { Spacer(Modifier.height(10.dp)); Text(error, color = Bad, textAlign = TextAlign.Center) }
             Spacer(Modifier.height(24.dp))
             Button(onClick = { onPair(code) }, enabled = code.length == 12 && !busy, modifier = Modifier.fillMaxWidth().height(54.dp)) {
-                if (busy) { CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = TextHi); Spacer(Modifier.width(10.dp)); Text("Pairing…") } else Text("Pair")
+                if (busy) { CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = TextHi); Spacer(Modifier.width(10.dp)); Text(tr("Pairing…")) } else Text(tr("Pair"))
             }
             Spacer(Modifier.height(16.dp))
-            Text("The code never leaves this phone: it only proves to the TV that you can see its screen.", color = Muted, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
+            Text(tr("The code never leaves this phone: it only proves to the TV that you can see its screen."), color = Muted, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
         }
     }
 }

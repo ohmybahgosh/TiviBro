@@ -73,6 +73,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        I18n.init(this)            // the phone's language (Android starts the activity again when it changes)
         enableEdgeToEdge()
         handle(intent, fresh = savedInstanceState == null)
         runCatching { BackupWorker.schedule(this) }
@@ -165,7 +166,7 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
         val opts = GmsBarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_QR_CODE).enableAutoZoom().build()
         GmsBarcodeScanning.getClient(ctx, opts).startScan()
             .addOnSuccessListener { b -> model.pairWithLink(b.rawValue) }
-            .addOnFailureListener { model.say("The code scanner isn't available on this phone.  Pick the TV from the list and type the code instead.") }
+            .addOnFailureListener { model.say(tr("The code scanner isn't available on this phone.  Pick the TV from the list and type the code instead.")) }
     }
 
     // Tablets, foldables and landscape: the app keeps a comfortable width in the middle instead of stretching.
@@ -187,7 +188,7 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
                 onOff = { model.turnOff(it) },
                 onForget = { model.forget(it) },
                 onAddress = { id, a -> model.setAddress(id, a) },
-                onTile = { model.tileTv = it; tile = it; model.say("The Quick Settings tile now opens TiviBro on this TV") },
+                onTile = { model.tileTv = it; tile = it; model.say(tr("The Quick Settings tile now opens TiviBro on this TV")) },
                 onRepair = { nav.navigate("add") },
                 onBackups = { id -> go(id, "backups") },
                 bleLog = { model.bleLog() },
@@ -224,7 +225,7 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
             OfflineEditorScreen(
                 title = model.backupName(b), tvId = id,
                 copy = { model.offlineCopy(b, pid) }, extras = { model.offlineExtras(b, pid) },
-                onKeep = { saved, label -> scope.launch { runCatching { model.keepEdited(b, pid, saved, label) }.onSuccess { model.say("Kept as a new backup.  Restore it on the TV from Backups.") }.onFailure { model.say(it.message ?: "Couldn't keep it") } } },
+                onKeep = { saved, label -> scope.launch { runCatching { model.keepEdited(b, pid, saved, label) }.onSuccess { model.say(tr("Kept as a new backup.  Restore it on the TV from Backups.")) }.onFailure { model.say(it.message ?: tr("Couldn't keep it")) } } },
                 onBack = { nav.popBackStack() },
             )
         }

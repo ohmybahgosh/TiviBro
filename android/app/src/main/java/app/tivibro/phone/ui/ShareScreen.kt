@@ -4,6 +4,8 @@
    travels sealed: it holds the login. */
 package app.tivibro.phone.ui
 
+import app.tivibro.phone.tr
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -65,7 +67,7 @@ fun ShareScreen(model: AppModel, text: String, tvs: List<TvUi>, onBack: () -> Un
     Scaffold(
         containerColor = Ink,
         topBar = {
-            TopAppBar(title = { Text("Add a playlist") }, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") } },
+            TopAppBar(title = { Text("Add a playlist") }, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, tr("Back")) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Ink))
         },
     ) { pad ->
@@ -76,38 +78,38 @@ fun ShareScreen(model: AppModel, text: String, tvs: List<TvUi>, onBack: () -> Un
                     Spacer(Modifier.width(12.dp))
                     Column {
                         when {
-                            link == null -> { Text("No link found", fontWeight = FontWeight.SemiBold); Text("Share the link your provider sent: the long one with your username and password in it.", color = Muted, style = MaterialTheme.typography.bodySmall) }
-                            link.bare -> { Text("Only a server address", fontWeight = FontWeight.SemiBold); Text("${link.host} has no login in it.  Share the full link your provider sent, or add it on the TV.", color = Muted, style = MaterialTheme.typography.bodySmall) }
-                            link.xtream -> { Text("Xtream Codes login", fontWeight = FontWeight.SemiBold); Text("${link.host}, username ${link.user}.  The password stays hidden.", color = Muted, style = MaterialTheme.typography.bodySmall) }
+                            link == null -> { Text(tr("No link found"), fontWeight = FontWeight.SemiBold); Text(tr("Share the link your provider sent: the long one with your username and password in it."), color = Muted, style = MaterialTheme.typography.bodySmall) }
+                            link.bare -> { Text(tr("Only a server address"), fontWeight = FontWeight.SemiBold); Text(tr("{x} has no login in it.  Share the full link your provider sent, or add it on the TV.", "x" to link.host), color = Muted, style = MaterialTheme.typography.bodySmall) }
+                            link.xtream -> { Text(tr("Xtream Codes login"), fontWeight = FontWeight.SemiBold); Text(tr("{x}, username {y}.  The password stays hidden.", "x" to link.host, "y" to link.user), color = Muted, style = MaterialTheme.typography.bodySmall) }
                             else -> { Text("M3U playlist", fontWeight = FontWeight.SemiBold); Text(link.host, color = Muted, style = MaterialTheme.typography.bodySmall) }
                         }
                     }
                 }
             }
-            if (link == null || link.bare) { Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("Close") }; return@Column }
+            if (link == null || link.bare) { Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text(tr("Close")) }; return@Column }
             if (tvs.isEmpty()) {
-                Text("Pair your TV first: on the TV, open TiviBro, Settings, Phone app and web editor, Pair the TiviBro app.", color = Muted)
+                Text(tr("Pair your TV first: on the TV, open TiviBro, Settings, Phone app and web editor, Pair the TiviBro app."), color = Muted)
                 Button(onClick = onPair, modifier = Modifier.fillMaxWidth()) { Text("Add a TV") }
                 return@Column
             }
             done?.let { msg ->
                 Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Rounded.CheckCircle, null, tint = Good); Spacer(Modifier.width(10.dp)); Text(msg) }
-                Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("Done") }
+                Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text(tr("Done")) }
                 return@Column
             }
-            Text("Add it to", style = MaterialTheme.typography.labelLarge, color = Muted)
+            Text(tr("Add it to"), style = MaterialTheme.typography.labelLarge, color = Muted)
             tvs.forEach { u ->
                 Row(Modifier.fillMaxWidth().clickable { pick = u.tv.id }, verticalAlignment = Alignment.CenterVertically) {
                     RadioButton(selected = pick == u.tv.id, onClick = { pick = u.tv.id })
                     Column {
                         Text(u.tv.name)
-                        Text(if (u.power == Power.ON) "On" else if (u.power == Power.STARTING) "On, connection starting" else if (u.power == Power.OFF) "Off or not reachable" else "…", color = Muted, style = MaterialTheme.typography.labelSmall)
+                        Text(if (u.power == Power.ON) tr("On") else if (u.power == Power.STARTING) tr("On, connection starting") else if (u.power == Power.OFF) tr("Off or not reachable") else "…", color = Muted, style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }
             OutlinedTextField(name, { name = it }, singleLine = true, label = { Text("Name (optional)") }, modifier = Modifier.fillMaxWidth())
             Row(Modifier.fillMaxWidth().clickable { use = !use }, verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(use, { use = it }); Text("Switch the TV to it when it's added")
+                Checkbox(use, { use = it }); Text(tr("Switch the TV to it when it's added"))
             }
             error?.let { Text(it, color = Bad) }
             if (error != null) TriedLog(tried)
@@ -118,16 +120,16 @@ fun ShareScreen(model: AppModel, text: String, tvs: List<TvUi>, onBack: () -> Un
                     scope.launch {
                         try { done = model.addPlaylist(id, link.link, name.trim(), use) }
                         catch (e: TbException) { error = e.message; tried = e.details }
-                        catch (e: Exception) { error = "The TV didn't answer.  Is it on, and on the same network?" }
+                        catch (e: Exception) { error = tr("The TV didn't answer.  Is it on, and on the same network?") }
                         finally { busy = false }
                     }
                 },
                 enabled = !busy && pick != null, modifier = Modifier.fillMaxWidth().height(52.dp),
             ) {
-                if (busy) { CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp); Spacer(Modifier.width(10.dp)); Text("Checking the login on the TV…") }
-                else Text("Add to the TV")
+                if (busy) { CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp); Spacer(Modifier.width(10.dp)); Text(tr("Checking the login on the TV…")) }
+                else Text(tr("Add to the TV"))
             }
-            Text("The TV checks the login and loads the channels, then shows them.  The link is sent encrypted and isn't kept on this phone.", color = Muted, style = MaterialTheme.typography.bodySmall)
+            Text(tr("The TV checks the login and loads the channels, then shows them.  The link is sent encrypted and isn't kept on this phone."), color = Muted, style = MaterialTheme.typography.bodySmall)
         }
     }
 }

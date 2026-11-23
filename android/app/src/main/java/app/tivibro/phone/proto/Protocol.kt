@@ -3,6 +3,8 @@
    and checking every answer.  Plain JVM code, unit tested against the TV's real service/companion.js. */
 package app.tivibro.phone.proto
 
+import app.tivibro.phone.tr
+
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.net.HttpURLConnection
@@ -213,27 +215,27 @@ object Pairing {
     fun hello(host: String, port: Int, timeoutMs: Int = 4000): Hello {
         val r = http(host, port, "GET", "/v1/hello", null, timeoutMs = timeoutMs)
         val j = r.json
-        if (r.status != 200 || j == null || j.optString("app") != "TiviBro") throw TbException("No TiviBro at $host:$port", "missing")
+        if (r.status != 200 || j == null || j.optString("app") != "TiviBro") throw TbException(tr("No TiviBro at {x}:{y}", "x" to host, "y" to port), "missing")
         return Hello(j.getString("id"), j.optString("name", "TV"), j.optString("version", ""), j.optBoolean("pairing"), j.optLong("now"), j.optInt("api", 1))
     }
 
     /** Pair with the code shown on the TV.  The code itself is never sent. */
     fun pair(host: String, port: Int, code: String, phoneName: String, phoneModel: String, expectId: String? = null): Tv {
         val h = hello(host, port)
-        if (expectId != null && h.id != expectId) throw TbException("That address is a different TV.", "other")
+        if (expectId != null && h.id != expectId) throw TbException(tr("That address is a different TV."), "other")
         val kp = Crypto.pairKey(code, h.id)
         val nonce = Crypto.nonce()
-        val name = phoneName.take(40).ifBlank { "Phone" }
+        val name = phoneName.take(40).ifBlank { tr("Phone") }
         val body = JSONObject()
             .put("nonce", nonce)
             .put("phone", JSONObject().put("name", name).put("model", phoneModel.take(40)).put("platform", "android"))
             .put("proof", Crypto.hmacHex(kp, "tivibro-pair-v1\n${h.id}\n$nonce\n$name"))
         val r = http(host, port, "POST", "/v1/pair", body.toString().toByteArray(Charsets.UTF_8))
-        val j = r.json ?: throw TbException("The TV gave an answer TiviBro doesn't understand.", "bad")
-        if (r.status != 200) throw TbException(j.optString("error", "Pairing failed (${r.status})."), j.optString("code"))
+        val j = r.json ?: throw TbException(tr("The TV gave an answer TiviBro doesn't understand."), "bad")
+        if (r.status != 200) throw TbException(j.optString("error", tr("Pairing failed ({x}).", "x" to r.status)), j.optString("code"))
         val phoneId = j.getString("phone")
         if (!Crypto.same(j.optString("proof"), Crypto.hmacHex(kp, "tivibro-paired-v1\n$phoneId\n$nonce")))
-            throw TbException("The TV did not prove it knows the code.  Is this the right TV?", "proof")
+            throw TbException(tr("The TV did not prove it knows the code.  Is this the right TV?"), "proof")
         val k = j.getJSONObject("key")
         val key = Crypto.openKey(kp, unb64(k.getString("iv")), unb64(k.getString("data")), unb64(k.getString("tag")), phoneId)
         val tv = j.getJSONObject("tv")
@@ -273,11 +275,11 @@ class TvClient(private val tv: Tv, private val timeoutMs: Int = 8000) {
         if (r.sig == null || !Crypto.same(r.sig.lowercase(), want)) {
             val j = raw
             // The one answer the TV can't sign: it no longer knows this phone.  Anyone could send that, so say so, but keep the TV.
-            throw TbException(j?.optString("error")?.ifBlank { null } ?: "The TV's answer was not signed (${r.status}).", j?.optString("code") ?: "", unsigned = true)
+            throw TbException(j?.optString("error")?.ifBlank { null } ?: tr("The TV's answer was not signed ({x}).", "x" to r.status), j?.optString("code") ?: "", unsigned = true)
         }
         // A sealed answer is opened here (errors from before the TV could open the request come back plain).
         val j = if (raw != null && open != null && raw.has("sealed")) open(raw.getJSONObject("sealed")) else raw
-        if (j == null) throw TbException("The TV gave an answer TiviBro doesn't understand.", "bad")
+        if (j == null) throw TbException(tr("The TV gave an answer TiviBro doesn't understand."), "bad")
         if (r.status == 401 && j.optString("code") == "clock" && j.optLong("now") > 0) skew[tv.id] = j.optLong("now") - System.currentTimeMillis()
         if (r.status >= 400) throw TbException(j.optString("error", "Failed (${r.status})."), j.optString("code"),
             details = j.optJSONArray("log")?.let { a -> (0 until a.length()).map { a.optString(it) }.filter { it.isNotBlank() } } ?: emptyList())
@@ -290,7 +292,8 @@ class TvClient(private val tv: Tv, private val timeoutMs: Int = 8000) {
      * or { pending } when TiviBro didn't answer in time, or { closed } with [noOpen] and TiviBro closed.
      */
     fun ask(what: String, args: JSONObject = JSONObject(), seal: Boolean = false, noOpen: Boolean = false): JSONObject {
-        val body = JSONObject().put("what", what).put("args", args)
+        // The app's language: TiviBro on the TV answers in it (I18n.within in phone.js).
+        val body = JSONObject().put("what", what).put("args", args).put("lang", app.tivibro.phone.I18n.lang)
         if (noOpen) body.put("noOpen", true)
         if (!seal) return call("POST", "/v1/ask", body)
         return clocked {
@@ -320,8 +323,8 @@ class TvClient(private val tv: Tv, private val timeoutMs: Int = 8000) {
         val j = call("POST", "/v1/editor", JSONObject())
         return when (j.optString("state")) {
             "ready" -> EditorState.Ready(j.getString("url"))
-            "starting" -> EditorState.Starting(j.optString("message", "Starting the editor on the TV…"))
-            else -> throw TbException(j.optString("error", "The TV could not start the editor."), "editor")
+            "starting" -> EditorState.Starting(j.optString("message", tr("Starting the editor on the TV…")))
+            else -> throw TbException(j.optString("error", tr("The TV could not start the editor.")), "editor")
         }
     }
 }
@@ -418,7 +421,7 @@ data class TvInput(val id: Int, val label: String, val type: String, val value: 
     val secret get() = type == "password"
     companion object {
         fun from(j: JSONObject?): TvInput? = j?.takeIf { it.has("id") }?.let {
-            TvInput(it.optInt("id"), it.optString("label", "Text"), it.optString("type", "text"), it.optString("value", ""), it.optInt("has") == 1 || it.optString("value").isNotEmpty(), it.optInt("submit") == 1, it.optInt("focus") == 1)
+            TvInput(it.optInt("id"), it.optString("label", tr("Text")), it.optString("type", "text"), it.optString("value", ""), it.optInt("has") == 1 || it.optString("value").isNotEmpty(), it.optInt("submit") == 1, it.optInt("focus") == 1)
         }
     }
 }

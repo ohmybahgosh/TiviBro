@@ -4,6 +4,8 @@
    TV (Backups and restore points).  See app/js/phone.js and app/js/settings.js on the TV. */
 package app.tivibro.phone.proto
 
+import app.tivibro.phone.tr
+
 import org.json.JSONObject
 
 /** A question from the TV.  [kind] is prompt, menu or confirm. */
@@ -47,8 +49,8 @@ data class Reminder(
         or "" when it was set by hand. */
     val from: String get() = when {
         watch.isBlank() -> ""
-        watch.startsWith("team:") -> "From My teams"
-        else -> "From your watchlist: $watch"
+        watch.startsWith("team:") -> tr("From My teams")
+        else -> tr("From your watchlist: {x}", "x" to watch)
     }
 
     companion object {

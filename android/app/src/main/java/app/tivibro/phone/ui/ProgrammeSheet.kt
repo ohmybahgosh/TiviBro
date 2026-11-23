@@ -6,6 +6,9 @@
    guide's rows. */
 package app.tivibro.phone.ui
 
+import app.tivibro.phone.tr
+import app.tivibro.phone.trn
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -67,18 +70,19 @@ import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 
 private fun clock(t: Long): String = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT).format(java.util.Date(t))
-private fun minsOf(ms: Long): String { val m = maxOf(1L, ms / 60_000); return if (m >= 60) "${m / 60} h" + (if (m % 60 > 0) " ${m % 60} min" else "") else "$m min" }
+private fun minsOf(ms: Long): String { val m = maxOf(1L, ms / 60_000); return if (m >= 60) tr("{n} h", "n" to m / 60) + (if (m % 60 > 0) " " + tr("{n} min", "n" to m % 60) else "") else tr("{n} min", "n" to m) }
 private fun dayOf(t: Long, now: Long): String {
     val d = java.util.Calendar.getInstance().apply { timeInMillis = t }; val n = java.util.Calendar.getInstance().apply { timeInMillis = now }
     if (d.get(java.util.Calendar.YEAR) == n.get(java.util.Calendar.YEAR) && d.get(java.util.Calendar.DAY_OF_YEAR) == n.get(java.util.Calendar.DAY_OF_YEAR)) return ""
     n.add(java.util.Calendar.DAY_OF_YEAR, 1)
-    if (d.get(java.util.Calendar.YEAR) == n.get(java.util.Calendar.YEAR) && d.get(java.util.Calendar.DAY_OF_YEAR) == n.get(java.util.Calendar.DAY_OF_YEAR)) return "Tomorrow "
+    if (d.get(java.util.Calendar.YEAR) == n.get(java.util.Calendar.YEAR) && d.get(java.util.Calendar.DAY_OF_YEAR) == n.get(java.util.Calendar.DAY_OF_YEAR)) return tr("Tomorrow") + " "
     return java.text.SimpleDateFormat("EEE d MMM ", java.util.Locale.getDefault()).format(java.util.Date(t))
 }
 
 // The TV guide's colours for each kind (its default theme).
-private val KINDS = mapOf("m" to ("Movie" to Color(0xFFB48CFF)), "s" to ("Sports" to Color(0xFF3DDC97)), "n" to ("News" to Color(0xFFF2B33D)),
-    "c" to ("Kids" to Color(0xFFFF7EB6)), "d" to ("Documentary" to Color(0xFF33C9E1)))
+// A getter, not a list made once: the names come out in the app's language each time (tr).
+private val KINDS get() = mapOf("m" to (tr("Movie") to Color(0xFFB48CFF)), "s" to (tr("Sports") to Color(0xFF3DDC97)), "n" to (tr("News") to Color(0xFFF2B33D)),
+    "c" to (tr("Kids") to Color(0xFFFF7EB6)), "d" to (tr("Documentary") to Color(0xFF33C9E1)))
 
 /** The guide's marks for a programme: its kind in its colour, NEW, and the season and episode.  Nothing when there are none. */
 @OptIn(ExperimentalLayoutApi::class)
@@ -105,16 +109,16 @@ fun WhenLine(p: Programme, now: Long) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         when {
             p.on(now) -> {
-                StatusTag(true, "Playing now")
+                StatusTag(true, tr("Playing now"))
                 Spacer(Modifier.width(8.dp))
-                Text(clock(p.start) + " – " + clock(p.end) + "  ·  " + minsOf(p.end - now) + " left", color = Muted, style = MaterialTheme.typography.labelMedium)
+                Text(clock(p.start) + " – " + clock(p.end) + "  ·  " + tr("{x} left", "x" to minsOf(p.end - now)), color = Muted, style = MaterialTheme.typography.labelMedium)
             }
             p.start > now -> {
-                StatusTag(false, "Starts at " + dayOf(p.start, now) + clock(p.start))
+                StatusTag(false, tr("Starts at {x}", "x" to dayOf(p.start, now) + clock(p.start)))
                 Spacer(Modifier.width(8.dp))
-                Text(if (p.start - now < 86_400_000) "in " + minsOf(p.start - now) else clock(p.start) + " – " + clock(p.end), color = Muted, style = MaterialTheme.typography.labelMedium)
+                Text(if (p.start - now < 86_400_000) tr("in {x}", "x" to minsOf(p.start - now)) else clock(p.start) + " – " + clock(p.end), color = Muted, style = MaterialTheme.typography.labelMedium)
             }
-            else -> Text("Aired " + dayOf(p.start, now) + clock(p.start) + " – " + clock(p.end), color = Muted, style = MaterialTheme.typography.labelMedium)
+            else -> Text(tr("Aired {x}", "x" to dayOf(p.start, now) + clock(p.start) + " – " + clock(p.end)), color = Muted, style = MaterialTheme.typography.labelMedium)
         }
     }
 }
@@ -133,7 +137,7 @@ fun ProgrammeSheet(model: AppModel, id: String, key: String, start: Long, first:
     val scope = rememberCoroutineScope()
     val now = System.currentTimeMillis()
     LaunchedEffect(key, start) {
-        try { d = model.prog(id, key, start) } catch (e: TbException) { error = e.message } catch (e: Exception) { error = "The TV didn't answer." }
+        try { d = model.prog(id, key, start) } catch (e: TbException) { error = e.message } catch (e: Exception) { error = tr("The TV didn't answer.") }
     }
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = Panel) {
         Column(Modifier.fillMaxHeight(0.92f).verticalScroll(rememberScrollState()).padding(bottom = 32.dp)) {
@@ -168,20 +172,20 @@ fun ProgrammeSheet(model: AppModel, id: String, key: String, start: Long, first:
                 WhenLine(p, now)
                 if (p.on(now)) LinearProgressIndicator(progress = { ((now - p.start).toFloat() / (p.end - p.start)).coerceIn(0f, 1f) }, color = Accent, trackColor = Panel2,
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp).height(4.dp))
-                val facts = listOfNotNull(tm?.facts, if ((x?.catchupDays ?: 0) > 0) "Catch-up ${x!!.catchupDays} days" else null).filter { it.isNotBlank() }.joinToString("  ·  ")
+                val facts = listOfNotNull(tm?.facts, if ((x?.catchupDays ?: 0) > 0) trn(x!!.catchupDays, "Catch-up {n} day", "Catch-up {n} days") else null).filter { it.isNotBlank() }.joinToString("  ·  ")
                 if (facts.isNotBlank()) Text(facts, color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 10.dp))
                 // The guide's description; TMDB's summary of the episode, or of the movie or show, when it adds something.
                 val desc = p.desc
                 when {
                     desc.isNotBlank() -> Text(desc, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 10.dp))
-                    x == null && error != null -> Text(if (error!!.contains("unknown question", true)) "Update TiviBro on the TV to see everything about a programme here." else error!!,
+                    x == null && error != null -> Text(if (error!!.contains("unknown question", true)) tr("Update TiviBro on the TV to see everything about a programme here.") else error!!,
                         color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 10.dp))
-                    x == null || x.descPending -> Text("Getting the description from the TV…", color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 10.dp))
-                    tm == null -> Text("No description in the guide.", color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 10.dp))
+                    x == null || x.descPending -> Text(tr("Getting the description from the TV…"), color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 10.dp))
+                    tm == null -> Text(tr("No description in the guide."), color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 10.dp))
                 }
                 val more = tm?.epPlot?.ifBlank { null } ?: tm?.plot?.ifBlank { null }
                 if (more != null && !desc.contains(more.take(40))) {
-                    Text(if (tm?.epPlot.isNullOrBlank()) "From TMDB" else "This episode, from TMDB", color = Muted, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 12.dp))
+                    Text(if (tm?.epPlot.isNullOrBlank()) tr("From TMDB") else tr("This episode, from TMDB"), color = Muted, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 12.dp))
                     Text(more, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 2.dp))
                 }
             }
@@ -190,17 +194,17 @@ fun ProgrammeSheet(model: AppModel, id: String, key: String, start: Long, first:
                 val set = reminder ?: p.reminder
                 FlowRow2(Modifier.padding(16.dp, 16.dp, 16.dp, 0.dp)) {
                     if (p.on(now)) Button(onClick = { onPlay(x.key); onDismiss() }, enabled = playing != x.key) {
-                        Icon(Icons.Rounded.PlayArrow, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text(if (playing == x.key) "On the TV" else "Watch on TV")
+                        Icon(Icons.Rounded.PlayArrow, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text(if (playing == x.key) tr("On the TV") else tr("Watch on TV"))
                     }
                     if (x.fromStart) OutlinedButton(onClick = {
-                        scope.launch { try { model.catchup(id, x.key, p.start); model.say("Playing from the start on the TV"); onDismiss() } catch (e: Exception) { model.say(e.message ?: "The TV didn't answer.") } }
-                    }) { Icon(Icons.Rounded.Replay, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("Watch from the start") }
+                        scope.launch { try { model.catchup(id, x.key, p.start); model.say(tr("Playing from the start on the TV")); onDismiss() } catch (e: Exception) { model.say(e.message ?: tr("The TV didn't answer.")) } }
+                    }) { Icon(Icons.Rounded.Replay, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text(tr("Watch from the start")) }
                     if (p.start > now) OutlinedButton(onClick = {
                         scope.launch {
-                            try { reminder = model.remind(id, x.key, p.start, !set); model.say(if (!set) "Reminder set on the TV for ${clock(p.start)}" else "Reminder removed") }
-                            catch (e: Exception) { model.say(e.message ?: "The TV didn't answer.") }
+                            try { reminder = model.remind(id, x.key, p.start, !set); model.say(if (!set) tr("Reminder set on the TV for {x}", "x" to (clock(p.start))) else tr("Reminder removed")) }
+                            catch (e: Exception) { model.say(e.message ?: tr("The TV didn't answer.")) }
                         }
-                    }) { Icon(if (set) Icons.Rounded.NotificationsActive else Icons.Rounded.Notifications, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text(if (set) "Cancel the reminder" else "Remind me") }
+                    }) { Icon(if (set) Icons.Rounded.NotificationsActive else Icons.Rounded.Notifications, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text(if (set) tr("Cancel the reminder") else tr("Remind me")) }
                     // Record to the TV's USB drive (an older TiviBro says nothing about it, and the TV explains when there is no drive).
                     if (p.end > now) {
                         val (rs, rid) = rec ?: (p.rec to x.recId)
@@ -213,29 +217,29 @@ fun ProgrammeSheet(model: AppModel, id: String, key: String, start: Long, first:
                                     rec = if (mine == null) "" to "" else (if (mine.recording) "rec" else "sched") to mine.id
                                     if (l.msg.isNotBlank()) model.say(l.msg)
                                 } catch (e: TbException) {
-                                    model.say(if ((e.message ?: "").contains("unknown question", true)) "Update TiviBro on the TV to record from here." else e.message ?: "The TV said no")
-                                } catch (e: Exception) { model.say("The TV didn't answer.") }
+                                    model.say(if ((e.message ?: "").contains("unknown question", true)) tr("Update TiviBro on the TV to record from here.") else e.message ?: tr("The TV said no"))
+                                } catch (e: Exception) { model.say(tr("The TV didn't answer.")) }
                                 recBusy = false
                             }
                         }) {
                             Icon(Icons.Rounded.FiberManualRecord, null, Modifier.size(18.dp), tint = if (rs.isBlank()) Accent else Bad); Spacer(Modifier.width(6.dp))
-                            Text(when (rs) { "rec" -> "Stop recording"; "sched" -> "Cancel recording"; else -> "Record" })
+                            Text(when (rs) { "rec" -> tr("Stop recording"); "sched" -> tr("Cancel recording"); else -> tr("Record") })
                         }
                     }
-                    if (onSchedule != null) TextButton(onClick = { onDismiss(); onSchedule() }) { Text("Channel schedule") }
+                    if (onSchedule != null) TextButton(onClick = { onDismiss(); onSchedule() }) { Text(tr("Channel schedule")) }
                 }
                 if (x.more.isNotEmpty()) {
-                    Text("Other showings", color = Muted, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(16.dp, 18.dp, 16.dp, 4.dp))
+                    Text(tr("Other showings"), color = Muted, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(16.dp, 18.dp, 16.dp, 4.dp))
                     x.more.forEach { o ->
                         val on = o.start <= now && o.end > now
                         Row(Modifier.fillMaxWidth().clickable { if (on) { onPlay(o.key); onDismiss() } else scope.launch {
-                            try { model.remind(id, o.key, o.start, true); model.say("Reminder set on the TV for ${clock(o.start)} on ${o.channel}") } catch (e: Exception) { model.say(e.message ?: "The TV didn't answer.") }
+                            try { model.remind(id, o.key, o.start, true); model.say(tr("Reminder set on the TV for {x} on {y}", "x" to (clock(o.start)), "y" to o.channel)) } catch (e: Exception) { model.say(e.message ?: tr("The TV didn't answer.")) }
                         } }.padding(16.dp, 8.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
                                 Text(o.channel, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text(if (on) "Playing now  ·  " + minsOf(o.end - now) + " left" else dayOf(o.start, now) + clock(o.start) + " – " + clock(o.end), color = Muted, style = MaterialTheme.typography.labelSmall)
+                                Text(if (on) tr("Playing now") + "  ·  " + tr("{x} left", "x" to minsOf(o.end - now)) else dayOf(o.start, now) + clock(o.start) + " – " + clock(o.end), color = Muted, style = MaterialTheme.typography.labelSmall)
                             }
-                            Icon(if (on) Icons.Rounded.PlayArrow else Icons.Rounded.Notifications, if (on) "Watch on TV" else "Remind me", tint = if (on) Accent else Muted)
+                            Icon(if (on) Icons.Rounded.PlayArrow else Icons.Rounded.Notifications, if (on) tr("Watch on TV") else tr("Remind me"), tint = if (on) Accent else Muted)
                         }
                     }
                 }

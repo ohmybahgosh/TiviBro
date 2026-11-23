@@ -5,6 +5,8 @@
    screen's shortcut asked for. */
 package app.tivibro.phone.ui
 
+import app.tivibro.phone.tr
+
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -168,8 +170,8 @@ fun TvScreen(
     val pickSubs = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) scope.launch {
             try { model.say(model.sendSubtitles(id, uri)) }
-            catch (e: TbException) { model.say(e.message ?: "Couldn't send it.") }
-            catch (e: Exception) { model.say("Couldn't send it.") }
+            catch (e: TbException) { model.say(e.message ?: tr("Couldn't send it.")) }
+            catch (e: Exception) { model.say(tr("Couldn't send it.")) }
         }
     }
 
@@ -179,7 +181,7 @@ fun TvScreen(
         topBar = {
             TopAppBar(
                 title = { Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") } },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, tr("Back")) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Ink),
             )
         },
@@ -190,7 +192,7 @@ fun TvScreen(
                 Row(Modifier.padding(14.dp, 10.dp), verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = Accent)
                     Spacer(Modifier.width(12.dp))
-                    Text("TiviBro on the TV is busy, for example loading a big playlist.  What you press here goes through when it's done; volume works now.", style = MaterialTheme.typography.bodySmall)
+                    Text(tr("TiviBro on the TV is busy, for example loading a big playlist.  What you press here goes through when it's done; volume works now."), style = MaterialTheme.typography.bodySmall)
                 }
             }
             val inputs = state?.inputs.orEmpty()
@@ -210,7 +212,8 @@ fun TvScreen(
                 indicator = { pos -> if (sel < pos.size) TabRowDefaults.SecondaryIndicator(Modifier.tabIndicatorOffset(pos[sel]), color = Accent) },
                 divider = {},
             ) {
-                tabs.forEach { t -> Tab(selected = cur == t, onClick = { tab = t }, text = { Text(t) }, selectedContentColor = Accent, unselectedContentColor = TextHi) }
+                // The tab names are their ids (shortcuts and links open them by name), shown in the app's language.
+                tabs.forEach { t -> Tab(selected = cur == t, onClick = { tab = t }, text = { Text(tr(t)) }, selectedContentColor = Accent, unselectedContentColor = TextHi) }
             }
             // Back from another tab goes to the remote first, then to the TV list.
             BackHandler(enabled = cur != "Remote") { tab = "Remote" }
@@ -241,14 +244,14 @@ private fun NowPlaying(st: NowState?, now: Long, onKey: (String) -> Unit, onOpen
             when {
                 st == null -> {
                     CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp); Spacer(Modifier.width(12.dp))
-                    Text("Connecting to the TV…", color = Muted)
+                    Text(tr("Connecting to the TV…"), color = Muted)
                 }
                 !st.open -> {
                     Column(Modifier.weight(1f)) {
-                        Text("TiviBro is closed on the TV", fontWeight = FontWeight.SemiBold)
-                        Text("Any button opens it.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                        Text(tr("TiviBro is closed on the TV"), fontWeight = FontWeight.SemiBold)
+                        Text(tr("Any button opens it."), color = Muted, style = MaterialTheme.typography.bodySmall)
                     }
-                    Button(onClick = onOpen) { Text("Open TiviBro") }
+                    Button(onClick = onOpen) { Text(tr("Open TiviBro")) }
                 }
                 st.vodTitle.isNotBlank() -> {
                     Column(Modifier.weight(1f)) {
@@ -266,7 +269,7 @@ private fun NowPlaying(st: NowState?, now: Long, onKey: (String) -> Unit, onOpen
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text((if (st.number.isNotBlank()) st.number + "  " else "") + st.channel, color = Muted, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(st.now?.title ?: "No guide information", fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        Text(st.now?.title ?: tr("No guide information"), fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                         val p = st.now
                         if (p != null && p.end > p.start) {
                             Spacer(Modifier.height(6.dp))
@@ -277,7 +280,7 @@ private fun NowPlaying(st: NowState?, now: Long, onKey: (String) -> Unit, onOpen
                     SubsButton(onSubs)
                     PlayPause(st.paused, onKey)
                 }
-                else -> Text(when (st.tab) { "guide" -> "TiviBro: the guide"; "search" -> "TiviBro: search"; "settings" -> "TiviBro: settings"; "movies" -> "TiviBro: movies"; "shows" -> "TiviBro: shows"; "media" -> "TiviBro: my media"; else -> "TiviBro is open" }, color = Muted)
+                else -> Text(when (st.tab) { "guide" -> tr("TiviBro: the guide"); "search" -> "TiviBro: search"; "settings" -> "TiviBro: settings"; "movies" -> "TiviBro: movies"; "shows" -> "TiviBro: shows"; "media" -> tr("TiviBro: my media"); else -> tr("TiviBro is open") }, color = Muted)
             }
         }
     }
@@ -286,12 +289,12 @@ private fun NowPlaying(st: NowState?, now: Long, onKey: (String) -> Unit, onOpen
 /** Sends a subtitle file from this phone to what the TV plays. */
 @Composable
 private fun SubsButton(onSubs: () -> Unit) {
-    IconButton(onClick = onSubs) { Icon(Icons.Rounded.Subtitles, "Send a subtitle file to the TV", tint = TextHi) }
+    IconButton(onClick = onSubs) { Icon(Icons.Rounded.Subtitles, tr("Send a subtitle file to the TV"), tint = TextHi) }
 }
 
 @Composable
 private fun PlayPause(paused: Boolean, onKey: (String) -> Unit) {
-    IconButton(onClick = { onKey("playpause") }) { Icon(if (paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause, if (paused) "Play" else "Pause", tint = TextHi) }
+    IconButton(onClick = { onKey("playpause") }) { Icon(if (paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause, if (paused) tr("Play") else tr("Pause"), tint = TextHi) }
 }
 
 @Composable
@@ -324,44 +327,44 @@ private fun Remote(volume: Volume?, onKey: (String) -> Unit, onAction: (String) 
     var askOff by remember { mutableStateOf(false) }
     if (askOff) AlertDialog(
         onDismissRequest = { askOff = false }, containerColor = Panel,
-        title = { Text("Turn the TV off?") },
-        text = { Text("Turn on brings it back.") },
-        confirmButton = { TextButton(onClick = { askOff = false; onPowerOff() }) { Text("Turn off") } },
-        dismissButton = { TextButton(onClick = { askOff = false }) { Text("Cancel") } },
+        title = { Text(tr("Turn the TV off?")) },
+        text = { Text(tr("Turn on brings it back.")) },
+        confirmButton = { TextButton(onClick = { askOff = false; onPowerOff() }) { Text(tr("Turn off")) } },
+        dismissButton = { TextButton(onClick = { askOff = false }) { Text(tr("Cancel")) } },
     )
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp, 16.dp, 20.dp, 28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Key(Icons.AutoMirrored.Rounded.ArrowBack, "Back", { onKey("back") })
-            Key(Icons.Rounded.Home, "Channels", { onAction("live") })
-            Key(Icons.Rounded.DateRange, "Guide", { onAction("guide") })
-            Key(Icons.Rounded.Keyboard, "Type a search", onType)
-            Key(Icons.Rounded.PowerSettingsNew, "Turn off", { askOff = true }, tint = Bad)
+            Key(Icons.AutoMirrored.Rounded.ArrowBack, tr("Back"), { onKey("back") })
+            Key(Icons.Rounded.Home, tr("Channels"), { onAction("live") })
+            Key(Icons.Rounded.DateRange, tr("Guide"), { onAction("guide") })
+            Key(Icons.Rounded.Keyboard, tr("Type a search"), onType)
+            Key(Icons.Rounded.PowerSettingsNew, tr("Turn off"), { askOff = true }, tint = Bad)
         }
         Spacer(Modifier.height(26.dp))
         // The pad: arrows round OK.  Hold OK for options, as on the remote.
         Box(Modifier.size(248.dp).clip(CircleShape).background(Panel).border(1.dp, Line, CircleShape)) {
-            Key(Icons.Rounded.KeyboardArrowUp, "Up", { onKey("up") }, Modifier.align(Alignment.TopCenter).padding(top = 8.dp), color = Color.Transparent)
-            Key(Icons.Rounded.KeyboardArrowDown, "Down", { onKey("down") }, Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp), color = Color.Transparent)
-            Key(Icons.Rounded.KeyboardArrowLeft, "Left", { onKey("left") }, Modifier.align(Alignment.CenterStart).padding(start = 8.dp), color = Color.Transparent)
-            Key(Icons.Rounded.KeyboardArrowRight, "Right", { onKey("right") }, Modifier.align(Alignment.CenterEnd).padding(end = 8.dp), color = Color.Transparent)
+            Key(Icons.Rounded.KeyboardArrowUp, tr("Up"), { onKey("up") }, Modifier.align(Alignment.TopCenter).padding(top = 8.dp), color = Color.Transparent)
+            Key(Icons.Rounded.KeyboardArrowDown, tr("Down"), { onKey("down") }, Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp), color = Color.Transparent)
+            Key(Icons.Rounded.KeyboardArrowLeft, tr("Left"), { onKey("left") }, Modifier.align(Alignment.CenterStart).padding(start = 8.dp), color = Color.Transparent)
+            Key(Icons.Rounded.KeyboardArrowRight, tr("Right"), { onKey("right") }, Modifier.align(Alignment.CenterEnd).padding(end = 8.dp), color = Color.Transparent)
             Key(null, "OK", { onKey("ok") }, Modifier.align(Alignment.Center), size = 96.dp, color = Accent, tint = OnAccent, onLong = { onKey("hold") })
         }
-        Text("Hold OK for options", color = Muted, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 8.dp))
+        Text(tr("Hold OK for options"), color = Muted, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 8.dp))
         Spacer(Modifier.height(22.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Pill("CH", { onKey("chup") }, { onKey("chdown") }, Icons.Rounded.KeyboardArrowUp, Icons.Rounded.KeyboardArrowDown)
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Key(Icons.Rounded.PlayArrow, "Play or pause", { onKey("playpause") }, size = 64.dp)
+                Key(Icons.Rounded.PlayArrow, tr("Play or pause"), { onKey("playpause") }, size = 64.dp)
                 Spacer(Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Key(Icons.Rounded.FastRewind, "Rewind", { onKey("rew") }, size = 48.dp)
-                    Key(Icons.Rounded.FastForward, "Fast forward", { onKey("ff") }, size = 48.dp)
+                    Key(Icons.Rounded.FastRewind, tr("Rewind"), { onKey("rew") }, size = 48.dp)
+                    Key(Icons.Rounded.FastForward, tr("Fast forward"), { onKey("ff") }, size = 48.dp)
                 }
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Pill(if (volume != null && volume.level >= 0) "${volume.level}" else "VOL", { onVolume("up") }, { onVolume("down") }, Icons.Rounded.Add, Icons.Rounded.Remove)
                 Spacer(Modifier.height(8.dp))
-                Key(if (volume?.muted == true) Icons.AutoMirrored.Rounded.VolumeOff else Icons.AutoMirrored.Rounded.VolumeUp, "Mute", { onVolume("mute") }, size = 44.dp,
+                Key(if (volume?.muted == true) Icons.AutoMirrored.Rounded.VolumeOff else Icons.AutoMirrored.Rounded.VolumeUp, tr("Mute"), { onVolume("mute") }, size = 44.dp,
                     tint = if (volume?.muted == true) Bad else TextHi)
             }
         }
@@ -370,18 +373,18 @@ private fun Remote(volume: Volume?, onKey: (String) -> Unit, onAction: (String) 
             listOf("red" to Color(0xFFE5484D), "green" to Color(0xFF30A46C), "yellow" to Color(0xFFF5D90A), "blue" to Color(0xFF3E63DD)).forEach { (k, c) ->
                 Box(Modifier.size(width = 52.dp, height = 28.dp).clip(RoundedCornerShape(14.dp)).background(c).clickable(onClickLabel = k) { onKey(k) })
             }
-            Key(Icons.Rounded.Info, "Info", { onKey("info") }, size = 44.dp)
+            Key(Icons.Rounded.Info, tr("Info"), { onKey("info") }, size = 44.dp)
         }
         Spacer(Modifier.height(18.dp))
         // Channel numbers, like the remote's: tap 1 2 to go to 12.  Last goes back to the channel before.
         var pad by remember { mutableStateOf(false) }
-        TextButton(onClick = { pad = !pad }) { Icon(Icons.Rounded.Dialpad, null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text(if (pad) "Hide numbers" else "Channel numbers") }
+        TextButton(onClick = { pad = !pad }) { Icon(Icons.Rounded.Dialpad, null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text(if (pad) tr("Hide numbers") else tr("Channel numbers")) }
         if (pad) Column(verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             listOf(listOf("1", "2", "3"), listOf("4", "5", "6"), listOf("7", "8", "9"), listOf("last", "0", "ok")).forEach { row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     row.forEach { k ->
                         when (k) {
-                            "last" -> Key(Icons.Rounded.History, "Last channel", { onAction("last") }, size = 60.dp)
+                            "last" -> Key(Icons.Rounded.History, tr("Last channel"), { onAction("last") }, size = 60.dp)
                             "ok" -> Key(null, "OK", { onKey("ok") }, size = 60.dp, color = Accent, tint = OnAccent, text = "OK")
                             else -> Key(null, k, { onKey("num$k") }, size = 60.dp, text = k)
                         }
@@ -395,9 +398,9 @@ private fun Remote(volume: Volume?, onKey: (String) -> Unit, onAction: (String) 
 @Composable
 private fun Pill(label: String, onUp: () -> Unit, onDown: () -> Unit, up: ImageVector, down: ImageVector) {
     Column(Modifier.width(64.dp).clip(RoundedCornerShape(32.dp)).background(Panel2), horizontalAlignment = Alignment.CenterHorizontally) {
-        Key(up, "$label up", onUp, color = Color.Transparent)
+        Key(up, tr("{x} up", "x" to label), onUp, color = Color.Transparent)
         Text(label, color = Muted, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-        Key(down, "$label down", onDown, color = Color.Transparent)
+        Key(down, tr("{x} down", "x" to label), onDown, color = Color.Transparent)
     }
 }
 
@@ -406,13 +409,13 @@ private fun TypeDialog(onDismiss: () -> Unit, onSend: (String) -> Unit) {
     var t by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss, containerColor = Panel,
-        title = { Text("Search on the TV") },
+        title = { Text(tr("Search on the TV")) },
         text = {
-            OutlinedTextField(t, { t = it }, singleLine = true, placeholder = { Text("Channel, show, team or movie") },
+            OutlinedTextField(t, { t = it }, singleLine = true, placeholder = { Text(tr("Channel, show, team or movie")) },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search), keyboardActions = KeyboardActions(onSearch = { if (t.isNotBlank()) onSend(t.trim()) }))
         },
-        confirmButton = { TextButton(onClick = { onSend(t.trim()) }, enabled = t.isNotBlank()) { Text("Search") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { TextButton(onClick = { onSend(t.trim()) }, enabled = t.isNotBlank()) { Text(tr("Search")) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Cancel")) } },
     )
 }
 
@@ -432,17 +435,17 @@ private fun Channels(lineup: Lineup?, note: String, playing: String, now: Long, 
         OutlinedTextField(
             value = q, onValueChange = { q = it }, singleLine = true,
             leadingIcon = { Icon(Icons.Rounded.Search, null) },
-            trailingIcon = { if (q.isNotEmpty()) IconButton(onClick = { q = "" }) { Icon(Icons.Rounded.Close, "Clear") } },
-            placeholder = { Text("Channel or programme") },
+            trailingIcon = { if (q.isNotEmpty()) IconButton(onClick = { q = "" }) { Icon(Icons.Rounded.Close, tr("Clear")) } },
+            placeholder = { Text(tr("Channel or programme")) },
             shape = RoundedCornerShape(28.dp),
             colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Panel, focusedContainerColor = Panel, unfocusedBorderColor = Line),
             modifier = Modifier.fillMaxWidth().padding(16.dp, 12.dp, 16.dp, 4.dp),
         )
         LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(vertical = 6.dp)) {
-            item { GroupChip("All", group.isBlank()) { group = "" } }
+            item { GroupChip(tr("All"), group.isBlank()) { group = "" } }
             items(lineup.groups, key = { it.id }) { g -> GroupChip(g.name, group == g.id) { group = g.id } }
         }
-        if (list.isEmpty()) Text("Nothing here matches.", color = Muted, modifier = Modifier.padding(24.dp))
+        if (list.isEmpty()) Text(tr("Nothing here matches."), color = Muted, modifier = Modifier.padding(24.dp))
         LazyColumn(contentPadding = PaddingValues(bottom = 24.dp), modifier = Modifier.fillMaxSize()) {
             items(list, key = { it.k }) { c -> ChannelRow(c, c.k == playing, now, onFav = { onFav(c, !c.fav) }, onLong = { onOptions(c) }) { onPlay(c) } }
         }
@@ -460,7 +463,7 @@ fun GroupChip(label: String, on: Boolean, onClick: () -> Unit) {
 @Composable
 private fun ChannelRow(c: Chan, playing: Boolean, now: Long, onFav: () -> Unit, onLong: () -> Unit, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().combinedClickable(onClickLabel = "Play on the TV", onLongClickLabel = "Channel options", onLongClick = onLong, onClick = onClick).background(if (playing) Panel else Color.Transparent).padding(16.dp, 10.dp),
+        Modifier.fillMaxWidth().combinedClickable(onClickLabel = tr("Play on the TV"), onLongClickLabel = tr("Channel options"), onLongClick = onLong, onClick = onClick).background(if (playing) Panel else Color.Transparent).padding(16.dp, 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Logo(c.logo, c.number, 44.dp)
@@ -479,9 +482,9 @@ private fun ChannelRow(c: Chan, playing: Boolean, now: Long, onFav: () -> Unit, 
                 }
             }
         }
-        if (playing) Text("On the TV", color = Accent, style = MaterialTheme.typography.labelSmall)
+        if (playing) Text(tr("On the TV"), color = Accent, style = MaterialTheme.typography.labelSmall)
         IconButton(onClick = onFav) {
-            Icon(if (c.fav) Icons.Rounded.Star else Icons.Rounded.StarOutline, if (c.fav) "Remove from Favorites" else "Add to Favorites", tint = if (c.fav) Accent else Muted)
+            Icon(if (c.fav) Icons.Rounded.Star else Icons.Rounded.StarOutline, if (c.fav) tr("Remove from Favorites") else tr("Add to Favorites"), tint = if (c.fav) Accent else Muted)
         }
     }
 }
@@ -489,7 +492,7 @@ private fun ChannelRow(c: Chan, playing: Boolean, now: Long, onFav: () -> Unit, 
 /** A channel whose last tries on the TV failed while other channels play (issue #37): a quiet amber note, gone once it plays. */
 @Composable
 internal fun NotPlayingTag() {
-    Text("not playing lately", color = Warn, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+    Text(tr("not playing lately"), color = Warn, style = MaterialTheme.typography.labelSmall, maxLines = 1)
 }
 
 /* ---------- typing on the phone into the TV ---------- */
@@ -504,8 +507,8 @@ private fun TypeOnTv(inputs: List<TvInput>, onType: (TvInput, String, Boolean) -
             Row(Modifier.fillMaxWidth().clickable { shown = !shown }, verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Rounded.Keyboard, null, tint = Accent, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(10.dp))
-                Text(if (inputs.size == 1) "Type on your phone: " + inputs[0].label else "Type on your phone", fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Icon(if (shown) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown, if (shown) "Hide" else "Show", tint = Muted)
+                Text(if (inputs.size == 1) tr("Type on your phone: {x}", "x" to inputs[0].label) else tr("Type on your phone"), fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Icon(if (shown) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown, if (shown) tr("Hide") else tr("Show"), tint = Muted)
             }
             if (shown) inputs.forEach { inp -> TvBox(inp, onType) }
         }
@@ -523,18 +526,18 @@ private fun TvBox(inp: TvInput, onType: (TvInput, String, Boolean) -> Unit) {
         OutlinedTextField(
             value = t, onValueChange = { t = it; edited = true }, singleLine = true,
             label = { Text(inp.label) },
-            placeholder = { if (inp.secret && inp.filled) Text("Filled in on the TV") },
+            placeholder = { if (inp.secret && inp.filled) Text(tr("Filled in on the TV")) },
             visualTransformation = if (inp.secret && !see) PasswordVisualTransformation() else VisualTransformation.None,
             keyboardOptions = KeyboardOptions(
                 keyboardType = when { inp.secret -> KeyboardType.Password; inp.type == "url" -> KeyboardType.Uri; else -> KeyboardType.Text },
                 imeAction = if (inp.canSubmit) ImeAction.Done else ImeAction.Next,
             ),
             keyboardActions = KeyboardActions(onDone = { onType(inp, t, inp.canSubmit) }),
-            trailingIcon = if (inp.secret) ({ IconButton(onClick = { see = !see }) { Icon(if (see) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility, if (see) "Hide" else "Show") } }) else null,
+            trailingIcon = if (inp.secret) ({ IconButton(onClick = { see = !see }) { Icon(if (see) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility, if (see) tr("Hide") else tr("Show")) } }) else null,
             modifier = Modifier.fillMaxWidth(),
         )
         if (inp.canSubmit) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            TextButton(onClick = { onType(inp, t, true) }) { Text("Save on the TV") }
+            TextButton(onClick = { onType(inp, t, true) }) { Text(tr("Save on the TV")) }
         }
     }
 }

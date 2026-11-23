@@ -6,6 +6,8 @@
    screens: TiviBroApp.open('media' | 'backups' | 'reminders' | 'settings'). */
 package app.tivibro.phone.ui
 
+import app.tivibro.phone.tr
+
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Bitmap
@@ -135,7 +137,7 @@ fun EditorScreen(
 ) {
     val ctx = LocalContext.current
     var url by remember { mutableStateOf<String?>(null) }
-    var status by remember { mutableStateOf("Asking the TV for the editor…") }
+    var status by remember { mutableStateOf(tr("Asking the TV for the editor…")) }
     var error by remember { mutableStateOf<String?>(null) }
     var attempt by remember { mutableIntStateOf(0) }
     var progress by remember { mutableIntStateOf(0) }
@@ -150,13 +152,13 @@ fun EditorScreen(
         val bytes = pendingSave; pendingSave = null
         if (uri != null && bytes != null) {
             val ok = runCatching { ctx.contentResolver.openOutputStream(uri)?.use { it.write(bytes) } }.isSuccess
-            say(if (ok) "Saved" else "Couldn't save the file")
+            say(if (ok) tr("Saved") else tr("Couldn't save the file"))
         }
     }
 
     LaunchedEffect(attempt) {
-        error = null; url = null; status = "Asking the TV for the editor…"
-        try { url = editorPageUrl(load { status = it }, page) } catch (e: TbException) { error = e.message } catch (e: Exception) { error = "$name didn't answer.  Is it on, and on the same network?" }
+        error = null; url = null; status = tr("Asking the TV for the editor…")
+        try { url = editorPageUrl(load { status = it }, page) } catch (e: TbException) { error = e.message } catch (e: Exception) { error = tr("{x} didn't answer.  Is it on, and on the same network?", "x" to name) }
     }
     // Back closes what is open in the editor, then goes back through its pages (tbBack in the editor),
     // and only then leaves it.  An older TiviBro's editor has no tbBack: back leaves.
@@ -171,8 +173,8 @@ fun EditorScreen(
         topBar = {
             TopAppBar(
                 title = { Text(name) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") } },
-                actions = { IconButton(onClick = { if (web != null && url != null) web?.reload() else attempt++ }) { Icon(Icons.Rounded.Refresh, "Reload") } },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, tr("Back")) } },
+                actions = { IconButton(onClick = { if (web != null && url != null) web?.reload() else attempt++ }) { Icon(Icons.Rounded.Refresh, tr("Reload")) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Ink),
             )
         },
@@ -183,7 +185,7 @@ fun EditorScreen(
                 error != null -> Column(Modifier.fillMaxSize().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                     Text(error ?: "", textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
                     Spacer(Modifier.height(20.dp))
-                    Button(onClick = { attempt++ }) { Text("Try again") }
+                    Button(onClick = { attempt++ }) { Text(tr("Try again")) }
                 }
                 u == null -> Column(Modifier.fillMaxSize().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                     CircularProgressIndicator()
@@ -227,7 +229,7 @@ fun EditorScreen(
                                     return true
                                 }
                             }
-                            loadUrl(u)
+                            loadUrl(app.tivibro.phone.I18n.editorUrl(u))   // in the app's language too
                             web = this
                         }
                     })

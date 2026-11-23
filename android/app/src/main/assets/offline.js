@@ -15,7 +15,7 @@
      edits and name rules through the bridge. */
   function load() {
     return loading || (loading = realFetch.call(window, '/__copy.json', { cache: 'no-store' }).then(function (r) {
-      if (!r.ok) throw new Error('The channel list kept on this phone is missing.  Open Edit channels with the TV once.');
+      if (!r.ok) throw new Error(tr('The channel list kept on this phone is missing.  Open Edit channels with the TV once.'));
       return r.json();
     }).then(function (d) {
       var x = JSON.parse(B.extras() || '{}');
@@ -30,12 +30,13 @@
   function drafts() { try { return JSON.parse(localStorage.getItem(key()) || '[]'); } catch (e) { return []; } }
   function keepDrafts(l) { try { localStorage.setItem(key(), JSON.stringify(l.slice(-40))); } catch (e) {} }
   function draftInfo() { var l = drafts(), x = l[l.length - 1]; return { count: l.length, latest: x ? { id: x.id, at: x.at, changes: x.changes, label: x.label } : null }; }
-  var NEEDS_TV = 'That needs the TV.  You are editing a backup on the phone: open the editor with the TV for this.';
+  // Messages in the editor's language (its tr() and trn(), there by the time anything is asked).
+  function needsTv() { return tr('That needs the TV.  You are editing a backup on the phone: open the editor with the TV for this.'); }
   var COMMANDS = {
-    listDrafts: function () { var l = drafts(); return { msg: l.length + ' draft versions', data: { bytes: JSON.stringify(l).length, list: l.slice().reverse().map(function (x) { return { id: x.id, at: x.at, started: x.at, kind: x.kind, name: x.name, label: x.label, changes: x.changes, size: x.state.length }; }) } }; },
-    getDraft: function (a) { var x = drafts().filter(function (y) { return y.id === a.id; })[0]; if (!x) throw new Error('That draft version no longer exists.'); return { msg: 'Draft version', data: { id: x.id, at: x.at, state: x.state, changes: x.changes, label: x.label } }; },
-    deleteDraft: function (a) { keepDrafts(drafts().filter(function (x) { return x.id !== a.id; })); return { msg: 'Draft version deleted' }; },
-    listSnaps: function () { return { msg: '0 restore points', data: [] }; }
+    listDrafts: function () { var l = drafts(); return { msg: trn(l.length, '{n} draft version', '{n} draft versions'), data: { bytes: JSON.stringify(l).length, list: l.slice().reverse().map(function (x) { return { id: x.id, at: x.at, started: x.at, kind: x.kind, name: x.name, label: x.label, changes: x.changes, size: x.state.length }; }) } }; },
+    getDraft: function (a) { var x = drafts().filter(function (y) { return y.id === a.id; })[0]; if (!x) throw new Error(tr('That draft version no longer exists.')); return { msg: tr('Draft version'), data: { id: x.id, at: x.at, state: x.state, changes: x.changes, label: x.label } }; },
+    deleteDraft: function (a) { keepDrafts(drafts().filter(function (x) { return x.id !== a.id; })); return { msg: tr('Draft version deleted') }; },
+    listSnaps: function () { return { msg: trn(0, '{n} restore point', '{n} restore points'), data: [] }; }
   };
   function body(o) { try { return o && o.body ? JSON.parse(o.body) : {}; } catch (e) { return {}; } }
   window.fetch = function (url, o) {
@@ -65,12 +66,12 @@
       }
       if (path === '/api/command' && method === 'POST') {
         var c2 = body(o), id = 'c' + (++cmdSeq), fn = COMMANDS[c2.type];
-        try { results[id] = fn ? Object.assign({ done: true, ok: true }, fn(c2.args || {})) : { done: true, ok: false, msg: NEEDS_TV }; }
+        try { results[id] = fn ? Object.assign({ done: true, ok: true }, fn(c2.args || {})) : { done: true, ok: false, msg: needsTv() }; }
         catch (e) { results[id] = { done: true, ok: false, msg: e.message }; }
         return json({ id: id });
       }
-      if (path === '/api/result') { var rid = (/id=([^&]+)/.exec(q) || [])[1]; return json(results[rid] || { done: true, ok: false, msg: 'Unknown request' }); }
-      if (path === '/api/restore') return json({ error: NEEDS_TV }, 400);
+      if (path === '/api/result') { var rid = (/id=([^&]+)/.exec(q) || [])[1]; return json(results[rid] || { done: true, ok: false, msg: tr('Unknown request') }); }
+      if (path === '/api/restore') return json({ error: needsTv() }, 400);
       return json({ error: 'Not on the phone' }, 404);
     } catch (e) { return json({ error: e.message }, 500); }
   }

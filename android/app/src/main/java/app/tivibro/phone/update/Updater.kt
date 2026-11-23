@@ -6,6 +6,8 @@
    browser link.  Everything here outlives the home screen's card, which only shows [step]. */
 package app.tivibro.phone.update
 
+import app.tivibro.phone.tr
+
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -80,7 +82,7 @@ object Updater {
             _step.value = UpdateStep.NeedsPermission
             val i = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + ctx.packageName))
             runCatching { ctx.startActivity(i) }.onFailure {
-                _step.value = UpdateStep.Failed("This phone has no setting to let TiviBro install apps.")
+                _step.value = UpdateStep.Failed(tr("This phone has no setting to let TiviBro install apps."))
             }
             return
         }
@@ -100,7 +102,7 @@ object Updater {
                 say(UpdateStep.Idle)
             } catch (e: Exception) {
                 Log.w(TAG, "update failed", e)
-                say(UpdateStep.Failed(e.message ?: "The update didn't download."))
+                say(UpdateStep.Failed(e.message ?: tr("The update didn't download.")))
             } finally {
                 // Once written into Android's install session the file isn't needed any more.
                 runCatching { file.delete() }
@@ -119,11 +121,11 @@ object Updater {
     private fun checkPackage(ctx: Context, f: File) {
         val pm = ctx.packageManager
         @Suppress("DEPRECATION")
-        val info = pm.getPackageArchiveInfo(f.path, 0) ?: throw IOException("The download isn't an Android app.")
-        if (info.packageName != ctx.packageName) throw IOException("The download is a different app.")
+        val info = pm.getPackageArchiveInfo(f.path, 0) ?: throw IOException(tr("The download isn't an Android app."))
+        if (info.packageName != ctx.packageName) throw IOException(tr("The download is a different app."))
         @Suppress("DEPRECATION")
         val mine = pm.getPackageInfo(ctx.packageName, 0)
-        if (PackageInfoCompat.getLongVersionCode(info) <= PackageInfoCompat.getLongVersionCode(mine)) throw IOException("The download isn't newer than this app.")
+        if (PackageInfoCompat.getLongVersionCode(info) <= PackageInfoCompat.getLongVersionCode(mine)) throw IOException(tr("The download isn't newer than this app."))
     }
 
     /** Streams [f] into a PackageInstaller session and commits it; the outcome comes to UpdateReceiver. */
@@ -151,7 +153,7 @@ object Updater {
             }
         } catch (e: Exception) {
             runCatching { installer.abandonSession(id) }
-            throw IOException("Android couldn't start the install.", e)
+            throw IOException(tr("Android couldn't start the install."), e)
         }
     }
 
@@ -160,7 +162,7 @@ object Updater {
         Log.i(TAG, "install status $status: $message")
         when (status) {
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
-                if (confirm == null) { _step.value = UpdateStep.Failed("Android didn't show its install question."); return }
+                if (confirm == null) { _step.value = UpdateStep.Failed(tr("Android didn't show its install question.")); return }
                 _step.value = UpdateStep.Confirm(confirm)
                 // Opened straight away while TiviBro is on screen; otherwise the card's Continue opens it.
                 runCatching { ctx.startActivity(Intent(confirm).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
@@ -172,15 +174,15 @@ object Updater {
 
     private fun failure(status: Int, message: String?): String {
         val plain = when (status) {
-            PackageInstaller.STATUS_FAILURE_ABORTED -> "The update was cancelled."
-            PackageInstaller.STATUS_FAILURE_BLOCKED -> "Android blocked the update."
-            PackageInstaller.STATUS_FAILURE_CONFLICT -> "The update clashes with the app on this phone."
-            PackageInstaller.STATUS_FAILURE_INCOMPATIBLE -> "This phone can't run the new version."
-            PackageInstaller.STATUS_FAILURE_INVALID -> "The download isn't a valid app."
-            PackageInstaller.STATUS_FAILURE_STORAGE -> "There isn't enough space on the phone."
-            else -> "The update didn't install."
+            PackageInstaller.STATUS_FAILURE_ABORTED -> tr("The update was cancelled.")
+            PackageInstaller.STATUS_FAILURE_BLOCKED -> tr("Android blocked the update.")
+            PackageInstaller.STATUS_FAILURE_CONFLICT -> tr("The update clashes with the app on this phone.")
+            PackageInstaller.STATUS_FAILURE_INCOMPATIBLE -> tr("This phone can't run the new version.")
+            PackageInstaller.STATUS_FAILURE_INVALID -> tr("The download isn't a valid app.")
+            PackageInstaller.STATUS_FAILURE_STORAGE -> tr("There isn't enough space on the phone.")
+            else -> tr("The update didn't install.")
         }
-        return if (message.isNullOrBlank()) plain else "$plain  Android says: $message"
+        return if (message.isNullOrBlank()) plain else tr("{x}  Android says: {y}", "x" to plain, "y" to message)
     }
 }
 

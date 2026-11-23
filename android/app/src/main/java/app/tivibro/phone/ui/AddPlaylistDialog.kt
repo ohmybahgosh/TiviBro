@@ -3,6 +3,8 @@
    the web editor's Add a playlist does.  The login is sealed on its way to the TV. */
 package app.tivibro.phone.ui
 
+import app.tivibro.phone.tr
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Column
@@ -39,11 +41,12 @@ import app.tivibro.phone.proto.TbException
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
-private val TYPES = listOf(
-    "link" to "Paste the full link from your provider",
-    "xtream" to "Xtream Codes (server, username, password)",
-    "m3u" to "M3U playlist address",
-    "stalker" to "Stalker portal (portal address and MAC address)",
+// A getter, not a list made once: the names come out in the app's language each time (tr).
+private val TYPES get() = listOf(
+    "link" to tr("Paste the full link from your provider"),
+    "xtream" to tr("Xtream Codes (server, username, password)"),
+    "m3u" to tr("M3U playlist address"),
+    "stalker" to tr("Stalker portal (portal address and MAC address)"),
 )
 
 @Composable
@@ -89,23 +92,23 @@ private fun PlaylistDialog(model: AppModel, id: String, editId: String?, editTyp
         scope.launch {
             try { model.say(model.addPlaylistWith(id, a)); onDone(true) }
             catch (e: TbException) { error = e.message; tried = e.details }
-            catch (e: Exception) { error = "The TV didn't answer.  Is it on, and on the same network?" }
+            catch (e: Exception) { error = tr("The TV didn't answer.  Is it on, and on the same network?") }
             busy = false
         }
     }
 
     AlertDialog(
         onDismissRequest = { if (!busy) onDone(false) }, containerColor = Panel,
-        title = { Text(if (editing) "Change the connection" else "Add a playlist") },
+        title = { Text(if (editing) tr("Change the connection") else "Add a playlist") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                Text("The TV logs in and loads the channel list before saving it, so you know it works." + if (editing) "  Leave a box empty to keep what the TV has." else "", color = Muted, style = MaterialTheme.typography.bodySmall)
+                Text("The TV logs in and loads the channel list before saving it, so you know it works." + if (editing) tr("  Leave a box empty to keep what the TV has.") else "", color = Muted, style = MaterialTheme.typography.bodySmall)
                 if (editing && now.isNotBlank()) Text("Now: " + now, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp))
                 Spacer(Modifier.size(10.dp))
-                if (!editing) Text("Playlist type", style = MaterialTheme.typography.labelMedium, color = Muted)
+                if (!editing) Text(tr("Playlist type"), style = MaterialTheme.typography.labelMedium, color = Muted)
                 if (!editing) Row(Modifier.fillMaxWidth().clickable(enabled = !busy) { open = true }.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(TYPES.first { it.first == type }.second, modifier = Modifier.weight(1f))
-                    Icon(Icons.Rounded.ArrowDropDown, "Choose")
+                    Icon(Icons.Rounded.ArrowDropDown, tr("Choose"))
                     DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
                         TYPES.forEach { (k, l) -> DropdownMenuItem(text = { Text(l) }, onClick = { type = k; open = false }) }
                     }
@@ -113,43 +116,43 @@ private fun PlaylistDialog(model: AppModel, id: String, editId: String?, editTyp
                 OutlinedTextField(name, { name = it }, label = { Text("Name (optional)") }, singleLine = true, enabled = !busy, modifier = Modifier.fillMaxWidth())
                 when (type) {
                     "xtream" -> {
-                        OutlinedTextField(server, { server = it.trim() }, label = { Text("Server") }, placeholder = { Text("http://provider.com:8080") }, singleLine = true, enabled = !busy,
+                        OutlinedTextField(server, { server = it.trim() }, label = { Text(tr("Server")) }, placeholder = { Text("http://provider.com:8080") }, singleLine = true, enabled = !busy,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), modifier = Modifier.fillMaxWidth())
-                        OutlinedTextField(user, { user = it.trim() }, label = { Text("Username") }, singleLine = true, enabled = !busy, modifier = Modifier.fillMaxWidth())
-                        SecretField(pass, { pass = it }, "Password", enabled = !busy)
+                        OutlinedTextField(user, { user = it.trim() }, label = { Text(tr("Username")) }, singleLine = true, enabled = !busy, modifier = Modifier.fillMaxWidth())
+                        SecretField(pass, { pass = it }, tr("Password"), enabled = !busy)
                     }
-                    "m3u" -> OutlinedTextField(m3u, { m3u = it.trim() }, label = { Text("Playlist address") }, placeholder = { Text("http://provider.com/get.php?…&type=m3u_plus") }, enabled = !busy,
+                    "m3u" -> OutlinedTextField(m3u, { m3u = it.trim() }, label = { Text(tr("Playlist address")) }, placeholder = { Text("http://provider.com/get.php?…&type=m3u_plus") }, enabled = !busy,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), modifier = Modifier.fillMaxWidth())
                     "stalker" -> {
-                        OutlinedTextField(portal, { portal = it.trim() }, label = { Text("Portal address") }, placeholder = { Text("http://provider.com:8080/c/") }, singleLine = true, enabled = !busy,
+                        OutlinedTextField(portal, { portal = it.trim() }, label = { Text(tr("Portal address")) }, placeholder = { Text("http://provider.com:8080/c/") }, singleLine = true, enabled = !busy,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), modifier = Modifier.fillMaxWidth())
-                        OutlinedTextField(mac, { mac = it.trim() }, label = { Text("MAC address") }, placeholder = { Text("00:1A:79:12:34:56") }, singleLine = true, enabled = !busy, modifier = Modifier.fillMaxWidth())
-                        OutlinedTextField(sn, { sn = it.trim() }, label = { Text("Serial number (optional)") }, singleLine = true, enabled = !busy, modifier = Modifier.fillMaxWidth())
-                        Text("The portal address your provider gave for a MAG box, and the MAC address they registered.  A serial number only if your provider gave you one.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                        OutlinedTextField(mac, { mac = it.trim() }, label = { Text(tr("MAC address")) }, placeholder = { Text("00:1A:79:12:34:56") }, singleLine = true, enabled = !busy, modifier = Modifier.fillMaxWidth())
+                        OutlinedTextField(sn, { sn = it.trim() }, label = { Text(tr("Serial number (optional)")) }, singleLine = true, enabled = !busy, modifier = Modifier.fillMaxWidth())
+                        Text(tr("The portal address your provider gave for a MAG box, and the MAC address they registered.  A serial number only if your provider gave you one."), color = Muted, style = MaterialTheme.typography.bodySmall)
                     }
                     else -> {
-                        OutlinedTextField(link, { link = it.trim() }, label = { Text("Full link") }, placeholder = { Text("http://provider.com:8080/get.php?username=…") }, enabled = !busy,
+                        OutlinedTextField(link, { link = it.trim() }, label = { Text(tr("Full link")) }, placeholder = { Text("http://provider.com:8080/get.php?username=…") }, enabled = !busy,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), modifier = Modifier.fillMaxWidth())
-                        Text("The whole link your provider sent, the long one with the username and password in it (it often has get.php).", color = Muted, style = MaterialTheme.typography.bodySmall)
+                        Text(tr("The whole link your provider sent, the long one with the username and password in it (it often has get.php)."), color = Muted, style = MaterialTheme.typography.bodySmall)
                     }
                 }
-                if (!editing) OutlinedTextField(epg, { epg = it.trim() }, label = { Text("Guide address (optional)") }, placeholder = { Text("XMLTV link, .xml or .xml.gz") }, singleLine = true, enabled = !busy,
+                if (!editing) OutlinedTextField(epg, { epg = it.trim() }, label = { Text(tr("Guide address (optional)")) }, placeholder = { Text(tr("XMLTV link, .xml or .xml.gz")) }, singleLine = true, enabled = !busy,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), modifier = Modifier.fillMaxWidth())
                 if (!editing) Row(Modifier.fillMaxWidth().clickable(enabled = !busy) { use = !use }, verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = use, onCheckedChange = { use = it }, enabled = !busy)
-                    Text("Switch the TV to it when it is added")
+                    Text(tr("Switch the TV to it when it is added"))
                 }
                 error?.let { Text(it, color = Bad, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 6.dp)) }
                 if (error != null) TriedLog(tried)
                 if (busy) Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = Accent)
                     Spacer(Modifier.size(10.dp))
-                    Text("The TV is logging in and loading the channels.  This can take a minute…", style = MaterialTheme.typography.bodySmall)
+                    Text(tr("The TV is logging in and loading the channels.  This can take a minute…"), style = MaterialTheme.typography.bodySmall)
                 }
             }
         },
-        confirmButton = { TextButton(enabled = !busy && ready, onClick = { add() }) { Text(if (editing) "Test and save" else "Add and test") } },
-        dismissButton = { TextButton(enabled = !busy, onClick = { onDone(false) }) { Text("Cancel") } },
+        confirmButton = { TextButton(enabled = !busy && ready, onClick = { add() }) { Text(if (editing) tr("Test and save") else tr("Add and test")) } },
+        dismissButton = { TextButton(enabled = !busy, onClick = { onDone(false) }) { Text(tr("Cancel")) } },
     )
 }
 
@@ -159,7 +162,7 @@ private fun PlaylistDialog(model: AppModel, id: String, editId: String?, editTyp
 fun TriedLog(lines: List<String>) {
     if (lines.isEmpty()) return
     var shown by remember { mutableStateOf(false) }
-    Text(if (shown) "Hide what the TV tried" else "What the TV tried", color = Accent, style = MaterialTheme.typography.labelLarge,
+    Text(if (shown) tr("Hide what the TV tried") else tr("What the TV tried"), color = Accent, style = MaterialTheme.typography.labelLarge,
         modifier = Modifier.clickable { shown = !shown }.padding(vertical = 8.dp))
     if (shown) Text(lines.joinToString("\n"), color = Muted, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
         style = MaterialTheme.typography.bodySmall, modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()))

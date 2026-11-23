@@ -4,11 +4,13 @@
    from the drawing (HomeScreen.kt) so it can be tested. */
 package app.tivibro.phone.ui
 
+import app.tivibro.phone.tr
+
 import app.tivibro.phone.proto.NowState
 
 enum class Shortcut(val label: String) {
-    REMOTE("Remote"), GUIDE("Guide"), SPORTS("Sports"), ON_NOW("On now"), VOD("Movies and Shows"), MEDIA("My media"),
-    REMINDERS("Reminders"), RECORDINGS("Recordings"), EDITOR("Edit channels"), BACKUPS("Backups"), SETTINGS("Settings");
+    REMOTE(tr("Remote")), GUIDE(tr("Guide")), SPORTS(tr("Sports")), ON_NOW(tr("On now")), VOD(tr("Movies and Shows")), MEDIA(tr("My media")),
+    REMINDERS(tr("Reminders")), RECORDINGS(tr("Recordings")), EDITOR(tr("Edit channels")), BACKUPS(tr("Backups")), SETTINGS(tr("Settings"));
 
     companion object {
         /** What the TV said it has ([caps] null: not known yet, so only the ones every TV has, plus Movies and Shows). */
@@ -25,13 +27,13 @@ enum class Shortcut(val label: String) {
 
         /** The tab of the TV screen a shortcut opens (TvScreen's tab names), or null for its own screen. */
         fun tab(s: Shortcut, caps: NowState?): String? = when (s) {
-            REMOTE -> "Remote"
-            GUIDE -> "Guide"
-            SPORTS -> "Sports"
-            ON_NOW -> "On now"
-            VOD -> if (caps?.movies == false && caps?.series != false) "Shows" else "Movies"
-            MEDIA -> "My media"
-            SETTINGS -> "Settings"
+            REMOTE -> tr("Remote")
+            GUIDE -> tr("Guide")
+            SPORTS -> tr("Sports")
+            ON_NOW -> tr("On now")
+            VOD -> if (caps?.movies == false && caps?.series != false) tr("Shows") else tr("Movies")
+            MEDIA -> tr("My media")
+            SETTINGS -> tr("Settings")
             else -> null
         }
     }

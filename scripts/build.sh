@@ -16,6 +16,8 @@ cp "$ROOT/app/js/links.js" "$ROOT/service/editor/links.js"
 cp "$ROOT/app/js/events.js" "$ROOT/service/editor/events.js"
 cp "$ROOT/app/js/vodview.js" "$ROOT/service/editor/vodview.js"   # the helper keeps the movie and show lists (service/vod.js)
 cp "$ROOT/app/js/plshape.js" "$ROOT/service/editor/plshape.js"   # the helper shapes the channel list (service/live.js)
+cp "$ROOT/app/js/i18n.js" "$ROOT/service/editor/i18n.js"           # the editor's languages: the same engine as the app's,
+cp "$ROOT/app/js/lang/es-ES.js" "$ROOT/app/js/lang/pt-PT.js" "$ROOT/service/editor/lang/"   # and the same word swaps (its dictionaries are its own)
 rm -rf "$ROOT/service/guide-data" "$ROOT/service/power.json" "$ROOT/service/reminders.json" "$ROOT/service/helper-errors.json" "$ROOT/service/companion.json" "$ROOT/service/companion.json.tmp" "$ROOT"/service/alert-*.json                                # guides stored by a dev relay: not for the package     # the helper's guide reader matches with it
 cp "$ROOT/app/img/tmdb.svg" "$ROOT/service/editor/tmdb.svg"          # the web editor's TMDB credit (My media)
 bash "$ROOT/scripts/ffmpeg/bundle.sh"                              # the audio converter rides along (docs/FFMPEG.md)

@@ -760,7 +760,7 @@ var Settings = (function () {
   }
 
   function playlistPage(p) {
-    var s = S(), out = [], active = p.id === s.active, xc = p.type === 'xtream', part = !active && L.partOf(p.id);
+    var s = S(), out = [], only = s.playlists.length < 2, active = p.id === s.active, xc = p.type === 'xtream', part = !active && L.partOf(p.id);
     // Every playlist that is on is in use: this makes it the first one (its groups first, and your
     // Favorites, groups and reminders are its own).  With only one on, it is the old "Use this playlist".
     if (!active && !p.off) out.push(Store.others().length > 1 || L.multi
@@ -2720,21 +2720,27 @@ var Settings = (function () {
     if (pg0 && pg0.n >= 0) { secId = SECTIONS[pg0.i][0]; path = [pg0.n].concat(path || []); }
     var i = -1; for (var x = 0; x < SECTIONS.length; x++) if (SECTIONS[x][0] === secId) i = x;
     if (i < 0) throw new Error('No such settings page');
-    var list = shape(FNS[i], SECTIONS[i][1]), title = title0(SECTIONS[i]), trail = [title];
+    var list = shape(FNS[i], SECTIONS[i][1]), title = title0(SECTIONS[i]), trail = [title], shown0 = title;
     (path || []).forEach(function (n) {
       var it = list[n];
       var pg = it && (it.page || it.phonePage);
       if (!pg) throw new Error('That page has changed on the TV.  Go back and open it again.');
-      title = pg.title && typeof pg.title === 'object' && pg.title.s != null ? String(pg.title.s) : pg.title;   // a name kept as written (I18n.raw) is plain text for the phone
-      trail.push(title); list = shape(pg.fn, title);
+      var named = pg.title && typeof pg.title === 'object' && pg.title.s != null;   // a name kept as written (I18n.raw)
+      title = named ? String(pg.title.s) : pg.title;
+      trail.push(named ? pg.title : title); list = shape(pg.fn, title);
+      shown0 = named ? pg.title : title;
     });
-    return { title: title, trail: trail, list: list };
+    return { title: title, shown: shown0, trail: trail, list: list };     // shown: the title, a name still marked as one
   }
   function title0(sct) { return title(sct); }
   function rowData(it, n) {
     var v = '';
-    try { v = it.value ? String(it.value() || '') : ''; } catch (e) {}
-    var r = { i: n, label: String(it.phoneLabel != null ? it.phoneLabel : it.label || ''), sub: it.sub ? String(it.sub) : '' };
+    try { v = it.value ? String(T(it.value() || '')) : ''; } catch (e) {}
+    /* In the language the phone or the web editor asked in (I18n.within around Settings.phone): the TV draws its
+       own rows through I18n.t, so here the same.  A name (I18n.raw) stays as it is.  The English label is kept
+       for actionTone below. */
+    var en = String(it.phoneLabel != null ? it.phoneLabel : it.label || '');
+    var r = { i: n, label: String(T(it.phoneLabel != null ? it.phoneLabel : it.label || '')), sub: it.sub ? String(T(it.sub)) : '' };
     if (it.head) r.kind = 'head';
     else if (it.info) { r.kind = 'info'; r.value = v; }
     else if (it.toggle) { r.kind = 'toggle'; r.on = !!it.get(); }
@@ -2754,7 +2760,7 @@ var Settings = (function () {
     if (it.cls === 'tip' || it.cls === 'jump' || it.cls === 'adv-row') r.style = it.cls;
     // Buttons that do something right away look like buttons on the phone and in the web editor: a "now"
     // (Reload guide now) is the main one on its page; one that deletes or resets is red and asks first.
-    if (r.look === 'action' && !it.go) { var t = actionTone(r.label); if (t) r.tone = t; }
+    if (r.look === 'action' && !it.go) { var t = actionTone(en); if (t) r.tone = t; }
     if (r.sub) { var b1 = brief(r.sub); if (b1 !== r.sub) r.brief = b1; }
     return r;
   }
@@ -2819,7 +2825,7 @@ var Settings = (function () {
       if (typeof Convert === 'undefined' || convSt || typeof Net === 'undefined' || !Net.port) return Promise.resolve();
       return Promise.race([Convert.status(true).then(function (x) { convSt = x; convAt = Date.now(); }), new Promise(function (r) { setTimeout(r, 3000); })]);
     },
-    sections: function () { return SECTIONS.filter(function (x, i) { return shown(i); }).map(function (x) { return { id: x[0], title: title(x) }; }); },
+    sections: function () { return SECTIONS.filter(function (x, i) { return shown(i); }).map(function (x) { return { id: x[0], title: String(T(title(x))) }; }); },
     /* Search every setting, for the phone and the web editor's search box: each hit with its section and the rows
        to follow to its page (the same path page() takes), best matches first (name before note). */
     find: function (q) {
@@ -2846,7 +2852,7 @@ var Settings = (function () {
         return { label: String(T(r.label)), sub: r.sub ? brief(String(T(r.sub))) : '', trail: r.trail.map(function (t) { return String(T(t)); }).join('  ›  '), sec: r.sec, path: path };
       }).filter(Boolean);
     },
-    page: function (secId, path) { var p = rowsOf(secId, path); return { title: p.title, trail: p.trail, rows: p.list.map(rowData).filter(function (r, n) { return !p.list[n].preview; }) }; },   // pictures (a preview, the TMDB credit) stay on the TV
+    page: function (secId, path) { var p = rowsOf(secId, path); return { title: String(T(p.shown)), trail: p.trail.map(function (x) { return String(T(x)); }), rows: p.list.map(rowData).filter(function (r, n) { return !p.list[n].preview; }) }; },   // pictures (a preview, the TMDB credit) stay on the TV
     // op: 'toggle' (on), 'choice' (v: the choice's index), 'cycle' (dir), 'action', 'answer' (to a dialog).
     change: function (secId, path, n, op, a) {
       if (op === 'answer') {

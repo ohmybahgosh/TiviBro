@@ -8,6 +8,10 @@
    Plain ES5 for the old Chromium on webOS. */
 var Phone = (function () {
   'use strict';
+  // fn in the language the phone or the web editor asked in (I18n.within), the TV's when it didn't say.
+  function inLang(code, fn) { return typeof I18n !== 'undefined' && I18n.within ? I18n.within(code, fn) : fn(); }
+  // A message or an error the TV made (webedit.js's, often after some waiting) in the phone's language.
+  function sayIn(m, code) { return typeof I18n !== 'undefined' && I18n.say ? I18n.say(m, code) : m && m.message ? m.message : m; }
   var st = null, timer = null, fast = null, onChange = null, handled = 0;
 
   function base() { return Net.port ? 'http://127.0.0.1:' + Net.port : ''; }
@@ -107,11 +111,15 @@ var Phone = (function () {
     Promise.resolve().then(function () {
       var fn = ASK[c.what];
       if (!fn) throw new Error('This TiviBro can\'t answer "' + c.what + '".  Update TiviBro on the TV.');
-      return fn(c.args || {}, c);
-    }).then(function (data) { return call('/companion/answer', { id: c.id, ok: true, data: data === undefined ? null : data }); },
+      // In the phone's language (c.lang, from translated phone apps): what the answer builds right away.
+      return inLang(c.lang, function () { return fn(c.args || {}, c); });
+    }).then(function (data) {
+      if (data && typeof data === 'object' && data.msg) data.msg = sayIn(data.msg, c.lang);
+      return call('/companion/answer', { id: c.id, ok: true, data: data === undefined ? null : data });
+    },
       function (e) {
         Log.warn('phone', c.what + ' for the phone failed: ' + (e && e.message));
-        return call('/companion/answer', { id: c.id, ok: false, error: (e && e.message) || 'failed', log: e && e.tried && e.tried.length ? e.tried : undefined });
+        return call('/companion/answer', { id: c.id, ok: false, error: (e && sayIn(e, c.lang)) || 'failed', log: e && e.tried && e.tried.length ? e.tried : undefined });
       })
       .then(function () { pushState(true); }, function () {});
   }
@@ -342,14 +350,19 @@ var Phone = (function () {
     /* TiviBro's Settings on the phone, page by page (see Settings.phone): the list of pages, one page, or a
        change on it (op toggle, choice, cycle, move, action).  Locked with the TV's PIN when Settings is: the
        answer says so ({ locked }) and the phone asks for the PIN. */
-    settings: function (a) {
+    settings: function (a, c) {
       try { Parental.phoneOk(a.pin); } catch (e) { if (e.code === 'pin') return { locked: true, msg: e.message }; throw e; }
       var op = String(a.op || 'page'), path = Array.isArray(a.path) ? a.path.map(Number) : [];
-      if (op === 'sections') return { sections: Settings.phone.sections() };
-      if (op === 'find') return { hits: Settings.phone.find(String(a.q || '').slice(0, 80)) };
+      // In the phone's language (c.lang, sent by phone apps that are translated), else the TV's: the page is
+      // built after ready(), out of answer()'s I18n.within.
+      function inLangOf(fn) { return inLang(c && c.lang, fn); }
+      if (op === 'sections') return inLangOf(function () { return { sections: Settings.phone.sections() }; });
+      if (op === 'find') return inLangOf(function () { return { hits: Settings.phone.find(String(a.q || '').slice(0, 80)) }; });
       return Settings.phone.ready().then(function () {
-        if (op === 'page') return Settings.phone.page(String(a.sec || ''), path);
-        return Settings.phone.change(String(a.sec || ''), path, +a.i, op, a);
+        return inLangOf(function () {
+          if (op === 'page') return Settings.phone.page(String(a.sec || ''), path);
+          return Settings.phone.change(String(a.sec || ''), path, +a.i, op, a);
+        });
       });
     },
     medialibrary:function (a) { return MediaSeries.phone.query(a); },
@@ -535,10 +548,12 @@ var Phone = (function () {
       return WebEdit.runData('reminders', { op: op, k: a.k, s: a.s }).then(function (r) { return { msg: r.msg || '', items: r.data }; });
     },
     /* Restore points on the TV (the phone's Backups and restore points): list, make, restore, delete. */
-    snaps: function (a) {
+    snaps: function (a, c) {
       var op = String(a.op || 'list'), id = String(a.id || '');
+      // The names the TV gives its own restore points ("Before restoring ..."), in the phone's language.
+      var named = function (x) { return x.kind === 'auto' || /^Before /.test(x.name || '') ? inLang(c && c.lang, function () { return String(I18n.t(x.name || '')); }) : x.name || ''; };
       var run = op === 'make' ? WebEdit.runData('makeSnap', { name: String(a.name || '').slice(0, 60) }) : op === 'restore' ? WebEdit.runData('restoreSnap', { id: id }) : op === 'delete' ? WebEdit.runData('deleteSnap', { id: id }) : Promise.resolve({ msg: '' });
-      return run.then(function (r) { return WebEdit.runData('listSnaps', {}).then(function (l) { return { msg: op === 'list' ? '' : r.msg || '', items: (l.data || []).map(function (x) { return { id: x.id, name: x.name || '', at: x.at || 0, kind: x.kind || '', playlist: x.playlist || '' }; }) }; }); });
+      return run.then(function (r) { return WebEdit.runData('listSnaps', {}).then(function (l) { return { msg: op === 'list' ? '' : r.msg || '', items: (l.data || []).map(function (x) { return { id: x.id, name: named(x), at: x.at || 0, kind: x.kind || '', playlist: x.playlist || '' }; }) }; }); });
     },
     // A provider link shared to the phone app: added like the web editor's Add a playlist.
     playlist: function (a) {

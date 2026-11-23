@@ -4,6 +4,8 @@
    sends the text to another app (a message, an email, a GitHub issue). */
 package app.tivibro.phone.ui
 
+import app.tivibro.phone.tr
+
 import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
@@ -61,7 +63,7 @@ fun LogScreen(model: AppModel, id: String, onBack: () -> Unit) {
         error = null
         try { text = model.tvLog(id) }
         catch (e: TbException) { error = e.message }
-        catch (e: Exception) { error = "The TV didn't answer.  Is it on, and on the same network?" }
+        catch (e: Exception) { error = tr("The TV didn't answer.  Is it on, and on the same network?") }
     }
     val lines = remember(text, problems) {
         val all = text?.lines().orEmpty()
@@ -72,28 +74,28 @@ fun LogScreen(model: AppModel, id: String, onBack: () -> Unit) {
 
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(4.dp, 2.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") }
-            Text("TiviBro log", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-            IconButton(onClick = { text = null; attempt++ }) { Icon(Icons.Rounded.Refresh, "Read it again") }
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, tr("Back")) }
+            Text(tr("TiviBro log"), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            IconButton(onClick = { text = null; attempt++ }) { Icon(Icons.Rounded.Refresh, tr("Read it again")) }
             IconButton(enabled = text != null, onClick = {
                 val t = text ?: return@IconButton
-                val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_SUBJECT, "TiviBro log")
+                val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_SUBJECT, tr("TiviBro log"))
                     .putExtra(Intent.EXTRA_TEXT, if (t.length > 300_000) "…" + t.takeLast(300_000) else t)
-                runCatching { ctx.startActivity(Intent.createChooser(send, "Share the TiviBro log")) }
-            }) { Icon(Icons.Rounded.Share, "Share") }
+                runCatching { ctx.startActivity(Intent.createChooser(send, tr("Share the TiviBro log"))) }
+            }) { Icon(Icons.Rounded.Share, tr("Share")) }
         }
         Row(Modifier.padding(16.dp, 0.dp, 16.dp, 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            GroupChip("Everything", !problems) { problems = false }
+            GroupChip(tr("Everything"), !problems) { problems = false }
             Spacer(Modifier.width(8.dp))
-            GroupChip("Problems only", problems) { problems = true }
+            GroupChip(tr("Problems only"), problems) { problems = true }
         }
-        Text("From the TV, with provider, guide and server names taken out.", color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(16.dp, 0.dp, 16.dp, 6.dp))
+        Text(tr("From the TV, with provider, guide and server names taken out."), color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(16.dp, 0.dp, 16.dp, 6.dp))
         when {
             text == null && error != null -> Column(Modifier.fillMaxWidth().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(error!!); Spacer(Modifier.size(12.dp)); Button(onClick = { attempt++ }) { Text("Try again") }
+                Text(error!!); Spacer(Modifier.size(12.dp)); Button(onClick = { attempt++ }) { Text(tr("Try again")) }
             }
             text == null -> Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-            lines.isEmpty() -> Text(if (problems) "No warnings or errors.  Nice." else "The log is empty.", color = Muted, modifier = Modifier.padding(16.dp))
+            lines.isEmpty() -> Text(if (problems) tr("No warnings or errors.  Nice.") else tr("The log is empty."), color = Muted, modifier = Modifier.padding(16.dp))
             else -> LazyColumn(state = list, contentPadding = PaddingValues(12.dp, 4.dp, 12.dp, 24.dp)) {
                 itemsIndexed(lines) { _, l ->
                     Text(l, fontFamily = FontFamily.Monospace, fontSize = 11.sp, lineHeight = 14.sp,

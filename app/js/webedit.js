@@ -11,6 +11,15 @@
    reload while it runs (restore does that) picks the running editor back up. */
 var WebEdit = (function () {
   'use strict';
+  // fn in the language the phone or the web editor asked in (I18n.within), the TV's when it didn't say.
+  function inLang(code, fn) { return typeof I18n !== 'undefined' && I18n.within ? I18n.within(code, fn) : fn(); }
+  /* Messages and errors for the editor and the phone: English here, put in the asker's language as they are
+     sent (I18n.msg and I18n.say), since most come after some waiting.  MN picks one or many by n. */
+  function M(s, v) { return typeof I18n !== 'undefined' && I18n.msg ? I18n.msg(s, v) : String(s).replace(/\{(\w+)\}/g, function (a, k) { return v && v[k] != null ? v[k] : a; }); }
+  function MN(n, one, many, v) { return M(n === 1 ? one : many, Object.assign({ n: n }, v)); }
+  function MJ() { return typeof I18n !== 'undefined' && I18n.join ? I18n.join.apply(null, arguments) : [].slice.call(arguments).join(''); }
+  function fail(s, v) { var e = new Error(String(M(s, v))); e.key = s; e.vars = v; return e; }
+  function sayIn(m, code) { return typeof I18n !== 'undefined' && I18n.say ? I18n.say(m, code) : m && m.message ? m.message : m; }
   var on = false, timer = 0, appliedRev = 0, lastCmd = 0, lastDraft = 0, lastSig = '', status = null, busy = false, onStatus = null;
   var FIELDS = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'custom', 'groupOrder', 'epgMap', 'groupAdd', 'groupRemove', 'groupSort', 'chanOrder', 'watchlist', 'toolSkip', 'guideSkip', 'noGuide', 'groupMerge'];
   var SORTS = ['provider', 'az', 'za', 'number', 'custom', 'event'];
@@ -28,7 +37,7 @@ var WebEdit = (function () {
 
   function base() { return Net.port ? 'http://127.0.0.1:' + Net.port : ''; }
   function call(path, body, text) {
-    if (!base()) return Promise.reject(new Error('The network helper is not running, so the editor cannot start.  See Settings, System.'));
+    if (!base()) return Promise.reject(fail('The network helper is not running, so the editor cannot start.  See Settings, System.'));
     var post = body || text;
     var asked = Net.ctlFetch(base() + path, { method: post ? 'POST' : 'GET', cache: 'no-store', headers: (post ? { 'Content-Type': 'application/json' } : {}), body: text || (body ? JSON.stringify(body) : undefined) })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || U.httpSays(r.status, 'helper')); return j; }); });
@@ -377,7 +386,7 @@ var WebEdit = (function () {
   function smbEditorLogin(a, at) {
     var l = { server: at.server, share: clean(a.share), user: clean(a.user), pass: String(a.pass || ''), domain: clean(a.domain), name: clean(a.name0) };
     var kept = a.saved ? Media.smbLoginOf(a.saved) : null;
-    if (a.saved && !kept) throw new Error('That library is gone from the TV.');
+    if (a.saved && !kept) throw fail('That library is gone from the TV.');
     if (kept) { l.user = kept.user; l.pass = kept.pass; l.domain = kept.domain; }
     return l;
   }
@@ -392,43 +401,50 @@ var WebEdit = (function () {
   }
   function mediaSource(a) {
     var s = MediaStore.source(clean(a.id));
-    if (!s) throw new Error('That media source no longer exists.');
+    if (!s) throw fail('That media source no longer exists.');
     return s;
   }
   var RUN = {
     /* Settings, the same pages the TV and the phone app show (Settings.phone): the sections, one page (sec and the
        rows followed into it), and a change (toggle, choice, cycle, action, or the answer to a question it asked). */
-    setSections: function () { return { msg: '', data: Settings.phone.sections() }; },
-    setFind: function (a) { return { msg: '', data: Settings.phone.find(String(a.q || '').slice(0, 80)) }; },
-    setPage: function (a) { return Settings.phone.ready().then(function () { return { msg: '', data: Settings.phone.page(String(a.sec || ''), Array.isArray(a.path) ? a.path.map(Number) : []) }; }); },
+    // Settings in the editor's language (a.lang, sent by editors that are translated), else the TV's.
+    setSections: function (a) { return inLang(a.lang, function () { return { msg: '', data: Settings.phone.sections() }; }); },
+    setFind: function (a) { return inLang(a.lang, function () { return { msg: '', data: Settings.phone.find(String(a.q || '').slice(0, 80)) }; }); },
+    setPage: function (a) { return Settings.phone.ready().then(function () { return inLang(a.lang, function () { return { msg: '', data: Settings.phone.page(String(a.sec || ''), Array.isArray(a.path) ? a.path.map(Number) : []) }; }); }); },
     setChange: function (a) {
       var path = Array.isArray(a.path) ? a.path.map(Number) : [];
-      return Settings.phone.ready().then(function () { return Settings.phone.change(String(a.sec || ''), path, +a.i, String(a.op || ''), a); }).then(function (r) { return { msg: r.msg || '', data: { page: r.page, dialog: r.dialog || null } }; });
+      return Settings.phone.ready().then(function () { return inLang(a.lang, function () { return Settings.phone.change(String(a.sec || ''), path, +a.i, String(a.op || ''), a); }); }).then(function (r) { return { msg: r.msg || '', data: { page: r.page, dialog: r.dialog || null } }; });
     },
     mediaPreferences: function (a) {
       var KEYS = ['language', 'sort', 'showSort', 'sortReverse', 'showSortReverse', 'favoritesInLists', 'shelfOrder', 'shelfOff', 'sourceFilter', 'checkEvery'];
-      function saved() { var data = KEYS.some(function (k) { return a[k] != null; }) ? Media.updatePreferences(a) : MediaStore.preferences(); data.shelves = Media.shelfList ? Media.shelfList() : []; Settings.live(); return { msg: 'My media preferences saved.', data: data }; }
+      // The preferences, with the shelves named in the asker's language (after a token check inLang is over).
+      function saved() {
+        var data = KEYS.some(function (k) { return a[k] != null; }) ? Media.updatePreferences(a) : MediaStore.preferences();
+        data.shelves = (Media.shelfList ? Media.shelfList() : []).map(function (x) { x.name = inLang(a.lang, function () { return typeof I18n !== 'undefined' ? I18n.t(x.name) : x.name; }); return x; });
+        Settings.live();
+        return { msg: M('My media preferences saved.'), data: data };
+      }
       if (a.clearTmdbToken || (typeof a.tmdbToken === 'string' && a.tmdbToken.trim())) return Media.setTmdbToken(a.clearTmdbToken ? '' : a.tmdbToken).then(saved);
       return saved();
     },
-    mediaSourceMode:function(a){var s=mediaSource(a);return Media.changeSourceMode(s.id,clean(a.mode)).then(function(r){if(r.error)throw new Error(r.message);return {msg:'Source content updated.'};});},
+    mediaSourceMode:function(a){var s=mediaSource(a);return Media.changeSourceMode(s.id,clean(a.mode)).then(function(r){if(r.error)throw new Error(r.message);return {msg:M('Source content updated.')};});},
     mediaLibrary:function (a) { return Media.request('library/query',a,30000).then(function (r) { if(r.error)throw new Error(r.message);return {data:r}; }); },
     mediaLibraryDetail:function (a) { return Media.request('library/detail',a,30000).then(function (r) { if(r.error)throw new Error(r.message);return {data:r}; }); },
     mediaLibraryEdit:function (a) { return Media.request('library/edit',a,30000).then(function (r) { if(r.error)throw new Error(r.message);if(a.operation==='setWatched'&&!a.watched&&Media.watchedReset)Media.watchedReset(a.handle,r.revision);return {msg:'Library updated.',data:r}; }); },
     mediaTokenTest: function () { return Media.testTmdbToken().then(function (m) { return { msg: m }; }); },
     mediaList: function () {
-      return MediaStore.load().then(function () { return { msg: 'Media sources', data: MediaStore.publicSources().map(function (s) { var st = Media.libraryStats ? Media.libraryStats(s.id) : null; return { id: s.id, type: s.type, name: s.name, root: s.type === 'dropbox' || s.type === 'gdrive' || s.type === 'smb' ? s.root || '' : undefined, account: s.type === 'gdrive' ? s.account || '' : undefined, count: s.count,contentMode:s.contentMode||'movies',episodeFiles:s.episodeFiles||0,
+      return MediaStore.load().then(function () { return { msg: M('Media sources'), data: MediaStore.publicSources().map(function (s) { var st = Media.libraryStats ? Media.libraryStats(s.id) : null; return { id: s.id, type: s.type, name: s.name, root: s.type === 'dropbox' || s.type === 'gdrive' || s.type === 'smb' ? s.root || '' : undefined, account: s.type === 'gdrive' ? s.account || '' : undefined, count: s.count,contentMode:s.contentMode||'movies',episodeFiles:s.episodeFiles||0,
         unmatched: st ? st.unmatched.length : 0, shows: st ? st.shows : 0, unmatchedShows: st ? st.unmatchedShows : 0, fourK: st ? st.fourK : 0, scanning: st ? st.scanning : false, homeOff: st ? st.homeOff : false }; }) }; });
     },
     // A library's name and Show on Home; its unmatched movies; Fix match (search, then save the pick).
-    mediaSourceUpdate: function (a) { var s = mediaSource(a), next = {}; if (typeof a.name === 'string') next.name = clean(a.name); if (typeof a.homeOff === 'boolean') next.homeOff = a.homeOff; MediaStore.sourceUpdate(s.id, next); Media.refresh(); Settings.live(); return { msg: 'Library saved.' }; },
+    mediaSourceUpdate: function (a) { var s = mediaSource(a), next = {}; if (typeof a.name === 'string') next.name = clean(a.name); if (typeof a.homeOff === 'boolean') next.homeOff = a.homeOff; MediaStore.sourceUpdate(s.id, next); Media.refresh(); Settings.live(); return { msg: M('Library saved.') }; },
     mediaUnmatched: function (a) { var s = mediaSource(a); return { data: Media.libraryStats(s.id).unmatched.slice(0, 500).map(function (m) { return { id: m.id, title: m.title || '', year: m.year || '', file: m.file || m.path || '' }; }) }; },
     mediaMatchSearch: function (a) { return Media.searchDetails(clean(a.title)).then(function (l) { return { data: l }; }); },
-    mediaMatchSave: function (a) { return Media.applyDetails(clean(a.movie), clean(a.tmdb)).then(function () { return { msg: 'Match saved.' }; }); },
-    mediaLibraryDetails: function (a) { var s = mediaSource(a); Media.libraryDetails(s.id); return { msg: 'Fetching details for ' + s.name + ' on the TV.' }; },
+    mediaMatchSave: function (a) { return Media.applyDetails(clean(a.movie), clean(a.tmdb)).then(function () { return { msg: M('Match saved.') }; }); },
+    mediaLibraryDetails: function (a) { var s = mediaSource(a); Media.libraryDetails(s.id); return { msg: M('Fetching details for {x} on the TV.', { x: s.name }) }; },
     /* Trakt (app/js/trakt.js): the sign-in code, switches, lists added like Radarr and Sonarr take them. */
     trakt: function (a) {
-      if (typeof Trakt === 'undefined') throw new Error('This TiviBro has no Trakt yet.');
+      if (typeof Trakt === 'undefined') throw fail('This TiviBro has no Trakt yet.');
       var op = String(a.op || 'status'), kind = /^(both|movies|shows)$/.test(a.kind) ? a.kind : 'auto';
       function status(m) { var c = Trakt.pendingCode(); return { msg: m || '', data: { connected: Trakt.connected(), user: Trakt.user(), describe: Trakt.describe(), code: c ? { user: c.user, url: c.url } : null, settings: Trakt.settings(),
         lists: Trakt.lists().map(function (l) { return { id: l.id, name: l.name, kind: l.kind, on: l.on !== false, count: Trakt.itemsOf(l.id).length, src: l.src }; }), charts: Trakt.CHARTS.map(function (c) { return [c[0], c[1], c[2], Trakt.hasChart(c[0], c[1])]; }), has: { history: Trakt.has({ type: 'history' }), watchlist: Trakt.has({ type: 'watchlist' }), recMovies: Trakt.has({ type: 'recommended', of: 'movies' }), recShows: Trakt.has({ type: 'recommended', of: 'shows' }) } } }; }
@@ -453,8 +469,8 @@ var WebEdit = (function () {
     },
     mediaAdd: function (a) {
       return Media.addAddress(clean(a.address), clean(a.user), clean(a.pass)).then(function (r) {
-        if (r.error) throw new Error(r.message || 'Could not add that media source.');
-        return { msg: 'Media source added: ' + (r.movies || 0) + ' movies.' + (Media.leftOut ? Media.leftOut(r.skipped) : '') };
+        if (r.error) throw (r.message ? new Error(r.message) : fail('Could not add that media source.'));
+        return { msg: MJ(MN(r.movies || 0, 'Media source added: {n} movie.', 'Media source added: {n} movies.'), Media.leftOut ? Media.leftOut(r.skipped) : '') };
       });
     },
     /* A Windows or network share (SMB) from the web editor: the server and login with each ask (shares,
@@ -470,35 +486,35 @@ var WebEdit = (function () {
     },
     mediaSmbShares: function (a) {
       var at = Media.smbAddress(clean(a.server));
-      if (!at) return Promise.reject(new Error('Enter the server\'s name or IP address, like NAS or 192.168.1.20.'));
+      if (!at) return Promise.reject(fail('Enter the server\'s name or IP address, like NAS or 192.168.1.20.'));
       return Media.smbShares(smbEditorLogin(a, at)).then(function (r) { if (r.error) throw new Error(r.message); return { msg: '', data: r.shares || [] }; });
     },
     mediaSmbFolders: function (a) {
       var at = Media.smbAddress(clean(a.server));
-      if (!at) return Promise.reject(new Error('Enter the server\'s name or IP address.'));
+      if (!at) return Promise.reject(fail('Enter the server\'s name or IP address.'));
       return Media.smbFolders(smbEditorLogin(a, at), clean(a.path) || '/').then(function (r) { if (r.error) throw new Error(r.message); return { msg: '', data: r.folders || [] }; });
     },
     mediaSmbAdd: function (a) {
       var at = Media.smbAddress(clean(a.server));
-      if (!at) return Promise.reject(new Error('Enter the server\'s name or IP address.'));
+      if (!at) return Promise.reject(fail('Enter the server\'s name or IP address.'));
       var l = smbEditorLogin(a, at); l.folder = clean(a.folder) || '/';
       return Media.addSmb(l, clean(a.name)).then(function (r) {
-        if (r.error) throw new Error(r.message || 'Could not add that share.');
-        return { msg: 'Share added: ' + (r.movies || 0) + ' movies and ' + (r.episodes || 0) + ' episodes.' + (Media.leftOut ? Media.leftOut(r.skipped) : '') };
+        if (r.error) throw (r.message ? new Error(r.message) : fail('Could not add that share.'));
+        return { msg: MJ(M('Share added: {x} and {y}.', { x: MN(r.movies || 0, '{n} movie', '{n} movies'), y: MN(r.episodes || 0, '{n} episode', '{n} episodes') }), Media.leftOut ? Media.leftOut(r.skipped) : '') };
       });
     },
     /* Google Drive from the web editor: the service account's key with each ask, then the folder picked.
        The key is never sent back to the page. */
     mediaGdrivePlaces: function (a) {
-      return Media.gdrivePlaces(a.key).then(function (r) { if (r.error) throw new Error(r.message); return { msg: 'Signed in as ' + r.account, data: { account: r.account, places: r.places || [] } }; });
+      return Media.gdrivePlaces(a.key).then(function (r) { if (r.error) throw new Error(r.message); return { msg: M('Signed in as {x}', { x: r.account }), data: { account: r.account, places: r.places || [] } }; });
     },
     mediaGdriveFolders: function (a) {
       return Media.gdriveFolders(a.key, clean(a.parent), clean(a.driveId)).then(function (r) { if (r.error) throw new Error(r.message); return { msg: '', data: r.folders || [] }; });
     },
     mediaGdriveAdd: function (a) {
       return Media.addGdrive(a.key, clean(a.root), clean(a.driveId), clean(a.where), clean(a.name)).then(function (r) {
-        if (r.error) throw new Error(r.message || 'Could not add that folder.');
-        return { msg: 'Google Drive added: ' + (r.movies || 0) + ' movies and ' + (r.episodes || 0) + ' episodes.' + (Media.leftOut ? Media.leftOut(r.skipped) : '') };
+        if (r.error) throw (r.message ? new Error(r.message) : fail('Could not add that folder.'));
+        return { msg: MJ(M('Google Drive added: {x} and {y}.', { x: MN(r.movies || 0, '{n} movie', '{n} movies'), y: MN(r.episodes || 0, '{n} episode', '{n} episodes') }), Media.leftOut ? Media.leftOut(r.skipped) : '') };
       });
     },
     mediaRemove: function (a) {
@@ -508,8 +524,8 @@ var WebEdit = (function () {
     mediaRescan: function (a) {
       var s = mediaSource(a);
       return Media.rescan(s.id).then(function (r) {
-        if (r.error) throw new Error(r.message || 'Could not read that media source.');
-        return { msg: (r.note || r.text || r.count + ' movies found.') + (Media.leftOut ? Media.leftOut(r.skipped) : '') };
+        if (r.error) throw (r.message ? new Error(r.message) : fail('Could not read that media source.'));
+        return { msg: MJ((r.note || r.text || MN(r.count, '{n} movie found.', '{n} movies found.')), Media.leftOut ? Media.leftOut(r.skipped) : '') };
       });
     },
     /* Reminders waiting to go off (the Watchlist and reminders page): the list, cancelling one, or all. */
@@ -517,13 +533,13 @@ var WebEdit = (function () {
       var op = String(a.op || 'list');
       if (op === 'cancel') Remind.cancel(String(a.k), +a.s);
       if (op === 'clear') Remind.clear();
-      return { msg: op === 'cancel' ? 'Reminder cancelled' : op === 'clear' ? 'All reminders cancelled' : '', data: Remind.list() };
+      return { msg: op === 'cancel' ? M('Reminder cancelled') : op === 'clear' ? M('All reminders cancelled') : '', data: Remind.list() };
     },
     report: function () { return Diag.report().then(function (r) { return { msg: 'ok', data: r }; }); },
     // The editor sent a report through the relay: the TV follows it from now on (app/js/reports.js).
     reported: function (a) {
       var n = +a.number;
-      if (!(n > 0) || !/^https:\/\/github\.com\//.test(String(a.url || ''))) throw new Error('That is not a report.');
+      if (!(n > 0) || !/^https:\/\/github\.com\//.test(String(a.url || ''))) throw fail('That is not a report.');
       Reports.add({ number: n, url: String(a.url), key: /^[0-9a-f]{32}$/.test(a.key || '') ? a.key : '' }, clean(a.title));
       return { msg: 'ok' };
     },
@@ -532,35 +548,35 @@ var WebEdit = (function () {
       var stk = a.type === 'stalker', xc = !stk && a.type !== 'm3u';
       var p = stk ? { id: '', name: clean(a.name), type: 'stalker', portal: clean(a.portal), mac: Source.stalkerMac(a.mac), sn: clean(a.sn) }
         : { id: '', name: clean(a.name), type: xc ? 'xtream' : 'm3u', server: clean(a.server), user: clean(a.user), pass: clean(a.pass), m3u: clean(a.m3u) };
-      if (stk && !(/^https?:\/\//i.test(p.portal) && p.mac)) throw new Error('Enter the portal address (starting with http) and the MAC address, like 00:1A:79:12:34:56.');
+      if (stk && !(/^https?:\/\//i.test(p.portal) && p.mac)) throw fail('Enter the portal address (starting with http) and the MAC address, like 00:1A:79:12:34:56.');
       if (stk && !p.sn) delete p.sn;
-      if (xc && !(p.server && p.user && p.pass) && !Source.credsFromLink(p.server)) throw new Error('Enter the server, username and password.');
-      if (!xc && !stk && !p.m3u) throw new Error('Enter the playlist address.');
+      if (xc && !(p.server && p.user && p.pass) && !Source.credsFromLink(p.server)) throw fail('Enter the server, username and password.');
+      if (!xc && !stk && !p.m3u) throw fail('Enter the playlist address.');
       if (!p.name) p.name = xc ? (p.user || 'Xtream') : stk ? 'Stalker portal' : 'M3U playlist';
       if (clean(a.epg)) p.epgSources = [{ url: clean(a.epg), offset: 0 }];
       p.id = 'p' + Date.now().toString(36);
       return loadAndSave(p).then(function (data) {
         if (!a.use && Store.settings.playlists.length === 1) { a.use = true; App.tourNext(); }   // first playlist on a fresh TV: then the set-up tour
-        var vod = data.vodSkipped ? '  Left out ' + data.vodSkipped.toLocaleString() + ' movies and series episodes: a list this big keeps its live channels.' : '';
+        var vod = data.vodSkipped ? MJ('  ', M('Left out {n} movies and series episodes: a list this big keeps its live channels.', { n: data.vodSkipped.toLocaleString() })) : '';
         activity('Added ' + p.name + ': ' + data.channels.length.toLocaleString() + ' channels.' + vod + (a.use ? '  Opening the guide…' : ''), 'ok');
         if (a.use) App.switchPlaylist(p.id);
         else App.playlistsChanged();          // it is on: its channels join the lists, under its name
-        return { msg: 'Added "' + p.name + '" with ' + data.channels.length + ' channels' + (a.use ? '.  The TV switched to it.' : '.') + vod };
+        return { msg: MJ(MN(data.channels.length, 'Added "{x}" with {n} channel.', 'Added "{x}" with {n} channels.', { x: p.name }), a.use ? MJ('  ', M('The TV switched to it.')) : '', vod) };
       });
     },
     updatePlaylist: function (a) {
-      var p = find(a.id); if (!p) throw new Error('That playlist no longer exists.');
+      var p = find(a.id); if (!p) throw fail('That playlist no longer exists.');
       if (clean(a.name)) p.name = clean(a.name);
       if (typeof a.ua === 'string') p.ua = a.ua.trim();
       if (a.plRefresh != null) p.plRefresh = +a.plRefresh;
       if (a.epgRefresh != null) p.epgRefresh = +a.epgRefresh;
       var login = p.type === 'm3u' ? clean(a.m3u) : p.type === 'stalker' ? (clean(a.portal) || clean(a.mac) || clean(a.sn)) : (clean(a.server) || clean(a.user) || clean(a.pass));
-      if (!login) { Store.upsertPlaylist(p); return Promise.resolve({ msg: 'Saved "' + p.name + '"' }); }
+      if (!login) { Store.upsertPlaylist(p); return Promise.resolve({ msg: M('Saved "{x}"', { x: p.name }) }); }
       var test = JSON.parse(JSON.stringify(p));
       if (p.type === 'm3u') test.m3u = clean(a.m3u);
       else if (p.type === 'stalker') {
         if (clean(a.portal)) test.portal = clean(a.portal);
-        if (clean(a.mac)) { test.mac = Source.stalkerMac(a.mac); if (!test.mac) throw new Error('That is not a MAC address: like 00:1A:79:12:34:56.'); }
+        if (clean(a.mac)) { test.mac = Source.stalkerMac(a.mac); if (!test.mac) throw fail('That is not a MAC address: like 00:1A:79:12:34:56.'); }
         if (clean(a.sn)) test.sn = clean(a.sn);
       }
       else { if (clean(a.server)) test.server = clean(a.server); if (clean(a.user)) test.user = clean(a.user); if (clean(a.pass)) test.pass = clean(a.pass); }
@@ -568,62 +584,62 @@ var WebEdit = (function () {
         Object.assign(p, test);
         if (p.id === Store.settings.active) App.switchPlaylist(p.id);
         else if (Library.otherIds().indexOf(p.id) >= 0) App.reopenOther(p.id);
-        return { msg: 'New login works: ' + data.channels.length + ' channels.  Saved.' };
+        return { msg: MN(data.channels.length, 'New login works: {n} channel.  Saved.', 'New login works: {n} channels.  Saved.') };
       });
     },
     deletePlaylist: function (a) {
-      var p = find(a.id); if (!p) throw new Error('That playlist no longer exists.');
-      if (Store.settings.playlists.length < 2) throw new Error('This is the only playlist.  Add another one first.');
+      var p = find(a.id); if (!p) throw fail('That playlist no longer exists.');
+      if (Store.settings.playlists.length < 2) throw fail('This is the only playlist.  Add another one first.');
       var wasActive = p.id === Store.settings.active;
       Store.removePlaylist(p.id);
       if (wasActive) App.switchPlaylist(Store.settings.active); else App.playlistsChanged();
-      return { msg: 'Deleted "' + (p.name || 'playlist') + '"' };
+      return { msg: M('Deleted "{x}"', { x: p.name || M('playlist') }) };
     },
     // Off instead of deleted: kept with its login and edits, left out until it is turned on again.
     playlistOff: function (a) {
-      var p = find(a.id); if (!p) throw new Error('That playlist no longer exists.');
-      if (a.off === false) { delete p.off; Store.upsertPlaylist(p); App.playlistsChanged(); return { msg: '"' + (p.name || 'Playlist') + '" is on again' }; }
+      var p = find(a.id); if (!p) throw fail('That playlist no longer exists.');
+      if (a.off === false) { delete p.off; Store.upsertPlaylist(p); App.playlistsChanged(); return { msg: M('"{x}" is on again', { x: p.name || M('Playlist') }) }; }
       var next = Store.settings.playlists.filter(function (x) { return x.id !== p.id && !x.off; })[0];
-      if (!next) throw new Error('This is the only playlist that is on.  Turn another one on, or add one, first.');
+      if (!next) throw fail('This is the only playlist that is on.  Turn another one on, or add one, first.');
       p.off = true; Store.upsertPlaylist(p);
-      if (p.id === Store.settings.active) { App.switchPlaylist(next.id); return { msg: '"' + (p.name || 'Playlist') + '" is off.  The TV now uses "' + (next.name || 'the next playlist') + '".' }; }
+      if (p.id === Store.settings.active) { App.switchPlaylist(next.id); return { msg: M('"{x}" is off.  The TV now uses "{y}".', { x: p.name || M('Playlist'), y: next.name || M('the next playlist') }) }; }
       App.playlistsChanged();
-      return { msg: '"' + (p.name || 'Playlist') + '" is off' };
+      return { msg: M('"{x}" is off', { x: p.name || M('Playlist') }) };
     },
     usePlaylist: function (a) {
-      var p = find(a.id); if (!p) throw new Error('That playlist no longer exists.');
+      var p = find(a.id); if (!p) throw fail('That playlist no longer exists.');
       if (p.off) { delete p.off; Store.upsertPlaylist(p); }
       App.switchPlaylist(p.id);
       // Several playlists on: they are all in use, and this one is now the first.
-      return { msg: Store.others().length ? '"' + p.name + '" is now the first playlist' : 'The TV is now using "' + p.name + '"' };
+      return { msg: Store.others().length ? M('"{x}" is now the first playlist', { x: p.name }) : M('The TV is now using "{x}"', { x: p.name }) };
     },
-    refreshPlaylist: function () { return App.refresh(true).then(function () { return { msg: 'Channel list reloaded: ' + Library.count() + ' channels' }; }); },
+    refreshPlaylist: function () { return App.refresh(true).then(function () { return { msg: MN(Library.count(), 'Channel list reloaded: {n} channel', 'Channel list reloaded: {n} channels') }; }); },
     addEpgSource: function (a) {
       var p = Store.playlist, url = clean(a.url);
-      if (!/^https?:\/\//i.test(url)) throw new Error('Enter a full http:// or https:// address.');
-      if ((p.epgSources || []).some(function (x) { return x.url === url; })) throw new Error('That guide source is already in the list.');
+      if (!/^https?:\/\//i.test(url)) throw fail('Enter a full http:// or https:// address.');
+      if ((p.epgSources || []).some(function (x) { return x.url === url; })) throw fail('That guide source is already in the list.');
       p.epgSources = (p.epgSources || []).concat([{ url: url, offset: +a.offset || 0 }]);
       Store.upsertPlaylist(p);
-      return bgGuide('Guide source added.');
+      return bgGuide(M('Guide source added.'));
     },
     removeEpgSource: function (a) {
       var p = Store.playlist, i = +a.index;
-      if (!p.epgSources || !p.epgSources[i]) throw new Error('That guide source no longer exists.');
+      if (!p.epgSources || !p.epgSources[i]) throw fail('That guide source no longer exists.');
       p.epgSources.splice(i, 1); Store.upsertPlaylist(p);
-      return bgGuide('Guide source removed.');
+      return bgGuide(M('Guide source removed.'));
     },
     moveEpgSource: function (a) {
       var p = Store.playlist, i = +a.index, j = i + (+a.dir || 0), l = p.epgSources || [];
-      if (!l[i] || !l[j]) throw new Error('Cannot move that guide source.');
+      if (!l[i] || !l[j]) throw fail('Cannot move that guide source.');
       var t = l[i]; l[i] = l[j]; l[j] = t; Store.upsertPlaylist(p);
-      return bgGuide('Guide sources reordered.');
+      return bgGuide(M('Guide sources reordered.'));
     },
     setProviderGuide: function (a) {
       var p = Store.playlist; if (['short', 'xmltv', 'off'].indexOf(a.mode) < 0) throw new Error('bad mode');
       p.providerEpg = a.mode; Store.upsertPlaylist(p);
-      return bgGuide({ short: 'Provider guide set to per channel.', xmltv: 'Provider guide set to the full XMLTV file.', off: 'Provider guide switched off.' }[a.mode]);
+      return bgGuide({ short: M('Provider guide set to per channel.'), xmltv: M('Provider guide set to the full XMLTV file.'), off: M('Provider guide switched off.') }[a.mode]);
     },
-    reloadGuide: function () { return bgGuide('Reloading the guide.'); },
+    reloadGuide: function () { return bgGuide(M('Reloading the guide.')); },
     setPublicGuide: function (a) {
       var p = Store.playlist, patch = {};
       if (typeof a.on === 'boolean') patch.on = a.on;
@@ -632,11 +648,11 @@ var WebEdit = (function () {
       if (a.again) Epg.pubAgain(); else Epg.refresh(Library, false);
       lastSig = '';
       var cf = PubEpg.conf(p);
-      return { msg: !cf.on ? 'Public guide fill-in is off.' : a.again ? 'Looking in the public guides again.' : 'Public guide fill-in is on' + (cf.cc.length ? ' for ' + cf.cc.map(PubEpg.name).join(', ') : ', countries picked automatically') + '.' };
+      return { msg: !cf.on ? M('Public guide fill-in is off.') : a.again ? M('Looking in the public guides again.') : cf.cc.length ? M('Public guide fill-in is on for {x}.', { x: cf.cc.map(PubEpg.name).join(', ') }) : M('Public guide fill-in is on, countries picked automatically.') };
     },
     testEpgSource: function (a) {
       var url = clean(a.url);
-      if (!/^https?:\/\//i.test(url)) throw new Error('Enter a full http:// or https:// address.');
+      if (!/^https?:\/\//i.test(url)) throw fail('Enter a full http:// or https:// address.');
       var t0 = Date.now();
       // Through the helper the guide arrives unzipped, whatever its compression.
       var viaHelper = Net.active;
@@ -648,7 +664,7 @@ var WebEdit = (function () {
       function hangUp() {
         timedOut = true;
         if (ctl) { try { ctl.abort(); } catch (e) {} } else if (rd) { try { rd.cancel(); } catch (e) {} }
-        if (giveUp) giveUp(new Error('No data for ' + (IDLE_MS / 1000) + 's.  Check the address and that the server is reachable.'));
+        if (giveUp) giveUp(fail('No data for {n} s.  Check the address and that the server is reachable.', { n: IDLE_MS / 1000 }));
       }
       function race(p) {
         clearTimeout(idle);
@@ -657,7 +673,7 @@ var WebEdit = (function () {
       }
       var size = 0, gz = false, noGzMsg = null;
       return race(fetch(Net.wrap(url, viaHelper ? { unzip: 't' + Date.now().toString(36) } : null), Object.assign({ cache: 'no-store' }, ctl ? { signal: ctl.signal } : null))).then(function (r) {
-        if (!r.ok) throw new Error('The server answered ' + r.status + '.  Check the address.');
+        if (!r.ok) throw fail('The server answered {n}.  Check the address.', { n: r.status });
         var how = r.headers.get('x-unzipped') || '';
         size = +(r.headers.get('x-raw-length') || r.headers.get('content-length')) || 0; gz = !!how || /\.gz($|\?)/.test(url);
         if (!viaHelper && gz && typeof DecompressionStream === 'undefined') { clearTimeout(idle); try { r.body.cancel(); } catch (e) {} noGzMsg = true; return ''; }
@@ -665,7 +681,7 @@ var WebEdit = (function () {
         rd = body.getReader();
         function step() {
           return race(rd.read()).then(function (x) {
-            if (x.done) { if (timedOut) throw new Error('No data for ' + (IDLE_MS / 1000) + 's.  Check the address and that the server is reachable.'); return txt; }
+            if (x.done) { if (timedOut) throw fail('No data for {n} s.  Check the address and that the server is reachable.', { n: IDLE_MS / 1000 }); return txt; }
             txt += dec.decode(x.value, { stream: true });
             if (txt.length > 400000) { try { rd.cancel(); } catch (e) {} return txt; }
             return step();
@@ -674,28 +690,28 @@ var WebEdit = (function () {
         return step();
       }).then(function (txt) {
         clearTimeout(idle);
-        if (noGzMsg) return { msg: 'Reachable, but this TV can only unzip .gz guides through the network helper.  Set Settings > Playback > Connection to Automatic, or use the plain .xml address.', data: { ok: true, size: size, gz: true, noGz: true } };
-        if (!/<tv[\s>]/.test(txt) && !/<channel\b/.test(txt)) throw new Error('That address does not return an XMLTV guide.');
+        if (noGzMsg) return { msg: M('Reachable, but this TV can only unzip .gz guides through the network helper.  Set Settings > Playback > Connection to Automatic, or use the plain .xml address.'), data: { ok: true, size: size, gz: true, noGz: true } };
+        if (!/<tv[\s>]/.test(txt) && !/<channel\b/.test(txt)) throw fail('That address does not return an XMLTV guide.');
         var ch = (txt.match(/<channel\b/g) || []).length, ms = Date.now() - t0;
-        return { msg: 'Works.  ' + (size ? (size / 1048576).toFixed(1) + ' MB' + (gz ? ' zipped' : '') + ', ' : '') + 'answered in ' + (ms / 1000).toFixed(1) + ' s.', data: { ok: true, size: size, gz: gz, channelsSeen: ch } };
+        return { msg: size ? M(gz ? 'Works.  {x} MB zipped, answered in {y} s.' : 'Works.  {x} MB, answered in {y} s.', { x: (size / 1048576).toFixed(1), y: (ms / 1000).toFixed(1) }) : M('Works.  Answered in {y} s.', { y: (ms / 1000).toFixed(1) }), data: { ok: true, size: size, gz: gz, channelsSeen: ch } };
       }, function (e) {
         clearTimeout(idle);
-        throw timedOut ? new Error('No data for ' + (IDLE_MS / 1000) + 's.  Check the address and that the server is reachable.') : e;
+        throw timedOut ? fail('No data for {n} s.  Check the address and that the server is reachable.', { n: IDLE_MS / 1000 }) : e;
       });
     },
     listDrafts: function () {
       return draftQ.then(function () { return drafts(); }).then(function (l) {
         summarize(l);
-        return { msg: l.length + ' draft versions', data: { bytes: bytes(l), list: l.map(function (x) { return { id: x.id, at: x.at, started: x.started, kind: x.kind, name: x.name, label: x.label, changes: x.changes, size: x.size, sent: !!x.sent }; }) } };
+        return { msg: MN(l.length, '{n} draft version', '{n} draft versions'), data: { bytes: bytes(l), list: l.map(function (x) { return { id: x.id, at: x.at, started: x.started, kind: x.kind, name: x.name, label: x.label, changes: x.changes, size: x.size, sent: !!x.sent }; }) } };
       });
     },
     getDraft: function (a) {
       return draftQ.then(function () { return drafts(); }).then(function (l) {
         var x = l.filter(function (y) { return y.id === a.id; })[0];
-        if (!x) throw new Error('That draft version no longer exists.');
+        if (!x) throw fail('That draft version no longer exists.');
         return Store.bigGet(stateKey(null, x.id)).then(function (state) {
-          if (typeof state !== 'string') throw new Error('That draft version could not be read.');
-          return { msg: 'Draft version', data: { id: x.id, at: x.at, state: state, changes: x.changes, label: x.label } };
+          if (typeof state !== 'string') throw fail('That draft version could not be read.');
+          return { msg: M('Draft version'), data: { id: x.id, at: x.at, state: state, changes: x.changes, label: x.label } };
         });
       });
     },
@@ -704,43 +720,43 @@ var WebEdit = (function () {
         l = l.filter(function (x) { return x.id !== a.id; });
         return Store.bigSet(draftKey(), l).then(function () { Store.bigSet(stateKey(null, a.id), null); summarize(l); });
       });
-      return draftQ.then(function () { return { msg: 'Draft version deleted' }; });
+      return draftQ.then(function () { return { msg: M('Draft version deleted') }; });
     },
     // A subtitle file from the web editor's Overview (its text, read in the browser): a track on what plays now.
     subFile: function (a) {
       var text = String(a.text || '');
-      if (!text.trim()) throw new Error('That file is empty.');
-      if (text.length > 3 * 1048576) throw new Error('That file is too big for subtitles (3 MB at most).');
+      if (!text.trim()) throw fail('That file is empty.');
+      if (text.length > 3 * 1048576) throw fail('That file is too big for subtitles (3 MB at most).');
       var r = Subs.fromAfar(String(a.name || 'Subtitles.srt').slice(0, 200), text, I18n.t('the web editor'));
       return { msg: 'On the TV: ' + r.label + ', ' + r.lines + ' lines' };
     },
-    listSnaps: function () { return snapList().then(function (l) { return { msg: l.length + ' restore points', data: l }; }); },
-    makeSnap: function (a) { return snap('named', clean(a.name) || 'Restore point').then(function (s) { return { msg: 'Restore point "' + s.name + '" saved on the TV', data: { id: s.id } }; }); },
+    listSnaps: function () { return snapList().then(function (l) { return { msg: MN(l.length, '{n} restore point', '{n} restore points'), data: l }; }); },
+    makeSnap: function (a) { return snap('named', clean(a.name) || 'Restore point').then(function (s) { return { msg: M('Restore point "{x}" saved on the TV', { x: s.name }), data: { id: s.id } }; }); },
     deleteSnap: function (a) {
-      return snaps().then(function (l) { var n = l.filter(function (x) { return x.id !== a.id; }); return Store.bigSet(snapKey(), n).then(function () { return { msg: 'Restore point deleted' }; }); });
+      return snaps().then(function (l) { var n = l.filter(function (x) { return x.id !== a.id; }); return Store.bigSet(snapKey(), n).then(function () { return { msg: M('Restore point deleted') }; }); });
     },
     restoreSnap: function (a) {
       return snaps().then(function (l) {
         var s = l.filter(function (x) { return x.id === a.id; })[0];
-        if (!s) throw new Error('That restore point no longer exists.');
+        if (!s) throw fail('That restore point no longer exists.');
         return snap('auto', 'Before restoring "' + s.name + '"').then(function () {
           writeEdits(s.data.edits || {}, s.data.names);
           Log.info('webedit', 'Restored "' + s.name + '" from ' + new Date(s.at).toISOString() + (s.pls && s.pls.length > 1 ? ' (' + s.pls.length + ' playlists)' : ''));
           U.toast('Restored "' + s.name + '"');
           // A playlist the point covers that is off now keeps its own edits (blend).
           var cov = coverOf(s.data.names), off = cov ? Object.keys(cov).filter(function (id) { var q = id && Store.byId(id); return q && q.off; }).map(function (id) { return Store.byId(id).name || 'a playlist'; }) : [];
-          return push(true).then(function () { return { msg: 'Restored "' + s.name + '".  The TV is using it now.' + (off.length ? '  ' + off.join(', ') + (off.length > 1 ? ' are' : ' is') + ' off, so ' + (off.length > 1 ? 'their' : 'its') + ' part was not restored.' : '') }; });
+          return push(true).then(function () { return { msg: MJ(M('Restored "{x}".  The TV is using it now.', { x: s.name }), off.length ? '  ' : '', !off.length ? '' : off.length > 1 ? M('{x} are off, so their part was not restored.', { x: off.join(', ') }) : M('{x} is off, so its part was not restored.', { x: off[0] })) }; });
         });
       });
     },
     // The editor's checklist ticks "Download a backup" from this (any phone or computer, any time).
-    backup: function () { return Backup.create().then(function (b) { Store.settings.lastBackup = Date.now(); Store.saveSettings(); lastSig = ''; return { msg: 'Backup ready', data: b }; }); },
+    backup: function () { return Backup.create().then(function (b) { Store.settings.lastBackup = Date.now(); Store.saveSettings(); lastSig = ''; return { msg: M('Backup ready'), data: b }; }); },
     restore: function (a) {
       activity('Restoring your backup…');
       return Backup.restore(a.data).then(function (info) {
         activity('Backup restored: ' + info.playlists + ' playlist' + (info.playlists === 1 ? '' : 's') + '.  TiviBro is restarting…', 'ok');
         setTimeout(function () { location.reload(); }, 1500);
-        return { msg: 'Restored ' + info.playlists + ' playlist(s).  The TV is restarting TiviBro.' };
+        return { msg: MN(info.playlists, 'Restored {n} playlist.  The TV is restarting TiviBro.', 'Restored {n} playlists.  The TV is restarting TiviBro.') };
       });
     }
   };
@@ -748,7 +764,7 @@ var WebEdit = (function () {
   // browser on its own (see sendProgress), so the editor never sits on a silent spinner.
   function bgGuide(m) {
     Epg.refresh(Library, true).catch(function (e) { Log.warn('webedit', 'Guide load failed: ' + (e && e.message)); }).then(function () { lastSig = ''; });
-    return { msg: m + (Epg.xml ? '  Loading the guide now.' : ''), data: { loading: Epg.xml } };
+    return { msg: Epg.xml ? M('{x}  Loading the guide now.', { x: m }) : m, data: { loading: Epg.xml } };
   }
   var progT = 0, progLast = 0;
   function sendProgress(p, force) {
@@ -767,15 +783,16 @@ var WebEdit = (function () {
       chain = chain.then(function () {
         Log.info('webedit', 'Running "' + c.type + '" from the web editor');
         Log.state('editor', 'running "' + c.type + '" from the web editor');
-        var fn = RUN[c.type], seen = Log.lines().length;
-        return Promise.resolve().then(function () { if (!fn) throw new Error('Unknown action ' + c.type); return fn(c.args || {}); })
-          .then(function (r) { return call('/editor/result', { id: c.id, ok: true, msg: r && r.msg, data: r && r.data }); },
+        var fn = RUN[c.type], seen = Log.lines().length, lang = (c.args || {}).lang;
+        // In the editor's language (args.lang): what the action builds right away (its message, a Settings page).
+        return Promise.resolve().then(function () { if (!fn) throw new Error('Unknown action ' + c.type); return inLang((c.args || {}).lang, function () { return fn(c.args || {}); }); })
+          .then(function (r) { return call('/editor/result', { id: c.id, ok: true, msg: sayIn(r && r.msg, lang), data: r && r.data }); },
             function (e) {
               Log.warn('webedit', '"' + c.type + '" failed: ' + (e && e.message));
               if (c.type === 'addPlaylist' || c.type === 'restore') activity(I18n.t('That didn\'t work: {x}  Fix it on your phone or computer and send it again.', { x: String((e && e.message) || 'it failed').replace(/([^.!?])$/, '$1.') }), 'err');
               // Adding a playlist: what the TV tried, for the "What the TV tried" box (issue #87).
               var tried = c.type === 'addPlaylist' ? triedLog(seen) : null;
-              return call('/editor/result', { id: c.id, ok: false, msg: (e && e.message) || 'failed', data: tried ? { log: tried } : undefined }); })
+              return call('/editor/result', { id: c.id, ok: false, msg: (e && sayIn(e, lang)) || 'failed', data: tried ? { log: tried } : undefined }); })
           .then(function () { lastSig = ''; Log.state('editor', ''); });
       });
     });

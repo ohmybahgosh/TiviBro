@@ -5,6 +5,8 @@
    A team whose scores are hidden on the TV shows none here either, until "Show the score". */
 package app.tivibro.phone.ui
 
+import app.tivibro.phone.tr
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -66,9 +68,9 @@ import kotlinx.coroutines.launch
 private fun clock(t: Long): String = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT).format(java.util.Date(t))
 /** As the TV says it: "2:10 4th", "Final", or when it starts ("Tomorrow 7:00 PM"). */
 private fun status(g: SportGame, now: Long): String = when {
-    g.hidden -> if (g.live) "On now, score hidden" else "Played, score hidden"
+    g.hidden -> if (g.live) tr("On now, score hidden") else tr("Played, score hidden")
     g.state == "in" -> g.detail.replace(Regex("\\s+-\\s+"), " ")
-    g.state == "post" -> "Final" + (Regex("OT|SO|/\\d").find(g.detail)?.let { " " + g.detail.replace(Regex("^Final/?", RegexOption.IGNORE_CASE), "") } ?: "")
+    g.state == "post" -> tr("Final") + (Regex("OT|SO|/\\d").find(g.detail)?.let { " " + g.detail.replace(Regex("^Final/?", RegexOption.IGNORE_CASE), "") } ?: "")
     else -> dateOf(g.start) + "  ·  " + clock(g.start)
 }
 /** "Sat, Nov 22", in the phone's own date format. */
@@ -86,18 +88,18 @@ fun SportsTab(model: AppModel, id: String, playing: String, now: Long) {
         while (true) {
             try { data = model.sports(id); error = null }
             catch (e: TbException) { error = e.message }
-            catch (e: Exception) { if (data == null) error = "The TV didn't answer.  Is it on, and on the same network?" }
+            catch (e: Exception) { if (data == null) error = tr("The TV didn't answer.  Is it on, and on the same network?") }
             delay(if (data?.rows?.any { r -> r.games.any { it.live } } == true) 30_000 else 120_000)
         }
     }
     val d = data
     when {
         d == null && error != null -> Column(Modifier.fillMaxWidth().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(error ?: ""); Spacer(Modifier.size(12.dp)); Button(onClick = { attempt++ }) { Text("Try again") }
+            Text(error ?: ""); Spacer(Modifier.size(12.dp)); Button(onClick = { attempt++ }) { Text(tr("Try again")) }
         }
         d == null -> Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
         d.off -> Text(d.msg, color = Muted, modifier = Modifier.padding(24.dp))
-        d.rows.isEmpty() -> Text("No games today in the TV's leagues (" + d.leagues.joinToString(", ") + ").  Pick the leagues on the TV: Sports, then Blue.",
+        d.rows.isEmpty() -> Text(tr("No games today in the TV's leagues ({x}).  Pick the leagues on the TV: Sports, then Blue.", "x" to d.leagues.joinToString(", ")),
             color = Muted, modifier = Modifier.padding(24.dp))
         else -> LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
             items(d.rows, key = { it.id }) { r ->
@@ -148,10 +150,10 @@ private fun GameCard(g: SportGame, row: String, now: Long, onClick: () -> Unit) 
             Text(status(g, now) + if (g.state == "post") "  ·  " + dateOf(g.start) else "", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
             Spacer(Modifier.weight(1f))
             val c = g.chans.firstOrNull()
-            Text(c?.name ?: if (g.state == "post") "" else "not on the TV's channels", color = if (c != null) TextHi else Muted, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            Text(c?.name ?: if (g.state == "post") "" else tr("not on the TV's channels"), color = if (c != null) TextHi else Muted, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(start = 6.dp))
         }
-        if (g.mine && row != "mine") Text("MY TEAM", color = Accent, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+        if (g.mine && row != "mine") Text(tr("MY TEAM"), color = Accent, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
     }
 }
 
@@ -170,7 +172,7 @@ private fun GameSheet(model: AppModel, id: String, first: SportGame, now: Long, 
         }
     }
     fun act(f: suspend () -> Unit) = scope.launch {
-        try { f() } catch (e: TbException) { model.say(e.message ?: "The TV said no") } catch (e: Exception) { model.say("The TV didn't answer.  Is it on, and on the same network?") }
+        try { f() } catch (e: TbException) { model.say(e.message ?: tr("The TV said no")) } catch (e: Exception) { model.say(tr("The TV didn't answer.  Is it on, and on the same network?")) }
     }
     ModalBottomSheet(onDismissRequest = onDone, sheetState = sheet, containerColor = Panel) {
         Column(Modifier.padding(bottom = 24.dp).verticalScroll(rememberScrollState())) {
@@ -185,7 +187,7 @@ private fun GameSheet(model: AppModel, id: String, first: SportGame, now: Long, 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (a != null) TeamBlock(a, Modifier.weight(1f), win == 0, win == 1)
                     Column(Modifier.weight(1.2f), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(if (g.teams.size == 2 && g.state != "pre" && !g.hidden) "${a?.score ?: ""}  –  ${h?.score ?: ""}" else if (g.hidden) "Score hidden" else clock(g.start),
+                        Text(if (g.teams.size == 2 && g.state != "pre" && !g.hidden) "${a?.score ?: ""}  –  ${h?.score ?: ""}" else if (g.hidden) tr("Score hidden") else clock(g.start),
                             fontSize = if (g.state != "pre" && !g.hidden) 36.sp else 24.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.Center)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             if (g.live) { StatusTag(true, "LIVE"); Spacer(Modifier.width(6.dp)) }
@@ -198,22 +200,22 @@ private fun GameSheet(model: AppModel, id: String, first: SportGame, now: Long, 
             }
             // Watch on TV, a reminder, follow, show the score.
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(16.dp, 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                g.chans.firstOrNull()?.let { c -> Button(onClick = { model.playOnTv(id, c.key, c.name); onDone() }, colors = ButtonDefaults.buttonColors(containerColor = Accent)) { Text("Watch on TV") } }
-                if (g.state == "pre" && g.chans.isNotEmpty()) OutlinedButton(onClick = { act { val on = model.sportsRemind(id, g.id); g = g.copy(reminder = on); model.say(if (on) "Reminder set on the TV" else "Reminder cancelled") } }) {
-                    Text(if (g.reminder) "Cancel the reminder" else "Remind me")
+                g.chans.firstOrNull()?.let { c -> Button(onClick = { model.playOnTv(id, c.key, c.name); onDone() }, colors = ButtonDefaults.buttonColors(containerColor = Accent)) { Text(tr("Watch on TV")) } }
+                if (g.state == "pre" && g.chans.isNotEmpty()) OutlinedButton(onClick = { act { val on = model.sportsRemind(id, g.id); g = g.copy(reminder = on); model.say(if (on) tr("Reminder set on the TV") else tr("Reminder cancelled")) } }) {
+                    Text(if (g.reminder) tr("Cancel the reminder") else tr("Remind me"))
                 }
                 g.teams.filter { it.id.isNotBlank() }.forEach { t ->
                     OutlinedButton(onClick = { act { val on = model.sportsFollow(id, t.id, !t.mine); g = g.copy(teams = g.teams.map { if (it.id == t.id) it.copy(mine = on) else it }) } }) {
-                        Text(if (t.mine) "Following ${t.name}" else "Follow ${t.name}")
+                        Text(if (t.mine) tr("Following {x}", "x" to t.name) else tr("Follow {x}", "x" to t.name))
                     }
                 }
-                if (g.hidden) OutlinedButton(onClick = { act { g = model.sportsShow(id, g.id) } }) { Text("Show the score") }
+                if (g.hidden) OutlinedButton(onClick = { act { g = model.sportsShow(id, g.id) } }) { Text(tr("Show the score")) }
             }
             val sum = g.sum
             // The box score, by period, and each team's leaders.
             val lines = sum?.lines?.filter { it.periods.isNotEmpty() }.orEmpty()
             if (!g.hidden && lines.size == 2) {
-                Section("Box score")
+                Section(tr("Box score"))
                 val n = lines.maxOf { it.periods.size }
                 Column(Modifier.padding(16.dp, 0.dp)) {
                     Row { Text("", Modifier.weight(2f)); (1..n).forEach { Text(it.toString(), Modifier.weight(1f), color = Muted, fontSize = 11.sp, textAlign = TextAlign.Center) }; Text("T", Modifier.weight(1f), color = Muted, fontSize = 11.sp, textAlign = TextAlign.Center) }
@@ -234,10 +236,10 @@ private fun GameSheet(model: AppModel, id: String, first: SportGame, now: Long, 
                         }
                     }
                 }
-            } else if (g.state == "pre") Text("The box score starts with the game.", color = Muted, modifier = Modifier.padding(16.dp, 8.dp))
+            } else if (g.state == "pre") Text(tr("The box score starts with the game."), color = Muted, modifier = Modifier.padding(16.dp, 8.dp))
             // Every channel of the TV's with the game.
-            Section("On the TV's channels")
-            if (g.chans.isEmpty()) Text(if (g.nets.isNotEmpty()) "Not on the TV's channels.  It's on " + g.nets.joinToString(", ") + "." else "Not on the TV's channels.", color = Muted, modifier = Modifier.padding(16.dp, 4.dp))
+            Section(tr("On the TV's channels"))
+            if (g.chans.isEmpty()) Text(if (g.nets.isNotEmpty()) tr("Not on the TV's channels.  It's on {x}.", "x" to g.nets.joinToString(", ")) else tr("Not on the TV's channels."), color = Muted, modifier = Modifier.padding(16.dp, 4.dp))
             g.chans.forEach { c ->
                 Row(Modifier.fillMaxWidth().clickable { model.playOnTv(id, c.key, c.name); onDone() }.padding(16.dp, 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Logo(c.logo, "", 40.dp)
@@ -250,7 +252,7 @@ private fun GameSheet(model: AppModel, id: String, first: SportGame, now: Long, 
             }
             // The standings of the teams' division or conference.
             (sum?.standings?.firstOrNull { st -> g.teams.any { t -> t.mine && rowOf(st.rows, t) != null } } ?: sum?.standings?.firstOrNull())?.let { st ->
-                Section(st.name.ifBlank { "Standings" })
+                Section(st.name.ifBlank { tr("Standings") })
                 st.rows.forEach { r ->
                     val who = g.teams.firstOrNull { rowOf(st.rows, it) == r }; val me = who != null
                     Row(Modifier.fillMaxWidth().background(if (me) Color.White.copy(alpha = 0.06f) else Color.Transparent).padding(16.dp, 3.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -273,7 +275,7 @@ private fun TeamBlock(t: SportTeam, modifier: Modifier, won: Boolean = false, lo
         }
         Text(t.name, fontWeight = FontWeight.Bold, color = if (lost) Color(0xFFAAB2C8) else TextHi, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
         // The poll rank in words beside the record, not a bare number before the name.
-        val sub = listOfNotNull(if (t.rank > 0) "Ranked #${t.rank}" else null, t.rec.ifBlank { null }).joinToString("  ·  ")
+        val sub = listOfNotNull(if (t.rank > 0) tr("Ranked #{n}", "n" to t.rank) else null, t.rec.ifBlank { null }).joinToString("  ·  ")
         if (sub.isNotBlank()) Text(sub, color = Color(0xFFD3D9EA), fontSize = 11.sp)
         if (won) Text("WINNER", color = Color(0xFF0B0E14), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(top = 4.dp).clip(RoundedCornerShape(50)).background(Color.White).padding(10.dp, 1.dp))
     }

@@ -4,6 +4,7 @@
    what the TV advertises to anyone nearby. */
 package app.tivibro.phone.ble
 
+
 import android.content.Context
 import android.os.Build
 import app.tivibro.phone.proto.TvAdvert

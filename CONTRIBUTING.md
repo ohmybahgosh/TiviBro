@@ -50,6 +50,8 @@ TiviBro's English is the key: `app/js/lang/es.js` and `ru.js` map each English t
 - A new language: copy `es.js`, change the code, add it to `LANGS` in `i18n.js` and a `<script>` line in `app/index.html`.
 - `node tests/soak/i18n-layout.js --shots dir` draws every screen, Settings page, menu and box in each language and fails on text that's cut off, overlapping or off the screen where English isn't, and lists the text that still shows in English.
 - Keep `{n}` and `{x}` in every translation (`npm test` checks), and translate text where it's drawn: the settings rows, menus, boxes, toasts and hints already go through `I18n.t`, so new code there needs nothing extra.
+- The web editor and the phone app share their own dictionaries, `service/editor/lang/<code>.js` (Spain's and Portugal's are the TV's files, copied by `scripts/build.sh`).  In the editor, text goes through `tr('...')` and `trn(n, 'one', 'many')`, and fixed text in the page is translated as it's drawn (`data-raw` keeps names and examples as they are); in the phone app, `tr("...")` and `trn(...)` in Kotlin.  `node scripts/i18n-companion.js` shows how far each language is, `node scripts/i18n-companion.js es` what's missing, and `node tests/soak/editor-i18n.js es ru` opens every editor page in those languages.
+- What the TV sends the editor and the phone (Settings pages, messages, errors) comes in the asker's language: webedit.js writes its messages with `M('...')`, `MN(n, ...)` and `fail('...')`, and `I18n.say` translates them as they go out.
 
 ## Releases
 

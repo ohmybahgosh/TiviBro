@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **The web editor and the phone app in your language.**  Spanish (Latin American or Spain's), French, Portuguese (Brazil's or Portugal's) and Russian, like the TV.  The web editor follows the browser's language, or pick one at the bottom of its menu; the phone app follows the phone's (on Android 13 and later, also its own language in the phone's settings) and opens the web editor in it.  What the TV sends them (Settings pages, messages, errors) comes in that language too, even when the TV itself is in another.
+- A playlist's page in Settings opens again (alpha 204 and 205 stopped at an error).
+
 ## 0.6.0 (alpha 205, 2026-11-23)
 
 Pre-release: expect rough edges, and keep a backup before installing.

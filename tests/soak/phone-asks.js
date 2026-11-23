@@ -320,7 +320,15 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const sa = (o) => ask('settings', o, { seal: true });
   await ev(() => { Store.settings.advView = true; });   // every row in place (Advanced view), as the checks below expect
   const secs = await sa({ op: 'sections' });
-  ok('the phone gets the TV\'s settings pages', secs.sections.some((x) => x.id === 'look' && x.title === 'Appearance') && secs.sections.length === 18, JSON.stringify(secs.sections));
+  ok('the phone gets the TV\'s settings pages', secs.sections.some((x) => x.id === 'look' && x.title === 'Appearance') && secs.sections.length === 19, secs.sections.length + ' ' + secs.sections.map((x) => x.id).join(' '));
+  // A phone in Spanish gets them in Spanish, while the TV stays in its own language; a message from later (a
+  // restore point list, after the TV looked it up) too.
+  const esSecs = await ask('settings', { op: 'sections' }, { seal: true, lang: 'es' });
+  ok('a phone in Spanish gets the pages in Spanish', esSecs.sections.some((x) => x.id === 'look' && x.title === 'Apariencia') && (await ev(() => I18n.t('Appearance'))) === 'Appearance', esSecs.sections.map((x) => x.title).join(', '));
+  const esSnaps = await ask('snaps', { op: 'make', name: 'Phone check' }, { seal: true, lang: 'es' });
+  ok('and the TV\'s messages, after waiting, in Spanish too', /guardado en la TV/.test(esSnaps.msg || ''), esSnaps.msg);
+  const made = (esSnaps.items || []).filter((x) => x.name === 'Phone check')[0];
+  if (made) await ask('snaps', { op: 'delete', id: made.id }, { seal: true });
   let pg = await sa({ op: 'page', sec: 'look' });
   const clock = pg.rows.find((r) => r.label === 'Show clock'), nums = pg.rows.find((r) => r.label === 'Numbers');
   ok('a page comes as rows: toggles, choices with their options', clock && clock.kind === 'toggle' && nums && nums.kind === 'choice' && nums.options.length === 3, JSON.stringify(pg.rows.slice(0, 4)));

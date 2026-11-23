@@ -2,6 +2,8 @@
    Wake-on-LAN and, when allowed, Bluetooth). */
 package app.tivibro.phone.tile
 
+import app.tivibro.phone.tr
+
 import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
@@ -33,18 +35,20 @@ private object TileWork { val scope = CoroutineScope(SupervisorJob() + Dispatche
 class TvTileService : TileService() {
 
     override fun onStartListening() {
+        app.tivibro.phone.I18n.ensure(this)
         val tv = TvStore(this).tileChoice()
         qsTile?.apply {
             label = "TiviBro"
-            sub(this, tv?.name ?: "Pair a TV in the app")
+            sub(this, tv?.name ?: tr("Pair a TV in the app"))
             state = if (tv == null) Tile.STATE_UNAVAILABLE else Tile.STATE_INACTIVE
             updateTile()
         }
     }
 
     override fun onClick() {
+        app.tivibro.phone.I18n.ensure(this)
         val tv = TvStore(this).tileChoice() ?: return
-        qsTile?.apply { state = Tile.STATE_ACTIVE; sub(this, "Opening…"); updateTile() }
+        qsTile?.apply { state = Tile.STATE_ACTIVE; sub(this, tr("Opening…")); updateTile() }
         val app = applicationContext
         TileWork.scope.launch {
             android.util.Log.i("TiviBroTile", "Opening TiviBro on ${tv.name}")
@@ -68,7 +72,7 @@ class TvTileService : TileService() {
                 }
                 runCatching { TvClient(tv).open() }.onFailure { android.util.Log.w("TiviBroTile", "Open failed: ${it.message}") }.isSuccess
             }
-            android.util.Log.i("TiviBroTile", if (ok) "Opened" else "${tv.name} didn't answer")
+            android.util.Log.i("TiviBroTile", if (ok) tr("Opened") else "${tv.name} didn't answer")
             withContext(Dispatchers.Main) {
                 if (!ok) Toast.makeText(app, "${tv.name} didn't answer", Toast.LENGTH_SHORT).show()
                 runCatching { qsTile?.apply { state = Tile.STATE_INACTIVE; sub(this, tv.name); updateTile() } }

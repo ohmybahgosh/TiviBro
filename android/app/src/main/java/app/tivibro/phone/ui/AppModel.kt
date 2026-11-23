@@ -4,6 +4,8 @@
    link, backups, volume, the editor address and Wake-on-LAN.  Talks to the TV only through proto/. */
 package app.tivibro.phone.ui
 
+import app.tivibro.phone.tr
+
 import android.app.Application
 import android.os.Build
 import android.provider.Settings
@@ -272,13 +274,13 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         val tv = tv(id) ?: return@launch
         val t = typed.trim()
         val m = Regex("^([0-9A-Za-z.\\-]+)(?::(\\d{2,5}))?$").find(t)
-        if (m == null) { say("That doesn't look like an address.  Like 192.168.1.50"); return@launch }
+        if (m == null) { say(tr("That doesn't look like an address.  Like 192.168.1.50")); return@launch }
         val host = m.groupValues[1]; val port = m.groupValues[2].toIntOrNull() ?: tv.port
         val h = withContext(Dispatchers.IO) { runCatching { Pairing.hello(host, port, 4000) }.getOrNull() }
         when {
-            h == null -> say("No TiviBro answered at $host.  Is the TV on, with TiviBro's phone connection on?")
-            h.id != tv.id -> say("That address is a different TV (${h.name}).")
-            else -> { saveTv(tv.copy(host = host, port = port)); say("${tv.name} is now at $host"); check(tv(id) ?: tv) }
+            h == null -> say(tr("No TiviBro answered at {x}.  Is the TV on, with TiviBro's phone connection on?", "x" to host))
+            h.id != tv.id -> say(tr("That address is a different TV ({x}).", "x" to h.name))
+            else -> { saveTv(tv.copy(host = host, port = port)); say(tr("{x} is now at {y}", "x" to tv.name, "y" to host)); check(tv(id) ?: tv) }
         }
     }
 
@@ -332,9 +334,9 @@ class AppModel(app: Application) : AndroidViewModel(app) {
 
     /* ---------- actions ---------- */
 
-    fun openTiviBro(id: String) = act(id, "Opening TiviBro…") { tv ->
+    fun openTiviBro(id: String) = act(id, tr("Opening TiviBro…")) { tv ->
         TvClient(tv).open()
-        say("Opening TiviBro on ${tv.name}")
+        say(tr("Opening TiviBro on {x}", "x" to tv.name))
         delay(2500); check(tv)
     }
 
@@ -345,7 +347,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
      */
     fun wake(id: String) = viewModelScope.launch {
         val tv = tv(id) ?: return@launch
-        if (!tv.canWake()) { say("This TV hasn't told the app its network card yet.  Open it once while it's on."); return@launch }
+        if (!tv.canWake()) { say(tr("This TV hasn't told the app its network card yet.  Open it once while it's on.")); return@launch }
         // In network standby LG's service already answers, so it can't say the TV came on: only TiviBro's helper can.
         val wasStandby = tvsLatestUi(id)?.standby == true
         setUi(id) { it.copy(power = Power.WAKING) }
@@ -355,7 +357,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         val ble = if (tv.bt.isNotBlank()) withContext(Dispatchers.IO) { BleWaker.start(app, tv.bt) } else null
         log.add("Turn on.  Phone on Wi-Fi: ${if (lan) "yes" else "no"}.  Bluetooth wake: ${ble?.result ?: "no Bluetooth address for this TV"}.")
         if (ble != null) android.util.Log.i("TiviBroBle", "Turn on ${tv.name} over Bluetooth: ${ble.result}")
-        if (ble?.result == BleWaker.Start.OFF) say("Turn on Bluetooth on the phone to wake the TV over Bluetooth too.")
+        if (ble?.result == BleWaker.Start.OFF) say(tr("Turn on Bluetooth on the phone to wake the TV over Bluetooth too."))
         // Watching for the TV's own advertisement: tells the TV came on when Wi-Fi can't (the phone isn't on it).
         val seen = TvSeen()
         val bleOn = java.util.concurrent.atomic.AtomicBoolean(false)
@@ -408,35 +410,35 @@ class AppModel(app: Application) : AndroidViewModel(app) {
             log.add("Waited ${(System.currentTimeMillis() - start) / 1000} s.")
         } finally {
             ble?.stop()
-            log.add(if (on) "The TV answered over Wi-Fi." else "Stopped the Bluetooth wake.")
+            log.add(if (on) tr("The TV answered over Wi-Fi.") else tr("Stopped the Bluetooth wake."))
             // Keep listening a little longer, to see what the TV sends once it is up (for the log).
             if (watch != null) viewModelScope.launch { delay(15_000); watch.stop(); log.add("Stopped watching."); log.save(app) }
             else log.save(app)
         }
         setUi(id) { it.copy(power = Power.CHECKING) }
-        if (on) { check(tv(id) ?: tv); say("${tv.name} is on") }
+        if (on) { check(tv(id) ?: tv); say(tr("{x} is on", "x" to tv.name)) }
         else if (bleOn.get() && !tvUp && !onLan(null)) {
             setUi(id) { it.copy(power = Power.OFF) }
-            say("${tv.name} is on (the phone saw it over Bluetooth).  Turn on Wi-Fi on the phone to use it.")
+            say(tr("{x} is on (the phone saw it over Bluetooth).  Turn on Wi-Fi on the phone to use it.", "x" to tv.name))
         }
         else if (!onLan(null) && ble?.result == BleWaker.Start.STARTED) {
             // Without Wi-Fi, and not seen over Bluetooth either: the phone can't tell whether the wake worked.
             setUi(id) { it.copy(power = Power.OFF) }
-            say("Sent the Bluetooth wake to ${tv.name}.  The phone isn't on Wi-Fi, so it can't see the TV: turn Wi-Fi on to check.")
+            say(tr("Sent the Bluetooth wake to {x}.  The phone isn't on Wi-Fi, so it can't see the TV: turn Wi-Fi on to check.", "x" to tv.name))
         }
         else if (said == 1) {
             setUi(id) { it.copy(power = Power.OFF, standby = true) }
-            say("${tv.name} answered but stayed in standby.  Is Turn on via Wi-Fi on in the TV's settings?")
+            say(tr("{x} answered but stayed in standby.  Is Turn on via Wi-Fi on in the TV's settings?", "x" to tv.name))
         }
         else if (tvUp) {
             setUi(id) { it.copy(power = Power.STARTING) }
             soon(id)
-            say("${tv.name} is on.  TiviBro's connection is still starting; opening TiviBro on the TV brings it at once.")
+            say(tr("{x} is on.  TiviBro's connection is still starting; opening TiviBro on the TV brings it at once.", "x" to tv.name))
         }
         else {
             setUi(id) { it.copy(power = Power.OFF) }
-            say(if (tv.bt.isNotBlank()) "${tv.name} didn't answer.  Is Turn on via Wi-Fi on, and Bluetooth on the phone?"
-                else "${tv.name} didn't answer.  Is Turn on via Wi-Fi on in the TV's settings?")
+            say(if (tv.bt.isNotBlank()) tr("{x} didn't answer.  Is Turn on via Wi-Fi on, and Bluetooth on the phone?", "x" to tv.name)
+                else tr("{x} didn't answer.  Is Turn on via Wi-Fi on in the TV's settings?", "x" to tv.name))
         }
     }
 
@@ -446,7 +448,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     /** Listens for the TV over Bluetooth for 20 seconds without waking it, into the Bluetooth log (to see what it sends while off). */
     fun bleListen(id: String) = viewModelScope.launch {
         val tv = tv(id) ?: return@launch
-        if (tv.bt.isBlank()) { say("This TV hasn't told the app its Bluetooth address yet.  Open the app once while the TV is on."); return@launch }
+        if (tv.bt.isBlank()) { say(tr("This TV hasn't told the app its Bluetooth address yet.  Open the app once while the TV is on.")); return@launch }
         val app = getApplication<Application>()
         val log = WakeLog(tv.name)
         log.add("Listening for 20 seconds, without waking the TV.  Phone on Wi-Fi: ${if (onLan(null)) "yes" else "no"}.")
@@ -455,18 +457,18 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         if (watch.result != BleWaker.Start.STARTED) {
             log.save(app)
             say(when (watch.result) {
-                BleWaker.Start.NOT_ALLOWED -> "The app isn't allowed to use Bluetooth.  Allow Nearby devices for TiviBro in Android's settings."
-                BleWaker.Start.OFF -> "Turn on Bluetooth on the phone first."
-                else -> "This phone can't listen for the TV over Bluetooth."
+                BleWaker.Start.NOT_ALLOWED -> tr("The app isn't allowed to use Bluetooth.  Allow Nearby devices for TiviBro in Android's settings.")
+                BleWaker.Start.OFF -> tr("Turn on Bluetooth on the phone first.")
+                else -> tr("This phone can't listen for the TV over Bluetooth.")
             })
             return@launch
         }
-        say("Listening for ${tv.name} for 20 seconds…")
+        say(tr("Listening for {x} for 20 seconds…", "x" to tv.name))
         delay(20_000)
         watch.stop()
         log.add("Done.")
         log.save(app)
-        say("Done.  Open the Bluetooth log to see what the TV sent.")
+        say(tr("Done.  Open the Bluetooth log to see what the TV sent."))
     }
 
     fun forget(id: String) = viewModelScope.launch {
@@ -481,15 +483,15 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         backups.forget(id)
         copies.forget(id)
         _tvs.update { l -> l.filterNot { it.tv.id == id } }
-        say("${tv.name} removed")
+        say(tr("{x} removed", "x" to tv.name))
     }
 
     private fun act(id: String, label: String, block: suspend (Tv) -> Unit) = viewModelScope.launch {
         val tv = tv(id) ?: return@launch
         setUi(id) { it.copy(busy = label) }
         try { withContext(Dispatchers.IO) { block(tv) } }
-        catch (e: TbException) { say(e.message ?: "Something went wrong") }
-        catch (e: Exception) { say("${tv.name} didn't answer.  Is it on, and on the same network?") }
+        catch (e: TbException) { say(e.message ?: tr("Something went wrong")) }
+        catch (e: Exception) { say(tr("{x} didn't answer.  Is it on, and on the same network?", "x" to tv.name)) }
         finally { setUi(id) { it.copy(busy = null) } }
     }
 
@@ -497,18 +499,18 @@ class AppModel(app: Application) : AndroidViewModel(app) {
 
     /** The editor's address for this phone: asks until TiviBro has started it (up to about a minute). */
     suspend fun editorUrl(id: String, progress: (String) -> Unit): String = withContext(Dispatchers.IO) {
-        val tv = tv(id) ?: throw TbException("This TV is no longer paired.")
+        val tv = tv(id) ?: throw TbException(tr("This TV is no longer paired."))
         val end = System.currentTimeMillis() + 60_000
         var url: String? = null
         while (url == null) {
             when (val s = TvClient(tv).editor()) {
                 is EditorState.Ready -> {
-                    if (!editorUrlOk(s.url, tv)) throw TbException("The TV sent an editor address this app doesn't trust.")
+                    if (!editorUrlOk(s.url, tv)) throw TbException(tr("The TV sent an editor address this app doesn't trust."))
                     url = s.url
                 }
                 is EditorState.Starting -> {
                     withContext(Dispatchers.Main) { progress(s.message) }
-                    if (System.currentTimeMillis() > end) throw TbException("TiviBro didn't start the editor.  Is TiviBro open on the TV?")
+                    if (System.currentTimeMillis() > end) throw TbException(tr("TiviBro didn't start the editor.  Is TiviBro open on the TV?"))
                     delay(2000)
                 }
             }
@@ -535,8 +537,8 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) {
             for (p in presses) {
                 try { p() }
-                catch (e: TbException) { say(e.message ?: "The TV said no") }
-                catch (e: Exception) { say("The TV didn't answer.  Is it on, and on the same network?") }
+                catch (e: TbException) { say(e.message ?: tr("The TV said no")) }
+                catch (e: Exception) { say(tr("The TV didn't answer.  Is it on, and on the same network?")) }
             }
         }
     }
@@ -549,7 +551,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     fun text(id: String, t: String) = press(id) { text(t) }
     fun playOnTv(id: String, k: String, name: String) {
         val tv = tv(id) ?: return
-        presses.trySend { TvClient(tv, 5000).play(k); say("Playing $name on ${tv.name}") }
+        presses.trySend { TvClient(tv, 5000).play(k); say(tr("Playing {x} on {y}", "x" to name, "y" to tv.name)) }
     }
     /** Turn the TV off.  Turning it on again is Turn on (Wake-on-LAN or Bluetooth), as before. */
     fun turnOff(id: String) {
@@ -557,10 +559,10 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         presses.trySend {
             try {
                 TvClient(tv, 5000).powerOff()
-                say("Turning ${tv.name} off")
+                say(tr("Turning {x} off", "x" to tv.name))
                 setUi(id) { it.copy(power = Power.OFF, standby = true, tivibroOpen = false) }
             } catch (e: TbException) {
-                say(if (e.code == "missing" || e.message == "not found") "Update TiviBro on ${tv.name} to turn it off from here." else e.message ?: "${tv.name} didn't turn off.")
+                say(if (e.code == "missing" || e.message == "not found") tr("Update TiviBro on {x} to turn it off from here.", "x" to tv.name) else e.message ?: tr("{x} didn't turn off.", "x" to tv.name))
             }
         }
     }
@@ -611,7 +613,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
 
     /** Asks TiviBro on the TV and returns its answer.  While TiviBro is still opening, asks again a few times. */
     suspend fun ask(id: String, what: String, args: JSONObject = JSONObject(), seal: Boolean = false, timeoutMs: Int = 45_000, tries: Int = 3): JSONObject = withContext(Dispatchers.IO) {
-        val tv = tv(id) ?: throw TbException("This TV is no longer paired.")
+        val tv = tv(id) ?: throw TbException(tr("This TV is no longer paired."))
         var busy = false
         repeat(tries) { i ->
             val r = TvClient(tv, timeoutMs).ask(what, args, seal)
@@ -619,7 +621,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
             busy = r.optBoolean("busy")
             if (i < tries - 1) delay(1200)
         }
-        throw TbException(if (busy) "TiviBro on the TV is busy (a big playlist can take a few minutes).  Try again when it's done." else "TiviBro on the TV didn't answer in time.  Is it open?")
+        throw TbException(if (busy) tr("TiviBro on the TV is busy (a big playlist can take a few minutes).  Try again when it's done.") else tr("TiviBro on the TV didn't answer in time.  Is it open?"))
     }
 
     /**
@@ -630,12 +632,12 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         val app = getApplication<Application>()
         var name = "Subtitles.srt"
         app.contentResolver.query(from, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c -> if (c.moveToFirst()) name = c.getString(0) ?: name }
-        if (!Regex("\\.(srt|vtt|ass|ssa|txt)$", RegexOption.IGNORE_CASE).containsMatchIn(name)) throw TbException("Pick a subtitle file: .srt, .vtt, .ass or .ssa.")
-        val bytes = app.contentResolver.openInputStream(from)?.use { it.readBytes() } ?: throw TbException("Couldn't open the file.")
-        if (bytes.size > 3 * 1048576) throw TbException("That file is too big for subtitles (3 MB at most).")
+        if (!Regex("\\.(srt|vtt|ass|ssa|txt)$", RegexOption.IGNORE_CASE).containsMatchIn(name)) throw TbException(tr("Pick a subtitle file: .srt, .vtt, .ass or .ssa."))
+        val bytes = app.contentResolver.openInputStream(from)?.use { it.readBytes() } ?: throw TbException(tr("Couldn't open the file."))
+        if (bytes.size > 3 * 1048576) throw TbException(tr("That file is too big for subtitles (3 MB at most)."))
         val text = subtitleText(bytes)
         val r = ask(id, "subfile", JSONObject().put("name", name).put("text", text), timeoutMs = 20_000, tries = 1)
-        r.optString("msg").ifBlank { "Sent to the TV." }
+        r.optString("msg").ifBlank { tr("Sent to the TV.") }
     }
 
     /** A page of the guide.  Rows whose guide the TV is still loading are asked for again. */
@@ -664,7 +666,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     /** One programme in full (the details sheet).  Its description is asked for again once if the TV is still reading it. */
     suspend fun prog(id: String, k: String, start: Long): ProgDetail {
         val args = JSONObject().put("k", k).put("s", start)
-        var d = ProgDetail.from(ask(id, "prog", args)) ?: throw TbException("That programme is no longer in the guide.")
+        var d = ProgDetail.from(ask(id, "prog", args)) ?: throw TbException(tr("That programme is no longer in the guide."))
         if (d.descPending && d.prog.desc.isBlank()) { delay(1500); ProgDetail.from(ask(id, "prog", args))?.let { d = it } }
         return d
     }
@@ -683,9 +685,9 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         }
         try {
             val now = ask(id, "fav", JSONObject().put("k", k).put("on", on), tries = 1).optBoolean("on")
-            say(if (now) "Added to Favorites on the TV" else "Removed from Favorites")
-        } catch (e: TbException) { say(e.message ?: "The TV said no") }
-        catch (e: Exception) { say("The TV didn't answer.  Is it on, and on the same network?") }
+            say(if (now) tr("Added to Favorites on the TV") else tr("Removed from Favorites"))
+        } catch (e: TbException) { say(e.message ?: tr("The TV said no")) }
+        catch (e: Exception) { say(tr("The TV didn't answer.  Is it on, and on the same network?")) }
     }
 
     /** One channel's details (op "info") or a change to it: hide, rename, group (in or out of one of your
@@ -733,9 +735,9 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         val tv = tv(id) ?: return@launch
         try {
             val r = ask(id, "vodplay", JSONObject().put("kind", kind).put("id", itemId).put("ep", ep ?: JSONObject.NULL).put("fromStart", fromStart), tries = 1)
-            say("Playing ${r.optString("title", "it")} on ${tv.name}")
-        } catch (e: TbException) { say(e.message ?: "The TV said no") }
-        catch (e: Exception) { say("The TV didn't answer.  Is it on, and on the same network?") }
+            say(tr("Playing {x} on {y}", "x" to r.optString("title", tr("it")), "y" to tv.name))
+        } catch (e: TbException) { say(e.message ?: tr("The TV said no")) }
+        catch (e: Exception) { say(tr("The TV didn't answer.  Is it on, and on the same network?")) }
     }
 
     /** Typing on the phone into a box on the TV's screen.  Sealed: it may be a password. */
@@ -746,12 +748,12 @@ class AppModel(app: Application) : AndroidViewModel(app) {
 
     /** A provider link shared to the app: added on the TV like the web editor's Add a playlist.  Sealed: it holds the login. */
     suspend fun addPlaylist(id: String, link: String, name: String, use: Boolean): String =
-        ask(id, "playlist", JSONObject().put("link", link).put("name", name).put("use", use), seal = true, timeoutMs = 140_000, tries = 1).optString("msg", "Added")
+        ask(id, "playlist", JSONObject().put("link", link).put("name", name).put("use", use), seal = true, timeoutMs = 140_000, tries = 1).optString("msg", tr("Added"))
 
     /** A playlist typed in on the phone (AddPlaylistDialog): a full [a] link, or type xtream (server, user,
         pass) or m3u (m3u), with name, epg and use.  Sealed: it holds the login. */
     suspend fun addPlaylistWith(id: String, a: JSONObject): String =
-        ask(id, "playlist", a, seal = true, timeoutMs = 140_000, tries = 1).optString("msg", "Added")
+        ask(id, "playlist", a, seal = true, timeoutMs = 140_000, tries = 1).optString("msg", tr("Added"))
 
     /* ---------- reminders and restore points on the TV ---------- */
 
@@ -797,14 +799,14 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     suspend fun tvLog(id: String): String = ask(id, "logs", seal = true, timeoutMs = 45_000, tries = 2).optString("text")
 
     suspend fun backupNow(id: String): SavedBackup = withContext(Dispatchers.IO) {
-        val b = ask(id, "backup", seal = true, timeoutMs = 60_000).optJSONObject("backup") ?: throw TbException("The TV sent no backup.")
+        val b = ask(id, "backup", seal = true, timeoutMs = 60_000).optJSONObject("backup") ?: throw TbException(tr("The TV sent no backup."))
         backups.save(id, b, auto = false)
     }
 
     /** Puts a backup back on a TV (this one or another).  TiviBro restarts there. */
     suspend fun restore(toId: String, b: SavedBackup): String = withContext(Dispatchers.IO) {
         val r = ask(toId, "restore", JSONObject().put("backup", backups.open(b)), seal = true, timeoutMs = 90_000, tries = 1)
-        "Restored ${r.optInt("playlists")} playlist(s).  TiviBro is restarting on the TV."
+        tr("Restored {x} playlist(s).  TiviBro is restarting on the TV.", "x" to r.optInt("playlists"))
     }
 
     /* ---------- backups on the phone, without the TV (discussion #23) ---------- */
@@ -816,22 +818,22 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         override fun part(chunk: String) = copies.part(chunk)
         override fun end(): Boolean {
             val c = copies.end() ?: return false
-            say("${c.name}: channel list saved, so its backups can be edited on the phone without the TV")
+            say(tr("{x}: channel list saved, so its backups can be edited on the phone without the TV", "x" to c.name))
             return true
         }
-        override fun failed(why: String) { say("Couldn't save the channel list for editing without the TV ($why)") }
+        override fun failed(why: String) { say(tr("Couldn't save the channel list for editing without the TV ({x})", "x" to why)) }
     }
 
     fun backupName(b: SavedBackup): String = b.label.ifBlank { java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT).format(java.util.Date(b.at)) }
 
-    suspend fun duplicate(b: SavedBackup): SavedBackup = withContext(Dispatchers.IO) { backups.save(b.tvId, backups.open(b), auto = false, label = "Copy of " + backupName(b)) }
+    suspend fun duplicate(b: SavedBackup): SavedBackup = withContext(Dispatchers.IO) { backups.save(b.tvId, backups.open(b), auto = false, label = tr("Copy of {x}", "x" to backupName(b))) }
 
     suspend fun rename(b: SavedBackup, label: String) = withContext(Dispatchers.IO) { backups.rename(b, label) }
 
     /** [a] with the playlists from [b] it doesn't have.  Says how many came in. */
     suspend fun merge(a: SavedBackup, b: SavedBackup): Int = withContext(Dispatchers.IO) {
         val (out, added) = BackupTools.merge(backups.open(a), backups.open(b))
-        if (added == 0) throw TbException("Nothing to add: ${backupName(a)} already has every playlist in ${backupName(b)}.")
+        if (added == 0) throw TbException(tr("Nothing to add: {x} already has every playlist in {y}.", "x" to (backupName(a)), "y" to (backupName(b))))
         backups.save(a.tvId, out, auto = false, label = backupName(a) + " + " + backupName(b))
         added
     }
@@ -859,25 +861,25 @@ class AppModel(app: Application) : AndroidViewModel(app) {
 
     /** Changes made in the offline editor, kept as a new backup. */
     suspend fun keepEdited(b: SavedBackup, pid: String, saved: String, label: String): SavedBackup = withContext(Dispatchers.IO) {
-        backups.save(b.tvId, BackupTools.withEdits(backups.open(b), pid, JSONObject(saved)), auto = false, label = label.ifBlank { "Edited on the phone" })
+        backups.save(b.tvId, BackupTools.withEdits(backups.open(b), pid, JSONObject(saved)), auto = false, label = label.ifBlank { tr("Edited on the phone") })
     }
 
     /** A copy the web editor can restore on any TV, sealed with a passphrase. */
     suspend fun exportBackup(b: SavedBackup, pass: String, out: android.net.Uri) = withContext(Dispatchers.IO) {
         val file = BackupFile.seal(backups.open(b), pass)
-        getApplication<Application>().contentResolver.openOutputStream(out)?.use { it.write(file.toString().toByteArray(Charsets.UTF_8)) } ?: throw TbException("Couldn't write the file.")
+        getApplication<Application>().contentResolver.openOutputStream(out)?.use { it.write(file.toString().toByteArray(Charsets.UTF_8)) } ?: throw TbException(tr("Couldn't write the file."))
     }
 
     /** A locked backup file of the TV as it is now (or, when the TV doesn't answer, of the newest backup on the phone). */
     suspend fun exportNow(id: String, pass: String, out: android.net.Uri): String = withContext(Dispatchers.IO) {
-        val tv = tv(id) ?: throw TbException("This TV is no longer paired.")
+        val tv = tv(id) ?: throw TbException(tr("This TV is no longer paired."))
         val fresh = runCatching { ask(id, "backup", seal = true, timeoutMs = 60_000, tries = 1).optJSONObject("backup") }.getOrNull()
         val newest = if (fresh == null) backups.list(id).firstOrNull() else null
-        val b = fresh ?: newest?.let { backups.open(it) } ?: throw TbException("${tv.name} didn't answer, and there is no backup on this phone yet.  Turn the TV on and try again.")
+        val b = fresh ?: newest?.let { backups.open(it) } ?: throw TbException(tr("{x} didn't answer, and there is no backup on this phone yet.  Turn the TV on and try again.", "x" to tv.name))
         val file = BackupFile.seal(b, pass)
-        getApplication<Application>().contentResolver.openOutputStream(out)?.use { it.write(file.toString().toByteArray(Charsets.UTF_8)) } ?: throw TbException("Couldn't write the file.")
-        if (fresh != null) "Saved.  Keep the file and its passphrase somewhere safe."
-        else "${tv.name} didn't answer, so the file holds the newest backup on this phone (${backupName(newest!!)})."
+        getApplication<Application>().contentResolver.openOutputStream(out)?.use { it.write(file.toString().toByteArray(Charsets.UTF_8)) } ?: throw TbException(tr("Couldn't write the file."))
+        if (fresh != null) tr("Saved.  Keep the file and its passphrase somewhere safe.")
+        else tr("{x} didn't answer, so the file holds the newest backup on this phone ({y}).", "x" to tv.name, "y" to (backupName(newest!!)))
     }
 
     /** A backup file (from this app or the web editor) read from the phone's storage: null [pass] for a file
@@ -885,7 +887,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     suspend fun importFile(id: String, from: android.net.Uri, pass: String?): SavedBackup = withContext(Dispatchers.IO) {
         val j = readBackupFile(from)
         val b = BackupFile.open(j, pass.orEmpty())
-        if (!BackupFile.isBackup(b) && b.optJSONObject("settings") == null) throw TbException("That file isn't a TiviBro backup.")
+        if (!BackupFile.isBackup(b) && b.optJSONObject("settings") == null) throw TbException(tr("That file isn't a TiviBro backup."))
         backups.save(id, b, auto = false, label = "From a file")
     }
 
@@ -897,11 +899,11 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     private fun readBackupFile(from: android.net.Uri): JSONObject {
         val text = getApplication<Application>().contentResolver.openInputStream(from)?.use { s ->
             val bytes = s.readBytes()
-            if (bytes.size > 200 * 1024 * 1024) throw TbException("That file is too big to be a TiviBro backup.")
+            if (bytes.size > 200 * 1024 * 1024) throw TbException(tr("That file is too big to be a TiviBro backup."))
             String(bytes, Charsets.UTF_8)
-        } ?: throw TbException("Couldn't read the file.")
+        } ?: throw TbException(tr("Couldn't read the file."))
         val j = runCatching { JSONObject(text) }.getOrNull()
-        if (!BackupFile.isBackup(j)) throw TbException("That file isn't a TiviBro backup.")
+        if (!BackupFile.isBackup(j)) throw TbException(tr("That file isn't a TiviBro backup."))
         return j!!
     }
 
@@ -942,10 +944,10 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         dbxPrefs.edit().clear().apply()
         if (verifier == null || state == null || tvId == null || System.currentTimeMillis() - at > DROPBOX_WAIT_MS) {
             _dropbox.value = null
-            say("That Dropbox sign-in is too old.  Start again: Settings, My media, Add media, Dropbox.")
+            say(tr("That Dropbox sign-in is too old.  Start again: Settings, My media, Add media, Dropbox."))
             return
         }
-        if (r.state != state) { _dropbox.value = DropboxStep(tvId, "failed", "That sign-in didn't start on this phone.  Try again."); return }
+        if (r.state != state) { _dropbox.value = DropboxStep(tvId, "failed", tr("That sign-in didn't start on this phone.  Try again.")); return }
         if (r.error.isNotBlank() || r.code.isBlank()) { _dropbox.value = DropboxStep(tvId, "failed", Dropbox.redirectError(r.error)); return }
         _dropbox.value = DropboxStep(tvId, "exchanging")
         viewModelScope.launch {
@@ -955,20 +957,20 @@ class AppModel(app: Application) : AndroidViewModel(app) {
             } catch (e: TbException) {
                 _dropbox.value = DropboxStep(tvId, "failed", e.message)
             } catch (e: Exception) {
-                _dropbox.value = DropboxStep(tvId, "failed", "Couldn't reach Dropbox.  Is the phone online?")
+                _dropbox.value = DropboxStep(tvId, "failed", tr("Couldn't reach Dropbox.  Is the phone online?"))
             }
         }
     }
 
     /** Asks the TV for the Dropbox folders in [path] ("" = the top), with the signed-in account's name. */
     suspend fun dropboxFolders(tvId: String, path: String): JSONObject {
-        val t = dropboxToken ?: throw TbException("The Dropbox sign-in is gone.  Sign in again.")
+        val t = dropboxToken ?: throw TbException(tr("The Dropbox sign-in is gone.  Sign in again."))
         return ask(tvId, "mymedia", JSONObject().put("op", "dbfolders").put("refresh", t).put("path", path), seal = true, timeoutMs = 45_000, tries = 1)
     }
 
     /** Adds the chosen folder on the TV ("" = the whole Dropbox), which scans it.  Returns the TV's message. */
     suspend fun dropboxAdd(tvId: String, root: String, name: String): String {
-        val t = dropboxToken ?: throw TbException("The Dropbox sign-in is gone.  Sign in again.")
+        val t = dropboxToken ?: throw TbException(tr("The Dropbox sign-in is gone.  Sign in again."))
         val r = ask(tvId, "mymedia", JSONObject().put("op", "adddropbox").put("refresh", t).put("root", root).put("name", name), seal = true, timeoutMs = 70_000, tries = 1)
         dropboxToken = null
         _mediaChanged.tryEmit(Unit)
@@ -993,7 +995,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
 
     fun pairWithLink(text: String?) {
         val l = PairLink.parse(text)
-        if (l == null) { say("That isn't a TiviBro pairing code.  On the TV: Settings, Phone app and web editor, Pair the TiviBro app."); return }
+        if (l == null) { say(tr("That isn't a TiviBro pairing code.  On the TV: Settings, Phone app and web editor, Pair the TiviBro app.")); return }
         pair(l.host, l.port, l.code, l.id)
     }
 
@@ -1004,12 +1006,12 @@ class AppModel(app: Application) : AndroidViewModel(app) {
             store.upsert(tv)
             _tvs.update { l -> l.filterNot { it.tv.id == tv.id } + TvUi(tv) }
             _pair.value = Pairing0(done = tv)
-            say("Paired with ${tv.name}")
+            say(tr("Paired with {x}", "x" to tv.name))
             check(tv)
         } catch (e: TbException) {
             _pair.value = Pairing0(error = e.message)
         } catch (e: Exception) {
-            _pair.value = Pairing0(error = "Couldn't reach the TV at $host.  Are the phone and the TV on the same network?")
+            _pair.value = Pairing0(error = tr("Couldn't reach the TV at {x}.  Are the phone and the TV on the same network?", "x" to host))
         }
     }
 }

@@ -4,6 +4,8 @@
    and, when GitHub gives one, its SHA-256 checked before anything is installed. */
 package app.tivibro.phone.proto
 
+import app.tivibro.phone.tr
+
 import org.json.JSONArray
 import java.io.File
 import java.io.IOException
@@ -59,7 +61,7 @@ object AppUpdate {
     fun newest(): AppRelease? = runCatching {
         val c = URL(API).openConnection() as HttpURLConnection
         c.connectTimeout = 8000; c.readTimeout = 8000
-        c.setRequestProperty("Accept", "application/vnd.github+json")
+        c.setRequestProperty(tr("Accept"), "application/vnd.github+json")
         c.setRequestProperty("User-Agent", "TiviBro-phone")
         try { if (c.responseCode != 200) null else pick(JSONArray(c.inputStream.bufferedReader().readText())) } finally { c.disconnect() }
     }.getOrNull()
@@ -84,7 +86,7 @@ object AppUpdate {
     fun notesFor(version: String): List<String> = runCatching {
         val c = URL("https://api.github.com/repos/ohmybahgosh/TiviBro/releases/tags/v" + version.removePrefix("v")).openConnection() as HttpURLConnection
         c.connectTimeout = 8000; c.readTimeout = 8000
-        c.setRequestProperty("Accept", "application/vnd.github+json")
+        c.setRequestProperty(tr("Accept"), "application/vnd.github+json")
         c.setRequestProperty("User-Agent", "TiviBro-phone")
         try { if (c.responseCode != 200) emptyList() else notes(org.json.JSONObject(c.inputStream.bufferedReader().readText()).optString("body")) } finally { c.disconnect() }
     }.getOrDefault(emptyList())
@@ -113,30 +115,30 @@ object AppUpdate {
     }
     /** What's wrong with a downloaded [f] for release [r] (its size, then its SHA-256 when known), or null when it matches. */
     fun problem(f: File, r: AppRelease): String? {
-        if (!f.isFile || f.length() == 0L) return "The download is empty."
-        if (r.size > 0 && f.length() != r.size) return "The download is the wrong size (${f.length()} bytes, expected ${r.size})."
+        if (!f.isFile || f.length() == 0L) return tr("The download is empty.")
+        if (r.size > 0 && f.length() != r.size) return tr("The download is the wrong size ({x} bytes, expected {y}).", "x" to (f.length()), "y" to r.size)
         val want = r.sha256 ?: return null
-        return if (sha256(f) == want) null else "The download doesn't match the release's fingerprint."
+        return if (sha256(f) == want) null else tr("The download doesn't match the release's fingerprint.")
     }
 
     /** Opens [start], following up to 5 redirects, all over https; returns the connection that answered 200. */
     private fun open(start: String): HttpURLConnection {
         var url = URL(start)
         repeat(6) {
-            if (url.protocol != "https") throw IOException("The download link isn't secure (https).")
+            if (url.protocol != "https") throw IOException(tr("The download link isn't secure (https)."))
             val c = url.openConnection() as HttpURLConnection
             c.instanceFollowRedirects = false
             c.connectTimeout = 15000; c.readTimeout = 20000
-            c.setRequestProperty("Accept", "application/octet-stream")
+            c.setRequestProperty(tr("Accept"), "application/octet-stream")
             c.setRequestProperty("User-Agent", "TiviBro-phone")
             val code = try { c.responseCode } catch (e: IOException) { c.disconnect(); throw e }
             if (code == 200) return c
             val loc = c.getHeaderField("Location")
             c.disconnect()
-            if (code !in 300..399 || loc.isNullOrBlank()) throw IOException("GitHub answered $code.")
+            if (code !in 300..399 || loc.isNullOrBlank()) throw IOException(tr("GitHub answered {x}.", "x" to code))
             url = URL(url, loc)
         }
-        throw IOException("Too many redirects.")
+        throw IOException(tr("Too many redirects."))
     }
 
     /** Saves release [r]'s APK as [dest] (through a .part file), reporting bytes done and the total (0 when
@@ -151,7 +153,7 @@ object AppUpdate {
             val c = open(r.apk)
             try {
                 val len = c.contentLengthLong
-                if (r.size > 0 && len >= 0 && len != r.size) throw IOException("The download is the wrong size ($len bytes, expected ${r.size}).")
+                if (r.size > 0 && len >= 0 && len != r.size) throw IOException(tr("The download is the wrong size ({x} bytes, expected {y}).", "x" to len, "y" to r.size))
                 val total = if (r.size > 0) r.size else len.coerceAtLeast(0L)
                 val cap = if (total > 0) total else MAX_UNKNOWN
                 c.inputStream.use { inp ->
@@ -160,11 +162,11 @@ object AppUpdate {
                         var done = 0L
                         progress(0L, total)
                         while (true) {
-                            if (!keepGoing()) throw CancellationException("Cancelled")
+                            if (!keepGoing()) throw CancellationException(tr("Cancelled"))
                             val n = inp.read(buf)
                             if (n < 0) break
                             done += n
-                            if (done > cap) throw IOException("The download is bigger than expected.")
+                            if (done > cap) throw IOException(tr("The download is bigger than expected."))
                             out.write(buf, 0, n)
                             progress(done, total)
                         }
@@ -172,7 +174,7 @@ object AppUpdate {
                 }
             } finally { c.disconnect() }
             problem(part, r)?.let { throw IOException(it) }
-            if (!part.renameTo(dest)) throw IOException("Couldn't save the download.")
+            if (!part.renameTo(dest)) throw IOException(tr("Couldn't save the download."))
         } catch (e: Throwable) {
             part.delete(); dest.delete()
             throw e

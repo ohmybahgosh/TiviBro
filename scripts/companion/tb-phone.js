@@ -114,6 +114,7 @@ async function ask(cred, what, args, opts) {
   opts = opts || {};
   const body = { what, args: args || {} };
   if (opts.noOpen) body.noOpen = true;
+  if (opts.lang) body.lang = opts.lang;       // the phone's language, as the app sends it: the TV answers in it
   if (!opts.seal) return call(cred, 'POST', '/v1/ask', body);
   const key = Buffer.from(cred.key, 'base64'), nonce = crypto.randomBytes(18).toString('base64');
   const r = await call(cred, 'POST', '/v1/ask', { sealed: seal(body, key, 'req', cred.phone, nonce) }, { nonce, raw: true });

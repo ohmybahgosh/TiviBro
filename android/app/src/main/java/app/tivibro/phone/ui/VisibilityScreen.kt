@@ -3,6 +3,8 @@
    then one save (Back, the arrow, or Save).  Hiding is the TV's: a hidden channel is hidden in every group. */
 package app.tivibro.phone.ui
 
+import app.tivibro.phone.tr
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -64,7 +66,7 @@ fun VisibilityScreen(model: AppModel, id: String, group: String, k: String, onCl
         error = null
         try { val d = model.visList(id, group, k); on.clear(); d.rows.forEach { on[it.key] = it.on }; data = d }
         catch (e: TbException) { error = e.message }
-        catch (e: Exception) { error = "The TV didn't answer.  Is it on, and on the same network?" }
+        catch (e: Exception) { error = tr("The TV didn't answer.  Is it on, and on the same network?") }
     }
     fun done() {
         val d = data
@@ -74,8 +76,8 @@ fun VisibilityScreen(model: AppModel, id: String, group: String, k: String, onCl
         saving = true
         scope.launch {
             try { model.visSave(id, d.group, changes); onClose() }
-            catch (e: TbException) { model.say(e.message ?: "The TV said no"); saving = false }
-            catch (e: Exception) { model.say("The TV didn't answer.  Nothing was changed."); saving = false }
+            catch (e: TbException) { model.say(e.message ?: tr("The TV said no")); saving = false }
+            catch (e: Exception) { model.say(tr("The TV didn't answer.  Nothing was changed.")); saving = false }
         }
     }
 
@@ -83,28 +85,28 @@ fun VisibilityScreen(model: AppModel, id: String, group: String, k: String, onCl
         BackHandler { done() }
         Column(Modifier.fillMaxSize().background(Ink)) {
             Row(Modifier.fillMaxWidth().padding(4.dp, 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { done() }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Save and close") }
+                IconButton(onClick = { done() }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, tr("Save and close")) }
                 Column(Modifier.weight(1f)) {
-                    Text(data?.title ?: "Show or hide channels", style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    data?.let { d -> Text("${d.rows.count { on[it.key] ?: it.on }} of ${d.rows.size} shown", color = Muted, style = MaterialTheme.typography.bodySmall) }
+                    Text(data?.title ?: tr("Show or hide channels"), style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    data?.let { d -> Text(tr("{x} of {y} shown", "x" to d.rows.count { on[it.key] ?: it.on }, "y" to d.rows.size), color = Muted, style = MaterialTheme.typography.bodySmall) }
                 }
                 if (saving) CircularProgressIndicator(Modifier.size(20.dp).padding(end = 4.dp), strokeWidth = 2.dp, color = Accent)
-                else TextButton(onClick = { done() }, enabled = data != null) { Text("Save") }
+                else TextButton(onClick = { done() }, enabled = data != null) { Text(tr("Save")) }
             }
             val d = data
             when {
                 d == null && error != null -> Column(Modifier.fillMaxWidth().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(error ?: ""); Spacer(Modifier.size(12.dp)); Button(onClick = { attempt++ }) { Text("Try again") }
+                    Text(error ?: ""); Spacer(Modifier.size(12.dp)); Button(onClick = { attempt++ }) { Text(tr("Try again")) }
                 }
                 d == null -> Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
                 else -> {
                     LazyRow(Modifier.padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        item { AssistChip(onClick = { d.rows.forEach { on[it.key] = true } }, label = { Text("Show all") }) }
-                        item { AssistChip(onClick = { d.rows.forEach { on[it.key] = false } }, label = { Text("Hide all") }) }
+                        item { AssistChip(onClick = { d.rows.forEach { on[it.key] = true } }, label = { Text(tr("Show all")) }) }
+                        item { AssistChip(onClick = { d.rows.forEach { on[it.key] = false } }, label = { Text(tr("Hide all")) }) }
                         // Not while the TV is still loading the guide: channels the public fill-in is about to cover would be hidden.
-                        item { AssistChip(enabled = !d.loading, onClick = { d.rows.forEach { if (!it.guide) on[it.key] = false } }, label = { Text(if (d.loading) "Guide still loading" else "Hide ones with no guide") }) }
+                        item { AssistChip(enabled = !d.loading, onClick = { d.rows.forEach { if (!it.guide) on[it.key] = false } }, label = { Text(if (d.loading) tr("Guide still loading") else tr("Hide ones with no guide")) }) }
                     }
-                    Text("A hidden channel is hidden in every group on the TV.", color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(16.dp, 4.dp, 16.dp, 6.dp))
+                    Text(tr("A hidden channel is hidden in every group on the TV."), color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(16.dp, 4.dp, 16.dp, 6.dp))
                     LazyColumn(Modifier.fillMaxSize()) {
                         items(d.rows, key = { it.key }) { r ->
                             val shown = on[r.key] ?: r.on

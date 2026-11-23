@@ -74,5 +74,42 @@ Object.keys(dicts).forEach((code) => {
   });
   ok(code + ': every translation keeps its {n} and {x}', !bad.length, bad.slice(0, 5));
 });
+
+// A language for one asker (the web editor or the phone app): within() and the messages that go out later.
+I = load({ language: 'en-US' });
+ok('within: the asker\'s language, then the TV\'s again', I.within('es', () => I.t('Settings')) === 'Configuración' && I.t('Settings') === 'Settings');
+ok('within a language TiviBro doesn\'t have: the TV\'s', I.within('de', () => I.t('Settings')) === 'Settings');
+const m = I.msg('Restore point "{x}" saved on the TV', { x: 'Mine' });
+ok('msg: the English, filled', String(m) === 'Restore point "Mine" saved on the TV' && JSON.stringify({ m }) === '{"m":"Restore point \\"Mine\\" saved on the TV"}');
+ok('say: in the asker\'s language when it goes out', I.say(m, 'es') === 'Punto de restauración "Mine" guardado en la TV');
+ok('say with no language (an older editor): English', I.say(m) === 'Restore point "Mine" saved on the TV');
+const nested = I.msg('Share added: {x} and {y}.', { x: I.msg('{n} movies', { n: 3 }), y: I.msg('{n} episode', { n: 1 }) });
+ok('say: a message inside a message is translated too', I.say(nested, 'ru') === 'Общая папка добавлена: 3 фильма и 1 эпизод.', I.say(nested, 'ru'));
+ok('say: joined parts each on their own', I.say(I.join(I.msg('Backup ready'), '  ', 'Library saved.'), 'fr') === 'Sauvegarde prête  Bibliothèque enregistrée.');
+const e = new Error('That playlist no longer exists.');
+ok('say: an error by its message', I.say(e, 'pt-BR') === 'Essa lista não existe mais.');
+const ek = new Error('The server answered 404.  Check the address.'); ek.key = 'The server answered {n}.  Check the address.'; ek.vars = { n: 404 };
+ok('say: an error with a key', I.say(ek, 'es') === 'El servidor respondió 404.  Comprueba la dirección.');
+
+// The web editor's and the phone app's dictionaries (service/editor/lang): placeholders kept, plural forms,
+// Spain's and Portugal's the TV's files, and the editor's copy of this file the same.
+const ED = path.join(__dirname, '../../service/editor');
+const cdicts = {};
+const cfake = { add(code, d) { cdicts[code] = Object.assign(cdicts[code] || {}, d); } };
+['es', 'fr', 'pt-BR', 'ru'].forEach((l) => new Function('I18n', fs.readFileSync(path.join(ED, 'lang', l + '.js'), 'utf8'))(cfake));
+Object.keys(cdicts).forEach((code) => {
+  const bad = [];
+  Object.keys(cdicts[code]).forEach((k) => {
+    const want = (k.match(/\{[nxyz]\}/g) || []).sort().join(), vals = [].concat(cdicts[code][k]);
+    vals.forEach((v) => { if (!v || /—/.test(v) || (v.match(/\{[nxyz]\}/g) || []).sort().join() !== want) bad.push(k + ' -> ' + v); });
+    if (Array.isArray(cdicts[code][k]) && cdicts[code][k].length !== (code === 'ru' ? 3 : 2)) bad.push(k + ': ' + cdicts[code][k].length + ' plural forms');
+  });
+  ok('editor and phone, ' + code + ': every translation keeps its {n} and {x}', !bad.length, bad.slice(0, 5));
+});
+const same = (a, b) => fs.existsSync(a) && fs.readFileSync(a, 'utf8') === fs.readFileSync(b, 'utf8');
+ok('the editor\'s i18n.js is the app\'s', same(path.join(ED, 'i18n.js'), path.join(APP, 'i18n.js')));
+ok('the editor\'s es-ES.js and pt-PT.js are the app\'s', same(path.join(ED, 'lang', 'es-ES.js'), path.join(APP, 'lang', 'es-ES.js')) && same(path.join(ED, 'lang', 'pt-PT.js'), path.join(APP, 'lang', 'pt-PT.js')));
+const cov = require('child_process').execFileSync(process.execPath, [path.join(__dirname, '../../scripts/i18n-companion.js')]).toString();
+ok('every text in the editor and the phone app is translated', !/\(([1-9]\d*) missing\)/.test(cov), cov);
 console.log(fails ? fails + ' failures' : 'all language checks passed');
 process.exit(fails ? 1 : 0);
