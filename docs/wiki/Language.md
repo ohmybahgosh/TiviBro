@@ -9,6 +9,8 @@ If it picked the wrong one, choose another:
 - **Settings > Language**, at the top of Settings.  It always says "Language" in English too, beside the name in the language TiviBro is in, so you can find it whatever you're reading.  The languages are listed in their own names (English, Español, Русский).  **Automatic** goes back to the TV's language.
 - On a brand-new TV, the first row of **Add your playlist** is **Language**: **◀ ▶** goes round Automatic and each language.
 
+The web editor and the phone app have the same languages.  The web editor follows your browser's language; **Language** at the bottom of its menu picks another.  The phone app follows the phone's language (on Android 13 and later, Settings > Apps > TiviBro > Language picks one for it alone), and opens the web editor in that language too.  Each gets the TV's Settings pages and messages in its own language, whatever the TV is in.
+
 The first time TiviBro starts in a language other than English, a message says which language it chose and where to change it.  In Spanish, French, Portuguese and Russian, times are on the 24-hour clock (19:30) unless the TV's region says otherwise.
 
 ---
