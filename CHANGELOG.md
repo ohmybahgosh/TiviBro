@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Find subtitles searches by name once you change the title, season and episode, or year (an episode has a Year row now too), and there's a Search by name instead row.  A search by the TMDB id that finds nothing tries once more by name.  For revivals filed as their own show on OpenSubtitles, such as Twin Peaks (2017).
 - **Settings where you'd look for them.**  A few settings are now in a second place too, the same setting in both: logos and channel numbers under Guide, live pause and the rewind buffer under Playback (with how long the info panel stays and which way Up and Down change channel), Hide channels with nothing on and Hide adult channels under Channels and groups (with a Channels screen part), Sports guides under Sports, team game reminders under Reminders, and Skip intro and Up next beside Up next in Movies and shows and My media.  The phone app and the web editor show them in both places too.
 - **Into a section, the list on the left has the focus.**  From the Settings home, a link, Fix a problem or Search, ◀ goes back instead of changing the first setting on the page.  ▶ or OK goes on to the setting, which is marked.
 - Settings stays where you are when a page redraws: Look again now on Public guide fill-in sent the focus to another part of the Guide page while the guide reloaded.

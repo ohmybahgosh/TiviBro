@@ -485,14 +485,21 @@ var Subs = (function () {
     var q = lastFind && lastFind.id === meta.id ? lastFind.q : guess(meta);
     lastFind = { id: meta.id, q: q };
     var what = '"' + q.query + '"' + (q.type === 'episode' ? '  S' + U.pad(q.season || 0) + 'E' + U.pad(q.episode || 0) : q.year ? '  (' + q.year + ')' : '');
+    /* What you change here is searched by name: the TMDB id stays out (issue: a revival such as Twin Peaks 2017 is a
+       third season on TMDB but its own show, season 1, on OpenSubtitles, and the id kept finding nothing). */
+    function byName() { q.tmdb = ''; }
+    var yearRow = { label: 'Year…', sub: q.year || 'any', action: function () { UI.prompt('Year', q.year, function (v) { q.year = /^\d{4}$/.test(v.trim()) ? v.trim() : ''; byName(); find(meta); }, 'Leave empty for any year', false, 'OK'); } };
     UI.menu('Find subtitles', [
-      { label: 'Search for ' + what, sub: langs().map(langName).join(', '), action: function () { search(meta, q); } },
-      { label: 'Change the title…', sub: 'For a title the subtitle sites know by another name', action: function () { UI.prompt('Title to look for', q.query, function (v) { if (v.trim()) q.query = v.trim(); find(meta); }, 'Season and episode, or the year, are asked for next.', false, 'Next'); } },
+      { label: 'Search for ' + what, sub: langs().map(langName).join(', ') + (q.tmdb ? '  ·  ' + (typeof I18n !== 'undefined' ? I18n.t('by its TMDB id') : 'by its TMDB id') : ''), action: function () { search(meta, q); } },
+      { label: 'Change the title…', sub: 'For a title the subtitle sites know by another name', action: function () { UI.prompt('Title to look for', q.query, function (v) { if (v.trim()) { q.query = v.trim(); byName(); } find(meta); }, 'Season and episode, or the year, are asked for next.', false, 'Next'); } },
       q.type === 'episode'
-        ? { label: 'Season and episode…', sub: 'S' + U.pad(q.season || 0) + 'E' + U.pad(q.episode || 0), action: function () { UI.prompt('Season and episode', 'S' + U.pad(q.season || 0) + 'E' + U.pad(q.episode || 0), function (v) { var m = /s?(\d+)\D+e?(\d+)/i.exec(v); if (m) { q.season = +m[1]; q.episode = +m[2]; } find(meta); }, 'Like S01E04', false, 'OK'); } }
-        : { label: 'Year…', sub: q.year || 'any', action: function () { UI.prompt('Year', q.year, function (v) { q.year = /^\d{4}$/.test(v.trim()) ? v.trim() : ''; find(meta); }, 'Leave empty for any year', false, 'OK'); } },
+        ? { label: 'Season and episode…', sub: 'S' + U.pad(q.season || 0) + 'E' + U.pad(q.episode || 0), action: function () { UI.prompt('Season and episode', 'S' + U.pad(q.season || 0) + 'E' + U.pad(q.episode || 0), function (v) { var m = /s?(\d+)\D+e?(\d+)/i.exec(v); if (m) { q.season = +m[1]; q.episode = +m[2]; byName(); } find(meta); }, 'Like S01E04', false, 'OK'); } }
+        : yearRow,
+      // An episode's year too: a revival is often filed under its own year (Twin Peaks 2017).
+      q.type === 'episode' ? yearRow : null,
+      q.tmdb ? { label: 'Search by name instead', sub: 'When the TMDB id finds nothing, or the wrong show', action: function () { byName(); find(meta); } } : null,
       { label: 'Languages…', sub: langs().map(langName).join(', '), action: function () { langMenu(function () { find(meta); }); } }
-    ]);
+    ].filter(Boolean));
   }
   /* The results by language (discussion #19), each under its heading and at most 25, best match first:
      the right year, season and episode, then a release name sharing the most words with what is playing
@@ -531,6 +538,8 @@ var Subs = (function () {
     token().then(function (tk) { return ask('search', { key: state.key, token: tk, query: q.query, year: q.year, season: q.season, episode: q.episode, type: q.type, tmdb: q.tmdb || '', langs: langs() }); })
       .then(function (j) {
         var r = j.results || [];
+        // Nothing by the TMDB id: once more by name, year and season (a show filed under another id there).
+        if (!r.length && q.tmdb && !q._again) { var by = {}; for (var k in q) by[k] = q[k]; by.tmdb = ''; by._again = true; return search(meta, by); }
         if (!r.length) { U.toast('Nothing found for "' + q.query + '".  Change the title or the languages.', 6000); return find(meta); }
         UI.menu(r.length + ' subtitles for "' + q.query + '"', listed(r, meta, q));
       }, function (e) { U.toast(e.message, 7000); });
