@@ -1636,7 +1636,7 @@ var Player = (function () {
      are cropped.  From 1.05 to 2. */
   function wideBy(mode) { var m = /^wide:(\d(?:\.\d{1,3})?)$/.exec(String(mode || '')), r = m ? +m[1] : 0; return r >= 1.05 && r <= 2 ? r : 0; }
   function validAspect(mode) { return !!(ASPECT_NAMES[mode] || filmShape(mode) || wideBy(mode)); }
-  function aspectName(mode) { var r = filmShape(mode), w = wideBy(mode); return r ? 'Film ' + r.toFixed(2) + ':1' : w ? 'Wider ×' + w.toFixed(2) : ASPECT_NAMES[mode] || ''; }
+  function aspectName(mode) { var r = filmShape(mode), w = wideBy(mode); return r ? T('Film {x}:1', { x: r.toFixed(2) }) : w ? T('Wider ×{x}', { x: w.toFixed(2) }) : T(ASPECT_NAMES[mode] || ''); }
   /* Stream format per channel: '' (the playlist's setting and what playback learns), 'hls' or 'ts'.
      Kept with the playlist's edits (backups too), by channel. */
   // "Busy" answers: connection limit, rate limit, overloaded.

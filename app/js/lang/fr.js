@@ -104,7 +104,7 @@ I18n.add('fr', {
   "Type a shape…": 'Saisir un format…', "Unlink a version": 'Dissocier une version', "Unlink a version…": 'Dissocier une version…',
   "Untick the channels to hide.  Back saves.": 'Décochez les chaînes à masquer.  Retour enregistre.', "Use this aspect for everything": 'Utiliser ce format pour tout', "Watch": 'Regarder',
   "Watch from start": 'Regarder depuis le début', "Watch from the start": 'Regarder depuis le début', "Watch fullscreen": 'Regarder en plein écran', "Watch in Multiview": 'Regarder en Multi-écrans',
-  "Watch it from the start": 'La regarder depuis le début', "Watch the trailer": 'Regarder la bande-annonce', "Weight": 'Épaisseur', "Wider ×": 'Plus large ×',
+  "Watch it from the start": 'La regarder depuis le début', "Watch the trailer": 'Regarder la bande-annonce', "Weight": 'Épaisseur',
   "You missed it:": 'Vous l\'avez manqué :', "a copy of this channel TiviBro didn't find": 'une copie de cette chaîne que TiviBro n\'a pas trouvée', "a day and time": 'un jour et une heure',
   "and the buffer": 'et la mémoire tampon', "back on in Settings > Channels and groups": 'réactivez-la dans Réglages > Chaînes et groupes',
   "back on in Settings > Sports": 'réactivez-le dans Réglages > Sport', "catch-up": 'rattrapage', "catch-up on": 'rattrapage sur', "change its place in": 'changer sa place dans',
@@ -893,4 +893,14 @@ I18n.add('fr', {
   "Galician": 'Galicien', "Hebrew": 'Hébreu', "Hindi": 'Hindi', "Hungarian": 'Hongrois', "Indonesian": 'Indonésien', "Italian": 'Italien', "Japanese": 'Japonais', "Korean": 'Coréen',
   "Latvian": 'Letton', "Lithuanian": 'Lituanien', "Polish": 'Polonais', "Portuguese": 'Portugais', "Russian": 'Russe', "Slovenian": 'Slovène', "Spanish": 'Espagnol', "Swedish": 'Suédois',
   "Tamil": 'Tamoul', "Telugu": 'Télougou', "Thai": 'Thaï', "Turkish": 'Turc', "Ukrainian": 'Ukrainien', "Urdu": 'Ourdou', "Vietnamese": 'Vietnamien',
+  // Quick panel (OK in fullscreen)
+  "Quick actions": 'Actions rapides', "Recent channels": 'Chaînes récentes', "Pause": 'Pause', "Add favorite": 'Ajouter aux favoris',
+  "Auto": 'Auto', "Not with TV player": 'Pas avec le lecteur de la TV', "On, none here": 'Activé, aucun ici',
+  "Finding subtitles…": 'Recherche de sous-titres…', "Subtitles unavailable": 'Sous-titres indisponibles', "No supported subtitles": 'Aucun sous-titre pris en charge',
+  "copy": 'copie', "carry on later": 'continuer plus tard', "more channels": 'plus de chaînes', "an hour": 'une heure',
+  "{n}s": '{n} s', "since {x}": 'depuis {x}', "until {x}": 'jusqu\'à {x}',
+  "4:3 to 16:9": '4:3 vers 16:9', "Film {x}:1": 'Film {x}:1', "Wider ×{x}": 'Plus large ×{x}',
+  "Aspect {x}.  This {y} plays with the TV player, which some TVs keep at its own shape.": 'Format {x}.  Ce {y} se joue avec le lecteur de la TV, que certaines TV gardent dans son format d\'origine.',
+  "Wider ×{x}.  This {y} plays with the TV player, which some TVs keep at its own shape.": 'Plus large ×{x}.  Ce {y} se joue avec le lecteur de la TV, que certaines TV gardent dans son format d\'origine.',
+  "video": 'vidéo', "channel": 'chaîne',
 });

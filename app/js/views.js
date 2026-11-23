@@ -1799,7 +1799,7 @@ var Views = (function () {
     lastPlayed = lp;                          // "last channel" stays the one you chose before
   }
   function versionsSummary(c) {
-    var v = L.versions(c), q = v.map(function (x) { return L.qualityLabel(x) || 'copy'; });
+    var v = L.versions(c), q = v.map(function (x) { return L.qualityLabel(x) || T('copy'); });
     return q.filter(function (x, i) { return q.indexOf(x) === i; }).join(', ');
   }
   function versionsMenu(c) {
@@ -2095,14 +2095,14 @@ var Views = (function () {
     if (c && mode === 'live') {
       var pz = Player.paused || (tsh && !Player.tshift);
       add('pause', { label: pz ? 'Play' : 'Pause', icon: pz ? 'play' : 'pause', v: pz ? '' : tsOn() ? 'carry on later' : '', run: function () { closePanel(); if (pz) { if (tsh && !Player.tshift) tsResume(); else Player.setPaused(false); } else if (!livePause()) Player.setPaused(true); osd(true); } });
-      if (Player.tshift || Player.liveWindow() || c.arch) add('pause', { label: 'Rewind', icon: 'back10', v: Store.settings.skip + 's', run: function () { closePanel(); rewindLive(); } });
-      if (behindLive()) add('pause', { label: 'Forward', icon: 'fwd10', v: Store.settings.skip + 's', run: function () { closePanel(); forward(); } });
+      if (Player.tshift || Player.liveWindow() || c.arch) add('pause', { label: 'Rewind', icon: 'back10', v: I18n.t('{n}s', { n: Store.settings.skip }), run: function () { closePanel(); rewindLive(); } });
+      if (behindLive()) add('pause', { label: 'Forward', icon: 'fwd10', v: I18n.t('{n}s', { n: Store.settings.skip }), run: function () { closePanel(); forward(); } });
       if (canScrub()) add('pause', { label: 'Timeline', icon: 'list', v: '◀  ▶', run: function () { closePanel(); scrubStart(); } });
     }
     if (c && mode !== 'vod' && typeof Record !== 'undefined' && Record.base()) {
       var rn = Record.of(c, nn && nn.now), pnow = nn && nn.now && nn.now.s <= now && nn.now.e > now ? nn.now : null;
-      add('rec', rn && rn.status === 'recording' ? { label: 'Stop recording', icon: 'rec', v: 'since ' + U.hhmm(rn.startedAt || rn.start), run: function () { closePanel(); Record.stop(rn.id); } }
-        : { label: 'Record', icon: 'rec', v: pnow ? 'until ' + U.hhmm(pnow.e) : 'an hour', run: function () { closePanel(); Record.now(c, pnow); } });
+      add('rec', rn && rn.status === 'recording' ? { label: 'Stop recording', icon: 'rec', v: I18n.t('since {x}', { x: U.hhmm(rn.startedAt || rn.start) }), run: function () { closePanel(); Record.stop(rn.id); } }
+        : { label: 'Record', icon: 'rec', v: pnow ? I18n.t('until {x}', { x: U.hhmm(pnow.e) }) : 'an hour', run: function () { closePanel(); Record.now(c, pnow); } });
     }
     add('list', { label: 'Channel guide', icon: 'list', run: function () { closePanel(); openOverlay(); } });
     if (c && c.arch && nn && nn.now && nn.now.s <= now) add('start', { label: 'From start', icon: 'start', v: 'catch-up', run: function () { closePanel(); watchFromStart(c); } });
@@ -2150,9 +2150,9 @@ var Views = (function () {
      turns them on or off and leaves the menu open, so you can see what changed. */
   function ccLabel() {
     var s = Player.cc;
-    if (!s.on) return 'Off';
-    if (s.engine && !s.possible) return 'Not with TV player';
-    return s.found ? 'On' : s.waited ? 'On, none here' : 'On';
+    if (!s.on) return T('Off');
+    if (s.engine && !s.possible) return T('Not with TV player');
+    return s.found ? T('On') : s.waited ? T('On, none here') : T('On');
   }
   function ccToggle() {
     var on = !Store.settings.cc;
@@ -2163,7 +2163,7 @@ var Views = (function () {
     else if (s.found || !s.waited) U.toast('Closed captions on' + (s.found ? '' : '.  They show when the channel sends them.'), s.found ? 0 : 5000);
     else U.toast('Closed captions on.  This channel doesn\'t send any; channels that do will show them.', 7000);
   }
-  function qualityLabel() { if (Player.qualityAuto()) return 'Auto'; var q = Player.qualities().filter(function (x) { return x.on; })[0]; return q ? q.label.split(' ')[0] : 'Auto'; }
+  function qualityLabel() { if (Player.qualityAuto()) return T('Auto'); var q = Player.qualities().filter(function (x) { return x.on; })[0]; return q ? q.label.split(' ')[0] : T('Auto'); }
   function qualityMenu() {
     var q = Player.qualities();
     UI.menu('Video quality', [{ label: 'Automatic', sub: Player.qualityAuto() ? 'on' : 'adapts to your connection', action: function () { Player.setQuality(-1); } }]
@@ -2183,7 +2183,7 @@ var Views = (function () {
       var same = look && looks[look]; if (look && !same) looks[look] = a[1];
       return { label: a[1], sub: k === on ? 'on' + (same ? ', looks the same as ' + same + ' on this picture' : '') : same ? 'looks the same as ' + same + ' on this picture' : tv && shaped ? 'may not change with the TV player' : ASPECT_SUB[k], action: function () {
         Player.setAspect(k, c);
-        if (tv && shaped) U.toast('Aspect ' + a[1] + '.  This ' + what + ' plays with the TV player, which some TVs keep at its own shape.', 6000);
+        if (tv && shaped) U.toast(I18n.t('Aspect {x}.  This {y} plays with the TV player, which some TVs keep at its own shape.', { x: T(a[1]), y: T(what) }), 6000);
       } };
     });
     // A film shape of your own: IMAX 1.90, 2.39 scope and so on, cropped to fill the screen (discussion #31).
@@ -2219,7 +2219,7 @@ var Views = (function () {
     var on = Player.wideBy(Player.displayFor(c));
     function use(r) {
       Player.setAspect('wide:' + r, c);
-      if (tv) U.toast('Wider ×' + r.toFixed(2) + '.  This ' + what + ' plays with the TV player, which some TVs keep at its own shape.', 6000);
+      if (tv) U.toast(I18n.t('Wider ×{x}.  This {y} plays with the TV player, which some TVs keep at its own shape.', { x: r.toFixed(2), y: T(what) }), 6000);
     }
     UI.menu('Stretch wider', [[1.1, 'a little'], [1.2, ''], [1.25, ''], [1.33, '4:3 to 16:9'], [1.5, 'a lot: 4:3 becomes 2:1, sides cropped'], [1.78, '']].map(function (x) {
       return { label: '×' + x[0].toFixed(2), sub: Math.abs(on - x[0]) < 0.001 ? 'on' : x[1], action: function () { use(x[0]); } };
@@ -2280,19 +2280,19 @@ var Views = (function () {
       bar.appendChild(fill);
     }
     el.appendChild(bar);
-    el.appendChild(U.el('div', 'qp-row-title', 'Quick actions'));
+    el.appendChild(U.el('div', 'qp-row-title', T('Quick actions')));
     var r0 = U.el('div', 'qp-actions');
     qp.rows[0].forEach(function (it, i) {
       var b = U.el('div', 'qp-act' + (qp.row === 0 && qp.col === i ? ' focus' : ''));
       var ic = U.el('span', 'i'); ic.innerHTML = '<svg viewBox="0 0 24 24" class="qico">' + (QP_ICONS[it.icon] || '') + '</svg>'; b.appendChild(ic);
-      b.appendChild(U.el('span', '', it.label));
-      if (it.v) b.appendChild(U.el('span', 'v', it.v));
+      b.appendChild(U.el('span', '', T(it.label)));
+      if (it.v) b.appendChild(U.el('span', 'v', T(it.v)));
       hook(b, 0, i);
       r0.appendChild(b);
     });
     el.appendChild(r0);
     if (qp.rows[1].length) {
-      el.appendChild(U.el('div', 'qp-row-title', 'Recent channels'));
+      el.appendChild(U.el('div', 'qp-row-title', T('Recent channels')));
       var r1 = U.el('div', 'qp-recent');
       qp.rows[1].forEach(function (it, i) {
         var x = it.ch, b = U.el('div', 'qp-ch' + (qp.row === 1 && qp.col === i ? ' focus' : '') + (x.k === c.k ? ' on' : ''));
@@ -2353,7 +2353,7 @@ var Views = (function () {
   }
   function subtitleStatus() {
     var state = video && video._mkvSubsState;
-    return state === 'discovering' ? 'Finding subtitles…' : state === 'error' ? 'Subtitles unavailable' : state === 'unavailable' ? 'No supported subtitles' : 'Off';
+    return state === 'discovering' ? T('Finding subtitles…') : state === 'error' ? T('Subtitles unavailable') : state === 'unavailable' ? T('No supported subtitles') : T('Off');
   }
   /* Subtitles: the settings first (for movies and shows Find subtitles from OpenSubtitles, subs.js;
      Timing; Line up with another track), under a Settings heading, then what this video has under its
