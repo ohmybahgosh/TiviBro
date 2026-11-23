@@ -172,4 +172,23 @@ function get(source, path, lang, cb) {
   if (!u || !u.hostname || path.charAt(0) !== '/') return cb({ error: 'address' });
   getText(u.protocol + '//' + u.host + path.split('/').map(function (p) { return encodeURIComponent(p); }).join('/'), { Authorization: require('./media').basicAuth(source) }, decode);
 }
-module.exports = { lookup: lookup, get: get, fromServer: fromServer, _test: { pick: pick, describe: describe } };
+/* A library's folders and subtitle files, for Load a subtitle file in the player (subs.js): path empty starts at the
+   library's own folder.  cb({ entries: [{ name, dir, path }] }), folders first.  DLNA has no folders to look in. */
+function browse(source, path, cb) {
+  source = source || {}; path = str(path);
+  function done(list) {
+    var out = (list || []).filter(function (e) { return e && e.name && e.name.charAt(0) !== '.' && (e.dir || SUB.test(e.name)); })
+      .map(function (e) { return { name: str(e.name), dir: !!e.dir, path: e.id && source.type === 'gdrive' && e.dir ? 'gd:' + e.id + '/' + str(e.name) : str(e.path) }; });
+    out.sort(function (a, b) { return (b.dir - a.dir) || a.name.toLowerCase().localeCompare(b.name.toLowerCase()); });
+    cb({ entries: out.slice(0, 500) });
+  }
+  if (source.type === 'smb') return smbList(source, path || str(source.folder) || '/', done);
+  if (source.type === 'dropbox') return dropboxList(source, path || require('./dropbox').folderPath(source.root), done);
+  if (source.type === 'gdrive') { var id = path ? require('./gdrive').idOf(path) : str(source.root); return id ? gdriveList(source, id, done) : done([]); }
+  if (source.type === 'webdav' || source.address) {
+    var root = ''; try { root = decodeURIComponent(URL_.parse(str(source.address)).pathname || '/'); } catch (e) { root = '/'; }
+    return webdavList(source, path || root, done);
+  }
+  done([]);
+}
+module.exports = { lookup: lookup, get: get, browse: browse, fromServer: fromServer, _test: { pick: pick, describe: describe } };

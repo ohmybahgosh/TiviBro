@@ -575,6 +575,14 @@ var Phone = (function () {
     logs: function () {
       return Diag.report().then(function (r) { var t = r.text || ''; return { text: t.length > 600000 ? t.slice(-600000) : t }; });
     },
+    // A subtitle file sent from the phone (its text, decoded there): a track on what plays now, switched on.
+    subfile: function (a, c) {
+      var text = String(a.text || ''), name = String(a.name || 'Subtitles.srt').slice(0, 200);
+      if (!text.trim()) throw new Error('That file is empty.');
+      if (text.length > 3 * 1048576) throw new Error('That file is too big for subtitles (3 MB at most).');
+      var r = Subs.fromAfar(name, text, c && c.from || '');
+      return { msg: 'On the TV: ' + r.label + ', ' + r.lines + ' lines.', label: r.label, lines: r.lines };
+    },
     backup: function () {
       return Backup.create().then(function (b) { Store.settings.lastBackup = Date.now(); Store.saveSettings(); return { backup: b }; });
     },

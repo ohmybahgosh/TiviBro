@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Load a subtitle file.**  The Subtitles menu has Load a subtitle file…: a .srt, .vtt, .ass or .ssa from a USB drive (rooted TVs) or a My media library on a share, Dropbox or Google Drive, for movies, episodes and live channels.  The phone app sends one from the phone (the subtitles button next to what's playing), and the web editor's Overview from a computer.
+- Translations: Spanish, Portuguese and Russian are complete again, settings, sports and My media's share forms included.
 - Find subtitles searches by name once you change the title, season and episode, or year (an episode has a Year row now too), and there's a Search by name instead row.  A search by the TMDB id that finds nothing tries once more by name.  For revivals filed as their own show on OpenSubtitles, such as Twin Peaks (2017).
 - **Settings where you'd look for them.**  A few settings are now in a second place too, the same setting in both: logos and channel numbers under Guide, live pause and the rewind buffer under Playback (with how long the info panel stays and which way Up and Down change channel), Hide channels with nothing on and Hide adult channels under Channels and groups (with a Channels screen part), Sports guides under Sports, team game reminders under Reminders, and Skip intro and Up next beside Up next in Movies and shows and My media.  The phone app and the web editor show them in both places too.
 - **Into a section, the list on the left has the focus.**  From the Settings home, a link, Fix a problem or Search, ◀ goes back instead of changing the first setting on the page.  ▶ or OK goes on to the setting, which is marked.

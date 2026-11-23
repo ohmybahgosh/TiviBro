@@ -235,6 +235,8 @@ var Record = (function () {
   // The always-on rewind buffer: a USB drive or the network share (it writes all the time, never to the TV's storage).
   function canBuffer() { return !!base() && (drive || pauseShare); }
 
-  return { setShare: setShare, setSharePause: setSharePause, get share() { return share; }, get pauseShare() { return pauseShare; }, now: now, schedule: schedule, convert: convert, canConvert: canConvert, tsStart: tsStart, tsPing: tsPing, tsStop: tsStop, canPause: canPause, canBuffer: canBuffer, enrich: enrich, base: base, stop: stop, remove: remove, list: list, drives: drives, open: open, shown: shown, watch: watch, posOf: posOf, forget: forget, hms: hms, sizeOf: sizeOf, whenOf: whenOf, get space() { return space; }, menuItem: menuItem, of: of, urlFor: urlFor,
+  // Subtitle files on a USB drive (subs.js Load a subtitle file): 'browse' { path } or 'get' { path, lang }.
+  function subs(op, body) { return api('/record/subs/' + (op === 'get' ? 'get' : 'browse'), body || {}); }
+  return { subs: subs, setShare: setShare, setSharePause: setSharePause, get share() { return share; }, get pauseShare() { return pauseShare; }, now: now, schedule: schedule, convert: convert, canConvert: canConvert, tsStart: tsStart, tsPing: tsPing, tsStop: tsStop, canPause: canPause, canBuffer: canBuffer, enrich: enrich, base: base, stop: stop, remove: remove, list: list, drives: drives, open: open, shown: shown, watch: watch, posOf: posOf, forget: forget, hms: hms, sizeOf: sizeOf, whenOf: whenOf, get space() { return space; }, menuItem: menuItem, of: of, urlFor: urlFor,
     get recs() { return last.recs; } };
 })();

@@ -151,6 +151,19 @@ function call(method, url, body, headers) {
   ok('the list is kept on storage', saved.recs.length >= 4, saved.recs.length);
   ok('file names: no characters FAT refuses', !/[:?"<>|*]/.test(R._nameFor({ title: 'A: B? "C" <D>|*', startedAt: Date.now() }, 'ts', 1)));
 
+  // Load a subtitle file from a USB drive: its folders and subtitle files, one read, nothing outside the drive.
+  const drv = path.join(process.env.TIVIBRO_USB_DIR, 'sda', 'sda1');
+  fs.mkdirSync(path.join(drv, 'Subs'), { recursive: true });
+  fs.writeFileSync(path.join(drv, 'Subs', 'Movie.en.srt'), '1\n00:00:01,000 --> 00:00:02,000\nCaf\xe9\n', 'latin1');
+  fs.writeFileSync(path.join(drv, 'Subs', 'Movie.mkv'), 'x');
+  let sb = await call('POST', '/record/subs/browse', { path: '' });
+  ok('subtitles: the drives first', sb.j && sb.j.entries && sb.j.entries.some((x) => x.path === drv), JSON.stringify(sb.j));
+  sb = await call('POST', '/record/subs/browse', { path: path.join(drv, 'Subs') });
+  ok('subtitles: a folder\'s subtitle files, not its videos', sb.j && sb.j.entries.map((x) => x.name).join() === 'Movie.en.srt', JSON.stringify(sb.j));
+  sb = await call('POST', '/record/subs/get', { path: path.join(drv, 'Subs', 'Movie.en.srt'), lang: 'en' });
+  ok('subtitles: a file read, its codepage worked out', sb.j && /Café/.test(sb.j.text || ''), JSON.stringify(sb.j));
+  sb = await call('POST', '/record/subs/get', { path: '/etc/passwd' });
+  ok('subtitles: nothing outside a drive', sb.code === 400, sb.code);
   R._reset(); srv.close();
   fs.rmSync(tmp, { recursive: true, force: true });
   if (fail) { console.log(fail + ' recording test(s) failed'); process.exit(1); }

@@ -6,6 +6,8 @@
 package app.tivibro.phone.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -56,6 +58,7 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.Subtitles
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -115,8 +118,11 @@ import app.tivibro.phone.proto.Lineup
 import app.tivibro.phone.proto.NowState
 import app.tivibro.phone.proto.Prog
 import app.tivibro.phone.proto.Volume
+import app.tivibro.phone.proto.TbException
 import coil.compose.AsyncImage
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import java.text.DateFormat
 import java.util.Date
 
@@ -157,6 +163,15 @@ fun TvScreen(
     // The clock, for programme progress: once every 20 seconds is plenty.
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) { while (true) { delay(20_000); now = System.currentTimeMillis() } }
+    // A subtitle file from this phone for what the TV plays (the button beside it in Now playing).
+    val scope = rememberCoroutineScope()
+    val pickSubs = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) scope.launch {
+            try { model.say(model.sendSubtitles(id, uri)) }
+            catch (e: TbException) { model.say(e.message ?: "Couldn't send it.") }
+            catch (e: Exception) { model.say("Couldn't send it.") }
+        }
+    }
 
     Scaffold(
         containerColor = Ink,
@@ -170,7 +185,7 @@ fun TvScreen(
         },
     ) { pad ->
         Column(Modifier.padding(pad).fillMaxSize()) {
-            NowPlaying(state, now, onKey, onOpen, Modifier.padding(16.dp, 4.dp, 16.dp, 8.dp))
+            NowPlaying(state, now, onKey, onOpen, Modifier.padding(16.dp, 4.dp, 16.dp, 8.dp), onSubs = { pickSubs.launch(arrayOf("*/*")) })
             if (state?.busy == true) Surface(color = Panel2, shape = MaterialTheme.shapes.medium, modifier = Modifier.padding(16.dp, 0.dp, 16.dp, 8.dp).fillMaxWidth()) {
                 Row(Modifier.padding(14.dp, 10.dp), verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = Accent)
@@ -220,7 +235,7 @@ fun TvScreen(
 private fun clock(t: Long): String = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(t))
 
 @Composable
-private fun NowPlaying(st: NowState?, now: Long, onKey: (String) -> Unit, onOpen: () -> Unit, modifier: Modifier) {
+private fun NowPlaying(st: NowState?, now: Long, onKey: (String) -> Unit, onOpen: () -> Unit, modifier: Modifier, onSubs: () -> Unit = {}) {
     Surface(color = Panel, shape = MaterialTheme.shapes.medium, modifier = modifier.fillMaxWidth()) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             when {
@@ -243,6 +258,7 @@ private fun NowPlaying(st: NowState?, now: Long, onKey: (String) -> Unit, onOpen
                             LinearProgressIndicator(progress = { (st.vodPos.toFloat() / st.vodDur).coerceIn(0f, 1f) }, color = Accent, trackColor = Panel2, modifier = Modifier.fillMaxWidth())
                         }
                     }
+                    SubsButton(onSubs)
                     PlayPause(st.paused, onKey)
                 }
                 st.channel.isNotBlank() -> {
@@ -258,12 +274,19 @@ private fun NowPlaying(st: NowState?, now: Long, onKey: (String) -> Unit, onOpen
                             Text(clock(p.start) + " – " + clock(p.end) + (st.next?.let { "   Next: " + it.title } ?: ""), color = Muted, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
+                    SubsButton(onSubs)
                     PlayPause(st.paused, onKey)
                 }
                 else -> Text(when (st.tab) { "guide" -> "TiviBro: the guide"; "search" -> "TiviBro: search"; "settings" -> "TiviBro: settings"; "movies" -> "TiviBro: movies"; "shows" -> "TiviBro: shows"; "media" -> "TiviBro: my media"; else -> "TiviBro is open" }, color = Muted)
             }
         }
     }
+}
+
+/** Sends a subtitle file from this phone to what the TV plays. */
+@Composable
+private fun SubsButton(onSubs: () -> Unit) {
+    IconButton(onClick = onSubs) { Icon(Icons.Rounded.Subtitles, "Send a subtitle file to the TV", tint = TextHi) }
 }
 
 @Composable

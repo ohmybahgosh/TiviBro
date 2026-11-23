@@ -2399,6 +2399,8 @@ var Views = (function () {
     var tr = subtitleTracks().filter(function (t) { return mode === 'vod' || t.kind === 'subtitles'; });
     var settings = [], list = [];
     if (mode === 'vod' && vod) settings.push({ label: 'Find subtitles…', sub: Subs.configured ? 'OpenSubtitles, in ' + Subs.langs().map(Subs.langName).join(', ') : 'from OpenSubtitles, with your free API key', action: function () { Subs.find(vod.meta); } });
+    // A subtitle file of your own: from a USB drive or a My media library here, or sent from the phone app or web editor.
+    settings.push({ label: 'Load a subtitle file…', sub: 'From a USB drive or a My media library', action: function () { Subs.pickFile(); } });
     if (tr.length || mode === 'vod') settings.push({ label: 'Size and style', sub: subStyleLine(), action: subStyleMenu });
     if (tr.length) settings.push({ label: 'Timing', sub: Subs.timing, action: Subs.timingMenu });
     if (tr.length > 1) settings.push({ label: 'Line up with another track…', sub: 'match a subtitle that is already in time', action: function () { Subs.lineUpMenu(tr); } });

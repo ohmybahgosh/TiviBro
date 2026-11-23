@@ -622,6 +622,22 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         throw TbException(if (busy) "TiviBro on the TV is busy (a big playlist can take a few minutes).  Try again when it's done." else "TiviBro on the TV didn't answer in time.  Is it open?")
     }
 
+    /**
+     * A subtitle file picked on this phone, sent to what the TV is playing (its Subtitles turn it on there).
+     * Read here, as UTF-8 or else Windows-1252 (most older .srt files), at most 3 MB.  Returns what the TV said.
+     */
+    suspend fun sendSubtitles(id: String, from: android.net.Uri): String = withContext(Dispatchers.IO) {
+        val app = getApplication<Application>()
+        var name = "Subtitles.srt"
+        app.contentResolver.query(from, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c -> if (c.moveToFirst()) name = c.getString(0) ?: name }
+        if (!Regex("\\.(srt|vtt|ass|ssa|txt)$", RegexOption.IGNORE_CASE).containsMatchIn(name)) throw TbException("Pick a subtitle file: .srt, .vtt, .ass or .ssa.")
+        val bytes = app.contentResolver.openInputStream(from)?.use { it.readBytes() } ?: throw TbException("Couldn't open the file.")
+        if (bytes.size > 3 * 1048576) throw TbException("That file is too big for subtitles (3 MB at most).")
+        val text = subtitleText(bytes)
+        val r = ask(id, "subfile", JSONObject().put("name", name).put("text", text), timeoutMs = 20_000, tries = 1)
+        r.optString("msg").ifBlank { "Sent to the TV." }
+    }
+
     /** A page of the guide.  Rows whose guide the TV is still loading are asked for again. */
     suspend fun guide(id: String, group: String, at: Long?, offset: Int, limit: Int = 60): GuidePage {
         fun args() = JSONObject().put("group", group).put("offset", offset).put("limit", limit).apply { if (at != null) put("at", at) }
@@ -996,4 +1012,11 @@ class AppModel(app: Application) : AndroidViewModel(app) {
             _pair.value = Pairing0(error = "Couldn't reach the TV at $host.  Are the phone and the TV on the same network?")
         }
     }
+}
+
+/** A subtitle file's bytes as text: UTF-8 (its BOM dropped) when they are valid UTF-8, else Windows-1252. */
+fun subtitleText(bytes: ByteArray): String {
+    val dec = Charsets.UTF_8.newDecoder().onMalformedInput(java.nio.charset.CodingErrorAction.REPORT).onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT)
+    val text = try { dec.decode(java.nio.ByteBuffer.wrap(bytes)).toString() } catch (e: java.nio.charset.CharacterCodingException) { String(bytes, charset("windows-1252")) }
+    return text.removePrefix("\uFEFF")
 }

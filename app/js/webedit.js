@@ -706,6 +706,14 @@ var WebEdit = (function () {
       });
       return draftQ.then(function () { return { msg: 'Draft version deleted' }; });
     },
+    // A subtitle file from the web editor's Overview (its text, read in the browser): a track on what plays now.
+    subFile: function (a) {
+      var text = String(a.text || '');
+      if (!text.trim()) throw new Error('That file is empty.');
+      if (text.length > 3 * 1048576) throw new Error('That file is too big for subtitles (3 MB at most).');
+      var r = Subs.fromAfar(String(a.name || 'Subtitles.srt').slice(0, 200), text, I18n.t('the web editor'));
+      return { msg: 'On the TV: ' + r.label + ', ' + r.lines + ' lines' };
+    },
     listSnaps: function () { return snapList().then(function (l) { return { msg: l.length + ' restore points', data: l }; }); },
     makeSnap: function (a) { return snap('named', clean(a.name) || 'Restore point').then(function (s) { return { msg: 'Restore point "' + s.name + '" saved on the TV', data: { id: s.id } }; }); },
     deleteSnap: function (a) {

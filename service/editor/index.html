@@ -545,6 +545,8 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
             <button id="qaHideEmpty">Hide groups with no channels</button>
             <button id="qaShowAll">Show every group again</button>
           </div></div>
+        <div class="card" style="margin-top:16px"><h3>Subtitles for what's playing</h3><p>Send a subtitle file (.srt, .vtt, .ass or .ssa) from this computer or phone to the movie, episode or channel playing on the TV.  It's switched on there, and Subtitles &gt; Timing on the TV moves it if it's out of time.</p>
+          <div class="row"><input id="subFile" type="file" accept=".srt,.vtt,.ass,.ssa,text/plain"><button id="subSend" class="primary">Send to the TV</button></div></div>
       </div>
     </section>
 
@@ -2082,6 +2084,17 @@ function suggestions() {
   var g = t.dataset.go; if (g) show(g);
 }); });
 $('qaHideAll').onclick = function () { hideAll(); show('gc'); };
+/* A subtitle file to what plays on the TV: read here (UTF-8, else Windows-1252 as most older .srt files are) and sent
+   as text (webedit.js subFile). */
+$('subSend').onclick = function () {
+  var f = $('subFile').files && $('subFile').files[0];
+  if (!f) return toast('Pick a subtitle file first.');
+  if (f.size > 3 * 1048576) return toast('That file is too big for subtitles (3 MB at most).');
+  f.arrayBuffer().then(function (buf) {
+    var text; try { text = new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch (e) { text = new TextDecoder('windows-1252').decode(buf); }
+    return busyBtn($('subSend'), command('subFile', { name: f.name, text: text.replace(/^\uFEFF/, '') }, 20000));
+  }).then(function (r) { toast(r.msg); }).catch(function (e) { toast(e.message); });
+};
 $('qaShowAll').onclick = function () { mut('Showed every group', function () { E.hiddenGroups = {}; }); toast('Every group is shown', ['Undo', undo]); };
 $('qaNames').onclick = function () { mut('Turned on the recommended name clean-up', function () { var d = Names.defaults(); N.enabled = true; N.rules = d.rules; }); renderNames(); toast('Recommended name clean-up is on', ['Undo', undo]); show('names'); };
 $('qaHideEmpty').onclick = function () { hideEmpty(); };

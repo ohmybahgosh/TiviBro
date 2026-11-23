@@ -555,6 +555,70 @@ var Subs = (function () {
       U.toast(langName(x.lang) + ' subtitles on.' + (j.remaining != null ? '  ' + j.remaining + ' downloads left today.' : '') + '  Out of time?  Subtitles > Timing.', 7000);
     }).catch(function (e) { U.toast(e.message, 7000); });
   }
+  /* ---------- a subtitle file you pick (Load a subtitle file) ----------
+     A .srt, .vtt, .ass or .ssa from a USB drive or a My media library (the player's Subtitles menu), or sent from the
+     TiviBro phone app or the web editor: a track on what plays now, switched on, and kept like a download. */
+  var LANG_IN_NAME = { en: 'en', eng: 'en', english: 'en', es: 'es', spa: 'es', spanish: 'es', fr: 'fr', fre: 'fr', french: 'fr', de: 'de', ger: 'de', german: 'de',
+    it: 'it', ita: 'it', italian: 'it', pt: 'pt', por: 'pt', portuguese: 'pt', ptbr: 'pt-br', ru: 'ru', rus: 'ru', russian: 'ru', nl: 'nl', dut: 'nl', dutch: 'nl' };
+  function nameLang(name) {
+    var w = String(name || '').toLowerCase().replace(/\.[a-z0-9]+$/, '').replace(/pt[._-]br/g, 'ptbr').split(/[^a-z]+/);
+    for (var i = w.length - 1; i >= 0 && i >= w.length - 3; i--) if (LANG_IN_NAME[w[i]]) return LANG_IN_NAME[w[i]];
+    return '';
+  }
+  // The text of one file as a track on what's playing: { label, lines }, or an error saying why not.
+  function addText(name, text) {
+    var v = video();
+    if (!v || !(v.currentSrc || v.src) || typeof Views === 'undefined' || !(Views.mode === 'vod' || Views.playing)) throw new Error('Nothing is playing on the TV.  Start the movie, episode or channel first.');
+    var cues = parse(text);
+    if (!cues.length) throw new Error('That file had no subtitles TiviBro can read.');
+    var lang = nameLang(name), stem = String(name || 'Subtitles').replace(/^.*[\/\\]/, '').replace(/\.[^.]+$/, '');
+    var label = (lang ? langName(lang) + '  ·  ' : '') + shortName(stem, 34);
+    v._subsChoice = true;
+    addTrack(label, lang, cues);
+    keep(label, lang, cues);
+    Log.info('subs', 'Subtitle file added: ' + cues.length + ' lines' + (lang ? ' in ' + lang : ''));
+    return { label: label, lines: cues.length };
+  }
+  // From the phone app or the web editor: says on the TV what came, and where from.
+  function fromAfar(name, text, who) {
+    var r = addText(name, text);
+    U.toast(I18n.t('Subtitles from {x} on: {y}.  Out of time?  Subtitles > Timing.', { x: who || I18n.t('your phone'), y: r.label }), 7000);
+    return r;
+  }
+  /* The TV's own picker: the USB drives (rooted TVs, through the recording helper) and your My media libraries on a
+     share or online folder, then their folders down to a subtitle file. */
+  function pickFile() {
+    var places = [];
+    if (typeof Record !== 'undefined' && Record.space) places.push({ label: 'USB drive', sub: 'Its folders', action: function () { browseUsb(''); } });
+    (typeof MediaStore !== 'undefined' ? MediaStore.sources() : []).filter(function (x) { return x.type === 'smb' || x.type === 'webdav' || x.type === 'dropbox' || x.type === 'gdrive'; })
+      .forEach(function (x) { places.push({ label: I18n.raw(x.name || x.type), sub: 'My media library', action: function () { browseLib(x, '', []); } }); });
+    if (!places.length) return UI.menu('Load a subtitle file', [{ label: 'No USB drive or My media library to look in', sub: 'Send a file from the TiviBro phone app (the remote, next to what plays) or the web editor\'s Overview instead.' }]);
+    UI.menu('Load a subtitle file', places);
+  }
+  // One folder's list: its subtitle files and folders, with a way back up (trail: the folders above).
+  function folderMenu(title, entries, open, read, up) {
+    var items = [];
+    if (up) items.push({ label: '‹  Up a folder', action: up });
+    entries.forEach(function (e) { items.push({ label: I18n.raw((e.dir ? '▸  ' : '') + e.name), sub: e.dir ? '' : 'subtitle file', action: function () { if (e.dir) open(e); else read(e); } }); });
+    if (!entries.length) items.push({ label: 'No folders or subtitle files here' });
+    UI.menu(I18n.raw(title), items);
+  }
+  function took(name, text) { try { var r = addText(name, text); U.toast(I18n.t('{x} on.  Out of time?  Subtitles > Timing.', { x: r.label }), 6000); } catch (e) { U.toast(e.message, 6000); } }
+  function browseUsb(dir, trail) {
+    trail = trail || [];
+    Record.subs('browse', { path: dir }).then(function (j) {
+      folderMenu(dir ? dir.split('/').pop() : I18n.t('USB drive'), j.entries || [], function (e) { browseUsb(e.path, trail.concat([dir])); },
+        function (e) { Record.subs('get', { path: e.path, lang: nameLang(e.name) }).then(function (g) { took(e.name, g.text); }, function (er) { U.toast(er.message, 6000); }); },
+        trail.length ? function () { browseUsb(trail[trail.length - 1], trail.slice(0, -1)); } : null);
+    }, function (e) { U.toast(e.message, 6000); });
+  }
+  function browseLib(src, dir, trail) {
+    post('sidecar/browse', { source: src, path: dir }, 30000).then(function (j) {
+      folderMenu(dir ? String(dir).replace(/\/+$/, '').split('/').pop() : src.name || 'My media', (j && j.entries) || [], function (e) { browseLib(src, e.path, trail.concat([dir])); },
+        function (e) { post('sidecar/get', { source: src, path: e.path, lang: nameLang(e.name) }, 30000).then(function (g) { if (g && g.text) took(e.name, g.text); else U.toast(I18n.t('Couldn\'t read {x}', { x: e.name }), 6000); }, function () { U.toast(I18n.t('Couldn\'t read {x}', { x: e.name }), 6000); }); },
+        trail.length ? function () { browseLib(src, trail[trail.length - 1], trail.slice(0, -1)); } : null);
+    }, function () { U.toast('The library didn\'t answer.', 6000); });
+  }
   function langMenu(done) {
     var cur = langs().slice();
     function draw() {
@@ -688,7 +752,7 @@ var Subs = (function () {
     try { localStorage.setItem(AMEMO, JSON.stringify(all)); } catch (e) {}
   }
 
-  return { sidecar: sidecar, memoFor: memoFor, remember: remember, audioFor: audioFor, rememberAudio: rememberAudio, showKey: showKey, find: find, gone: gone, forget: forget, refresh: applyDelay, fresh: fresh, timingOf: timingOf, autoOn: autoOn, timingMenu: timingMenu, lineUpMenu: lineUpMenu, langMenu: langMenu, reset: reset, restore: restore, setup: setup, test: test, forgetKept: forgetKept, setKey: setKey, signIn: signIn, langs: langs, langName: langName,
+  return { addText: addText, fromAfar: fromAfar, pickFile: pickFile, sidecar: sidecar, memoFor: memoFor, remember: remember, audioFor: audioFor, rememberAudio: rememberAudio, showKey: showKey, find: find, gone: gone, forget: forget, refresh: applyDelay, fresh: fresh, timingOf: timingOf, autoOn: autoOn, timingMenu: timingMenu, lineUpMenu: lineUpMenu, langMenu: langMenu, reset: reset, restore: restore, setup: setup, test: test, forgetKept: forgetKept, setKey: setKey, signIn: signIn, langs: langs, langName: langName,
     get delay() { return delay; }, get rate() { return rate; }, get timing() { return timingSummary(); }, setRate: setRate, draw: drawLines, get configured() { return !!state.key; }, get user() { return state.user || ''; }, get allowed() { return state.allowed || 0; },
-    _test: { keepOn: keepOn, listed: listed, shortName: shortName, keep: keep, parse: parse, align: align, clean: clean, guess: guess, shift: shift, addTrack: addTrack, linesAt: linesAt, snapshot: snapshot, setRate: setRate, lineUp: lineUp, applyDelay: applyDelay } };
+    _test: { nameLang: nameLang, keepOn: keepOn, listed: listed, shortName: shortName, keep: keep, parse: parse, align: align, clean: clean, guess: guess, shift: shift, addTrack: addTrack, linesAt: linesAt, snapshot: snapshot, setRate: setRate, lineUp: lineUp, applyDelay: applyDelay } };
 })();

@@ -35,8 +35,12 @@ srv.listen(0, '127.0.0.1', () => {
     ok('WebDAV: the .en.srt beside it and the Spanish one in Subs', r.subs.map((x) => x.lang).sort().join() === 'en,es', JSON.stringify(r));
     Sc.get(src, (r.subs.filter((x) => x.lang === 'es')[0] || {}).path, 'es', (g) => {
       ok('...read with the login', /Show\.S01E01\.es\.srt/.test(g.text || ''), JSON.stringify(g));
-      srv.close();
-      console.log(fails ? fails + ' FAILED' : 'all sidecar subtitle checks passed'); process.exit(fails ? 1 : 0);
+      // Load a subtitle file: the library's own folder first, folders before files, no videos.
+      Sc.browse(src, '/TV/Show/Season 1', (b) => {
+        ok('browse: the Subs folder first, then the .srt, no video', b.entries.map((x) => x.name + (x.dir ? '/' : '')).join() === 'Subs/,Show.S01E01.en.srt', JSON.stringify(b));
+        srv.close();
+        console.log(fails ? fails + ' FAILED' : 'all sidecar subtitle checks passed'); process.exit(fails ? 1 : 0);
+      });
     });
   });
 });

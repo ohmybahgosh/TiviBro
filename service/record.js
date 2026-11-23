@@ -748,8 +748,8 @@ function serveFile(req, res, ALLOW, r, part) {
 }
 /* ---------- the agent (rooted TVs) ---------- */
 /* Raised whenever record-agent.js or what it runs changes in a way an old agent would miss (2: it keeps the helper up
-   for the phone app; 3: recordings filed for media servers, Convert to MP4; 4: recording to a WebDAV share; 5: to a Windows share, and live pause there).  The version can't tell: every alpha is 0.6.0 to the helper. */
-var AGENT_REV = 5;
+   for the phone app; 3: recordings filed for media servers, Convert to MP4; 4: recording to a WebDAV share; 5: to a Windows share, and live pause there; 6: subtitle files on a USB drive).  The version can't tell: every alpha is 0.6.0 to the helper. */
+var AGENT_REV = 6;
 function agentUp(cb) {
   var r = http.get({ hostname: '127.0.0.1', port: AGENT_PORT, path: '/record/ping', headers: { 'X-TiviBro-Ctl': agentKey() } }, function (res) {
     var b = ''; res.on('data', function (d) { b += d; });
@@ -868,6 +868,29 @@ function handleHere(req, res, ALLOW) {
       var keep = function () { load().target = tg; save(); send(res, ALLOW, 200, { ok: true, target: { type: tg.type, name: tg.name } }); };
       if (!q.check) return keep();
       return Net(tg).check(tg, FOLDER, function (e) { if (e) return send(res, ALLOW, 502, { error: 'Couldn\'t write to the share: ' + e.message }); note('info', 'recording: network share set', { name: tg.name }); keep(); });
+    }
+    /* Subtitle files on a USB drive, for Load a subtitle file in the player's Subtitles (subs.js): a folder's folders
+       and subtitle files, { path } empty for the drives themselves, then one file's text (3 MB at most, its
+       codepage worked out as for OpenSubtitles).  Only inside a drive TiviBro can see. */
+    if (p === '/record/subs/browse' || p === '/record/subs/get') {
+      var dvs = drives(), want = q.path ? path.resolve('/', String(q.path)) : '';
+      var inside = want && dvs.some(function (d) { return want === d.dir || want.indexOf(d.dir + '/') === 0; });
+      if (p === '/record/subs/browse') {
+        if (!want) return send(res, ALLOW, 200, { entries: dvs.map(function (d) { return { name: d.name, dir: true, path: d.dir }; }) });
+        if (!inside) return send(res, ALLOW, 404, { error: 'not on a USB drive' });
+        var names = []; try { names = fs.readdirSync(want); } catch (e) { return send(res, ALLOW, 404, { error: 'that folder is gone' }); }
+        var entries = [];
+        names.forEach(function (n) {
+          if (n.charAt(0) === '.') return;
+          var full = path.join(want, n), st; try { st = fs.statSync(full); } catch (e) { return; }
+          if (st.isDirectory() || /\.(srt|vtt|ass|ssa)$/i.test(n)) entries.push({ name: n, dir: st.isDirectory(), path: full });
+        });
+        return send(res, ALLOW, 200, { entries: entries.slice(0, 500) });
+      }
+      if (!inside || !/\.(srt|vtt|ass|ssa)$/i.test(want)) return send(res, ALLOW, 400, { error: 'not a subtitle file on a USB drive' });
+      var buf; try { var fd = fs.openSync(want, 'r'), b = new Buffer(Math.min(fs.fstatSync(fd).size, 3 * 1048576)); fs.readSync(fd, b, 0, b.length, 0); fs.closeSync(fd); buf = b; }
+      catch (e) { return send(res, ALLOW, 404, { error: 'couldn\'t read it' }); }
+      return send(res, ALLOW, 200, { text: require('./subtitles')._test.decode(buf, String(q.lang || '')) });
     }
     // Live pause on the share on or off, keeping the share and its login as they are.
     if (p === '/record/target/pause') {

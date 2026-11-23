@@ -18,6 +18,8 @@ vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js/subs.js'), 'utf8') + ';this.Subs = Subs;', ctx);
 const T = ctx.Subs._test;
 
+// A subtitle file you pick: its language from the end of its name.
+ok('a file\'s language from its name', T.nameLang('Movie.2020.en.srt') === 'en' && T.nameLang('Show.S01E01.pt-BR.srt') === 'pt-br' && T.nameLang('Some.Movie.srt') === '' && T.nameLang('2_English.srt') === 'en');
 // Remembered per title: Off stays off, a language comes back on, whatever Subtitles automatically says.
 ctx.U.lang = (x) => /^en|english/i.test(String(x || '')) ? 'en' : /^es|spanish/i.test(String(x || '')) ? 'es' : '';
 ctx.Subs.remember({ id: 'm1' }, null); ctx.Subs.remember({ id: 'm2' }, { language: 'es', label: 'Spanish' });

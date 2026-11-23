@@ -28,12 +28,16 @@ const RULES = [
 // choice(label, sub, values, ['3 hours', '6 hours'], ...): the names of the choices.
 const CHOICE_LABELS = /\bchoice\([^;]*?\],\s*\[((?:\s*(?:'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")\s*,?)+)\]/g;
 
+// Names and codes that are the same in every language: brands, leagues, formats, a provider's "EN -" prefix.
+const SAME = ['TiviBro', 'YouTube', 'Dropbox', 'Google Drive', 'Trakt', 'TMDB  ·', 'Trakt  ·', 'HLS', 'MPEG-TS', 'NBA', 'NFL', 'NHL', 'MLB', 'MLS', 'WNBA', 'EN -'];
 function keep(s) {
   s = s.trim();
   if (!/[A-Za-z]{2}/.test(s)) return false;                 // symbols, numbers, "›"
   if (/^[a-z][a-zA-Z0-9]*$/.test(s)) return false;         // identifiers: 'guide', 'ok'
   if (/^(https?:|\/|#|\.|[a-z]+:\/\/)/.test(s)) return false;
   if (/^[\w-]+\.(js|json|png|svg|html|css)$/.test(s)) return false;
+  if (/^[a-z0-9]+(-[a-z0-9]*)+$|^[a-z-]+:$/.test(s)) return false;      // CSS classes and key names: 'focus-ring', 'long:'
+  if (SAME.indexOf(s) >= 0) return false;                               // names that stay as they are in every language
   return true;
 }
 const found = new Map();
@@ -62,7 +66,13 @@ global.I18n = { add(code, d) { dicts[code] = Object.assign(dicts[code] || {}, d)
 for (const f of fs.readdirSync(path.join(APP, 'lang'))) if (/^[a-z]{2}(-BR)?\.js$/.test(f)) eval(fs.readFileSync(path.join(APP, 'lang', f), 'utf8'));
 // Covered: the text is a key.  (Patterns, '{n} hours', are for text put together while the app runs, and
 // would match text found here only by chance.)
-function covered(d, s) { return Object.prototype.hasOwnProperty.call(d, s); }
+/* Text put together from a piece and a value ('Hidden (' + n + ')') is covered by a pattern that starts with that
+   piece ("Hidden ({n})"): the app translates the whole text with it while it runs. */
+function covered(d, s) {
+  if (Object.prototype.hasOwnProperty.call(d, s)) return true;
+  if (!/[(#"]$|\s$|\b(of|to|for|as|at|with)$/.test(s)) return false;
+  return Object.keys(d).some((k) => k.indexOf(s) === 0 && /\{[nxyz]\}/.test(k.slice(s.length, s.length + 4)));
+}
 
 const all = [...found.keys()].sort();
 if (arg === '--json') { console.log(JSON.stringify(Object.fromEntries(all.map((s) => [s, [...found.get(s)]])), null, 1)); process.exit(0); }
