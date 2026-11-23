@@ -7,6 +7,7 @@
     { "code": "fr", "name": "Français", "english": "French", "plural": "fr" },
     { "code": "pt-BR", "name": "Português (Brasil)", "english": "Portuguese (Brazil)", "plural": "pt" },
     { "code": "pt-PT", "name": "Português (Portugal)", "english": "Portuguese (Portugal)", "plural": "pt", "from": "pt-BR" },
-    { "code": "ru", "name": "Русский", "english": "Russian", "plural": "ru" }
+    { "code": "ru", "name": "Русский", "english": "Russian", "plural": "ru" },
+    { "code": "de", "name": "Deutsch", "english": "German", "plural": "one" }
   ]
 }
