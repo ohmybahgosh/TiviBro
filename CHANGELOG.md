@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Record and pause live TV to a network share, on any TV.**  A Windows or Samba share (a PC, Mac, NAS or router) now works for recordings as WebDAV did, and live pause goes to the share too: hours on a TV without root instead of 10 minutes.  Choose a My media library in Settings > Recording and live pause > Network share.  The rewind buffer works there as well, a recording on a Windows share plays while it records, and the Recordings screen shows the share's free room.
+- **Logo library: Worldwide TV Logos.**  A third source, with each channel's own logo cleaned up (transparent, trimmed, current branding) and in white where it needs to be on a dark screen.  It's the new default style, **Cleaned up**, with tv-logos and iptv-org standing in where it has none.
+- **Settings home: every tile has its own icon.**  Guide, Audio and subtitles, Movies and shows and My media showed a plain square.
+
 ## 0.6.0 (alpha 201, 2026-11-22)
 
 Pre-release: expect rough edges, and keep a backup before installing.

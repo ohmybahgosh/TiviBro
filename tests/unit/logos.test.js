@@ -3,10 +3,10 @@
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const ctx = vm.createContext({ console, Map, Set, Promise, JSON, navigator: { language: 'en-US' } });
 const load = f => vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js', f), 'utf8'), ctx, { filename: f });
-const INDEX = { v: 1, tvlogos: 'https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/', countries: { US: 5, UK: 1, CA: 1, INT: 1 } };
+const INDEX = { v: 1, tvlogos: 'https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/', wtl: 'https://worldwide-tv-logos.github.io/database/logos/', countries: { US: 5, UK: 1, CA: 1, INT: 1 } };
 const FILES = {
   index: INDEX,
-  US: { e: [['cnn', 'CNN.us', 'https://example.org/cnn.png', 'united-states/cnn-us.png'], ['espn2', 'ESPN2.us', 'https://example.org/espn2.png', ''],
+  US: { e: [['cnn', 'CNN.us', 'https://example.org/cnn.png', 'united-states/cnn-us.png', 'us/CNN.us.white.png'], ['espn2', 'ESPN2.us', 'https://example.org/espn2.png', ''],
     ['abc7wxyz', '', '', 'united-states/us-local/abc-7-wxyz-us.png'], ['abc', 'ABC.us', 'https://example.org/abc.png', 'united-states/abc-us.png'],
     ['aande', 'AE.us', '', 'united-states/a-and-e-us.png']], x: [['wxyz', 2]] },
   UK: { e: [['skynews', 'SkyNews.uk', 'https://example.org/skynews.png', 'united-kingdom/sky-news-uk.png']], x: [] },
@@ -51,6 +51,8 @@ const data = {
   ok('international set', u('9') === INDEX.tvlogos + 'international/bein-sports-1-int.png', u('9'));
   Store.settings.logoStyle = 'original';
   ok('original style', u('1') === 'https://example.org/cnn.png' && u('7') === INDEX.tvlogos + 'united-states/a-and-e-us.png', u('1') + ' ' + u('7'));
+  Store.settings.logoStyle = '';
+  ok('cleaned up by default: Worldwide TV Logos\' white version, the others standing in where it has none', u('1') === INDEX.wtl + 'us/CNN.us.white.png' && u('7') === INDEX.tvlogos + 'united-states/a-and-e-us.png' && u('2') === 'https://example.org/espn2.png', u('1') + ' ' + u('7') + ' ' + u('2'));
   const cov = Logos.coverage(data.channels, c => c.k === '1');
   ok('coverage', cov.found === 7 && cov.filled === 6 && cov.total === 13, JSON.stringify(cov));
   ok('cached on the TV', !!Store._db['logos:US'] && Store._db['logos:US'].base === 'https://logos.test/');

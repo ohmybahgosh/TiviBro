@@ -104,7 +104,9 @@ Everything the tour hides stays one press away: Settings > Channels and groups, 
 
 ### Channel logos
 
-Providers often leave logos out, or send some that no longer load.  The **logo library** fills them in from two open projects:
+Providers often leave logos out, or send some that no longer load.  The **logo library** fills them in from three open projects:
+
+- **[Worldwide TV Logos](https://worldwide-tv-logos.github.io/database/)**: each channel's own logo, cleaned up (transparent, trimmed, current branding) with a white version for dark screens, for about 11,000 channels.
 
 - **[iptv-org](https://github.com/iptv-org/database)**: each channel's own logo, for about 28,000 channels in 230 countries.
 - **[tv-logos](https://github.com/tv-logo/tv-logos)**: one matching style made for dark screens, for about 7,700 channels.
@@ -119,7 +121,7 @@ Turn it on in the set-up tour or in **Settings > Appearance > Logo library**:
 - **Fill in missing logos**: the library's logo for channels that have none.
 - **Use for every channel it knows**: the library's logo everywhere it has one, so the whole list matches.
 
-**Logo library style** picks **Matching set** (tv-logos) or **Original logos** (iptv-org); each falls back to the other.  On a real 9,800-channel playlist it found logos for about 3,600 channels.
+**Logo library style** picks **Cleaned up** (Worldwide TV Logos, the default), **Matching set** (tv-logos) or **Original logos** (iptv-org); each falls back to the others.  On a real 9,800-channel playlist it found logos for about 3,600 channels.
 
 ### The remote
 
@@ -438,15 +440,18 @@ From live TV, **From start** in the quick menu restarts the current programme.  
 
 ### Recording, live pause and rewind
 
-On a rooted TV (the Homebrew Channel) with a USB drive in, TiviBro records to the drive, into a "TiviBro Recordings" folder.  webOS keeps USB drives away from apps installed in developer mode, so recording needs root.
+On a rooted TV (the Homebrew Channel) with a USB drive in, TiviBro records to the drive, into a "TiviBro Recordings" folder.  webOS keeps USB drives away from apps installed in developer mode, so recording to a drive needs root.
+
+**Any TV can record to a network share instead:** a Windows or Samba share on a PC, Mac, NAS or router, or a WebDAV folder (Synology, QNAP, TrueNAS, Unraid, Nextcloud).  Add the share as a library in [My media](#windows-and-network-shares), then choose it in **Settings > Recording and live pause > Network share**.  TiviBro checks that it can write there, and recordings go into a "TiviBro Recordings" folder on it (at the top of a Windows share).  Live pause and the rewind buffer go there too, for hours instead of the 10 minutes the TV's own storage allows.  The TV does the recording, so it has to be on or in standby.
 
 - **Record:** in the guide, Hold OK on a programme > **Record** (on now: until it ends; later: scheduled).  In fullscreen, **OK** opens the quick menu, which starts with **Pause**, **Rewind** and **Record**: that's the way on a Magic Remote, which has no Pause or REC button.  On a remote with **● REC**, that button records too.  A programme being recorded has a red dot in the guide (a ring when it's scheduled).
 - **Recordings** (side menu): Recording now, Scheduled, Recorded (a show recorded more than once is one row that opens to its recordings) and Didn't record, with the drive's free space.  OK watches from where you left off; Hold OK or Red: watch from the start, stop, cancel, delete, or select several to delete.  With a TMDB token, recordings get their poster and plot.  Watching one that's still recording, yellow goes to the channel live and Back goes back to Recordings.
 - **For Plex, Jellyfin, Kodi and Infuse:** a finished recording moves to **TiviBro Recordings/TV/<show>** (named "Show - s01e02", or by date when the guide has no episode number) or, when TMDB says it's a film, **TiviBro Recordings/Movies/<title (year)>**.  Beside it go a .nfo with its title, plot, year, genre and channel, and TMDB's poster as poster.jpg.  Add the TV and Movies folders to your media server as a TV library and a Movies library.  The Recordings screen shows where each one is.
 - **Convert to MP4** (Hold OK or Red on a recording): one .mp4 with its title, plot, year, genre, show, season, episode and channel inside, which Plex, Infuse and Apple TV apps read.  Nothing is re-encoded, so it's quick (a few minutes for a long film) and runs in the background.  A recording in parts becomes one file.  If MP4 can't hold the channel's sound or picture, it's an MKV instead, with the poster inside.  The drive needs as much free room as the recording while it converts.  It plays in TiviBro as before; if you're watching it, the new file waits until you stop.
-- **Pause live TV:** Pause keeps the channel (on the USB drive up to 2 hours; without one, up to 10 minutes in the TV's own storage) and Play carries on from there.  ◀ ▶ move back and forth in what's kept, Back goes live, and the info bar says how far behind live you are.
-- **Rewind buffer** (off at first): keeps the channel you watch fullscreen on the drive the whole time, so ◀ goes back to something you just missed without pausing first.  Channels take a second or two longer to start.
+- **Pause live TV:** Pause keeps the channel (on the USB drive or the network share up to 2 hours; without either, up to 10 minutes in the TV's own storage) and Play carries on from there.  ◀ ▶ move back and forth in what's kept, Back goes live, and the info bar says how far behind live you are.
+- **Rewind buffer** (off at first): keeps the channel you watch fullscreen on the drive or share the whole time, so ◀ goes back to something you just missed without pausing first.  Channels take a second or two longer to start.
 - Recording and pausing the same channel share one connection to your provider.
+- **On a network share:** a recording goes up in parts of about 10 minutes, so a dropped connection loses the end of one part, not the recording.  On a Windows share, one that's still recording plays right up to a few seconds behind; on WebDAV, up to the last finished part.  The Recordings screen says the share's free room (Windows shares).
 - **If TiviBro closes or crashes:** recordings carry on (the recording helper runs on its own, as root), and it's started again within a minute if it stops while a recording is due.  A recording cut short by the TV turning off picks up again when it's back on, if its time isn't over, in a second part that plays on from the first.  A pause or rewind buffer ends with TiviBro: what it kept is deleted within 30 seconds, which also frees its provider connection, and anything left from a crash is cleared the next time.
 - Settings > Playback > **Recording and live pause** has the drive, how early to start and how long to keep going after, deleting watched recordings, and the pause settings.
 
@@ -1112,17 +1117,20 @@ Which audio track plays, sound the TV can't play, subtitles and captions, and su
 
 ### Settings: Recording and live pause
 
-Recording to a USB drive in the TV, pausing live TV, and the rewind buffer.  How they work is in [Recording, live pause and rewind](#recording-live-pause-and-rewind).
+Recording to a USB drive in the TV or a network share, pausing live TV, and the rewind buffer.  How they work is in [Recording, live pause and rewind](#recording-live-pause-and-rewind).
 
 <p align="center"><a href="https://tivibro.app/view/#tv-set-recording"><img src="screenshots/tv-set-recording.png" width="60%" alt="Recording and live pause"></a></p>
 
 | Setting | Choices | What it does |
 |---|---|---|
+| **Network share** | a My media library | Record (and pause) to a Windows / Samba share or WebDAV folder, chosen from your My media libraries.  No root or USB drive needed.  **Stop recording to a share** goes back to the drive. |
+| **Record to** *(a USB drive and a share)* | **USB drive** · Network share | Where new recordings go when both are there. |
 | **Open Recordings** | (button) | The Recordings screen: what's recording, scheduled and recorded. |
 | **Start early** · **Keep going after** | minutes | How long before a programme starts, and after it ends, a recording runs, so a late or early start isn't cut off. |
 | **Delete watched recordings** | Off · after some days | Clears recordings you've watched to the end after that long, to keep room on the drive. |
-| **Pause live TV** | **On** · Off | Pause in fullscreen keeps recording the channel to the USB drive (or a short buffer in the TV's own storage), so you carry on where you paused. |
-| **Rewind buffer** | **Off** · 30 min · 1 hour · 2 hours | Keeps the channel you watch on the USB drive the whole time, so ◀ goes back to something you just missed. |
+| **Pause live TV** | **On** · Off | Pause in fullscreen keeps recording the channel to the USB drive or network share (or a short buffer in the TV's own storage), so you carry on where you paused. |
+| **Live pause on the network share** *(a share, no USB drive)* | **On** · Off | Off keeps live pause in the TV's own storage (10 minutes) while recordings still go to the share. |
+| **Rewind buffer** | **Off** · 30 min · 1 hour · 2 hours | Keeps the channel you watch on the USB drive or network share the whole time, so ◀ goes back to something you just missed. |
 | **Remote and buttons** | (opens the section) | Which buttons pause, rewind and record: [Remote and buttons](#settings-remote-and-buttons). |
 
 ### Settings: Remote and buttons
@@ -1309,8 +1317,8 @@ Which screen TiviBro opens on, where the lists start, colours, sizes and what's 
 | **Text size** | Small · **Medium** · Large | In the guide and channel lists.  On a 32-inch or smaller TV it starts at Large. |
 | **Panels over video** | Solid · **Normal** · See-through | How see-through the info panel, quick menu and channel guide are in fullscreen. |
 | **Channel logos** | **From the playlist** · From the guide | Which logo to use when both have one. |
-| **Logo library** | **Off** · Fill in missing logos · Use for every channel it knows | Logos from iptv-org and tv-logos for channels with none, or for every channel.  See [Channel logos](#channel-logos).  The set-up tour offers *Fill in missing logos*. |
-| **Logo library style** *(library on)* | **Matching set** · Original logos | One style for dark screens (tv-logos), or each channel's own logo (iptv-org).  Each falls back to the other. |
+| **Logo library** | **Off** · Fill in missing logos · Use for every channel it knows | Logos from Worldwide TV Logos, tv-logos and iptv-org for channels with none, or for every channel.  See [Channel logos](#channel-logos).  The set-up tour offers *Fill in missing logos*. |
+| **Logo library style** *(library on)* | **Cleaned up** · Matching set · Original logos | Each channel's own logo, cleaned up and in white for dark screens (Worldwide TV Logos); one style for dark screens (tv-logos); or each channel's own logo as iptv-org has it.  Each falls back to the others. |
 | **Logo library status** *(library on)* | | How many names it has, and for which countries. |
 | **Numbers** | **TV font** · Even width · Fixed width, slashed zero | Even width gives every digit the same width, so channel numbers and times line up and the buffer info stays steady.  Fixed width also crosses the zero. |
 | **Show clock** | **On** · Off | The clock in the top right corner. |

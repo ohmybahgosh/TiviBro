@@ -9,7 +9,7 @@ var Record = (function () {
   // Minutes before and after a programme (Settings > Recording and live pause), 2 and 5 at first.
   function padB() { var v = Store.settings.recPadBefore; return (v == null ? 2 : +v) * 60000; }
   function padA() { var v = Store.settings.recPadAfter; return (v == null ? 5 : +v) * 60000; }
-  var last = { recs: [], at: 0 }, drive = false, space = null, pauseHere = false, share = null;
+  var last = { recs: [], at: 0 }, drive = false, space = null, pauseHere = false, pauseShare = false, share = null;
 
   function T(s, o) { var t = typeof I18n !== 'undefined' ? I18n.t(s) : s; return t.replace(/\{(\w+)\}/g, function (a, k) { return o && o[k] != null ? o[k] : a; }); }
   function base() { return Net.port ? 'http://127.0.0.1:' + Net.port : ''; }
@@ -37,10 +37,16 @@ var Record = (function () {
   function dest() { return Store.settings.recTo === 'share' ? 'share' : ''; }
   /* The network share to record to (a WebDAV library from My media, or none): checked by writing a small file
      there, then kept by the helper with its login (service/record.js), so scheduled recordings work without TiviBro. */
+  /* Where to record without a USB drive: a My media library's share, WebDAV or Windows (SMB; recordings go in a
+     "TiviBro Recordings" folder at the top of the share), checked by writing to it; null stops. */
   function setShare(src) {
-    var body = src ? { type: 'webdav', address: src.address, user: src.user || '', pass: src.pass || '', name: src.name || '', check: true } : { type: '' };
+    var body = !src ? { type: '' } : src.type === 'smb'
+      ? { type: 'smb', server: src.server, host: src.host || '', share: src.share, folder: '/', user: src.user || '', pass: src.pass || '', domain: src.domain || '', name: src.name || '', check: true }
+      : { type: 'webdav', address: src.address, user: src.user || '', pass: src.pass || '', name: src.name || '', check: true };
     return api('/record/target', body).then(function () { return list(); });
   }
+  // Live pause on the share (on by default once a share is chosen), else the TV's own 10 minutes.
+  function setSharePause(on) { return api('/record/target/pause', { on: !!on }).then(function () { return list(); }); }
   function descOf(ch, p) { try { return p && typeof Epg !== 'undefined' && Epg.desc ? Epg.desc(ch, p) || '' : ''; } catch (e) { return ''; } }
   /* What TMDB knows about each recording (with your token): the guide's own match when Movies on now already found
      one, else a look by its title (a show when the guide gave it an episode, else a movie or show by title and
@@ -68,7 +74,7 @@ var Record = (function () {
   function list() {
     return api('/record/list').then(function (j) {
       var was = sig(last.recs), had = shown();
-      last = { recs: j.recs || [], at: Date.now() }; space = j.drive || null; drive = !!space; pauseHere = !!j.pauseHere; share = j.target || null;
+      last = { recs: j.recs || [], at: Date.now() }; space = j.drive || null; drive = !!space; pauseHere = !!j.pauseHere; pauseShare = !!j.pauseShare; share = j.target || null;
       // The guide marks what's recording, so it's redrawn when that changes.
       if (shown() !== had && typeof Views !== 'undefined' && Views.buildTabs) Views.buildTabs();
       if (sig(last.recs) !== was && typeof Guide !== 'undefined' && Guide.vis) try { Guide.draw(); } catch (e) {}
@@ -223,11 +229,11 @@ var Record = (function () {
   function tsStart(ch, max) { return api('/record/ts/start', { url: urlFor(ch), key: ch.k, max: max || 0 }).then(function (r) { if (r.error && !r.id) throw new Error(r.error); return r; }); }
   function tsPing(id) { return api('/record/ts/ping', { id: id }).catch(function (e) { if (/gone|HTTP 404/.test(e && e.message)) e.gone = true; throw e; }); }
   function tsStop(id) { return api('/record/ts/stop', { id: id }).catch(function () {}); }
-  // Live pause: to the USB drive, or (no drive, or a TV that isn't rooted) a short one in the TV's own storage.
+  // Live pause: to the USB drive, else the network share, else (a TV that isn't rooted) a short one in the TV's own storage.
   function canPause() { return !!base() && (drive || pauseHere); }
-  // The always-on rewind buffer: the USB drive only (it writes all the time).
-  function canBuffer() { return !!base() && drive; }
+  // The always-on rewind buffer: a USB drive or the network share (it writes all the time, never to the TV's storage).
+  function canBuffer() { return !!base() && (drive || pauseShare); }
 
-  return { setShare: setShare, get share() { return share; }, now: now, schedule: schedule, convert: convert, canConvert: canConvert, tsStart: tsStart, tsPing: tsPing, tsStop: tsStop, canPause: canPause, canBuffer: canBuffer, enrich: enrich, base: base, stop: stop, remove: remove, list: list, drives: drives, open: open, shown: shown, watch: watch, posOf: posOf, forget: forget, hms: hms, sizeOf: sizeOf, whenOf: whenOf, get space() { return space; }, menuItem: menuItem, of: of, urlFor: urlFor,
+  return { setShare: setShare, setSharePause: setSharePause, get share() { return share; }, get pauseShare() { return pauseShare; }, now: now, schedule: schedule, convert: convert, canConvert: canConvert, tsStart: tsStart, tsPing: tsPing, tsStop: tsStop, canPause: canPause, canBuffer: canBuffer, enrich: enrich, base: base, stop: stop, remove: remove, list: list, drives: drives, open: open, shown: shown, watch: watch, posOf: posOf, forget: forget, hms: hms, sizeOf: sizeOf, whenOf: whenOf, get space() { return space; }, menuItem: menuItem, of: of, urlFor: urlFor,
     get recs() { return last.recs; } };
 })();

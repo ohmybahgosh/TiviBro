@@ -154,7 +154,7 @@ run_for() {   # run_for <arch> <args...>: the built program, through qemu-user f
 start_samba() {
   command -v smbd >/dev/null && command -v smbpasswd >/dev/null || die "test needs smbd and smbpasswd (apt: samba)"
   T="$WORK_DIR/samba"
-  rm -rf "$T" && mkdir -p "$T"/{media/Movies,guest,enc,priv,lock,state,cache,log,pid,ncalrpc}
+  rm -rf "$T" && mkdir -p "$T"/{media/Movies,guest,enc,rec,priv,lock,state,cache,log,pid,ncalrpc}
   head -c 9000000 /dev/urandom > "$T/media/Movies/Film (2020).mkv"
   cp "$T/media/Movies/Film (2020).mkv" "$T/enc/film.mkv"
   echo hello > "$T/guest/a.txt"
@@ -186,12 +186,18 @@ start_samba() {
   read only = yes
   valid users = tbtest
   smb encrypt = required
+[rec]
+  path = $T/rec
+  read only = no
+  valid users = tbtest
+  smb encrypt = required
 [guest]
   path = $T/guest
   read only = yes
   guest ok = yes
 EOF
   id tbtest >/dev/null 2>&1 || useradd -M tbtest 2>/dev/null || die "test needs a local user tbtest (useradd)"
+  chown tbtest "$T/rec"
   printf 'pass word1\npass word1\n' | smbpasswd -c "$T/smb.conf" -s -a tbtest >/dev/null
   smbd -D -s "$T/smb.conf"
   for _ in $(seq 1 20); do [ -f "$T/pid/smbd.pid" ] && break; sleep 0.5; done
@@ -224,6 +230,24 @@ test_one() {
   ok "a missing file says notfound" "$([[ "$got" == *'"error":"notfound"'* ]] && echo 1)" "$got"
   got="$(printf '%s' "$L" | run_for "$arch" check 127.0.0.1:1 media 2>&1 >/dev/null || true)"
   ok "no server says unreachable" "$([[ "$got" == *'"error":"unreachable"'* ]] && echo 1)" "$got"
+  # Writing (recordings and live pause): a new file with its folders, more added at its end, renamed, room, gone.
+  # The data comes after the login's three lines (user, password, domain), so the domain line is there, empty.
+  local LW=$'tbtest\npass word1\n\n'
+  head -c 3000000 /dev/urandom > "$WORK_DIR/put.bin"
+  got="$({ printf '%s' "$LW"; head -c 2000000 "$WORK_DIR/put.bin"; } | run_for "$arch" put "$S" rec "TiviBro Recordings/$arch/a.ts" 0)"
+  ok "writes a new file, making its folders" "$([[ "$got" == *'"size":2000000'* ]] && echo 1)" "$got"
+  got="$({ printf '%s' "$LW"; tail -c +2000001 "$WORK_DIR/put.bin"; } | run_for "$arch" put "$S" rec "TiviBro Recordings/$arch/a.ts" 2000000)"
+  ok "carries on writing at its end" "$([[ "$got" == *'"size":3000000'* ]] && echo 1)" "$got"
+  got="$(printf '%s' "$L" | run_for "$arch" mv "$S" rec "TiviBro Recordings/$arch/a.ts" "TiviBro Recordings/$arch/Show/b.ts")"
+  ok "moves a file into a new folder" "$([[ "$got" == *'"ok":true'* ]] && echo 1)" "$got"
+  got="$(printf '%s' "$L" | run_for "$arch" cat "$S" rec "TiviBro Recordings/$arch/Show/b.ts" 0 -1 | sha256sum | cut -c1-64)"
+  ok "reads back what it wrote (encrypted share)" "$([ "$got" = "$(sha256sum < "$WORK_DIR/put.bin" | cut -c1-64)" ] && echo 1)"
+  got="$(printf '%s' "$L" | run_for "$arch" df "$S" rec)"
+  ok "says how much room is free" "$([[ "$got" == *'"free":'*'"total":'* ]] && echo 1)" "$got"
+  got="$(printf '%s' "$L" | run_for "$arch" rm "$S" rec "TiviBro Recordings/$arch/Show/b.ts" "TiviBro Recordings/$arch/Show" "TiviBro Recordings/$arch/gone.ts")"
+  ok "deletes a file, its empty folder, and one that isn't there" "$([[ "$got" == *'"ok":true}'*'"ok":true}'*'"ok":true}'* && ! -e "$T/rec/TiviBro Recordings/$arch/Show" ]] && echo 1)" "$got"
+  got="$({ printf '%s' "$LW"; echo x; } | run_for "$arch" put "$S" media x.ts 0 2>&1 >/dev/null || true)"
+  ok "a read-only share says denied" "$([[ "$got" == *'"error":"denied"'* ]] && echo 1)" "$got"
   return "$fails"
 }
 

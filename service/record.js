@@ -30,7 +30,7 @@
      /record/ts/...                           live pause (timeshift.js)
    Plain ES5 and callbacks for Node 0.12 (webOS 4). */
 'use strict';
-var Dav = require('./recdav');
+var Dav = require('./recdav'), Rsmb = require('./recsmb');
 var http = require('http'), cp = require('child_process'), fs = require('fs'), path = require('path'), URL_ = require('url'), TS = require('./timeshift'), Feed = require('./feed');
 
 var ROOTS = process.env.TIVIBRO_USB_DIR ? [process.env.TIVIBRO_USB_DIR] : ['/tmp/usb'];
@@ -48,6 +48,8 @@ var FOLDER = 'TiviBro Recordings', PART_MAX = +(process.env.TIVIBRO_REC_PART_MAX
 var TICK_MS = +(process.env.TIVIBRO_REC_TICK_MS || 15000), BODY_MAX = 64 * 1024;
 // On a WebDAV share a part is one upload: a new one every 10 minutes, so a dropped connection loses little.
 var DAV_PART_MS = +(process.env.TIVIBRO_REC_DAV_PART_MS || 600000);
+// How far behind the writing a growing part on a Windows share is offered to the player (see serveFile).
+var SMB_BEHIND = +(process.env.TIVIBRO_REC_SMB_BEHIND || 2 * 1024 * 1024);
 
 var state = null, run = {}, logf = function () {}, timer = null, listFile = '';
 
@@ -106,14 +108,26 @@ function watchAgent() {
   }, +(process.env.TIVIBRO_REC_WATCH_MS || 60000));
   if (watchT.unref) watchT.unref();
 }
-/* ---------- the WebDAV share (recdav.js) ---------- */
-// A part on the share is "dav:<path under the share's address>"; a USB part is a file path.
+/* ---------- the network share: WebDAV (recdav.js) or Windows / Samba (recsmb.js) ---------- */
+// A part on the share is "dav:<path under the share's address>" (either kind); a USB part is a file path.
 function isDavPath(f) { return String(f || '').indexOf('dav:') === 0; }
 function isDav(r) { return !!(r && r.parts && r.parts.length ? isDavPath(r.parts[0]) : r && r.davAddr); }
 function relOf(f) { return String(f).slice(4); }
-function target() { var t = load().target; return t && t.type === 'webdav' && t.address ? t : null; }
+function target() { var t = load().target; return t && (t.type === 'webdav' || t.type === 'smb') && t.address ? t : null; }
+// The module that talks to a share: recsmb.js for smb://, recdav.js for WebDAV.  Both take the same calls.
+function Net(t) { return t && (t.type === 'smb' || /^smb:/.test(String(t.address || ''))) ? Rsmb : Dav; }
 // The share a recording is on: today's login when it's the same address, else the address alone.
-function davFor(r) { var t = target(); return t && t.address === r.davAddr ? t : { type: 'webdav', address: r.davAddr }; }
+function davFor(r) { var t = target(); return t && t.address === r.davAddr ? t : { type: /^smb:/.test(String(r.davAddr || '')) ? 'smb' : 'webdav', address: r.davAddr }; }
+/* The share's free room, for the Recordings screen and Settings: asked in the background (a Windows share answers;
+   WebDAV has no simple way, so -1), at most every 2 minutes, and given with the next list. */
+var room = { address: '', freeMB: -1, at: 0 };
+function shareRoom(t) {
+  if (!t || !Net(t).free || (room.address === t.address && Date.now() - room.at < 120000)) return;
+  room.at = Date.now();
+  Net(t).free(t, function (mb) { room = { address: t.address, freeMB: mb, at: Date.now() }; });
+}
+// Live pause on the share as well (on unless turned off with the target: { pause: false }).
+function pauseToShare() { var t = target(); return !!t && t.pause !== false; }
 function byId(id) { var hit = null; load().recs.forEach(function (r) { if (r.id === id) hit = r; }); return hit; }
 /* How long it is to watch: the time it was recording, less the time a dropped connection took to come back. */
 function lengthOf(r) {
@@ -231,14 +245,14 @@ function openDavPart(r, R) {
   if (R.out) { var old = R.out; old.end(function (e) { if (e) note('warn', 'recording: a part on the share didn\'t finish', { title: r.title, e: e.message }); }); }
   var n = (r.parts || []).length + 1, rel = FOLDER + '/' + nameFor(r, r.kind === 'mp4' ? 'mp4' : 'ts', n), at = r.parts.length;
   r.parts = (r.parts || []).concat(['dav:' + rel]); r.psize = (r.psize || []).concat([0]);
-  var w = Dav.upload(R.dav, rel, function (e) {
+  var w = Net(R.dav).upload(R.dav, rel, function (e) {
     // The connection to the share dropped: a gap, and the next data starts a new part.
     if (R.out === w) R.out = null;
     if (R.stopped) return;
     r.gaps = (r.gaps || 0) + 1;
     note('warn', 'recording: the share stopped taking it, a new part', { title: r.title, e: e.message, part: at + 1 });
     // What the share kept of it (what was on its way when it dropped is lost): the size the player is told.
-    setTimeout(function () { Dav.size(R.dav, rel, function (n) { if (n >= 0 && r.psize && n < r.psize[at]) { r.bytes -= r.psize[at] - n; r.psize[at] = n; save(); } }); }, 2000);
+    setTimeout(function () { Net(R.dav).size(R.dav, rel, function (n) { if (n >= 0 && r.psize && n < r.psize[at]) { r.bytes -= r.psize[at] - n; r.psize[at] = n; save(); } }); }, 2000);
   });
   R.out = w; R.partBytes = 0; R.partAt = Date.now();
   if (R.init) { w.write(R.init); R.partBytes += R.init.length; r.psize[at] += R.init.length; }
@@ -298,7 +312,7 @@ function beginDav(r, tg) {
   var R = run[r.id] = { dav: tg, dir: FOLDER, out: null, stopped: false, init: null };
   r.davAddr = tg.address; r.driveName = tg.name || 'network share'; r.status = 'recording'; r.startedAt = r.startedAt || Date.now();
   note('info', 'recording started', { title: r.title, to: 'share' });
-  Dav.mkdirs(tg, FOLDER, function (e) {
+  Net(tg).mkdirs(tg, FOLDER, function (e) {
     if (e) note('warn', 'recording: the share\'s folder', { e: e.message });
     if (R.stopped) return;
     R.feed = Feed.open(r.key || r.url, r.url, r.alt, feedOf(r, R));
@@ -445,11 +459,11 @@ function tidy(r) {
 // A folder on the share left with nothing (or only its poster.jpg) goes, and its parent the same way, up to the recordings folder.
 function davPrune(t, d) {
   if (!d || d === FOLDER || d.indexOf(FOLDER + '/') !== 0) return;
-  Dav.names(t, d, function (l) {
+  Net(t).names(t, d, function (l) {
     if (!l) return;
-    var gone = function () { Dav.del(t, d, function (e) { if (!e) davPrune(t, path.dirname(d)); }); };
+    var gone = function () { Net(t).del(t, d, function (e) { if (!e) davPrune(t, path.dirname(d)); }); };
     if (!l.length) return gone();
-    if (l.length === 1 && l[0] === 'poster.jpg') Dav.del(t, d + '/poster.jpg', function (e) { if (!e) gone(); });
+    if (l.length === 1 && l[0] === 'poster.jpg') Net(t).del(t, d + '/poster.jpg', function (e) { if (!e) gone(); });
   });
 }
 function tidyDav(r) {
@@ -459,20 +473,20 @@ function tidyDav(r) {
   var t = davFor(r), dir = FOLDER + '/' + pl.dir.join('/'), many = r.parts.length > 1, ext = path.extname(relOf(r.parts[0])) || '.ts';
   r.tidying = true;
   var stop = function (e) { r.tidying = false; if (e) note('warn', 'recording: filing on the share', { title: r.title, e: e.message }); save(); };
-  Dav.mkdirs(t, dir, function (e) {
+  Net(t).mkdirs(t, dir, function (e) {
     if (e) return stop(e);
     var olds = r.parts.map(function (f) { return path.dirname(relOf(f)); }), i = 0;
     (function each() {
       if (i >= r.parts.length) return after();
       var from = relOf(r.parts[i]), to = dir + '/' + pl.base + (many ? ' - pt' + (i + 1) : '') + ext, at = i++;
       if (from === to) return each();
-      Dav.move(t, from, to, function (e2) { if (e2) return stop(e2); r.parts[at] = 'dav:' + to; each(); });
+      Net(t).move(t, from, to, function (e2) { if (e2) return stop(e2); r.parts[at] = 'dav:' + to; each(); });
     })();
     function after() {
-      (r.side || []).forEach(function (f) { if (isDavPath(f)) Dav.del(t, relOf(f), function () {}); });
+      (r.side || []).forEach(function (f) { if (isDavPath(f)) Net(t).del(t, relOf(f), function () {}); });
       r.side = [];
       var nf = dir + '/' + pl.base + '.nfo';
-      Dav.put(t, nf, nfo(r, pl), 'text/xml', function (e3) {
+      Net(t).put(t, nf, nfo(r, pl), 'text/xml', function (e3) {
         if (!e3) r.side.push('dav:' + nf);
         // The folder it left (the top one, or another show's), when it's empty now: gone.
         olds.forEach(function (d) { if (d !== dir) davPrune(t, d); });
@@ -483,7 +497,7 @@ function tidyDav(r) {
           if (e4) { try { fs.unlinkSync(tmp); } catch (x) {} return stop(); }
           var buf = null; try { buf = fs.readFileSync(tmp); } catch (x) {} try { fs.unlinkSync(tmp); } catch (x) {}
           if (!buf) return stop();
-          Dav.put(t, dir + '/poster.jpg', buf, 'image/jpeg', function (e5) { if (!e5 && pl.movie) r.side.push('dav:' + dir + '/poster.jpg'); stop(); });
+          Net(t).put(t, dir + '/poster.jpg', buf, 'image/jpeg', function (e5) { if (!e5 && pl.movie) r.side.push('dav:' + dir + '/poster.jpg'); stop(); });
         });
       });
     }
@@ -673,16 +687,23 @@ function add(q, scheduled) {
    ?part=n serves one part alone. */
 function serveFile(req, res, ALLOW, r, part) {
   var all = (r.parts || []).slice();
-  /* On a share, the part being sent now can't be read back yet (servers keep an upload aside until it's whole):
-     while it records, what's there is the parts already up, up to one part (10 minutes) behind. */
-  if (r.status === 'recording' && run[r.id] && run[r.id].dav) all = all.slice(0, -1);
+  /* On a WebDAV share, the part being sent now can't be read back yet (servers keep an upload aside until it's whole):
+     while it records, what's there is the parts already up, up to one part (10 minutes) behind.  A Windows share
+     writes into the file as it goes, so the part being written plays too, all but its last couple of MB (still on
+     their way in tivibro-smb and the pipe to it). */
+  var growing = r.status === 'recording' && run[r.id] && run[r.id].dav, grows = growing && Net(run[r.id].dav) === Rsmb;
+  if (growing && !grows) all = all.slice(0, -1);
   var files = part != null && !isNaN(part) ? [all[part]].filter(Boolean) : all;
   if (!files.length) return send(res, ALLOW, 404, { error: 'no such part' });
   var sizes = [], size = 0;
   var onShare = isDavPath(files[0]), base0 = part != null && !isNaN(part) ? +part : 0;
   for (var i = 0; i < files.length; i++) {
     // On the share: the sizes counted while it was sent (the part being sent now is still growing).
-    if (onShare) { var ps = +(r.psize || [])[base0 + i] || 0; sizes.push(ps); size += ps; continue; }
+    if (onShare) {
+      var ps = +(r.psize || [])[base0 + i] || 0;
+      if (grows && base0 + i === all.length - 1) ps = Math.max(0, ps - SMB_BEHIND);
+      sizes.push(ps); size += ps; continue;
+    }
     try { var sz = fs.statSync(files[i]).size; sizes.push(sz); size += sz; } catch (e) { return send(res, ALLOW, 404, { error: 'a file is gone (the drive unplugged?)' }); }
   }
   if (!size) return send(res, ALLOW, 404, { error: 'nothing recorded yet' });
@@ -710,7 +731,7 @@ function serveFile(req, res, ALLOW, r, part) {
     var jb = jobs.shift();
     if (!jb) return res.end();
     if (isDavPath(jb.f)) {
-      var gr = Dav.get(davFor(r), relOf(jb.f), jb.start, jb.end, function (e, sr) {
+      var gr = Net(davFor(r)).get(davFor(r), relOf(jb.f), jb.start, jb.end, function (e, sr) {
         if (e || !sr || sr.statusCode >= 300) { if (sr) sr.resume(); return res.end(); }
         sr.on('error', function () { res.end(); });
         sr.on('end', next);
@@ -799,9 +820,9 @@ function handleHere(req, res, ALLOW) {
   if (req.method === 'GET' && p === '/record/list') {
     tick();
     var dl = drives(), sp0 = dl.length ? space(dl[0].dir) : null;
-    var tg0 = target();
-    return send(res, ALLOW, 200, { target: tg0 ? { type: tg0.type, name: tg0.name || '', host: (Dav.base(tg0) || { u: {} }).u.hostname || '' } : null, recs: load().recs.map(pub), drive: sp0 ? { name: dl[0].name, freeMB: sp0.freeMB, totalMB: sp0.totalMB, low: sp0.freeMB >= 0 && sp0.freeMB < LOW_MB } : null,
-      pauseHere: !dl.length && !!tvRoom() });
+    var tg0 = target(); shareRoom(tg0);
+    return send(res, ALLOW, 200, { target: tg0 ? { type: tg0.type, name: tg0.name || '', host: tg0.type === 'smb' ? String(tg0.host || tg0.server || '') : (Dav.base(tg0) || { u: {} }).u.hostname || '', user: tg0.user || '', pause: tg0.pause !== false, freeMB: tg0.address === room.address ? room.freeMB : -1 } : null, recs: load().recs.map(pub), drive: sp0 ? { name: dl[0].name, freeMB: sp0.freeMB, totalMB: sp0.totalMB, low: sp0.freeMB >= 0 && sp0.freeMB < LOW_MB } : null,
+      pauseHere: !dl.length && (!!tvRoom() || !!(pauseToShare() && tg0)), pauseShare: !dl.length && !!(pauseToShare() && tg0) });
   }
   var fm = /^\/record\/file\/([A-Za-z0-9]+)(?:\/[^\/]*)?$/.exec(p);       // "/rec.ts" after the id tells the player what it is
   if (fm && (req.method === 'GET' || req.method === 'HEAD')) { var fr = byId(fm[1]); return fr ? serveFile(req, res, ALLOW, fr, u.query.part != null ? +u.query.part : null) : send(res, ALLOW, 404, { error: 'no such recording' }); }
@@ -814,23 +835,44 @@ function handleHere(req, res, ALLOW) {
       TS.setup({ feed: Feed, freeMB: function (d) { return require('./storage')._freeMB(d); }, log: logf });
       if (p === '/record/ts/start') {
         if (!okUrl(q.url)) return send(res, ALLOW, 400, { error: 'not a relayed address' });
-        var dv = drives(), small = !dv.length, where = dv.length ? folderOn(dv[0].dir) : tvRoom();
+        // Where the pause goes: a USB drive; else the network share chosen for recordings (hours, any TV); else a
+        // short one in the TV's own storage.
+        var dv = drives(), tgp = !dv.length && pauseToShare() ? target() : null;
+        var small = !dv.length && !tgp, where = dv.length ? folderOn(dv[0].dir) : tgp ? FOLDER : tvRoom();
         if (!where) return send(res, ALLOW, 409, { error: 'Plug in a USB drive to pause live TV.', code: 'nodrive' });
-        var tsr = TS.post(p, q, where, small);
+        var tsr = TS.post(p, q, where, small, tgp ? { t: tgp, M: Net(tgp) } : null);
         return send(res, ALLOW, tsr.error && !tsr.id ? 500 : 200, tsr);
       }
       var tr = TS.post(p, q);
       return tr ? send(res, ALLOW, tr.gone ? 404 : 200, tr) : send(res, ALLOW, 404, { error: 'no such route' });
     }
-    /* Where to record without a USB drive (Settings > Recording > Record to): a WebDAV share, its login kept here
-       (the list file is 0600).  { type: 'webdav', address, user, pass, name, check } or { type: '' } to stop. */
+    /* Where to record without a USB drive (Settings > Recording > Record to): a WebDAV share or a Windows / Samba
+       share, its login kept here (the list file is 0600).  { type: 'webdav', address, user, pass, name, check },
+       { type: 'smb', server, host, share, folder, user, pass, domain, name, check } or { type: '' } to stop.
+       A login left out for the same share keeps the one saved (the app never gets it back to send again). */
     if (p === '/record/target') {
       if (!q.type) { load().target = null; save(); return send(res, ALLOW, 200, { ok: true, target: null }); }
-      if (q.type !== 'webdav' || !Dav.base(q)) return send(res, ALLOW, 400, { error: 'Enter the share\'s WebDAV address (http:// or https://).' });
-      var tg = { type: 'webdav', address: String(q.address).slice(0, 500), user: String(q.user || '').slice(0, 200), pass: String(q.pass || '').slice(0, 200), name: String(q.name || '').slice(0, 80) };
+      var was = load().target || {}, tg;
+      if (q.type === 'smb') {
+        tg = { type: 'smb', server: String(q.server || '').trim().slice(0, 260), host: String(q.host || '').trim().slice(0, 260), share: String(q.share || '').trim().slice(0, 80), folder: String(q.folder || '/').slice(0, 500),
+          user: String(q.user || '').slice(0, 200), pass: String(q.pass || '').slice(0, 200), domain: String(q.domain || '').slice(0, 100), name: String(q.name || '').slice(0, 80) };
+        if (!Rsmb.base(tg)) return send(res, ALLOW, 400, { error: 'Enter the server and the share.' });
+        tg.address = Rsmb.addressOf(tg);
+        if (q.keepLogin && was.address === tg.address) { tg.user = was.user || ''; tg.pass = was.pass || ''; tg.domain = was.domain || ''; }
+      } else {
+        if (q.type !== 'webdav' || !Dav.base(q)) return send(res, ALLOW, 400, { error: 'Enter the share\'s WebDAV address (http:// or https://).' });
+        tg = { type: 'webdav', address: String(q.address).slice(0, 500), user: String(q.user || '').slice(0, 200), pass: String(q.pass || '').slice(0, 200), name: String(q.name || '').slice(0, 80) };
+        if (q.keepLogin && was.address === tg.address) { tg.user = was.user || ''; tg.pass = was.pass || ''; }
+      }
+      tg.pause = q.pause === false || q.pause === 'false' ? false : was.address === tg.address && was.pause === false && q.pause == null ? false : true;
       var keep = function () { load().target = tg; save(); send(res, ALLOW, 200, { ok: true, target: { type: tg.type, name: tg.name } }); };
       if (!q.check) return keep();
-      return Dav.check(tg, FOLDER, function (e) { if (e) return send(res, ALLOW, 502, { error: 'Couldn\'t write to the share: ' + e.message }); note('info', 'recording: network share set', { name: tg.name }); keep(); });
+      return Net(tg).check(tg, FOLDER, function (e) { if (e) return send(res, ALLOW, 502, { error: 'Couldn\'t write to the share: ' + e.message }); note('info', 'recording: network share set', { name: tg.name }); keep(); });
+    }
+    // Live pause on the share on or off, keeping the share and its login as they are.
+    if (p === '/record/target/pause') {
+      var tp = load().target; if (!tp) return send(res, ALLOW, 404, { error: 'no network share chosen' });
+      tp.pause = !!q.on; save(); return send(res, ALLOW, 200, { ok: true, pause: tp.pause });
     }
     if (p === '/record/start' || p === '/record/schedule') {
       if (!okUrl(q.url)) return send(res, ALLOW, 400, { error: 'not a relayed address' });
@@ -852,7 +894,7 @@ function handleHere(req, res, ALLOW) {
     if (p === '/record/delete' && isDav(r)) {
       halt(r);
       var dt = davFor(r), ddir = {};
-      (r.parts || []).concat(sides(r)).forEach(function (f) { if (!isDavPath(f)) return; ddir[path.dirname(relOf(f))] = 1; Dav.del(dt, relOf(f), function () {}); });
+      (r.parts || []).concat(sides(r)).forEach(function (f) { if (!isDavPath(f)) return; ddir[path.dirname(relOf(f))] = 1; Net(dt).del(dt, relOf(f), function () {}); });
       // The folder goes too when nothing else is in it (a show's poster.jpg alone counts as nothing).
       setTimeout(function () { Object.keys(ddir).forEach(function (d) { davPrune(dt, d); }); }, 1500);
       state.recs = state.recs.filter(function (x) { return x !== r; }); save();

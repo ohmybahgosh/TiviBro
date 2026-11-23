@@ -1559,12 +1559,12 @@ var Settings = (function () {
     out.push(choice('Text size', 'Guide and channel lists.', ['s', 'm', 'l'], ['Small', 'Medium', 'Large'], function () { return s.textSize || 'm'; }, function (v) { s.textSize = v; Views.applyLook(); save(); }));
     out.push(choice('Panels over video', 'How see-through the info panel, quick menu and channel guide are in fullscreen.', ['l', 'm', 'h'], ['Solid', 'Normal', 'See-through'], function () { return s.overlay || 'm'; }, function (v) { s.overlay = v; Views.applyLook(); save(); }));
     out.push(choice('Channel logos', 'Which logo to use when both the playlist and the guide have one.', ['playlist', 'guide'], ['From the playlist', 'From the guide'], function () { return s.logoPref === 'guide' ? 'guide' : 'playlist'; }, function (v) { s.logoPref = v; save(); relist(); }));
-    out.push(choice('Logo library', 'Logos from two open projects, iptv-org and tv-logos, matched to your channels by guide id, name and country.  TiviBro hosts no images: each logo loads from its project.',
+    out.push(choice('Logo library', 'Logos from three open projects, Worldwide TV Logos, tv-logos and iptv-org, matched to your channels by guide id, name and country.  TiviBro hosts no images: each logo loads from its project.',
       ['off', 'fill', 'all'], ['Off', 'Fill in missing logos', 'Use for every channel it knows'], function () { return s.logoLib || 'off'; },
       function (v) { s.logoLib = v; save(true); Logos.load(L.data).then(function () { build(); }); relist(); }));
     if (s.logoLib && s.logoLib !== 'off') {
-      out.push(choice('Logo library style', 'Matching set: one clean style for dark screens (tv-logos).  Original: each channel\'s own logo (iptv-org).  Each falls back to the other.',
-        ['set', 'original'], ['Matching set', 'Original logos'], function () { return s.logoStyle === 'original' ? 'original' : 'set'; }, function (v) { s.logoStyle = v; save(); relist(); }));
+      out.push(choice('Logo library style', 'Cleaned up: each channel\'s own logo, transparent and trimmed, in white where it needs to be for dark screens (Worldwide TV Logos).  Matching set: one style for dark screens (tv-logos).  Original: each channel\'s own logo as iptv-org has it.  Each falls back to the others.',
+        ['clean', 'set', 'original'], ['Cleaned up', 'Matching set', 'Original logos'], function () { return s.logoStyle === 'original' || s.logoStyle === 'set' ? s.logoStyle : 'clean'; }, function (v) { s.logoStyle = v; save(); relist(); }));
       var ls = Logos.status;
       out.push(info('Logo library status', ls.state === 'ready' ? ls.entries + ' names for ' + ls.countries.join(', ') : ls.state === 'loading' ? 'loading' : ls.state === 'error' ? 'not reachable: ' + ls.error : 'off'));
     }
@@ -2027,16 +2027,20 @@ var Settings = (function () {
     var s = S(), out = [], R = typeof Record !== 'undefined' ? Record : null, sp = R && R.space;
     var gb = function (mb) { return mb >= 1024 ? (mb / 1024).toFixed(1) + ' GB' : Math.max(0, mb) + ' MB'; };
     out.push(info('Where', ''));
-    out[out.length - 1].value = function () { var x = R && R.space, sh = R && R.share; return x ? T('USB drive, {x} free of {y}', { x: gb(x.freeMB), y: gb(x.totalMB) }) + (sh ? '  ·  ' + T('Network share: {x}', { x: sh.name || sh.host }) : '') : sh ? T('Network share: {x}', { x: sh.name || sh.host }) : R && R.canPause() ? T('No USB drive: pause uses the TV\'s own storage (10 minutes)') : T('No USB drive'); };
-    if (!sp && !(R && R.share)) out.push(info('Record to a USB drive on a rooted TV, or to a network share on any TV.  webOS keeps USB drives from apps installed in developer mode; on a rooted TV (the Homebrew Channel) TiviBro\'s helper reaches them.  A network share (WebDAV, which Synology, QNAP, TrueNAS, Unraid and Nextcloud offer) works without root: add it as a library in My media, then choose it below.  Live pause works without either, for up to 10 minutes in the TV\'s own storage.', ''));
-    // A network share: a WebDAV library from My media (its address and login).
-    if (R) out.push(action('Network share', 'Record to a WebDAV share on your network (a NAS, Nextcloud): no USB drive or root needed.  Choose one of your My media WebDAV libraries.', function () {
-      var libs = typeof MediaStore !== 'undefined' ? MediaStore.sources().filter(function (x) { return x.type === 'webdav'; }) : [];
-      var items = libs.map(function (x) { return { label: x.name || x.address, icon: 'folder', sub: x.address, action: function () {
+    out[out.length - 1].value = function () {
+      var x = R && R.space, sh = R && R.share, shName = sh ? sh.name || sh.host : '';
+      var shText = sh ? T('Network share: {x}', { x: shName }) + (sh.freeMB > 0 ? ', ' + T('{x} free', { x: gb(sh.freeMB) }) : '') : '';
+      return x ? T('USB drive, {x} free of {y}', { x: gb(x.freeMB), y: gb(x.totalMB) }) + (sh ? '  ·  ' + shText : '') : sh ? shText : R && R.canPause() ? T('No USB drive: pause uses the TV\'s own storage (10 minutes)') : T('No USB drive');
+    };
+    if (!sp && !(R && R.share)) out.push(info('Record to a USB drive on a rooted TV, or to a network share on any TV.  webOS keeps USB drives from apps installed in developer mode; on a rooted TV (the Homebrew Channel) TiviBro\'s helper reaches them.  A network share works without root: a Windows or Samba share (a PC, Mac, NAS or router) or WebDAV (Synology, QNAP, TrueNAS, Unraid, Nextcloud).  Add it as a library in My media, then choose it below.  Live pause then goes there too, for hours.  Without either, live pause keeps up to 10 minutes in the TV\'s own storage.', ''));
+    // A network share: a WebDAV or Windows (SMB) library from My media (its address and login).
+    if (R) out.push(action('Network share', 'Record to a share on your network (a PC, Mac or NAS): no USB drive or root needed.  Choose one of your My media libraries on a Windows share or WebDAV.  Live pause goes there too.', function () {
+      var libs = typeof MediaStore !== 'undefined' ? MediaStore.sources().filter(function (x) { return x.type === 'webdav' || x.type === 'smb'; }) : [];
+      var items = libs.map(function (x) { var where = x.type === 'smb' ? '\\\\' + (x.host || x.server) + '\\' + x.share : x.address; return { label: x.name || where, icon: 'folder', sub: where, action: function () {
         U.toast(T('Checking that TiviBro can write there…'), 3000);
         R.setShare(MediaStore.source(x.id)).then(function () { U.toast(T('Recording to {x}', { x: x.name || x.address }), 4000); build(); }, function (e) { U.toast(e && e.message || 'No answer from the helper', 7000); });
       } }; });
-      if (!libs.length) items.push({ label: 'No WebDAV library yet', sub: 'Settings > My media > Add a library > WebDAV, then come back here.' });
+      if (!libs.length) items.push({ label: 'No network library yet', sub: 'Settings > My media > Add a library > Windows or network share (or WebDAV), then come back here.' });
       if (R.share) items.push({ label: 'Stop recording to a share', icon: 'stop', action: function () { R.setShare(null).then(build, function () {}); } });
       UI.menu('Network share', items);
     }, function () { var sh = R.share; return sh ? (sh.name || sh.host) + ' ›' : T('None') + ' ›'; }));
@@ -2054,9 +2058,11 @@ var Settings = (function () {
       UI.confirm(T('Delete {n} watched recordings?', { n: done.length }), 'Delete', function () { (function one(i) { if (i >= done.length) { U.toast(T('Deleted {n} recordings', { n: done.length })); return build(); } R.remove(done[i].id).then(function () { one(i + 1); }, function () { one(i + 1); }); })(0); });
     }));
     out.push(head('Live pause'));
-    out.push(toggle('Pause live TV', 'Pause keeps the channel, and Play carries on from where you paused, with ◀ ▶ to go back and forth in it.  On a USB drive (a rooted TV) it keeps up to 2 hours; without one, up to 10 minutes in the TV\'s own storage.  Off: pause holds for as long as the player\'s buffer, then Play is live.',
+    out.push(toggle('Pause live TV', 'Pause keeps the channel, and Play carries on from where you paused, with ◀ ▶ to go back and forth in it.  On a USB drive (a rooted TV) or a network share it keeps up to 2 hours; without either, up to 10 minutes in the TV\'s own storage.  Off: pause holds for as long as the player\'s buffer, then Play is live.',
       function () { return s.livePause !== false; }, function (v) { s.livePause = v; save(); }));
-    out.push(choice('Rewind buffer', 'Keeps the channel you watch fullscreen on the USB drive the whole time, so ◀ goes back to something you just missed without pausing first (like a DVR).  Channels start a second or two slower, and the drive is written all the time.  Needs a USB drive in the TV and Pause live TV on.',
+    if (R && R.share && !sp) out.push(toggle('Live pause on the network share', 'Keeps paused TV on the share chosen for recordings, up to 2 hours.  Off: the TV\'s own storage, 10 minutes.',
+      function () { return R.pauseShare; }, function (v) { R.setSharePause(v).then(build, function (e) { U.toast(e && e.message || 'No answer from the helper', 6000); }); }));
+    out.push(choice('Rewind buffer', 'Keeps the channel you watch fullscreen on the USB drive or network share the whole time, so ◀ goes back to something you just missed without pausing first (like a DVR).  Channels start a second or two slower, and the drive or share is written all the time.  Needs Pause live TV on, and a USB drive or a network share.',
       [0, 30, 60, 120], ['Off', '30 min', '1 hour', '2 hours'], function () { return +s.rewindBuffer || 0; }, function (v) { s.rewindBuffer = v; save(); }));
     out.push(head('Buttons'));
     out.push(info('A Magic Remote has no Pause or REC button: in fullscreen, OK opens the quick menu, which starts with Pause, Rewind and Record, and in the guide Hold OK has Record.  On a remote with ● REC, it records what\'s on (in the guide, the programme you\'re on).  Any button can be set to Record or Recordings: Remote and buttons.', ''));
@@ -2425,6 +2431,19 @@ var Settings = (function () {
   var homeEl = null, onHome = false, hsel = -1, hitems = [];
   var TILES = ['guide', 'sports', 'playback', 'audio', 'recording', 'reminders', 'vod', 'media'];
   var TILE_ICON = { guide: 'guide', sports: 'sports', playback: 'play', audio: 'audio', recording: 'rec', reminders: 'bell', vod: 'movies', media: 'media' };
+  /* Each tile's line icon (inline SVG on a 24 grid, drawn in the tile colour), the same shapes as the side menu's
+     where there's one.  They were CSS boxes before, and four of them came out as plain squares. */
+  var TILE_SVG = {
+    guide: '<path d="M3 5h18M3 12h18M3 19h18M9 3v18"/>',
+    sports: '<path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4.5a2.5 2.5 0 0 0 2.6 4M17 6h2.5a2.5 2.5 0 0 1-2.6 4M12 14v3.5M8.5 20.5h7M9.5 17.5h5v3h-5z"/>',
+    play: '<path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/>',
+    audio: '<path d="M4 9.5h4l5-4.5v14l-5-4.5H4z"/><path d="M16.5 9a4 4 0 0 1 0 6M19 6.5a7.5 7.5 0 0 1 0 11"/>',
+    rec: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor"/>',
+    bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+    movies: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
+    media: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M10 11l5 3-5 3z"/>'
+  };
+  function tileIcon(id) { var i = U.el('i', 'sh-ico ico-' + TILE_ICON[id]); i.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + (TILE_SVG[TILE_ICON[id]] || '') + '</svg>'; return i; }
   // One line under a tile: what it's set to now.  Anything that fails says nothing rather than something wrong.
   function tileLine(id) {
     var s = S(), out = '';
@@ -2466,7 +2485,7 @@ var Settings = (function () {
     var grid = U.el('div', 'sh-grid'), col = 0;
     TILES.filter(function (id) { return ids.indexOf(id) >= 0; }).forEach(function (id) {
       var i = -1; SECTIONS.forEach(function (x, k) { if (x[0] === id) i = k; });
-      var t = U.el('div', 'sh-tile'); t.appendChild(U.el('i', 'sh-ico ico-' + TILE_ICON[id]));
+      var t = U.el('div', 'sh-tile'); t.appendChild(tileIcon(id));
       t.appendChild(U.el('b', '', navTitle(SECTIONS[i]))); t.appendChild(U.el('span', '', tileLine(id)));
       grid.appendChild(t);
       hitems.push({ el: t, row: row + Math.floor(col / 4), col: col % 4, go: function () { goSection(id); } }); col++;

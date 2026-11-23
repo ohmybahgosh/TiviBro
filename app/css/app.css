@@ -1232,14 +1232,12 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .sh-chips{display:flex;flex-wrap:wrap;gap:14px}
 .sh-chip{padding:12px 22px;border-radius:999px;background:var(--panel);border:2px solid rgba(255,255,255,.08);font-size:23px;color:#c7cee6}
 .set-home .focus{background:var(--raised);border-color:#fff;color:var(--text);transform:scale(1.03);box-shadow:0 14px 36px rgba(0,0,0,.45)}
-.sh-ico{display:block;width:44px;height:44px;border-radius:12px;background:rgba(91,140,255,.18);position:relative}
-.sh-ico::after{content:'';position:absolute;top:12px;left:12px;right:12px;bottom:12px;border-radius:4px;border:3px solid var(--accent-text)}
-.ico-sports{background:rgba(255,180,94,.18)}.ico-sports::after{border-color:#ffb45e;border-radius:0 0 10px 10px;border-top-width:3px}
-.ico-play{background:rgba(51,225,255,.15)}.ico-play::after{top:12px;right:12px;bottom:12px;left:15px;border:0;border-left:17px solid #33e1ff;border-top:10px solid transparent;border-bottom:10px solid transparent;border-radius:0}
-.ico-audio{background:rgba(51,225,255,.15)}.ico-audio::after{border-color:#33e1ff}
-.ico-rec{background:rgba(255,107,107,.15)}.ico-rec::after{top:13px;right:13px;bottom:13px;left:13px;border-radius:50%;border:0;background:#ff8a8a}
-.ico-bell{background:rgba(255,180,94,.18)}.ico-bell::after{border-color:#ffb45e;border-radius:10px 10px 3px 3px}
-.ico-movies::after,.ico-media::after{border-radius:3px}
+.sh-ico{display:block;width:44px;height:44px;border-radius:12px;background:rgba(91,140,255,.18);color:var(--accent-text);position:relative}
+.sh-ico svg{position:absolute;left:9px;top:9px;width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ico-sports,.ico-bell{background:rgba(255,180,94,.18);color:#ffb45e}
+.ico-play,.ico-audio{background:rgba(51,225,255,.15);color:#33e1ff}
+.ico-rec{background:rgba(255,107,107,.15);color:#ff8a8a}
+.ico-movies,.ico-media{background:rgba(160,130,255,.18);color:#bfa8ff}
 .set-body .opt{border-bottom:1px solid rgba(255,255,255,.05);margin-bottom:2px}
 .set-body .opt.focus{border-bottom-color:transparent}
 .set-body .opt .ol small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}

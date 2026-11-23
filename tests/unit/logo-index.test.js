@@ -7,7 +7,8 @@ w('channels.json', [
   { id: 'AE.us', name: 'A&E', alt_names: [], country: 'US' },
   { id: 'WXYZTV.us', name: 'WXYZ-TV', alt_names: [], country: 'US' },
   { id: 'BBCOne.uk', name: 'BBC One', alt_names: [], country: 'UK' },
-  { id: 'Gone.us', name: 'Gone TV', alt_names: [], country: 'US', closed: '2020-01-01' }]);
+  { id: 'Gone.us', name: 'Gone TV', alt_names: [], country: 'US', closed: '2020-01-01' },
+  { id: 'France3.fr', name: 'France 3', alt_names: [], country: 'FR' }]);
 w('logos.json', [
   { channel: 'CNN.us', feed: null, in_use: true, format: 'PNG', width: 512, url: 'https://example.org/cnn.png' },
   { channel: 'CNN.us', feed: 'East', in_use: true, format: 'PNG', width: 512, url: 'https://example.org/cnn-east.png' },
@@ -21,6 +22,12 @@ w('tvlogos-tree.json', { tree: [
   { type: 'blob', path: 'countries/united-states/us-local/abc-7-wxyz-us.png' }, { type: 'blob', path: 'countries/united-kingdom/bbc-one-uk.png' },
   { type: 'blob', path: 'countries/united-kingdom/old/bbc-two-uk.png' }, { type: 'blob', path: 'countries/international/bein-sports-1-int.png' },
   { type: 'blob', path: 'misc/vod/thing.png' }] });
+const WTL = 'https://worldwide-tv-logos.github.io/database/logos/';
+w('wtl.json', [
+  { channel: 'AE.us', feed: null, in_use: true, url: WTL + 'us/AE.us.png', variant: null },
+  { channel: 'AE.us', feed: null, in_use: true, url: WTL + 'us/AE.us.white.png', variant: 'white' },
+  { channel: 'AE.us', feed: 'East', in_use: true, url: WTL + 'us/AE.us@East.png', variant: null },
+  { channel: 'France3.fr', feed: null, in_use: true, url: WTL + 'fr/France3.fr.png', variant: null }]);
 cp.execFileSync('node', [path.join(__dirname, '../../scripts/logos/build-index.js'), out, '--from', dir], { stdio: 'pipe' });
 let fail = 0, n = 0;
 const ok = (name, c, x) => { n++; if (!c) { fail++; console.log('FAIL ' + name + (x !== undefined ? '  ' + x : '')); } };
@@ -35,5 +42,9 @@ ok('A&E: plain beats horizontal', get(us, 'aande')[3] === 'united-states/a-and-e
 ok('call signs', get(us, 'wxyz') && get(us, 'wxyz')[3] === 'united-states/us-local/abc-7-wxyz-us.png', JSON.stringify(get(us, 'wxyz')));
 ok('logos no longer in use and closed channels are left out', !get(us, 'gone') && !get(uk, 'bbcone')[2], JSON.stringify(get(uk, 'bbcone')));
 ok('old folders are left out', !get(uk, 'bbctwo'));
+const fr = rd('FR.json');
+ok('worldwide-tv-logos: the white version for dark screens, the channel\'s own not an edition\'s', get(us, 'aande')[4] === 'us/AE.us.white.png', JSON.stringify(get(us, 'aande')));
+ok('worldwide-tv-logos alone is enough for a channel', get(fr, 'france3') && get(fr, 'france3')[4] === 'fr/France3.fr.png' && !get(fr, 'france3')[2], JSON.stringify(get(fr, 'france3')));
+ok('where its logos live is in the index', ix.wtl === WTL && ix.sources.length === 3);
 console.log(fail ? fail + ' failures' : 'all ' + n + ' logo index tests passed');
 process.exit(fail ? 1 : 0);

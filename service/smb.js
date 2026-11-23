@@ -6,6 +6,9 @@
      check / shares / list / stat   one short run each, answers as JSON lines
      reader                         a movie read with Range for media-stream.js: each range is one run of
                                     "cat", so seeking simply starts another one and the old one is stopped
+     put / writer                   a file written: a small one at once, or a recording's part as it comes
+     mkdirs / remove / move / space folders, deleting, renaming and free room (recordings and live pause,
+                                    recsmb.js)
 
    A source is { type: 'smb', server: 'host' or 'host:port', host (the server's name, when server is an
    address), share, folder ('/' or '/Movies'), user, pass, domain }.  The login goes to the program on its stdin, never on its command line (other programs on
@@ -23,13 +26,13 @@ require('./compat');
 var fs = require('fs'), path = require('path'), cp = require('child_process'), crypto = require('crypto'), zlib = require('zlib');
 var Storage = require('./storage');
 
-var VERSION = '2';
+var VERSION = '3';
 /* The release the bundled programs come from (.github/workflows/smb.yml, scripts/smb/bundle.sh), and the
    SHA-256 of each .gz there. */
 var TAG = 'smb-1-tb2';
 var SHA256 = { armv7: '26387ede8e1585d18fe97c27f1b5e046171629ed69a623442ff692f7f6091ef8', aarch64: 'f57f1a4b583427c05f2fda9400e0f0f60a5b67c7bb064cb3b21c495bb23fc10f' };
 var BUNDLE = path.join(__dirname, 'smb-bundle');
-var cfg = { sums: SHA256, bundle: BUNDLE, arch: null };
+var cfg = { sums: SHA256, bundle: BUNDLE, arch: null, dir: '' };
 var RUN_MS = 30000, OUT_MAX = 8 * 1024 * 1024, ERR_MAX = 4096, MAX_RUNS = 2, MAX_READS = 4;
 
 var logFn = null;
@@ -133,7 +136,8 @@ function program(cb) {
   }
   var list = arches();
   if (!list.length) return end(new Error('Windows shares need an LG TV (' + process.arch + ')'));
-  var dir; try { dir = Storage.sub('bin'); } catch (e) { return end(e); }
+  // The recording agent (root, rooted TVs) keeps its own copy (binDir), so root never writes into the helper's folder.
+  var dir; try { dir = cfg.dir || Storage.sub('bin'); if (cfg.dir) { try { fs.mkdirSync(cfg.dir); } catch (x) {} } } catch (e) { return end(e); }
   (function next(i, firstErr) {
     if (i >= list.length) return end(firstErr);
     prepareOne(dir, list[i], function (e, file) { if (!e) return end(null, file); next(i + 1, firstErr || e); });
@@ -191,7 +195,7 @@ function errorFrom(code, stderr) {
 }
 /* One short run: cb(err, rows), rows being the JSON lines it printed.  Stopped after RUN_MS, and its
    output is capped (a folder of a few thousand files is well under it). */
-function run(p, args, cb) {
+function run(p, args, cb, input) {
   program(function (e, prog) {
     if (e) { e.kind = e.kind || 'program'; return cb(e); }
     slot(function (free) {
@@ -209,16 +213,17 @@ function run(p, args, cb) {
         finish(null, rows);
       });
       child.stdin.on('error', function () {});
-      child.stdin.end(p.login);
+      child.stdin.end(input ? Buffer.concat([Buffer.from(p.login), input]) : p.login);
     });
   });
 }
 
 /* ---------- what My media asks ---------- */
 
-/* One run for a source: build(p) gives the program's arguments from the checked parts.  A server that
-   doesn't answer is looked for by name and, found elsewhere, asked once more there. */
-function runFor(source, build, cb) {
+/* One run for a source: build(p) gives the program's arguments from the checked parts, input what follows the
+   login on its stdin (a file put).  A server that doesn't answer is looked for by name and, found elsewhere, asked
+   once more there. */
+function runFor(source, build, cb, input) {
   var p = parts(source); if (p instanceof Error) return cb(p);
   var args = build(p); if (args instanceof Error) return cb(args);
   run(p, args, function (e, rows) {
@@ -226,9 +231,9 @@ function runFor(source, build, cb) {
     relocate(source, function (again) {
       if (!again) return cb(e, rows, p);
       var p2 = parts(source);
-      run(p2, build(p2), function (e2, rows2) { cb(e2, rows2, p2); });
+      run(p2, build(p2), function (e2, rows2) { cb(e2, rows2, p2); }, input);
     });
-  });
+  }, input);
 }
 
 // Signs in and opens the share: cb(err, { dialect }).
@@ -303,6 +308,89 @@ function reader(source, file) {
   };
 }
 
+/* ---------- writing (version 3): recordings and live pause on a share ---------- */
+
+// A file inside the share for writing: never the share itself.
+function fileOf(file) { var f = cleanPath(file); return f && f !== '/' ? f : null; }
+/* A small file (a live-pause piece, a poster, an .nfo) written whole: its folders are made first.  cb(err, size). */
+function put(source, file, data, cb) {
+  var f = fileOf(file), buf = Buffer.isBuffer(data) ? data : Buffer.from(str(data));
+  runFor(source, function (p) { return f && p.share ? ['put', p.server, p.share, f, '0'] : bad('address'); }, function (e, rows) {
+    cb(e, e ? 0 : +(rows[0] && rows[0].size) || 0);
+  }, buf);
+}
+// Folder and the ones above it, made when they aren't there.  cb(err).
+function mkdirs(source, folder, cb) {
+  var f = cleanPath(folder);
+  if (f === '/') return cb(null);
+  runFor(source, function (p) { return f && p.share ? ['mkdir', p.server, p.share, f] : bad('address'); }, function (e) { cb(e); });
+}
+/* Files, and folders once empty, deleted; one that isn't there counts as done.  cb(err, [paths that stayed]).
+   Many at once go in runs of 50, so the command line stays short. */
+function remove(source, files, cb) {
+  var list = (files || []).map(fileOf).filter(Boolean), stayed = [];
+  (function next() {
+    if (!list.length) return cb(null, stayed);
+    var batch = list.splice(0, 50);
+    runFor(source, function (p) { return p.share ? ['rm', p.server, p.share].concat(batch) : bad('address'); }, function (e, rows) {
+      if (e) return cb(e, stayed.concat(batch, list));
+      rows.forEach(function (r) { if (r && r.ok === false) stayed.push('/' + str(r.path)); });
+      next();
+    });
+  })();
+}
+// Renamed or moved (its new folder made); never over a file that's there.  cb(err).
+function move(source, from, to, cb) {
+  var a = fileOf(from), b = fileOf(to);
+  runFor(source, function (p) { return a && b && p.share ? ['mv', p.server, p.share, a, b] : bad('address'); }, function (e) { cb(e); });
+}
+// The room on the share for this login: cb(err, { freeMB, totalMB }).
+function space(source, cb) {
+  runFor(source, function (p) { return p.share ? ['df', p.server, p.share] : bad('noshare'); }, function (e, rows) {
+    if (e || !rows[0]) return cb(e || bad('other'));
+    cb(null, { freeMB: Math.round((+rows[0].free || 0) / 1048576), totalMB: Math.round((+rows[0].total || 0) / 1048576) });
+  });
+}
+/* A recording's part, written as it arrives: write(buf) and end(cb), as recdav.js's upload.  One run of "put" that
+   lasts the whole part, outside the queue of short runs.  onFail(err) once if it stops early (the share went away,
+   it's full); what was written before that stays on the share. */
+function writer(source, file, onFail) {
+  var f = fileOf(file), p = parts(source), child = null, failed = false, ended = false, endCb = null, err = '', pending = [];
+  function fail(e) {
+    if (failed) return; failed = true;
+    if (endCb) { var c = endCb; endCb = null; c(e); } else if (onFail) onFail(e);
+  }
+  if (p instanceof Error || !f || !p.share) { setTimeout(function () { fail(p instanceof Error ? p : bad('address')); }, 0); }
+  else program(function (e, prog) {
+    if (e) return fail(e);
+    if (failed) return;
+    try { child = cp.spawn(prog, ['put', p.server, p.share, f, '0'], { stdio: ['pipe', 'ignore', 'pipe'] }); } catch (e2) { return fail(e2); }
+    child.on('error', function (e3) { fail(e3); });
+    child.stderr.on('data', function (d) { if (err.length < ERR_MAX) err += d; });
+    child.stdin.on('error', function () {});
+    child.on('close', function (code) {
+      if (code) return fail(errorFrom(code, err));
+      if (!ended) return fail(bad('other'));
+      if (endCb) { var c = endCb; endCb = null; c(null); }
+    });
+    child.stdin.write(p.login);
+    pending.forEach(function (b) { child.stdin.write(b); }); pending = null;
+    if (ended) child.stdin.end();
+  });
+  return {
+    write: function (buf) { if (failed || ended) return true; if (!child || pending) { (pending = pending || []).push(buf); return true; } return child.stdin.write(buf); },
+    end: function (cb) {
+      if (ended) return cb && cb(null);
+      ended = true;
+      if (failed) return cb && cb(bad('other'));
+      endCb = cb || function () {};
+      if (child && !pending) child.stdin.end();
+    },
+    abort: function () { failed = true; try { if (child) child.kill('SIGKILL'); } catch (e) {} },
+    get failed() { return failed; }
+  };
+}
+
 // What a failure says to the viewer, by kind.
 var MESSAGES = {
   login: 'The share didn\'t accept that user name and password.  On a Windows PC, use the PC\'s account (or Microsoft account email) and its password.',
@@ -313,6 +401,8 @@ var MESSAGES = {
   timeout: 'The server took too long to answer.',
   signing: 'The server only lets signed-in users in: guests can\'t sign their connection.  Enter a user name and password.',
   smb1: 'This server only speaks SMB1, which is unsafe and not supported.  Turn on SMB2 or SMB3 on it.',
+  full: 'The share is full.',
+  exists: 'There\'s already a file by that name on the share.',
   address: 'That isn\'t a server name or address TiviBro can use.',
   program: 'This TiviBro can\'t open Windows shares on this TV yet.',
   other: 'The share couldn\'t be read.'
@@ -324,6 +414,7 @@ function failure(e) {
 
 module.exports = {
   setLog: function (f) { logFn = f; }, VERSION: VERSION, TAG: TAG, SHA256: SHA256,
-  check: check, shares: shares, list: list, stat: stat, tree: tree, reader: reader, movedTo: movedTo, hostKey: hostKey, failure: failure, parts: parts, cleanPath: cleanPath, program: program,
-  _config: function (o) { if (o.sums) cfg.sums = o.sums; if (o.bundle !== undefined) cfg.bundle = o.bundle; if (o.arch !== undefined) cfg.arch = o.arch; if (o.archList) cfg.archList = o.archList; if (o.reset) { cfg = { sums: SHA256, bundle: BUNDLE, arch: null, locate: cfg.locate }; ready = ''; } if (o.runMs) RUN_MS = o.runMs; if (o.locate !== undefined) cfg.locate = o.locate; if (o.forget) { moved = {}; lastLook = {}; } }
+  check: check, shares: shares, list: list, stat: stat, tree: tree, reader: reader, put: put, writer: writer, mkdirs: mkdirs, remove: remove, move: move, space: space,
+  binDir: function (d) { cfg.dir = d; ready = ''; }, movedTo: movedTo, hostKey: hostKey, failure: failure, parts: parts, cleanPath: cleanPath, program: program,
+  _config: function (o) { if (o.sums) cfg.sums = o.sums; if (o.bundle !== undefined) cfg.bundle = o.bundle; if (o.arch !== undefined) cfg.arch = o.arch; if (o.archList) cfg.archList = o.archList; if (o.reset) { cfg = { sums: SHA256, bundle: BUNDLE, arch: null, dir: '', locate: cfg.locate }; ready = ''; } if (o.runMs) RUN_MS = o.runMs; if (o.locate !== undefined) cfg.locate = o.locate; if (o.forget) { moved = {}; lastLook = {}; } }
 };

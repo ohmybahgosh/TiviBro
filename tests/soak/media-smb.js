@@ -18,6 +18,7 @@ fs.chmodSync(FAKE, 0o755);
 const ROOT = fs.mkdtempSync(path.join(os.tmpdir(), 'smb-soak-share-'));
 process.env.TIVIBRO_SMB = FAKE;
 process.env.FAKE_SMB_ROOT = ROOT;
+process.env.TIVIBRO_USB_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'smb-soak-usb-'));   // no USB drive: recordings and pause go to the share
 const proxy = require('../../service/proxy.js');
 const APP = process.env.APP || 'http://127.0.0.1:8078/index.html';
 const MOCK = process.env.MOCK || 'http://127.0.0.1:8088';
@@ -117,6 +118,19 @@ put('Photos/a.jpg', 10);
     return Diag.report().then((x) => { s.pass = was; return x.text; });
   });
   ok('the problem report masks a library password that reached the log', r.indexOf('Zq9-long-share-secret') < 0 && /a message that names \*\*\*/.test(r), r.slice(-300));
+  // Recording and live pause to the share: chosen from the library, checked by writing there.
+  r = await ev((id) => Record.setShare(MediaStore.source(id)).then(() => ({ share: Record.share, pause: Record.canPause(), buffer: Record.canBuffer(), ps: Record.pauseShare }), (e) => ({ err: e.message })), sid);
+  ok('the library\'s share is chosen for recordings and live pause', r.share && r.share.type === 'smb' && r.pause && r.buffer && r.ps && !JSON.stringify(r).includes('"pw"'), JSON.stringify(r));
+  await ev(() => { Views.switchTab('settings'); Settings.section('playback'); }); await page.waitForTimeout(300);
+  const recText = await ev(() => JSON.stringify(Settings.phone.page('recording', [])));
+  ok('Settings says where it records and offers live pause on the share', /Network share/.test(recText) && /Live pause on the network share/.test(recText), recText.slice(0, 300));
+  const ts = await ev(() => Record.tsStart(Library.data.channels[0]).then((x) => x, (e) => ({ err: e.message })));
+  ok('live pause starts on the share', ts.share === true && ts.small === false && ts.id, JSON.stringify(ts));
+  await page.waitForTimeout(6000);
+  const tsDir = path.join(ROOT, 'Media', 'TiviBro Recordings', '.timeshift', String(ts.id));
+  ok('its pieces are written on the share', fs.existsSync(tsDir) && fs.readdirSync(tsDir).length >= 1, fs.existsSync(tsDir) ? fs.readdirSync(tsDir).join(' ') : 'none');
+  await ev((id) => Record.tsStop(id), ts.id);
+  await ev(() => Record.setShare(null));
   // Playing from a localhost link.
   await ev(() => Views.switchTab('media')); await page.waitForTimeout(500);
   await ev(() => { var original = Player.play; Player.play = function (ch, opts) { window.__mediaPlay = opts; return original.apply(this, arguments); }; });

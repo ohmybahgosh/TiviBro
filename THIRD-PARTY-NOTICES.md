@@ -47,8 +47,9 @@ TiviBro talks to these services from your TV, with your own keys where one is ne
 - **Trakt**, watched history and lists as My media shelves.  TiviBro uses Trakt but is not endorsed or certified by Trakt.
 - **OpenSubtitles.com**, subtitles for Find subtitles.
 - **Channel logos**: [tv-logo/tv-logos](https://github.com/tv-logo/tv-logos) (Creative Commons BY-SA and BY-NC-SA,
-  per logo) and [iptv-org/database](https://github.com/iptv-org/database) (Unlicense).  The logos themselves are
-  trademarks of their owners.
+  per logo), [iptv-org/database](https://github.com/iptv-org/database) (Unlicense) and
+  [Worldwide TV Logos](https://worldwide-tv-logos.github.io/database/) (open data, free to use).  TiviBro hosts none
+  of them: each logo loads from its project.  The logos themselves are trademarks of their owners.
 - **Public guides**: epg.pw, iptv-epg.org, epgshare01, Pluto TV's guide through i.mjh.nz, and EPGTalk for the
   sports guides.
 - **YouTube**, for trailers, opened in the TV's own YouTube app.

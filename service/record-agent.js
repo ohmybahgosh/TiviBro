@@ -10,6 +10,8 @@ try { fs.mkdirSync(DIR); } catch (e) {}
 process.env.TIVIBRO_REC_AGENT = '1';
 process.env.TIVIBRO_REC_LIST = process.env.TIVIBRO_REC_LIST || path.join(DIR, 'recordings.json');
 var Record = require('./record');
+// Its own copy of the program for Windows shares (recording to one), so root never writes into the helper's folder.
+require('./smb').binDir(path.join(DIR, 'bin'));
 var CTL = process.env.TIVIBRO_REC_CTL || '', LOG = path.join(DIR, 'agent.log');
 // The secret, compared in constant time (a byte-by-byte compare that stops early tells a guesser how far it got).
 function sameText(a, b) {

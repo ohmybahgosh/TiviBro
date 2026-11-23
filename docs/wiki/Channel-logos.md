@@ -2,7 +2,9 @@
 
 *On the TV*
 
-Providers often leave logos out, or send some that no longer load.  The **logo library** fills them in from two open projects:
+Providers often leave logos out, or send some that no longer load.  The **logo library** fills them in from three open projects:
+
+- **[Worldwide TV Logos](https://worldwide-tv-logos.github.io/database/)**: each channel's own logo, cleaned up (transparent, trimmed, current branding) with a white version for dark screens, for about 11,000 channels.
 
 - **[iptv-org](https://github.com/iptv-org/database)**: each channel's own logo, for about 28,000 channels in 230 countries.
 - **[tv-logos](https://github.com/tv-logo/tv-logos)**: one matching style made for dark screens, for about 7,700 channels.
@@ -17,7 +19,7 @@ Turn it on in the set-up tour or in **Settings > Appearance > Logo library**:
 - **Fill in missing logos**: the library's logo for channels that have none.
 - **Use for every channel it knows**: the library's logo everywhere it has one, so the whole list matches.
 
-**Logo library style** picks **Matching set** (tv-logos) or **Original logos** (iptv-org); each falls back to the other.  On a real 9,800-channel playlist it found logos for about 3,600 channels.
+**Logo library style** picks **Cleaned up** (Worldwide TV Logos, the default), **Matching set** (tv-logos) or **Original logos** (iptv-org); each falls back to the others.  On a real 9,800-channel playlist it found logos for about 3,600 channels.
 
 ---
 

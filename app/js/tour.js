@@ -289,8 +289,8 @@ var Tour = (function () {
     st.logoSeen = true;
     out.push(choice('Logo library', '', ['off', 'fill', 'all'], ['Off', 'Fill in missing logos', 'Use for every channel it knows'],
       function () { return s.logoLib || 'off'; }, function (v) { s.logoLib = v; Store.saveSettings(); relogo(); }));
-    if (s.logoLib && s.logoLib !== 'off') out.push(choice('Style', 'Matching set: one clean style for dark screens.  Original: each channel\'s own logo.', ['set', 'original'], ['Matching set', 'Original logos'],
-      function () { return s.logoStyle === 'original' ? 'original' : 'set'; }, function (v) { s.logoStyle = v; Store.saveSettings(); st.cov = null; draw(); }));
+    if (s.logoLib && s.logoLib !== 'off') out.push(choice('Style', 'Cleaned up: each channel\'s own logo, made for dark screens.  Matching set: one style for all.  Original: each channel\'s own logo as it is.', ['clean', 'set', 'original'], ['Cleaned up', 'Matching set', 'Original logos'],
+      function () { return s.logoStyle === 'original' || s.logoStyle === 'set' ? s.logoStyle : 'clean'; }, function (v) { s.logoStyle = v; Store.saveSettings(); st.cov = null; draw(); }));
     out.push(choice('When the playlist and the guide both have a logo', '', ['playlist', 'guide'], ['Use the playlist\'s', 'Use the guide\'s'],
       function () { return s.logoPref === 'guide' ? 'guide' : 'playlist'; }, function (v) { s.logoPref = v; Store.saveSettings(); st.cov = null; draw(); }));
     out.push(custom(logoStrip()));
@@ -375,7 +375,7 @@ var Tour = (function () {
     if (sv.dupeSets && ch.dupes !== 'off') cl.push('extra copies (' + DUPE_L[DUPES.indexOf(ch.dupes)].replace(/^Keep /, '').replace(/ \(.*\)$/, '') + ' shown, the rest kept as backups)');
     if (ch.words.trim()) cl.push('"' + ch.words.trim() + '"');
     out.push(['clutter', 'Clutter', cl.length ? 'Hide ' + cl.join(', ') : 'Nothing hidden']);
-    out.push(['logos', 'Logos', !s.logoLib || s.logoLib === 'off' ? 'Playlist and guide logos only' : (s.logoLib === 'all' ? 'Library for every channel' : 'Fill in missing') + ', ' + (s.logoStyle === 'original' ? 'original logos' : 'matching set')]);
+    out.push(['logos', 'Logos', !s.logoLib || s.logoLib === 'off' ? 'Playlist and guide logos only' : (s.logoLib === 'all' ? 'Library for every channel' : 'Fill in missing') + ', ' + (s.logoStyle === 'original' ? 'original logos' : s.logoStyle === 'set' ? 'matching set' : 'cleaned up')]);
     out.push(['guide', 'Guide', PubEpg.conf(P()).on ? 'Public guides fill in channels with no guide' : 'Your sources and the provider\'s guide only']);
     var K = Settings.LOOK, ai = K.ACCENTS.indexOf(s.accent), ti = K.THEMES.indexOf(s.theme || 'dark');
     out.push(['look', 'Look and start', (Views.PALETTES[s.palette] ? Views.PALETTE_NAMES[s.palette] : (ai >= 0 ? K.ACCENT_NAMES[ai] : 'Custom colour') + ' on ' + (ti >= 0 ? K.THEME_NAMES[ti] : 'Midnight')) + ', opens on ' + (s.startTab === 'live' ? 'Channels' : 'Guide')]);

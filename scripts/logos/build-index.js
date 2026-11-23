@@ -1,15 +1,18 @@
 /* Channel logo index for "Channel logos" on the TV, published with the website at tivibro.app/logos/.
-   TiviBro hosts no logo images.  This index only lists where two open logo projects keep theirs:
+   TiviBro hosts no logo images.  This index only lists where three open logo projects keep theirs:
      iptv-org/database   channel names, ids and logo addresses (public domain data, CC0)
                          https://github.com/iptv-org/database
      tv-logo/tv-logos    a matching set of logos for dark screens, one PNG per channel, by country
                          https://github.com/tv-logo/tv-logos
+     worldwide-tv-logos  logos cleaned up (transparent, trimmed, current branding), named by the iptv-org id,
+                         with a white version for dark screens: https://worldwide-tv-logos.github.io/database/
    The TV downloads the index for the countries in its playlist and loads each logo from its own
    project, the way it loads a provider's logos.
      node scripts/logos/build-index.js [outDir] [--from dir]
-   --from reads channels.json, logos.json and tvlogos-tree.json from a folder instead of the web.
+   --from reads channels.json, logos.json, tvlogos-tree.json and wtl.json (if there) from a folder instead of the web.
    Output: index.json (the countries, how many logos each, where the images live) and one <CC>.json per
-   country: { e: [[key, iptv-org id, iptv-org logo, tv-logos path], ...], x: [[other name key, entry], ...] }.
+   country: { e: [[key, iptv-org id, iptv-org logo, tv-logos path, worldwide-tv-logos path?], ...],
+   x: [[other name key, entry], ...] }.
    Keys are Tidy.logoKey() keys, the same the TV computes from channel names. */
 'use strict';
 const fs = require('fs'), path = require('path');
@@ -22,12 +25,18 @@ const OUT = args.filter((a, i) => a !== '--from' && args[i - 1] !== '--from')[0]
 const SRC = {
   channels: 'https://iptv-org.github.io/api/channels.json',
   logos: 'https://iptv-org.github.io/api/logos.json',
-  tree: 'https://api.github.com/repos/tv-logo/tv-logos/git/trees/main?recursive=1'
+  tree: 'https://api.github.com/repos/tv-logo/tv-logos/git/trees/main?recursive=1',
+  wtl: 'https://worldwide-tv-logos.github.io/database/logos.json'
 };
+const WTL = 'https://worldwide-tv-logos.github.io/database/logos/';
 const TVLOGOS = 'https://raw.githubusercontent.com/tv-logo/tv-logos/main/';
 
 async function get(name) {
-  if (FROM) return JSON.parse(fs.readFileSync(path.join(FROM, name === 'tree' ? 'tvlogos-tree.json' : name + '.json'), 'utf8'));
+  if (FROM) {
+    const f = path.join(FROM, name === 'tree' ? 'tvlogos-tree.json' : name + '.json');
+    if (name === 'wtl' && !fs.existsSync(f)) return [];
+    return JSON.parse(fs.readFileSync(f, 'utf8'));
+  }
   const h = { 'User-Agent': 'tivibro-logo-index' };
   if (name === 'tree' && process.env.GITHUB_TOKEN) h.Authorization = 'Bearer ' + process.env.GITHUB_TOKEN;
   const r = await fetch(SRC[name], { headers: h });
@@ -76,23 +85,37 @@ function bestLogos(logos) {
   return by;
 }
 
+/* worldwide-tv-logos: per iptv-org id, the path under its logos/ folder: the channel's own (not an edition's), its
+   white version when it has one (TiviBro's screens are dark), else the logo itself.  Unreachable: none (the other
+   two still work). */
+function wtlLogos(list) {
+  const by = {};
+  (Array.isArray(list) ? list : []).forEach(l => {
+    if (!l || !l.channel || l.feed || l.in_use === false || String(l.url || '').indexOf(WTL) !== 0) return;
+    const rank = l.variant === 'white' ? 0 : !l.variant ? 1 : 2, cur = by[l.channel];
+    if (!cur || rank < cur.rank) by[l.channel] = { path: l.url.slice(WTL.length), rank };
+  });
+  return by;
+}
+
 (async () => {
-  const [channels, logos, tree] = await Promise.all([get('channels'), get('logos'), get('tree')]);
-  const best = bestLogos(logos), countries = {};
+  const [channels, logos, tree, wtlList] = await Promise.all([get('channels'), get('logos'), get('tree'), get('wtl').catch(e => { console.warn('worldwide-tv-logos: ' + e.message); return []; })]);
+  const best = bestLogos(logos), wtl = wtlLogos(wtlList), countries = {};
   const C = c => countries[c] || (countries[c] = { e: [], byKey: {}, x: [], seen: {} });
   function entry(c, k) {
     const x = C(c);
     if (x.byKey[k] != null) return x.e[x.byKey[k]];
     const e = [k, '', '', '']; x.byKey[k] = x.e.length; x.e.push(e); return e;
   }
-  let iptv = 0, tv = 0;
+  let iptv = 0, tv = 0, ww = 0;
   channels.forEach(ch => {
     if (ch.closed || ch.is_nsfw) return;
-    const l = best[ch.id]; if (!l) return;
+    const l = best[ch.id], wl = wtl[ch.id]; if (!l && !wl) return;
     const c = cc(ch.country), k = key(ch.name); if (!k || k.length < 2) return;
     const e = entry(c, k);
-    if (e[2]) return;                                         // two channels, one name: keep the first
-    e[1] = ch.id; e[2] = l.url; iptv++;
+    if (e[1]) return;                                         // two channels, one name: keep the first
+    e[1] = ch.id; e[2] = l ? l.url : ''; if (l) iptv++;
+    if (wl) { e[4] = wl.path; ww++; }
     const idx = C(c).byKey[k];
     (ch.alt_names || []).forEach(a => { const ak = key(a); if (ak && ak.length > 1 && ak !== k && C(c).byKey[ak] == null && !C(c).seen[ak]) { C(c).seen[ak] = 1; C(c).x.push([ak, idx]); } });
     // US and Canadian stations: "WXYZ-TV" also answers to its call sign.
@@ -112,7 +135,7 @@ function bestLogos(logos) {
   });
 
   fs.mkdirSync(OUT, { recursive: true });
-  const index = { v: 1, at: new Date().toISOString().slice(0, 10), tvlogos: TVLOGOS + 'countries/', sources: ['https://github.com/iptv-org/database', 'https://github.com/tv-logo/tv-logos'], countries: {} };
+  const index = { v: 1, at: new Date().toISOString().slice(0, 10), tvlogos: TVLOGOS + 'countries/', wtl: WTL, sources: ['https://github.com/iptv-org/database', 'https://github.com/tv-logo/tv-logos', 'https://worldwide-tv-logos.github.io/database/'], countries: {} };
   let bytes = 0;
   Object.keys(countries).sort().forEach(c => {
     const x = countries[c]; if (!x.e.length) return;
@@ -122,5 +145,5 @@ function bestLogos(logos) {
     index.countries[c] = x.e.length;
   });
   fs.writeFileSync(path.join(OUT, 'index.json'), JSON.stringify(index));
-  console.log('Logo index: ' + Object.keys(index.countries).length + ' countries, ' + iptv + ' from iptv-org, ' + tv + ' from tv-logos, ' + Math.round(bytes / 1024) + ' KB in ' + OUT);
+  console.log('Logo index: ' + Object.keys(index.countries).length + ' countries, ' + iptv + ' from iptv-org, ' + tv + ' from tv-logos, ' + ww + ' from worldwide-tv-logos, ' + Math.round(bytes / 1024) + ' KB in ' + OUT);
 })().catch(e => { console.error(e.stack || e); process.exit(1); });

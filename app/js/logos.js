@@ -4,8 +4,10 @@
    scripts/logos/build-index.js) for the countries in your playlist, matches each channel by its guide
    id, its cleaned name and country, or a local station's call sign, and loads the logo from where its
    project keeps it:
-     "Matching set"    tv-logo/tv-logos, one style for dark screens (falls back to the original)
-     "Original logos"  iptv-org/database, each channel's own logo (falls back to the set)
+     "Cleaned up"      worldwide-tv-logos, each channel's own logo made transparent and trimmed, its white version
+                       for dark screens (the default; falls back to the set, then the original)
+     "Matching set"    tv-logo/tv-logos, one style for dark screens (falls back to cleaned up, then the original)
+     "Original logos"  iptv-org/database, each channel's own logo (falls back to cleaned up, then the set)
    The index is kept on the TV for a week. */
 var Logos = (function () {
   'use strict';
@@ -16,7 +18,7 @@ var Logos = (function () {
 
   function S() { return Store.settings; }
   function mode() { return S().logoLib || 'off'; }                 // off | fill | all
-  function style() { return S().logoStyle === 'original' ? 'original' : 'set'; }
+  function style() { var v = S().logoStyle; return v === 'original' || v === 'set' ? v : 'clean'; }
   function base() { var b = S().logoBase || BASE; return /\/$/.test(b) ? b : b + '/'; }
   function cc(code) { code = String(code || '').toUpperCase(); return code === 'GB' ? 'UK' : code; }
 
@@ -112,10 +114,12 @@ var Logos = (function () {
     memo.set(c.k, e);
     return e;
   }
+  // The logo for an index entry in a style, the other sources standing in when its own has none.
   function urlOf(e, st) {
     if (!e) return '';
-    var set = e[3] && index ? index.tvlogos + e[3] : '', orig = e[2] || '';
-    return (st || style()) === 'set' ? set || orig : orig || set;
+    var set = e[3] && index ? index.tvlogos + e[3] : '', orig = e[2] || '', clean = e[4] && index && index.wtl ? index.wtl + e[4] : '';
+    st = st || style();
+    return st === 'set' ? set || clean || orig : st === 'original' ? orig || clean || set : clean || set || orig;
   }
   function url(c) { return mode() === 'off' ? '' : urlOf(match(c)); }
 

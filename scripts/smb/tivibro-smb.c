@@ -14,18 +14,30 @@
  *   tivibro-smb cat    <server[:port]> <share> <path> <offset> <length|-1>
  *                                                          the file's bytes from offset (all of it with -1)
  *
+ * And for recording and live pause to a share (version 3):
+ *
+ *   tivibro-smb put    <server[:port]> <share> <path> <offset>
+ *                                                          writes what follows the login on stdin into the
+ *                                                          file from offset (0: a new file, its folders made
+ *                                                          as needed), as it comes; one JSON line, the size
+ *   tivibro-smb mkdir  <server[:port]> <share> <folder>     the folder and any missing above it
+ *   tivibro-smb rm     <server[:port]> <share> <path>...    files, and empty folders, gone (missing is fine)
+ *   tivibro-smb mv     <server[:port]> <share> <from> <to>  renamed or moved (never over another file)
+ *   tivibro-smb df     <server[:port]> <share>              one JSON line: free and total bytes
+ *
  * The login comes on stdin, never on the command line (where other programs could read it): three lines,
  * user, password and domain, each of which may be empty.  An empty user signs in as a guest.
  *
  * A failure exits non-zero with one JSON line on stderr, {"error": kind, "status": "0x...", "detail": ...},
- * where kind is login, denied, noshare, notfound, unreachable, timeout, signing, smb1 or other.  The helper
+ * where kind is login, denied, noshare, notfound, unreachable, timeout, signing, smb1, full, exists or other.  The helper
  * turns those into words (service/smb.js).
  *
  * Built on libsmb2 (LGPL-2.1, https://github.com/sahlberg/libsmb2): SMB 2.0.2 to 3.1.1, NTLMv2, signing
  * and SMB3 encryption.  SMB1 is never offered.  Statically linked by scripts/smb/build.sh.
  *
  * Memory: a file is read in pieces of at most 512 KB with three in flight (1.5 MB at most), so TVs with
- * 1 GB of memory are not pushed, and the helper reads what it needs with Range-sized cat calls.
+ * 1 GB of memory are not pushed, and the helper reads what it needs with Range-sized cat calls.  A put
+ * holds one piece of at most 512 KB.
  */
 #define _GNU_SOURCE
 #include <errno.h>
@@ -50,7 +62,7 @@
 #define TB_SHARE_ENUM 1
 #endif
 
-#define TB_VERSION "2"
+#define TB_VERSION "3"
 #define PIECE_MAX (512 * 1024)
 #define DEPTH 3
 #define TIMEOUT_S 15
@@ -97,6 +109,11 @@ static const char *kind_of(uint32_t nt, int err)
                 return "notfound";
         case 0xC00000BB: /* NOT_SUPPORTED: an SMB1-only server */
                 return "smb1";
+        case 0xC000007F: /* DISK_FULL */
+        case 0xC0000044: /* QUOTA_EXCEEDED */
+                return "full";
+        case 0xC0000035: /* OBJECT_NAME_COLLISION: a rename onto a file that's there */
+                return "exists";
         }
         if (err == ECONNREFUSED || err == EHOSTUNREACH || err == ENETUNREACH || err == EADDRNOTAVAIL)
                 return "unreachable";
@@ -395,6 +412,149 @@ static int cmd_cat(const char *server, const char *share, const char *path, cons
         return 0;
 }
 
+/* ---------- writing: recordings and live pause on a share ---------- */
+
+/* Makes folder and every folder above it that isn't there yet ("a/b/c": a, a/b, then a/b/c). */
+static void mkdirs(struct smb2_context *smb2, const char *folder)
+{
+        char buf[1024];
+        size_t i, n = strlen(folder);
+        struct smb2_stat_64 st;
+        if (!n) return;
+        if (n >= sizeof buf) fail(smb2, -ENAMETOOLONG, "mkdir");
+        memcpy(buf, folder, n + 1);
+        for (i = 1; i <= n; i++) {
+                if (buf[i] != '/' && buf[i] != 0) continue;
+                buf[i] = 0;
+                if (smb2_stat(smb2, buf, &st) < 0) {
+                        int ret = smb2_mkdir(smb2, buf);
+                        /* Made by someone else meanwhile is fine; anything else is a real refusal. */
+                        if (ret < 0 && smb2_stat(smb2, buf, &st) < 0) fail(smb2, ret, "mkdir");
+                } else if (st.smb2_type != SMB2_TYPE_DIRECTORY) fail(smb2, -ENOTDIR, "mkdir");
+                if (i < n) buf[i] = '/';
+        }
+}
+
+/* The folder part of a path ("a/b/c.ts": "a/b"), in buf; "" for a file at the top. */
+static const char *parent(const char *path, char *buf, size_t n)
+{
+        const char *slash = strrchr(path, '/');
+        size_t l = slash ? (size_t)(slash - path) : 0;
+        if (l >= n) l = n - 1;
+        memcpy(buf, path, l);
+        buf[l] = 0;
+        return buf;
+}
+
+/* Reads up to n bytes of stdin into buf (less only at its end). */
+static size_t fill(uint8_t *buf, size_t n)
+{
+        size_t got = 0;
+        while (got < n) {
+                size_t r = fread(buf + got, 1, n - got, stdin);
+                if (r == 0) break;
+                got += r;
+        }
+        return got;
+}
+
+/* Writes stdin into path from offset: a new file (and its folders) at offset 0, else into the one there, so a
+   part of a recording can be carried on after a dropped connection.  Written as it comes, a piece at a time. */
+static int cmd_put(const char *server, const char *share, const char *path, const char *from)
+{
+        struct smb2_context *smb2 = connect_to(server, share);
+        uint64_t at = strtoull(from, NULL, 10), wrote = 0;
+        uint32_t piece = smb2_get_max_write_size(smb2);
+        char dir[1024];
+        struct smb2fh *fh;
+        uint8_t *buf;
+        size_t n;
+
+        if (!path[0]) fail(smb2, -EISDIR, "put");
+        if (at == 0) mkdirs(smb2, parent(path, dir, sizeof dir));
+        fh = smb2_open(smb2, path, at == 0 ? O_WRONLY | O_CREAT | O_TRUNC : O_WRONLY);
+        if (!fh) fail(smb2, -ENOENT, "open");
+        if (piece > PIECE_MAX || piece == 0) piece = piece ? PIECE_MAX : 65536;
+        buf = malloc(piece);
+        if (!buf) fail(smb2, -ENOMEM, "malloc");
+        while ((n = fill(buf, piece)) > 0) {
+                size_t done = 0;
+                while (done < n) {
+                        int w = smb2_pwrite(smb2, fh, buf + done, (uint32_t)(n - done), at);
+                        if (w <= 0) fail(smb2, w < 0 ? w : -EIO, "write");
+                        done += (size_t)w; at += (uint64_t)w; wrote += (uint64_t)w;
+                }
+        }
+        if (smb2_close(smb2, fh) < 0) fail(smb2, -EIO, "close");
+        printf("{\"ok\":true,\"wrote\":%" PRIu64 ",\"size\":%" PRIu64 "}\n", wrote, at);
+        free(buf);
+        smb2_disconnect_share(smb2);
+        smb2_destroy_context(smb2);
+        return 0;
+}
+
+static int cmd_mkdir(const char *server, const char *share, const char *folder)
+{
+        struct smb2_context *smb2 = connect_to(server, share);
+        mkdirs(smb2, folder);
+        puts("{\"ok\":true}");
+        smb2_disconnect_share(smb2);
+        smb2_destroy_context(smb2);
+        return 0;
+}
+
+/* Each path: a file is deleted, a folder only when it's empty.  One that isn't there counts as done, so old
+   pieces of a live pause can be cleared without asking first.  One JSON line per path. */
+static int cmd_rm(const char *server, const char *share, char **paths, int count)
+{
+        struct smb2_context *smb2 = connect_to(server, share);
+        int i;
+        for (i = 0; i < count; i++) {
+                const char *p = rel(paths[i]);
+                struct smb2_stat_64 st;
+                int ret = 0;
+                if (!p[0]) continue;                          /* never the share itself */
+                if (smb2_stat(smb2, p, &st) < 0) ret = 0;
+                else ret = st.smb2_type == SMB2_TYPE_DIRECTORY ? smb2_rmdir(smb2, p) : smb2_unlink(smb2, p);
+                fputs("{\"path\":", stdout);
+                json_str(stdout, p);
+                printf(",\"ok\":%s}\n", ret < 0 ? "false" : "true");
+        }
+        smb2_disconnect_share(smb2);
+        smb2_destroy_context(smb2);
+        return 0;
+}
+
+static int cmd_mv(const char *server, const char *share, const char *from, const char *to)
+{
+        struct smb2_context *smb2 = connect_to(server, share);
+        char dir[1024];
+        int ret;
+        if (!from[0] || !to[0]) fail(smb2, -EINVAL, "rename");
+        mkdirs(smb2, parent(to, dir, sizeof dir));
+        ret = smb2_rename(smb2, from, to);
+        if (ret < 0) fail(smb2, ret, "rename");
+        puts("{\"ok\":true}");
+        smb2_disconnect_share(smb2);
+        smb2_destroy_context(smb2);
+        return 0;
+}
+
+/* The room on the share: free (for this user) and total, in bytes. */
+static int cmd_df(const char *server, const char *share)
+{
+        struct smb2_context *smb2 = connect_to(server, share);
+        struct smb2_statvfs vfs;
+        uint64_t unit;
+        int ret = smb2_statvfs(smb2, "", &vfs);
+        if (ret < 0) fail(smb2, ret, "statvfs");
+        unit = vfs.f_frsize ? vfs.f_frsize : vfs.f_bsize;
+        printf("{\"free\":%" PRIu64 ",\"total\":%" PRIu64 "}\n", vfs.f_bavail * unit, vfs.f_blocks * unit);
+        smb2_disconnect_share(smb2);
+        smb2_destroy_context(smb2);
+        return 0;
+}
+
 /* ---------- the shares on a server (NetShareEnum over IPC$) ---------- */
 
 /* Prints one share, if it's a disk share that isn't hidden (C$, ADMIN$ and the like are left out). */
@@ -461,7 +621,7 @@ static int cmd_shares(const char *server)
 static int usage(void)
 {
         fputs("tivibro-smb " TB_VERSION " (libsmb2)\n"
-              "usage: tivibro-smb check|shares|ls|stat|tree|cat <server[:port]> [share] [path] [depth | offset length]\n"
+              "usage: tivibro-smb check|shares|ls|stat|tree|cat|put|mkdir|rm|mv|df <server[:port]> [share] [path...] [depth | offset [length]]\n"
               "login on stdin: user, password, domain (one per line)\n", stderr);
         return 1;
 }
@@ -480,5 +640,10 @@ int main(int argc, char **argv)
         if (!strcmp(argv[1], "stat") && argc == 5) return cmd_stat(argv[2], argv[3], rel(argv[4]));
         if (!strcmp(argv[1], "tree") && argc == 6) return cmd_tree(argv[2], argv[3], rel(argv[4]), argv[5]);
         if (!strcmp(argv[1], "cat") && argc == 7) return cmd_cat(argv[2], argv[3], rel(argv[4]), argv[5], argv[6]);
+        if (!strcmp(argv[1], "put") && argc == 6) return cmd_put(argv[2], argv[3], rel(argv[4]), argv[5]);
+        if (!strcmp(argv[1], "mkdir") && argc == 5) return cmd_mkdir(argv[2], argv[3], rel(argv[4]));
+        if (!strcmp(argv[1], "rm") && argc >= 5) return cmd_rm(argv[2], argv[3], argv + 4, argc - 4);
+        if (!strcmp(argv[1], "mv") && argc == 6) return cmd_mv(argv[2], argv[3], rel(argv[4]), rel(argv[5]));
+        if (!strcmp(argv[1], "df") && argc == 4) return cmd_df(argv[2], argv[3]);
         return usage();
 }

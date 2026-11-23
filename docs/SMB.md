@@ -29,7 +29,16 @@ One short run for each thing it needs, answering in JSON lines:
 | `shares <server>` | the disk shares (hidden ones like `C$` left out) |
 | `ls <server> <share> <folder>` | each entry: name, folder or not, size, time |
 | `stat <server> <share> <path>` | one file |
+| `tree <server> <share> <folder> <depth>` | each folder down to depth: path, time, files (the check for new media) |
 | `cat <server> <share> <path> <offset> <length>` | the file's bytes |
+| `put <server> <share> <path> <offset>` | writes what follows the login on stdin, as it comes (version 3) |
+| `mkdir`, `rm <path>...`, `mv <from> <to>`, `df` | folders, deleting, renaming, free room (version 3) |
+
+**Recording and live pause** (version 3, service/recsmb.js) use the write commands with the same calls as
+WebDAV (service/recdav.js), so record.js and timeshift.js treat both kinds of share alike.  A recording's part is
+one long `put` fed as the channel arrives (a new part every 10 minutes); a live-pause piece is one short `put`
+each (about 4 s of video), read back with `cat` and deleted in batches with `rm`.  On a rooted TV the recording
+agent (root) keeps its own copy of the program in /media/developer/.tivibro-rec/bin.
 
 - **The login** goes on the program's stdin (user, password, domain, a line each), never on its command
   line, where other programs on the TV could read it.  It is kept with the source like a WebDAV password:
