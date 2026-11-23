@@ -91,6 +91,20 @@ var Settings = (function () {
   /* A row that opens another section: the one place a setting lives (the TMDB token is under API keys, not in four
      places).  On the phone it opens that section there (rowData's go). */
   function link(label, sub, id, value) { var it = action(label, sub, function () { section(id); }, value || function () { return '›'; }); it.go = id; it.cls = 'jump'; return it; }
+  /* Rows that live in another section, shown here too, where people look for them (the logo library in Guide, live
+     pause in Playback).  The very same rows, found by label in that section's own list: changing one here changes it
+     there, and the phone and the web editor show them in both places too.  A label that section doesn't show right
+     now (Logo library style with the library off) is left out.  Never nested, so two sections can share both ways. */
+  var alsoBusy = false;
+  function also(id, labels) {
+    var fn = SEC_FNS[id] || BY_ID[id];
+    if (alsoBusy || !fn) return [];
+    var list = [];
+    alsoBusy = true;
+    try { list = (fn() || []).filter(Boolean); } catch (e) { list = []; }
+    alsoBusy = false;
+    return labels.map(function (l) { return list.filter(function (it) { return !it.head && it.label === l; })[0]; }).filter(Boolean);
+  }
   function page(label, sub, title, fn, value) { var it = action(label, sub, function () { push(title, fn); }, value || function () { return '›'; }); it.page = { title: title, fn: fn }; return it; }
   function save(rebuild) { Store.saveSettings(); if (rebuild) build(); else paint(); }
   function push(title, fn) { stack.push({ title: title, fn: fn, sel: sel }); sel = 0; build(); }
@@ -163,11 +177,16 @@ var Settings = (function () {
     out.push(choice('Dolby Vision 7 (UHD Blu-ray)', 'A UHD Blu-ray remux\'s Dolby Vision (profile 7) shows only as HDR10 on LG TVs.  Automatic: played as profile 8.1 through the converter, in Dolby Vision (the base picture with its Dolby Vision brightness data, as dovi_tool makes it).  Off: HDR10, as before.',
       ['auto', 'off'], ['Automatic, in Dolby Vision', 'Off, HDR10'], function () { return s.dv7 === 'off' ? 'off' : 'auto'; }, function (v) { s.dv7 = v; save(); }));
     out.push(toggle('Skip intro and Up next', 'From the file\'s chapters: "Skip intro" while an intro or recap plays, and "Up next" when the credits start (the next episode, or the next movie of a collection you play).  OK does it, Back hides it.', function () { return s.skipIntro !== false; }, function (v) { s.skipIntro = v; save(); }));
+    // Live pause and the rewind buffer, from Recording and live pause: people look for them under Playback too.
+    out.push(head('Live pause'));
+    out = out.concat(also('recording', ['Pause live TV', 'Live pause on the network share', 'Rewind buffer']));
     out.push(head('Switching channels'));
     out.push(choice('When a channel stops working', 'Switches to another version of the same channel, such as the HD copy of a Full HD channel, or one you hid.  It only happens once the player has run out of retries.',
       ['auto', 'ask', 'off'], ['Switch to another version', 'Ask me', 'Keep retrying'], function () { return s.backups || 'auto'; }, function (v) { s.backups = v; save(); }));
     out.push(toggle('Ask when a channel is slow to start', 'After 12 seconds without a picture: says what TiviBro has seen, and asks whether to keep trying, start over, try another version or stop.', function () { return s.slowAsk !== false; }, function (v) { s.slowAsk = v; save(); }));
     out.push(toggle('Info panel when switching channels', 'Off shows just the number and name.', function () { return s.osdOnZap !== false; }, function (v) { s.osdOnZap = v; save(); }));
+    // How long the info panel stays (Appearance) and which way Up and Down change channel (Remote and buttons).
+    out = out.concat(also('look', ['Info panel stays for']), also('remote', ['Up and Down in fullscreen']));
     out.push(toggle('Show stream details in the info panel', 'Resolution and which player is in use.', function () { return s.osdMedia !== false; }, function (v) { s.osdMedia = v; save(); }));
     out.push(toggle('Keep the picture while reconnecting', 'When a channel drops for a moment, the last picture stays on screen with a small Reconnecting notice instead of going black.  Not every stream allows it (the TV player draws some itself).', function () { return s.holdFrame !== false; }, function (v) { s.holdFrame = v; save(); }));
     out.push(toggle('Black screen while switching', 'Hides the last picture until the next channel starts.', function () { return !!s.blackSwitch; }, function (v) { s.blackSwitch = v; save(); }));
@@ -393,10 +412,10 @@ var Settings = (function () {
       toggle('Mark what\'s new', 'A small dot by what came in since your last visit, and a shelf of them.  Gone once you open it.', function () { return S().mediaNew !== false; }, function (v) { S().mediaNew = v; save(); Media.refresh(); }),
       toggle('Open where you left off', 'My media opens on the tab, and the library grid, you were last on.  Off: always on Home.', function () { return S().mediaResume !== false; }, function (v) { S().mediaResume = v; save(); }),
       autoNextRow(),
-      upNextRow(),
+      upNextRow()].concat(also('playback', ['Skip intro and Up next']), [
       toggle('Favorites also in lists', 'On: a favorite movie or show is in Favorites and also in Movies or TV shows.  Off: only in Favorites.', function () { return MediaStore.preferences().favoritesInLists; }, function (v) { Media.updatePreferences({ favoritesInLists: v }); paint(); }),
       choice('Metadata language', 'Shared with the web editor.  Refreshes saved movie and show matches in this language.  Missing translations fall back to English.', Object.keys(names), Object.keys(names).map(function (k) { return names[k]; }), function () { return MediaStore.preferences().language; }, function (v) { Media.updatePreferences({ language: v }); paint(); })
-    ].filter(Boolean);
+    ]).filter(Boolean);
   }
 
   /* ---------- Trakt: watch history both ways, and its lists as My media shelves ---------- */
@@ -1228,7 +1247,12 @@ var Settings = (function () {
     out.push(head('Hidden'));
     out.push(page('Hidden groups', hid.groups.length ? 'Restore them one by one, or all at once.' : 'None hidden.', 'Hidden groups', hiddenGroupsPage, function () { return L.hiddenItems().groups.length + ' ›'; }));
     out.push(page('Hidden channels', hid.channels.length ? 'Restore them one by one, or all at once.' : 'None hidden.', 'Hidden channels', hiddenChannelsPage, function () { return L.hiddenItems().channels.length + ' ›'; }));
+    // Hiding channels by what's on them or what they are: Channel and group names, and Parental controls.
+    out = out.concat(also('names', ['Hide channels with nothing on']), also('parental', ['Hide adult channels']));
     tidyRows(out);
+    // The Channels screen and where the lists open, from Appearance.
+    out.push(head('Channels screen'));
+    out = out.concat(also('look', ['Channels screen in the menu', 'Preview on the Channels screen', 'Lists open on', 'Group to open on']));
     out.push(head('Reset'));
     out.push(action('Clear all edits for this playlist', 'Removes your groups, renames, guide assignments and hidden items.', function () {
       UI.confirm('Clear every group, rename and hidden item for this playlist?', 'Clear all edits', function () { Store.resetEdits(); relist(); build(); });
@@ -1352,6 +1376,8 @@ var Settings = (function () {
         if (!v) { Store.edits.reminders = Store.edits.reminders.filter(function (r) { return !/^team:/.test(r.w || ''); }); Store.saveEdits(); }
         Store.saveSettings(); if (v) Watch.scan(false); paint();
       }));
+    // The sports guides, from Guide > Public guide fill-in: more days of sports networks' and teams' games.
+    out = out.concat(also('guide', ['Sports guides']));
     out.push(head('Sports screen'));
     out.push(toggle('Sports in the menu', 'A screen of today\'s games with their scores and team logos (from ESPN), your teams first, and which of your channels has each one.  Blue on it picks the leagues.',
       function () { return s.sportsTab !== false; }, function (v) { s.sportsTab = v; Store.saveSettings(); Views.buildTabs(); paint(); }));
@@ -1406,6 +1432,8 @@ var Settings = (function () {
     out.push(toggle('Channel names in the guide', 'Off shows logos only, leaving more room.', function () { return s.guideNames !== false; }, function (v) { s.guideNames = v; Views.applyLook(); save(); }));
     out.push(toggle('Two-line channel names', 'Long names wrap instead of being cut off.', function () { return !!s.twoLineNames; }, function (v) { s.twoLineNames = v; Views.applyLook(); save(); }));
     out.push(toggle('Mark catch-up channels', 'Shows ↺ on channels and programmes you can replay.', function () { return s.showCatchupMark !== false; }, function (v) { s.showCatchupMark = v; save(); relist(); }));
+    // Logos and numbers, from Appearance: the guide is where people look for them.
+    out = out.concat(also('look', ['Channel logos', 'Logo library', 'Logo library style', 'Show channel numbers']));
     return out;
   }
 
@@ -1429,6 +1457,7 @@ var Settings = (function () {
     out.push(action('Arrange the Shows home', 'Move its shelves up or down, switch them off, and pin categories.  Red on the Shows home too.', function () { Vod.arrange('series'); }));
     out.push(autoNextRow());
     if (upNextRow()) out.push(upNextRow());
+    out = out.concat(also('playback', ['Skip intro and Up next']));          // the credits' Up next button, from Playback
     out.push(toggle('Hide spoilers', 'In the guide, new episodes and episodes or movies that haven\'t aired yet (not news or sport), and on the Shows screen, episodes you haven\'t started, keep only their title, season and episode, and when they air: no summary, episode title or picture from the episode.',
       function () { return !!s.noSpoilers; }, function (v) { s.noSpoilers = v; save(); if (window.Guide && Guide.draw) Guide.draw(); }));
     out.push(head('Details from TMDB'));
@@ -1448,6 +1477,8 @@ var Settings = (function () {
     out.push(choice('When a reminder starts', '', ['ask', 'switch'], ['Ask me', 'Switch to the channel'], function () { return s.remindAction === 'switch' ? 'switch' : 'ask'; }, function (v) { s.remindAction = v; save(); }));
     out.push(choice('Reminder question stays for', 'Then it closes by itself, in TiviBro and on the TV\'s own alert when TiviBro isn\'t on screen.', [10, 20, 30, 60], ['10s', '20s', '30s', '1 min'], function () { return +s.remindTimeout || 10; }, function (v) { s.remindTimeout = v; save(); }));
     out.push(toggle('Hold notices during movies', 'Watchlist finds and the like wait while a movie or episode plays full screen, and show when you stop or leave full screen.  Reminders you set still come on time.', function () { return s.holdNotices !== false; }, function (v) { s.holdNotices = v; save(); }));
+    // Reminders for your teams' games, from Sports.
+    out = out.concat(also('sports', ['Remind me before their games']));
     out.push(head('Watchlist'));
     out.push(page('Watchlist', 'Shows, teams and names to look for in the guide.  TiviBro sets a reminder when one is coming up.', 'Watchlist', watchlist, function () { var n = Watch.list().length; return n ? n + ' ›' : '›'; }));
     out.push(head('Coming up  (' + rem.length + ')'));
@@ -2150,7 +2181,8 @@ var Settings = (function () {
     /* The same page drawn again (the guide loading, a value changed): what's focused now, so it stays in the same
        part and on the same row though rows above it came or went.  Look again now on Public guide fill-in reloads
        the guide, and its page lost rows meanwhile, which put the focus back in the first part. */
-    var was = key === lastKey && parts[grp] ? { title: parts[grp].title, label: items[sel] && items[sel].label, off: sel - parts[grp].start } : null;
+    // The part from the row (sel), not grp: a caller may have just moved sel (to a setting found) without grp.
+    var g0 = parts[groupOf(sel)], was = key === lastKey && g0 ? { title: g0.title, label: items[sel] && items[sel].label, off: sel - g0.start } : null;
     lastKey = key;
     items = top ? shape(top.fn, top.title) : sec < 0 ? findPage() : shape(FNS[sec], SECTIONS[sec][1]);
     items = items.filter(Boolean);
@@ -2313,6 +2345,8 @@ var Settings = (function () {
       } else if (e._tg) { var on = !!it.get(); e._tg.classList.toggle('on', on); put(e._v, T(on ? 'On' : 'Off')); }
       else if (e._v) { var tv = it.value ? (it.raw ? it.value() : T(it.value())) : ''; if (it.page || it.cls === 'jump') tv = String(tv).replace(/\s*›$/, ''); put(e._v, tv); }
       e.classList.toggle('focus', zone === 'body' && i === sel && focusable(i));
+      // With the list on the left focused (just come into a section, or to a setting found): where ▶ goes, marked.
+      e.classList.toggle('here', zone === 'nav' && i === sel && focusable(i));
     });
     help(rowEls[sel]);
     var f = rowEls[sel];
@@ -2458,7 +2492,7 @@ var Settings = (function () {
     // An advanced setting with Advanced view off: into the page's Advanced row.
     if (n < 0) for (var j = 0; j < items.length; j++) if (items[j] && items[j].cls === 'adv-row' && items[j].page) { push(items[j].page.title, items[j].page.fn); n = at(); break; }
     if (n >= 0) sel = n;
-    zone = 'body'; build();
+    zone = 'nav'; build();               // the row chosen, the list on the left focused (see section())
   }
 
   /* ---------- Settings home (the overhaul): what needs you, the everyday sections as tiles with their
@@ -2552,7 +2586,7 @@ var Settings = (function () {
     // The corner picture keeps its place between the home and a page, laid out again with the new screen.
     if (typeof Views !== 'undefined' && Views.pipUpdate) try { Views.pipUpdate(); } catch (e) {}
   }
-  function goSection(id) { homeShow(false); for (var i = 0; i < SECTIONS.length; i++) if (SECTIONS[i][0] === id && shown(i)) { sec = i; stack = []; sel = 0; zone = 'body'; build(); return; } }
+  function goSection(id) { homeShow(false); for (var i = 0; i < SECTIONS.length; i++) if (SECTIONS[i][0] === id && shown(i)) { sec = i; stack = []; sel = 0; zone = 'nav'; build(); return; } }
   /* The remote on the home: arrows move by where things are on the screen (the chips wrap to as many lines as
      their words need, discussion #36: ▶ stopped at the end of a line and ▼ jumped to the wrong chip), OK opens,
      Back goes to the menu bar.  ▶ at the end of a line of chips goes on to the next line, ◀ at its start back. */
@@ -2601,13 +2635,16 @@ var Settings = (function () {
   }
 
   // Straight to one section (the phone app's own shortcut, and tests).
+  /* Into a section (from the home, a link, Fix a problem, Search or another screen's Blue): the list on the left is
+     focused, on the part holding the row picked.  ◀ there goes back, as people press it at once; landing on a row
+     instead, ◀ changed a setting with choices on it.  ▶ or OK goes on to the row. */
   function section(id) {
     if (id === 'phone' && !phoneOK()) return false;
     homeShow(false);
     if (ALIAS[id]) id = ALIAS[id];
     var pg = pageOf(id);
-    if (pg && pg.it) { sec = pg.i; stack = []; sel = pg.n; zone = 'body'; push(pg.it.page.title, pg.it.page.fn); return true; }
-    for (var i = 0; i < SECTIONS.length; i++) if (SECTIONS[i][0] === id && shown(i)) { sec = i; stack = []; sel = 0; zone = 'body'; build(); return true; } return false; }
+    if (pg && pg.it) { sec = pg.i; stack = []; sel = pg.n; zone = 'nav'; push(pg.it.page.title, pg.it.page.fn); return true; }
+    for (var i = 0; i < SECTIONS.length; i++) if (SECTIONS[i][0] === id && shown(i)) { sec = i; stack = []; sel = 0; zone = 'nav'; build(); return true; } return false; }
 
   /* Settings from the phone app (ask "settings" in phone.js): the same pages, built by the same code, as
      data the phone draws.  A page is a section plus the page rows followed into it (path, by row).  Each

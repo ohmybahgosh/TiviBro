@@ -290,6 +290,8 @@ body.pointer .set-preview{cursor:pointer}
 /* A value you don't change with ◀ ▶ (facts: a folder, a command, a longer translation) wraps rather than being cut off. */
 .opt:not(.cyc) .ov{white-space:normal;overflow-wrap:break-word;word-break:break-word;max-width:560px}
 .opt.focus{background:var(--raised);box-shadow:inset 6px 0 0 var(--accent)}
+/* The row ▶ goes to while the list on the left has the focus (settings.js rows()). */
+.opt.here{box-shadow:inset 4px 0 0 var(--accent)}
 .opt.focus .ov{color:var(--text)}
 /* ◀ ▶ values: arrows on the focused row say "change me with left and right" */
 .opt .ar{display:inline-block;width:34px;text-align:center;color:var(--accent-text);visibility:hidden;font-weight:600}

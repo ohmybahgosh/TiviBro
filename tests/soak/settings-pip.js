@@ -61,11 +61,11 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const found = await ev(() => [...document.querySelectorAll('#setBody .opt')].map((e) => e.innerText.split('\n')[0]));
   ok('it lists the settings with that word', found.indexOf('Subtitle colour') >= 0 && found.indexOf('Keep downloaded subtitles') >= 0, found.join(' | '));
   await ev(() => [...document.querySelectorAll('#setBody .opt')].find((e) => /^Keep downloaded subtitles/.test(e.innerText)).click()); await page.waitForTimeout(400);
-  ok('OK on one goes there, focused', JSON.stringify(await ev(() => [document.querySelector('#setNav .nav-title').innerText, document.querySelector('#setBody .opt.focus').innerText.split('\n')[0]])) === JSON.stringify(['Audio and subtitles', 'Keep downloaded subtitles']));
+  ok('OK on one goes there, focused', JSON.stringify(await ev(() => [document.querySelector('#setNav .nav-title').innerText, document.querySelector('#setBody .opt.focus, #setBody .opt.here').innerText.split('\n')[0]])) === JSON.stringify(['Audio and subtitles', 'Keep downloaded subtitles']), await ev(() => [document.querySelector('#setNav .nav-title').innerText, (document.querySelector('#setBody .opt.focus, #setBody .opt.here') || {}).innerText]));
   await ev(() => UI.press('yellow')); await page.waitForTimeout(300);
   await page.fill('#modal input', 'movies on now'); await page.keyboard.press('Enter'); await page.waitForTimeout(500);
   await ev(() => [...document.querySelectorAll('#setBody .opt')].find((e) => /^Show Movies on now/.test(e.innerText)).click()); await page.waitForTimeout(400);
-  ok('and into the page it is on', await ev(() => document.querySelector('#setBody .opt.focus').innerText.split('\n')[0]) === 'Show Movies on now');
+  ok('and into the page it is on', await ev(() => document.querySelector('#setBody .opt.focus, #setBody .opt.here').innerText.split('\n')[0]) === 'Show Movies on now');
   await ev(() => UI.press('yellow')); await page.waitForTimeout(300);
   await page.fill('#modal input', 'zzqx'); await page.keyboard.press('Enter'); await page.waitForTimeout(400);
   ok('nothing found says so', /No setting has that/.test(await ev(() => document.getElementById('setBody').innerText)));
