@@ -2527,5 +2527,14 @@ I18n.add('es', {
   "{n} movie found.": ["{n} película encontrada.", "{n} películas encontradas."],
   "{n} movies found.": ["{n} película encontrada.", "{n} películas encontradas."],
   "{n} restore point": ["{n} punto de restauración", "{n} puntos de restauración"],
-  "{n} restore points": ["{n} punto de restauración", "{n} puntos de restauración"]
+  "{n} restore points": ["{n} punto de restauración", "{n} puntos de restauración"],
+  "A message on the TV when a playlist's subscription ends within this many days, and once it has ended.  Once a day at most.  Your provider has to say when it ends (most Xtream Codes and Stalker providers do).": "Un mensaje en la TV cuando la suscripción de una lista termina dentro de estos días, y una vez que ha terminado.  Como mucho una vez al día.  Tu proveedor tiene que indicar cuándo termina (la mayoría de los proveedores Xtream Codes y Stalker lo hacen).",
+  "Not for this playlist": "No para esta lista",
+  "Subscription ended": "Suscripción terminada",
+  "Subscription ends soon": "La suscripción termina pronto",
+  "The subscription for {x} ended on {y}.  Its channels may stop playing until you renew it with your provider.": "La suscripción de {x} terminó el {y}.  Sus canales pueden dejar de funcionar hasta que la renueves con tu proveedor.",
+  "The subscription for {x} ends today.  Renew it with your provider to keep watching.": "La suscripción de {x} termina hoy.  Renuévala con tu proveedor para seguir viendo.",
+  "The subscription for {x} ends in {n} day ({y}).  Renew it with your provider to keep watching.": ["La suscripción de {x} termina en {n} día ({y}).  Renuévala con tu proveedor para seguir viendo.", "La suscripción de {x} termina en {n} días ({y}).  Renuévala con tu proveedor para seguir viendo."],
+  "The subscription for {x} ends in {n} days ({y}).  Renew it with your provider to keep watching.": ["La suscripción de {x} termina en {n} día ({y}).  Renuévala con tu proveedor para seguir viendo.", "La suscripción de {x} termina en {n} días ({y}).  Renuévala con tu proveedor para seguir viendo."],
+  "Warn before a subscription ends": "Avisar antes de que termine una suscripción"
 });

@@ -1,0 +1,12 @@
+{
+  "_about": "TiviBro's languages, the one list everything else is made from (scripts/i18n-langs.js writes it into the TV app, the web editor and the phone app).  code: the language; name: in its own language; english: in English; plural: the plural rule (scripts/i18n-langs.js PLURALS); from: a variant made from another language with its own words swapped (I18n.variant), no dictionary of its own to fill.  Add one with node scripts/i18n-add-lang.js.",
+  "langs": [
+    { "code": "en", "name": "English", "english": "English", "plural": "one" },
+    { "code": "es", "name": "Español", "english": "Spanish", "plural": "one" },
+    { "code": "es-ES", "name": "Español (España)", "english": "Spanish (Spain)", "plural": "one", "from": "es" },
+    { "code": "fr", "name": "Français", "english": "French", "plural": "fr" },
+    { "code": "pt-BR", "name": "Português (Brasil)", "english": "Portuguese (Brazil)", "plural": "pt" },
+    { "code": "pt-PT", "name": "Português (Portugal)", "english": "Portuguese (Portugal)", "plural": "pt", "from": "pt-BR" },
+    { "code": "ru", "name": "Русский", "english": "Russian", "plural": "ru" }
+  ]
+}

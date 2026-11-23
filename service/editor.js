@@ -68,7 +68,9 @@ var STATIC = { '/': ['index.html', 'text/html; charset=utf-8'], '/index.html': [
   '/tmdb.svg': ['tmdb.svg', 'image/svg+xml'], '/favicon.png': ['favicon.png', 'image/png'], '/favicon.ico': ['favicon.png', 'image/png'], '/wordmark.png': ['wordmark.png', 'image/png'], '/mark.png': ['mark.png', 'image/png'] };
 // The languages (the TV's I18n engine and the editor's own dictionaries, shared with the phone app).
 STATIC['/i18n.js'] = ['i18n.js', 'application/javascript; charset=utf-8'];
+// langs:begin: the dictionaries, from i18n/langs.json (scripts/i18n-langs.js)
 ['es', 'es-ES', 'fr', 'pt-BR', 'pt-PT', 'ru'].forEach(function (l) { STATIC['/lang/' + l + '.js'] = ['lang/' + l + '.js', 'application/javascript; charset=utf-8']; });
+// langs:end
 var MAX_BODY = 25 * 1024 * 1024;
 
 function create(log) {

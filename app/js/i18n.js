@@ -19,8 +19,13 @@
    app that a language doesn't have yet. */
 var I18n = (function () {
   'use strict';
-  // code, name in its own language, name in English
+  // langs:begin
+  // code, name in its own language, name in English (from i18n/langs.json by scripts/i18n-langs.js)
   var LANGS = [['en', 'English', 'English'], ['es', 'Español', 'Spanish'], ['es-ES', 'Español (España)', 'Spanish (Spain)'], ['fr', 'Français', 'French'], ['pt-BR', 'Português (Brasil)', 'Portuguese (Brazil)'], ['pt-PT', 'Português (Portugal)', 'Portuguese (Portugal)'], ['ru', 'Русский', 'Russian']];
+  // Each one's plural rule (see plural below), and the ones made from another (variant)
+  var PLURAL = { 'en': 'one', 'es': 'one', 'es-ES': 'one', 'fr': 'fr', 'pt-BR': 'pt', 'pt-PT': 'pt', 'ru': 'ru' };
+  var FROM = { 'es-ES': 'es', 'pt-PT': 'pt-BR' };
+  // langs:end
   var dicts = {}, pats = {}, cache = {}, cacheN = 0, misses = {}, missN = 0, tv = '', tvAsked = false, listeners = [];
 
   function has(code) { for (var i = 0; i < LANGS.length; i++) if (LANGS[i][0] === code) return true; return false; }
@@ -35,6 +40,17 @@ var I18n = (function () {
      are what the web engine was started with, which on webOS follows it too. */
   var seen = null;                 // the answer, until the TV tells us its language (changed() forgets it)
   function detected() { return seen || (seen = look()); }
+  /* The language for a locale: the exact one when TiviBro has it ("es-ES": Spain's Spanish, "pt-PT"), else the
+     language ("es-MX": Spanish), else its first regional one ("pt": Brazil's Portuguese), else the language
+     as it is (one TiviBro doesn't have). */
+  function codeOf(loc) {
+    var c = base(loc); if (!c) return '';
+    var m = /^[a-z]{2,3}[-_]([a-z]{2})\b/i.exec(String(loc).trim()), full = m ? c + '-' + m[1].toUpperCase() : '';
+    if (full && has(full)) return full;
+    if (has(c)) return c;
+    for (var i = 0; i < LANGS.length; i++) if (LANGS[i][0].indexOf(c + '-') === 0 && !FROM[LANGS[i][0]]) return LANGS[i][0];
+    return c;
+  }
   function look() {
     var l = [tv];
     try { if (typeof webOSSystem !== 'undefined' && webOSSystem.locale) l.push(webOSSystem.locale); } catch (e) {}
@@ -42,9 +58,7 @@ var I18n = (function () {
     try { if (navigator.languages && navigator.languages.length) l = l.concat([].slice.call(navigator.languages)); } catch (e) {}
     l.push(navigator.language, navigator.userLanguage);
     for (var i = 0; i < l.length; i++) {
-      var c = base(l[i]);
-      if (c === 'es' && /^es[-_]es\b/i.test(String(l[i]))) c = 'es-ES';        // Spain's Spanish (lang/es-ES.js)
-      if (c === 'pt') c = /^pt[-_]pt\b/i.test(String(l[i])) ? 'pt-PT' : 'pt-BR';   // Portugal's (lang/pt-PT.js), else Brazil's
+      var c = codeOf(l[i]);
       if (c) return { code: c, locale: String(l[i]), supported: has(c) };
     }
     return { code: 'en', locale: 'en-US', supported: true };
@@ -103,16 +117,16 @@ var I18n = (function () {
     return { rx: new RegExp('^' + src + '$'), names: names, v: v, lit: lit, auto: names.indexOf('n') >= 0 || lit >= 14 };
   }
 
-  /* Plural forms (CLDR): Spanish one/other, French one/other (0 and 1 singular), Russian one/few/many. */
+  /* Plural forms (CLDR), by each language's rule (PLURAL, from i18n/langs.json): the index into a list in the
+     dictionary.  one: one/other.  fr and pt: 0 and 1 singular ("0 heure", "1 hora").  ru: one/few/many
+     (1 and 21, 2-4 and 22-24, the rest).  pl: one/few/many (only 1, 2-4 and 22-24 but not 12-14, the rest). */
   function plural(code, n) {
     n = Math.abs(+String(n).replace(/[^\d.-]/g, '')) || 0;
-    if (code === 'ru') {
-      var i = Math.floor(n), m10 = i % 10, m100 = i % 100;
-      if (i !== n) return 1;
-      return m10 === 1 && m100 !== 11 ? 0 : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? 1 : 2;
-    }
-    if (code === 'pt-BR') return Math.floor(n) <= 1 ? 0 : 1;     // Portuguese: 0 and 1 are singular ("0 hora", "1 hora")
-    if (code === 'fr') return n < 2 ? 0 : 1;                      // French: 0 and 1 are singular ("0 heure", "1,5 heure")
+    var rule = PLURAL[code] || 'one', i = Math.floor(n), m10 = i % 10, m100 = i % 100;
+    if (rule === 'ru') return i !== n ? 1 : m10 === 1 && m100 !== 11 ? 0 : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? 1 : 2;
+    if (rule === 'pl') return i !== n ? 1 : i === 1 ? 0 : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? 1 : 2;
+    if (rule === 'pt') return i <= 1 ? 0 : 1;
+    if (rule === 'fr') return n < 2 ? 0 : 1;
     return n === 1 ? 0 : 1;
   }
   function pick(code, v, vars) {

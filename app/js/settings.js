@@ -632,6 +632,11 @@ var Settings = (function () {
       out.push(head('Playlists on or off'));
       s.playlists.forEach(function (raw) { var p = Store.normalize(raw); out.push(onSwitch(p, I18n.raw(p.name || (p.type === 'xtream' ? p.user : 'M3U')))); });
     }
+    // A warning on the TV before a subscription ends (subwarn.js), and once it has ended.
+    out.push(choice('Warn before a subscription ends', 'A message on the TV when a playlist\'s subscription ends within this many days, and once it has ended.  Once a day at most.  Your provider has to say when it ends (most Xtream Codes and Stalker providers do).',
+      [0, 1, 3, 7, 14], ['Off', '1 day', '3 days', '7 days', '14 days'],
+      function () { return +s.subWarnDays || 0; },
+      function (v) { s.subWarnDays = v; save(); SubWarn.check(); }));
     // Several playlists on: where the others' channels show up (mixPage).
     if (mixable().length) out.push(page('Mixing playlists', 'Where your other playlists\' channels show up: All channels, Favorites and your groups, My teams, Events by time, Movies on now, Recently added and Search.',
       'Mixing playlists', mixOverview, function () { return mixSummary(); }));

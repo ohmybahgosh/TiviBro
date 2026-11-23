@@ -6,13 +6,15 @@ const fs = require('fs'), path = require('path');
 let fails = 0;
 const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undefined && !c ? '  ' + JSON.stringify(x) : '')); if (!c) fails++; };
 const APP = path.join(__dirname, '../../app/js');
+const LANGS = require('../../scripts/i18n-langs.js'), BASES = LANGS.LIST.filter((l) => l.code !== 'en' && !l.from).map((l) => l.code);
+const FORMS = (code) => LANGS.PLURALS[LANGS.LIST.filter((l) => l.code === code)[0].plural];   // plural forms a list has
 function load(nav, settings, extra) {
   const ctx = { navigator: nav, Store: { settings: settings || {}, saveSettings() {} }, console };
   Object.assign(ctx, extra || {});
   const vm = require('vm');
   vm.createContext(ctx);
   vm.runInContext(fs.readFileSync(path.join(APP, 'i18n.js'), 'utf8') + ';this.I18n = I18n;', ctx);
-  ['es', 'es-ES', 'fr', 'pt-BR', 'pt-PT', 'ru'].forEach((l) => vm.runInContext(fs.readFileSync(path.join(APP, 'lang', l + '.js'), 'utf8'), ctx));
+  LANGS.dicts.forEach((l) => vm.runInContext(fs.readFileSync(path.join(APP, 'lang', l.code + '.js'), 'utf8'), ctx));
   return ctx.I18n;
 }
 
@@ -64,13 +66,13 @@ ok('Spanish plural rule', [0, 1, 2].map((n) => I.plural('es', n)).join('') === '
 // Every translation keeps the placeholders of its English, and no key is an empty translation.
 const dicts = {};
 const fake = { add(code, d) { dicts[code] = Object.assign(dicts[code] || {}, d); } };
-['es', 'fr', 'pt-BR', 'ru'].forEach((l) => new Function('I18n', fs.readFileSync(path.join(APP, 'lang', l + '.js'), 'utf8'))(fake));
+BASES.forEach((l) => new Function('I18n', fs.readFileSync(path.join(APP, 'lang', l + '.js'), 'utf8'))(fake));
 Object.keys(dicts).forEach((code) => {
   const bad = [];
   Object.keys(dicts[code]).forEach((k) => {
     const want = (k.match(/\{[nxyz]\}/g) || []).sort().join(), vals = [].concat(dicts[code][k]);
     vals.forEach((v) => { if (!v || (v.match(/\{[nxyz]\}/g) || []).sort().join() !== want) bad.push(k + ' -> ' + v); });
-    if (Array.isArray(dicts[code][k]) && dicts[code][k].length !== (code === 'ru' ? 3 : 2)) bad.push(k + ': ' + dicts[code][k].length + ' plural forms');
+    if (Array.isArray(dicts[code][k]) && dicts[code][k].length !== FORMS(code)) bad.push(k + ': ' + dicts[code][k].length + ' plural forms');
   });
   ok(code + ': every translation keeps its {n} and {x}', !bad.length, bad.slice(0, 5));
 });
@@ -96,20 +98,28 @@ ok('say: an error with a key', I.say(ek, 'es') === 'El servidor respondió 404. 
 const ED = path.join(__dirname, '../../service/editor');
 const cdicts = {};
 const cfake = { add(code, d) { cdicts[code] = Object.assign(cdicts[code] || {}, d); } };
-['es', 'fr', 'pt-BR', 'ru'].forEach((l) => new Function('I18n', fs.readFileSync(path.join(ED, 'lang', l + '.js'), 'utf8'))(cfake));
+BASES.forEach((l) => new Function('I18n', fs.readFileSync(path.join(ED, 'lang', l + '.js'), 'utf8'))(cfake));
 Object.keys(cdicts).forEach((code) => {
   const bad = [];
   Object.keys(cdicts[code]).forEach((k) => {
     const want = (k.match(/\{[nxyz]\}/g) || []).sort().join(), vals = [].concat(cdicts[code][k]);
     vals.forEach((v) => { if (!v || /—/.test(v) || (v.match(/\{[nxyz]\}/g) || []).sort().join() !== want) bad.push(k + ' -> ' + v); });
-    if (Array.isArray(cdicts[code][k]) && cdicts[code][k].length !== (code === 'ru' ? 3 : 2)) bad.push(k + ': ' + cdicts[code][k].length + ' plural forms');
+    if (Array.isArray(cdicts[code][k]) && cdicts[code][k].length !== FORMS(code)) bad.push(k + ': ' + cdicts[code][k].length + ' plural forms');
   });
   ok('editor and phone, ' + code + ': every translation keeps its {n} and {x}', !bad.length, bad.slice(0, 5));
 });
 const same = (a, b) => fs.existsSync(a) && fs.readFileSync(a, 'utf8') === fs.readFileSync(b, 'utf8');
 ok('the editor\'s i18n.js is the app\'s', same(path.join(ED, 'i18n.js'), path.join(APP, 'i18n.js')));
-ok('the editor\'s es-ES.js and pt-PT.js are the app\'s', same(path.join(ED, 'lang', 'es-ES.js'), path.join(APP, 'lang', 'es-ES.js')) && same(path.join(ED, 'lang', 'pt-PT.js'), path.join(APP, 'lang', 'pt-PT.js')));
+ok('the editor\'s variants (es-ES, pt-PT...) are the app\'s', LANGS.variants.every((l) => same(path.join(ED, 'lang', l.code + '.js'), path.join(APP, 'lang', l.code + '.js'))));
 const cov = require('child_process').execFileSync(process.execPath, [path.join(__dirname, '../../scripts/i18n-companion.js')]).toString();
 ok('every text in the editor and the phone app is translated', !/\(([1-9]\d*) missing\)/.test(cov), cov);
+// The TV app too: new text in the code is translated in the same change (scripts/i18n-todo.js and i18n-import.js).
+const tvCov = require('child_process').execFileSync(process.execPath, [path.join(__dirname, '../../scripts/i18n-check.js')]).toString();
+ok('every text in the TV app is translated', tvCov.split('\n').filter((l) => /^\S+: \d+ of \d+/.test(l)).every((l) => { const m = /: (\d+) of (\d+)/.exec(l); return m[1] === m[2]; }), tvCov);
+// One list of languages (i18n/langs.json) everywhere: the app, the editor, the phone app.
+let inStep = true; try { require('child_process').execFileSync(process.execPath, [path.join(__dirname, '../../scripts/i18n-langs.js'), '--check'], { stdio: 'pipe' }); } catch (e) { inStep = false; }
+ok('the languages are the same everywhere (node scripts/i18n-langs.js)', inStep);
+// Polish plural rule: 1, 2-4 and 22-24 (not 12-14), the rest.
+ok('Polish plural forms', [1, 2, 4, 5, 12, 22, 25, 112].map((n) => I.plural('pl', n)).join() === '0,1,1,2,2,1,2,2' || !LANGS.LIST.some((l) => l.code === 'pl'));
 console.log(fails ? fails + ' failures' : 'all language checks passed');
 process.exit(fails ? 1 : 0);

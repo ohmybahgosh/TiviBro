@@ -437,7 +437,7 @@ var Update = (function () {
   }
 
   return {
-    check: check, autoCheck: autoCheck, whatsNew: whatsNew, countMe: countMe, install: install, installer: installer, describe: describe,
+    check: check, autoCheck: autoCheck, whatsNew: whatsNew, whenFree: whenFree, countMe: countMe, install: install, installer: installer, describe: describe,
     onChange: function (f) { listeners.push(f); }, get state() { return st; }, get current() { return current(); },
     get wantPre() { return wantPre(); }, REPO: REPO, isPre: isPre, earlier: earlier, rollback: rollback, snaps: snaps, restore: restore,
     _test: { prepare: prepare, snapshot: snapshot, signed: signed, parse: parse, compare: compare, pick: pick, notes: notes, isPre: isPre, notesBox: notesBox }

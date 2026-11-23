@@ -15,7 +15,7 @@
 const fs = require('fs'), path = require('path');
 const ROOT = path.join(__dirname, '..'), ED = path.join(ROOT, 'service', 'editor');
 const KT = path.join(ROOT, 'android', 'app', 'src', 'main', 'java');
-const LANGS = ['es', 'fr', 'pt-BR', 'ru'];
+const LANGS = require('./i18n-langs.js').LIST.filter((l) => l.code !== 'en' && !l.from).map((l) => l.code);   // i18n/langs.json
 
 const found = new Map();      // text -> Set of places
 function note(s, where) {
@@ -111,7 +111,8 @@ for (const l of LANGS) { const f = path.join(ED, 'lang', l + '.js'); if (fs.exis
 const all = [...found.keys()].sort();
 const arg = process.argv[2] || '';
 if (bad.length) { console.error('tr() with a $ template (use {n}, {x}):\n  ' + bad.join('\n  ')); process.exitCode = 1; }
-if (arg === '--json') { console.log(JSON.stringify(Object.fromEntries(all.map((s) => [s, [...found.get(s)]])), null, 1)); process.exit(); }
+// Written whole before exiting (a pipe takes it in pieces: process.exit right after console.log cut it short).
+if (arg === '--json') { process.stdout.write(JSON.stringify(Object.fromEntries(all.map((s) => [s, [...found.get(s)]])), null, 1) + '\n', () => process.exit(0)); return; }
 const has = (code, s) => Object.prototype.hasOwnProperty.call(dicts[code] || {}, s);
 if (LANGS.indexOf(arg) >= 0) {
   const miss = all.filter((s) => !has(arg, s));

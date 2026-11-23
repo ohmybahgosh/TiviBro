@@ -1683,5 +1683,14 @@ I18n.add('fr', {
   "{n} movie found.": ["{n} film trouvé.", "{n} films trouvés."],
   "{n} movies found.": ["{n} film trouvé.", "{n} films trouvés."],
   "{n} restore point": ["{n} point de restauration", "{n} points de restauration"],
-  "{n} restore points": ["{n} point de restauration", "{n} points de restauration"]
+  "{n} restore points": ["{n} point de restauration", "{n} points de restauration"],
+  "A message on the TV when a playlist's subscription ends within this many days, and once it has ended.  Once a day at most.  Your provider has to say when it ends (most Xtream Codes and Stalker providers do).": "Un message sur la TV quand l'abonnement d'une liste se termine dans ce nombre de jours, et une fois qu'il est terminé.  Une fois par jour au plus.  Votre fournisseur doit indiquer la date de fin (la plupart des fournisseurs Xtream Codes et Stalker le font).",
+  "Not for this playlist": "Pas pour cette liste",
+  "Subscription ended": "Abonnement terminé",
+  "Subscription ends soon": "L'abonnement se termine bientôt",
+  "The subscription for {x} ended on {y}.  Its channels may stop playing until you renew it with your provider.": "L'abonnement de {x} s'est terminé le {y}.  Ses chaînes peuvent ne plus fonctionner tant que vous ne l'avez pas renouvelé auprès de votre fournisseur.",
+  "The subscription for {x} ends today.  Renew it with your provider to keep watching.": "L'abonnement de {x} se termine aujourd'hui.  Renouvelez-le auprès de votre fournisseur pour continuer à regarder.",
+  "The subscription for {x} ends in {n} day ({y}).  Renew it with your provider to keep watching.": ["L'abonnement de {x} se termine dans {n} jour ({y}).  Renouvelez-le auprès de votre fournisseur pour continuer à regarder.", "L'abonnement de {x} se termine dans {n} jours ({y}).  Renouvelez-le auprès de votre fournisseur pour continuer à regarder."],
+  "The subscription for {x} ends in {n} days ({y}).  Renew it with your provider to keep watching.": ["L'abonnement de {x} se termine dans {n} jour ({y}).  Renouvelez-le auprès de votre fournisseur pour continuer à regarder.", "L'abonnement de {x} se termine dans {n} jours ({y}).  Renouvelez-le auprès de votre fournisseur pour continuer à regarder."],
+  "Warn before a subscription ends": "Prévenir avant la fin d'un abonnement"
 });

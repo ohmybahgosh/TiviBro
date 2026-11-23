@@ -925,6 +925,7 @@ var App = (function () {
       Phone.start();
       Phone.launched(launchParams());
       Update.whatsNew();             // the first start of a newer version: its notes, once
+      SubWarn.start();               // a provider's subscription ending soon, or ended: said on the TV
       Update.autoCheck();
       Update.countMe();
       Reports.start();

@@ -43,15 +43,26 @@ Open a pull request against `main`; the template lists what to check.  Don't tar
 
 ## Translations
 
-TiviBro's English is the key: `app/js/lang/es.js` and `ru.js` map each English text to its translation (`app/js/i18n.js` explains the patterns for text with numbers or names in it, and plural forms).  Text that isn't in a dictionary shows in English, so a language can be filled in a little at a time.
+English is the key: each language's dictionaries map an English text to its translation, and anything not translated yet shows in English.  Two sets, one per part:
 
-- `node scripts/i18n-check.js` shows how far each language is and which files have the most left.
-- `node scripts/i18n-check.js es` lists the Spanish still missing, ready to paste into `es.js`.
-- A new language: copy `es.js`, change the code, add it to `LANGS` in `i18n.js` and a `<script>` line in `app/index.html`.
-- `node tests/soak/i18n-layout.js --shots dir` draws every screen, Settings page, menu and box in each language and fails on text that's cut off, overlapping or off the screen where English isn't, and lists the text that still shows in English.
-- Keep `{n}` and `{x}` in every translation (`npm test` checks), and translate text where it's drawn: the settings rows, menus, boxes, toasts and hints already go through `I18n.t`, so new code there needs nothing extra.
-- The web editor and the phone app share their own dictionaries, `service/editor/lang/<code>.js` (Spain's and Portugal's are the TV's files, copied by `scripts/build.sh`).  In the editor, text goes through `tr('...')` and `trn(n, 'one', 'many')`, and fixed text in the page is translated as it's drawn (`data-raw` keeps names and examples as they are); in the phone app, `tr("...")` and `trn(...)` in Kotlin.  `node scripts/i18n-companion.js` shows how far each language is, `node scripts/i18n-companion.js es` what's missing, and `node tests/soak/editor-i18n.js es ru` opens every editor page in those languages.
-- What the TV sends the editor and the phone (Settings pages, messages, errors) comes in the asker's language: webedit.js writes its messages with `M('...')`, `MN(n, ...)` and `fail('...')`, and `I18n.say` translates them as they go out.
+- `app/js/lang/<code>.js`: the TV app.  Text goes through `I18n.t` (Settings rows, menus, boxes, toasts and hints already do, so new code there needs nothing extra).
+- `service/editor/lang/<code>.js`: the web editor (`tr('...')`, `trn(n, 'one', 'many')`, fixed page text translated as it's drawn, `data-raw` for names) and the phone app (`tr("...")`, `trn(...)` in Kotlin).  What the TV sends them (Settings pages, webedit.js messages written with `M('...')`, `MN(...)`, `fail('...')`) comes back in their language.
+
+`{n}` is a number and `{x}` `{y}` `{z}` any text; a list is the plural forms of `{n}`.  `app/js/i18n.js` explains patterns, plural rules and variants (Spain's Spanish made from the Latin American one with words swapped).
+
+**Every change ships translated.**  `npm test` fails while any language is missing a text, in any part.  After adding text:
+
+1. `node scripts/i18n-todo.js <code> > todo.json`: what's missing in one language, across all three parts, with the rules and the glossary's words for each text.  (A text one part already has is copied to the other first.)
+2. Translate it: by hand, or `ANTHROPIC_API_KEY=... node scripts/i18n-fill.js <code>`, which does it in batches with Claude and checks each answer.
+3. `node scripts/i18n-import.js <code> done.json`: checks each translation (placeholders, HTML tags, plural forms, no em dash) and writes it where the text shows.  `--replace` fixes a text already translated.
+
+`npm run i18n` shows how far each language is.
+
+**A new language:** `node scripts/i18n-add-lang.js de Deutsch German one` (its code, its own name, its English name, its plural rule: `one`, `fr`, `pt`, `ru` or `pl`; `--from es` for a variant).  It adds it to `i18n/langs.json`, the one list of languages, and `scripts/i18n-langs.js` writes that list into the TV app, the web editor and the phone app.  Then fill it as above.
+
+**Words that stay the same:** `i18n/glossary.json` lists TiviBro's own words (Guide, Catch-up, Send to TV...).  Each language's word for one is whatever its dictionary says, the todo file puts the ones a language lacks first, and every text gets the words it uses, so a term is translated the same way everywhere.
+
+**Checking the result:** `node tests/soak/i18n-layout.js --shots dir` draws every TV screen in each language and fails on text that's cut off or overlapping; `node tests/soak/editor-i18n.js de` opens every web editor page in a language.  Native speakers fixing wording: a pull request on the dictionary file is welcome (data only: JSON-style keys and values).
 
 ## Releases
 

@@ -1,0 +1,16 @@
+{
+  "_about": "TiviBro's own words, translated the same way everywhere.  terms: English texts the app shows on their own (a menu item, a section, a button); each language's word for one is whatever its dictionary already says (app/js/lang, else service/editor/lang), so there is nothing to keep in step here.  scripts/i18n-todo.js puts the terms a language doesn't have yet first, and gives every text the words for the terms it uses.  notes: what a term means, for whoever translates it.",
+  "terms": ["Settings", "Guide", "Channels", "Groups", "Favorites", "Playlist", "Playlists", "Movies", "Shows", "My media", "Search", "Recordings", "Reminders", "Watchlist", "Catch-up", "Live pause", "Rewind buffer", "Network helper", "Web editor", "Backups and restore points", "Restore point", "Restore points", "Smart clean-up", "Send to TV", "Sports", "My teams", "Audio sync", "Subtitles", "Audio", "Quick menu", "Options", "Hidden", "Library", "Media source", "Guide source", "Public guide fill-in", "Channel and group names", "Parental controls", "Appearance", "Playback", "Connection", "Automatic", "Live", "Programme", "Record", "Trailer", "Logo library", "Set-up tour", "Language", "System", "Up next", "Next episode", "Continue watching", "Report a problem", "Undo", "Redo", "Delete", "Rename", "Hide", "Show", "Keep", "Skip", "Try again"],
+  "notes": {
+    "Catch-up": "the provider's recordings of programmes already shown, to watch afterwards",
+    "Live pause": "pausing live TV and carrying on from there (timeshift)",
+    "Rewind buffer": "the last part of a live channel kept on the TV to go back in",
+    "Network helper": "TiviBro's small background service on the TV that fetches streams and guides",
+    "Web editor": "TiviBro's page in a computer's or phone's browser for changing the TV's setup",
+    "Smart clean-up": "tools that hide clutter in a provider's channel list",
+    "Send to TV": "the web editor's button that applies the changes on the TV",
+    "Public guide fill-in": "free community TV guides used for channels the provider gives no guide for",
+    "Up next": "the screen offering the next episode when one ends",
+    "Programme": "one TV show at one time in the guide (a listing)"
+  }
+}

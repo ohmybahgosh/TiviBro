@@ -3037,5 +3037,14 @@ I18n.add('pt-BR', {
   "{n} movie found.": ["{n} filme encontrado.", "{n} filmes encontrados."],
   "{n} movies found.": ["{n} filme encontrado.", "{n} filmes encontrados."],
   "{n} restore point": ["{n} ponto de restauração", "{n} pontos de restauração"],
-  "{n} restore points": ["{n} ponto de restauração", "{n} pontos de restauração"]
+  "{n} restore points": ["{n} ponto de restauração", "{n} pontos de restauração"],
+  "A message on the TV when a playlist's subscription ends within this many days, and once it has ended.  Once a day at most.  Your provider has to say when it ends (most Xtream Codes and Stalker providers do).": "Uma mensagem na TV quando a assinatura de uma lista termina dentro desses dias, e quando já terminou.  No máximo uma vez por dia.  Seu provedor precisa informar quando ela termina (a maioria dos provedores Xtream Codes e Stalker informa).",
+  "Not for this playlist": "Não para esta lista",
+  "Subscription ended": "Assinatura terminada",
+  "Subscription ends soon": "A assinatura termina em breve",
+  "The subscription for {x} ended on {y}.  Its channels may stop playing until you renew it with your provider.": "A assinatura de {x} terminou em {y}.  Os canais podem parar de funcionar até você renovar com seu provedor.",
+  "The subscription for {x} ends today.  Renew it with your provider to keep watching.": "A assinatura de {x} termina hoje.  Renove com seu provedor para continuar assistindo.",
+  "The subscription for {x} ends in {n} day ({y}).  Renew it with your provider to keep watching.": ["A assinatura de {x} termina em {n} dia ({y}).  Renove com seu provedor para continuar assistindo.", "A assinatura de {x} termina em {n} dias ({y}).  Renove com seu provedor para continuar assistindo."],
+  "The subscription for {x} ends in {n} days ({y}).  Renew it with your provider to keep watching.": ["A assinatura de {x} termina em {n} dia ({y}).  Renove com seu provedor para continuar assistindo.", "A assinatura de {x} termina em {n} dias ({y}).  Renove com seu provedor para continuar assistindo."],
+  "Warn before a subscription ends": "Avisar antes de uma assinatura terminar"
 });

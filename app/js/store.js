@@ -42,6 +42,8 @@ var Store = (function () {
     rewindLeft: true,           // Left on a live channel with catch-up rewinds instead of last channel
     skip: 30,                   // seconds per Left/Right while watching catch-up or VOD
     remindBefore: 2,            // minutes
+    subWarnDays: 3,             // a warning this many days before a playlist's subscription ends (0: off; subwarn.js)
+    subWarned: {},              // { playlist id: the day it was last warned about }
     pin: '',                    // hashed parental PIN
     pinScope: 'channels',       // channels | settings | both
     pinStay: true,              // stay unlocked until the app restarts

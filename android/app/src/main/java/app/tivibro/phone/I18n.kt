@@ -19,24 +19,28 @@ import org.json.JSONTokener
 import java.util.Locale
 
 object I18n {
-    /** The languages TiviBro has, as the TV and the web editor name them. */
+    // langs:begin
+    /** The languages TiviBro has, as the TV and the web editor name them (i18n/langs.json, by scripts/i18n-langs.js). */
     val LANGS = listOf("en", "es", "es-ES", "fr", "pt-BR", "pt-PT", "ru")
+    /** Languages made from another one with their own words swapped (I18n.variant in the files). */
+    val VARIANTS = mapOf("es-ES" to "es", "pt-PT" to "pt-BR")
+    /** Each one's plural rule (see [plural]). */
+    val PLURAL = mapOf("en" to "one", "es" to "one", "es-ES" to "one", "fr" to "fr", "pt-BR" to "pt", "pt-PT" to "pt", "ru" to "ru")
+    // langs:end
 
     /** The language in use (a code from [LANGS]). */
     @Volatile var lang = "en"; private set
     @Volatile private var dict: Map<String, Any> = emptyMap()
 
-    /** The language for a locale: Spain's Spanish for es-ES, Portugal's Portuguese for pt-PT, Brazil's for any
-     *  other Portuguese, English for a language TiviBro doesn't have. */
+    /** The language for a locale, as on the TV: the exact one when TiviBro has it (es-ES, pt-PT), else the
+     *  language (es for es-MX), else its first regional one (pt-BR for pt), else English. */
     fun codeFor(l: Locale): String {
         val c = l.language.lowercase()
+        val full = if (l.country.isNotEmpty()) c + "-" + l.country.uppercase() else ""
         return when {
-            c == "es" && l.country.equals("ES", true) -> "es-ES"
-            c == "es" -> "es"
-            c == "pt" && l.country.equals("PT", true) -> "pt-PT"
-            c == "pt" -> "pt-BR"
-            c == "fr" || c == "ru" -> c
-            else -> "en"
+            full in LANGS -> full
+            c in LANGS -> c
+            else -> LANGS.firstOrNull { it.startsWith("$c-") && it !in VARIANTS } ?: "en"
         }
     }
 
@@ -54,7 +58,7 @@ object I18n {
 
     /** Sets [code] with its dictionary, read by [read] (a file name without .js, its text or null).  Tests call it. */
     fun use(code: String, read: (String) -> String?) {
-        val from = mapOf("es-ES" to "es", "pt-PT" to "pt-BR")[code]
+        val from = VARIANTS[code]
         val d = runCatching {
             when {
                 code == "en" || code !in LANGS -> emptyMap()
@@ -90,16 +94,17 @@ object I18n {
         return out
     }
 
-    /** Plural forms (CLDR), as on the TV: Russian one/few/many, French and Portuguese 0 and 1 singular, the
-     *  others one/other.  The index into a list in the dictionary. */
+    /** Plural forms (CLDR), as on the TV, by each language's rule ([PLURAL]): one/other; fr and pt 0 and 1
+     *  singular; ru one/few/many (1 and 21, 2-4 and 22-24, the rest); pl one/few/many (only 1, 2-4 and 22-24
+     *  but not 12-14, the rest).  The index into a list in the dictionary. */
     fun plural(code: String, n: Any?): Int {
         val x = Math.abs(n?.toString()?.replace(Regex("[^\\d.-]"), "")?.toDoubleOrNull() ?: 0.0)
-        return when (code) {
-            "ru" -> {
-                val i = Math.floor(x).toLong()
-                if (i.toDouble() != x) 1 else { val m10 = i % 10; val m100 = i % 100; if (m10 == 1L && m100 != 11L) 0 else if (m10 in 2..4 && (m100 < 12 || m100 > 14)) 1 else 2 }
-            }
-            "pt-BR", "pt-PT" -> if (Math.floor(x) <= 1) 0 else 1
+        val i = Math.floor(x).toLong(); val m10 = i % 10; val m100 = i % 100
+        val few = m10 in 2..4 && (m100 < 12 || m100 > 14)
+        return when (PLURAL[code] ?: "one") {
+            "ru" -> if (i.toDouble() != x) 1 else if (m10 == 1L && m100 != 11L) 0 else if (few) 1 else 2
+            "pl" -> if (i.toDouble() != x) 1 else if (i == 1L) 0 else if (few) 1 else 2
+            "pt" -> if (i <= 1) 0 else 1
             "fr" -> if (x < 2) 0 else 1
             else -> if (x == 1.0) 0 else 1
         }

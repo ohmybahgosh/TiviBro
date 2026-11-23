@@ -2530,5 +2530,14 @@ I18n.add('ru', {
   "{n} movie found.": ["Найден {n} фильм.", "Найдено {n} фильма.", "Найдено {n} фильмов."],
   "{n} movies found.": ["Найден {n} фильм.", "Найдено {n} фильма.", "Найдено {n} фильмов."],
   "{n} restore point": ["{n} точка восстановления", "{n} точки восстановления", "{n} точек восстановления"],
-  "{n} restore points": ["{n} точка восстановления", "{n} точки восстановления", "{n} точек восстановления"]
+  "{n} restore points": ["{n} точка восстановления", "{n} точки восстановления", "{n} точек восстановления"],
+  "A message on the TV when a playlist's subscription ends within this many days, and once it has ended.  Once a day at most.  Your provider has to say when it ends (most Xtream Codes and Stalker providers do).": "Сообщение на телевизоре, когда подписка плейлиста заканчивается в течение этого числа дней, и когда она уже закончилась.  Не чаще раза в день.  Провайдер должен сообщать дату окончания (большинство провайдеров Xtream Codes и Stalker сообщают).",
+  "Not for this playlist": "Не для этого плейлиста",
+  "Subscription ended": "Подписка закончилась",
+  "Subscription ends soon": "Подписка скоро закончится",
+  "The subscription for {x} ended on {y}.  Its channels may stop playing until you renew it with your provider.": "Подписка {x} закончилась {y}.  Каналы могут не работать, пока вы не продлите её у провайдера.",
+  "The subscription for {x} ends today.  Renew it with your provider to keep watching.": "Подписка {x} заканчивается сегодня.  Продлите её у провайдера, чтобы смотреть дальше.",
+  "The subscription for {x} ends in {n} day ({y}).  Renew it with your provider to keep watching.": ["Подписка {x} заканчивается через {n} день ({y}).  Продлите её у провайдера, чтобы смотреть дальше.", "Подписка {x} заканчивается через {n} дня ({y}).  Продлите её у провайдера, чтобы смотреть дальше.", "Подписка {x} заканчивается через {n} дней ({y}).  Продлите её у провайдера, чтобы смотреть дальше."],
+  "The subscription for {x} ends in {n} days ({y}).  Renew it with your provider to keep watching.": ["Подписка {x} заканчивается через {n} день ({y}).  Продлите её у провайдера, чтобы смотреть дальше.", "Подписка {x} заканчивается через {n} дня ({y}).  Продлите её у провайдера, чтобы смотреть дальше.", "Подписка {x} заканчивается через {n} дней ({y}).  Продлите её у провайдера, чтобы смотреть дальше."],
+  "Warn before a subscription ends": "Предупреждать об окончании подписки"
 });

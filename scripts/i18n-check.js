@@ -67,7 +67,9 @@ html.replace(/>([^<>]*[A-Za-z][^<>]*)</g, (a, s) => { s.split(/<br>/).forEach((x
 global.window = global;
 const dicts = {};
 global.I18n = { add(code, d) { dicts[code] = Object.assign(dicts[code] || {}, d); } };
-for (const f of fs.readdirSync(path.join(APP, 'lang'))) if (/^[a-z]{2}(-BR)?\.js$/.test(f)) eval(fs.readFileSync(path.join(APP, 'lang', f), 'utf8'));
+// The languages with dictionaries of their own (i18n/langs.json; a variant like es-ES is made from es).
+const BASES = require('./i18n-langs.js').LIST.filter((l) => l.code !== 'en' && !l.from).map((l) => l.code);
+for (const l of BASES) { const f = path.join(APP, 'lang', l + '.js'); if (fs.existsSync(f)) eval(fs.readFileSync(f, 'utf8')); }
 // Covered: the text is a key.  (Patterns, '{n} hours', are for text put together while the app runs, and
 // would match text found here only by chance.)
 /* Text put together from a piece and a value ('Hidden (' + n + ')') is covered by a pattern that starts with that
@@ -79,7 +81,8 @@ function covered(d, s) {
 }
 
 const all = [...found.keys()].sort();
-if (arg === '--json') { console.log(JSON.stringify(Object.fromEntries(all.map((s) => [s, [...found.get(s)]])), null, 1)); process.exit(0); }
+// Written whole before exiting (a pipe takes it in pieces: process.exit right after console.log cut it short).
+if (arg === '--json') { process.stdout.write(JSON.stringify(Object.fromEntries(all.map((s) => [s, [...found.get(s)]])), null, 1) + '\n', () => process.exit(0)); return; }
 if (dicts[arg]) {
   const miss = all.filter((s) => !covered(dicts[arg], s));
   miss.forEach((s) => console.log('  ' + JSON.stringify(s) + ': \'\',   // ' + [...found.get(s)].join(', ')));

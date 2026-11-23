@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The languages TiviBro has (I18n.kt): Android 13 and later list them under the app's own language in the
-     phone's settings. -->
+<!-- The languages TiviBro has (I18n.kt), from i18n/langs.json by scripts/i18n-langs.js: Android 13 and later list
+     them under the app's own language in the phone's settings. -->
 <locale-config xmlns:android="http://schemas.android.com/apk/res/android">
     <locale android:name="en" />
     <locale android:name="es" />

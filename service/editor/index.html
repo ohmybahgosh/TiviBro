@@ -495,7 +495,9 @@ var Store = { settings: { lang: (function () {
   var l = I18n.lang();
   document.documentElement.lang = l;
   if (l === 'en') return;
+  // langs:begin: the variants and what they're made from (i18n/langs.json, scripts/i18n-langs.js)
   var from = { 'es-ES': 'es', 'pt-PT': 'pt-BR' }[l];
+  // langs:end
   if (from) document.write('<script src="lang/' + from + '.js"><\/script>');
   document.write('<script src="lang/' + l + '.js"><\/script>');
 })();
