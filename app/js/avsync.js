@@ -108,12 +108,17 @@ var AvSync = (function () {
     var pos = Math.max(-500, Math.min(500, ms)), pct = 50 + pos / 10;
     el.querySelector('.avs-val').textContent = says(ms);
     el.querySelector('.avs-dot').style.left = pct + '%';
-    if (!note && ms && !movable()) note = T('This one plays on the TV\'s own player, which can\'t move the sound.  For a movie, the converter (Settings > Audio and subtitles) lets it.');
+    var block = ms && typeof Player !== 'undefined' ? Player.syncBlock : '';
+    if (!note && block) note = T('The sound can\'t be moved here: {x}.', { x: T(block) });
+    else if (!note && ms && !movable()) note = T('This one plays on the TV\'s own player, which can\'t move the sound.  For a movie, the converter (Settings > Audio and subtitles) lets it.');
     el.querySelector('.avs-note').textContent = note || (ms ? T('Kept for {x}', { x: label || T('this channel') }) : '');
   }
-  // The panel: what the delay is now, a scale, which way to press, and the keys.  It takes the remote until closed.
+  var hooked = false;
+  /* The bar, over the picture; it takes the remote until closed.  It says what happened once the stream has started
+     again with a new delay (moved, or why it couldn't be): hooked on first use, as player.js loads after this file. */
   function open() {
     if (el) return;
+    if (!hooked && typeof Player !== 'undefined' && Player.on) { hooked = true; Player.on('state', function (st) { if (el && (st === 'playing' || st === 'error')) draw(); }); }
     var stage = document.body;
     el = U.el('div', 'avsync');
     el.appendChild(U.el('div', 'avs-title', T('Audio sync') + (label ? '  ·  ' + label : '')));

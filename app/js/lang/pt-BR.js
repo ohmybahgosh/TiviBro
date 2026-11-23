@@ -2788,5 +2788,12 @@ I18n.add('pt-BR', {
   "Cleaned up: each channel's own logo, trimmed, in white where it needs it for dark screens (Worldwide TV Logos).  In colour: the same logos in their own colours.  Matching set: one style (tv-logos).  Original: as iptv-org has it.": "Limpo: o logo próprio de cada canal, recortado, em branco onde precisa para telas escuras (Worldwide TV Logos).  Em cores: os mesmos logos nas próprias cores.  Conjunto combinando: um só estilo (tv-logos).  Original: como o iptv-org tem.",
   "Logos from three open projects, Worldwide TV Logos, tv-logos and iptv-org, matched to your channels by guide id, name and country.  Fill in missing logos only changes channels with no logo of their own (or one that doesn't load).  Use for every channel it knows gives them all the library's style.  TiviBro hosts no images: each logo loads from its project.": "Logos de três projetos abertos, Worldwide TV Logos, tv-logos e iptv-org, associados aos seus canais por id do guia, nome e país.  Preencher logos que faltam só muda canais sem logo próprio (ou com um que não carrega).  Usar para todos os canais que conhece dá a todos o estilo da biblioteca.  O TiviBro não hospeda imagens: cada logo carrega do seu projeto.",
   "Cleaned up: each channel's own logo, made for dark screens.  In colour: the same, in their own colours.  Matching set: one style for all.  Original: each channel's own logo as it is.": "Limpo: o logo próprio de cada canal, preparado para telas escuras.  Em cores: os mesmos, nas próprias cores.  Conjunto combinando: um estilo para todos.  Original: o logo de cada canal como ele é.",
-  "cleaned up, in colour": "limpo, em cores"
+  "cleaned up, in colour": "limpo, em cores",
+  "The sound can't be moved here: {x}.": "Aqui não dá para mover o som: {x}.",
+  "this channel didn't play on TiviBro's own player, only on the TV's": "este canal não tocou no player do TiviBro, só no da TV",
+  "this provider's channels only played on the TV's player here": "os canais deste provedor só tocaram aqui no player da TV",
+  "this TV can't use TiviBro's own player": "esta TV não consegue usar o player do TiviBro",
+  "a movie needs the audio converter for it (Settings > Audio and subtitles)": "um filme precisa do conversor de áudio para isso (Configurações > Áudio e legendas)",
+  "a protected channel plays only on the TV's player": "um canal protegido só toca no player da TV",
+  "it plays on the TV's own player": "toca no player da própria TV"
 });

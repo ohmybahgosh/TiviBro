@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Audio sync says why when a channel can only play on the TV's own player, which can't move the sound (a format TiviBro's own player can't take, or one that only played on the TV's).
+
 ## 0.6.0 (alpha 204, 2026-11-23)
 
 Pre-release: expect rough edges, and keep a backup before installing.

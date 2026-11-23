@@ -158,6 +158,17 @@ var Player = (function () {
 
   // Is a sound delay set for what plays (Audio sync)?
   function syncing() { return !!(window.AvSync && AvSync.wanted()); }
+  /* Why this plays on the TV's own player although a sound delay is set (that player can't move the sound), in words
+     for the Audio sync bar.  Discussion #60: a channel only the TV's player played showed nothing being moved. */
+  function whyNative(url) {
+    if (cur.routeWhy) return String(cur.routeWhy);
+    if (cur.tried && Object.keys(cur.tried).length) return 'this channel didn\'t play on TiviBro\'s own player, only on the TV\'s';
+    if (fallbackHosts[hostOf(url)] === 'native') return 'this provider\'s channels only played on the TV\'s player here';
+    if (!mse()) return 'this TV can\'t use TiviBro\'s own player';
+    if (isFile()) return 'a movie needs the audio converter for it (Settings > Audio and subtitles)';
+    if (cur.ch && cur.ch.drm) return 'a protected channel plays only on the TV\'s player';
+    return 'it plays on the TV\'s own player';
+  }
 
   /* ---------- engines ---------- */
   /* The playlist a stream belongs to: with several playlists on, its User-Agent goes with every
@@ -619,8 +630,10 @@ var Player = (function () {
     // Known codecs up front (a movie's details): route before anything loads.
     if (!conv && !cur.forceKind && !cur.forceNative && kind !== 'native' && cur.media && !cur.routed) {
       var r0 = Caps.route(cur.media, hdrPolicy());
-      if (r0.engine === 'native') { cur.routed = true; Log.info('player', r0.reason); useEngine('native'); kind = 'native'; }
+      if (r0.engine === 'native') { cur.routed = true; cur.routeWhy = r0.reason; Log.info('player', r0.reason); useEngine('native'); kind = 'native'; }
     }
+    cur.syncWhy = kind === 'native' && syncing() ? whyNative(url) : '';
+    if (cur.syncWhy) Log.info('player', 'Audio sync can\'t move the sound here: ' + cur.syncWhy);
     Log.state('player', 'playing ' + (cur.ch && cur.ch.n ? '"' + cur.ch.n + '"' : 'a video') + ' with the ' + kind + ' engine');
     Log.info('player', 'Start ' + (cur.ch && cur.ch.n ? '"' + cur.ch.n + '" ' : '') + 'with ' + kind + ' engine' + (kind !== 'native' && Net.active ? ' via helper' : '') + ', profile ' + p.label + ' (prebuffer ' + p.prebuffer + 's)' + (cur.retries ? ', attempt ' + (cur.retries + 1) : '') + (cur.startAt ? ', from ' + Math.round(cur.startAt) + 's' : '') + (conv ? ', sound converted from ' + Math.round(conv.t) + 's' : '') + '  ' + (conv ? cur.url : url));
     var gen = cur.gen = (cur.gen || 0) + 1;     // a torn-down engine's late events are ignored
@@ -725,7 +738,7 @@ var Player = (function () {
       if (r.warn && r.unplayable && !cur.warned && lateConvert(r.unplayable, myToken)) cur.warned = true;
       if (r.warn && !cur.warned) { cur.warned = true; Log.warn('player', r.warn); notice(r.unplayable && window.Convert ? Convert.noSound(Caps.unplayable(r.unplayable, cur.media.channels, null, cur.media.rate) || r.unplayable) : r.warn); }
       if (r.engine === 'native' && kind !== 'native' && !st.started && !cur.routed && !(cur.tried && cur.tried.native)) {
-        cur.routed = true;
+        cur.routed = true; cur.routeWhy = r.reason;
         Log.info('player', r.reason + '; switching to the TV player');
         useEngine('native');
         setTimeout(function () { start(myToken); }, 0);   // not from inside the engine's own event
@@ -1865,7 +1878,7 @@ var Player = (function () {
 
   return {
     _test: { reconnect: function (why) { reconnect(token, why || 'test'); }, get holding() { return holding; }, get kind() { return st && st.kind; } },
-    PRESETS: PRESETS, memorySafe: memorySafe, get converting() { return !!(cur && cur.conv); }, vodHls: function (u) { return vodHls(u); }, get userPaused() { return !!(st && st.userPaused); }, get memSafe() { return memSafe() ? (typeof Store !== 'undefined' && Store.settings && Store.settings.memSafe === 'on' ? 'turned on in Settings' : safeWhy || (navigator.deviceMemory ? 'this TV has 1 GB of memory or less' : 'an HD or Full HD TV, with about 1 GB of memory')) : ''; }, bind: bind, play: play, _dashProtection: dashProtection, heardAudio: heardAudio, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, retryNow: retryNow, resync: resync, get startStatus() { return startStatus(); }, on: on,
+    PRESETS: PRESETS, memorySafe: memorySafe, get converting() { return !!(cur && cur.conv); }, vodHls: function (u) { return vodHls(u); }, get userPaused() { return !!(st && st.userPaused); }, get memSafe() { return memSafe() ? (typeof Store !== 'undefined' && Store.settings && Store.settings.memSafe === 'on' ? 'turned on in Settings' : safeWhy || (navigator.deviceMemory ? 'this TV has 1 GB of memory or less' : 'an HD or Full HD TV, with about 1 GB of memory')) : ''; }, bind: bind, play: play, _dashProtection: dashProtection, heardAudio: heardAudio, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, retryNow: retryNow, resync: resync, get syncBlock() { return cur && st && st.kind === 'native' && syncing() ? cur.syncWhy || 'it plays on the TV\'s own player' : ''; }, get startStatus() { return startStatus(); }, on: on,
     seek: seek, seekTo: seekTo, liveWindow: liveWindow, get tshift() { return !!(cur && cur.tshift); }, liveSeek: liveSeek, applyDisplay: applyDisplay, suspend: suspend, resume: resume,
     audioTracks: function () { return eng && eng.audio ? eng.audio() : []; }, describeTrack: describeTrack,
     qualities: function () { return eng && eng.levels ? eng.levels() : []; },

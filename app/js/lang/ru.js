@@ -2281,5 +2281,12 @@ I18n.add('ru', {
   "Cleaned up: each channel's own logo, trimmed, in white where it needs it for dark screens (Worldwide TV Logos).  In colour: the same logos in their own colours.  Matching set: one style (tv-logos).  Original: as iptv-org has it.": "Очищенные: собственный логотип каждого канала, обрезанный, белый там, где это нужно для тёмного экрана (Worldwide TV Logos).  В цвете: те же логотипы в своих цветах.  Единый набор: один стиль (tv-logos).  Оригинальные: как в iptv-org.",
   "Logos from three open projects, Worldwide TV Logos, tv-logos and iptv-org, matched to your channels by guide id, name and country.  Fill in missing logos only changes channels with no logo of their own (or one that doesn't load).  Use for every channel it knows gives them all the library's style.  TiviBro hosts no images: each logo loads from its project.": "Логотипы из трёх открытых проектов: Worldwide TV Logos, tv-logos и iptv-org, подобранные к вашим каналам по id гида, названию и стране.  «Дополнять недостающие» меняет только каналы без своего логотипа (или с незагружающимся).  «Для всех известных каналов» даёт всем стиль библиотеки.  TiviBro не хранит изображения: каждый логотип загружается из своего проекта.",
   "Cleaned up: each channel's own logo, made for dark screens.  In colour: the same, in their own colours.  Matching set: one style for all.  Original: each channel's own logo as it is.": "Очищенные: собственный логотип каждого канала для тёмного экрана.  В цвете: те же, в своих цветах.  Единый набор: один стиль для всех.  Оригинальные: логотип канала как есть.",
-  "cleaned up, in colour": "очищенные, в цвете"
+  "cleaned up, in colour": "очищенные, в цвете",
+  "The sound can't be moved here: {x}.": "Здесь нельзя сдвинуть звук: {x}.",
+  "this channel didn't play on TiviBro's own player, only on the TV's": "этот канал не воспроизвёлся в плеере TiviBro, только в плеере телевизора",
+  "this provider's channels only played on the TV's player here": "каналы этого провайдера здесь воспроизводились только в плеере телевизора",
+  "this TV can't use TiviBro's own player": "этот телевизор не может использовать плеер TiviBro",
+  "a movie needs the audio converter for it (Settings > Audio and subtitles)": "фильму для этого нужен конвертер звука (Настройки > Звук и субтитры)",
+  "a protected channel plays only on the TV's player": "защищённый канал воспроизводится только в плеере телевизора",
+  "it plays on the TV's own player": "он воспроизводится встроенным плеером телевизора"
 });
