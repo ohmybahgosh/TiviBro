@@ -169,7 +169,9 @@ var MediaSeries = (function () {
     var preferred=MediaStore.preferredSource&&MediaStore.preferredSource();var ranked=versions.filter(function(v){return v.sourceId===preferred;});if(ranked.length===1)return ranked[0];
     return versions.length===1?versions[0]:null;
   }
-  function completed(file,handoff) {
+  /* An episode is over: the next one.  now: chosen at the credits (Next episode, skipper.js), so it plays at once;
+     else Up next (upnext.js) shows it and counts down.  A missing episode before it always asks. */
+  function completed(file,handoff,now) {
     if (!file || !file.episodeHandle) return false;
     function finish(){if(handoff)return handoff.cancel();if(file.returnTo)return file.returnTo();open();}
     function launch(detail){
@@ -185,6 +187,7 @@ var MediaSeries = (function () {
           var next = r.items[0];
           if (!next || (file.season === 0 && next.season !== 0) || (file.season !== 0 && next.season === 0)) return finish();
           var gap = next.gapBefore === true, expected = generation;
+          if (now && !gap) return request('detail',{kind:'episode',handle:next.handle},function (detail) { launch(detail); });
           var go = function (showRecord) {
             if (expected !== generation) return;          // moved on meanwhile (another episode, another screen)
             upNext(next, showRecord, gap, function () { request('detail',{kind:'episode',handle:next.handle},function (detail) { launch(detail); }); }, finish);

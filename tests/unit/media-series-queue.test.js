@@ -24,6 +24,7 @@ async function settle(){for(let i=0;i<8;i++)await Promise.resolve();await new Pr
 (async()=>{
  let w=world();w.S.completed(w.file);await settle();assert.equal(w.timers.length,1);const c=w.cards[0].o;assert.equal(c.kicker,'Up next');assert.equal(c.title,'Two');assert.equal(c.line,'Season 1, episode 2');w.timers[0].f();await settle();assert.equal(w.plays.length,1);assert.equal(w.plays[0].episodeHandle,'ep2');
  w=world();w.S.completed(w.file);await settle();w.cards[0].o.play();await settle();assert.equal(w.plays.length,1,'Play now starts it at once');
+ w=world({autoNext:false});w.S.completed(w.file,null,true);await settle();assert.equal(w.cards.length,0);assert.equal(w.plays.length,1,'Next episode at the credits plays it at once, with no card');
  w=world({autoNext:false});w.S.completed(w.file);await settle();assert.equal(w.timers.length,0);assert.equal(w.plays.length,0);assert.equal(w.cards.length,1,'the card still comes, waiting for OK');
  w=world({gap:true});w.S.completed(w.file);await settle();assert.equal(w.timers.length,0);assert.equal(w.cards.at(-1).o.kicker,'An episode is missing');
  w=world();w.S.completed(w.file);await settle();const stale=w.timers[0];w.cards[0].off=true;w.cards[0].o.cancel();await settle();stale.f();await settle();assert.equal(w.plays.length,0,'a cancelled countdown cannot start playback even if its callback fires');

@@ -1498,13 +1498,14 @@ var Media = (function () {
     playQueued(0);
   }
   function playQueued(at) { var m = queue.list[at]; queue.at = at; queue.item = m; playFrom(m, false, queue.back); }
-  function queueNext(finished) {
+  function queueNext(finished, now) {
     clearTimeout(queueTimer); queueTimer = null;
     if (!queue || queue.item !== finished) return;
     var q = queue, next = q.list[q.at + 1];
     if (!next) { queue = null; U.toast('That was the last movie of the collection.', 4000); return; }
     var go = function () { clearTimeout(queueTimer); queueTimer = null; if (queue === q) playQueued(q.at + 1); };
     var stop = function () { clearTimeout(queueTimer); queueTimer = null; if (queue === q) queue = null; };
+    if (now) return go();
     // Up next (upnext.js): the next movie's backdrop, its name, year and plot, counting down.
     var md = next.metadata || {};
     UpNext.show({ kicker: 'Next in the collection', image: md.backdrop ? wrap(md.backdrop) : md.poster ? wrap(md.poster) : '', still: !!md.backdrop,
@@ -1603,7 +1604,8 @@ var Media = (function () {
     } else if (length > 0 && typeof Trakt !== 'undefined' && Trakt.paused) Trakt.paused(item, 100 * position / length);   // other apps can continue from here
     playingMeta = null;
   }
-  function ended() {
+  // now: Next episode (or Next movie) chosen at the credits (skipper.js): straight to it, no Up next card.
+  function ended(now) {
     clearInterval(progressTimer); progressTimer = null;
     checkpoint();
     var finished = playingMeta && playingMeta.item;
@@ -1612,8 +1614,8 @@ var Media = (function () {
     playingMeta = null;
     Views.stopAll();
     open(true);
-    if (eligible && typeof MediaSeries !== 'undefined') MediaSeries.completed(finished);
-    if (finished && finished.kind !== 'episode') queueNext(finished);
+    if (eligible && typeof MediaSeries !== 'undefined') MediaSeries.completed(finished, null, now === true);
+    if (finished && finished.kind !== 'episode') queueNext(finished, now === true);
     // Trakt (Settings > My media > Trakt > Mark as watched on Trakt): what you finished.
     if (finished && typeof Trakt !== 'undefined') { if (finished.kind === 'episode') { if (eligible) Trakt.watchedEpisode(finished.episodeHandle); } else Trakt.watchedMovie(finished.metadata && finished.metadata.id); }
   }
