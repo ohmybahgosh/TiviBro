@@ -10,7 +10,9 @@ var Service = require('webos-service');
 var proxy = require('./proxy');
 
 var service = new Service('app.tivibro.tv.service');
-process.on('uncaughtException', function (e) { proxy.log({ lv: 'error', event: 'uncaught exception', e: e && (e.stack || e.message) }); });
+// Logged and carried on; several close together and the helper starts over (watchdog.js, issue #153).
+var watchdog = null;
+process.on('uncaughtException', function (e) { proxy.log({ lv: 'error', event: 'uncaught exception', e: e && (e.stack || e.message) }); if (watchdog) watchdog.error(e); });
 var crypto = require('crypto');
 var relay = null, port = 0, subs = 0, activity = null, idleTimer = null;
 // Only TiviBro may switch the web editor and the phone app connection (see proxy.js): it gets this with the start reply.
@@ -219,6 +221,9 @@ function hold() {
 function release() {
   if (activity) { try { service.activityManager.complete(activity); } catch (e) {} activity = null; }
 }
+
+// The helper checks on itself while TiviBro uses it, and exits for a fresh start when it is stuck (watchdog.js).
+watchdog = require('./watchdog').create({ port: function () { return relay ? port : 0; }, busy: function () { return subs > 0; }, log: function (o) { proxy.log(o); } });
 
 service.register('start', function (message) {
   clearTimeout(idleTimer);

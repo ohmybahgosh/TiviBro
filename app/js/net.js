@@ -37,6 +37,8 @@ var Net = (function () {
         if (j && j.ok) { port = devPort; state = 'on'; info = j; Log.info('net', 'Using the development helper on port ' + devPort + ' (webOS service: ' + (lastError || 'not available') + ')'); }
       }).catch(function () {}).then(function () {
         if (!port) Log.warn('net', 'Network helper not available (' + (lastError || 'unknown reason') + ').  Requests go direct.');
+        // No answer at all (not "not installed"): asked again later, as after a restart (issue #153).
+        if (!port && !restarting && typeof PalmServiceBridge !== 'undefined' && /^no answer/.test(lastError)) againLater();
         finish();
       });
     }
@@ -117,15 +119,29 @@ var Net = (function () {
       restartListeners.forEach(function (f) { try { f(p); } catch (e) {} });
     });
   }
+  /* Issue #153: one try, and a helper that didn't answer it stayed gone for the rest of the session.  Now it
+     is asked again 30 s later, then 1, 2 and every 5 minutes, until it answers (a helper stuck for good
+     restarts itself, service/watchdog.js, and the next ask starts a fresh one). */
+  var againTimer = null, againTries = 0;
+  function againLater() {
+    var wait = [30, 60, 120, 300][Math.min(againTries++, 3)];
+    Log.info('net', 'Asking the network helper again in ' + (wait >= 60 ? wait / 60 + ' min' : wait + ' s'));
+    clearTimeout(againTimer);
+    againTimer = setTimeout(function () { if (!port) restart('still not answering, try ' + (againTries + 1)); }, wait * 1000);
+  }
   function restart(why) {
     if (restarting || +localStorage.getItem('tivibro.devRelay')) return;
-    restarting = true; misses = 0;
+    restarting = true; misses = 0; clearTimeout(againTimer);
     Log.warn('net', 'Starting the network helper again (' + why + ')');
     try { if (bridge) bridge.cancel(); } catch (e) {}
     bridge = null; port = 0; state = 'off';
     start(10000).then(function (p) {
       restarting = false;
-      if (!p) { Log.error('net', 'The network helper did not start again: ' + lastError); return; }
+      if (!p) {
+        Log.error('net', 'The network helper did not start again: ' + lastError);
+        return againLater();
+      }
+      againTries = 0;
       Log.info('net', 'The network helper is back on port ' + p);
       restartListeners.forEach(function (f) { try { f(p); } catch (e) {} });
     });
