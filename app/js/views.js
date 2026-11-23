@@ -2304,7 +2304,7 @@ var Views = (function () {
       });
       el.appendChild(r1);
     }
-    el.appendChild(U.el('div', 'qp-row-title', tl ? '◀ ▶  move      ▲ ▼  switch row, ▲ at the top: timeline      OK  choose      Back  close' : '◀ ▶  move      ▲ ▼  switch row      OK  choose      Back  close'));
+    el.appendChild(U.el('div', 'qp-row-title', T(tl ? '◀ ▶  move      ▲ ▼  switch row, ▲ at the top: timeline      OK  choose      Back  close' : '◀ ▶  move      ▲ ▼  switch row      OK  choose      Back  close')));
     focusPanel();
   }
   function hook(b, row, col) {

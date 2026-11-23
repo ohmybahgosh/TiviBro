@@ -119,6 +119,8 @@ I18n.add('fr', {
   "tick the channels to keep in": 'cochez les chaînes à garder dans', "undo the channels you moved here": 'annuler les chaînes déplacées ici', "undo the merge": 'annuler la fusion',
   "usually switches channels faster": 'change généralement de chaîne plus vite', "{x} is no longer in the guide": '{x} n\'est plus dans le guide', "{x} is on {y} now": '{x} passe sur {y} maintenant',
   "▲ ▼  choose a group": '▲ ▼  choisir un groupe', "▲ ▼  choose a screen": '▲ ▼  choisir un écran', "▲ ▼  move    CH +/−  a page": '▲ ▼  déplacer    CH +/−  une page',
+  "◀ ▶  move      ▲ ▼  switch row, ▲ at the top: timeline      OK  choose      Back  close": '◀ ▶  déplacer      ▲ ▼  changer de ligne, ▲ en haut : chronologie      OK  choisir      Retour  fermer',
+  "◀ ▶  move      ▲ ▼  switch row      OK  choose      Back  close": '◀ ▶  déplacer      ▲ ▼  changer de ligne      OK  choisir      Retour  fermer',
   // settings.js: full pass
   
   "\"NCAAB 001 | NORTH FLORIDA @ CHARLESTON SOUTHERN (M) | 12.18 11:00 AM\" shows as \"NCAAB 001\"; the game is in the guide line under it.": '« NCAAB 001 | NORTH FLORIDA @ CHARLESTON SOUTHERN (M) | 12.18 11:00 AM » s\'affiche « NCAAB 001 » ; le match est dans la ligne de guide en dessous.',
