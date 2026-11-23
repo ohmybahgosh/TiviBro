@@ -53,7 +53,7 @@ English is the key: each language's dictionaries map an English text to its tran
 **Every change ships translated.**  `npm test` fails while any language is missing a text, in any part.  After adding text:
 
 1. `node scripts/i18n-todo.js <code> > todo.json`: what's missing in one language, across all three parts, with the rules and the glossary's words for each text.  (A text one part already has is copied to the other first.)
-2. Translate it: by hand, or `ANTHROPIC_API_KEY=... node scripts/i18n-fill.js <code>`, which does it in batches with Claude and checks each answer.
+2. Translate it: by hand, or `ANTHROPIC_API_KEY=... node scripts/i18n-fill.js <code>`, which does it with Claude (the Message Batches API at half price, the shared rules and glossary prompt-cached) and checks each answer.  `node scripts/i18n-fill.js --test` shows which key is set, its organization and its models.
 3. `node scripts/i18n-import.js <code> done.json`: checks each translation (placeholders, HTML tags, plural forms, no em dash) and writes it where the text shows.  `--replace` fixes a text already translated.
 
 `npm run i18n` shows how far each language is.
