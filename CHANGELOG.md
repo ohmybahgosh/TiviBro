@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Trakt stays signed in when its sign-in is renewed: two renewals at once (right after TiviBro starts, say) used the same one-time key, Trakt refused the second, and TiviBro signed out.
+
 ## 0.6.0 (alpha 207, 2026-11-23)
 
 Pre-release: expect rough edges, and keep a backup before installing.

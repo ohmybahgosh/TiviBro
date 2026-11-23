@@ -79,3 +79,31 @@ console.log('PASS marked watched or not watched by hand: grouped by show and sea
   assert.equal(st2.episodesFixed, 2, 'the full pass after the fix is done once');
   console.log('PASS a show watched on Trakt: every one of its watched episodes marked here, in one edit');
 })().catch((e) => { console.error(e); process.exit(1); });
+
+// The sign-in kept across a refresh (issue: Trakt signed out after an update): calls at once share one refresh,
+// since each refresh spends its refresh token; a refusal for a token already replaced doesn't sign out.
+(async () => {
+  const kept = { token: { access: 'a1', refresh: 'r1', expires: Date.now() + 3600e3 } }, asked = [];
+  let answer = () => Promise.resolve({ token: { access: 'a2', refresh: 'r2', expires: Date.now() + 7 * 86400e3 } });
+  const c3 = { Promise, setTimeout, clearTimeout, Date, JSON, console, localStorage: { getItem: () => null, setItem: () => {} }, U: { hhmm: () => '12:00', toast: () => {} },
+    MediaStore: { trakt: () => kept, setTrakt: (n) => Object.keys(n).forEach((k) => { if (n[k] === null) delete kept[k]; else kept[k] = n[k]; }) },
+    Media: { request: (what, q) => { asked.push(q.op); return answer(q); }, refresh: () => {} } };
+  vm.createContext(c3); vm.runInContext(fs.readFileSync('app/js/trakt.js', 'utf8') + '\nthis.Trakt = Trakt;', c3);
+  const tok = c3.Trakt._test.token;
+  const got = await Promise.all([tok(), tok(), tok()]);
+  assert.equal(asked.filter((x) => x === 'refresh').length, 1, 'one refresh for three calls at once');
+  assert.deepEqual(got, ['a2', 'a2', 'a2']);
+  assert.equal(await tok(), 'a2', 'a fresh token is used without asking');
+  assert.equal(asked.length, 1);
+  // Refused, but another refresh replaced the token meanwhile: still signed in, with the new one.
+  kept.token = { access: 'a3', refresh: 'r3', expires: Date.now() + 3600e3 };
+  answer = () => { kept.token = { access: 'a4', refresh: 'r4', expires: Date.now() + 7 * 86400e3 }; return Promise.resolve({ error: 'trakt', message: 'invalid_grant', signedOut: true }); };
+  assert.equal(await tok(), 'a4', 'the replacement is used');
+  assert.ok(kept.token && kept.token.access === 'a4', 'and kept');
+  // Refused for the token that's kept: signed out, as before.
+  kept.token = { access: 'a5', refresh: 'r5', expires: Date.now() + 3600e3 };
+  answer = () => Promise.resolve({ error: 'trakt', message: 'invalid_grant', signedOut: true });
+  await assert.rejects(tok());
+  assert.ok(!kept.token, 'signed out');
+  console.log('PASS Trakt: one refresh at a time, and a refusal for a replaced token keeps the sign-in');
+})().catch((e) => { console.error(e); process.exit(1); });

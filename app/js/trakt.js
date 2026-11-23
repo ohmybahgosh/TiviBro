@@ -31,15 +31,34 @@ var Trakt = (function () {
       return r || {};
     });
   }
-  // A token good for at least a day more; refreshed (Trakt's last 7 days) when it isn't.
+  var refreshing = null;       // the refresh in flight, shared by every caller (token)
+  /* A token good for a while more, refreshed when it isn't: in its last day (a 7-day token) or its last
+     seventh (a shorter one).  Each refresh hands out a new refresh token and spends the old one, so one
+     refresh at a time (every caller waits for the same
+     one: two at once spent the same refresh token, the second was refused, and that signed TiviBro out of
+     Trakt), and a refusal signs out only when the token refused is still the one kept (another refresh may
+     have replaced it meanwhile). */
   function token() {
     var t = st().token;
     if (!t || !t.access) return Promise.reject(new Error('Connect Trakt first: Settings > My media > Trakt.'));
-    if (t.expires - Date.now() > 86400e3) return Promise.resolve(t.access);
-    return req({ op: 'refresh', refresh: t.refresh }).then(function (r) { MediaStore.setTrakt({ token: r.token }); return r.token.access; }, function (e) {
-      if (e.signedOut) { MediaStore.setTrakt({ token: null }); changed(); }
+    var left = t.expires - Date.now(), life = t.life || 7 * 86400e3;
+    if (left > Math.min(86400e3, life / 7)) return Promise.resolve(t.access);
+    if (refreshing) return refreshing;
+    var spent = t.refresh;
+    refreshing = req({ op: 'refresh', refresh: spent }).then(function (r) {
+      refreshing = null;
+      r.token.life = Math.max(3600e3, r.token.expires - Date.now());
+      MediaStore.setTrakt({ token: r.token });
+      note('info', 'Signed in to Trakt again (a new token, good for ' + Math.round(r.token.life / 3600e3) + ' h)');
+      return r.token.access;
+    }, function (e) {
+      refreshing = null;
+      var now = st().token;
+      if (e.signedOut && now && now.refresh === spent) { note('warn', 'Trakt refused the sign-in (' + e.message + '): signed out'); MediaStore.setTrakt({ token: null }); changed(); }
+      else if (now && now.refresh !== spent) return now.access;      // refreshed elsewhere meanwhile: use that one
       throw e;
     });
+    return refreshing;
   }
   // Signed in when connected (a private list, the watchlist); Trakt's charts and public lists work without.
   function get(path, needSignIn) {
@@ -479,5 +498,5 @@ var Trakt = (function () {
   return { connected: connected, user: user, settings: settings, setSettings: setSettings, connect: connect, cancel: cancel, pendingCode: pendingCode, disconnect: disconnect,
     lists: lists, has: has, hasChart: hasChart, hasFound: hasFound, update: update, remove: remove, addChart: addChart, addWatchlist: addWatchlist, addHistory: addHistory, addRecommended: addRecommended, addTyped: addTyped, search: search, browse: browse, holds: holds, tabName: tabName, addFound: addFound, CHARTS: CHARTS,
     itemsOf: itemsOf, itemsSoon: itemsSoon, shelves: shelves, watchedMovie: watchedMovie, watchedEpisode: watchedEpisode, markMovie: markMovie, markEpisode: markEpisode, markEpisodes: markEpisodes, paused: paused, syncNow: syncNow, syncIfStale: syncIfStale, start: start, describe: describe, onChange: onChange,
-    get syncing() { return syncing; }, get busy() { return itemsBusy; }, _test: { parse: parse, normalize: normalize, pathsOf: pathsOf, bodyOf: bodyOf } };
+    get syncing() { return syncing; }, get busy() { return itemsBusy; }, _test: { parse: parse, normalize: normalize, pathsOf: pathsOf, bodyOf: bodyOf, token: token } };
 })();
