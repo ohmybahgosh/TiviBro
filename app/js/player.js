@@ -1177,6 +1177,9 @@ var Player = (function () {
       // what is buffered, and move the playhead there before playing.
       var bf = video.buffered, first = bf.length ? bf.start(0) : 0;
       if (bf.length && video.currentTime < first) ahead = bf.end(0) - first;
+      /* Audio sync moves the sound (or the picture) on: nothing has both at 0, the video never gets a frame there
+         (readyState 1) and the start waited forever.  Go to where both are, as the start does below. */
+      if (bf.length && video.currentTime < first - 0.01 && video.readyState < 2 && ahead > 0.3 && syncing()) { try { video.currentTime = first + 0.05; } catch (e) {} }
       // After this channel has run dry, reconnects wait for the bigger cushion too (capped so a
       // reconnect never sits for long).
       var need = cur.boost && cur.everPlayed && cur.starved ? Math.min(Math.max(p.prebuffer, refillGoal()), p.prebuffer + 2) : p.prebuffer;

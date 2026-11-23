@@ -1651,7 +1651,7 @@ var Settings = (function () {
       ['off', 'fill', 'all'], ['Off', 'Fill in missing logos', 'Use for every channel it knows'], function () { return s.logoLib || 'off'; },
       function (v) { s.logoLib = v; save(true); Views.logosChanged(); Logos.load(L.data).then(function () { Views.logosChanged(); build(); }); }));
     if (s.logoLib && s.logoLib !== 'off') {
-      var sty = choice('Logo library style', 'Cleaned up: each channel\'s own logo, trimmed, in white where it needs it for dark screens (Worldwide TV Logos).  In colour: the same logos in their own colours.  Matching set: one style (tv-logos).  Original: as iptv-org has it.  Some of your channels in each, beside.',
+      var sty = choice('Logo library style', 'Cleaned up: each channel\'s own logo, trimmed, in white where it needs it for dark screens (Worldwide TV Logos).  In colour: the same logos in their own colours.  Matching set: one style (tv-logos).  Original: as iptv-org has it.',
         Logos.STYLES, ['Cleaned up', 'Cleaned up, in colour', 'Matching set', 'Original logos'], function () { return Logos.style(); }, function (v) { s.logoStyle = v; save(); Views.logosChanged(); });
       sty.extra = logoPreview;
       out.push(sty);
@@ -2379,7 +2379,9 @@ var Settings = (function () {
     h._t = key; h.innerHTML = '';
     h.appendChild(U.el('div', 'sh-k', T('About this')));
     h.appendChild(U.el('b', '', e._title));
-    if (e._help) h.appendChild(U.el('p', '', e._help));
+    // A row with a preview shows it in place of its long note (the note is under the row's name too): beside the
+    // playing channel's picture the panel has room for one or the other.
+    if (e._help && !extra) h.appendChild(U.el('p', '', e._help));
     if (e._how) h.appendChild(U.el('div', 'sh-how', e._how));
     if (extra) try { h.appendChild(extra()); } catch (x) {}
   }

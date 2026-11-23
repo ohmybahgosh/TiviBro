@@ -10,10 +10,10 @@
                        light screens, name.white.png for dark ones), for a light theme or a colourful guide
      "Matching set"    tv-logo/tv-logos, one style for dark screens (falls back to cleaned up, then the original)
      "Original logos"  iptv-org/database, each channel's own logo (falls back to cleaned up, then the set)
-   The index is kept on the TV for a week. */
+   The index is looked at once a day, and a country's list is fetched again when the index is newer (at most weekly otherwise). */
 var Logos = (function () {
   'use strict';
-  var BASE = 'https://tivibro.app/logos/', WEEK = 7 * 86400e3;
+  var BASE = 'https://tivibro.app/logos/', WEEK = 7 * 86400e3, DAY = 86400e3;     // the index (2 KB) daily, the country lists when it changes
   var index = null, lists = {}, memo = new Map(), ctx = null, localGroups = {}, order = [], loading = null, gen = 0, status = { state: 'off', countries: [], entries: 0, at: 0, error: '' };
   // Regions in a playlist that the index keeps under several countries.
   var ALSO = { LAT: ['MX', 'AR', 'CO', 'ES', 'CL', 'PE'], ARAB: ['AE', 'SA', 'EG', 'QA'], EXYU: ['RS', 'HR', 'BA', 'SI', 'MK'], NORDIC: ['SE', 'NO', 'DK', 'FI'], CARIB: ['JM', 'TT', 'DO', 'PR'] };
@@ -25,12 +25,15 @@ var Logos = (function () {
   function base() { var b = S().logoBase || BASE; return /\/$/.test(b) ? b : b + '/'; }
   function cc(code) { code = String(code || '').toUpperCase(); return code === 'GB' ? 'UK' : code; }
 
-  function cached(name, maxAge) {
+  /* stamp: the index's date for a country's list, so a list kept from an older index (one without Worldwide TV Logos,
+     before alpha 202) is fetched again the day the index changes, not up to a week later.  Without it, Cleaned up
+     showed the Matching set's logos for every channel on a TV that had the library on before. */
+  function cached(name, maxAge, stamp) {
     // Kept by the helper with the playlists (Store.bigGet/bigSet), not in the browser's small storage.
     return Store.bigGet('logos:' + name).catch(function () { return null; }).then(function (x) {
-      if (x && x.base === base() && Date.now() - x.at < maxAge) return x.data;
+      if (x && x.base === base() && Date.now() - x.at < maxAge && (stamp == null || x.stamp === stamp)) return x.data;
       return U.getJSON(base() + name + '.json', 30000, 'logos ' + name).then(function (data) {
-        Store.bigSet('logos:' + name, { at: Date.now(), base: base(), data: data });
+        Store.bigSet('logos:' + name, { at: Date.now(), base: base(), data: data, stamp: stamp });
         return data;
       }, function (e) { if (x && x.data) return x.data; throw e; });   // offline: last week's copy beats nothing
     });
@@ -63,11 +66,11 @@ var Logos = (function () {
     if (mode() === 'off' || !data || !data.channels || !data.channels.length) { status = { state: 'off', countries: [], entries: 0, at: 0, error: '' }; return Promise.resolve(); }
     status = { state: 'loading', countries: [], entries: 0, at: 0, error: '' };
     var want = wanted(data);
-    loading = cached('index', WEEK).then(function (ix) {
+    loading = cached('index', DAY).then(function (ix) {
       if (my !== gen) return;
       index = ix;
       var have = want.filter(function (c) { return ix.countries && ix.countries[c]; });
-      return Promise.all(have.map(function (c) { return cached(c, WEEK).then(function (raw) { return [c, raw]; }, function () { return null; }); })).then(function (got) {
+      return Promise.all(have.map(function (c) { return cached(c, WEEK, ix.at || '').then(function (raw) { return [c, raw]; }, function () { return null; }); })).then(function (got) {
         if (my !== gen) return;
         var n = 0;
         got.forEach(function (x) { if (!x) return; lists[x[0]] = prepare(x[0], x[1]); order.push(x[0]); n += lists[x[0]].keys.size; });
@@ -128,15 +131,18 @@ var Logos = (function () {
   }
   function url(c) { return mode() === 'off' ? '' : urlOf(match(c)); }
 
-  /* A few of these channels the library knows, for the preview of each style in Settings: ones whose logo differs
-     between the styles first, so the difference shows. */
+  /* A few of these channels the library knows, for the preview of each style in Settings: the ones whose logo
+     differs most between the styles first (and has one in every style), so the difference shows. */
   function samples(channels, n) {
-    var out = [], other = [];
-    for (var i = 0; i < channels.length && out.length < n; i++) {
+    var scored = [];
+    for (var i = 0; i < channels.length && scored.length < 400; i++) {
       var e = match(channels[i]); if (!e) continue;
-      (e[4] && (e[3] || e[2]) ? out : other).push(channels[i]);
+      var urls = STYLES.map(function (st) { return urlOf(e, st); }), seen = {};
+      urls.forEach(function (u) { if (u) seen[u] = 1; });
+      scored.push({ c: channels[i], d: Object.keys(seen).length + (e[2] && e[3] && e[4] ? 1 : 0), i: i });
     }
-    return out.concat(other).slice(0, n);
+    scored.sort(function (x, y) { return y.d - x.d || x.i - y.i; });
+    return scored.slice(0, n).map(function (x) { return x.c; });
   }
   // How many of these channels the library has a logo for, and how many of those had none before.
   function coverage(channels, own) {

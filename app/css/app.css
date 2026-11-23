@@ -1526,8 +1526,10 @@ body.mv-open #osd,body.mv-open #clock,body.mv-open .qpanel{display:none!importan
 .sp-shelf.active h3{color:var(--text)}
 .sp-rsub{font-size:23px;font-weight:400;color:var(--muted);margin-left:16px}
 .sp-track{display:flex;gap:24px;padding:14px 6px;transition:transform .18s ease-out}
-.sp-card{position:relative;flex:none;width:448px;height:252px;border-radius:18px;padding:20px 22px;background:linear-gradient(160deg,var(--raised),var(--panel));border:2px solid rgba(255,255,255,.05);transition:transform 140ms ease,box-shadow 140ms ease}
-.sp-card.focus{box-shadow:0 0 0 5px var(--accent),0 16px 36px rgba(0,0,0,.45);transform:scale(1.04)}
+/* No scale or fade on focus, and a plain background: on the TV each card grown by a transition was drawn again frame
+   by frame, and ▲ ▼ ran at about 12 frames a second for the first seconds (measured on a C2: 80 ms a frame, 21 without). */
+.sp-card{position:relative;flex:none;width:448px;height:252px;border-radius:18px;padding:20px 22px;background:var(--raised);border:2px solid rgba(255,255,255,.05)}
+.sp-card.focus{box-shadow:0 0 0 5px var(--accent),0 16px 36px rgba(0,0,0,.45)}
 body.focus-ring .sp-card.focus{box-shadow:0 0 0 5px var(--accent),0 0 0 9px #fff}
 .sp-card.post{opacity:.82}.sp-card.post.focus{opacity:1}
 /* Out of sight (sportshub.js paintOnly): kept in place, not painted. */
@@ -1681,11 +1683,11 @@ body:not(.full) .sp-bug,body.mv-open .sp-bug{display:none}
 .avs-keys{font-size:20px;margin-top:10px;color:#9aa;white-space:pre}
 .avs-note{font-size:20px;min-height:26px;margin-top:8px;color:var(--accent)}
 /* Logo library style's preview (settings.js logoPreview): each style's logos on the guide's own background. */
-.logo-prev{margin-top:14px;display:flex;flex-direction:column;gap:6px}
-.lp-line{padding:6px 12px;border-radius:10px;background:var(--panel, rgba(0,0,0,.35));border:2px solid transparent}
+.logo-prev{margin-top:12px;display:flex;flex-direction:column;gap:4px}
+.lp-line{padding:4px 10px 6px;border-radius:10px;background:var(--panel, rgba(0,0,0,.35));border:2px solid transparent}
 .lp-line.on{border-color:var(--accent)}
-.lp-name{font-size:17px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.lp-name{font-size:16px;font-weight:600;color:var(--muted);margin-bottom:2px}
 .lp-line.on .lp-name{color:var(--text, #fff)}
-.lp-strip{display:flex;gap:12px;align-items:center;height:38px;overflow:hidden}
-.lp-strip img{height:34px;width:66px;flex:none;object-fit:contain}
+.lp-strip{display:flex;gap:10px;align-items:center;height:34px;overflow:hidden}
+.lp-strip img{height:30px;width:62px;flex:none;object-fit:contain}
 .lp-none{color:var(--muted)}

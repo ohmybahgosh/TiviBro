@@ -75,5 +75,5 @@
 .nogap .sp-bt > * + *{margin-left:10px}
 .nogap .mv-g-row > * + *{margin-left:20px}
 .nogap .avs-bar > * + *{margin-left:18px}
-.nogap .logo-prev > * + *{margin-top:6px}
-.nogap .lp-strip > * + *{margin-left:12px}
+.nogap .logo-prev > * + *{margin-top:4px}
+.nogap .lp-strip > * + *{margin-left:10px}
