@@ -9,6 +9,7 @@
 package app.tivibro.phone.ui
 
 import app.tivibro.phone.tr
+import app.tivibro.phone.trn
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -184,6 +185,8 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
     var page by remember { mutableStateOf<SetPage?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
+    // TiviBro isn't on the TV's screen (another app is): the pages wait for a tap instead of taking over the TV.
+    var away by remember { mutableStateOf(false) }
     var picking by remember { mutableStateOf<SetRow?>(null) }
     var showLog by remember { mutableStateOf(false) }
     var native by remember { mutableStateOf<SetRow?>(null) }      // a media-add, media-source or tmdb-token row open here
@@ -202,9 +205,11 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
                 sec?.let { a.put("sec", it) }
                 a.put("path", JSONArray(path))
                 if (pin.isNotEmpty()) a.put("pin", pin)
-                val r = model.ask(id, "settings", a, seal = true, timeoutMs = timeoutMs, tries = tries)
+                // Never opens TiviBro by itself: Settings on the phone while the TV shows something else leaves it there.
+                val r = model.ask(id, "settings", a, seal = true, timeoutMs = timeoutMs, tries = tries, noOpen = true)
+                away = false
                 if (r.optBoolean("locked")) { askPin = r.optString("msg"); pin = "" } else then(r)
-            } catch (e: TbException) { error = e.message }
+            } catch (e: TbException) { if (e.code == "closed") away = true else error = e.message }
             catch (e: Exception) { error = tr("The TV didn't answer.  Is it on, and on the same network?") }
             busy = false
         }
@@ -261,6 +266,11 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
         }
         error?.let { Text(it, color = Bad, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(16.dp, 6.dp)) }
         when {
+            away -> Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(tr("TiviBro isn't on the TV's screen right now, so its settings can't be read."), color = Muted)
+                Button(onClick = { model.openTiviBro(id); scope.launch { kotlinx.coroutines.delay(4000); if (sec == null) loadSections() else loadPage() } }) { Text(tr("Open TiviBro on the TV")) }
+                OutlinedButton(onClick = { if (sec == null) loadSections() else loadPage() }) { Text(tr("Try again")) }
+            }
             sec == null -> {
                 val l = sections
                 if (l == null) Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { if (error == null) CircularProgressIndicator() else Button(onClick = { loadSections() }) { Text(tr("Try again")) } }
@@ -268,7 +278,7 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
                     item { SearchBox(query, { query = it }) }
                     val h = hits
                     if (h != null) {
-                        item { Text(if (h.isEmpty()) tr("No setting has that in its name or its note.") else "${h.size} setting${if (h.size == 1) "" else "s"}", color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(4.dp, 4.dp)) }
+                        item { Text(if (h.isEmpty()) tr("No setting has that in its name or its note.") else trn(h.size, "{n} setting", "{n} settings"), color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(4.dp, 4.dp)) }
                         if (h.isNotEmpty()) item {
                             SetCard { h.forEachIndexed { n, x ->
                                 if (n > 0) HorizontalDivider(color = Line.copy(alpha = 0.5f), thickness = 0.5.dp)

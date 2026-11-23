@@ -2081,5 +2081,8 @@ I18n.add('pt-BR', {
   "{n} draft versions": ["{n} versão de rascunho","{n} versões de rascunho"],
   "That needs the TV.  You are editing a backup on the phone: open the editor with the TV for this.": "Isso precisa da TV.  Você está editando um backup no celular: abra o editor com a TV para isso.",
   "The channel list kept on this phone is missing.  Open Edit channels with the TV once.": "A lista de canais guardada neste celular está faltando.  Abra Editar canais com a TV uma vez.",
-  "Unknown request": "Pedido desconhecido"
+  "Unknown request": "Pedido desconhecido",
+  "TiviBro isn't on the TV's screen right now, so its settings can't be read.": "O TiviBro não está na tela da TV agora, então as configurações não podem ser lidas.",
+  "TiviBro isn't on the TV's screen.": "O TiviBro não está na tela da TV.",
+  "{n} settings": ["{n} configuração", "{n} configurações"]
 });

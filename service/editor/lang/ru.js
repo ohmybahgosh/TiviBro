@@ -2081,5 +2081,8 @@ I18n.add('ru', {
   "{n} draft versions": ["{n} версия черновика","{n} версии черновика","{n} версий черновика"],
   "That needs the TV.  You are editing a backup on the phone: open the editor with the TV for this.": "Для этого нужен телевизор.  Вы редактируете резервную копию на телефоне: откройте редактор с телевизором.",
   "The channel list kept on this phone is missing.  Open Edit channels with the TV once.": "Список каналов на этом телефоне отсутствует.  Один раз откройте «Изменить каналы» с телевизором.",
-  "Unknown request": "Неизвестный запрос"
+  "Unknown request": "Неизвестный запрос",
+  "TiviBro isn't on the TV's screen right now, so its settings can't be read.": "TiviBro сейчас не на экране телевизора, поэтому его настройки не прочитать.",
+  "TiviBro isn't on the TV's screen.": "TiviBro не на экране телевизора.",
+  "{n} settings": ["{n} настройка", "{n} настройки", "{n} настроек"]
 });

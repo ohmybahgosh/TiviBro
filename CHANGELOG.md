@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Settings in the phone app no longer brings TiviBro to the TV's screen over another app (YouTube, say).  When TiviBro isn't on screen it says so, with a button to open it.
+
 ## 0.6.0 (alpha 206, 2026-11-23)
 
 Pre-release: expect rough edges, and keep a backup before installing.

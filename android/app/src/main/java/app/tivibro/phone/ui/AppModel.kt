@@ -612,11 +612,14 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     /* ---------- questions for TiviBro (POST /v1/ask) ---------- */
 
     /** Asks TiviBro on the TV and returns its answer.  While TiviBro is still opening, asks again a few times. */
-    suspend fun ask(id: String, what: String, args: JSONObject = JSONObject(), seal: Boolean = false, timeoutMs: Int = 45_000, tries: Int = 3): JSONObject = withContext(Dispatchers.IO) {
+    /* With [noOpen], TiviBro isn't brought to the screen to answer: when it isn't on screen (closed, or behind
+       another app such as YouTube) this throws a TbException with code "closed" instead. */
+    suspend fun ask(id: String, what: String, args: JSONObject = JSONObject(), seal: Boolean = false, timeoutMs: Int = 45_000, tries: Int = 3, noOpen: Boolean = false): JSONObject = withContext(Dispatchers.IO) {
         val tv = tv(id) ?: throw TbException(tr("This TV is no longer paired."))
         var busy = false
         repeat(tries) { i ->
-            val r = TvClient(tv, timeoutMs).ask(what, args, seal)
+            val r = TvClient(tv, timeoutMs).ask(what, args, seal, noOpen)
+            if (r.optBoolean("closed")) throw TbException(tr("TiviBro isn't on the TV's screen."), code = "closed")
             if (!r.optBoolean("pending")) return@withContext r.optJSONObject("data") ?: JSONObject()
             busy = r.optBoolean("busy")
             if (i < tries - 1) delay(1200)
