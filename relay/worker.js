@@ -193,6 +193,11 @@ async function followup(request, env) {
   if (!n || !same(j.key, await reportKey(env, n))) return json({ error: 'That report is not from this TV.' }, 403);
   const r = { what: field(j.what, 2000), version: field(j.version, 40), tv: field(j.tv, 120), log: field(j.log, MAX_BODY) };
   if (!VER.test(r.version) || !/^# TiviBro problem report/.test(r.log)) return json({ error: 'That does not look like a TiviBro report.' }, 400);
+  /* Fixed in a newer TiviBro than the TV has (the newest version the developer's replies name): update first.  Old
+     versions keep sending Still happening from the reply screen (issue #91: a TV on alpha 132, months after the fix). */
+  const known = await statusOf(env, n).catch(() => null);
+  if (known && known.fixed && vparse(r.version) && vcmp(known.fixed, r.version) > 0)
+    return json({ error: 'This was fixed in TiviBro ' + known.fixed + ', and this TV has ' + r.version + '.  Update first: Settings > Updates, about and diagnostics.  Then Still happening if it comes back.', update: known.fixed }, 409);
   const why = await limited(env, request.headers.get('cf-connecting-ip') || 'unknown');
   if (why) return json({ error: why }, 429);
   const st = await gh(env, '/issues/' + n);
@@ -228,6 +233,11 @@ async function fixed(request, env) {
   if (!n || !same(j.key, await reportKey(env, n))) return json({ error: 'That report is not from this TV.' }, 403);
   const r = { what: field(j.what, 2000), version: field(j.version, 40), tv: field(j.tv, 120) };
   if (!VER.test(r.version)) return json({ error: 'That does not look like TiviBro.' }, 400);
+  /* Fixed in a newer TiviBro than the TV has (the newest version the developer's replies name): update first.  Old
+     versions keep sending Still happening from the reply screen (issue #91: a TV on alpha 132, months after the fix). */
+  const known = await statusOf(env, n).catch(() => null);
+  if (known && known.fixed && vparse(r.version) && vcmp(known.fixed, r.version) > 0)
+    return json({ error: 'This was fixed in TiviBro ' + known.fixed + ', and this TV has ' + r.version + '.  Update first: Settings > Updates, about and diagnostics.  Then Still happening if it comes back.', update: known.fixed }, 409);
   const why = await limited(env, request.headers.get('cf-connecting-ip') || 'unknown');
   if (why) return json({ error: why }, 429);
   const st = await gh(env, '/issues/' + n);

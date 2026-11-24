@@ -129,13 +129,15 @@ var Reports = (function () {
   function still(r) {
     if (!r.key) { U.toast('This report can only be followed up on GitHub: scan the code on the report.', 7000); return; }
     var cur = (window.Update && Update.current) || TIVIBRO_VERSION, behind = r.fixed && Update._test.compare(r.fixed, cur) > 0;
-    UI.menu('Tell the developer it still happens?', [
-      { label: 'Send with the log', sub: (behind ? 'You have ' + cur + '; the fix is in ' + r.fixed + '.  ' : '') + 'The log goes too, with logins and server names taken out.', action: function () { send(r, ''); } },
+    // Fixed in a newer version than this one: updating comes first (the relay turns a follow-up away until then).
+    var first = behind ? [{ label: 'Update to ' + r.fixed, sub: T('You have {x}; the fix is in {y}.', { x: cur, y: r.fixed }), action: function () { update(); } }] : [];
+    UI.menu('Tell the developer it still happens?', first.concat([
+      { label: 'Send with the log', sub: (behind ? T('You have {x}; the fix is in {y}.', { x: cur, y: r.fixed }) + '  ' : '') + T('The log goes too, with logins and server names taken out.'), action: function () { send(r, ''); } },
       { label: 'Add a note first', sub: 'What you were doing, or what is different now', action: function () {
         UI.prompt('What happens now?', '', function (v) { send(r, v); }, 'A sentence is plenty.  The log goes with it.', false, 'Send');
       } },
       { label: 'Cancel', current: true }
-    ]);
+    ]));
   }
   function send(r, note) {
     U.toast('Sending…', 3000);

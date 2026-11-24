@@ -62,6 +62,9 @@ r = await post('/followup', { n: 8, key, what: 'again', version: '0.6.0-alpha.56
 ok('one report\'s key does not open another', r.status === 403);
 r = await post('/followup', { n: 7, key, what: 'again', version: 'nope', log: LOG });
 ok('nonsense is refused', r.status === 400);
+r = await post('/followup', { n: 7, key, what: 'again', version: '0.6.0-alpha.54', tv: 'OLED', log: LOG }, '3.3.3.3');
+const old = await r.json();
+ok('a TV older than the fix is told to update first, and nothing is posted', r.status === 409 && old.update === '0.6.0-alpha.56' && /Update first/.test(old.error) && !comments[7].some(c => /Still happening/.test(c.body)), JSON.stringify(old));
 issues[7].state = 'closed'; issues[7].state_reason = 'completed';
 r = await (await post('/followup', { n: 7, key, what: 'Still closes, @someone see #3', version: '0.6.0-alpha.56', tv: 'OLED', log: LOG }, '2.2.2.2')).json();
 const made = comments[7][comments[7].length - 1];
