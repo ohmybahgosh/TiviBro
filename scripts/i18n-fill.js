@@ -9,7 +9,9 @@
    The key comes from ANTHROPIC_API_KEY (never commit it); I18N_MODEL picks the model (claude-sonnet-5-5).
 
    Cost: the rules, plural forms and the whole glossary go first as the system prompt, marked for prompt
-   caching, so every request after the first reads them from the cache (a tenth of the price).  The batch
+   caching (for an hour, since a batch's requests can start well apart), so every request after the first
+   reads them from the cache (a tenth of the price).  A new language has no glossary words yet: they are
+   translated first, in one request, so every later request uses the same words for TiviBro's own terms.  The batch
    way (the default) runs every request at once at half price, usually done within minutes (up to a day at
    the most); --now asks them one by one at full price.
    What comes back goes through scripts/i18n-lib.js problem() and is written where each text shows.  A text
@@ -44,7 +46,7 @@ async function test() {
 /* The part every request shares, cached: the rules, the plural forms and every glossary word in this language.
    Then each request has only its own texts. */
 function system(todo, g) {
-  return [{ type: 'text', cache_control: { type: 'ephemeral' }, text:
+  return [{ type: 'text', cache_control: { type: 'ephemeral', ttl: '1h' }, text:
     'You translate TiviBro, an IPTV app for LG TVs with a phone app and a web editor, from English into ' + todo.name + '.\n\n' +
     'Rules:\n- ' + todo.rules.join('\n- ') + '\n\nPlural forms in ' + todo.name + ': ' + todo.forms.count + ' (' + todo.forms.order.join('; ') + ').  ' + todo.forms.note + '\n\n' +
     'Glossary: TiviBro\'s own words and how they are translated here.  Use them every time:\n' +
@@ -102,7 +104,17 @@ function results(text) {
 (async () => {
   if (code === '--test') return test();
   if (!code || !L.lang(code)) { console.error('node scripts/i18n-fill.js <code> [--now] [--max N]  |  --test'); process.exit(1); }
-  const todo = JSON.parse(cp.execFileSync(process.execPath, [path.join(__dirname, 'i18n-todo.js'), code], { maxBuffer: 64 << 20 }).toString());
+  const todoNow = () => JSON.parse(cp.execFileSync(process.execPath, [path.join(__dirname, 'i18n-todo.js'), code], { maxBuffer: 64 << 20 }).toString());
+  let todo = todoNow();
+  // The glossary's terms not yet in this language: first, alone, so the rest are asked with them.
+  const terms = todo.items.filter((x) => x.term);
+  if (terms.length && !argv.includes('--results')) {
+    console.log(terms.length + ' glossary terms first, so every request uses the same words');
+    let got = {}; try { got = await now(params(system(todo, L.glossary(code)), terms)); } catch (e) { console.log('  the terms: ' + e.message); }
+    const res = L.importAll(code, got, false);
+    console.log('  ' + (res.tv + res.ed) + ' written' + (res.bad.length ? ', ' + res.bad.length + ' left for the rest' : ''));
+    todo = todoNow();
+  }
   const items = todo.items.slice(0, max), g = L.glossary(code), sys = system(todo, g), batches = [];
   for (let i = 0; i < items.length; i += BATCH) batches.push(items.slice(i, i + BATCH));
   console.log(items.length + ' of ' + todo.items.length + ' texts into ' + todo.name + ' with ' + MODEL + ', ' + batches.length + ' requests' + (argv.includes('--now') ? ', one by one' : ', as one batch'));

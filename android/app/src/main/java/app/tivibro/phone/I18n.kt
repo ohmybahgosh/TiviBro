@@ -21,11 +21,11 @@ import java.util.Locale
 object I18n {
     // langs:begin
     /** The languages TiviBro has, as the TV and the web editor name them (i18n/langs.json, by scripts/i18n-langs.js). */
-    val LANGS = listOf("en", "es", "es-ES", "fr", "pt-BR", "pt-PT", "ru", "de")
+    val LANGS = listOf("en", "es", "es-ES", "fr", "pt-BR", "pt-PT", "ru", "de", "it", "tr", "pl", "nl")
     /** Languages made from another one with their own words swapped (I18n.variant in the files). */
     val VARIANTS = mapOf("es-ES" to "es", "pt-PT" to "pt-BR")
     /** Each one's plural rule (see [plural]). */
-    val PLURAL = mapOf("en" to "one", "es" to "one", "es-ES" to "one", "fr" to "fr", "pt-BR" to "pt", "pt-PT" to "pt", "ru" to "ru", "de" to "one")
+    val PLURAL = mapOf("en" to "one", "es" to "one", "es-ES" to "one", "fr" to "fr", "pt-BR" to "pt", "pt-PT" to "pt", "ru" to "ru", "de" to "one", "it" to "one", "tr" to "one", "pl" to "pl", "nl" to "one")
     // langs:end
 
     /** The language in use (a code from [LANGS]). */

@@ -21,9 +21,9 @@ var I18n = (function () {
   'use strict';
   // langs:begin
   // code, name in its own language, name in English (from i18n/langs.json by scripts/i18n-langs.js)
-  var LANGS = [['en', 'English', 'English'], ['es', 'Español', 'Spanish'], ['es-ES', 'Español (España)', 'Spanish (Spain)'], ['fr', 'Français', 'French'], ['pt-BR', 'Português (Brasil)', 'Portuguese (Brazil)'], ['pt-PT', 'Português (Portugal)', 'Portuguese (Portugal)'], ['ru', 'Русский', 'Russian'], ['de', 'Deutsch', 'German']];
+  var LANGS = [['en', 'English', 'English'], ['es', 'Español', 'Spanish'], ['es-ES', 'Español (España)', 'Spanish (Spain)'], ['fr', 'Français', 'French'], ['pt-BR', 'Português (Brasil)', 'Portuguese (Brazil)'], ['pt-PT', 'Português (Portugal)', 'Portuguese (Portugal)'], ['ru', 'Русский', 'Russian'], ['de', 'Deutsch', 'German'], ['it', 'Italiano', 'Italian'], ['tr', 'Türkçe', 'Turkish'], ['pl', 'Polski', 'Polish'], ['nl', 'Nederlands', 'Dutch']];
   // Each one's plural rule (see plural below), and the ones made from another (variant)
-  var PLURAL = { 'en': 'one', 'es': 'one', 'es-ES': 'one', 'fr': 'fr', 'pt-BR': 'pt', 'pt-PT': 'pt', 'ru': 'ru', 'de': 'one' };
+  var PLURAL = { 'en': 'one', 'es': 'one', 'es-ES': 'one', 'fr': 'fr', 'pt-BR': 'pt', 'pt-PT': 'pt', 'ru': 'ru', 'de': 'one', 'it': 'one', 'tr': 'one', 'pl': 'pl', 'nl': 'one' };
   var FROM = { 'es-ES': 'es', 'pt-PT': 'pt-BR' };
   // langs:end
   var dicts = {}, pats = {}, cache = {}, cacheN = 0, misses = {}, missN = 0, tv = '', tvAsked = false, listeners = [];

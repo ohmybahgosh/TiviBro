@@ -8,6 +8,10 @@
     { "code": "pt-BR", "name": "Português (Brasil)", "english": "Portuguese (Brazil)", "plural": "pt" },
     { "code": "pt-PT", "name": "Português (Portugal)", "english": "Portuguese (Portugal)", "plural": "pt", "from": "pt-BR" },
     { "code": "ru", "name": "Русский", "english": "Russian", "plural": "ru" },
-    { "code": "de", "name": "Deutsch", "english": "German", "plural": "one" }
+    { "code": "de", "name": "Deutsch", "english": "German", "plural": "one" },
+    { "code": "it", "name": "Italiano", "english": "Italian", "plural": "one" },
+    { "code": "tr", "name": "Türkçe", "english": "Turkish", "plural": "one" },
+    { "code": "pl", "name": "Polski", "english": "Polish", "plural": "pl" },
+    { "code": "nl", "name": "Nederlands", "english": "Dutch", "plural": "one" }
   ]
 }
