@@ -899,11 +899,20 @@ var Vod = (function () {
     return Source.vodInfo(it.id, plOf(it)).then(function (r) {
       var i = (r && r.info) || {}, md = (r && r.movie_data) || {};
       // The provider's trailer: a YouTube id, or a whole YouTube link.
-      var m = { trailer: ytId(i.youtube_trailer || i.trailer), plot: i.plot || i.description || '', genre: i.genre || '', cast: i.cast || i.actors || '', director: i.director || '', dur: i.duration || '', year: (i.releasedate || i.release_date || '').slice(0, 4), poster: i.movie_image || i.cover_big || '', backdrop: [].concat(i.backdrop_path || [])[0] || '', media: Caps.fromXtream(i) };
+      var m = { trailer: ytId(i.youtube_trailer || i.trailer), plot: i.plot || i.description || '', genre: i.genre || '', cast: i.cast || i.actors || '', director: i.director || '', dur: i.duration || '', year: (i.releasedate || i.release_date || '').slice(0, 4), poster: i.movie_image || i.cover_big || '', backdrop: [].concat(i.backdrop_path || [])[0] || '', media: Caps.fromXtream(i), tmdb: tmdbOf(i.tmdb_id || i.tmdb || md.tmdb_id) };
       info.set(k, m);
       if (then) then();
       if (!m.trailer) m.tr = new Promise(function (res) { movieTrailer(i.tmdb_id || i.tmdb || md.tmdb_id, nm, m.year || yr, function (t) { if (t && info.get(k) === m) { m.trailer = t; if (then) then(); } res(t || ''); }); });
     }).catch(function () {});
+  }
+  // A TMDB id as a provider gives it (a number, a string, sometimes "0" or a link): the number, or ''.
+  function tmdbOf(v) { var m = /^\s*([1-9][0-9]{0,9})\s*$/.exec(String(v == null ? '' : v)); return m ? m[1] : ''; }
+  /* A provider's movie's TMDB id, for skip times (skipper.js): from its row in the list, its details already
+     loaded, or its details asked for now.  '' when the provider doesn't say. */
+  function movieTmdb(it) {
+    var known = tmdbOf(it.tmdb || it.tmdb_id) || (info.get(key(it)) || {}).tmdb;
+    if (known) return Promise.resolve(known);
+    return Source.vodInfo(it.id, plOf(it)).then(function (r) { var i = (r && r.info) || {}, md = (r && r.movie_data) || {}; return tmdbOf(i.tmdb_id || i.tmdb || md.tmdb_id); }, function () { return ''; });
   }
   var tmdbMv = {};
   function movieTrailer(tmdbId, name, year, cb) {
@@ -1020,7 +1029,7 @@ var Vod = (function () {
   function play(it, fromStart) {
     var id = idOf(it);
     var r = resumeOf(id), startAt = !fromStart && r && r.pos > 30 && !(U.isWatchedAt || function (p, d) { return d > 0 && (p >= d * 0.9 || p > d - 60); })(r.pos, r.dur) ? r.pos - 5 : 0;
-    var meta = { id: id, media: mediaOf(it), title: it.ep ? (series ? series.name : '') + '   ' + it.label : it.name, sub: it.ep ? '' : it.year || '', item: it, seriesKey: series ? pre(series) + 's' + series.id : null, p: it.pl || '', provider: true };
+    var meta = { id: id, media: mediaOf(it), title: it.ep ? (series ? series.name : '') + '   ' + it.label : it.name, sub: it.ep ? '' : it.year || '', item: it, seriesKey: series ? pre(series) + 's' + series.id : null, showTmdb: it.ep && series ? tmdbOf(series.tmdb) : '', p: it.pl || '', provider: true };
     // An M3U list's episodes carry their own link, and its movies' links are asked for (Source.movieLink).
     var link = it.ep ? Promise.resolve(it.url || Source.episodeUrl(it.id, it.ext, plOf(it))) : Source.movieLink(it.id, it.ext, plOf(it));
     link.then(function (url) {
@@ -1401,5 +1410,5 @@ var Vod = (function () {
   function arrange(k) { U.toast('Loading ' + (k === 'series' ? 'shows' : 'movies') + '…'); load(k).then(function () { kind = k; VodHome.arrange(k, homeApi); }, function (e) { U.toast('Could not load the list: ' + (e && e.message || e), 5000); }); }
   // Settings > Movies and shows > Order categories changed: the list again, on the same category.
   function recats() { if (!catsVL || !data[kind]) return; var c = catsVL.current(), cl = catList(); catsVL.setItems(cl, Math.max(0, cl.findIndex(function (x) { return c && x.id === c.id; }))); }
-  return { arrange: arrange, recats: recats, reloadNow: reloadNow, homeApi: function () { return homeApi; }, _test: { homeApi: function () { return homeApi; }, catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, lean: lean, findRemote: findRemote, titleCount: titleCount, countsFor: countsFor, get searchState() { return searchState(); }, offered: offered, reset: function (fresh) { if (fresh) freshAt = Date.now(); gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; seriesAsk++; spClose(); } };
+  return { arrange: arrange, movieTmdb: movieTmdb, recats: recats, reloadNow: reloadNow, homeApi: function () { return homeApi; }, _test: { homeApi: function () { return homeApi; }, catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, lean: lean, findRemote: findRemote, titleCount: titleCount, countsFor: countsFor, get searchState() { return searchState(); }, offered: offered, reset: function (fresh) { if (fresh) freshAt = Date.now(); gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; seriesAsk++; spClose(); } };
 })();

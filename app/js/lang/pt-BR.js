@@ -1939,7 +1939,6 @@ I18n.add('pt-BR', {
   "For": "Para",
   "For OLED TVs left on the guide or a menu: every 90 seconds the screen moves a few pixels, and after 10 minutes without a key press it dims until you press one.  Fullscreen video is left alone.": "Para TVs OLED no guia ou em um menu: a cada 90 s a imagem se move alguns pixels e, após 10 min sem tocar no controle, escurece.  O vídeo em tela cheia não muda.",
   "Fourth of July movies": "Filmes de 4 de Julho",
-  "From the file's chapters: \"Skip intro\" while an intro or recap plays, and \"Up next\" when the credits start (the next episode, or the next movie of a collection you play).  OK does it, Back hides it.": "Dos capítulos do arquivo: \"Pular abertura\" enquanto passa uma abertura ou recapitulação, e \"A seguir\" quando os créditos começam (o próximo episódio ou o próximo filme de uma coleção que você está assistindo).  OK faz isso, Voltar esconde.",
   "From your Trakt account": "Da sua conta do Trakt",
   "Full": "Máximo",
   "Genre": "Gênero",
@@ -3046,5 +3045,9 @@ I18n.add('pt-BR', {
   "The subscription for {x} ends today.  Renew it with your provider to keep watching.": "A assinatura de {x} termina hoje.  Renove com seu provedor para continuar assistindo.",
   "The subscription for {x} ends in {n} day ({y}).  Renew it with your provider to keep watching.": ["A assinatura de {x} termina em {n} dia ({y}).  Renove com seu provedor para continuar assistindo.", "A assinatura de {x} termina em {n} dias ({y}).  Renove com seu provedor para continuar assistindo."],
   "The subscription for {x} ends in {n} days ({y}).  Renew it with your provider to keep watching.": ["A assinatura de {x} termina em {n} dia ({y}).  Renove com seu provedor para continuar assistindo.", "A assinatura de {x} termina em {n} dias ({y}).  Renove com seu provedor para continuar assistindo."],
-  "Warn before a subscription ends": "Avisar antes de uma assinatura terminar"
+  "Warn before a subscription ends": "Avisar antes de uma assinatura terminar",
+  "Contains information from IntroDB (introdb.app), made available under the Open Database License (ODbL).": "Contém informações do IntroDB (introdb.app), disponíveis sob a Open Database License (ODbL).",
+  "For a movie or episode whose file has no chapters: where its intro, recap and credits are, from TheIntroDB and IntroDB, two free community databases.  Only the title's TMDB or IMDb number, season and episode are sent.": "Para um filme ou episódio cujo arquivo não tem capítulos: onde estão a abertura, a recapitulação e os créditos, segundo o TheIntroDB e o IntroDB, dois bancos de dados comunitários gratuitos.  Só são enviados o número TMDB ou IMDb do título, a temporada e o episódio.",
+  "From the file's chapters, or the online databases below: \"Skip intro\" while an intro or recap plays, and \"Up next\" when the credits start (the next episode, or the next movie of a collection you play).  OK does it, Back hides it.": "Pelos capítulos do arquivo, ou pelos bancos de dados online abaixo: \"Pular abertura\" enquanto passa uma abertura ou recapitulação, e \"A seguir\" quando os créditos começam (o próximo episódio, ou o próximo filme de uma coleção que você assiste).  OK faz, Voltar esconde.",
+  "Skip times from online databases": "Tempos para pular de bancos de dados online"
 });

@@ -338,6 +338,13 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   pg = await sa({ op: 'choice', sec: 'look', i: nums.i, v: 1 });
   ok('a choice from the phone changes the TV', await ev(() => Store.settings.numFont) === 'even' && await ev(() => document.body.classList.contains('nums-even')));
   await sa({ op: 'choice', sec: 'look', i: nums.i, v: 0 });
+  // Every TV setting reaches the phone and the web editor too: the newest ones as well (skip times, alpha 208).
+  pg = await sa({ op: 'page', sec: 'playback' });
+  const sk = pg.rows.find((r) => r.label === 'Skip times from online databases');
+  ok('the phone has Skip times from online databases, on', sk && sk.kind === 'toggle' && sk.on === true, JSON.stringify(pg.rows.map((r) => r.label)).slice(0, 300));
+  if (sk) { await sa({ op: 'toggle', sec: 'playback', i: sk.i, on: false }); ok('...and turns it off on the TV', await ev(() => Store.settings.skipOnline) === false); await sa({ op: 'toggle', sec: 'playback', i: sk.i, on: true }); }
+  const dePg = await ask('settings', { op: 'page', sec: 'playback' }, { seal: true, lang: 'de' });
+  ok('a phone in German gets it in German', (dePg.rows || []).some((r) => r.label === 'Überspring-Zeiten aus Online-Datenbanken'), JSON.stringify((dePg.rows || []).map((r) => r.label)).slice(0, 300));
   const grp = await sa({ op: 'page', sec: 'channels' });
   const sub = grp.rows.find((r) => r.kind === 'page');
   if (sub) { const inner = await sa({ op: 'page', sec: 'channels', path: [sub.i] }); ok('and pages inside pages', inner.trail.length === 2 && inner.rows.length > 0, JSON.stringify(inner).slice(0, 200)); }

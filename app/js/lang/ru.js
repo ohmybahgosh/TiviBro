@@ -1426,7 +1426,6 @@ I18n.add('ru', {
   "For": "Для",
   "For OLED TVs left on the guide or a menu: every 90 seconds the screen moves a few pixels, and after 10 minutes without a key press it dims until you press one.  Fullscreen video is left alone.": "Для OLED на телегиде или в меню: каждые 90 с картинка сдвигается на пару пикселей, а через 10 мин без нажатий тускнеет.  Полноэкранное видео не трогается.",
   "Fourth of July movies": "Фильмы ко Дню независимости США",
-  "From the file's chapters: \"Skip intro\" while an intro or recap plays, and \"Up next\" when the credits start (the next episode, or the next movie of a collection you play).  OK does it, Back hides it.": "По главам файла: «Пропустить заставку» во время заставки или пересказа и «Далее», когда начинаются титры (следующая серия или следующий фильм воспроизводимой коллекции).  OK – выполнить, «Назад» – скрыть.",
   "From your Trakt account": "Из вашего аккаунта Trakt",
   "Full": "Полная",
   "Genre": "Жанр",
@@ -2539,5 +2538,9 @@ I18n.add('ru', {
   "The subscription for {x} ends today.  Renew it with your provider to keep watching.": "Подписка {x} заканчивается сегодня.  Продлите её у провайдера, чтобы смотреть дальше.",
   "The subscription for {x} ends in {n} day ({y}).  Renew it with your provider to keep watching.": ["Подписка {x} заканчивается через {n} день ({y}).  Продлите её у провайдера, чтобы смотреть дальше.", "Подписка {x} заканчивается через {n} дня ({y}).  Продлите её у провайдера, чтобы смотреть дальше.", "Подписка {x} заканчивается через {n} дней ({y}).  Продлите её у провайдера, чтобы смотреть дальше."],
   "The subscription for {x} ends in {n} days ({y}).  Renew it with your provider to keep watching.": ["Подписка {x} заканчивается через {n} день ({y}).  Продлите её у провайдера, чтобы смотреть дальше.", "Подписка {x} заканчивается через {n} дня ({y}).  Продлите её у провайдера, чтобы смотреть дальше.", "Подписка {x} заканчивается через {n} дней ({y}).  Продлите её у провайдера, чтобы смотреть дальше."],
-  "Warn before a subscription ends": "Предупреждать об окончании подписки"
+  "Warn before a subscription ends": "Предупреждать об окончании подписки",
+  "Contains information from IntroDB (introdb.app), made available under the Open Database License (ODbL).": "Содержит данные IntroDB (introdb.app), доступные по лицензии Open Database License (ODbL).",
+  "For a movie or episode whose file has no chapters: where its intro, recap and credits are, from TheIntroDB and IntroDB, two free community databases.  Only the title's TMDB or IMDb number, season and episode are sent.": "Для фильма или серии, в файле которых нет глав: где заставка, пересказ и титры, по данным TheIntroDB и IntroDB, двух бесплатных баз сообщества.  Отправляются только номер TMDB или IMDb, сезон и серия.",
+  "From the file's chapters, or the online databases below: \"Skip intro\" while an intro or recap plays, and \"Up next\" when the credits start (the next episode, or the next movie of a collection you play).  OK does it, Back hides it.": "По главам файла или по онлайн-базам ниже: «Пропустить заставку», пока идёт заставка или пересказ, и «Далее», когда начинаются титры (следующая серия или следующий фильм из коллекции).  OK выполняет, Назад скрывает.",
+  "Skip times from online databases": "Отметки пропуска из онлайн-баз"
 });

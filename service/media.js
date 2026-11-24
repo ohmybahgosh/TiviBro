@@ -912,7 +912,7 @@ function handle(req, res, ALLOW, log) {
   var dropbox = /^\/media\/dropbox\/(folders|account|revoke)$/.exec(route);
   var gdrive = /^\/media\/gdrive\/(places|folders)$/.exec(route);
   var smb = /^\/media\/smb\/(shares|folders|check|discover)$/.exec(route);
-  if (req.method !== 'POST' || (!libraryRoute && !subs && !subscan && !dropbox && !gdrive && !smb && route !== '/media/scan/control' && route !== '/media/discover' && route !== '/media/scan' && route !== '/media/resolve' && route !== '/media/sidecar' && route !== '/media/sidecar/get' && route !== '/media/sidecar/browse' && route !== '/media/vformat' && route !== '/media/check' && route !== '/media/metadata' && route !== '/media/trakt')) return send(res, ALLOW, 404, { error: 'unknown media route' });
+  if (req.method !== 'POST' || (!libraryRoute && !subs && !subscan && !dropbox && !gdrive && !smb && route !== '/media/scan/control' && route !== '/media/discover' && route !== '/media/scan' && route !== '/media/resolve' && route !== '/media/sidecar' && route !== '/media/sidecar/get' && route !== '/media/sidecar/browse' && route !== '/media/vformat' && route !== '/media/check' && route !== '/media/metadata' && route !== '/media/trakt' && route !== '/media/skipdb')) return send(res, ALLOW, 404, { error: 'unknown media route' });
   var body = '', over = false, bodyBytes = 0, bodyLimit = libraryRoute || subscan ? 1048576 : 65536;   // subscan: a long movie's Cluster offsets
   if (req.setEncoding) req.setEncoding('utf8');
   req.on('data', function (c) { if (over) return; body += c; bodyBytes += Buffer.byteLength(c, 'utf8'); if (bodyBytes > bodyLimit) { over = true; send(res, ALLOW, 413, { error: 'too large' }); } });
@@ -951,6 +951,11 @@ function handle(req, res, ALLOW, log) {
     // Trakt (service/trakt.js): what was asked and how it went, never a token or a code.
     if (route === '/media/trakt') return require('./trakt').handle(q, function (r) {
       log({ lv: r.error ? 'warn' : 'info', event: 'trakt ' + String(q.op || '').slice(0, 10), path: q.path ? String(q.path).split('/')[1] : undefined, error: r.error ? r.message : null });
+      send(res, ALLOW, 200, r);
+    });
+    // Skip times from TheIntroDB and IntroDB (service/skipdb.js): what was found and where, never the TMDB key.
+    if (route === '/media/skipdb') return require('./skipdb').lookup(q, function (r) {
+      log({ lv: 'info', event: 'skip times', kind: q.kind === 'episode' ? 'episode' : 'movie', from: r.from ? r.from.join(',') || 'none' : undefined, error: r.error ? r.message : null });
       send(res, ALLOW, 200, r);
     });
     if (route === '/media/discover') return discover(function (r) { log({ lv: 'info', event: 'media discover', servers: r.servers.length }); send(res, ALLOW, 200, r); });

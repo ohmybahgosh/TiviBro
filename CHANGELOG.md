@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Skip intro, recap and credits without chapters.**  A movie or episode whose file has no chapters now gets Skip intro, Skip recap and Up next from TheIntroDB and IntroDB, two free community databases.  Settings > Playback > Skip times from online databases, on the TV, the phone and the web editor.
 - Settings' first page with the corner picture showing: the last line of sections is no longer cut off.  The page is a little tighter there, and it scrolls to keep the one you're on in view.
 - Trakt stays signed in when its sign-in is renewed: two renewals at once (right after TiviBro starts, say) used the same one-time key, Trakt refused the second, and TiviBro signed out.
 

@@ -676,7 +676,6 @@ I18n.add('de', {
   "From a USB drive or a My media library": "Von einem USB-Laufwerk oder aus einer Mediathek unter Meine Medien",
   "From start": "Von Anfang an",
   "From the TV's own answers plus what LG TVs are known to do.  Dolby Vision and DTS are not always reported correctly, so the known rules win.": "Aus den Antworten des TVs selbst plus dem, was von LG-Fernsehern bekannt ist.  Dolby Vision und DTS werden nicht immer korrekt gemeldet, deshalb haben die bekannten Regeln Vorrang.",
-  "From the file's chapters: \"Skip intro\" while an intro or recap plays, and \"Up next\" when the credits start (the next episode, or the next movie of a collection you play).  OK does it, Back hides it.": "Aus den Kapiteln der Datei: „Intro überspringen“ während eines Intros oder Rückblicks und „Als Nächstes“, wenn der Abspann beginnt (die nächste Folge oder der nächste Film einer Sammlung, die du abspielst).  OK führt es aus, Zurück blendet es aus.",
   "From the first player again, as if just picked": "Wieder vom ersten Player an, als wäre er gerade erst gewählt worden",
   "From the guide": "Aus dem TV-Guide",
   "From the playlist": "Aus der Playlist",
@@ -2384,5 +2383,14 @@ I18n.add('de', {
   "Urdu": "Urdu",
   "Use": "Verwenden",
   "Use current playback position": "Aktuelle Wiedergabeposition verwenden",
-  "Use for every channel it knows": "Für alle bekannten Sender verwenden"
+  "Use for every channel it knows": "Für alle bekannten Sender verwenden",
+  "Contains information from IntroDB (introdb.app), made available under the Open Database License (ODbL).": "Enthält Informationen von IntroDB (introdb.app), verfügbar unter der Open Database License (ODbL).",
+  "For a movie or episode whose file has no chapters: where its intro, recap and credits are, from TheIntroDB and IntroDB, two free community databases.  Only the title's TMDB or IMDb number, season and episode are sent.": "Für einen Film oder eine Folge, deren Datei keine Kapitel hat: wo Intro, Rückblick und Abspann sind, aus TheIntroDB und IntroDB, zwei kostenlosen Community-Datenbanken.  Gesendet werden nur die TMDB- oder IMDb-Nummer des Titels, Staffel und Folge.",
+  "From the file's chapters, or the online databases below: \"Skip intro\" while an intro or recap plays, and \"Up next\" when the credits start (the next episode, or the next movie of a collection you play).  OK does it, Back hides it.": "Aus den Kapiteln der Datei oder den Online-Datenbanken darunter: „Intro überspringen“, während ein Intro oder Rückblick läuft, und „Als Nächstes“, wenn der Abspann beginnt (die nächste Folge oder der nächste Film einer Sammlung, die du abspielst).  OK macht es, Zurück blendet es aus.",
+  "Skip times from online databases": "Überspring-Zeiten aus Online-Datenbanken",
+  "Skip intro": "Intro überspringen",
+  "Skip recap": "Rückblick überspringen",
+  "Next movie": "Nächster Film",
+  "Next episode": "Nächste Folge",
+  "Up next": "Als Nächstes"
 });

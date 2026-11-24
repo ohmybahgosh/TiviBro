@@ -176,7 +176,9 @@ var Settings = (function () {
       ['auto', 'on', 'off'], ['Automatic', 'On, 4K too', 'Off'], function () { return s.seekPreviews || 'auto'; }, function (v) { s.seekPreviews = v; save(); }));
     out.push(choice('Dolby Vision 7 (UHD Blu-ray)', 'A UHD Blu-ray remux\'s Dolby Vision (profile 7) shows only as HDR10 on LG TVs.  Automatic: played as profile 8.1 through the converter, in Dolby Vision (the base picture with its Dolby Vision brightness data, as dovi_tool makes it).  Off: HDR10, as before.',
       ['auto', 'off'], ['Automatic, in Dolby Vision', 'Off, HDR10'], function () { return s.dv7 === 'off' ? 'off' : 'auto'; }, function (v) { s.dv7 = v; save(); }));
-    out.push(toggle('Skip intro and Up next', 'From the file\'s chapters: "Skip intro" while an intro or recap plays, and "Up next" when the credits start (the next episode, or the next movie of a collection you play).  OK does it, Back hides it.', function () { return s.skipIntro !== false; }, function (v) { s.skipIntro = v; save(); }));
+    out.push(toggle('Skip intro and Up next', 'From the file\'s chapters, or the online databases below: "Skip intro" while an intro or recap plays, and "Up next" when the credits start (the next episode, or the next movie of a collection you play).  OK does it, Back hides it.', function () { return s.skipIntro !== false; }, function (v) { s.skipIntro = v; save(); }));
+    // The intro, recap and credits of a file without chapters, from TheIntroDB and IntroDB (skipper.js, service/skipdb.js).
+    out.push(toggle('Skip times from online databases', 'For a movie or episode whose file has no chapters: where its intro, recap and credits are, from TheIntroDB and IntroDB, two free community databases.  Only the title\'s TMDB or IMDb number, season and episode are sent.', function () { return s.skipOnline !== false; }, function (v) { s.skipOnline = v; save(); }));
     // Live pause and the rewind buffer, from Recording and live pause: people look for them under Playback too.
     out.push(head('Live pause'));
     out = out.concat(also('recording', ['Pause live TV', 'Live pause on the network share', 'Rewind buffer']));
@@ -421,7 +423,7 @@ var Settings = (function () {
       toggle('Mark what\'s new', 'A small dot by what came in since your last visit, and a shelf of them.  Gone once you open it.', function () { return S().mediaNew !== false; }, function (v) { S().mediaNew = v; save(); Media.refresh(); }),
       toggle('Open where you left off', 'My media opens on the tab, and the library grid, you were last on.  Off: always on Home.', function () { return S().mediaResume !== false; }, function (v) { S().mediaResume = v; save(); }),
       autoNextRow(),
-      upNextRow()].concat(also('playback', ['Skip intro and Up next']), [
+      upNextRow()].concat(also('playback', ['Skip intro and Up next', 'Skip times from online databases']), [
       toggle('Favorites also in lists', 'On: a favorite movie or show is in Favorites and also in Movies or TV shows.  Off: only in Favorites.', function () { return MediaStore.preferences().favoritesInLists; }, function (v) { Media.updatePreferences({ favoritesInLists: v }); paint(); }),
       choice('Metadata language', 'Shared with the web editor.  Refreshes saved movie and show matches in this language.  Missing translations fall back to English.', Object.keys(names), Object.keys(names).map(function (k) { return names[k]; }), function () { return MediaStore.preferences().language; }, function (v) { Media.updatePreferences({ language: v }); paint(); })
     ]).filter(Boolean);
@@ -1499,7 +1501,7 @@ var Settings = (function () {
     out.push(action('Arrange the Shows home', 'Move its shelves up or down, switch them off, and pin categories.  Red on the Shows home too.', function () { Vod.arrange('series'); }));
     out.push(autoNextRow());
     if (upNextRow()) out.push(upNextRow());
-    out = out.concat(also('playback', ['Skip intro and Up next']));          // the credits' Up next button, from Playback
+    out = out.concat(also('playback', ['Skip intro and Up next', 'Skip times from online databases']));          // the credits' Up next button, from Playback
     out.push(toggle('Hide spoilers', 'In the guide, new episodes and episodes or movies that haven\'t aired yet (not news or sport), and on the Shows screen, episodes you haven\'t started, keep only their title, season and episode, and when they air: no summary, episode title or picture from the episode.',
       function () { return !!s.noSpoilers; }, function (v) { s.noSpoilers = v; save(); if (window.Guide && Guide.draw) Guide.draw(); }));
     out.push(head('Details from TMDB'));
@@ -1960,6 +1962,9 @@ var Settings = (function () {
       L2('Trakt', 'Watched history and lists'),
       info('TiviBro uses Trakt but is not endorsed or certified by Trakt.', ''),
       L2('OpenSubtitles.com', 'Subtitles'),
+      L2('TheIntroDB', 'Skip times'),
+      L2('IntroDB', 'Skip times, ODbL'),
+      info('Contains information from IntroDB (introdb.app), made available under the Open Database License (ODbL).', ''),
       L2('tv-logo/tv-logos', 'Logos, CC BY-SA / BY-NC-SA'),
       L2('iptv-org/database', 'Logos, Unlicense'),
       info('Channel logos are trademarks of their owners.', ''),

@@ -1740,6 +1740,7 @@ var Views = (function () {
     video._subsMemo = Subs.memoFor ? Subs.memoFor(meta) : null;   // on or off, as last time for this title
     Player.play({ k: 'vod:' + meta.id, n: meta.title, num: '', p: meta.p || undefined }, { url: url, live: false, startAt: startAt || 0, meta: meta });
     if (typeof SeekPrev !== 'undefined') SeekPrev.start(meta, url);
+    if (typeof Skipper !== 'undefined') Skipper.start(meta);   // skip times from the online databases, for a file without chapters
     Subs.restore(meta);           // subtitles downloaded for it in the last days (discussion #19)
     goFull();
   }
