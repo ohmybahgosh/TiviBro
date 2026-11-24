@@ -1618,7 +1618,10 @@ var Media = (function () {
     playingMeta = null;
     Views.stopAll();
     open(true);
-    if (eligible && typeof MediaSeries !== 'undefined') MediaSeries.completed(finished, null, now === true);
+    /* An episode skipped to its end isn't marked watched (eligible), but still gets Up next, and its season page
+       back with the remote on it: without this it came back with the remote left on My media's own screen, so the
+       arrows did nothing (Cunk on Cinema, skipped through to the credits). */
+    if (finished && finished.kind === 'episode' && typeof MediaSeries !== 'undefined') MediaSeries.completed(finished, null, now === true, !eligible);
     if (finished && finished.kind !== 'episode') queueNext(finished, now === true);
     // Trakt (Settings > My media > Trakt > Mark as watched on Trakt): what you finished.
     if (finished && typeof Trakt !== 'undefined') { if (finished.kind === 'episode') { if (eligible) Trakt.watchedEpisode(finished.episodeHandle); } else Trakt.watchedMovie(finished.metadata && finished.metadata.id); }

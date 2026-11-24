@@ -171,7 +171,8 @@ var MediaSeries = (function () {
   }
   /* An episode is over: the next one.  now: chosen at the credits (Next episode, skipper.js), so it plays at once;
      else Up next (upnext.js) shows it and counts down.  A missing episode before it always asks. */
-  function completed(file,handoff,now) {
+  // noMark: skipped to the end, so not marked watched; the next episode is still offered (Up next).
+  function completed(file,handoff,now,noMark) {
     if (!file || !file.episodeHandle) return false;
     function finish(){if(handoff)return handoff.cancel();if(file.returnTo)return file.returnTo();open();}
     function launch(detail){
@@ -182,7 +183,8 @@ var MediaSeries = (function () {
       if(handoff)handoff.stop();detail.originPage=file.returnTo||origin(detail);playVersion(version,detail);
     }
     request('detail',{kind:'episode',handle:file.episodeHandle},function (current) {
-      edit(file.segmented ? current : {handle:file.id,revision:current.revision},file.segmented ? 'setWatched' : 'completeFile',{watched:true,playback:true,baseWatchRevision:file.libraryRevision,playStartedAt:file.playStartedAt},function () {
+      var mark = noMark ? function (k) { k(); } : function (k) { edit(file.segmented ? current : {handle:file.id,revision:current.revision},file.segmented ? 'setWatched' : 'completeFile',{watched:true,playback:true,baseWatchRevision:file.libraryRevision,playStartedAt:file.playStartedAt},k); };
+      mark(function () {
         request('query',{kind:'episode',show:file.showId,after:file.episodeHandle,excludeFile:file.segmented ? null : file.id,skipWatched:file.sequenceIntent!=='sequential',limit:1},function (r) {
           var next = r.items[0];
           if (!next || (file.season === 0 && next.season !== 0) || (file.season !== 0 && next.season === 0)) return finish();

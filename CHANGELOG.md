@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Up next after skipping to the end of an episode.**  An episode skipped through to its credits isn't marked watched, and so it went back to the season page with no Up next, and the arrows did nothing there.  Up next now comes either way, and the season page answers the remote.
 - **The public guide is read again once after updating**, so a guide kept from epg.pw with times 8 hours off is replaced right away rather than within the day.
 
 ## 0.6.0 (alpha 214, 2026-11-24)
