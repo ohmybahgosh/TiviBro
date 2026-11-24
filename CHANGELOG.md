@@ -1,18 +1,18 @@
 # Changelog
 
-## Unreleased
-
-- **Update first, then Still happening** (issue #91).  When the developer's reply says a problem was fixed in a newer TiviBro, Still happening now offers the update first, and the report service asks a TV on an older version to update before sending.
-- **"Fetch details" questions translated.**  In My media, the "Fetch movie details" and "Fetch show details" questions were always in English.
-- **Everything without a TMDB token.**  Movies and shows now get posters, backdrops, logo art, summaries, cast, trailers and skip times from TheTVDB for everyone, through TiviBro's own service: no token, no account.  In the guide (series and Movies on now), Movies and Shows, My media (matched on its own) and Up next.  A TMDB token still comes first: add one later and what was matched on TheTVDB moves to TMDB on its own.  Settings > Movies and shows > Details from TheTVDB.  Metadata provided by TheTVDB.
-- **No dimming after an episode.**  With Burn-in protection on, an episode watched to the end without a key press could dim the screen as it ended, and the dim stayed over the next episode for up to a minute and a half.  Watching now counts as use, and the dim never covers fullscreen video.
-- **Up next without the flash.**  Before Up next appeared, and again between Play and the next episode starting, the show's page flashed by for a moment.  The screen now stays dark through both, for My media's shows and collections and your provider's series.
-
-## 0.6.0 (alpha 215, 2026-11-24)
+## 0.6.0 (alpha 216, 2026-11-24)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 215
+### New in alpha 216
+
+- **Everything without a TMDB token.**  Movies and shows now get posters, backdrops, logo art, summaries, cast, trailers and skip times from TheTVDB for everyone, through TiviBro's own service: no token, no account.  In the guide (series and Movies on now), Movies and Shows, My media (matched on its own) and Up next.  A TMDB token still comes first: add one later and what was matched on TheTVDB moves to TMDB on its own.  Settings > Movies and shows > Details from TheTVDB.  Metadata provided by TheTVDB.
+- **Update first, then Still happening** (issue #91).  When the developer's reply says a problem was fixed in a newer TiviBro, Still happening now offers the update first, and the report service asks a TV on an older version to update before sending.
+- **Up next without the flash.**  Before Up next appeared, and again between Play and the next episode starting, the show's page flashed by for a moment.  The screen now stays dark through both, for My media's shows and collections and your provider's series.
+- **No dimming after an episode.**  With Burn-in protection on, an episode watched to the end without a key press could dim the screen as it ended, and the dim stayed over the next episode for up to a minute and a half.  Watching now counts as use, and the dim never covers fullscreen video.
+- **"Fetch details" questions translated.**  In My media, the "Fetch movie details" and "Fetch show details" questions were always in English.
+
+### In alpha 215
 
 - **Switch several playlists on or off, then act** (discussion #36).  Under Playlists and accounts > Playlists on or off, a switch is saved at once, and the channel lists change when you leave the page, not at each press.  Turning off the playlist in use moves to the next one only when you leave Settings, so you aren't taken to the channel list partway through.
 - **Settings home: the other sections as cards.**  Everything else under the tiles is now small cards with an icon each, instead of pills that looked like tags.
