@@ -34,7 +34,16 @@ function versionScripts(html, read) {
     return pre + q + to + q;
   });
   if (seen !== tags) throw new Error('index.html has a script tag whose src is not in quotes; it would keep its old name');
-  return { html: out, renames: renames };
+  /* The dictionaries I18n loads when it needs one (index.html's I18n.boot({ 'es': 'js/lang/es.js', ... })) are
+     named in a script, not loaded by a tag: renamed the same way. */
+  const html2 = out.replace(/(['"])(js\/lang\/[A-Za-z-]+\.js)\1/g, function (all, q, src) {
+    if (renames.some(r => r[0] === src)) throw new Error('index.html loads ' + src + ' twice');
+    const v = crypto.createHash('sha1').update(read(src)).digest('hex').slice(0, 10);
+    const to = src.replace(/\.js$/, '.' + v + '.js');
+    renames.push([src, to]);
+    return q + to + q;
+  });
+  return { html: html2, renames: renames };
 }
 
 if (require.main === module) {

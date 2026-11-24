@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Italian, Dutch, Polish and Turkish.**  TiviBro, the web editor and the phone app now come in Italian, Dutch, Polish and Turkish too, picked from the TV's language or in Settings > Language.
+- **Button hints in every language.**  Some hints along the bottom of the screen (OK or ▶ its channels, Hold OK group options) stayed in English in every language: they're translated now.
+- **Less memory for languages.**  The TV now loads only the language it shows (and one a phone or the web editor asks in), not all of them at start: a few megabytes less on every TV.
+
 ## 0.6.0 (alpha 211, 2026-11-24)
 
 Pre-release: expect rough edges, and keep a backup before installing.

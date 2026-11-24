@@ -16,7 +16,10 @@
    PalmSystem.locale, then the browser's languages.  A language TiviBro doesn't have yet is English.
 
    Dictionaries: app/js/lang/<code>.js, I18n.add('es', { ... }).  node scripts/i18n-check.js lists text in the
-   app that a language doesn't have yet. */
+   app that a language doesn't have yet.  Only the dictionaries in use are loaded (each is 200 to 350 KB, and a
+   1 GB TV has none to spare): the TV's language as the page starts (boot), another one when the language
+   changes or a phone or the web editor asks in it (need).  app/js/lang/keys.js lists every text TiviBro
+   translates, for known(), whatever is loaded. */
 var I18n = (function () {
   'use strict';
   // langs:begin
@@ -27,6 +30,7 @@ var I18n = (function () {
   var FROM = { 'es-ES': 'es', 'pt-PT': 'pt-BR' };
   // langs:end
   var dicts = {}, pats = {}, cache = {}, cacheN = 0, misses = {}, missN = 0, tv = '', tvAsked = false, listeners = [];
+  var files = {}, loading = {}, keySet = null, keyPats = [];
 
   function has(code) { for (var i = 0; i < LANGS.length; i++) if (LANGS[i][0] === code) return true; return false; }
   // "es-MX", "ru_RU", "spa" -> "es", "ru"; anything else -> ''
@@ -196,17 +200,58 @@ var I18n = (function () {
     });
   }
 
+  /* Loading dictionaries.  boot(map) runs as the page starts, from index.html, with each language's file (the
+     build gives each a name with its contents' hash, scripts/script-versions.js): the language TiviBro will
+     start in is written into the page there, so it's ready before anything is drawn.  The language comes from
+     the saved settings, or the TV's, as lang() will find it. */
+  function boot(map) {
+    files = map || {};
+    var s = {}; try { s = JSON.parse(localStorage.getItem('tivibro.settings') || 'null') || {}; } catch (e) {}
+    var d = detected(), l = s.lang && s.lang !== 'auto' && has(s.lang) ? s.lang : d.supported ? d.code : 'en';
+    [FROM[l], l].forEach(function (c) { if (c && files[c] && !dicts[c]) document.write('<script src="' + files[c] + '"><\/script>'); });
+  }
+  // A language's dictionary (and the one a variant is made from, first), then done().  At once when it's there.
+  function load(code, done) {
+    done = done || function () {};
+    if (!code || code === 'en' || !has(code) || dicts[code] || !files[code]) return done();
+    if (loading[code]) return loading[code].push(done);
+    loading[code] = [done];
+    load(FROM[code], function () {
+      var el = document.createElement('script');
+      // Missing or broken: that language stays English, as one without a dictionary always has.
+      el.onload = el.onerror = function () { var l = loading[code] || []; delete loading[code]; l.forEach(function (f) { try { f(); } catch (e) {} }); };
+      el.src = files[code];
+      (document.head || document.documentElement).appendChild(el);
+    });
+  }
+  /** A promise for a language's dictionary: before within() or say() in a language that may not be loaded. */
+  function need(code) { return new Promise(function (r) { load(String(code || ''), r); }); }
+  /* keys.js: every text TiviBro translates, as hashes (the same sum as U.hash), and the texts with {n}, {x}...
+     as patterns, so known() can tell TiviBro's own words from a name whatever language is loaded. */
+  function hash(s) { var h = 0x811c9dc5; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h * 0x01000193) >>> 0; } return h; }
+  function keys(list, patterns) {
+    keySet = {};
+    for (var i = 0; i < list.length; i++) keySet[list[i]] = 1;
+    keyPats = (patterns || []).map(function (k) { return compile(k, k); }).filter(function (p) { return p.auto; });
+  }
+
   function set(code) {
     var s = Store.settings;
     s.lang = code === 'auto' || !has(code) ? 'auto' : code;
     Store.saveSettings();
     changed();
   }
+  // The language may be another one now: its dictionary loaded, then everything that draws text told.
   function changed() {
     var was = cur; cur = null; seen = null; cache = {}; cacheN = 0;
-    if (lang() === was) return;
-    try { document.documentElement.lang = lang(); } catch (e) {}
-    listeners.forEach(function (f) { try { f(lang()); } catch (e) {} });
+    var now = lang();
+    if (now === was) return;
+    load(now, function () {
+      if (lang() !== now) return;                    // changed again meanwhile: that load tells them
+      cache = {}; cacheN = 0;
+      try { document.documentElement.lang = now; } catch (e) {}
+      listeners.forEach(function (f) { try { f(now); } catch (e) {} });
+    });
   }
   function onChange(f) { listeners.push(f); }
   /* Text for someone else: the phone app and the web editor ask in their own language (a.lang), which can
@@ -275,6 +320,11 @@ var I18n = (function () {
     // A string of TiviBro's own (any language has it), not a name from your channels or teams: Search settings.
     known: function (s) {
       s = String(s);
+      if (keySet) {
+        if (keySet[hash(s)]) return true;
+        for (var j = 0; j < keyPats.length; j++) if (keyPats[j].rx.test(s)) return true;
+        return false;
+      }
       for (var c in dicts) {
         if (dicts[c].hasOwnProperty(s)) return true;
         // Or built from one ("Hold " + a button: "Hold {x}").
@@ -284,6 +334,7 @@ var I18n = (function () {
     },
     t: t, raw: raw, add: add, lang: lang, locale: locale, set: set, setting: function () { return chosen() || 'auto'; }, detected: detected, base: base,
     plural: plural, page: page, onChange: onChange, within: within, msg: msg, join: join, say: say, variant: variant, askTV: askTV, name: name, langs: langs, has: has, changed: changed,
+    boot: boot, load: load, need: need, keys: keys, hash: hash,
     misses: function () { return Object.keys(misses); }, _dicts: dicts, _setTV: function (l) { tv = l; changed(); }
   };
 })();

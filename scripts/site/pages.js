@@ -547,7 +547,7 @@ module.exports = [
     '<li><b>Parental controls:</b> a PIN, blocked channels and groups, and a content filter.</li>',
     '<li><b>Locked backups</b> (AES-256) of every playlist, group and setting, restored from the first screen of a new TV.</li>',
     '<li><b>Remote remapping</b>, a button tester and the Magic Remote pointer.</li>',
-    '<li><b>English, German, Spanish, French, Portuguese and Russian</b>, picked from the TV\'s language.</li>',
+    '<li><b>English, German, Spanish, French, Italian, Dutch, Polish, Portuguese, Russian and Turkish</b>, picked from the TV\'s language.</li>',
     '<li><b>Free and open:</b> MIT licensed, no account, no ads, no tracking in the TV app, only an anonymous daily install count you can switch off.</li>',
     '</ul>',
     '<p>Every setting is explained in the <a href="https://github.com/ohmybahgosh/TiviBro/wiki">user guide</a>, and every part has a <a href="/videos/">short video</a>.</p>'

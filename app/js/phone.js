@@ -10,6 +10,8 @@ var Phone = (function () {
   'use strict';
   // fn in the language the phone or the web editor asked in (I18n.within), the TV's when it didn't say.
   function inLang(code, fn) { return typeof I18n !== 'undefined' && I18n.within ? I18n.within(code, fn) : fn(); }
+  // That language's dictionary loaded first (I18n.need).
+  function need(code) { return typeof I18n !== 'undefined' && I18n.need ? I18n.need(code) : Promise.resolve(); }
   // A message or an error the TV made (webedit.js's, often after some waiting) in the phone's language.
   function sayIn(m, code) { return typeof I18n !== 'undefined' && I18n.say ? I18n.say(m, code) : m && m.message ? m.message : m; }
   var st = null, timer = null, fast = null, onChange = null, handled = 0;
@@ -111,8 +113,9 @@ var Phone = (function () {
     Promise.resolve().then(function () {
       var fn = ASK[c.what];
       if (!fn) throw new Error('This TiviBro can\'t answer "' + c.what + '".  Update TiviBro on the TV.');
-      // In the phone's language (c.lang, from translated phone apps): what the answer builds right away.
-      return inLang(c.lang, function () { return fn(c.args || {}, c); });
+      // In the phone's language (c.lang, from translated phone apps): what the answer builds right away, once
+      // that language's dictionary is loaded (the TV loads only the ones in use).
+      return need(c.lang).then(function () { return inLang(c.lang, function () { return fn(c.args || {}, c); }); });
     }).then(function (data) {
       if (data && typeof data === 'object' && data.msg) data.msg = sayIn(data.msg, c.lang);
       return call('/companion/answer', { id: c.id, ok: true, data: data === undefined ? null : data });

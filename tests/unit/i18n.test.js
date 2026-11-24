@@ -119,6 +119,19 @@ ok('every text in the TV app is translated', tvCov.split('\n').filter((l) => /^\
 // One list of languages (i18n/langs.json) everywhere: the app, the editor, the phone app.
 let inStep = true; try { require('child_process').execFileSync(process.execPath, [path.join(__dirname, '../../scripts/i18n-langs.js'), '--check'], { stdio: 'pipe' }); } catch (e) { inStep = false; }
 ok('the languages are the same everywhere (node scripts/i18n-langs.js)', inStep);
+// The TV loads only the dictionary in use, so known() reads keys.js: every text TiviBro translates.
+let keysNow = true; try { require('child_process').execFileSync(process.execPath, [path.join(__dirname, '../../scripts/i18n-keys.js'), '--check'], { stdio: 'pipe' }); } catch (e) { keysNow = false; }
+ok('keys.js lists every text (node scripts/i18n-keys.js)', keysNow);
+{
+  const vm = require('vm'), c = { console, localStorage: { getItem: () => null }, navigator: { language: 'en' }, document: {} };
+  vm.createContext(c);
+  vm.runInContext(fs.readFileSync(path.join(APP, 'i18n.js'), 'utf8') + ';this.I18n = I18n;', c);
+  vm.runInContext(fs.readFileSync(path.join(APP, 'lang', 'keys.js'), 'utf8'), c);
+  ok('known() with no dictionary loaded: TiviBro\'s own text, a pattern, not a name', c.I18n.known('Show clock') && c.I18n.known('Hidden (3)') && !c.I18n.known('Detroit Red Wings'));
+  ok('the same sum in the app and the script', c.I18n.hash('Show clock') === require('../../scripts/i18n-keys.js').hash('Show clock'));
+}
+const html = fs.readFileSync(path.join(APP, '..', 'index.html'), 'utf8');
+ok('index.html loads no dictionary by itself, only through I18n.boot', !/<script src="js\/lang\/(?!keys)/.test(html) && /I18n\.boot\(\{/.test(html));
 // Polish plural rule: 1, 2-4 and 22-24 (not 12-14), the rest.
 ok('Polish plural forms', [1, 2, 4, 5, 12, 22, 25, 112].map((n) => I.plural('pl', n)).join() === '0,1,1,2,2,1,2,2' || !LANGS.LIST.some((l) => l.code === 'pl'));
 console.log(fails ? fails + ' failures' : 'all language checks passed');

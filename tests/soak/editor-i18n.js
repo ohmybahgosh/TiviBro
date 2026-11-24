@@ -14,8 +14,9 @@ let fails = 0;
 const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undefined ? '  ' + String(x).slice(0, 400) : '')); if (!c) fails++; };
 // Words that say a sentence is still English (the mock channel names use none of them).
 const WORDS = ['the', 'your', 'you', 'and', 'with', 'from', 'this', 'that', 'these', 'channels?', 'groups?', 'guide', 'playlists?', 'settings', 'press', 'click', 'send', 'hidden', 'shown', 'nothing', 'every', 'when'];
-// English words a language uses too: "guide" in French, "Guide" and "Playlist" in German (TV-Guide).
-const SAME = { fr: ['guide'], de: ['guide', 'playlists?'] };
+// English words a language uses too: "guide" in French and Italian (the plural of guida), "Guide" and "Playlist" in
+// German (TV-Guide), "playlist" in Italian and Polish (playlistę).
+const SAME = { fr: ['guide'], de: ['guide', 'playlists?'], it: ['guide', 'playlists?'], pl: ['playlists?'] };
 const english = (lang) => '\\b(' + WORDS.filter((w) => (SAME[lang] || []).indexOf(w) < 0).join('|') + ')\\b';
 
 (async () => {

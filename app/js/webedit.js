@@ -13,6 +13,8 @@ var WebEdit = (function () {
   'use strict';
   // fn in the language the phone or the web editor asked in (I18n.within), the TV's when it didn't say.
   function inLang(code, fn) { return typeof I18n !== 'undefined' && I18n.within ? I18n.within(code, fn) : fn(); }
+  // That language's dictionary loaded first (I18n.need: the TV loads only the ones in use).
+  function need(code) { return typeof I18n !== 'undefined' && I18n.need ? I18n.need(code) : Promise.resolve(); }
   /* Messages and errors for the editor and the phone: English here, put in the asker's language as they are
      sent (I18n.msg and I18n.say), since most come after some waiting.  MN picks one or many by n. */
   function M(s, v) { return typeof I18n !== 'undefined' && I18n.msg ? I18n.msg(s, v) : String(s).replace(/\{(\w+)\}/g, function (a, k) { return v && v[k] != null ? v[k] : a; }); }
@@ -795,7 +797,8 @@ var WebEdit = (function () {
         Log.state('editor', 'running "' + c.type + '" from the web editor');
         var fn = RUN[c.type], seen = Log.lines().length, lang = (c.args || {}).lang;
         // In the editor's language (args.lang): what the action builds right away (its message, a Settings page).
-        return Promise.resolve().then(function () { if (!fn) throw new Error('Unknown action ' + c.type); return inLang((c.args || {}).lang, function () { return fn(c.args || {}); }); })
+        return Promise.resolve().then(function () { if (!fn) throw new Error('Unknown action ' + c.type); return need(lang); })
+          .then(function () { return inLang(lang, function () { return fn(c.args || {}); }); })
           .then(function (r) { return call('/editor/result', { id: c.id, ok: true, msg: sayIn(r && r.msg, lang), data: r && r.data }); },
             function (e) {
               Log.warn('webedit', '"' + c.type + '" failed: ' + (e && e.message));

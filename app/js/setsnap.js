@@ -41,6 +41,12 @@ var SetSnap = (function () {
      into the pages inside pages (MAX_DEPTH deep, MAX_PAGES at most).  step() runs pages for 20 ms, then rests 80 ms,
      so the copy takes about a fifth of the TV's time while it's made (a C2 with two languages: about 50 s). */
   function buildLang(code, done) {
+    // The language's dictionary first: the TV loads only the ones in use.
+    if (typeof I18n !== 'undefined' && I18n.need) return I18n.need(code).then(function () { pages(code, done); });
+    pages(code, done);
+  }
+  // The walk itself, a few pages at a time (see buildLang above).
+  function pages(code, done) {
     var out = { sections: [], pages: {} }, queue = [], n = 0;
     try { out.sections = within(code, function () { return Settings.phone.sections(); }); } catch (e) { return done(out); }
     // What the helper says to the phone about a change it keeps, in this language.

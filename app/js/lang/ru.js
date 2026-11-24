@@ -2564,5 +2564,13 @@ I18n.add('ru', {
   "A setting changed on the phone is made now": "Настройка, изменённая на телефоне, применена",
   "Saved.  The TV makes this change when TiviBro is next on screen.": "Сохранено.  TV применит это изменение, когда TiviBro снова будет на экране.",
   "That changed on the TV.  Look again.": "Это изменилось на TV.  Посмотрите ещё раз.",
-  "{n} settings changed on the phone are made now": ["{n} настройка, изменённая на телефоне, применена", "{n} настройки, изменённые на телефоне, применены", "{n} настроек, изменённых на телефоне, применено"]
+  "{n} settings changed on the phone are made now": ["{n} настройка, изменённая на телефоне, применена", "{n} настройки, изменённые на телефоне, применены", "{n} настроек, изменённых на телефоне, применено"],
+  "Back  games": "Назад  матчи",
+  "Hold OK  episode options": "Удерживать OK  параметры эпизода",
+  "OK  play the trailer": "OK  смотреть трейлер",
+  "OK  put it here": "OK  поставить сюда",
+  "OK  the game": "OK  матч",
+  "▲  back up": "▲  обратно наверх",
+  "▼  channels": "▼  каналы",
+  "▼  standings": "▼  турнирная таблица"
 });

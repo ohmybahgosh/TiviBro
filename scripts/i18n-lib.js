@@ -69,7 +69,9 @@ function write(part, code, entries) {
     const body = s.slice(0, close).replace(/\s+$/, ''), empty = /\{$/.test(body);
     s = body + (empty ? '\n' : ',\n') + fresh.map((l) => '  ' + l).join(',\n') + s.slice(close);
   }
-  fs.writeFileSync(f, s);
+  // Written beside it, then moved over it: another fill reading every language's file meanwhile never sees half a file.
+  fs.writeFileSync(f + '.tmp', s);
+  fs.renameSync(f + '.tmp', f);
   return keys.length;
 }
 

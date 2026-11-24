@@ -4,7 +4,7 @@
      node scripts/i18n-langs.js --check    says what is out of step, and fails (tests/unit/i18n.test.js runs it)
    Where they go:
      app/js/i18n.js                 LANGS (code, own name, English name) and PLURAL (each one's plural rule)
-     app/index.html                 a <script> per dictionary (a variant after the language it's made from)
+     app/index.html                 each dictionary's file for I18n.boot, which loads only the one in use
      service/editor.js              the dictionaries the helper serves to the web editor
      service/editor/index.html      which variant loads which language first
      scripts/build.sh               the variants' files copied into the editor (the TV's word swaps)
@@ -55,7 +55,9 @@ const jobs = [
       p + 'var FROM = { ' + variants.map((l) => q(l.code) + ': ' + q(l.from)).join(', ') + ' };'
     ], 'app/js/i18n.js');
   }],
-  ['app/index.html', (s) => between(s, '<!-- langs:begin', '<!-- langs:end', dicts.map((l) => '<script src="js/lang/' + l.code + '.js"></script>'), 'app/index.html')],
+  // Only the language in use is loaded (I18n.boot, I18n.load): each file by name, renamed with its hash by the build.
+  ['app/index.html', (s) => between(s, '<!-- langs:begin', '<!-- langs:end', ['<script src="js/lang/keys.js"></script>',
+    '<script>I18n.boot({ ' + dicts.map((l) => q(l.code) + ': \'js/lang/' + l.code + '.js\'').join(', ') + ' });</script>'], 'app/index.html')],
   ['service/editor.js', (s) => between(s, '// langs:begin', '// langs:end',
     [indent(s, '// langs:begin') + '[' + dicts.map((l) => q(l.code)).join(', ') + '].forEach(function (l) { STATIC[\'/lang/\' + l + \'.js\'] = [\'lang/\' + l + \'.js\', \'application/javascript; charset=utf-8\']; });'], 'service/editor.js')],
   ['service/editor/index.html', (s) => between(s, '// langs:begin', '// langs:end',

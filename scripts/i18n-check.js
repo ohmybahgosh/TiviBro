@@ -26,7 +26,7 @@ const RULES = [
   // webedit.js's messages and errors for the editor and the phone, translated as they're sent (I18n.msg, I18n.say)
   new RegExp(`\\b(?:M|fail)\\(\\s*${STR}`, 'g'),
   new RegExp(`\\bMN\\([^,]+,\\s*${STR}\\s*,\\s*${STR}`, 'g'),
-  new RegExp(`\\[\\s*'[a-z]*'\\s*,\\s*${STR}\\s*\\]`, 'g'),       // hints: ['ok', 'Play']
+  new RegExp(`\\[\\s*'[a-z]*'\\s*,\\s*${STR}\\s*(?:,\\s*'[a-z:]*'\\s*)?\\]`, 'g'),       // hints: ['ok', 'Play'], ['', 'OK  Play', 'ok'] (the button it answers to)
   new RegExp(`\\btel\\(\\s*'[a-z]+'\\s*,\\s*'[^']*'\\s*,\\s*${STR}`, 'g')            // tel('div', 'cls', 'Words'): the pages' own elements
 ];
 // choice(label, sub, values, ['3 hours', '6 hours'], ...): the names of the choices.

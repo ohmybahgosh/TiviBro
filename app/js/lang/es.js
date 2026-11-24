@@ -2561,5 +2561,13 @@ I18n.add('es', {
   "A setting changed on the phone is made now": "Un ajuste cambiado en el teléfono se aplica ahora",
   "Saved.  The TV makes this change when TiviBro is next on screen.": "Guardado.  La TV aplica este cambio cuando TiviBro vuelva a estar en pantalla.",
   "That changed on the TV.  Look again.": "Eso cambió en la TV.  Vuelve a mirar.",
-  "{n} settings changed on the phone are made now": ["{n} ajuste cambiado en el teléfono se aplica ahora", "{n} ajustes cambiados en el teléfono se aplican ahora"]
+  "{n} settings changed on the phone are made now": ["{n} ajuste cambiado en el teléfono se aplica ahora", "{n} ajustes cambiados en el teléfono se aplican ahora"],
+  "Back  games": "Atrás  partidos",
+  "Hold OK  episode options": "Mantén OK  opciones del episodio",
+  "OK  play the trailer": "OK  ver el tráiler",
+  "OK  put it here": "OK  ponerlo aquí",
+  "OK  the game": "OK  el partido",
+  "▲  back up": "▲  volver arriba",
+  "▼  channels": "▼  canales",
+  "▼  standings": "▼  clasificación"
 });

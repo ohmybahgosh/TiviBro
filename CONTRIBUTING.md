@@ -43,6 +43,8 @@ Open a pull request against `main`; the template lists what to check.  Don't tar
 
 ## Translations
 
+The TV loads only the dictionary of the language it shows, and one a phone or the web editor asks in, when it's needed (`I18n.boot`, `I18n.need` in `app/js/i18n.js`).  `app/js/lang/keys.js` lists every text the TV translates (as hashes), for telling TiviBro's own words from names; `i18n-import.js` rewrites it, and `npm test` says when it's out of date (`node scripts/i18n-keys.js`).
+
 English is the key: each language's dictionaries map an English text to its translation, and anything not translated yet shows in English.  Two sets, one per part:
 
 - `app/js/lang/<code>.js`: the TV app.  Text goes through `I18n.t` (Settings rows, menus, boxes, toasts and hints already do, so new code there needs nothing extra).
