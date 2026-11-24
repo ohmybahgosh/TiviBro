@@ -1,15 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 210, 2026-11-24)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 210
 
 - The network helper reads a provider's channel, movie and show lists as they arrive, a title at a time, instead of the whole answer at once: far less memory on a TV with a big playlist, and it keeps answering TiviBro while it reads (issue #166).
 - Problem reports from a TV that closed TiviBro show what it was doing up to the end: the log on the TV was saved only once things went quiet, so a busy start that ended in a crash left a log that stopped in its first second.
 
-## 0.6.0 (alpha 209, 2026-11-24)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 209
+### In alpha 209
 
 - A 1 GB TV with two or more playlists on no longer closes TiviBro 15 to 30 seconds after it starts (issues #169, #170): the playlists together count toward the careful start for big lists, which loads the guide and channel logos a little later.
 - A 4K channel whose connection drops no longer takes TiviBro down with it on some TVs (issue #168): the player reconnects a moment after the drop instead of from inside it.
