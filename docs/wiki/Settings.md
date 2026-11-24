@@ -42,6 +42,8 @@ The sections, in the order the TV lists them.  Every option is explained, with i
 
 The phone app's **Settings** tab and the web editor's **Settings** page show the same sections, pages and rows, drawn the same way.
 
+The phone app's Settings works while TiviBro is behind another app (YouTube, say) too: it shows the last copy of Settings TiviBro left, with a note saying so.  Switches and choices you change there are made the moment TiviBro is back on screen, and the TV says how many.  Buttons that do something right away (a test, a scan, a restart) need TiviBro on the TV's screen.  A PIN on Settings is asked for as usual.
+
 <p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/settings.mp4"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/settings.gif" width="100%" alt="Settings and appearance"></a></p>
 <p align="center"><sub><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/settings.mp4">Watch the MP4</a></sub></p>
 
