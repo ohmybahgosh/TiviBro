@@ -1,13 +1,15 @@
-/* TV shows from TheTVDB, for viewers without a TMDB token (Settings > Movies and shows > Series details from
-   TheTVDB).  The helper asks TiviBro's metadata relay (meta/worker.js, a Cloudflare Worker that holds TheTVDB's
+/* Shows and movies from TheTVDB, for viewers without a TMDB token (Settings > Movies and shows > Details from
+   TheTVDB): the guide's series and movies, the provider's Movies and Shows, My media's matches, and Up next.  The helper asks TiviBro's metadata relay (meta/worker.js, a Cloudflare Worker that holds TheTVDB's
    project key), never TheTVDB directly, so no key is on the TV.  Only a show's name (and year, the channel's
    country and your language) leaves the TV.  Metadata provided by TheTVDB.
 
-   lookup(q, cb), the same questions and answers as media-metadata.js's TV lookups:
-     q.guide + q.title (q.year, q.country, q.language): a show by name, from the guide or the Shows screen
-       -> { metadata } (the show) or { miss: true }
-     q.id 'tvdb:372264': the show -> { metadata }
+   lookup(q, cb), the same questions and answers as media-metadata.js's TMDB lookups:
+     q.guide + q.title (q.kind 'tv' for a show; q.year, q.country, q.language): from the guide or the Shows screen
+       -> { metadata } or { miss: true }
+     q.id 'tvdb:372264' (a show) or 'tvdb:movie:1406': its details -> { metadata }
      q.id 'tvdb:372264', q.season 2: that season -> { metadata: { episodes: [...] } }
+     q.title without q.guide (My media; q.kind 'tv' for a show): -> { matches: [...] }, or with q.auto { metadata } / { matches }
+   Every answer carries the title's IMDb and TMDB ids when TheTVDB knows them (imdb, tmdb) and a YouTube trailer.
    ES5 / Node 0.12. */
 'use strict';
 var https = require('https');
@@ -78,32 +80,94 @@ function choose(results, name, year, cc3, strong) {
 }
 
 /* ---------- the answers, in media-metadata.js's shape ---------- */
-function show(s, language) {
-  return { provider: 'TheTVDB', id: 'tvdb:' + s.id, kind: 'show', language: language, title: bare(s.title) || str(s.title, 200), originalTitle: str(s.originalTitle, 200), plot: str(s.plot, 5000),
+// What shows and movies share.  imdb and tmdb: the same title elsewhere (skip times, subtitles); trailer: a YouTube id.
+function base(s, language, kind, id) {
+  return { provider: 'TheTVDB', id: id, kind: kind, language: language, title: bare(s.title) || str(s.title, 200), originalTitle: str(s.originalTitle, 200), plot: str(s.plot, 5000),
     genre: str(s.genre, 300), year: str(s.year, 4), releaseDate: str(s.releaseDate, 10), runtime: str(s.runtime, 20), poster: str(s.poster, 500), backdrop: str(s.backdrop, 500),
-    backdropHd: str(s.backdropHd, 500), logo: str(s.logo, 500), rating: '', cast: str(s.cast, 600), network: str(s.network, 100), status: str(s.status, 40),
-    originalLanguage: LANG2[s.originalLanguage] || '', seasons: (s.seasons || []).map(function (x) { return { number: x.number }; }), directors: [], fallbackFields: [], v: 2 };
+    backdropHd: str(s.backdropHd, 500), logo: str(s.logo, 500), rating: '', cast: str(s.cast, 600), originalLanguage: LANG2[s.originalLanguage] || '',
+    directors: (s.directors || []).slice(0, 3).map(function (d) { return str(d, 100); }), imdb: /^tt[0-9]{5,10}$/.test(s.imdb || '') ? s.imdb : '',
+    tmdb: /^[1-9][0-9]{0,9}$/.test(s.tmdb || '') ? s.tmdb : '', trailer: /^[A-Za-z0-9_-]{11}$/.test(s.trailer || '') ? s.trailer : '', fallbackFields: [], v: 2 };
 }
+function show(s, language) {
+  var o = base(s, language, 'show', 'tvdb:' + s.id);
+  o.network = str(s.network, 100); o.status = str(s.status, 40);
+  o.seasons = (s.seasons || []).map(function (x) { return { number: x.number }; });
+  return o;
+}
+function movie(s, language) { return base(s, language, 'movie', 'tvdb:movie:' + s.id); }
 function season(id, n, list, language) {
   return { provider: 'TheTVDB', id: 'tvdb:' + id + ':season:' + n, kind: 'season', language: language, episodes: (list || []).map(function (e) {
-    return { id: 'tvdb:' + id + ':season:' + n + ':episode:' + e.number, number: e.number, season: e.season, title: str(e.title, 200), plot: str(e.plot, 5000), airDate: str(e.airDate, 10), runtime: e.runtime || null, still: str(e.still, 500) };
+    return { id: 'tvdb:' + id + ':season:' + n + ':episode:' + e.number, number: e.number, season: e.season, title: str(e.title, 200), plot: str(e.plot, 5000), airDate: str(e.airDate, 10),
+      runtime: e.runtime || null, still: str(e.still, 500), absolute: e.absolute || null, tvdbEpisode: /^[1-9][0-9]{0,9}$/.test(e.id || '') ? e.id : '' };
   }) };
 }
+// Search results as My media's "pick a match" list (the same fields TMDB's give; TheTVDB has no votes).
+function matchesOf(results, kind) {
+  return results.slice(0, 20).map(function (r) {
+    return { id: (kind === 'movie' ? 'tvdb:movie:' : 'tvdb:') + r.id, title: bare(r.name) || str(r.name, 200), original: str(r.original, 200), year: str(r.year, 4), votes: 0, poster: str(r.poster, 500), plot: str(r.overview, 300) };
+  });
+}
+/* My media matching on its own (q.auto): the one title of exactly that name (or a name it goes by) from that year,
+   else from a year either side (a folder's year and the release often differ by one), else of any year when no year
+   was given.  Several left: the one spelled exactly the same, if only one is.  Never a guess between equals. */
+function pickAuto(results, title, year) {
+  var named0 = results.filter(function (r) { return named(r, title); }), y = +year || 0;
+  function near(d) { return named0.filter(function (r) { return !y || (r.year && Math.abs(+r.year - y) <= d); }); }
+  function one(list) {
+    if (list.length === 1) return list[0];
+    var lit = list.filter(function (r) { return str(bare(r.name), 200).toLowerCase() === title.toLowerCase(); });
+    return lit.length === 1 ? lit[0] : null;
+  }
+  return one(near(0)) || one(near(1)) || null;
+}
+var WEAK_MOVIE = 5000;
+/* A guide programme that may be a movie (Movies on now): a film of exactly that name, the one that came out in the
+   year the guide gave (or a year either side).  Several left: the best known (TheTVDB's score; "Dune" is the 2021
+   film, not the 1984 one).  A sure one (strong: the guide says Movie, or a year in its title) takes it; an unsure one
+   (weak: any long programme) only a film people know (score WEAK_MOVIE or more) with a poster and a summary. */
+function guideMovie(title, year, strong, language, cb) {
+  ask('/v1/search?type=movie&q=' + encodeURIComponent(title) + '&lang=' + language, function (e, r) {
+    if (e) return cb(e);
+    var all = (r && Array.isArray(r.results) ? r.results : []).filter(function (x) { return named(x, title) && (strong || (x.poster && x.overview)); });
+    var y = +year || 0, list = y ? all.filter(function (x) { return +x.year === y; }) : all;
+    if (y && !list.length) list = all.filter(function (x) { return x.year && Math.abs(+x.year - y) <= 1; });
+    list = list.slice(0, 4);
+    if (!list.length) return cb(null, { miss: true });
+    var got = [];
+    // Each candidate's details (kept, like every answer): the best known one wins.
+    list.forEach(function (x) {
+      ask('/v1/movie/' + x.id + '?lang=' + language, function (e2, d) {
+        got.push(!e2 && d && d.movie ? d.movie : null);
+        if (got.length < list.length) return;
+        var best = got.filter(Boolean).sort(function (a, b) { return (b.score || 0) - (a.score || 0); })[0];
+        if (!best || (!strong && (best.score || 0) < WEAK_MOVIE)) return cb(null, { miss: true });
+        cb(null, { metadata: movie(best, language) });
+      });
+    });
+  });
+}
 
-// One question (see the top of this file): a season, a show by its id, or a show by name tried name by name.
+/* One question (see the top of this file): a season, a show or movie by its id, a show or movie from the guide, or
+   My media's search for a title (a list to pick from, or with q.auto the one match). */
 function lookup(q, cb) {
   q = q || {};
   var language = LANGS.indexOf(String(q.language || '').slice(0, 2)) >= 0 ? String(q.language).slice(0, 2) : 'en', lang = '?lang=' + language;
+  if (q.check) return cb(null, { ok: true });
+  // TMDB's own: its lists, episode groups, videos and titles by a TMDB id need a TMDB token.
+  if (q.list || q.groups || q.groupId || q.videos || /^(tmdb:|tt)/.test(String(q.id || ''))) return cb(new Error('Add your TMDB token in Settings > My media first.'));
+  var mv = /^tvdb:movie:([1-9][0-9]{0,9})$/.exec(String(q.id || ''));
+  if (mv) return ask('/v1/movie/' + mv[1] + lang, function (e, r) { if (e) return cb(e); cb(null, r && r.movie ? { metadata: movie(r.movie, language) } : { miss: true }); });
   var m = /^tvdb:([1-9][0-9]{0,9})$/.exec(String(q.id || ''));
   if (m && q.season != null) {
     if (typeof q.season !== 'number' || q.season < 0 || Math.floor(q.season) !== q.season) return cb(new Error('Choose a valid season.'));
     return ask('/v1/series/' + m[1] + '/season/' + q.season + lang, function (e, r) { cb(e, e ? null : { metadata: season(m[1], q.season, r && r.episodes, language) }); });
   }
   if (m) return ask('/v1/series/' + m[1] + lang, function (e, r) { if (e) return cb(e); cb(null, r && r.show ? { metadata: show(r.show, language) } : { miss: true }); });
-  var title = str(q.title, 200).trim(), year = /^(19|20)\d\d$/.test(q.year || '') ? String(q.year) : '', strong = q.guide === 'strong';
-  var cc3 = CC3[String(q.country || '').toUpperCase()] || '';
+  var title = str(q.title, 200).trim(), year = /^(19|20)\d\d$/.test(q.year || '') ? String(q.year) : '', strong = q.guide === 'strong', tv = q.kind === 'tv';
+  if (!q.guide) return library(q, title, year, tv, language, cb);
   if (!title || !key(title)) return cb(null, { miss: true });
-  var list = names(title);
+  if (!tv) return guideMovie(title, year, strong, language, cb);
+  var cc3 = CC3[String(q.country || '').toUpperCase()] || '', list = names(title);
   // Each name in turn; a year that finds nothing is tried once without it (a guide's year can be the episode's).
   function tryName(i, withYear) {
     if (i >= list.length) return cb(null, { miss: true });
@@ -116,5 +180,31 @@ function lookup(q, cb) {
   }
   tryName(0, true);
 }
+/* My media: a title searched (with its year, then without), as a list to pick from, or with q.auto the one match.
+   A movie's other names (q.alts: a folder named for one title, its file for another) are tried too. */
+function library(q, title, year, tv, language, cb) {
+  if (!title) return cb(new Error(tv ? 'Enter a show title.' : 'Enter a movie title.'));
+  var tries = [{ t: title, y: year }], first = null, type = tv ? '' : '&type=movie';
+  (Array.isArray(q.alts) ? q.alts : []).slice(0, 3).forEach(function (a) {
+    var t = str(a && a.title, 200).trim(), y = /^(19|20)\d\d$/.test(a && a.year || '') ? String(a.year) : '';
+    if (t && key(t)) tries.push({ t: t, y: y });
+  });
+  var steps = [];
+  tries.forEach(function (x) { steps.push({ t: x.t, y: x.y }); });
+  tries.forEach(function (x) { if (x.y) steps.push({ t: x.t, y: '' , was: x.y }); });
+  (function next(i) {
+    if (i >= steps.length) return cb(null, { matches: first || [] });
+    var st = steps[i];
+    ask('/v1/search?q=' + encodeURIComponent(st.t) + (st.y ? '&year=' + st.y : '') + type + '&lang=' + language, function (e, r) {
+      if (e) return cb(e);
+      var results = r && Array.isArray(r.results) ? r.results : [];
+      if (!first && results.length) first = matchesOf(results, tv ? 'show' : 'movie');
+      if (!q.auto) return results.length || i + 1 >= steps.length ? cb(null, { matches: matchesOf(results, tv ? 'show' : 'movie') }) : next(i + 1);
+      var pick = pickAuto(results, st.t, st.y || st.was || '');
+      if (pick) return lookup({ id: (tv ? 'tvdb:' : 'tvdb:movie:') + pick.id, language: language }, cb);
+      next(i + 1);
+    });
+  })(0);
+}
 
-var api = module.exports = { lookup: lookup, _get: get, _choose: choose, _names: names, _cache: cached };
+var api = module.exports = { lookup: lookup, _get: get, _choose: choose, _names: names, _pickAuto: pickAuto, _cache: cached };

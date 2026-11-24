@@ -25,6 +25,7 @@
 - [Movies and shows](Movies-and-shows)
 - [Movies on now](Movies-on-now)
 - [TV series from TMDB](TV-series-from-TMDB)
+- [No TMDB token? TheTVDB](No-TMDB-token-TheTVDB)
 - [My media](My-media)
 - [Search](Search)
 - [Favorites, hiding and your own groups](Favorites-hiding-and-your-own-groups)

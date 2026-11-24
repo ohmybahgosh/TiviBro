@@ -23,10 +23,14 @@ var MediaSeries = (function () {
     q.title=t.replace(/\s+/g,' ').trim()||String(arguments[0]||'');
     return q;
   }
+  // Who answers questions about shows (media.js metaWho: TMDB with a token, else TheTVDB) and a question marked for them.
+  function who() { return Media.metaWho ? Media.metaWho() : MediaStore.tmdbToken() ? 'tmdb' : ''; }
+  function auth(q) { if (Media.metaAuth) return Media.metaAuth(q); q.credential = MediaStore.tmdbToken(); return q; }
   // Background work has its own lifetime: browsing seasons must not cancel it.
   function fetchDetails(force) {
-    var token=MediaStore.tmdbToken(),language=MediaStore.preferences().language,started=Date.now(),updated=0,missed=0,lastHandle=null,streak=0;
-    if(!token)return Promise.resolve({skipped:true});
+    // Who answers (TMDB with a token, else TheTVDB: Media.metaWho): a change of either stops the run.
+    var token=(MediaStore.tmdbToken()||'')+'|'+who(),language=MediaStore.preferences().language,started=Date.now(),updated=0,missed=0,lastHandle=null,streak=0;
+    if(!who())return Promise.resolve({skipped:true});
     if(fetchingMetadata){
       if(token!==metadataToken||language!==metadataLanguage)queuedMetadata=true;
       if(force)U.toast('Show details are already being fetched.');
@@ -34,12 +38,12 @@ var MediaSeries = (function () {
     }
     fetchingMetadata=true;metadataToken=token;metadataLanguage=language;
     function finish(){if(Media.setBusy)Media.setBusy('shows',0);fetchingMetadata=false;metadataToken='';Media.refreshShows();if(queuedMetadata){queuedMetadata=false;setTimeout(function(){fetchDetails(false);},350);}}
-    function active(){if(MediaStore.tmdbToken()!==token||MediaStore.preferences().language!==language)throw new Error('Show details stopped because the token or language changed.');}
+    function active(){if((MediaStore.tmdbToken()||'')+'|'+who()!==token||MediaStore.preferences().language!==language)throw new Error('Show details stopped because the token or language changed.');}
     function call(route,q){
       try{active();}catch(e){return Promise.reject(e);}
       return Media.request(route,q,30000).then(function(r){active();if(r.error)throw new Error(r.message||'Could not fetch show details.');return r;});
     }
-    function lookup(q){q.credential=token;q.language=language;return call('metadata',q);}
+    function lookup(q){auth(q);q.language=language;return call('metadata',q);}
     function detail(handle){return call('library/detail',{kind:'show',handle:handle});}
     function save(handle,operation,fields,expectedId){
       return detail(handle).then(function(current){
@@ -124,17 +128,17 @@ var MediaSeries = (function () {
     request('edit',q,function (result) { if(operation==='setWatched'&&!fields.watched&&Media.watchedReset)Media.watchedReset(item.handle,result.revision);back(result); });
   }
   function match(item, back) {
-    var token = MediaStore.tmdbToken();
-    if (!token) { U.toast('Add your TMDB token in Settings > My media.'); return; }
-    UI.confirm('Search TMDB for this show?  Its title is sent to TMDB using your saved token.', 'Search',function () {
+    var who = who();
+    if (!who) { U.toast('Add your TMDB token in Settings > My media.'); return; }
+    UI.confirm(who === 'tvdb' ? T('Search TheTVDB for this show?  Its title is sent to TheTVDB through TiviBro\'s service.') : T('Search TMDB for this show?  Its title is sent to TMDB using your saved token.'), 'Search',function () {
       UI.prompt('Show title',item.title,function (title) {
         var lookupVersion=++generation;
-        Media.request('metadata',{kind:'tv',title:title,credential:token,language:MediaStore.preferences().language},30000).then(function (r) {
+        Media.request('metadata',auth({kind:'tv',title:title,language:MediaStore.preferences().language}),30000).then(function (r) {
           if(lookupVersion!==generation)return;
           if (r.error) return U.toast(r.message,6000);
           UI.posters('Choose matching show',(r.matches || []).map(function (candidate) { return {label:candidate.title,sub:[candidate.year,candidate.votes ? candidate.votes + ' votes' : ''].filter(Boolean).join('  ·  '),poster:candidate.poster,note:candidate.plot || '',action:function () {
             var detailVersion=++generation;
-            Media.request('metadata',{id:candidate.id,credential:token,language:MediaStore.preferences().language},30000).then(function (details) {
+            Media.request('metadata',auth({id:candidate.id,language:MediaStore.preferences().language}),30000).then(function (details) {
               if(detailVersion!==generation)return;
               if (details.error) return U.toast(details.message,6000);
               edit(item,'setMetadata',{metadata:details.metadata},function (saved) { if(saved.mergedInto)item.handle=saved.mergedInto;enrich(item.handle,details.metadata.id,back); });
@@ -151,7 +155,7 @@ var MediaSeries = (function () {
         if (at === show.buckets.length || show.order !== 'aired') return back();
         var season = +show.buckets[at++].key;
         var lookupVersion=generation;
-        Media.request('metadata',{id:id,season:season,credential:MediaStore.tmdbToken(),language:MediaStore.preferences().language},30000).then(function (r) {
+        Media.request('metadata',auth({id:id,season:season,language:MediaStore.preferences().language}),30000).then(function (r) {
           if(lookupVersion!==generation)return;
           if (r.error) { U.toast(r.message,6000); return back(); }
           request('detail',{kind:'show',handle:handle},function (current) {
@@ -293,7 +297,7 @@ var MediaSeries = (function () {
     },back);
   }
   function groupOrder(item, back) {
-    if(!item.metadata)return U.toast('Match this show with TMDB first.');
+    if(!item.metadata||!/^tmdb:/.test(item.metadata.id||''))return U.toast('Match this show with TMDB first.');   // episode orders are TMDB's episode groups
     Media.request('metadata',{id:item.metadata.id,groups:true,credential:MediaStore.tmdbToken()},30000).then(function (r) {
       if(r.error)return U.toast(r.message,6000);
       UI.menu('Episode order',(r.groups||[]).map(function(group){return {label:group.name,sub:group.description,action:function(){

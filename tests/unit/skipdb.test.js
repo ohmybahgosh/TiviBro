@@ -14,7 +14,8 @@ const reset = () => { K.reset(); asked = []; answers = {}; };
 
 (async () => {
   // What is asked: only numbers and an IMDb id, a TMDB key never sent to the databases.
-  ok('a TMDB id and an episode are clean', JSON.stringify(K.clean({ kind: 'episode', tmdb: '1396', season: '1', episode: '2', dur: 2900.4 })) === JSON.stringify({ kind: 'episode', tmdb: '1396', imdb: '', season: 1, episode: 2, dur: 2900.4, credential: '' }));
+  ok('a TMDB id and an episode are clean', JSON.stringify(K.clean({ kind: 'episode', tmdb: '1396', season: '1', episode: '2', dur: 2900.4 })) === JSON.stringify({ kind: 'episode', tmdb: '1396', tvdb: '', imdb: '', season: 1, episode: 2, dur: 2900.4, credential: '' }));
+  ok('a TheTVDB id is clean too', K.clean({ kind: 'movie', tvdb: '169' }).tvdb === '169' && K.clean({ kind: 'movie', tvdb: 'x1' }) === null);
   ok('anything else is refused', K.clean({ tmdb: '1396&x=1' }) === null && K.clean({ imdb: 'tt12' }) === null && K.clean({ kind: 'episode', tmdb: '5', season: 1 }) === null);
 
   // TheIntroDB has it all: IntroDB isn't asked.  null start: from the beginning; null end: to the end (-1).
@@ -28,6 +29,13 @@ const reset = () => { K.reset(); asked = []; answers = {}; };
   answers['api.theintrodb.org'] = (p, cb) => cb(null, { status: 200, json: { intro: [{ start_ms: 1000, end_ms: null }], credits: [{ start_ms: 9000, end_ms: null }] } });
   await look({ kind: 'movie', tmdb: '9' }); r = await look({ kind: 'movie', tmdb: '9' });
   ok('an end "to the end" is -1, the same when kept (JSON has no Infinity)', JSON.stringify(JSON.parse(JSON.stringify(r)).intro) === '[1,-1]', r);
+
+  // A title matched on TheTVDB (no TMDB token): TheIntroDB by its TheTVDB id, IntroDB by the IMDb id that came with it.
+  reset();
+  answers['api.theintrodb.org'] = (p, cb) => cb(null, { status: 200, json: { intro: [{ start_ms: 10000, end_ms: 70000 }] } });
+  answers['api.introdb.app'] = (p, cb) => cb(null, { status: 200, json: { outro: { start_ms: 3431000, end_ms: null } } });
+  r = await look({ kind: 'episode', tvdb: '372264', imdb: 'tt5875444', season: 1, episode: 2 });
+  ok('TheTVDB match: TheIntroDB by tvdb_id, IntroDB by its IMDb id, nothing asked of TMDB', asked[0].p === '/v4/media?tvdb_id=372264&season=1&episode=2' && asked[1].p.indexOf('imdb_id=tt5875444') > 0 && asked.length === 2 && r.credits === 3431, asked);
 
   // TheIntroDB without the credits: IntroDB (by the IMDb id TMDB gives with the viewer's key) fills them in.
   reset();
@@ -114,14 +122,18 @@ const reset = () => { K.reset(); asked = []; answers = {}; };
   ctx.Store.settings = {};
 
   // What the title is asked by.
-  ctx.Media = { showTmdb: () => '1396', request: () => Promise.resolve({ metadata: { id: 'tmdb:tv:42' } }) };
+  const idsOfMeta = (md) => { md = md || {}; const t = /^tmdb:(?:tv:)?(\d+)$/.exec(md.id || ''), v = /^tvdb:(?:movie:)?(\d+)$/.exec(md.id || ''); return { tmdb: t ? t[1] : md.tmdb || '', tvdb: v ? v[1] : '', imdb: md.imdb || '' }; };
+  ctx.Media = { showIds: () => ({ tmdb: '1396' }), idsOfMeta, request: () => Promise.resolve({ metadata: { id: 'tmdb:tv:42' } }) };
+  const E = (o) => JSON.stringify(Object.assign({ kind: o.kind, tvdb: '', tmdb: '', imdb: '' }, o));
   ctx.Vod = { movieTmdb: (it) => Promise.resolve(it.id === 7 ? '603' : '') };
   const ids = async (m) => JSON.stringify(await S.idsOf(m));
-  ok('My media episode: the show\'s TMDB id, season, number', await ids({ local: true, item: { kind: 'episode', showId: 's', season: 2, number: 3 } }) === JSON.stringify({ kind: 'episode', tmdb: '1396', season: 2, episode: 3 }));
-  ctx.Media.showTmdb = () => '';
-  ok('...from the library when its card isn\'t loaded', await ids({ local: true, item: { kind: 'episode', showId: 's', season: 2, number: 3 } }) === JSON.stringify({ kind: 'episode', tmdb: '42', season: 2, episode: 3 }));
-  ok('My media movie: its TMDB id', await ids({ local: true, item: { kind: 'movie', metadata: { id: 'tmdb:27205' } } }) === JSON.stringify({ kind: 'movie', tmdb: '27205' }));
-  ok('a provider\'s episode: the show\'s TMDB id from its details', await ids({ provider: true, showTmdb: '1399', item: { ep: true, season: 1, num: 4 } }) === JSON.stringify({ kind: 'episode', tmdb: '1399', season: 1, episode: 4 }));
+  ok('My media episode: the show\'s TMDB id, season, number', await ids({ local: true, item: { kind: 'episode', showId: 's', season: 2, number: 3 } }) === E({ kind: 'episode', tmdb: '1396', season: 2, episode: 3 }));
+  ctx.Media.showIds = () => ({});
+  ok('...from the library when its card isn\'t loaded', await ids({ local: true, item: { kind: 'episode', showId: 's', season: 2, number: 3 } }) === E({ kind: 'episode', tmdb: '42', season: 2, episode: 3 }));
+  ok('My media movie: its TMDB id', await ids({ local: true, item: { kind: 'movie', metadata: { id: 'tmdb:27205' } } }) === E({ kind: 'movie', tmdb: '27205' }));
+  ok('a show matched on TheTVDB: its TheTVDB and IMDb ids (TheIntroDB\'s numbering)', await (ctx.Media.showIds = () => ({ tvdb: '372264', tmdb: '95480', imdb: 'tt5875444' }), ids({ local: true, item: { kind: 'episode', showId: 's', season: 1, number: 2 } })) === E({ kind: 'episode', tvdb: '372264', imdb: 'tt5875444', season: 1, episode: 2 }));
+  ok('a movie matched on TheTVDB', await ids({ local: true, item: { kind: 'movie', metadata: { id: 'tvdb:movie:169', imdb: 'tt0133093', tmdb: '603' } } }) === E({ kind: 'movie', tvdb: '169', imdb: 'tt0133093' }));
+  ok('a provider\'s episode: the show\'s TMDB id from its details', await ids({ provider: true, showTmdb: '1399', item: { ep: true, season: 1, num: 4 } }) === E({ kind: 'episode', tmdb: '1399', season: 1, episode: 4 }));
   ok('a provider\'s movie: from Vod, none when unknown', await ids({ provider: true, item: { id: 7 } }) === JSON.stringify({ kind: 'movie', tmdb: '603' }) && await ids({ provider: true, item: { id: 8 } }) === 'null');
   ok('a recording or a show with no id: nothing', await ids({ item: { recording: true } }) === 'null' && await ids({ provider: true, item: { ep: true, season: 1, num: 4 } }) === 'null');
 

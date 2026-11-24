@@ -23,7 +23,7 @@ Which groups show, in what order, the special groups (Recent, Favorites, My team
 | **Recent channels kept** *(Groups in the list)* | 10 · **20** · 30 · 50 | How many channels Recent remembers. |
 | **Show Favorites group** *(Groups in the list)* | **On** · Off | The Favorites group. |
 | **My teams ›** | | The teams you follow, for the [My teams](My-teams) group: **Show the My teams group** (**On**), **Games starting within** (3 · **6** · 12 · 24 hours), **Remind me before their games** (**Off**), and a page for each league in your playlist to pick teams. |
-| **Show Movies on now** *(Groups in the list)* | **On** · Off | The [Movies on now](Movies-on-now) group.  Needs a TMDB token (Settings > API keys). |
+| **Show Movies on now** *(Groups in the list)* | **On** · Off | The [Movies on now](Movies-on-now) group.  Needs a TMDB token (Settings > API keys), or **Details from TheTVDB**. |
 | **Event channels ›** | **On** · Off | Pay-per-view and league pass channels whose names carry the game and its time, read into the guide (below). |
 | **Show Events by time** *(Groups in the list)* | **On** · Off | With event channels on: the group of events on now or starting in the next two weeks.  The same switch as **Events by time** in Event channels; brings the group back after **Turn off Events by time** in its menu. |
 | **Recently added channels** *(Groups in the list)* | Off · 3 days · **7 days** · 14 days | A **Recently added** group with the channels that are new in your playlist since it last loaded, newest first, and a **NEW** tag in the lists. |

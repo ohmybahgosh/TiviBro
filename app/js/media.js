@@ -1141,23 +1141,37 @@ var Media = (function () {
     ]);
   }
   function metadataRequest(q, language) {
-    var token = MediaStore.tmdbToken();
-    if (!token) return Promise.reject(new Error('Add your TMDB token in Settings > My media first.'));
-    q.credential = token;
+    if (!metaWho()) return Promise.reject(new Error('Add your TMDB token in Settings > My media first.'));
+    metaAuth(q);
     q.language = language || MediaStore.preferences().language;
     return ask('metadata', q, 25000).then(function (r) { if (r.error) throw new Error(r.message); return r; });
   }
   // A guide programme that may be a movie (movies.js): { metadata } or { miss }.
   // description: the guide's, which tells apart films of one name when there's no year (media-metadata.js).
   function guideLookup(title, year, strength, description) {
-    var token = MediaStore.tmdbToken();
-    if (!token) return Promise.reject(new Error('No TMDB token'));
-    return ask('metadata', { credential: token, guide: strength || 'weak', title: title, year: year || '', description: String(description || '').slice(0, 1500), language: MediaStore.preferences().language }, 25000)
+    if (!metaWho()) return Promise.reject(new Error('No TMDB token'));
+    return ask('metadata', metaAuth({ guide: strength || 'weak', title: title, year: year || '', description: String(description || '').slice(0, 1500), language: MediaStore.preferences().language }), 25000)
       .then(function (r) { if (r.error) throw new Error(r.message); return r; });
   }
-  /* Series details from TheTVDB (Settings > Movies and shows), for viewers without a TMDB token: the helper asks
-     TiviBro's metadata relay (service/tvdb.js), with no key on the TV.  A TMDB token, when there is one, comes first. */
-  function tvdbOn() { return Store.settings.seriesTvdb !== false; }
+  /* Details from TheTVDB (Settings > Movies and shows), for viewers without a TMDB token: the helper asks TiviBro's
+     metadata relay (service/tvdb.js), with no key on the TV.  A TMDB token, when there is one, comes first.
+     metaWho(): who answers questions about titles now ('tmdb', 'tvdb' or '' for nobody); metaAuth(q): q marked for
+     them (the token, or source 'tvdb').  A question about a title matched on TheTVDB ('tvdb:...') goes there anyway. */
+  function tvdbOn() { return typeof Store !== 'undefined' && !!Store.settings && Store.settings.seriesTvdb !== false; }
+  function metaWho() { return MediaStore.tmdbToken() ? 'tmdb' : tvdbOn() ? 'tvdb' : ''; }
+  function metaAuth(q) { var t = MediaStore.tmdbToken(); if (t) q.credential = t; else if (tvdbOn()) q.source = 'tvdb'; return q; }
+  /* A My media show's ids, from its card: { tmdb, tvdb, imdb } (each '' when not known).  A show matched on TheTVDB
+     brings its TMDB and IMDb links (service/tvdb.js), for subtitles and skip times by id. */
+  function showIds(h) {
+    var all = seriesCards.concat(favouriteShows, continuingShows);
+    for (var i = 0; i < all.length; i++) if ((all[i].handle || all[i].id) === h) return idsOfMeta(all[i].metadata);
+    return { tmdb: '', tvdb: '', imdb: '' };
+  }
+  function idsOfMeta(md) {
+    md = md || {};
+    var id = String(md.id || ''), t = /^tmdb:(?:tv:)?(\d+)$/.exec(id), v = /^tvdb:(?:movie:)?(\d+)$/.exec(id);
+    return { tmdb: t ? t[1] : /^\d+$/.test(md.tmdb || '') ? md.tmdb : '', tvdb: v ? v[1] : '', imdb: /^tt\d+$/.test(md.imdb || '') ? md.imdb : '' };
+  }
   // A TV series by name, for the guide and the Shows screen (series.js): { metadata } (the show) or { miss }.
   function tvByName(title, year, strength, country) {
     var token = MediaStore.tmdbToken(), q = { kind: 'tv', guide: strength || 'weak', title: title, year: year || '', country: country || '', language: MediaStore.preferences().language };
@@ -1173,9 +1187,9 @@ var Media = (function () {
     return ask('metadata', { credential: tvdb ? undefined : token, id: id, season: season, language: MediaStore.preferences().language }, 25000).then(function (r) { if (r.error) throw new Error(r.message); return r; });
   }
   function movieById(id) {
-    var token = MediaStore.tmdbToken();
-    if (!token) return Promise.reject(new Error('No TMDB token'));
-    return ask('metadata', { credential: token, id: id, language: MediaStore.preferences().language }, 25000).then(function (r) { if (r.error) throw new Error(r.message); return r; });
+    var tvdb = /^tvdb:/.test(String(id || ''));
+    if (!tvdb && !MediaStore.tmdbToken()) return Promise.reject(new Error('No TMDB token'));
+    return ask('metadata', tvdb ? { id: id, language: MediaStore.preferences().language } : metaAuth({ id: id, language: MediaStore.preferences().language }), 25000).then(function (r) { if (r.error) throw new Error(r.message); return r; });
   }
   var tokenVersion = 0;
   function setTmdbToken(value) {
@@ -1199,7 +1213,7 @@ var Media = (function () {
     });
   }
   function needToken() {
-    if (MediaStore.tmdbToken()) return false;
+    if (metaWho()) return false;
     U.toast('Add your own TMDB API token in Settings › My media, or use the web editor.', 6500); return true;
   }
   /* An unmatched file that isn't a movie you want (a sample, a home video, a clip) left out of My media, and back.
@@ -1208,7 +1222,8 @@ var Media = (function () {
   function includeMovie(m) { MediaStore.setExcluded(m.id, false); refresh(); U.toast(T('Back in My media: {x}', { x: RAW(m.title || m.file || '') })); }
   function findDetails(m) {
     if (needToken()) return;
-    UI.confirm('Search TMDB for movie details?  The movie title is sent to TMDB using your saved token.  Images load from image.tmdb.org.', 'Search', function () {
+    UI.confirm(metaWho() === 'tvdb' ? T('Search TheTVDB for movie details?  The movie title is sent to TheTVDB through TiviBro\'s service.  Images load from artworks.thetvdb.com.')
+      : T('Search TMDB for movie details?  The movie title is sent to TMDB using your saved token.  Images load from image.tmdb.org.'), 'Search', function () {
       UI.prompt('Movie title', m.title, function (title) {
         U.toast('Looking for movie details…');
         metadataRequest({ title: title }).then(function (r) {
@@ -1281,7 +1296,7 @@ var Media = (function () {
   }
   function refreshMetadata() {
     if (fetchingDetails) { pendingLanguageRefresh = true; return Promise.resolve({ queued: true }); }
-    if (!MediaStore.tmdbToken()) return Promise.resolve({ needsToken: true });
+    if (!metaWho()) return Promise.resolve({ needsToken: true });
     return MediaStore.load().then(function () {
       if (fetchingDetails) { pendingLanguageRefresh = true; return { queued: true }; }
       var language = MediaStore.preferences().language;
@@ -1309,7 +1324,7 @@ var Media = (function () {
     return MediaStore.load().then(function () { return fetchDetails(MediaStore.movies(s.id), MediaStore.preferences().language); }).then(function (r) { return k === 'both' ? shows(r) : r; });
   }
   function sourceDetailsNow(id) {
-    if (!MediaStore.tmdbToken()) return Promise.reject(new Error('Save your TMDB token first.'));
+    if (!metaWho()) return Promise.reject(new Error('Save your TMDB token first.'));
     var s = MediaStore.source(id);
     if (fetchingDetails && detailsKind(s) !== 'shows') return Promise.reject(new Error('Movie details are already being fetched.'));
     return runDetails(s, true);
@@ -1318,8 +1333,11 @@ var Media = (function () {
     if (needToken()) return;
     var k = detailsKind(s);
     if (fetchingDetails && k !== 'shows') return U.toast('Movie details are already being fetched.');
-    UI.confirm(k === 'shows' ? 'Fetch show details from TMDB?  Show names and years or saved show IDs are sent to TMDB.  Images load from image.tmdb.org.  Your source logins are never sent.'
-      : 'Fetch movie details from TMDB?  Titles and years or saved movie IDs are sent to TMDB.  Images load from image.tmdb.org.  Your source logins are never sent.', 'Fetch details', function () {
+    var tvdb = metaWho() === 'tvdb';
+    UI.confirm(k === 'shows' ? (tvdb ? T('Fetch show details from TheTVDB?  Show names and years or saved show IDs are sent to TheTVDB through TiviBro\'s service.  Images load from artworks.thetvdb.com.  Your source logins are never sent.')
+      : T('Fetch show details from TMDB?  Show names and years or saved show IDs are sent to TMDB.  Images load from image.tmdb.org.  Your source logins are never sent.'))
+      : tvdb ? T('Fetch movie details from TheTVDB?  Titles and years or saved movie IDs are sent to TheTVDB through TiviBro\'s service.  Images load from artworks.thetvdb.com.  Your source logins are never sent.')
+      : T('Fetch movie details from TMDB?  Titles and years or saved movie IDs are sent to TMDB.  Images load from image.tmdb.org.  Your source logins are never sent.'), 'Fetch details', function () {
       runDetails(s).catch(function (e) { U.toast(why(e), 6000); });
     });
   }
@@ -1335,7 +1353,7 @@ var Media = (function () {
     return !m.metadata || (!m.metadata.poster && m.metadata.provider !== 'TMDB') || (m.metadata.provider === 'TMDB' && /^tmdb:[0-9]+$/.test(m.metadata.id || '') && (m.metadata.v || 1) < 2);
   }
   function autoDetails() {
-    if (!MediaStore.tmdbToken() || fetchingDetails || scanningAll || Object.keys(scanning).length || !MediaStore.sources().length) return Promise.resolve({ skipped: true });
+    if (!metaWho() || fetchingDetails || scanningAll || Object.keys(scanning).length || !MediaStore.sources().length) return Promise.resolve({ skipped: true });
     return MediaStore.load().then(function () {
       var now = Date.now(), list = MediaStore.movies(null).filter(function (m) { return needsDetails(m, now); });
       if (!list.length) return { updated: 0 };
@@ -1696,7 +1714,7 @@ var Media = (function () {
       { label: MediaStore.isFavorite(m.id) ? 'Remove from Favorites' : 'Add to Favorites', action: function () { MediaStore.toggleFavorite(m.id); refresh(); } },
       r && { label: 'Resume', sub: RT(Math.max(1, Math.floor(r.pos / 60))), action: function () { play(m, false); } },
       { label: r ? 'Play from beginning' : 'Play', action: function () { play(m, true); } },
-      { label: m.metadata ? 'Change movie details' : 'Find movie details', sub: 'Search TMDB and choose the correct match', action: function () { findDetails(m); } },
+      { label: m.metadata ? 'Change movie details' : 'Find movie details', sub: metaWho() === 'tvdb' ? T('Search TheTVDB and choose the correct match') : T('Search TMDB and choose the correct match'), action: function () { findDetails(m); } },
       m.metadata && { label: 'Remove movie details', action: function () { MediaStore.setMetadata(m.id, null); refresh(); } },
       { label:'TV shows',action:function () { MediaSeries.open(); } },
       reviewCards.length > 0 && { label:'Needs review',action:function () { MediaSeries.review(); } },
@@ -1899,16 +1917,17 @@ var Media = (function () {
     quickMarkMovie: quickMarkMovie, movieCard: movieCard,
     reviewCount: function () { return reviewCards.length; },      // how many need a look (the show options offer Needs review)
     refreshShows:refreshSeries, playNow: function (m) { playNow(m); }, foundText: foundText, discover: discover, addServer: addServer, sourceDetailsNow: sourceDetailsNow, isScanning: function (id) { return !!scanning[id]; }, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); visitEnd(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress, addDropbox: addDropbox, dropboxFolders: dropboxFolders, addGdrive: addGdrive, gdrivePlaces: gdrivePlaces, addSmb: addSmb, smbDiscover: smbDiscover, smbSaved: smbSaved, smbLoginOf: smbLoginOf, setLogin: setLogin, changeLogin: changeLogin, smbShares: smbShares, smbFolders: smbFolders, smbAddress: smbAddress, gdriveFolders: gdriveFolders, gdriveKey: gdriveKey, signOut: signOut,
-    rescanAll: rescanAll, newMedia: newMedia, newMediaSoon: newMediaSoon, guideLookup: guideLookup, movieById: movieById, tvByName: tvByName, tvSeason: tvSeason, tvdbOn: tvdbOn, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, libraryStats: libraryStats, removeLibrary: removeLibrary,
+    rescanAll: rescanAll, newMedia: newMedia, newMediaSoon: newMediaSoon, guideLookup: guideLookup, movieById: movieById, tvByName: tvByName, tvSeason: tvSeason, tvdbOn: tvdbOn, metaWho: metaWho, metaAuth: metaAuth, idsOfMeta: idsOfMeta, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, libraryStats: libraryStats, removeLibrary: removeLibrary,
     // The web editor's Fix match: search TMDB by a typed title, then save the one picked.
-    searchDetails: function (title) { if (!MediaStore.tmdbToken()) return Promise.reject(new Error('Add a TMDB API token first.')); return metadataRequest({ title: String(title || '').slice(0, 200) }).then(function (r) { return (r.matches || []).slice(0, 10).map(function (x) { return { id: x.id, title: x.title, year: x.year || '' }; }); }); },
+    searchDetails: function (title) { if (!metaWho()) return Promise.reject(new Error('Add a TMDB API token first.')); return metadataRequest({ title: String(title || '').slice(0, 200) }).then(function (r) { return (r.matches || []).slice(0, 10).map(function (x) { return { id: x.id, title: x.title, year: x.year || '' }; }); }); },
     applyDetails: function (movieId, tmdbId) { return metadataRequest({ id: tmdbId }).then(function (r) { if (!r.metadata) throw new Error('TMDB has no details for that.'); return MediaStore.setMetadata(movieId, r.metadata); }).then(function () { refresh(); }); }, findDetails: findDetails, excludeMovie: excludeMovie, includeMovie: includeMovie, libraryDetails: function (id) { var s = MediaStore.source(id); if (s) sourceDetails(s); }, lookUpWaiting: function (id) { if (needToken()) return; if (fetchingDetails) return U.toast('Movie details are already being fetched.'); MediaStore.load().then(function () { var list = MediaStore.movies(id).filter(function (m) { return !(m.metadata && m.metadata.id) && !m.tmdbMiss; }); if (!list.length) return U.toast('Every movie here has been looked up.', 4000); return fetchDetails(list, MediaStore.preferences().language); }).catch(function (e) { U.toast(why(e), 6000); }); }, detailsLabel: detailsLabel, arrangeShelves: function (sec) { arrangeMenu(null, sec || 'home'); }, bothKinds: function () { var h = has(); return !!(h.movies && h.shows); }, busyText: busyText, setBusy: setBusy,
     // The web editor's shelf list: with movies and shows, each shelf says which tab it's on (Continue watching: Home).
     shelfList: function () { var ar = arrangement(), h = has(), both = h.movies && h.shows; return ar.order.filter(function (k) { return fits(k, h); }).map(function (k) { return { key: k, name: NAMES[k], off: ar.off(k), section: !both ? '' : traktOf(k) ? traktOf(k).tab : k === 'continue' || inSection(k, 'home') ? 'home' : TV_ONLY[k] ? 'shows' : 'movies' }; }); }, holidaysNow: holidaysNow, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
     watchedReset:function(handle,revision){if(playingMeta&&playingMeta.item.episodeHandle===handle){playingMeta.continuous=0;playingMeta.lastPos=Player.position;playingMeta.lastAt=Date.now();playingMeta.item.libraryRevision=revision;playingMeta.item.playStartedAt=Date.now();}}, seeking: function (target) { if (playingMeta) { playingMeta.continuous = 0; playingMeta.lastPos = target; playingMeta.lastAt = Date.now(); } }, currentFile: function () { return playingMeta && playingMeta.item.id; }, cancelPending: function () { playToken++; }, request: ask, playAll: playAll, chooseCopy: chooseCopy, copyCount: function (m) { return copies(m).length; }, upNext: function () { var it = playingMeta && playingMeta.item; if (!it) return ''; if (queue && queue.item === it && queue.list[queue.at + 1]) return 'collection'; return it.kind === 'episode' ? 'episode' : ''; }, playFile: function (m, fromStart, back) { if (back) playFrom(m, fromStart, back); else play(m, fromStart); }, openTitle: openTitle, optionsFor: itemMenu, restore: restore, refresh: refresh, leftOut: leftOut, phone: ForPhone,
+    // A show's TMDB id ('tmdb:tv:308007' -> '308007', or TheTVDB's link for a show matched there), for subtitles by id.
+    showTmdb: function (h) { return showIds(h).tmdb; },
+    showIds: showIds,
     // A show's name by its library handle (Find subtitles for an episode searches the show, subs.js).
-    // A show's TMDB id ('tmdb:tv:308007' -> '308007'), for subtitles found by id rather than by name.
-    showTmdb: function (h) { var all = seriesCards.concat(favouriteShows, continuingShows); for (var i = 0; i < all.length; i++) if ((all[i].handle || all[i].id) === h) { var m = /^tmdb:tv:(\d+)$/.exec(String(all[i].metadata && all[i].metadata.id || '')); return m ? m[1] : ''; } return ''; },
     showTitle: function (h) { var all = seriesCards.concat(favouriteShows, continuingShows); for (var i = 0; i < all.length; i++) if ((all[i].handle || all[i].id) === h) return nameOf(all[i]); return ''; },
     isNew: isNew, posterMark: posterMark, addedLine: addedLine, addedAt: addedAt, pictureInfo: pictureInfo, sources: function () { return MediaStore.sources(); },
     _test: { askSearch: askSearch, setSection: setSection, stampNew: stampNew, visit: function (v) { if (v !== undefined) { visit = v; visitSave(); } return visitLoad(); }, visitEnd: visitEnd, categories: categories, namedIn: namedIn, section: function (x) { if (x) { tabsFocus = false; setSection(x); } return { section: section, split: split, tabs: tabsFocus }; }, goShelf: function (id) { followTop = false; goShelf(id); }, addServer: addServer, addAddress: addAddress, addDropbox: addDropbox, focusItems: function () { restore(); }, rescanCurrent: function () { var s = MediaStore.sources()[0]; return s ? rescan(s.id) : Promise.resolve(); } }

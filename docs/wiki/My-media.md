@@ -57,7 +57,7 @@ TV/
 - **Needs review:** a file TiviBro isn't sure about waits here.  Fix one file, or a whole folder (you see what changes before it's saved).  The web editor can do the same, with undo.
 - **Deleted files:** a file you delete from the server leaves My media at the next complete rescan.  If it comes back within 30 days, it keeps its details, favorite and watched state.  A scan that couldn't read every folder, or found nothing, changes nothing.
 
-**Show details.**  With a TMDB token saved, shows get their poster and details on their own, then season details and episode names, summaries and pictures for the seasons you have.  Only exact matches are picked automatically; **Find show details** on a show picks one yourself.  **Yellow** fetches details again.  TMDB gets show titles or IDs, season numbers and your language, with your token, and never a source's login or links.
+**Show details.**  With a TMDB token saved (or from TheTVDB without one), shows get their poster and details on their own, then season details and episode names, summaries and pictures for the seasons you have.  Only exact matches are picked automatically; **Find show details** on a show picks one yourself.  **Yellow** fetches details again.  TMDB gets show titles or IDs, season numbers and your language, with your token, and never a source's login or links.
 
 **Episodes.**  Playback remembers where you stopped, and **Auto next episode** offers the next one.  For a file that holds several episodes, TiviBro uses its chapters, or you can set where each episode starts.
 
@@ -107,4 +107,4 @@ Playback contacts servers you add and their playback servers.  Fetching details 
 
 ---
 
-← [TV series from TMDB](TV-series-from-TMDB)  ·  [Home](Home)  ·  [Search](Search) →
+← [No TMDB token? TheTVDB](No-TMDB-token-TheTVDB)  ·  [Home](Home)  ·  [Search](Search) →

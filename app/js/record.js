@@ -54,7 +54,8 @@ var Record = (function () {
      A miss is kept too, so it isn't asked again; a few at a time. */
   var asked = {}, metaBusy = false;
   function lite(m) { return { title: m.title, year: m.year, poster: m.poster, backdrop: m.backdrop, backdropHd: m.backdropHd || '', logo: m.logo || '', plot: String(m.plot || '').slice(0, 1200), genre: m.genre, runtime: m.runtime, rating: m.rating, kind: m.kind || '' }; }
-  function tmdbOn() { return typeof Media !== 'undefined' && Media.guideLookup && typeof MediaStore !== 'undefined' && MediaStore.tmdbToken && !!MediaStore.tmdbToken(); }
+  // A recording's poster and details: TMDB with a token, else TheTVDB (media.js metaWho).
+  function tmdbOn() { return typeof Media !== 'undefined' && !!Media.guideLookup && !!Media.metaWho && !!Media.metaWho(); }
   function enrich() {
     if (metaBusy || !tmdbOn()) return;
     var r = last.recs.filter(function (x) { return !x.meta && !asked[x.id] && x.status !== 'failed' && x.status !== 'cancelled'; })[0];

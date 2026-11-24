@@ -90,7 +90,7 @@ var Series = (function () {
   function lite(m) {
     return { id: m.id, title: m.title, year: m.year, poster: m.poster, backdrop: m.backdrop, backdropHd: m.backdropHd || '', logo: m.logo || '', plot: String(m.plot || '').slice(0, 600), genre: m.genre, rating: m.rating,
       network: m.network || '', status: m.status || '', cast: String(m.cast || '').split(', ').slice(0, 5).join(', '),
-      seasons: (m.seasons || []).filter(function (x) { return x && x.number > 0; }).length };
+      seasons: (m.seasons || []).filter(function (x) { return x && x.number > 0; }).length, imdb: m.imdb || '', tmdb: m.tmdb || '' };   // links of a TheTVDB match (skip times)
   }
 
   /* ---------- asking ---------- */

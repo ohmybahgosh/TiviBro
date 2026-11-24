@@ -147,6 +147,7 @@ var Subs = (function () {
       q.query = clean(it.name || it.title || meta && meta.title); q.year = String(it.year || meta && meta.sub || '').slice(0, 4);
       var mid = /^tmdb:(\d+)$/.exec(String(it.metadata && it.metadata.id || it.tmdb_id || ''));      // a My media movie TMDB knows
       if (mid) q.tmdb = mid[1];
+      else if (it.metadata && /^\d+$/.test(it.metadata.tmdb || '')) q.tmdb = it.metadata.tmdb;          // one matched on TheTVDB, with its TMDB link
     }
     if (!/^\d{4}$/.test(q.year)) { var y = /\b(19|20)\d\d\b/.exec(it.name || it.title || meta && meta.title || ''); q.year = y ? y[0] : ''; }
     return q;

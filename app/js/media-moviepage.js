@@ -54,12 +54,17 @@ var MediaMoviePage = (function () {
     // The trailer, once per movie and session; only on the TV (it opens the YouTube app).
     trailerFor(md(m).id, function (t) { if (pg && pg.m === m && t) { pg.trailer = t; draw(); } });
   }
-  /* TMDB's trailer for a movie ("tmdb:123") or a show ("tmdb:tv:123"), once per title and session: cb(YouTube id
-     or '').  Only on the TV, with a TMDB token.  Movies, shows (media-showpage.js) and the provider's shows (vod.js)
+  /* TMDB's trailer for a movie ("tmdb:123") or a show ("tmdb:tv:123"), with a TMDB token, or TheTVDB's for one
+     matched there ("tvdb:movie:1406", "tvdb:372264"), once per title and session: cb(YouTube id or '').  Only on the TV.  Movies, shows (media-showpage.js) and the provider's shows (vod.js)
      all ask here. */
   function trailerFor(id, cb) {
-    if (!tv() || !id || !/^tmdb:(tv:)?[0-9]+$/.test(id) || typeof MediaStore === 'undefined' || !MediaStore.tmdbToken() || typeof Media === 'undefined') return cb('');
+    if (!tv() || !id || typeof MediaStore === 'undefined' || typeof Media === 'undefined') return cb('');
     if (trailers[id] !== undefined) return cb(trailers[id]);
+    // A title matched on TheTVDB: its details carry the trailer (no token needed; the details are kept by the helper).
+    if (/^tvdb:(movie:)?[0-9]+$/.test(id)) return Media.request('metadata', { id: id, language: MediaStore.preferences().language }, 20000).then(function (r) {
+      trailers[id] = r && r.metadata && r.metadata.trailer || ''; cb(trailers[id]);
+    }, function () { cb(''); });
+    if (!/^tmdb:(tv:)?[0-9]+$/.test(id) || !MediaStore.tmdbToken()) return cb('');
     Media.request('metadata', { credential: MediaStore.tmdbToken(), videos: id, language: MediaStore.preferences().language }, 20000).then(function (r) {
       trailers[id] = r && r.trailer || ''; cb(trailers[id]);
     }, function () { cb(''); });

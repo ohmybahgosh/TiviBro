@@ -1,10 +1,12 @@
 /* Skip times from online databases, for movies and episodes whose files have no chapters (app/js/skipper.js):
    where the intro, the recap and the credits are, from two free community databases that need no account.
-     TheIntroDB   api.theintrodb.org/v4/media   by TMDB id (TMDB's season and episode numbers) or IMDb id
+     TheIntroDB   api.theintrodb.org/v4/media   by TheTVDB id (its own identity, TheTVDB's numbers), TMDB id (TMDB's
+                                                season and episode numbers) or IMDb id
      IntroDB      api.introdb.app/segments      by IMDb id (its data is open, under the ODbL: credited in the app)
    TheIntroDB is asked first; IntroDB fills in what it has not timed (an intro, a recap, the credits).
 
-     POST /media/skipdb { kind: 'movie'|'episode', tmdb, imdb, season, episode, dur (seconds), credential }
+     POST /media/skipdb { kind: 'movie'|'episode', tvdb, tmdb, imdb, season, episode, dur (seconds), credential }
+       tvdb: a title matched on TheTVDB (no TMDB token needed; its imdb comes with it, for IntroDB)
        -> { intro: [s, e] | null, recap: [s, e] | null, credits: s | -1, creditsEnd: e | -1, from: ['TheIntroDB', ...] }
           (seconds; an end of -1 is the end of the file)
    credential: the viewer's TMDB key, only to find a show's or movie's IMDb id for IntroDB when TiviBro knows
@@ -95,8 +97,8 @@ function span(s, e) {
    each is used).  404 is "nobody has timed it", not an error. */
 function theIntroDb(q, cb) {
   var name = 'TheIntroDB';
-  if (paused(name) || (!q.tmdb && !q.imdb)) return cb(null);
-  var p = '/v4/media?' + (q.tmdb ? 'tmdb_id=' + q.tmdb : 'imdb_id=' + q.imdb) + (q.kind === 'episode' ? '&season=' + q.season + '&episode=' + q.episode : '') + (q.dur ? '&duration_ms=' + Math.round(q.dur * 1000) : '');
+  if (paused(name) || (!q.tvdb && !q.tmdb && !q.imdb)) return cb(null);
+  var p = '/v4/media?' + (q.tvdb ? 'tvdb_id=' + q.tvdb : q.tmdb ? 'tmdb_id=' + q.tmdb : 'imdb_id=' + q.imdb) + (q.kind === 'episode' ? '&season=' + q.season + '&episode=' + q.episode : '') + (q.dur ? '&duration_ms=' + Math.round(q.dur * 1000) : '');
   get('api.theintrodb.org', p, {}, function (e, r) {
     if (e || !r) return cb(null, true);
     if (r.status === 429) { slowDown(name, r.retry); return cb(null, true); }
@@ -140,10 +142,11 @@ function imdbFor(q, cb) {
 function clean(q) {
   q = q || {};
   var out = { kind: q.kind === 'episode' ? 'episode' : 'movie', tmdb: /^[1-9][0-9]{0,9}$/.test(String(q.tmdb || '')) ? String(q.tmdb) : '',
+    tvdb: /^[1-9][0-9]{0,9}$/.test(String(q.tvdb || '')) ? String(q.tvdb) : '',
     imdb: /^tt[0-9]{5,10}$/.test(String(q.imdb || '')) ? String(q.imdb) : '', season: Math.floor(+q.season), episode: Math.floor(+q.episode),
     dur: +q.dur > 0 && +q.dur < 36000 ? +q.dur : 0, credential: typeof q.credential === 'string' ? q.credential.slice(0, 2048).trim() : '' };
   if (out.kind === 'episode' && !(out.season >= 0 && out.season <= 300 && out.episode >= 1 && out.episode <= 20000)) return null;
-  return out.tmdb || out.imdb ? out : null;
+  return out.tvdb || out.tmdb || out.imdb ? out : null;
 }
 // TheIntroDB's answer with IntroDB's for what it lacks.  from: the databases that gave something.
 function merge(a, b) {
@@ -169,7 +172,7 @@ function wire(r) {
 function lookup(q, cb) {
   q = clean(q);
   if (!q) return cb({ error: 'skipdb', message: 'Not a movie or episode the databases know.' });
-  var k = (q.tmdb ? 'tmdb:' + q.tmdb : q.imdb) + (q.kind === 'episode' ? ':' + q.season + ':' + q.episode : ''), c = kept(k);
+  var k = (q.tvdb ? 'tvdb:' + (q.kind === 'movie' ? 'movie:' : '') + q.tvdb : q.tmdb ? 'tmdb:' + q.tmdb : q.imdb) + (q.kind === 'episode' ? ':' + q.season + ':' + q.episode : ''), c = kept(k);
   if (c) return cb(c.v || wire(merge(null, null)));
   if (waiting[k]) return waiting[k].push(cb);
   waiting[k] = [cb];

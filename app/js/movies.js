@@ -16,7 +16,8 @@ var Movies = (function () {
   var cache = {}, loaded = null, ver = 1, queue = [], queued = {}, busy = false, timer = null, saveT = null, hooked = false;
   var found = [], foundAt = 0, lastScan = 0;
   function S() { return Store.settings; }
-  function on() { return S().guideMovies !== false && typeof MediaStore !== 'undefined' && !!MediaStore.tmdbToken(); }
+  // With a TMDB token, or without one from TheTVDB (Details from TheTVDB: media.js metaWho, service/tvdb.js).
+  function on() { return S().guideMovies !== false && typeof MediaStore !== 'undefined' && typeof Media !== 'undefined' && !!Media.metaWho && !!Media.metaWho(); }
   function groupOn() { return on() && S().moviesGroup !== false; }
   function norm(t) { return String(t || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, ''); }
 

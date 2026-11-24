@@ -145,19 +145,32 @@ var Skipper = (function () {
       });
     }).catch(function () {});
   }
-  /* What the databases know the title by: { kind, tmdb, imdb, season, episode }, or null.
-     My media: a movie's TMDB id, a show's (its card, else the library) with the episode's season and number.
-     The provider's: a show's TMDB id from its details (vod.js), a movie's from its row or details. */
+  /* What the databases know the title by: { kind, tvdb, tmdb, imdb, season, episode }, or null.
+     My media: a movie's id, a show's (its card, else the library) with the episode's season and number.
+     The provider's: a show's TMDB id from its details, else the show series.js matched (vod.js showIds); a
+     movie's TMDB id from its row or details, else the movie found by its name (TMDB or TheTVDB).
+     A title matched on TheTVDB goes by its TheTVDB id (TheIntroDB's own) and its IMDb id (IntroDB's). */
+  function pick(kind, ids, season, episode) {
+    var q = { kind: kind, tvdb: ids.tvdb || '', tmdb: ids.tvdb ? '' : ids.tmdb || '', imdb: ids.imdb || '' };
+    if (kind === 'episode') { q.season = season; q.episode = episode; if (!(episode > 0)) return null; }
+    return q.tvdb || q.tmdb || q.imdb ? q : null;
+  }
   function idsOf(meta) {
-    var it = meta.item || {}, num = function (x) { var m = /^(?:tmdb:(?:tv:)?)?([1-9][0-9]{0,9})$/.exec(String(x || '')); return m ? m[1] : ''; };
+    var it = meta.item || {}, of = Media.idsOfMeta || function () { return {}; };
     if (meta.local && it.kind === 'episode' && it.showId) {
-      var ep = { kind: 'episode', tmdb: num(Media.showTmdb && Media.showTmdb(it.showId)), season: +it.season || 0, episode: +it.number || 0 };
-      if (ep.tmdb || !ep.episode) return Promise.resolve(ep.tmdb && ep.episode ? ep : null);
-      return Media.request('library/detail', { kind: 'show', handle: it.showId }, 30000).then(function (sh) { ep.tmdb = num(sh && sh.metadata && /^tmdb:tv:/.test(sh.metadata.id || '') ? sh.metadata.id : ''); return ep.tmdb ? ep : null; });
+      var known = Media.showIds ? Media.showIds(it.showId) : {}, se = +it.season || 0, en = +it.number || 0;
+      if (known.tvdb || known.tmdb) return Promise.resolve(pick('episode', known, se, en));
+      return Media.request('library/detail', { kind: 'show', handle: it.showId }, 30000).then(function (sh) { return pick('episode', of(sh && sh.metadata), se, en); });
     }
-    if (meta.local) { var mid = /^tmdb:([0-9]+)$/.exec(String(it.metadata && it.metadata.id || '')); return Promise.resolve(mid ? { kind: 'movie', tmdb: mid[1] } : null); }
-    if (it.ep) return Promise.resolve(meta.showTmdb && +it.num ? { kind: 'episode', tmdb: num(meta.showTmdb), season: +it.season || 0, episode: +it.num } : null);
-    if (meta.provider && typeof Vod !== 'undefined' && Vod.movieTmdb) return Vod.movieTmdb(it).then(function (id) { return id ? { kind: 'movie', tmdb: id } : null; });
+    if (meta.local) return Promise.resolve(pick('movie', of(it.metadata)));
+    if (it.ep) return Promise.resolve(+it.num ? pick('episode', meta.showIds || { tmdb: meta.showTmdb }, +it.season || 0, +it.num) : null);
+    if (meta.provider && typeof Vod !== 'undefined' && Vod.movieTmdb) return Vod.movieTmdb(it).then(function (id) {
+      if (id) return { kind: 'movie', tmdb: id };
+      // No TMDB id from the provider: the movie by its name (Movies on now's lookup: TMDB with a token, else TheTVDB).
+      var c = typeof Movies !== 'undefined' && Movies.clean ? Movies.clean(String(it.name || '')) : { t: it.name, y: '' };
+      if (!c.t || !Media.guideLookup || !Media.metaWho || !Media.metaWho()) return null;
+      return Media.guideLookup(c.t, it.year || c.y, 'strong').then(function (r) { return r && r.metadata ? pick('movie', of(r.metadata)) : null; }, function () { return null; });
+    });
     return Promise.resolve(null);
   }
   function show(id, label, kicker, act) {

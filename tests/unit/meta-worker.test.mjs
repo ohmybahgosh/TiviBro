@@ -17,7 +17,7 @@ globalThis.fetch = async (url, init = {}) => {
   const reply = (data, status) => new Response(JSON.stringify({ status: 'success', data }), { status: status || 200 });
   if (/\/login$/.test(url)) return reply({ token: 'tok' + calls.length });
   if (refuseOnce) { refuseOnce = false; return new Response('{}', { status: 401 }); }
-  if (/\/search\?/.test(url)) return reply([{ tvdb_id: '372264', name: 'Slow Horses', year: '2022', country: 'gbr', network: 'Apple TV', primary_language: 'eng', aliases: ['Caballos lentos'],
+  if (/\/search\?type=series/.test(url)) return reply([{ tvdb_id: '372264', name: 'Slow Horses', year: '2022', country: 'gbr', network: 'Apple TV', primary_language: 'eng', aliases: ['Caballos lentos'],
     translations: { deu: 'Slow Horses - Ein Fall für Jackson Lamb' }, overviews: { eng: 'Spies.', deu: 'Spione.' }, thumbnail: ART + 'posters/a_t.jpg' }, { tvdb_id: 'nope', name: 'Bad' }]);
   if (/\/series\/372264\/extended/.test(url)) return reply({ id: 372264, name: 'Slow Horses', year: '2022', firstAired: '2022-04-01', averageRuntime: 46, originalCountry: 'gbr', originalLanguage: 'eng',
     status: { name: 'Continuing' }, originalNetwork: { name: 'Apple TV' }, genres: [{ name: 'Thriller' }], image: ART + 'posters/a.jpg',
@@ -27,6 +27,11 @@ globalThis.fetch = async (url, init = {}) => {
       { type: 23, image: ART + 'clearlogo/l.png', language: 'eng', score: 1 }, { type: 2, image: 'https://evil.example/x.jpg', language: 'deu', score: 99 }],
     characters: [{ personName: 'Jack Lowden', peopleType: 'Actor', sort: 2, isFeatured: true }, { personName: 'Gary Oldman', peopleType: 'Actor', sort: 1, isFeatured: true }, { personName: 'Someone', peopleType: 'Director', sort: 0 }],
     seasons: [{ number: 1, type: { type: 'official' } }, { number: 0, type: { type: 'official' } }, { number: 1, type: { type: 'dvd' } }, { number: 2, type: { type: 'official' } }] });
+  if (/\/search\?type=movie/.test(url)) return reply([{ tvdb_id: '1406', name: 'Dune', year: '1984', director: 'David Lynch', remote_ids: [{ id: 'tt0087182', sourceName: 'IMDB' }, { id: '841', sourceName: 'TheMovieDB.com' }] }]);
+  if (/\/movies\/1406\/extended/.test(url)) return reply({ id: 1406, name: 'Dune', year: '1984', runtime: 137, score: 36856, first_release: { date: '1984-12-14' },
+    remoteIds: [{ id: 'tt0087182', sourceName: 'IMDB' }, { id: '841', sourceName: 'TheMovieDB.com' }], trailers: [{ url: 'https://www.youtube.com/watch?v=WHh8dzxTSNw', language: 'eng' }],
+    artworks: [{ type: 14, image: ART + 'mp.jpg', thumbnail: ART + 'mp_t.jpg', language: 'eng' }, { type: 15, image: ART + 'mb.jpg', thumbnail: ART + 'mb_t.jpg', language: null }, { type: 25, image: ART + 'ml.png', language: 'eng' }],
+    characters: [{ personName: 'Kyle MacLachlan', peopleType: 'Actor', sort: 1 }, { personName: 'David Lynch', peopleType: 'Director' }] });
   if (/\/series\/999\/extended/.test(url)) return new Response('{}', { status: 404 });
   if (/\/series\/372264\/episodes\/default\/deu/.test(url)) return reply({ episodes: [{ seasonNumber: 1, number: 1, name: 'Folge 1', overview: 'Eins.', aired: '2022-04-01', image: '/banners/v4/episode/1/s.jpg', runtime: 50 },
     { seasonNumber: 2, number: 1, name: 'Zwei', aired: '2022-12-02' }, { seasonNumber: 0, number: 1, name: 'Extra' }] });
@@ -47,6 +52,11 @@ ok('artwork: your language first, never another host', s.poster === ART + 'poste
 ok('a backdrop without words first, with an HD one', s.backdrop === ART + 'backgrounds/p_t.jpg' && s.backdropHd === ART + 'backgrounds/p.jpg', s.backdrop);
 ok('the logo art', s.logo === ART + 'clearlogo/l.png');
 ok('cast: actors, featured in order', s.cast === 'Gary Oldman, Jack Lowden', s.cast);
+r = await (await get('/v1/search?q=Dune&type=movie')).json();
+ok('movie search, with its IMDb and TMDB ids', r.results[0].id === '1406' && r.results[0].imdb === 'tt0087182' && r.results[0].tmdb === '841' && r.results[0].director === 'David Lynch', JSON.stringify(r));
+r = await (await get('/v1/movie/1406?lang=en')).json();
+ok('a movie: its art, cast, director, runtime, links and trailer', r.movie.poster === ART + 'mp_t.jpg' && r.movie.backdropHd === ART + 'mb.jpg' && r.movie.logo === ART + 'ml.png' && r.movie.cast === 'Kyle MacLachlan' &&
+  r.movie.directors[0] === 'David Lynch' && r.movie.runtime === '137 min' && r.movie.releaseDate === '1984-12-14' && r.movie.imdb === 'tt0087182' && r.movie.tmdb === '841' && r.movie.trailer === 'WHh8dzxTSNw', JSON.stringify(r.movie));
 ok('official seasons, each once', JSON.stringify(s.seasons) === JSON.stringify([{ number: 0 }, { number: 1 }, { number: 2 }]), JSON.stringify(s.seasons));
 r = await (await get('/v1/series/372264/season/1?lang=de')).json();
 ok('a season: only its episodes, stills on TheTVDB\'s host', r.episodes.length === 1 && r.episodes[0].title === 'Folge 1' && r.episodes[0].still === 'https://artworks.thetvdb.com/banners/v4/episode/1/s.jpg', JSON.stringify(r));
