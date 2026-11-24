@@ -1,16 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 209, 2026-11-24)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 209
 
 - A 1 GB TV with two or more playlists on no longer closes TiviBro 15 to 30 seconds after it starts (issues #169, #170): the playlists together count toward the careful start for big lists, which loads the guide and channel logos a little later.
 - A 4K channel whose connection drops no longer takes TiviBro down with it on some TVs (issue #168): the player reconnects a moment after the drop instead of from inside it.
 - Problem reports keep more out of the public issue: a login or token in a link's path, a stream piece's md5, and the names of adult channels.
 
-## 0.6.0 (alpha 208, 2026-11-23)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 208
+### In alpha 208
 
 - **Exclude unmatched movies.**  Unmatched movies (Settings > My media > the library, the web editor and the phone app) now offer Exclude beside Fix match, for a sample or a clip you don't want in My media.  Rescans keep them out; Excluded movies brings one back.
 - **Skip intro and Skip credits, by button or automatically.**  Settings > Playback > Skip intro and Skip credits: Show a button, Skip automatically or Off, each on its own.  Skip credits brings up Up next with its countdown, or jumps to a scene after the credits.
