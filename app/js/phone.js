@@ -351,6 +351,7 @@ var Phone = (function () {
        change on it (op toggle, choice, cycle, move, action).  Locked with the TV's PIN when Settings is: the
        answer says so ({ locked }) and the phone asks for the PIN. */
     settings: function (a, c) {
+      if (typeof SetSnap !== 'undefined' && c) SetSnap.noteLang(c.lang);     // its pages in this language go in the copy for when TiviBro is away
       try { Parental.phoneOk(a.pin); } catch (e) { if (e.code === 'pin') return { locked: true, msg: e.message }; throw e; }
       var op = String(a.op || 'page'), path = Array.isArray(a.path) ? a.path.map(Number) : [];
       // In the phone's language (c.lang, sent by phone apps that are translated), else the TV's: the page is

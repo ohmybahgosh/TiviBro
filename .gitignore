@@ -47,6 +47,9 @@ service/power.json
 service/helper-errors.json
 service/companion.json
 service/companion.json.tmp
+service/companion-settings.json
+service/companion-settings.json.tmp
+service/dev-away
 
 # the AI knowledge base, built by npm run ai (published at tivibro.app/ai/)
 tivibro-for-ai.md

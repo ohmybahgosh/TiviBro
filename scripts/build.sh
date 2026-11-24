@@ -21,7 +21,7 @@ cp "$ROOT/app/js/i18n.js" "$ROOT/service/editor/i18n.js"           # the editor'
 # langs:begin
 cp "$ROOT/app/js/lang/es-ES.js" "$ROOT/app/js/lang/pt-PT.js" "$ROOT/service/editor/lang/"
 # langs:end
-rm -rf "$ROOT/service/guide-data" "$ROOT/service/power.json" "$ROOT/service/reminders.json" "$ROOT/service/helper-errors.json" "$ROOT/service/companion.json" "$ROOT/service/companion.json.tmp" "$ROOT"/service/alert-*.json                                # guides stored by a dev relay: not for the package     # the helper's guide reader matches with it
+rm -rf "$ROOT/service/guide-data" "$ROOT/service/power.json" "$ROOT/service/reminders.json" "$ROOT/service/helper-errors.json" "$ROOT/service/companion.json" "$ROOT/service/companion.json.tmp" "$ROOT/service/companion-settings.json" "$ROOT/service/companion-settings.json.tmp" "$ROOT/service/dev-away" "$ROOT"/service/alert-*.json                                # guides stored by a dev relay: not for the package     # the helper's guide reader matches with it
 cp "$ROOT/app/img/tmdb.svg" "$ROOT/service/editor/tmdb.svg"          # the web editor's TMDB credit (My media)
 bash "$ROOT/scripts/ffmpeg/bundle.sh"                              # the audio converter rides along (docs/FFMPEG.md)
 bash "$ROOT/scripts/smb/bundle.sh"                                 # and the reader for Windows shares (docs/SMB.md)

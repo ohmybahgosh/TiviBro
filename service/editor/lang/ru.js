@@ -2088,5 +2088,8 @@ I18n.add('ru', {
   "Exclude": "Исключить",
   "Excluded ({n})": "Исключённые ({n})",
   "Include": "Вернуть",
-  "No movies excluded.": "Нет исключённых фильмов."
+  "No movies excluded.": "Нет исключённых фильмов.",
+  "Made when TiviBro is back on the TV": "Применится, когда TiviBro снова будет на TV",
+  "That needs TiviBro on the TV's screen.  Open TiviBro on the TV, then press it again.": "Для этого TiviBro должен быть на экране TV.  Откройте TiviBro на TV и нажмите ещё раз.",
+  "TiviBro isn't on the TV's screen, so this is its last copy.  Switches and choices you change are made when TiviBro is back; buttons need TiviBro on screen.": "TiviBro сейчас не на экране TV, поэтому это его последняя копия.  Переключатели и выбор, которые вы измените, применятся, когда TiviBro вернётся; кнопкам нужен TiviBro на экране."
 });

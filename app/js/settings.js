@@ -106,7 +106,8 @@ var Settings = (function () {
     return labels.map(function (l) { return list.filter(function (it) { return !it.head && it.label === l; })[0]; }).filter(Boolean);
   }
   function page(label, sub, title, fn, value) { var it = action(label, sub, function () { push(title, fn); }, value || function () { return '›'; }); it.page = { title: title, fn: fn }; return it; }
-  function save(rebuild) { Store.saveSettings(); if (rebuild) build(); else paint(); }
+  // A setting changed: kept, the page drawn again, and the phone's copy of Settings made again soon (setsnap.js).
+  function save(rebuild) { Store.saveSettings(); if (typeof SetSnap !== 'undefined') SetSnap.soon(); if (rebuild) build(); else paint(); }
   function push(title, fn) { stack.push({ title: title, fn: fn, sel: sel }); sel = 0; build(); }
   function pop() { var p = stack.pop(); sel = p ? p.sel : 0; build(); }
   function relist() { L.dirty(); Views.refreshLists(true); }

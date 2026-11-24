@@ -3067,5 +3067,9 @@ I18n.add('pt-BR', {
   "Not a movie you want here (a sample, a clip).  Settings > My media > the library > Excluded movies brings it back.": "Não é um filme que você quer aqui (uma amostra, um clipe).  Configurações > Minhas mídias > a biblioteca > Filmes excluídos traz de volta.",
   "Search TMDB by the title you type": "Buscar no TMDB pelo título que você digitar",
   "That movie is no longer in My media.  Rescan on the TV.": "Esse filme não está mais em Minhas mídias.  Escaneie de novo na TV.",
-  "Include": "Incluir"
+  "Include": "Incluir",
+  "A setting changed on the phone is made now": "Um ajuste mudado no celular é aplicado agora",
+  "Saved.  The TV makes this change when TiviBro is next on screen.": "Salvo.  A TV aplica esta mudança quando o TiviBro voltar à tela.",
+  "That changed on the TV.  Look again.": "Isso mudou na TV.  Veja de novo.",
+  "{n} settings changed on the phone are made now": ["{n} ajuste mudado no celular é aplicado agora", "{n} ajustes mudados no celular são aplicados agora"]
 });

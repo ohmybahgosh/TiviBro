@@ -153,6 +153,8 @@ data class SetRow(
     val tone: String = "",
     /** Can be dragged to another place in its list (a group in Manage groups): op "move" with how many places. */
     val move: Boolean = false,
+    /** Changed here while TiviBro wasn't on the TV's screen: the TV makes it when TiviBro is back (the helper keeps it). */
+    val pending: Boolean = false,
 ) {
     companion object {
         fun from(j: JSONObject) = SetRow(
@@ -160,7 +162,7 @@ data class SetRow(
             j.optBoolean("on"), j.optJSONArray("options")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty(), j.optInt("cur", -1), j.optString("swatch"),
             j.optString("phone"), j.optString("sid"), j.optString("epage"), j.optInt("tv") == 1 || j.optBoolean("tv"), j.optString("ptype"),
             j.optString("look"), j.optInt("attn") == 1, j.optString("style"), j.optString("brief"), j.optString("go"), j.optString("tone"),
-            j.optInt("move") == 1,
+            j.optInt("move") == 1, j.optBoolean("pending"),
         )
     }
 }
@@ -168,8 +170,9 @@ data class SetRow(
 private val NATIVE = setOf("media-add", "media-source", "tmdb-token", "add-playlist", "edit-playlist")
 /** The buttons that open one of the phone's own screens ([SettingsTab]'s onGo, except the log, shown here). */
 private val SCREENS = setOf("reminders", "backups", "editor")
-private data class SetPage(val title: String, val rows: List<SetRow>)
-private fun pageOf(j: JSONObject) = SetPage(j.optString("title"), j.optJSONArray("rows")?.let { a -> (0 until a.length()).map { SetRow.from(a.getJSONObject(it)) } }.orEmpty())
+/** [away]: from the copy TiviBro left the network helper, because TiviBro isn't on the TV's screen (setsnap.js). */
+private data class SetPage(val title: String, val rows: List<SetRow>, val away: Boolean = false)
+private fun pageOf(j: JSONObject) = SetPage(j.optString("title"), j.optJSONArray("rows")?.let { a -> (0 until a.length()).map { SetRow.from(a.getJSONObject(it)) } }.orEmpty(), j.optBoolean("away"))
 
 /** [startSec]: a section to open first (one of the TV's section ids, such as "media").  [onGo] opens one of
     the phone's own screens: "reminders", "backups" or "editor" (with an editor page id, or ""). */
@@ -187,6 +190,8 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
     var busy by remember { mutableStateOf(false) }
     // TiviBro isn't on the TV's screen (another app is): the pages wait for a tap instead of taking over the TV.
     var away by remember { mutableStateOf(false) }
+    // TiviBro isn't on screen, but it left the helper a copy of its Settings: the pages come from it (setsnap.js).
+    var fromCopy by remember { mutableStateOf(false) }
     var picking by remember { mutableStateOf<SetRow?>(null) }
     var showLog by remember { mutableStateOf(false) }
     var native by remember { mutableStateOf<SetRow?>(null) }      // a media-add, media-source or tmdb-token row open here
@@ -208,8 +213,13 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
                 // Never opens TiviBro by itself: Settings on the phone while the TV shows something else leaves it there.
                 val r = model.ask(id, "settings", a, seal = true, timeoutMs = timeoutMs, tries = tries, noOpen = true)
                 away = false
+                fromCopy = r.optBoolean("away") || r.optJSONObject("page")?.optBoolean("away") == true
                 if (r.optBoolean("locked")) { askPin = r.optString("msg"); pin = "" } else then(r)
-            } catch (e: TbException) { if (e.code == "closed") away = true else error = e.message }
+            } catch (e: TbException) {
+                // A button pressed while the pages come from the helper's copy: it needs TiviBro itself, the page stays.
+                if (e.code == "closed" && fromCopy && op != "page" && op != "sections") model.say(tr("That needs TiviBro on the TV's screen.  Open TiviBro on the TV, then press it again."))
+                else if (e.code == "closed") away = true else error = e.message
+            }
             catch (e: Exception) { error = tr("The TV didn't answer.  Is it on, and on the same network?") }
             busy = false
         }
@@ -316,6 +326,7 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
             else -> {
               // The rows are read later by the list, after Back may have cleared the page: keep this page's.
               val cards = cardsOf(page?.rows.orEmpty())
+              val copy = page?.away == true
               val lit = found
               // The list and where it is on screen: a group dragged near its top or bottom edge scrolls it (MovableRows).
               val listState = rememberLazyListState()
@@ -323,6 +334,11 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
               val edges = ListEdges(listState) { listBox }
               LazyColumn(state = listState, contentPadding = PaddingValues(16.dp, 4.dp, 16.dp, 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp),
                   modifier = Modifier.onGloballyPositioned { val y = it.positionInWindow().y; listBox = y to y + it.size.height }) {
+                // From the helper's copy: what works now and what waits for TiviBro.
+                if (copy) item(key = "away") {
+                    Text(tr("TiviBro isn't on the TV's screen, so this is its last copy.  Switches and choices you change are made when TiviBro is back; buttons need TiviBro on screen."),
+                        color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(4.dp, 2.dp))
+                }
                 cards.forEachIndexed { n, (head, rows) ->
                   if (head.isNotBlank()) item(key = "h$n") { SetHead(head) }
                   // One row as the TV sent it, with what each kind of tap does.
@@ -597,6 +613,8 @@ private fun SettingRow(r: SetRow, lit: Boolean, onToggle: (Boolean) -> Unit, onP
             Column(Modifier.weight(1f)) {
                 Text(r.label, fontWeight = if (r.attn || button) FontWeight.SemiBold else FontWeight.Medium,
                     color = when { r.attn -> Good; r.tone == "danger" -> Color(0xFFFF9A9D); else -> TextHi })
+                // Changed here while TiviBro was away: made on the TV when TiviBro is back.
+                if (r.pending) Text(tr("Made when TiviBro is back on the TV"), color = Accent2, style = MaterialTheme.typography.bodySmall)
                 val note = if (more || r.brief.isBlank()) r.sub else r.brief
                 if (note.isNotBlank()) Row(verticalAlignment = Alignment.Top) {
                     Text(note, color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f, fill = false), maxLines = if (more) Int.MAX_VALUE else 3, overflow = TextOverflow.Ellipsis)

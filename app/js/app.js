@@ -934,6 +934,7 @@ var App = (function () {
       Phone.launched(launchParams());
       Update.whatsNew();             // the first start of a newer version: its notes, once
       SubWarn.start();               // a provider's subscription ending soon, or ended: said on the TV
+      if (typeof SetSnap !== 'undefined') SetSnap.start();   // the phone's Settings while TiviBro is away (setsnap.js)
       Update.autoCheck();
       Update.countMe();
       Reports.start();

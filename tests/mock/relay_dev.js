@@ -10,7 +10,8 @@ const companion = require(path.join(__dirname, '../../service/companion.js')).cr
   version: 'dev',
   launch: (params, cb) => { console.log('companion: would open TiviBro with ' + JSON.stringify(params)); cb(null); },
   sysinfo: (cb) => cb({ model: 'DEV', webos: 'dev', name: '' }),
-  app: () => ({ open: true, visible: true }),
+  // TiviBro on screen, unless a test put it "behind another app" with the file dev-away beside companion.json.
+  app: () => ({ open: true, visible: !require('fs').existsSync(path.join(process.env.COMPANION_DIR || path.join(__dirname, '../../service'), 'dev-away')) }),
   editor: () => (relay ? relay.editor : null)
 });
 relay = proxy.create({ companion });

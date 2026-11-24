@@ -2560,5 +2560,9 @@ I18n.add('ru', {
   "Not a movie you want here (a sample, a clip).  Settings > My media > the library > Excluded movies brings it back.": "Не тот фильм, который нужен здесь (сэмпл, клип).  Настройки > Мои медиа > библиотека > Исключённые фильмы вернёт его.",
   "Search TMDB by the title you type": "Искать в TMDB по введённому названию",
   "That movie is no longer in My media.  Rescan on the TV.": "Этого фильма больше нет в «Мои медиа».  Пересканируйте на TV.",
-  "Include": "Вернуть"
+  "Include": "Вернуть",
+  "A setting changed on the phone is made now": "Настройка, изменённая на телефоне, применена",
+  "Saved.  The TV makes this change when TiviBro is next on screen.": "Сохранено.  TV применит это изменение, когда TiviBro снова будет на экране.",
+  "That changed on the TV.  Look again.": "Это изменилось на TV.  Посмотрите ещё раз.",
+  "{n} settings changed on the phone are made now": ["{n} настройка, изменённая на телефоне, применена", "{n} настройки, изменённые на телефоне, применены", "{n} настроек, изменённых на телефоне, применено"]
 });

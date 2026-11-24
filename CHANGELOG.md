@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The phone app's Settings works while TiviBro is behind another app: it shows the TV's last copy of Settings, and switches and choices changed there are made when TiviBro is back on screen.  Buttons still need TiviBro on the TV's screen.
+
 ## 0.6.0 (alpha 210, 2026-11-24)
 
 Pre-release: expect rough edges, and keep a backup before installing.

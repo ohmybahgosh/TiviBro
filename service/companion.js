@@ -379,6 +379,8 @@ function create(opts) {
     if (!j || typeof j.what !== 'string' || !Object.prototype.hasOwnProperty.call(ASKS, j.what)) return reply(400, { error: 'unknown question', code: 'bad' });
     if (SEALED[j.what] && !sealed) return reply(400, { error: 'This needs a sealed request.', code: 'sealed' });
     var args = j.args && typeof j.args === 'object' ? j.args : {};
+    // Settings while TiviBro is away: from the copy it left here (above).
+    if (j.what === 'settings' && !appOpen() && snap && snapAsk(j, reply)) return;
     if (j.noOpen && !appOpen()) return reply(200, { ok: true, closed: true });
     var cmd = { type: 'ask', what: j.what, args: args };
     if (typeof j.lang === 'string' && /^[A-Za-z]{2}(-[A-Za-z]{2})?$/.test(j.lang)) cmd.lang = j.lang;   // the phone's language: TiviBro answers in it
@@ -386,6 +388,93 @@ function create(opts) {
     var w = asks[cmd.id] = { reply: reply };
     w.timer = setTimeout(function () { delete asks[cmd.id]; reply(200, { ok: true, pending: true, state: how, busy: busyNow() }); }, ASKS[j.what]);
   }
+  /* ---------- Settings while TiviBro is away (app/js/setsnap.js) ----------
+     webOS pauses TiviBro behind another app, so it can't answer the phone's Settings then.  TiviBro leaves a copy of
+     every Settings page here (POST /companion/snapshot, per language), and while it is away the phone's Settings are
+     answered from it: the sections, a page, a search.  A switch or a choice changed then is kept (pending) and shown
+     changed, and TiviBro makes it the next time it is on screen (GET /companion/pending).  Anything that does
+     something at once (a button, a question) still needs TiviBro: those get "closed" as before.  The PIN: the copy
+     carries its hash (Parental's FNV-1a of "tivibro:<pin>:pin"), checked here with the same 30 s lock after 5 tries. */
+  // In the helper's storage when it has one (it outlives a TiviBro update, so waiting changes do too), else beside companion.json.
+  var SNAP_FILE = (function () { try { var d = opts.alt && opts.alt(); if (d) return path.join(d, 'companion-settings.json'); } catch (e) {} return path.join(opts.dir || __dirname, 'companion-settings.json'); })();
+  var snap = null, pending = [], pinFails = 0, pinLockUntil = 0;
+  (function () {
+    try { var o = JSON.parse(fs.readFileSync(SNAP_FILE, 'utf8')); if (o && o.snap && o.snap.langs) { snap = o.snap; pending = Array.isArray(o.pending) ? o.pending : []; } } catch (e) {}
+  })();
+  function saveSnap() {
+    var tmp = SNAP_FILE + '.tmp';
+    fs.writeFile(tmp, JSON.stringify({ snap: snap, pending: pending }), { mode: 384 }, function (e) { if (!e) fs.rename(tmp, SNAP_FILE, function () {}); });
+  }
+  // Exactly U.hash in app/js/util.js (a double multiply, then >>> 0), so the same PIN gives the same hash.
+  function fnv(x) { var h = 0x811c9dc5; for (var i = 0; i < x.length; i++) { h ^= x.charCodeAt(i); h = (h * 0x01000193) >>> 0; } return h.toString(36); }
+  function snapLang(code) {
+    var L = snap && snap.langs || {}; code = String(code || '');
+    return L[code] || L[code.split('-')[0]] || L.en || L[Object.keys(L)[0]] || null;
+  }
+  function samePlace(c, sec, p, i) { return c.sec === sec && c.path.join('.') === p.join('.') && c.i === i; }
+  // A pending change shown on a row: a switch on or off, a choice picked, marked as waiting for TiviBro.
+  function showPending(row, c) {
+    if (c.op === 'toggle') row.on = c.on !== false;
+    else { row.cur = c.v; if (row.options && row.options[c.v] != null) row.value = row.options[c.v]; }
+    row.pending = true;
+  }
+  // The PIN check, as Parental.phoneOk does it: '' when it may go on, else the message for the phone.
+  function pinSays(pin) {
+    if (!snap.pin) return '';
+    if (Date.now() < pinLockUntil) return 'Too many wrong PINs.  Try again in ' + Math.ceil((pinLockUntil - Date.now()) / 1000) + 's.';
+    if (pin == null || pin === '') return 'Settings on this TV are locked with a PIN.';
+    if (fnv('tivibro:' + String(pin) + ':pin') === snap.pin) { pinFails = 0; return ''; }
+    if (++pinFails >= 5) { pinLockUntil = Date.now() + 30000; pinFails = 0; }
+    return 'Wrong PIN';
+  }
+  // Every setting whose name (or note) has q, as Settings.phone.find answers: best matches first, at most 40.
+  function snapFind(L, q) {
+    q = String(q || '').toLowerCase().trim(); if (q.length < 2) return [];
+    var hits = [], seen = {};
+    Object.keys(L.pages).forEach(function (k) {
+      var pg = L.pages[k], cut = k.indexOf('|'), sec = k.slice(0, cut), p = k.slice(cut + 1) ? k.slice(cut + 1).split('.').map(Number) : [];
+      (pg.rows || []).forEach(function (r) {
+        if (r.kind === 'head' || r.kind === 'info' || !r.label) return;
+        var w = r.label.toLowerCase().indexOf(q) >= 0 ? 0 : String(r.sub || '').toLowerCase().indexOf(q) >= 0 ? 1 : -1, key = r.label + '|' + r.sub;
+        if (w < 0 || seen[key]) return;
+        seen[key] = 1; hits.push({ w: w, d: p.length, h: { label: r.label, sub: String(r.sub || '').split('  ')[0], trail: (pg.trail || []).join('  ›  '), sec: sec, path: p } });
+      });
+    });
+    hits.sort(function (a, b) { return a.w - b.w || a.d - b.d; });
+    return hits.slice(0, 40).map(function (x) { return x.h; });
+  }
+  /* A Settings question answered from the copy: true when answered.  False (TiviBro is needed): no copy, a page it
+     hasn't, or an op that does something at once. */
+  function snapAsk(j, reply) {
+    var a = j.args && typeof j.args === 'object' ? j.args : {}, op = String(a.op || 'page'), L = snapLang(j.lang);
+    if (!L || ['sections', 'page', 'find', 'toggle', 'choice'].indexOf(op) < 0) return false;
+    var no = pinSays(a.pin);
+    if (no) { reply(200, { ok: true, data: { locked: true, msg: no } }); return true; }
+    if (op === 'sections') { reply(200, { ok: true, data: { sections: L.sections, away: true } }); return true; }
+    if (op === 'find') { reply(200, { ok: true, data: { hits: snapFind(L, a.q), away: true } }); return true; }
+    var sec = String(a.sec || ''), p = Array.isArray(a.path) ? a.path.map(Number) : [], pg = L.pages[sec + '|' + p.join('.')];
+    if (!pg) return false;
+    if (op === 'page') { reply(200, { ok: true, data: pagePending(pg, sec, p) }); return true; }
+    var i = +a.i, row = (pg.rows || []).filter(function (r) { return r.i === i; })[0];
+    if (!row || (op === 'toggle' ? row.kind !== 'toggle' : row.kind !== 'choice' || !(row.options || [])[+a.v])) { reply(200, { ok: true, data: { msg: (L.msgs || {}).changed || 'That changed on the TV.  Look again.', page: pagePending(pg, sec, p) } }); return true; }
+    var c = { sec: sec, path: p, i: i, op: op, at: Date.now(), label: row.label };
+    if (op === 'toggle') c.on = a.on !== false; else c.v = +a.v;
+    pending = pending.filter(function (x) { return !samePlace(x, sec, p, i); });
+    pending.push(c);
+    if (pending.length > 100) pending.splice(0, pending.length - 100);
+    saveSnap();
+    log({ lv: 'info', event: 'companion: setting kept for TiviBro', op: op, label: String(row.label).slice(0, 60) });
+    reply(200, { ok: true, data: { msg: (L.msgs || {}).saved || 'Saved.  The TV makes this change when TiviBro is next on screen.', page: pagePending(pg, sec, p) } });
+    return true;
+  }
+  // A page from the copy with the changes still waiting for TiviBro shown on it.
+  function pagePending(pg, sec, p) {
+    var out = JSON.parse(JSON.stringify(pg));
+    out.away = true;
+    pending.forEach(function (c) { if (c.sec === sec && c.path.join('.') === p.join('.')) (out.rows || []).forEach(function (r) { if (r.i === c.i) showPending(r, c); }); });
+    return out;
+  }
+
   function answerAsk(j) {
     var w = asks[j.id];
     if (!w) return false;
@@ -521,6 +610,8 @@ function create(opts) {
     var reply = function (code, obj) { res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(obj)); };
     var done = function (e) { if (e) return reply(409, { error: e.message }); reply(200, status()); };
     if (u === '/companion/status') return reply(200, status());
+    // Changes made on the phone while TiviBro was away: handed over once, for TiviBro to make now (setsnap.js).
+    if (u === '/companion/pending') { var ch = pending; pending = []; saveSnap(); return reply(200, { changes: ch }); }
     // TiviBro waits here for commands from phones (and for a phone wanting the channel list).
     if (u === '/companion/next') {
       appSeen = Date.now();
@@ -575,6 +666,13 @@ function create(opts) {
       }
       if (u === '/companion/editor-done' && req.method === 'POST') { wantEditor = 0; return done(); }
       if (u === '/companion/answer' && req.method === 'POST') return reply(200, { ok: true, waiting: answerAsk(j) });
+      // TiviBro's copy of its Settings, for the phone while it is away (setsnap.js).  A new copy replaces the old.
+      if (u === '/companion/snapshot' && req.method === 'POST') {
+        if (!j.langs || typeof j.langs !== 'object') return reply(400, { error: 'bad copy' });
+        snap = { at: +j.at || Date.now(), version: cleanText(j.version, 40), pin: typeof j.pin === 'string' ? j.pin.slice(0, 40) : '', langs: j.langs };
+        saveSnap();
+        return reply(200, { ok: true, langs: Object.keys(j.langs), pending: pending.length });
+      }
       if (u === '/companion/state' && req.method === 'POST') {
         var was = JSON.stringify(tvState.data), now = JSON.stringify(j.state || null);
         if (was !== now) { tvState = { rev: tvState.rev + 1, data: j.state || null, at: Date.now() }; flushPhones(); }
