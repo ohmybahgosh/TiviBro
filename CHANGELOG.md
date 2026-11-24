@@ -1,17 +1,17 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 214, 2026-11-24)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 214
 
 - **A big portal's categories sorted out** (issue #173).  A portal lists every category under both Movies and Shows; ones whose name says they're the other kind ("WEB SERIES" in Movies) now go to the end, under Probably shows or Probably movies, until you open one.  Categories are also grouped under each language when their names say it (Hindi, Tamil, English...).
 - **A public guide with wrong times is left out.**  epg.pw's US guide lists every programme 8 hours late (the morning news at noon).  TiviBro now checks titles that say their own time ("News at 4:30am") against when they're listed, and a public guide that's hours off is left out, so the next one fills those channels.
 - **Lighter on 1 GB TVs.**  The copy of Settings kept for the phone app (alpha 211) no longer builds the set-up tour's pages, which went through the whole channel list several times a minute after the start.
 - **Problem reports say what held the network helper up**, when its own work keeps it from answering for seconds or more (issue #172).
 
-## 0.6.0 (alpha 213, 2026-11-24)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 213
+### In alpha 213
 
 - **No more freezing at the start on a busy TV.**  On a 1 GB TV with a huge playlist, the network helper could be busy for minutes, and TiviBro started it again: the next start froze while webOS dealt with the old one, and webOS closed TiviBro (issue #172).  A helper that is busy (it takes the connection but hasn't answered yet) is now waited for, never started again, and TiviBro opens without it meanwhile.
 - **A big portal's movies and shows stay read.**  On a Stalker portal browsed by category, the categories you had opened were read all over again after a day (often right after an update, issue #173).  The copy on the TV now lasts a week: past a day its categories and newest titles are read again in the background, and what you opened stays.
