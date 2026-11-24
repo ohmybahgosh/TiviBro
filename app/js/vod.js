@@ -269,7 +269,7 @@ var Vod = (function () {
       var fresh = wantFresh(k, p);
       return (fresh ? Promise.resolve(null) : Store.bigGet(browseKey(k, p)).catch(function () { return null; })).then(function (c) {
         var kept = keptBrowse(k, p, c);
-        if (kept) return kept;
+        if (kept) { if (kept.stale) refreshBrowse(k, p, kept); return kept; }
         return U.getJSON(Source.api(p, 'count', '&kind=' + k), 30000).then(function (j) {
           var n = +(j && j.total) || 0;
           return n > bigPortal() ? browse(k, p, n).then(function (d) { saveBrowse(k, d); return d; }) : full();
@@ -323,13 +323,32 @@ var Vod = (function () {
      (a day when it has none), unless the playlist was just loaded again from the provider. */
   function browseKey(k, p) { return 'vodbrowse:' + String(p.id).replace(/[^A-Za-z0-9_-]/g, '') + ':' + k; }
   function browseAge(p) { var h = +p.plRefresh; return (h > 0 ? h : 24) * 3600e3; }
+  /* Past that age the copy is still used (issue #173: "after an update it starts scanning all over again"): its
+     categories and newest titles are read again behind it (refreshBrowse), and the categories already read
+     stay.  Only a copy older than a week, or from a playlist that changed, starts over. */
+  var BROWSE_KEEP = 7 * 24 * 3600e3;
   function keptBrowse(k, p, c) {
-    if (!c || c.v !== 1 || c.sig !== Source.sig(p) || !Array.isArray(c.cats) || !(Date.now() - c.at < browseAge(p))) return null;
+    if (!c || c.v !== 1 || c.sig !== Source.sig(p) || !Array.isArray(c.cats) || !(Date.now() - c.at < BROWSE_KEEP)) return null;
     var items = (c.recent || []).slice(), have = {};
     items.forEach(function (it) { have[it.id] = 1; });
     (c.catOrder || []).forEach(function (cid) { (c.catItems[cid] || []).forEach(function (it) { if (!have[it.id]) { have[it.id] = 1; items.push(it); } }); });
     Log.info('vod', 'A big portal: its ' + (k === 'series' ? 'shows' : 'movies') + ' as kept on the TV (' + Math.round((Date.now() - c.at) / 60000) + ' min old), no new read');
-    return { browse: true, p: p, at: c.at, cats: c.cats, items: items, recent: c.recent || [], langs: {}, keep: null, total: c.total, adultCat: c.adultCat || {}, catItems: c.catItems || {}, catOrder: c.catOrder || [] };
+    return { browse: true, p: p, at: c.at, cats: c.cats, items: items, recent: c.recent || [], langs: {}, keep: null, total: c.total, adultCat: c.adultCat || {}, catItems: c.catItems || {}, catOrder: c.catOrder || [], stale: !(Date.now() - c.at < browseAge(p)) };
+  }
+  /* A stale copy's categories and newest titles, read again a minute after it's shown (so the start isn't
+     slowed), and put into it: new titles come in, the categories read before stay as they were. */
+  function refreshBrowse(k, p, d) {
+    d.stale = false;
+    setTimeout(function () {
+      browse(k, p, d.total).then(function (f) {
+        var have = {};
+        d.items.forEach(function (it) { have[it.id] = 1; });
+        d.cats = f.cats; d.adultCat = f.adultCat; d.recent = f.recent; d.at = f.at;
+        f.recent.forEach(function (it) { if (!have[it.id]) { have[it.id] = 1; d.items.unshift(it); } });
+        saveBrowse(k, d);
+        Log.info('vod', 'A big portal: its ' + (k === 'series' ? 'shows' : 'movies') + ' categories and newest titles read again');
+      }, function (e) { Log.warn('vod', 'A big portal: reading its categories again failed: ' + (e && e.message || e)); });
+    }, 60000);
   }
   var saveT = {};
   function saveBrowse(k, d) {
@@ -826,7 +845,9 @@ var Vod = (function () {
   // With a PIN set (Settings > Parental controls, for channels), adult categories open only after it.
   var adultUnlocked = false;
   function adultOpen() { return adultUnlocked || !Parental.enabled() || (Store.settings.pinScope !== 'channels' && Store.settings.pinScope !== 'both'); }
-  function onCat(i, c) { catDeb(c); if (zone === 'cats') hints(); }
+  // The category you're on, kept for the next time Movies or Shows opens (issue #173).
+  function onCat(i, c) { catDeb(c); if (zone === 'cats') hints(); try { if (c && c.id != null) localStorage.setItem('tivibro.vodCat.' + kind, String(c.id)); } catch (e) {} }
+  function keptCat() { try { return localStorage.getItem('tivibro.vodCat.' + kind); } catch (e) { return null; } }
   var infoDeb = U.debounce(fetchInfo, 400);
   function onItem() { showInfo(); infoDeb(); }
 
@@ -1304,7 +1325,9 @@ var Vod = (function () {
     load(k).then(function () {
       if (kind !== k || mine !== opens) return;
       var cats = catList();
-      var first = Math.max(0, cats.findIndex(function (c) { return c.count > 0; }));   // skip an empty My list
+      // The category you were on last time, else the first with something in it (skip an empty My list).
+      var kc = keptCat(), at = kc == null ? -1 : cats.findIndex(function (c) { return String(c.id) === kc; });
+      var first = at >= 0 ? at : Math.max(0, cats.findIndex(function (c) { return c.count > 0; }));
       catsVL.setItems(cats, first);
       itemsVL.empty = data[k].items.length ? 'Nothing here' : data[k].total ? 'Nothing in the languages picked.  Choose Languages on the left.' : 'This provider has no ' + (k === 'series' ? 'shows' : 'movies') + ' right now';
       itemsVL.setItems(itemsFor(cats[first].id), 0);
@@ -1410,5 +1433,5 @@ var Vod = (function () {
   function arrange(k) { U.toast('Loading ' + (k === 'series' ? 'shows' : 'movies') + '…'); load(k).then(function () { kind = k; VodHome.arrange(k, homeApi); }, function (e) { U.toast('Could not load the list: ' + (e && e.message || e), 5000); }); }
   // Settings > Movies and shows > Order categories changed: the list again, on the same category.
   function recats() { if (!catsVL || !data[kind]) return; var c = catsVL.current(), cl = catList(); catsVL.setItems(cl, Math.max(0, cl.findIndex(function (x) { return c && x.id === c.id; }))); }
-  return { arrange: arrange, movieTmdb: movieTmdb, recats: recats, reloadNow: reloadNow, homeApi: function () { return homeApi; }, _test: { homeApi: function () { return homeApi; }, catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, lean: lean, findRemote: findRemote, titleCount: titleCount, countsFor: countsFor, get searchState() { return searchState(); }, offered: offered, reset: function (fresh) { if (fresh) freshAt = Date.now(); gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; seriesAsk++; spClose(); } };
+  return { arrange: arrange, movieTmdb: movieTmdb, recats: recats, reloadNow: reloadNow, homeApi: function () { return homeApi; }, _test: { curCat: function () { var c = catsVL && catsVL.current(); return c ? String(c.id) : ''; }, homeApi: function () { return homeApi; }, catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, lean: lean, findRemote: findRemote, titleCount: titleCount, countsFor: countsFor, get searchState() { return searchState(); }, offered: offered, reset: function (fresh) { if (fresh) freshAt = Date.now(); gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; seriesAsk++; spClose(); } };
 })();

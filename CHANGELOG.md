@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **A big portal's movies and shows stay read.**  On a Stalker portal browsed by category, the categories you had opened were read all over again after a day (often right after an update, issue #173).  The copy on the TV now lasts a week: past a day its categories and newest titles are read again in the background, and what you opened stays.
+- **Movies and Shows open on the category you were on**, not the first one.
 - **No more freezing at the start on a busy TV.**  On a 1 GB TV with a huge playlist, the network helper could be busy for minutes, and TiviBro started it again: the next start froze while webOS dealt with the old one, and webOS closed TiviBro (issue #172).  A helper that is busy (it takes the connection but hasn't answered yet) is now waited for, never started again, and TiviBro opens without it meanwhile.
 
 ## 0.6.0 (alpha 212, 2026-11-24)

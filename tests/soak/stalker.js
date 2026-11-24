@@ -104,6 +104,18 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     await page.waitForFunction(() => Vod._test.withKind('movie', () => Vod._test.itemsFor('11').length) > 100, null, { timeout: 40000 }).catch(() => {});
     const later = await ev(() => Vod._test.withKind('movie', () => Vod._test.itemsFor('11').length));
     ok('...a category\'s titles come when it is opened', first === 0 && later > 100, first + ' then ' + later);
+
+    // Issue #173: a copy past its age (two days old here) is still used, its categories read again behind it, and
+    // Movies opens again on the category you were on.
+    const pid = await ev(() => Store.settings.playlists.filter((x) => x.name === 'Big portal')[0].id);
+    await page.waitForTimeout(3500);                                    // the copy is saved 3 s after a change
+    await ev(async (id) => { const key = 'vodbrowse:' + String(id).replace(/[^A-Za-z0-9_-]/g, '') + ':movie'; const c = await Store.bigGet(key); c.at -= 2 * 24 * 3600e3; await Store.bigSet(key, c); localStorage.setItem('tivibro.vodCat.movie', '11'); Vod.reset(); }, pid);
+    await ev(() => Views.switchTab('settings')); await page.waitForTimeout(300);
+    await ev(() => Views.switchTab('movies'));
+    await page.waitForFunction(() => Vod._test.withKind('movie', () => Vod._test.itemsFor('11').length) > 100, null, { timeout: 20000 }).catch(() => {});
+    const kept = await ev(() => Log.lines().map((l) => l.msg || l).filter((l) => /A big portal/.test(l)).slice(-2).join(' | '));
+    ok('a two-day-old copy is still used, with the category read before (issue #173)', /as kept on the TV \(2\d\d\d min old\)/.test(kept) && (await ev(() => Vod._test.withKind('movie', () => Vod._test.itemsFor('11').length))) > 100, kept);
+    ok('Movies opens on the category you were on', (await ev(() => Vod._test.curCat())) === '11', await ev(() => Vod._test.curCat()));
     m2.server.close();
 
     const logs = await ev(() => Log.lines().map((l) => l.msg || l).join('\n'));
