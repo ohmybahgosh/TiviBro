@@ -37,6 +37,10 @@
 | 🧭 **A set-up tour and clean names**<br>Countries, East or West, your city's locals and clutter sorted in a few presses; "USA \| FHD ⚽" becomes a plain name. | 🌍 **In 11 languages**<br>English, German, Spanish, French, Italian, Dutch, Polish, Portuguese, Russian, Turkish, on the TV, the phone and the editor. |
 | 🔐 **Locked backups and restore points**<br>One encrypted file with everything, restored onto a new TV from the first screen. | 💸 **Free and open source**<br>Every feature free.  MIT licensed, no account, no ads, no tracking. |
 
+<h3 align="center">⏭️ New in alpha 208: Skip intro and credits, free</h3>
+<p align="center">Plex charges for this with Plex Pass.  TiviBro does it for free: <b>Skip intro</b>, <b>Skip recap</b> and <b>Skip credits</b> on your movies and episodes, as a button or <b>automatically</b>.  The times come from the file's own chapters, or from <b><a href="https://theintrodb.org">TheIntroDB</a></b> and <b><a href="https://introdb.app">IntroDB</a></b>, two free community databases.  Skip credits brings up <b>Up next</b>, counting down to the next episode.</p>
+<p align="center"><sub><a href="docs/USER-GUIDE.md">How to turn it on</a> (Settings > Playback > Skip intro, Skip credits) · <a href="https://github.com/ohmybahgosh/TiviBro/releases/tag/v0.6.0-alpha.208">Alpha 208 release notes</a></sub></p>
+
 <h3 align="center">🏈 New in alpha 189: Sports</h3>
 <p align="center">Today's games with <b>live scores and logos</b>, your teams first, each tied to the channel of yours that has it.  A <b>page for every game</b> with the box score, leaders and standings.  And while you watch something else, <b>your teams' live scores sit in the corner</b>, with an alert when a game is close near the end.</p>
 <p align="center"><a href="#sports"><img src="docs/screenshots/tv-sports.png" width="49%" alt="The Sports screen: your teams first, then a row per league"></a> <a href="#sports"><img src="docs/screenshots/tv-sports-corner.png" width="49%" alt="Your teams' live score in the corner while another channel plays"></a></p>

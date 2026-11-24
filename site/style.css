@@ -148,6 +148,21 @@ h3 { letter-spacing: -0.01em; }
 .mini-phone img { border-radius: 16px; aspect-ratio: 390 / 600; object-fit: cover; object-position: top; width: 100%; }
 .tile.wide { grid-column: span 2; display: grid; grid-template-columns: 1fr 1.1fr; gap: 22px; align-items: center; }
 
+/* Skip intro tile: a drawn player over a dimmed screenshot. */
+.skip-demo { position: relative; border-radius: 14px; overflow: hidden; border: 1px solid var(--line2); box-shadow: 0 20px 50px rgba(0, 0, 0, .45); }
+.skip-demo { aspect-ratio: 16 / 9; background: radial-gradient(120% 90% at 70% 20%, rgba(139, 92, 246, .45), transparent 55%), radial-gradient(90% 80% at 15% 85%, rgba(51, 225, 255, .25), transparent 60%), linear-gradient(160deg, #1a1f3d, #05060f); }
+.skip-title { position: absolute; left: 6%; top: 12%; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255, 255, 255, .6); }
+.skip-title b { display: block; margin-top: 4px; font-size: 19px; letter-spacing: 0; text-transform: none; color: #fff; }
+.skip-btn { position: absolute; right: 6%; bottom: 20%; display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 12px; font-weight: 700; font-size: 15px; color: #06102a; background: linear-gradient(135deg, var(--acc), var(--acc2)); box-shadow: 0 8px 24px rgba(51, 225, 255, .35); animation: skipPulse 2.4s ease-in-out infinite; }
+.skip-btn .i { width: 18px; height: 18px; }
+.skip-bar { position: absolute; left: 6%; right: 6%; bottom: 9%; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .18); }
+.skip-bar i { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
+.skip-seen { left: 0; width: 4%; background: #fff; }
+.skip-intro { left: 4%; width: 8%; background: var(--acc2); }
+.skip-credits { right: 0; width: 7%; background: var(--violet); }
+@keyframes skipPulse { 50% { box-shadow: 0 8px 34px rgba(51, 225, 255, .6); } }
+@media (prefers-reduced-motion: reduce) { .skip-btn { animation: none; } }
+
 /* ---------- phone story ---------- */
 .story { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: start; }
 .story-steps { list-style: none; margin: 0; padding: 0; }
