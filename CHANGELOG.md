@@ -1,16 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 212, 2026-11-24)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 212
 
 - **Italian, Dutch, Polish and Turkish.**  TiviBro, the web editor and the phone app now come in Italian, Dutch, Polish and Turkish too, picked from the TV's language or in Settings > Language.
 - **More of TiviBro in every language.**  Some hints along the bottom of the screen (OK or ▶ its channels, Hold OK group options) and a few lines (the Settings home's "8 teams", "1 reminder", Audio sync's "Sound 40 ms later") stayed in English in every language: they're translated now.
 - **Less memory for languages.**  The TV now loads only the language it shows (and one a phone or the web editor asks in), not all of them at start: a few megabytes less on every TV.
 
-## 0.6.0 (alpha 211, 2026-11-24)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 211
+### In alpha 211
 
 - **Phone Settings while TiviBro is away.**  The phone app's Settings works while TiviBro is behind another app: it shows the TV's last copy of Settings, and switches and choices changed there are made when TiviBro is back on screen.  Buttons still need TiviBro on the TV's screen.
 
