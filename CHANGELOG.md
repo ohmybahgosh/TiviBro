@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **No more freezing at the start on a busy TV.**  On a 1 GB TV with a huge playlist, the network helper could be busy for minutes, and TiviBro started it again: the next start froze while webOS dealt with the old one, and webOS closed TiviBro (issue #172).  A helper that is busy (it takes the connection but hasn't answered yet) is now waited for, never started again, and TiviBro opens without it meanwhile.
+
 ## 0.6.0 (alpha 212, 2026-11-24)
 
 Pre-release: expect rough edges, and keep a backup before installing.

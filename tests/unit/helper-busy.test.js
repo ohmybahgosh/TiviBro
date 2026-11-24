@@ -2,6 +2,9 @@
 // misses pings for half a minute, and restarting it then left TiviBro without it and the next starts hung.
 // Missed pings only count; after two minutes webOS is asked (status), and only no answer there restarts it.
 // A subscription that drops (the helper exited) still restarts it at once.
+// Issue #172: no answer from webOS either is only a restart when the helper's port refuses the connection (it's
+// gone); a port that takes it but doesn't answer is a busy helper, waited for.  A start while the helper from
+// before is still busy asks webOS only once it answers (that call froze TiviBro on a 1 GB TV).
 'use strict';
 const fs = require('fs'), path = require('path'), vm = require('vm');
 let fails = 0;
@@ -13,13 +16,14 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms || 30));
    (answered or not) and the 15 s timer, run by hand. */
 function sandbox() {
   // tick: the first 15 s timer in net.js, the pings (the second one checks the control secret).
-  const t = { calls: [], logs: [], pingOk: true, statusAnswers: true, tick: null, bridges: [] };
+  // pingOk: answered; refused: nothing on the port (fails at once); else the port takes it and no answer comes (busy).
+  const t = { calls: [], logs: [], pingOk: true, refused: false, statusAnswers: true, tick: null, bridges: [], ls: {} };
   const ctx = {
     console, Promise, setTimeout: (f, ms) => setTimeout(f, Math.min(ms, 20)), clearTimeout, setInterval: (f, ms) => { if (ms === 15000 && !t.tick) t.tick = f; return 0; }, clearInterval() {},
-    localStorage: { getItem: () => null }, document: { hidden: false },
+    localStorage: { getItem: (k) => (k in t.ls ? t.ls[k] : null), setItem: (k, v) => { t.ls[k] = String(v); } }, document: { hidden: false },
     Log: { info: (c, m) => t.logs.push(m), warn: (c, m) => t.logs.push(m), error: (c, m) => t.logs.push(m), debug() {} },
     Store: { settings: { network: 'auto' }, playlist: {} },
-    fetch: () => t.pingOk ? Promise.resolve({ ok: true, json: () => ({ ok: true, node: 'v8' }) }) : new Promise(() => {}),
+    fetch: () => t.pingOk ? Promise.resolve({ ok: true, json: () => ({ ok: true, node: 'v8' }) }) : t.refused ? Promise.reject(new TypeError('Failed to fetch')) : new Promise(() => {}),
     btoa: (s) => Buffer.from(s, 'binary').toString('base64'), unescape, encodeURIComponent,
     PalmServiceBridge: function () {
       const me = this; t.bridges.push(me);
@@ -52,10 +56,34 @@ function sandbox() {
 
   t = sandbox();
   await t.Net.start(3000);
+  t.pingOk = false; t.statusAnswers = false; t.refused = true;
+  await t.ticks(8);
+  await wait(120);
+  ok('no answer from webOS either, and its port refuses: started again', t.calls.slice(0, 3).join() === 'start,status,start' && t.logs.some((m) => /did not answer for it/.test(m)), t.calls);
+
+  t = sandbox();
+  await t.Net.start(3000);
   t.pingOk = false; t.statusAnswers = false;
   await t.ticks(8);
   await wait(120);
-  ok('no answer from webOS either: started again', t.calls.join() === 'start,status,start' && t.logs.some((m) => /did not answer for it/.test(m)), t.calls);
+  ok('no answer from webOS, but its port takes the connection: busy, waited for (issue #172)', t.calls.join() === 'start,status' && t.logs.some((m) => /busy \(its port takes/.test(m)) && !t.bridges[0].cancelled, t.calls);
+
+  // A start while the helper from before is still busy: webOS is asked only once it answers.
+  t = sandbox();
+  t.ls['tivibro.helperPort'] = '47811'; t.pingOk = false;
+  const started = t.Net.start(3000);
+  await wait(150);
+  ok('the helper from before still busy: webOS isn\'t asked yet', t.calls.length === 0 && t.logs.some((m) => /from before is still busy/.test(m)), t.calls);
+  t.pingOk = true;
+  await wait(150);
+  await started;
+  ok('...and is once it answers', t.calls.join() === 'start', t.calls);
+
+  t = sandbox();
+  t.ls['tivibro.helperPort'] = '47811'; t.pingOk = false; t.refused = true;
+  await t.Net.start(3000);
+  ok('nothing on its port (a fresh start): webOS asked at once', t.calls.join() === 'start' && !t.logs.some((m) => /still busy/.test(m)), t.calls);
+  ok('the port is kept for next time', t.ls['tivibro.helperPort'] === '47811');
 
   t = sandbox();
   await t.Net.start(3000);

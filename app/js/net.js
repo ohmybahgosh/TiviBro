@@ -27,13 +27,18 @@ var Net = (function () {
       .then(function (r) { return r.json(); }).then(function (j) { dnsSaid = j && j.mode || m; if (m !== 'tv') Log.info('net', 'Providers are found with ' + (j && j.mode) + (j && j.server ? ' (' + j.server + ')' : '')); },
         function (e) { Log.warn('net', 'Could not set the DNS: ' + (e && e.message)); });
   }
+  /* The start is over, with a port or without: a port is checked (verify) before anyone uses it, and without
+     one TiviBro goes on with direct requests and asks again later (againLater). */
   function settle() {
     var finish = function () { var w = waiters; waiters = []; w.forEach(function (f) { f(port); }); };
     if (!port) {
       // Simulator / desktop: no webOS service, but `npm run sim` runs the same helper on this
       // computer (tests/mock/relay_dev.js).  Use it if it answers; on a TV nothing listens there.
       var devPort = 47811;
-      return fetch('http://127.0.0.1:' + devPort + '/ping', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+      /* Only off the TV: on a TV the helper's own port is 47811 too, and a busy helper there would hold this
+         request (and the start waiting on it) with no end (issue #172). */
+      var devPing = typeof PalmServiceBridge === 'undefined' ? fetch('http://127.0.0.1:' + devPort + '/ping', { cache: 'no-store' }).then(function (r) { return r.json(); }) : Promise.reject(new Error('on a TV'));
+      return devPing.then(function (j) {
         if (j && j.ok) { port = devPort; state = 'on'; info = j; Log.info('net', 'Using the development helper on port ' + devPort + ' (webOS service: ' + (lastError || 'not available') + ')'); }
       }).catch(function () {}).then(function () {
         if (!port) Log.warn('net', 'Network helper not available (' + (lastError || 'unknown reason') + ').  Requests go direct.');
@@ -44,6 +49,22 @@ var Net = (function () {
     }
     verify(port).then(function (ok) { if (!ok) { port = 0; state = 'off'; } else { dnsSaid = 'tv'; setDns(); } finish(); });
   }
+
+  /* Is a helper on this port, and how is it (issue #172)?  'ok' it answers, 'gone' nothing there (the connection
+     is refused at once), 'busy' its process is there but its work holds it: the TV takes the connection for it
+     and no answer comes.  A busy helper is waited for, never started again: on a 1 GB TV, asking webOS to start
+     the helper while the old one was still busy froze TiviBro inside that call until webOS closed it. */
+  function check(p, ms) {
+    if (!p) return Promise.resolve('gone');
+    var t = Date.now();
+    return Promise.race([
+      fetch('http://127.0.0.1:' + p + '/ping', { cache: 'no-store' }).then(function (r) { return r.ok ? 'ok' : 'busy'; },
+        function () { return Date.now() - t < 1000 ? 'gone' : 'busy'; }),
+      new Promise(function (r) { setTimeout(function () { r('busy'); }, ms || 1500); })
+    ]);
+  }
+  // The helper's port last time (it keeps it from start to start), for check() before the next start.
+  function lastPort() { try { return +localStorage.getItem('tivibro.helperPort') || 0; } catch (e) { return 0; } }
 
   // Start the helper and keep a subscription open: that is what keeps the service alive.
   function start(timeoutMs) {
@@ -66,6 +87,7 @@ var Net = (function () {
           Log.info('net', 'Helper replied after ' + (Date.now() - t0) + 'ms', msg && String(msg).slice(0, 300));
           if (r.returnValue && r.port) {
             if (r.ctl) { ctl = String(r.ctl); key = String(r.key || ''); }
+            try { localStorage.setItem('tivibro.helperPort', String(r.port)); } catch (e) {}
             if (state === 'starting') { port = r.port; state = 'on'; clearTimeout(timer); settle(); }
             /* It answered after TiviBro stopped waiting (a TV just switched on or woken can take longer than
                the wait): take it now rather than run the whole session without it, which left the first
@@ -93,11 +115,30 @@ var Net = (function () {
             else if (state === 'on') { Log.error('net', 'Helper subscription dropped while running'); restart('its subscription dropped'); }
           }
         };
-        Log.info('net', 'Starting network helper (luna://app.tivibro.tv.service/start)');
-        bridge.call('luna://app.tivibro.tv.service/start', JSON.stringify({ subscribe: true }));
-      } catch (e) { lastError = 'could not call the helper: ' + e.message; state = 'off'; clearTimeout(timer); settle(); }
+      } catch (e) { lastError = 'could not call the helper: ' + e.message; state = 'off'; clearTimeout(timer); settle(); return; }
+      var gen = ++startGen;
+      // The helper from before still busy: webOS is asked once it isn't (or after three minutes), not now.
+      check(lastPort(), 1500).then(function (how) {
+        if (how !== 'busy') return call();
+        Log.warn('net', 'The network helper from before is still busy (its port takes the connection but doesn\'t answer); asking webOS for it once it is free');
+        var since = Date.now();
+        (function wait() {
+          setTimeout(function () {
+            if (gen !== startGen || port) return;
+            check(lastPort(), 3000).then(function (h) { if (h === 'busy' && Date.now() - since < 180000) wait(); else call(); });
+          }, 5000);
+        })();
+      });
+      function call() {
+        if (gen !== startGen || port) return;
+        try {
+          Log.info('net', 'Starting network helper (luna://app.tivibro.tv.service/start)');
+          bridge.call('luna://app.tivibro.tv.service/start', JSON.stringify({ subscribe: true }));
+        } catch (e) { lastError = 'could not call the helper: ' + e.message; if (state === 'starting') { state = 'off'; clearTimeout(timer); settle(); } }
+      }
     });
   }
+  var startGen = 0;
 
   /* The helper carries every stream, so it must not stay gone.  When its subscription drops (it exited:
      webOS stopped it, or its own watchdog found it stuck, service/watchdog.js) it is started again at once,
@@ -107,7 +148,7 @@ var Net = (function () {
      answering nobody, TiviBro ran without it for the rest of the session, and the next starts hung on the
      splash until webOS let go of the old one.  So missed pings only count; after two minutes of them webOS
      is asked whether it still runs (status), and only no answer there starts it again. */
-  var misses = 0, restarting = false, probing = false, restartListeners = [];
+  var misses = 0, restarting = false, probing = false, restartListeners = [], busySince = 0;
   var PROBE_AFTER = 8;            // missed pings (15 s apart) before webOS is asked: two minutes
   function missed(why) {
     misses++;
@@ -123,8 +164,18 @@ var Net = (function () {
       if (done) return;
       done = true; probing = false; clearTimeout(t);
       try { if (b) b.cancel(); } catch (e) {}
-      if (alive) { misses = 2; Log.info('net', 'The network helper still runs (webOS says so); waiting for it'); }
-      else restart(why + ', and webOS did not answer for it');
+      if (alive) { misses = 2; Log.info('net', 'The network helper still runs (webOS says so); waiting for it'); return; }
+      /* No answer from webOS either: gone, or so busy it can't answer webOS.  Busy (its port still takes the
+         connection) is waited for, up to ten minutes; it restarts itself if it's stuck (service/watchdog.js). */
+      check(port, 4000).then(function (how) {
+        if (how === 'busy' && Date.now() - (busySince || (busySince = Date.now())) < 600000) {
+          misses = 2;
+          Log.warn('net', 'The network helper is busy (its port takes the connection but doesn\'t answer); waiting for it, not starting it again');
+          return;
+        }
+        busySince = 0;
+        restart(why + (how === 'busy' ? ', busy for ten minutes' : ', and webOS did not answer for it'));
+      });
     }
     try {
       b = new PalmServiceBridge();
@@ -185,7 +236,7 @@ var Net = (function () {
     ping(4000).then(function (ok) {
       if (!ok) return missed('no answer to its pings');
       if (misses >= 2) Log.info('net', 'The network helper answers again');
-      misses = 0;
+      misses = 0; busySince = 0;
     });
   }, 15000);
 
