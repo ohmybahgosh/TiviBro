@@ -38,8 +38,8 @@ var SetSnap = (function () {
   function pinHash() { var s = Store.settings || {}; return s.pin && (s.pinScope === 'both' || s.pinScope === 'settings') ? String(s.pin) : ''; }
 
   /* Every page of one language, as Settings.phone.page gives them: { sections, pages: { 'sec|0.2': page } }, walked
-     into the pages inside pages (MAX_DEPTH deep, MAX_PAGES at most).  step(next) runs a few pages, then waits, so
-     a big Settings never holds the TV for long. */
+     into the pages inside pages (MAX_DEPTH deep, MAX_PAGES at most).  step() runs pages for 20 ms, then rests 80 ms,
+     so the copy takes about a fifth of the TV's time while it's made (a C2 with two languages: about 50 s). */
   function buildLang(code, done) {
     var out = { sections: [], pages: {} }, queue = [], n = 0;
     try { out.sections = within(code, function () { return Settings.phone.sections(); }); } catch (e) { return done(out); }
@@ -47,7 +47,7 @@ var SetSnap = (function () {
     out.msgs = within(code, function () { return { saved: T('Saved.  The TV makes this change when TiviBro is next on screen.'), changed: T('That changed on the TV.  Look again.') }; });
     out.sections.forEach(function (s) { queue.push({ sec: s.id, path: [] }); });
     function step() {
-      var until = Date.now() + 40;
+      var until = Date.now() + 20;
       while (queue.length && Date.now() < until) {
         var q = queue.shift(), pg = null;
         try { pg = within(code, function () { return Settings.phone.page(q.sec, q.path); }); } catch (e) { pg = null; }
@@ -55,7 +55,7 @@ var SetSnap = (function () {
         out.pages[q.sec + '|' + q.path.join('.')] = pg; n++;
         if (q.path.length < MAX_DEPTH) (pg.rows || []).forEach(function (r) { if (r.kind === 'page' && n + queue.length < MAX_PAGES) queue.push({ sec: q.sec, path: q.path.concat(r.i) }); });
       }
-      if (queue.length && n < MAX_PAGES) setTimeout(step, 30); else done(out);
+      if (queue.length && n < MAX_PAGES) setTimeout(step, 80); else done(out);
     }
     step();
   }
