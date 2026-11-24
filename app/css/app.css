@@ -1402,6 +1402,8 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
    transitions slow enough not to be seen. */
 .burn-veil{position:fixed;top:0;left:0;right:0;bottom:0;background:#000;opacity:0;pointer-events:none;z-index:9999;transition:opacity 2s}
 .burn-veil.on{opacity:.7}
+/* Never over fullscreen video: the moment a channel or episode goes fullscreen, the dim is gone (burnin.js). */
+body.full .burn-veil{display:none}
 #app,#sidenav,#clock{transition:transform 3s linear}
 /* Settings: that a page goes on (settings.js scrollHint): a scroll bar, and More below / More above with a fade. */
 .set-sbar{position:absolute;top:8px;bottom:8px;right:2px;width:6px;border-radius:3px;background:rgba(255,255,255,.1);pointer-events:none}

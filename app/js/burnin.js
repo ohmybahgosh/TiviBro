@@ -3,7 +3,7 @@
    move a few pixels (a small circle around where they belong, never more than 4 pixels), and after 10
    minutes without a key press everything but the picture dims; the first key brings it back (and does
    nothing else).  Fullscreen video is left alone: the picture moves by itself, and the TV has its own
-   protection for that.  The video in the guide's window is not moved either (moving it costs the TV's
+   protection for that, and the veil is never over it (CSS).  The video in the guide's window is not moved either (moving it costs the TV's
    video plane). */
 var Burnin = (function () {
   'use strict';
@@ -26,10 +26,17 @@ var Burnin = (function () {
     if (!veil) { veil = document.createElement('div'); veil.id = 'burnVeil'; veil.className = 'burn-veil'; document.body.appendChild(veil); }
     veil.classList.toggle('on', on);
   }
+  /* Should the screen dim now?  Fullscreen video counts as use: watching restarts the 10 minutes, so an episode
+     watched to the end without a key press doesn't dim the screen the moment it ends (and then stay dimmed over
+     the next one, which is what happened: the dim was only lifted at the next 90-second tick). */
+  function check() {
+    if (full()) { last = Date.now(); return setDim(false); }
+    if (mode() !== 'on') return setDim(false);
+    if (Date.now() - last > DIM_MS) setDim(true);
+  }
   function tick() {
     shift();
-    if (mode() === 'on' && !full() && Date.now() - last > DIM_MS) setDim(true);
-    else if (full() || mode() !== 'on') setDim(false);
+    check();
   }
   // A key or the pointer: awake again.  True when this key only woke the screen (the caller drops it).
   function activity() {
@@ -41,8 +48,8 @@ var Burnin = (function () {
     if (timer) return;
     timer = setInterval(tick, SHIFT_MS);
     // Dimming is checked more often than the shift, so it comes on close to 10 minutes.
-    setInterval(function () { if (mode() === 'on' && !dimmed && !full() && Date.now() - last > DIM_MS) setDim(true); }, 15000);
+    setInterval(check, 15000);
     document.addEventListener('mousemove', function () { activity(); }, true);
   }
-  return { start: start, activity: activity, isDimmed: function () { return dimmed; }, _tick: tick };
+  return { start: start, activity: activity, isDimmed: function () { return dimmed; }, _tick: tick, _check: check, _idle: function (ms) { last = Date.now() - ms; } };
 })();

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **No dimming after an episode.**  With Burn-in protection on, an episode watched to the end without a key press could dim the screen as it ended, and the dim stayed over the next episode for up to a minute and a half.  Watching now counts as use, and the dim never covers fullscreen video.
 - **Up next without the flash.**  Before Up next appeared, and again between Play and the next episode starting, the show's page flashed by for a moment.  The screen now stays dark through both, for My media's shows and collections and your provider's series.
 
 ## 0.6.0 (alpha 215, 2026-11-24)
