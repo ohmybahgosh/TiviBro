@@ -59,8 +59,7 @@ var App = (function () {
     // Language on the setup screen: Automatic (the TV's), then each one, round.
     function nextLang(d) {
       var l = ['auto'].concat(I18n.langs().map(function (x) { return x.code; })), i = l.indexOf(I18n.setting());
-      I18n.set(l[(i + (d || 1) + l.length) % l.length]);
-      render();
+      I18n.use(l[(i + (d || 1) + l.length) % l.length], render);
     }
 
     /* A value picked with ◀ ▶ (the language, the type, the connection): arrows on both sides say so, and

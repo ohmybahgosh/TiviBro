@@ -235,6 +235,12 @@ var I18n = (function () {
     keyPats = (patterns || []).map(function (k) { return compile(k, k); }).filter(function (p) { return p.auto; });
   }
 
+  /** Settings > Language and the setup screen: the dictionary loaded first, then the language set, then done(),
+   *  so what's drawn next is already in it. */
+  function use(code, done) {
+    var d = detected(), to = code === 'auto' || !has(code) ? (d.supported ? d.code : 'en') : code;
+    load(to, function () { set(code); if (done) done(); });
+  }
   function set(code) {
     var s = Store.settings;
     s.lang = code === 'auto' || !has(code) ? 'auto' : code;
@@ -334,7 +340,7 @@ var I18n = (function () {
     },
     t: t, raw: raw, add: add, lang: lang, locale: locale, set: set, setting: function () { return chosen() || 'auto'; }, detected: detected, base: base,
     plural: plural, page: page, onChange: onChange, within: within, msg: msg, join: join, say: say, variant: variant, askTV: askTV, name: name, langs: langs, has: has, changed: changed,
-    boot: boot, load: load, need: need, keys: keys, hash: hash,
+    boot: boot, load: load, need: need, use: use, keys: keys, hash: hash,
     misses: function () { return Object.keys(misses); }, _dicts: dicts, _setTV: function (l) { tv = l; changed(); }
   };
 })();

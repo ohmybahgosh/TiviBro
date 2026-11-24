@@ -1726,5 +1726,11 @@ I18n.add('fr', {
   "OK  put it here": "OK  le mettre ici",
   "▲  back up": "▲  remonter",
   "▼  channels": "▼  chaînes",
-  "▼  standings": "▼  classement"
+  "▼  standings": "▼  classement",
+  "{n} library": "{n} bibliothèque",
+  "{n} libraries": "{n} bibliothèques",
+  "{n} reminder": "{n} rappel",
+  "{n} reminders": "{n} rappels",
+  "{n} team": "{n} équipe",
+  "{n} teams": "{n} équipes"
 });

@@ -3079,5 +3079,12 @@ I18n.add('pt-BR', {
   "OK  the game": "OK  o jogo",
   "▲  back up": "▲  voltar para cima",
   "▼  channels": "▼  canais",
-  "▼  standings": "▼  classificação"
+  "▼  standings": "▼  classificação",
+  "{n} library": "{n} biblioteca",
+  "{n} libraries": "{n} bibliotecas",
+  "{n} reminder": "{n} lembrete",
+  "{n} reminders": "{n} lembretes",
+  "{n} team": "{n} time",
+  "{n} teams": "{n} times",
+  "◀ ▶  move      ▲ ▼  switch row      OK  choose      Back  close": "◀ ▶  mover      ▲ ▼  trocar de linha      OK  escolher      Voltar  fechar"
 });

@@ -2569,5 +2569,12 @@ I18n.add('es', {
   "OK  the game": "OK  el partido",
   "▲  back up": "▲  volver arriba",
   "▼  channels": "▼  canales",
-  "▼  standings": "▼  clasificación"
+  "▼  standings": "▼  clasificación",
+  "{n} library": "{n} biblioteca",
+  "{n} libraries": "{n} bibliotecas",
+  "{n} reminder": "{n} recordatorio",
+  "{n} reminders": "{n} recordatorios",
+  "{n} team": "{n} equipo",
+  "{n} teams": "{n} equipos",
+  "◀ ▶  move      ▲ ▼  switch row      OK  choose      Back  close": "◀ ▶  mover      ▲ ▼  cambiar de fila      OK  elegir      Atrás  cerrar"
 });

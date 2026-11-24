@@ -2042,9 +2042,10 @@ var Settings = (function () {
   function language() {
     var out = [], d = I18n.detected(), cur = I18n.setting();
     function pickIt(code) {
-      I18n.set(code);
-      U.toast(code === 'auto' ? 'Language: automatic, the TV\'s language' : I18n.t('Language: {x}', { x: I18n.name(I18n.lang()) }));
-      build();
+      I18n.use(code, function () {
+        U.toast(code === 'auto' ? 'Language: automatic, the TV\'s language' : I18n.t('Language: {x}', { x: I18n.name(I18n.lang()) }));
+        build();
+      });
     }
     out.push(info('TiviBro is in the TV\'s own language unless you choose one here.  Spanish and Russian are new: anything not translated yet shows in English.', ''));
     var tvName = d.supported ? I18n.name(d.code) : d.locale + ' (English: not in TiviBro yet)';
@@ -2613,12 +2614,12 @@ var Settings = (function () {
     var s = S(), out = '';
     try {
       if (id === 'guide') { var st = Epg.status || {}; out = Epg.loading ? T('Loading now') : st.at ? T('Loaded {x}', { x: when(st.at) }) : ''; }
-      else if (id === 'sports') { var n = Teams.followed().length; out = n ? T(n === 1 ? '{n} team' : '{n} teams', { n: n }) + (s.sportsBar !== false ? '  ·  ' + T('scores on') : '') : T('No teams yet'); }
+      else if (id === 'sports') { var n = Teams.followed().length; out = n ? (n === 1 ? T('{n} team', { n: n }) : T('{n} teams', { n: n })) + (s.sportsBar !== false ? '  ·  ' + T('scores on') : '') : T('No teams yet'); }
       else if (id === 'playback') out = s.memSafe ? T('Memory-safe') : '';
       else if (id === 'audio') out = s.subsAuto ? T('Subtitles automatically') : T('Subtitles off');
       else if (id === 'recording') { var sp = typeof Record !== 'undefined' && Record.space; out = sp ? T('USB drive, {x} free', { x: Math.round(sp.freeMB / 1024) + ' GB' }) : (typeof Record !== 'undefined' && Record.share ? T('Network share') : T('No USB drive')); }
-      else if (id === 'reminders') { var r = (Store.edits.reminders || []).length; out = r ? T(r === 1 ? '{n} reminder' : '{n} reminders', { n: r }) : T('None set'); }
-      else if (id === 'media') { var m = typeof MediaStore !== 'undefined' ? MediaStore.sources().length : 0; out = m ? T(m === 1 ? '{n} library' : '{n} libraries', { n: m }) : T('No libraries yet'); }
+      else if (id === 'reminders') { var r = (Store.edits.reminders || []).length; out = r ? (r === 1 ? T('{n} reminder', { n: r }) : T('{n} reminders', { n: r })) : T('None set'); }
+      else if (id === 'media') { var m = typeof MediaStore !== 'undefined' ? MediaStore.sources().length : 0; out = m ? (m === 1 ? T('{n} library', { n: m }) : T('{n} libraries', { n: m })) : T('No libraries yet'); }
     } catch (e) { out = ''; }
     return out;
   }
@@ -2944,7 +2945,8 @@ var Settings = (function () {
   // Drawn again in a new language (I18n.onChange in app.js).
   // Settings has the remote again after something opened from it (My media's Excluded files) gave it away.
   function regain() { UI.setHandler(keys); build(); }
-  function redraw() { if (!document.getElementById('viewSettings').classList.contains('hidden')) build(); }
+  // The home too when it's showing (the language can change while it is: the TV's own, or a dictionary still loading).
+  function redraw() { if (document.getElementById('viewSettings').classList.contains('hidden')) return; if (onHome) homeBuild(); else build(); }
   return { capturing: function () { return !!cap; }, dns: { ids: DNS_IDS, names: DNS_NAMES, ask: askDns }, open: open, openFrom: openFrom, redraw: redraw, regain: regain, assignGuide: assignGuide, section: section, openPlaylist: openPlaylist, openTeams: openTeams, live: live, reset: function () { stack = []; sel = 0; }, phone: forPhone,
     LOOK: { ACCENTS: ACCENTS, ACCENT_NAMES: ACCENT_NAMES, THEMES: THEMES, THEME_NAMES: THEME_NAMES, THEME_INK: THEME_INK } };
 })();
