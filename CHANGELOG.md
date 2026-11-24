@@ -6,7 +6,7 @@ Pre-release: expect rough edges, and keep a backup before installing.
 
 ### New in alpha 211
 
-- The phone app's Settings works while TiviBro is behind another app: it shows the TV's last copy of Settings, and switches and choices changed there are made when TiviBro is back on screen.  Buttons still need TiviBro on the TV's screen.
+- **Phone Settings while TiviBro is away.**  The phone app's Settings works while TiviBro is behind another app: it shows the TV's last copy of Settings, and switches and choices changed there are made when TiviBro is back on screen.  Buttons still need TiviBro on the TV's screen.
 
 ### In alpha 210
 
