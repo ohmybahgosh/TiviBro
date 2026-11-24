@@ -1,4 +1,5 @@
-/* TV series from TMDB, with your own token (Settings > Movies and shows > Series details from TMDB): for a series in
+/* TV series from TMDB, with your own token (Settings > Movies and shows > Series details from TMDB), or without one
+   from TheTVDB (Series details from TheTVDB, service/tvdb.js): for a series in
    the guide, a poster, year, network, genres and rating in the details above it, and the episode's own
    title and summary when the guide gives its season and episode; and on the Shows screen, what the
    provider's details leave out (a poster, a summary, the rating, genres and cast, each episode's title,
@@ -14,7 +15,8 @@ var Series = (function () {
   var KEY = 'tvseries', VER = 4, KEEP = 30 * 86400e3, MAX_SHOWS = 3000, MAX_SEASONS = 200, MAX_LOW = { shows: 1200, seasons: 60 }, GAP = 350, QUEUE = 4;
   var shows = {}, seasons = {}, loaded = null, ready = false, queue = [], queued = {}, busy = false, saveT = null, listeners = [], paused = 0;
   function S() { return Store.settings; }
-  function on() { return S().guideSeries !== false && typeof MediaStore !== 'undefined' && !!MediaStore.tmdbToken(); }
+  // On with a TMDB token, or without one when Series details from TheTVDB is on (media.js tvdbOn).
+  function on() { return S().guideSeries !== false && typeof MediaStore !== 'undefined' && (!!MediaStore.tmdbToken() || (typeof Media !== 'undefined' && !!Media.tvdbOn && Media.tvdbOn())); }
   function norm(t) { return String(t || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, ''); }
 
   /* The show's own name from what providers and guides put around it:
@@ -127,7 +129,7 @@ var Series = (function () {
       // TMDB refused or can't be reached: wait a minute before asking again.
       paused = Date.now() + 60000;
       queue.concat(later).forEach(function (x) { delete queued[x.k]; }); queue = []; later = [];
-      if (typeof Log !== 'undefined') Log.warn('series', 'TMDB lookups paused: ' + (e && e.message));
+      if (typeof Log !== 'undefined') Log.warn('series', 'Series lookups paused: ' + (e && e.message));
     }).then(function () { delete queued[job.k]; busy = false; setTimeout(pump, GAP); });
   }
 

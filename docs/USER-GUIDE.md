@@ -510,7 +510,7 @@ Which programmes are movies: the guide's own **Movie** category, a year in the t
 
 ### TV series from TMDB
 
-The same token fills in TV series (Settings > Movies and shows > **Series details from TMDB**, on by default):
+The same token fills in TV series (Settings > Movies and shows > **Series details from TMDB**, on by default).  **Without a token**, the same series details come from TheTVDB instead (**Series details from TheTVDB**, on by default), through TiviBro's own service: nothing to set up, and only show names leave the TV.  TheTVDB has no ratings, so those are left out.  Metadata provided by [TheTVDB](https://thetvdb.com).  Either way:
 
 - **In the guide:** land on a series and its details show its poster and a line with when it started, its network, genres and TMDB rating.  When the guide gives the season and episode (S2 E5), the episode's own title is in front of its summary, and TMDB's summary of that episode is shown when the guide's is short.
 - **About this show:** **Info** on a series (or **Hold OK > About this show…**) opens a panel with its poster, when it started, its network, how many seasons, whether it's still running, its rating, genres, summary and cast, and its next showings on that channel this week, each with its episode and title.  **Watch now** when it's on, or **Remind me** for the next one.  On anything that isn't a series, **Info** opens the options menu as before.
@@ -1220,6 +1220,7 @@ The Movies and Shows screens, and the TMDB details for them and the guide.
 | **Hide spoilers** | On · **Off** | In the guide, new episodes and episodes or movies that haven't aired yet (not news or sport), and on the Shows screen, episodes you haven't started, keep only their title, season and episode, and when they air: no summary, episode title or picture from the episode. |
 | **Movie details from TMDB** | **On** · Off | Under **Details from TMDB**.  With a TMDB token: posters and details for movies in the guide, the **Movie** tag, the [Movies on now](#movies-on-now) group and the Movies on now screen.  Only programme titles go to TMDB. |
 | **Series details from TMDB** | **On** · Off | Under **Details from TMDB**.  With a TMDB token: a series' poster, network, genres and rating in the guide, each episode's own title and summary when the guide gives its season and episode, and what your provider leaves out on the Shows screen ([TV series from TMDB](#tv-series-from-tmdb)).  Only a show's name and episode numbers go to TMDB. |
+| **Series details from TheTVDB** | **On** · Off | Under **Details from TMDB**.  Without a TMDB token, the same series details from TheTVDB through TiviBro's own service: no token or account.  Only show names leave the TV.  A TMDB token, when you add one, comes first. |
 | **TMDB API token ›** | | Under **Details from TMDB**.  Opens [API keys](#settings-api-keys), where the token is added, tested or removed. |
 
 ### Settings: My media

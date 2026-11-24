@@ -1548,6 +1548,9 @@ var Settings = (function () {
       function () { return s.guideMovies !== false; }, function (v) { s.guideMovies = v; save(true); if (typeof Movies !== 'undefined') Movies.poke(); }));
     out.push(toggle('Series details from TMDB', 'With your TMDB token, for the series in your guide and on the Shows screen: a poster, when it started, its network, genres and rating, and each episode\'s own title and summary (in the guide when it gives the season and episode).  On the Shows screen it fills in what your provider\'s details leave out.  Only a show\'s name and episode numbers go to TMDB.',
       function () { return s.guideSeries !== false; }, function (v) { s.guideSeries = v; save(true); if (typeof Series !== 'undefined') Series.poke(); }));
+    // Without a token, the same series details from TheTVDB through TiviBro's metadata relay (service/tvdb.js).
+    out.push(toggle('Series details from TheTVDB', 'Without a TMDB token, the same series details come from TheTVDB through TiviBro\'s own service: no token or account needed.  Only show names leave the TV.  Metadata provided by TheTVDB (thetvdb.com).',
+      function () { return s.seriesTvdb !== false; }, function (v) { s.seriesTvdb = v; save(true); if (typeof Series !== 'undefined') Series.poke(); }));
     out.push(tmdbLink());
     if (!MediaStore.preferences().tmdbConfigured) out.push(info('Needs a TMDB token: add one under API keys (above), free from themoviedb.org.  The same token gives My media its posters.', ''));
     return out;
@@ -1998,6 +2001,8 @@ var Settings = (function () {
       head('Services and data, with thanks'),
       L2('TMDB', 'Movie and show details and posters'),
       info('This product uses the TMDB API but is not endorsed or certified by TMDB.', ''),
+      L2('TheTVDB', 'Show details without a TMDB token'),
+      info('Metadata provided by TheTVDB.  Please consider adding missing information or subscribing (thetvdb.com).', ''),
       L2('Trakt', 'Watched history and lists'),
       info('TiviBro uses Trakt but is not endorsed or certified by Trakt.', ''),
       L2('OpenSubtitles.com', 'Subtitles'),

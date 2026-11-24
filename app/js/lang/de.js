@@ -2460,5 +2460,8 @@ I18n.add('de', {
   "Probably movies": "Wahrscheinlich Filme",
   "Other categories": "Andere Kategorien",
   "Saved.  Your channels change when you leave this page.": "Gespeichert.  Deine Sender ändern sich, wenn du diese Seite verlässt.",
-  "\"{x}\" is off.  Switching to \"{y}\".": "„{x}\" ist aus.  Wechsel zu „{y}\"."
+  "\"{x}\" is off.  Switching to \"{y}\".": "„{x}\" ist aus.  Wechsel zu „{y}\".",
+  "Series details from TheTVDB": "Seriendetails von TheTVDB",
+  "Without a TMDB token, the same series details come from TheTVDB through TiviBro's own service: no token or account needed.  Only show names leave the TV.  Metadata provided by TheTVDB (thetvdb.com).": "Ohne TMDB-Token kommen dieselben Seriendetails von TheTVDB über TiviBros eigenen Dienst: kein Token und kein Konto nötig.  Nur Seriennamen verlassen den Fernseher.  Metadaten bereitgestellt von TheTVDB (thetvdb.com).",
+  "Metadata provided by TheTVDB.  Please consider adding missing information or subscribing (thetvdb.com).": "Metadaten bereitgestellt von TheTVDB.  Bitte ergänze fehlende Angaben oder werde Abonnent (thetvdb.com)."
 });

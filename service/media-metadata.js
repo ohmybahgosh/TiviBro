@@ -1,4 +1,4 @@
-/* TMDB movie details.  The app sends the viewer's locally stored TMDB credential per request.  Only title/year or a chosen movie ID and locale leave
+/* TMDB movie details (and TV shows from TheTVDB without a token: tvdb.js, asked for with q.source 'tvdb' or a 'tvdb:' id).  The app sends the viewer's locally stored TMDB credential per request.  Only title/year or a chosen movie ID and locale leave
    the TV.  Provider logins and playback links never reach TMDB.  ES5 / Node 0.12. */
 'use strict';
 var https = require('https');
@@ -514,6 +514,6 @@ function create(opts) {
     }
     ask(0);
   }
-  return { cancel:function(){cancelled=true;jobs.forEach(function(job){job.cancel();});jobs=[];}, lookup: function (q, cb) { return q && q.list ? lookup(q, cb) : q && q.guide ? (q.kind === 'tv' ? guideTvLookup(q, cb) : guideLookup(q, cb)) : q && (q.kind === 'tv' || /^tmdb:tv:/.test(q.id || '')) ? tvLookup(q, cb) : lookup(q, cb); }, configured: function () { return !!credential; } };
+  return { cancel:function(){cancelled=true;jobs.forEach(function(job){job.cancel();});jobs=[];}, lookup: function (q, cb) { if (q && (q.source === 'tvdb' || /^tvdb:/.test(String(q.id || '')))) return require('./tvdb').lookup(q, cb); return q && q.list ? lookup(q, cb) : q && q.guide ? (q.kind === 'tv' ? guideTvLookup(q, cb) : guideLookup(q, cb)) : q && (q.kind === 'tv' || /^tmdb:tv:/.test(q.id || '')) ? tvLookup(q, cb) : lookup(q, cb); }, configured: function () { return !!credential; } };
 }
 module.exports = { lookup: function (q, cb) { return create({ credential: q.credential, refresh:!!q.refresh }).lookup(q, cb); }, create: create };

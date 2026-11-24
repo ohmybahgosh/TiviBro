@@ -1155,18 +1155,22 @@ var Media = (function () {
     return ask('metadata', { credential: token, guide: strength || 'weak', title: title, year: year || '', description: String(description || '').slice(0, 1500), language: MediaStore.preferences().language }, 25000)
       .then(function (r) { if (r.error) throw new Error(r.message); return r; });
   }
+  /* Series details from TheTVDB (Settings > Movies and shows), for viewers without a TMDB token: the helper asks
+     TiviBro's metadata relay (service/tvdb.js), with no key on the TV.  A TMDB token, when there is one, comes first. */
+  function tvdbOn() { return Store.settings.seriesTvdb !== false; }
   // A TV series by name, for the guide and the Shows screen (series.js): { metadata } (the show) or { miss }.
   function tvByName(title, year, strength, country) {
-    var token = MediaStore.tmdbToken();
-    if (!token) return Promise.reject(new Error('No TMDB token'));
-    return ask('metadata', { credential: token, kind: 'tv', guide: strength || 'weak', title: title, year: year || '', country: country || '', language: MediaStore.preferences().language }, 25000)
-      .then(function (r) { if (r.error) throw new Error(r.message); return r; });
+    var token = MediaStore.tmdbToken(), q = { kind: 'tv', guide: strength || 'weak', title: title, year: year || '', country: country || '', language: MediaStore.preferences().language };
+    if (token) q.credential = token;
+    else if (tvdbOn()) q.source = 'tvdb';
+    else return Promise.reject(new Error('No TMDB token'));
+    return ask('metadata', q, 25000).then(function (r) { if (r.error) throw new Error(r.message); return r; });
   }
-  // One season of a show TMDB knows ('tmdb:tv:1399'): { metadata: { episodes: [...] } }.
+  // One season of a show TMDB knows ('tmdb:tv:1399') or TheTVDB does ('tvdb:372264'): { metadata: { episodes: [...] } }.
   function tvSeason(id, season) {
-    var token = MediaStore.tmdbToken();
-    if (!token) return Promise.reject(new Error('No TMDB token'));
-    return ask('metadata', { credential: token, id: id, season: season, language: MediaStore.preferences().language }, 25000).then(function (r) { if (r.error) throw new Error(r.message); return r; });
+    var token = MediaStore.tmdbToken(), tvdb = /^tvdb:/.test(String(id || ''));
+    if (!token && !tvdb) return Promise.reject(new Error('No TMDB token'));
+    return ask('metadata', { credential: tvdb ? undefined : token, id: id, season: season, language: MediaStore.preferences().language }, 25000).then(function (r) { if (r.error) throw new Error(r.message); return r; });
   }
   function movieById(id) {
     var token = MediaStore.tmdbToken();
@@ -1895,7 +1899,7 @@ var Media = (function () {
     quickMarkMovie: quickMarkMovie, movieCard: movieCard,
     reviewCount: function () { return reviewCards.length; },      // how many need a look (the show options offer Needs review)
     refreshShows:refreshSeries, playNow: function (m) { playNow(m); }, foundText: foundText, discover: discover, addServer: addServer, sourceDetailsNow: sourceDetailsNow, isScanning: function (id) { return !!scanning[id]; }, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); visitEnd(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress, addDropbox: addDropbox, dropboxFolders: dropboxFolders, addGdrive: addGdrive, gdrivePlaces: gdrivePlaces, addSmb: addSmb, smbDiscover: smbDiscover, smbSaved: smbSaved, smbLoginOf: smbLoginOf, setLogin: setLogin, changeLogin: changeLogin, smbShares: smbShares, smbFolders: smbFolders, smbAddress: smbAddress, gdriveFolders: gdriveFolders, gdriveKey: gdriveKey, signOut: signOut,
-    rescanAll: rescanAll, newMedia: newMedia, newMediaSoon: newMediaSoon, guideLookup: guideLookup, movieById: movieById, tvByName: tvByName, tvSeason: tvSeason, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, libraryStats: libraryStats, removeLibrary: removeLibrary,
+    rescanAll: rescanAll, newMedia: newMedia, newMediaSoon: newMediaSoon, guideLookup: guideLookup, movieById: movieById, tvByName: tvByName, tvSeason: tvSeason, tvdbOn: tvdbOn, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, libraryStats: libraryStats, removeLibrary: removeLibrary,
     // The web editor's Fix match: search TMDB by a typed title, then save the one picked.
     searchDetails: function (title) { if (!MediaStore.tmdbToken()) return Promise.reject(new Error('Add a TMDB API token first.')); return metadataRequest({ title: String(title || '').slice(0, 200) }).then(function (r) { return (r.matches || []).slice(0, 10).map(function (x) { return { id: x.id, title: x.title, year: x.year || '' }; }); }); },
     applyDetails: function (movieId, tmdbId) { return metadataRequest({ id: tmdbId }).then(function (r) { if (!r.metadata) throw new Error('TMDB has no details for that.'); return MediaStore.setMetadata(movieId, r.metadata); }).then(function () { refresh(); }); }, findDetails: findDetails, excludeMovie: excludeMovie, includeMovie: includeMovie, libraryDetails: function (id) { var s = MediaStore.source(id); if (s) sourceDetails(s); }, lookUpWaiting: function (id) { if (needToken()) return; if (fetchingDetails) return U.toast('Movie details are already being fetched.'); MediaStore.load().then(function () { var list = MediaStore.movies(id).filter(function (m) { return !(m.metadata && m.metadata.id) && !m.tmdbMiss; }); if (!list.length) return U.toast('Every movie here has been looked up.', 4000); return fetchDetails(list, MediaStore.preferences().language); }).catch(function (e) { U.toast(why(e), 6000); }); }, detailsLabel: detailsLabel, arrangeShelves: function (sec) { arrangeMenu(null, sec || 'home'); }, bothKinds: function () { var h = has(); return !!(h.movies && h.shows); }, busyText: busyText, setBusy: setBusy,

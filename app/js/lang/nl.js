@@ -2457,5 +2457,8 @@ I18n.add('nl', {
   "Probably movies": "Waarschijnlijk films",
   "Other categories": "Andere categorieën",
   "Saved.  Your channels change when you leave this page.": "Opgeslagen.  Je zenders veranderen zodra je deze pagina verlaat.",
-  "\"{x}\" is off.  Switching to \"{y}\".": "\"{x}\" staat uit.  Overschakelen naar \"{y}\"."
+  "\"{x}\" is off.  Switching to \"{y}\".": "\"{x}\" staat uit.  Overschakelen naar \"{y}\".",
+  "Series details from TheTVDB": "Seriedetails van TheTVDB",
+  "Without a TMDB token, the same series details come from TheTVDB through TiviBro's own service: no token or account needed.  Only show names leave the TV.  Metadata provided by TheTVDB (thetvdb.com).": "Zonder TMDB-token komen dezelfde seriedetails van TheTVDB via TiviBro's eigen dienst: geen token of account nodig.  Alleen namen van series verlaten de tv.  Metadata geleverd door TheTVDB (thetvdb.com).",
+  "Metadata provided by TheTVDB.  Please consider adding missing information or subscribing (thetvdb.com).": "Metadata geleverd door TheTVDB.  Overweeg ontbrekende informatie toe te voegen of een abonnement te nemen (thetvdb.com)."
 });

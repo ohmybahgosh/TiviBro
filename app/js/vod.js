@@ -940,10 +940,10 @@ var Vod = (function () {
     function idFor() {
       if (/^[0-9]+$/.test(String(it.tmdb || ''))) return Promise.resolve('tmdb:tv:' + it.tmdb);
       var tv = typeof Series !== 'undefined' ? Series.show(it.name, it.year, 'strong') : null;
-      if (tv && tv.id) return Promise.resolve(tv.id);
+      if (tv && /^tmdb:/.test(tv.id)) return Promise.resolve(tv.id);          // a trailer is TMDB's: a TheTVDB match has no TMDB id
       var c = typeof Series !== 'undefined' && Series.clean ? Series.clean(it.name) : { t: it.name, y: '' };
       if (!c.t || !Media.tvByName) return Promise.resolve('');
-      return Media.tvByName(c.t, it.year || c.y, 'strong').then(function (r) { return (r && r.metadata && r.metadata.id) || ''; }, function () { return ''; });
+      return Media.tvByName(c.t, it.year || c.y, 'strong').then(function (r) { var id = r && r.metadata && r.metadata.id; return /^tmdb:/.test(id || '') ? id : ''; }, function () { return ''; });
     }
   }
   function fetchInfo() {

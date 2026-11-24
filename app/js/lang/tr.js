@@ -2457,5 +2457,8 @@ I18n.add('tr', {
   "Probably movies": "Muhtemelen filmler",
   "Other categories": "Diğer kategoriler",
   "Saved.  Your channels change when you leave this page.": "Kaydedildi.  Kanallarınız bu sayfadan çıktığınızda değişir.",
-  "\"{x}\" is off.  Switching to \"{y}\".": "\"{x}\" kapalı.  \"{y}\" listesine geçiliyor."
+  "\"{x}\" is off.  Switching to \"{y}\".": "\"{x}\" kapalı.  \"{y}\" listesine geçiliyor.",
+  "Series details from TheTVDB": "TheTVDB'den dizi ayrıntıları",
+  "Without a TMDB token, the same series details come from TheTVDB through TiviBro's own service: no token or account needed.  Only show names leave the TV.  Metadata provided by TheTVDB (thetvdb.com).": "TMDB anahtarı yoksa aynı dizi ayrıntıları TiviBro'nun kendi hizmeti üzerinden TheTVDB'den gelir: anahtar ya da hesap gerekmez.  TV'den yalnızca dizi adları çıkar.  Meta veriler TheTVDB (thetvdb.com) tarafından sağlanır.",
+  "Metadata provided by TheTVDB.  Please consider adding missing information or subscribing (thetvdb.com).": "Meta veriler TheTVDB tarafından sağlanır.  Eksik bilgileri eklemeyi ya da abone olmayı düşünün (thetvdb.com)."
 });

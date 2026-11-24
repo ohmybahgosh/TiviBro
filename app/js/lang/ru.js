@@ -2584,5 +2584,8 @@ I18n.add('ru', {
   "Probably movies": "Вероятно, фильмы",
   "Other categories": "Другие категории",
   "Saved.  Your channels change when you leave this page.": "Сохранено.  Каналы изменятся, когда вы уйдёте с этой страницы.",
-  "\"{x}\" is off.  Switching to \"{y}\".": "«{x}» выключен.  Переключение на «{y}»."
+  "\"{x}\" is off.  Switching to \"{y}\".": "«{x}» выключен.  Переключение на «{y}».",
+  "Series details from TheTVDB": "Данные о сериалах из TheTVDB",
+  "Without a TMDB token, the same series details come from TheTVDB through TiviBro's own service: no token or account needed.  Only show names leave the TV.  Metadata provided by TheTVDB (thetvdb.com).": "Без токена TMDB те же данные о сериалах приходят из TheTVDB через собственный сервис TiviBro: токен и аккаунт не нужны.  Телевизор отправляет только названия сериалов.  Метаданные предоставлены TheTVDB (thetvdb.com).",
+  "Metadata provided by TheTVDB.  Please consider adding missing information or subscribing (thetvdb.com).": "Метаданные предоставлены TheTVDB.  Добавьте недостающие сведения или оформите подписку (thetvdb.com)."
 });

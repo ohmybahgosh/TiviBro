@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Series details without a TMDB token.**  Posters, backdrops, logo art, summaries, cast and each episode's title and picture now come from TheTVDB for everyone, in the guide, on the Shows screen and in Up next, through TiviBro's own service: no token, no account.  A TMDB token still comes first.  Settings > Movies and shows > Series details from TheTVDB.  Metadata provided by TheTVDB.
 - **No dimming after an episode.**  With Burn-in protection on, an episode watched to the end without a key press could dim the screen as it ended, and the dim stayed over the next episode for up to a minute and a half.  Watching now counts as use, and the dim never covers fullscreen video.
 - **Up next without the flash.**  Before Up next appeared, and again between Play and the next episode starting, the show's page flashed by for a moment.  The screen now stays dark through both, for My media's shows and collections and your provider's series.
 

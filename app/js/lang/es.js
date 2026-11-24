@@ -2581,5 +2581,8 @@ I18n.add('es', {
   "Probably movies": "Probablemente películas",
   "Other categories": "Otras categorías",
   "Saved.  Your channels change when you leave this page.": "Guardado.  Tus canales cambian cuando salgas de esta página.",
-  "\"{x}\" is off.  Switching to \"{y}\".": "\"{x}\" está desactivada.  Cambiando a \"{y}\"."
+  "\"{x}\" is off.  Switching to \"{y}\".": "\"{x}\" está desactivada.  Cambiando a \"{y}\".",
+  "Series details from TheTVDB": "Detalles de series de TheTVDB",
+  "Without a TMDB token, the same series details come from TheTVDB through TiviBro's own service: no token or account needed.  Only show names leave the TV.  Metadata provided by TheTVDB (thetvdb.com).": "Sin un token de TMDB, los mismos detalles de series llegan de TheTVDB a través del servicio propio de TiviBro: no hace falta token ni cuenta.  Solo los nombres de las series salen del televisor.  Metadatos proporcionados por TheTVDB (thetvdb.com).",
+  "Metadata provided by TheTVDB.  Please consider adding missing information or subscribing (thetvdb.com).": "Metadatos proporcionados por TheTVDB.  Considera añadir la información que falte o suscribirte (thetvdb.com)."
 });
