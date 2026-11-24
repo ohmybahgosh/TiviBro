@@ -2452,5 +2452,8 @@ I18n.add('pl', {
   "Sound {n} ms later": ["Dźwięk {n} ms później", "Dźwięk {n} ms później", "Dźwięk {n} ms później"],
   "The preview shows once the library has loaded.": "Podgląd pojawi się po wczytaniu biblioteki.",
   "{n} setting": "{n} ustawienie",
-  "◀ ▶  move      ▲ ▼  switch row, ▲ at the top: timeline      OK  choose      Back  close": "◀ ▶  przesuń      ▲ ▼  zmień rząd, ▲ na górze: oś czasu      OK  wybierz      Wstecz  zamknij"
+  "◀ ▶  move      ▲ ▼  switch row, ▲ at the top: timeline      OK  choose      Back  close": "◀ ▶  przesuń      ▲ ▼  zmień rząd, ▲ na górze: oś czasu      OK  wybierz      Wstecz  zamknij",
+  "Probably shows": "Prawdopodobnie seriale",
+  "Probably movies": "Prawdopodobnie filmy",
+  "Other categories": "Inne kategorie"
 });

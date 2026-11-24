@@ -3086,5 +3086,8 @@ I18n.add('pt-BR', {
   "{n} reminders": "{n} lembretes",
   "{n} team": "{n} time",
   "{n} teams": "{n} times",
-  "◀ ▶  move      ▲ ▼  switch row      OK  choose      Back  close": "◀ ▶  mover      ▲ ▼  trocar de linha      OK  escolher      Voltar  fechar"
+  "◀ ▶  move      ▲ ▼  switch row      OK  choose      Back  close": "◀ ▶  mover      ▲ ▼  trocar de linha      OK  escolher      Voltar  fechar",
+  "Probably shows": "Provavelmente séries",
+  "Probably movies": "Provavelmente filmes",
+  "Other categories": "Outras categorias"
 });

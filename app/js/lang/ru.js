@@ -2579,5 +2579,8 @@ I18n.add('ru', {
   "{n} reminders": ["{n} напоминание", "{n} напоминания", "{n} напоминаний"],
   "{n} team": "{n} команда",
   "{n} teams": ["{n} команда", "{n} команды", "{n} команд"],
-  "◀ ▶  move      ▲ ▼  switch row      OK  choose      Back  close": "◀ ▶  перемещение      ▲ ▼  сменить ряд      OK  выбрать      Назад  закрыть"
+  "◀ ▶  move      ▲ ▼  switch row      OK  choose      Back  close": "◀ ▶  перемещение      ▲ ▼  сменить ряд      OK  выбрать      Назад  закрыть",
+  "Probably shows": "Вероятно, сериалы",
+  "Probably movies": "Вероятно, фильмы",
+  "Other categories": "Другие категории"
 });

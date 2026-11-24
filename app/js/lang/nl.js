@@ -2452,5 +2452,8 @@ I18n.add('nl', {
   "Sound {n} ms later": "Geluid {n} ms later",
   "The preview shows once the library has loaded.": "De voorvertoning verschijnt zodra de bibliotheek geladen is.",
   "{n} setting": "{n} instelling",
-  "◀ ▶  move      ▲ ▼  switch row, ▲ at the top: timeline      OK  choose      Back  close": "◀ ▶  verplaatsen      ▲ ▼  andere rij, ▲ bovenaan: tijdlijn      OK  kiezen      Terug  sluiten"
+  "◀ ▶  move      ▲ ▼  switch row, ▲ at the top: timeline      OK  choose      Back  close": "◀ ▶  verplaatsen      ▲ ▼  andere rij, ▲ bovenaan: tijdlijn      OK  kiezen      Terug  sluiten",
+  "Probably shows": "Waarschijnlijk series",
+  "Probably movies": "Waarschijnlijk films",
+  "Other categories": "Andere categorieën"
 });

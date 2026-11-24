@@ -1732,5 +1732,8 @@ I18n.add('fr', {
   "{n} reminder": "{n} rappel",
   "{n} reminders": "{n} rappels",
   "{n} team": "{n} équipe",
-  "{n} teams": "{n} équipes"
+  "{n} teams": "{n} équipes",
+  "Probably shows": "Probablement des séries",
+  "Probably movies": "Probablement des films",
+  "Other categories": "Autres catégories"
 });

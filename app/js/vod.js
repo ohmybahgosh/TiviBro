@@ -668,6 +668,39 @@ var Vod = (function () {
     built = true;
   }
 
+  /* A big portal lists every category under Movies and Shows alike, and one is only known to be empty here once
+     it's been read (issue #173: "series folders in Movies", read for a minute to show 0).  One that looks like the
+     other kind goes to the end, under Probably shows / Probably movies, until it's opened: its name says so
+     ("HINDI SERIES", "WEB SERIES", "DIZI"), or it has titles in the other list already. */
+  var SHOWISH = /\b(series|serie|serial|serials|shows?|tv\s?shows?|web\s?series|dizi|dizileri|novelas?|seasons?|episodes?|s[eé]ries)\b/i;
+  var MOVIEISH = /\b(movies?|films?|cinema|kino|filmes?|pel[ií]culas?)\b/i;
+  function otherKind(d, c) {
+    if (!d.browse || d.catItems[c.id]) return false;                  // read: its own count says
+    var o = data[kind === 'series' ? 'movie' : 'series'];
+    if (o && o.browse && o.catItems && o.catItems[c.id] && o.catItems[c.id].length) return true;
+    return nameSays(kind === 'series' ? 'movie' : 'series', c.name);
+  }
+  // The category's name says it's this kind only ("WEB SERIES" for series, "HINDI MOVIES" for movie).
+  function nameSays(k, name) { var n = String(name || ''); return k === 'series' ? SHOWISH.test(n) && !MOVIEISH.test(n) : MOVIEISH.test(n) && !SHOWISH.test(n); }
+  /* A category's language from its name, for a big portal's headings (issue #173: "by language folder"):
+     "HINDI | MOVIES", "TAMIL SERIES", "|EN| ...", "DE - ...".  '' when the name doesn't say. */
+  var LANG_WORDS = /^\W*(hindi|english|tamil|telugu|malayalam|kannada|marathi|bengali|bangla|gujarati|punjabi|urdu|odia|nepali|sinhala|arabic|turkish|persian|farsi|kurdish|spanish|french|german|italian|portuguese|dutch|polish|russian|ukrainian|romanian|greek|albanian|serbian|croatian|bosnian|bulgarian|hungarian|czech|swedish|norwegian|danish|finnish|korean|japanese|chinese|thai|vietnamese|filipino|tagalog|indonesian|malay)\b/i;
+  function catLang(name) {
+    var n = String(name || ''), w = LANG_WORDS.exec(n);
+    if (w) return w[1].charAt(0).toUpperCase() + w[1].slice(1).toLowerCase();
+    var m = /^\s*[|\[]\s*([A-Za-z]{2,4})\s*[|\]]/.exec(n) || /^\s*([A-Z]{2,3})\s*(?:[|:]|\s[-–])\s/.exec(n);
+    var code = m && m[1].toUpperCase();
+    return code && VodView.known(code) ? VodView.langName(code) : '';
+  }
+  // A big portal's categories by language, each language where its first category was, with a heading each.
+  function byLang(cats) {
+    var groups = [], at = {};
+    cats.forEach(function (c) { var l = catLang(c.name); if (at[l] === undefined) { at[l] = groups.length; groups.push({ l: l, cats: [] }); } groups[at[l]].cats.push(c); });
+    if (groups.filter(function (g) { return g.l && g.cats.length > 1; }).length < 2) return cats;
+    var out = [];
+    groups.forEach(function (g) { if (g.l) out.push({ id: '@lang:' + g.l, head: true, name: g.l }); else if (out.length) out.push({ id: '@lang:', head: true, name: I18n.t('Other categories') }); out = out.concat(g.cats); });
+    return out;
+  }
   function catList() {
     var d = data[kind], counts = {};
     if (!d) return [];
@@ -694,7 +727,11 @@ var Vod = (function () {
     var labels = catLabels(d), cats = d.cats;
     // Settings > Movies and shows > Order categories: by name (each playlist's own, several playlists on).
     if (Store.settings.vodCatSort === 'name') cats = d.cats.slice().sort(function (a, b) { return d.multi && (a.pl || '') !== (b.pl || '') ? 0 : String(labels[a.id] || a.name).localeCompare(String(labels[b.id] || b.name), undefined, { sensitivity: 'base', numeric: true }); });
+    var elsewhere = [];
+    // A big portal by language, when its category names say (no playlist headings then: one portal).
+    if (d.browse && !d.multi && Store.settings.vodCatSort !== 'name') cats = byLang(cats);
     cats.forEach(function (c) {
+      if (c.head) { out.push(c); return; }
       if ((!counts[c.id] && !d.browse) || hid[c.id]) return;
       /* A big portal lists every category under both Movies and Shows (issue #118: "ENGLISH | SERIES" in Movies, with
          0 movies, its shows in Shows only): one found empty leaves the list, unless it's the one you're on. */
@@ -704,10 +741,14 @@ var Vod = (function () {
       var n = d.browse ? (d.catItems[c.id] ? d.catItems[c.id].length : '') : counts[c.id];
       var adult = !!(d.adultCat && d.adultCat[c.id]), row = { id: c.id, name: name, count: n, adult: adult, pl: c.pl || '' };
       if (adult) { later.push(row); return; }
+      if (otherKind(d, c) && !(catsVL && catsVL.current() && catsVL.current().id === c.id)) { elsewhere.push(row); return; }
       // Several playlists: a heading with the playlist's name above its categories.
       if (d.multi && (c.pl || '') !== section) { section = c.pl || ''; var pp = section ? Store.byId(section) : Store.playlist; out.push({ id: '@' + (section || 'first'), head: true, name: (pp && pp.name) || 'Playlist' }); }
       out.push(row);
     });
+    // A heading left with nothing under it (its categories hidden, empty or elsewhere) goes.
+    out = out.filter(function (r, i) { return !r.head || (out[i + 1] && !out[i + 1].head); });
+    if (elsewhere.length) out = out.concat([{ id: '@elsewhere', head: true, name: kind === 'series' ? I18n.t('Probably movies') : I18n.t('Probably shows') }], elsewhere);
     out = out.concat(later);
     return out;
   }
@@ -1433,5 +1474,5 @@ var Vod = (function () {
   function arrange(k) { U.toast('Loading ' + (k === 'series' ? 'shows' : 'movies') + '…'); load(k).then(function () { kind = k; VodHome.arrange(k, homeApi); }, function (e) { U.toast('Could not load the list: ' + (e && e.message || e), 5000); }); }
   // Settings > Movies and shows > Order categories changed: the list again, on the same category.
   function recats() { if (!catsVL || !data[kind]) return; var c = catsVL.current(), cl = catList(); catsVL.setItems(cl, Math.max(0, cl.findIndex(function (x) { return c && x.id === c.id; }))); }
-  return { arrange: arrange, movieTmdb: movieTmdb, recats: recats, reloadNow: reloadNow, homeApi: function () { return homeApi; }, _test: { curCat: function () { var c = catsVL && catsVL.current(); return c ? String(c.id) : ''; }, homeApi: function () { return homeApi; }, catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, lean: lean, findRemote: findRemote, titleCount: titleCount, countsFor: countsFor, get searchState() { return searchState(); }, offered: offered, reset: function (fresh) { if (fresh) freshAt = Date.now(); gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; seriesAsk++; spClose(); } };
+  return { arrange: arrange, movieTmdb: movieTmdb, recats: recats, reloadNow: reloadNow, homeApi: function () { return homeApi; }, _test: { catLang: catLang, byLang: byLang, nameSays: nameSays, curCat: function () { var c = catsVL && catsVL.current(); return c ? String(c.id) : ''; }, homeApi: function () { return homeApi; }, catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, lean: lean, findRemote: findRemote, titleCount: titleCount, countsFor: countsFor, get searchState() { return searchState(); }, offered: offered, reset: function (fresh) { if (fresh) freshAt = Date.now(); gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; seriesAsk++; spClose(); } };
 })();

@@ -115,6 +115,11 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     await page.waitForFunction(() => Vod._test.withKind('movie', () => Vod._test.itemsFor('11').length) > 100, null, { timeout: 20000 }).catch(() => {});
     const kept = await ev(() => Log.lines().map((l) => l.msg || l).filter((l) => /A big portal/.test(l)).slice(-2).join(' | '));
     ok('a two-day-old copy is still used, with the category read before (issue #173)', /as kept on the TV \(2\d\d\d min old\)/.test(kept) && (await ev(() => Vod._test.withKind('movie', () => Vod._test.itemsFor('11').length))) > 100, kept);
+    // Issue #173: a big portal's show categories in Movies go to the end (and the other way round); by language.
+    const guess = await ev(() => [Vod._test.nameSays('series', 'HINDI | WEB SERIES'), Vod._test.nameSays('series', 'HINDI | MOVIES'), Vod._test.nameSays('movie', 'TAMIL MOVIES'), Vod._test.nameSays('movie', 'DIZI'), Vod._test.nameSays('series', 'TV SHOWS')]);
+    ok('a category\'s name says shows or movies', guess.join() === 'true,false,true,false,true', guess);
+    const langs = await ev(() => Vod._test.byLang([{ id: 1, name: 'HINDI | MOVIES' }, { id: 2, name: 'TAMIL | MOVIES' }, { id: 3, name: 'HINDI | 2025' }, { id: 4, name: 'TAMIL | NEW' }, { id: 5, name: 'KIDS' }]).map((c) => c.head ? '#' + c.name : c.id).join(' '));
+    ok('a big portal\'s categories by language, with headings', langs === '#Hindi 1 3 #Tamil 2 4 #Other categories 5', langs);
     ok('Movies opens on the category you were on', (await ev(() => Vod._test.curCat())) === '11', await ev(() => Vod._test.curCat()));
     m2.server.close();
 

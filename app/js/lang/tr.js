@@ -2452,5 +2452,8 @@ I18n.add('tr', {
   "Sound {n} ms later": "Ses {n} ms sonra",
   "The preview shows once the library has loaded.": "Önizleme, kütüphane yüklenince görünür.",
   "{n} setting": "{n} ayar",
-  "◀ ▶  move      ▲ ▼  switch row, ▲ at the top: timeline      OK  choose      Back  close": "◀ ▶  hareket      ▲ ▼  satır değiştir, en üstte ▲: zaman çizelgesi      OK  seç      Geri  kapat"
+  "◀ ▶  move      ▲ ▼  switch row, ▲ at the top: timeline      OK  choose      Back  close": "◀ ▶  hareket      ▲ ▼  satır değiştir, en üstte ▲: zaman çizelgesi      OK  seç      Geri  kapat",
+  "Probably shows": "Muhtemelen diziler",
+  "Probably movies": "Muhtemelen filmler",
+  "Other categories": "Diğer kategoriler"
 });

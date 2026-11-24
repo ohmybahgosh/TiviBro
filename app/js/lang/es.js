@@ -2576,5 +2576,8 @@ I18n.add('es', {
   "{n} reminders": "{n} recordatorios",
   "{n} team": "{n} equipo",
   "{n} teams": "{n} equipos",
-  "◀ ▶  move      ▲ ▼  switch row      OK  choose      Back  close": "◀ ▶  mover      ▲ ▼  cambiar de fila      OK  elegir      Atrás  cerrar"
+  "◀ ▶  move      ▲ ▼  switch row      OK  choose      Back  close": "◀ ▶  mover      ▲ ▼  cambiar de fila      OK  elegir      Atrás  cerrar",
+  "Probably shows": "Probablemente series",
+  "Probably movies": "Probablemente películas",
+  "Other categories": "Otras categorías"
 });
