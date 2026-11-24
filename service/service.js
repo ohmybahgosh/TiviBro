@@ -224,6 +224,14 @@ function release() {
 
 // The helper checks on itself while TiviBro uses it, and exits for a fresh start when it is stuck (watchdog.js).
 watchdog = require('./watchdog').create({ port: function () { return relay ? port : 0; }, busy: function () { return subs > 0; }, log: function (o) { proxy.log(o); } });
+// And when its own work holds it up (a late timer), how long and what it was doing (lag.js, issue #172).
+var Lag = require('./lag');
+Lag.create({ log: function (o) { proxy.log(o); }, doing: function () {
+  var d = Lag.mem();
+  if (relay) d.requests = relay.stats.active;
+  try { var g = require('./guide').busy(); if (g.length) d.guide = g; } catch (e) {}
+  return d;
+} });
 
 service.register('start', function (message) {
   clearTimeout(idleTimer);

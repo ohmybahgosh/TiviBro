@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **A public guide with wrong times is left out.**  epg.pw's US guide lists every programme 8 hours late (the morning news at noon).  TiviBro now checks titles that say their own time ("News at 4:30am") against when they're listed, and a public guide that's hours off is left out, so the next one fills those channels.
+- **Lighter on 1 GB TVs.**  The copy of Settings kept for the phone app (alpha 211) no longer builds the set-up tour's pages, which went through the whole channel list several times a minute after the start.
+- **Problem reports say what held the network helper up**, when its own work keeps it from answering for seconds or more (issue #172).
+
 ## 0.6.0 (alpha 213, 2026-11-24)
 
 Pre-release: expect rough edges, and keep a backup before installing.

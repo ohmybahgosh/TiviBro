@@ -61,6 +61,35 @@ function regional(s) {
   if (r && b.indexOf('bbc') !== 0 && !/^(hh|hamburg|mv|mecklenburgvorpommern|sh|schleswigholstein|nds|ni|niedersachsen|sachsen|sachsenanhalt|sa|thuringen|thueringen|th|nord|sud|sued|nordbayern|sudbayern|suedbayern|bw|badenwurttemberg|badenwuerttemberg|rp|rlp|rheinlandpfalz|koln|koeln|aachen|bielefeld|dortmund|duisburg|dusseldorf|duesseldorf|essen|munster|muenster|siegen|wuppertal|bonn|berlin|brandenburg|w|wien|n|noe|niederosterreich|niederoesterreich|b|burgenland|o|oo|oberosterreich|oberoesterreich|s|salzburg|t|tirol|v|vorarlberg|k|karnten|kaernten|st|stmk|steiermark)$/.test(r)) return '';
   return '^' + b;
 }
+/* A public guide whose times are hours off (epg.pw's US file, Nov 2026: every time 8 hours late, though marked
+   +0000) is left out, so the next source fills those channels.  Titles that say their own time ("7 News at
+   4:30am") give how far each start is from that time; in a country's guide most must come out at one of its
+   time zones (a US channel: 4 to 10 hours before UTC).  Countries not listed aren't checked. */
+var ZONES = { US: [-10, -4], CA: [-8, -3.5], MX: [-8, -5], GB: [0, 1], IE: [0, 1], AU: [8, 11], NZ: [12, 13], IN: [5.5, 5.5], PH: [8, 8], ZA: [2, 2] };
+// Only a title that ends with its time ("7 News at 4:30am"): "Next game ... at 10:00PM EST" is about another time.
+var SAID = /\b(?:at|@)\s*(\d{1,2})(?::(\d\d))?\s*([ap])\.?\s?m\.?\s*$/i;
+// The hours between a programme's start (UTC) and the time its title says, 0 to 24, or -1 when it says none.
+function saidGap(title, start) {
+  var m = SAID.exec(title || '');
+  if (!m || +m[1] < 1 || +m[1] > 12) return -1;
+  var said = ((+m[1] % 12) + (/p/i.test(m[3]) ? 12 : 0)) * 60 + (+m[2] || 0), d = new Date(start), utc = d.getUTCHours() * 60 + d.getUTCMinutes();
+  return (((utc - said) % 1440) + 1440) % 1440 / 60;
+}
+/* From a source's gaps: the hours it is off when most of its gaps fit none of the country's time zones (more than
+   an hour from every one), else 0.  Too few titles say a time (under 20): 0, not judged. */
+function hoursOff(gaps, cc) {
+  var z = ZONES[cc === 'UK' ? 'GB' : cc];
+  if (!z || gaps.length < 20) return 0;
+  function fits(g) { for (var tz = z[0]; tz <= z[1]; tz += 0.5) { var want = ((-tz % 24) + 24) % 24, dd = Math.abs(g - want); if (Math.min(dd, 24 - dd) <= 1) return true; } return false; }
+  var bad = gaps.filter(function (g) { return !fits(g); });
+  if (bad.length < gaps.length * 0.6) return 0;
+  var mid = ((z[0] + z[1]) / 2), want = ((-mid % 24) + 24) % 24, at = {};
+  bad.forEach(function (g) { var k = Math.round(g); at[k] = (at[k] || 0) + 1; });
+  var top = Object.keys(at).sort(function (a, b) { return at[b] - at[a]; })[0], off = +top - want;
+  if (off > 12) off -= 24; if (off < -12) off += 24;
+  return Math.round(off) || (off < 0 ? -1 : 1);
+}
+
 function ts(s) {
   var m = /^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)?\s*([+-]\d{4})?/.exec(s || '');
   if (!m) return 0;
@@ -213,7 +242,7 @@ function start(body, log) {
   }
 
   function one(src, si, next) {
-    var got = {}, buf = '', n = 0, inFile = 0, off = (+src.offset || 0) * 60000, P = src.pub, wantP = {};
+    var got = {}, buf = '', n = 0, inFile = 0, off = (+src.offset || 0) * 60000, P = src.pub, wantP = {}, gaps = [];
     var RE = /<programme\b([^>]*)>([\s\S]*?)<\/programme>/g;
     var CH = /<channel\b[^>]*id="([^"]*)"[^>]*>([\s\S]*?)<\/channel>/g;
     function eat(final) {
@@ -277,6 +306,7 @@ function start(body, log) {
         ix = slot(ch);
         if (!alt) { firstSrc[ix] = si; count[ix]++; got[ch] = 1; }
         var title = t ? withSub(unesc(t[1]), m[2]) : '';
+        if (P && gaps.length < 2000) { var gp = saidGap(title, s); if (gp >= 0) gaps.push(gp); }
         if (!P && (alt || src.provider)) keepLook(ix, si, s, e, title);
         var bw = buckets[ix % NB];
         if (!bw.write(ix + '\t' + s + '\t' + e + '\t' + flat(title) + '\t' + flat(de ? unesc(de[1]).slice(0, DESC_MAX) : '') + '\t' + movieFlag(m[2]) + '\t' + si + '\n') && !bw.full) { bw.full = true; waiting++; }
@@ -292,6 +322,12 @@ function start(body, log) {
       if (done) return;
       done = true; current = null;
       if (err) { for (var lx in look) delete look[lx][si]; report.push({ url: src.label || src.url, ok: false, error: String(err && err.message || err), filled: settle() }); }
+      else if (P && hoursOff(gaps, P.cc)) {
+        // Its times are hours off: nothing claimed (best forgotten), so the next source fills these channels.
+        var ho = hoursOff(gaps, P.cc);
+        best = {};
+        report.push({ url: src.label || src.url, ok: false, error: 'its times are hours off (about ' + Math.abs(ho) + ' ' + (ho > 0 ? 'late' : 'early') + '), left out', programmes: n, filled: 0 });
+      }
       else {
         var x = unz && Unzip.progress(unz), bytes = x ? (x.total || x.raw) : job.bytes, jd = judge(si);
         // channels: its guide channels that matched one of yours (and so kept programmes); inFile: all it has.
@@ -599,4 +635,10 @@ function handle(req, res, allow, log) {
   send(res, 404, { ok: false, error: 'unknown guide request' }, null, allow);
 }
 
-module.exports = { movieFlag: movieFlag, withSub: withSub, handle: handle, norm: norm, unprefixed: unprefixed, tagCountry: tagCountry, regional: regional, start: start, status: status, keyOf: keyOf, root: root, find: find, descs: descs };
+// The guides being read now, for what held the helper up (lag.js): which, its phase and how far.
+function busy() {
+  var out = [];
+  Object.keys(jobs).forEach(function (k) { var j = jobs[k]; if (j && /download|save/.test(j.phase)) out.push({ k: k.replace(/^.*-/, ''), phase: j.phase, src: j.src + '/' + j.of, mb: Math.round((j.bytes || 0) / 1048576), programmes: j.programmes, s: Math.round((Date.now() - j.started) / 1000) }); });
+  return out;
+}
+module.exports = { busy: busy, saidGap: saidGap, hoursOff: hoursOff, movieFlag: movieFlag, withSub: withSub, handle: handle, norm: norm, unprefixed: unprefixed, tagCountry: tagCountry, regional: regional, start: start, status: status, keyOf: keyOf, root: root, find: find, descs: descs };

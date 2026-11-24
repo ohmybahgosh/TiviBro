@@ -39,6 +39,8 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   await wait(1500);
   const made = await ev(() => SetSnap.made);
   ok('TiviBro made its copy of Settings', made > 0);
+  // Not the set-up tour's pages: each one surveys the whole channel list (issue #172's log: five in 30 s on a 1 GB TV).
+  ok('...without opening the set-up tour', !(await ev(() => Log.lines().map((l) => String(l.msg || l)).some((l) => /Set-up tour opened/.test(l)))));
 
   // Behind another app.
   fs.writeFileSync(AWAY, '1');

@@ -840,7 +840,8 @@ var Settings = (function () {
     // On the phone it is a page of its own (Tour.phoneRows), the same steps without the TV's screen.
     // Several playlists on: each playlist that is on has its own tour, for its own channels.
     if (active || part) { var tourRow = action('Set-up tour', 'Countries, channel names, East or West, your city, event channels, clutter, logos and look, one screen at a time.', function () { Tour.open({ from: 'settings', pl: p.id }); }, function () { return p.tour > 0 ? 'done ' + when(p.tour) : '›'; });
-      tourRow.phonePage = { title: 'Set-up tour', fn: function () { return Tour.phoneRows(p.id); } }; out.push(tourRow); }
+      // live: built from the whole channel list each time (Tour's survey), so not in the copy kept for when TiviBro is away (setsnap.js).
+      tourRow.phonePage = { title: 'Set-up tour', live: true, fn: function () { return Tour.phoneRows(p.id); } }; out.push(tourRow); }
     if (active) out.push(link('Channel and group names', p.names && p.names.enabled ? 'On' : 'Off', 'names'));
     else out.push(page('Channel and group names', p.names && p.names.enabled ? 'On' : 'Off', 'Channel and group names', function () { return namesPage(p); }));
     out.push(page('Event channels', p.events && p.events.on === false ? 'Off' : 'On', 'Event channels', function () { return eventsPage(p); }));
@@ -1369,7 +1370,7 @@ var Settings = (function () {
     out.push(head('Tidy up'));
     TIDY.forEach(function (t) {
       var it = action(t[1], t[2], function () { Tour.open({ from: 'settings', pl: p.id, only: t[0] }); }, function () { return '›'; });
-      it.phonePage = { title: t[1], fn: function () { return Tour.phoneRows(p.id, t[0]); } };
+      it.phonePage = { title: t[1], live: true, fn: function () { return Tour.phoneRows(p.id, t[0]); } };
       out.push(it);
     });
   }
@@ -2785,7 +2786,7 @@ var Settings = (function () {
     else if (it.toggle) { r.kind = 'toggle'; r.on = !!it.get(); }
     else if (it.values) { r.kind = 'choice'; r.options = it.labels.map(String); r.cur = it.values.indexOf(it.get()); r.value = v; }
     else if (it.cycle) { r.kind = 'cycle'; r.value = v; }
-    else if (it.page || it.phonePage) { r.kind = 'page'; r.value = v === '›' ? '' : v; }
+    else if (it.page || it.phonePage) { r.kind = 'page'; r.value = v === '›' ? '' : v; if ((it.page || it.phonePage).live) r.live = 1; }
     else if (it.action) { r.kind = 'action'; r.value = v; }
     else { r.kind = 'info'; r.value = v; }
     if (it.swatch) try { r.swatch = it.swatch() || ''; } catch (e) {}

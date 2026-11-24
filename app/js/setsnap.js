@@ -59,7 +59,8 @@ var SetSnap = (function () {
         try { pg = within(code, function () { return Settings.phone.page(q.sec, q.path); }); } catch (e) { pg = null; }
         if (!pg) continue;
         out.pages[q.sec + '|' + q.path.join('.')] = pg; n++;
-        if (q.path.length < MAX_DEPTH) (pg.rows || []).forEach(function (r) { if (r.kind === 'page' && n + queue.length < MAX_PAGES) queue.push({ sec: q.sec, path: q.path.concat(r.i) }); });
+        // Not a live page (the set-up tour: built from the whole channel list each time, too heavy to make here).
+        if (q.path.length < MAX_DEPTH) (pg.rows || []).forEach(function (r) { if (r.kind === 'page' && !r.live && n + queue.length < MAX_PAGES) queue.push({ sec: q.sec, path: q.path.concat(r.i) }); });
       }
       if (queue.length && n < MAX_PAGES) setTimeout(step, 80); else done(out);
     }
