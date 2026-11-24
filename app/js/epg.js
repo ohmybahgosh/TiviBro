@@ -1277,7 +1277,8 @@ var Epg = (function () {
        your own guide (one that failed, or loaded a moment later): with those in the signature the public
        guides (100 MB and a minute of the TV's time) were read again at almost every start. */
     // What you chose (the days kept, countries picked by hand, sports guides on or off) still makes it a new guide.
-    var ckey = 'epgpub:' + p.id, sig = U.hash(p.epgDays + '|' + PubEpg.conf(p).cc.join() + '|' + PubEpg.sportsOn(p) + '|es3');
+    // es4: read again once after the update that leaves out a guide whose times are hours off (epg.pw US, alpha 214).
+    var ckey = 'epgpub:' + p.id, sig = U.hash(p.epgDays + '|' + PubEpg.conf(p).cc.join() + '|' + PubEpg.sportsOn(p) + '|es4');
     var labels = files.map(function (s) { return s.prefix ? s.name + ' ' + s.cc : s.url; });
     function covers(c) {
       var had = {}; (c.report || []).forEach(function (r) { if (r.ok) had[r.url] = 1; });

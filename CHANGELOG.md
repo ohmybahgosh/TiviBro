@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **The public guide is read again once after updating**, so a guide kept from epg.pw with times 8 hours off is replaced right away rather than within the day.
+
 ## 0.6.0 (alpha 214, 2026-11-24)
 
 Pre-release: expect rough edges, and keep a backup before installing.
