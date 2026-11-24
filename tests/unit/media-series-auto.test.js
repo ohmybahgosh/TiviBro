@@ -56,6 +56,14 @@ function file(title,n){return {id:'demo:/'+title+'/S01E'+n+'.mkv',file:title+'.S
     failSeason=false;failOne='tmdb:tv:1';await new Promise(resolve=>setTimeout(resolve,3));
     const one=await ctx.MediaSeries.fetchDetails(true);
     assert(!one.error,one.error);assert(one.missed>=1&&one.updated>=1,'the other show still gets its details: '+JSON.stringify(one));
-    console.log('PASS automatic show matches, owned episode enrichment, bounded pending queries, saved IDs, language refresh, miss cooldown, explicit retry and cancellation');
+    // A show matched on TheTVDB before a TMDB token was added: moved to TMDB by the link TheTVDB gave.
+    failOne='';const cur=await call(c,'detail',{kind:'show',handle:harbour.handle});
+    await call(c,'edit',{handle:cur.handle,expectedRevision:cur.revision,operation:'setMetadata',metadata:{id:'tvdb:999',provider:'TheTVDB',tmdb:'77',title:'Harbour'}});
+    assert.equal((await call(c,'query',{kind:'show',provider:'TheTVDB'})).total,1);
+    const before=lookups.length,moved=await ctx.MediaSeries.fetchDetails(false);assert(!moved.error,moved.error);
+    assert(lookups.slice(before).some(q=>q.id==='tmdb:tv:77'&&q.season==null),'asked TMDB by the link');
+    assert.equal((await call(c,'detail',{kind:'show',handle:harbour.handle})).metadata.id,'tmdb:tv:77','now TMDB\'s');
+    assert.equal((await call(c,'query',{kind:'show',provider:'TheTVDB'})).total,0);
+    console.log('PASS automatic show matches, owned episode enrichment, bounded pending queries, saved IDs, language refresh, miss cooldown, explicit retry, cancellation, and TheTVDB matches moved to TMDB');
   }finally{fs.rmSync(root,{recursive:true,force:true});}
 })().catch(e=>{console.error(e);process.exitCode=1;});

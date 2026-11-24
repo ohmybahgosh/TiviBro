@@ -29,7 +29,7 @@ var MediaSeries = (function () {
   // Background work has its own lifetime: browsing seasons must not cancel it.
   function fetchDetails(force) {
     // Who answers (TMDB with a token, else TheTVDB: Media.metaWho): a change of either stops the run.
-    var token=(MediaStore.tmdbToken()||'')+'|'+who(),language=MediaStore.preferences().language,started=Date.now(),updated=0,missed=0,lastHandle=null,streak=0;
+    var token=(MediaStore.tmdbToken()||'')+'|'+who(),language=MediaStore.preferences().language,started=Date.now(),updated=0,missed=0,skipped=0,lastHandle=null,streak=0;
     if(!who())return Promise.resolve({skipped:true});
     if(fetchingMetadata){
       if(token!==metadataToken||language!==metadataLanguage)queuedMetadata=true;
@@ -53,10 +53,13 @@ var MediaSeries = (function () {
     }
     function process(item){
       return detail(item.handle).then(function(show){
-        var id=show.metadata&&show.metadata.id,handle=show.handle;
-        var q=id?{id:id}:showQuery(show.title);
-        if(!id&&show.buckets){q.seasons={};show.buckets.forEach(function(b){if(/^[0-9]{1,3}$/.test(String(b.key))&&b.count>0)q.seasons[b.key]=b.count;});}   // to tell same-named shows apart
+        var id=show.metadata&&show.metadata.id,handle=show.handle,md=show.metadata||{};
+        // Matched on TheTVDB before the TMDB token: TMDB by the link TheTVDB gave, else by name (a miss keeps TheTVDB's).
+        var swap=who()==='tmdb'&&/^tvdb:/.test(id||'');
+        var q=swap?(/^[1-9][0-9]*$/.test(md.tmdb||'')?{id:'tmdb:tv:'+md.tmdb}:showQuery(show.title)):id?{id:id}:showQuery(show.title);
+        if(!q.id&&show.buckets){q.seasons={};show.buckets.forEach(function(b){if(/^[0-9]{1,3}$/.test(String(b.key))&&b.count>0)q.seasons[b.key]=b.count;});}   // to tell same-named shows apart
         return lookup(q).then(function(result){
+          if(!result.metadata&&swap){skipped++;return;}
           if(!result.metadata){missed++;return save(handle,'markMetadataChecked',{language:language,startedAt:started,missed:true,missV:4},id);}
           return save(handle,'setMetadata',{metadata:result.metadata},id).then(function(saved){
             handle=saved.mergedInto||handle;id=result.metadata.id;
@@ -74,6 +77,16 @@ var MediaSeries = (function () {
             return season();
           }).then(function(){return save(handle,'markMetadataChecked',{language:language,startedAt:started,missed:false},id);}).then(function(){updated++;});
         });
+      });
+    }
+    /* With a TMDB token, the shows matched on TheTVDB first (TMDB comes first); skipped: those TMDB didn't have,
+       passed over (offset).  Then the shows still waiting for details. */
+    function fromTvdb(){
+      if(who()!=='tmdb')return Promise.resolve();
+      return call('library/query',{kind:'show',provider:'TheTVDB',limit:1,offset:skipped}).then(function(r){
+        if(!r.items.length)return;
+        return process(r.items[0]).then(null,function(e){active();skipped++;if(typeof Log!=='undefined'&&Log.warn)Log.warn('media','Moving a show to TMDB failed: '+(e&&e.message));})
+          .then(function(){return new Promise(function(resolve){setTimeout(resolve,350);});}).then(fromTvdb);
       });
     }
     function next(){
@@ -97,7 +110,7 @@ var MediaSeries = (function () {
         }).then(function(){return new Promise(function(resolve){setTimeout(resolve,350);});}).then(next);
       });
     }
-    return next().then(function(){
+    return fromTvdb().then(next).then(function(){
       finish();
       var n=function(k,one,many){return k+' '+(k===1?one:many);};
       if(updated||missed)U.toast(n(updated,'show','shows')+' updated'+(missed?'.  '+n(missed,'needs','need')+' a manual match.':'.'),6000);

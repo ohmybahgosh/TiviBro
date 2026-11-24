@@ -72,7 +72,7 @@ function run(c, q, cb) {
           if (!(target.fileIds || []).some(function (id) { return M.fileHandle(id) === q.version; })) return done(invalid('Choose a version belonging to this episode.'));
           target.preferredVersion = q.version; changed = true;
         } else if (op === 'setMetadata') {
-          if (q.metadata !== null && (!q.metadata || typeof q.metadata !== 'object' || !/^tmdb:tv:[1-9][0-9]*(?::season:[0-9]+(?::episode:[1-9][0-9]*)?)?$/.test(q.metadata.id || ''))) return done(invalid('Choose a valid metadata match.'));
+          if (q.metadata !== null && (!q.metadata || typeof q.metadata !== 'object' || !/^(?:tmdb:tv|tvdb):[1-9][0-9]*(?::season:[0-9]+(?::episode:[1-9][0-9]*)?)?$/.test(q.metadata.id || ''))) return done(invalid('Choose a valid metadata match.'));
           target.metadata = q.metadata; changed = true;
         } else if (op === 'completeFile' && family === 'files') {
           var wanted = target.episodeIds || [], found = false;
@@ -86,7 +86,7 @@ function run(c, q, cb) {
           target.boundaries = q.ranges.map(function (range) { return { episode: range.episode, startSec: range.startSec, endSec: range.endSec == null ? null : range.endSec, origin: 'user' }; });
           changed = true;
         } else if (op === 'setSeasonMetadata' && family === 'shows') {
-          var match = /^tmdb:tv:[0-9]+:season:([0-9]+)$/.exec(q.metadata && q.metadata.id || '');
+          var match = /^(?:tmdb:tv|tvdb):[0-9]+:season:([0-9]+)$/.exec(q.metadata && q.metadata.id || '');      // TMDB's, or TheTVDB's (service/tvdb.js)
           if (!match || !target.metadata || q.metadata.id.indexOf(target.metadata.id + ':season:') !== 0 || !Array.isArray(q.metadata.episodes)) return done(invalid('Choose a season belonging to this show.'));
           return c.readShard(target.id, function (readError, showShard) {
             if (readError) return done(readError);

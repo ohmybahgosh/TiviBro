@@ -160,6 +160,8 @@ function metadataPending(r, q) {
 // The filters every list shares.  kind and disabled sources are checked by the caller.
 function matches(r, q) {
   if (q.availableOnly && r.availability !== 'available') return false;
+  // Matched by one details provider (q.provider 'TheTVDB': moved to TMDB once there's a token, app/js/media-series.js).
+  if (q.provider && !(r.metadata && r.metadata.provider === q.provider)) return false;
   if (q.favourite && !r.favourite) return false;
   if (q.favourite === false && r.favourite) return false;
   if (q.metadataPending && !metadataPending(r, q)) return false;
@@ -712,7 +714,7 @@ Catalog.prototype.edit = function (q, cb) {
     var original = cb; cb = function (e, r) { original(e, r); }; cb.command = { key: q.idempotencyKey, hash: digest };
     q = copy(q); q._commandPrepared = true;
   }
-  if (q.operation === 'setMetadata' && q.metadata && /^tmdb:tv:[1-9][0-9]*$/.test(q.metadata.id || '') && !q._single) return this.setShowMetadata(q, cb);
+  if (q.operation === 'setMetadata' && q.metadata && /^(?:tmdb:tv|tvdb):[1-9][0-9]*$/.test(q.metadata.id || '') && !q._single) return this.setShowMetadata(q, cb);
   if (/^(classifyFile|resetOverride)$/.test(q.operation)) return require('./media-fast-edit').reclassify(this, q, cb);
   if (/^(setWatched|setFavourite|setPreferredVersion|setMetadata|completeFile|setSeasonMetadata|setBoundaries|markMetadataChecked)$/.test(q.operation)) return require('./media-fast-edit').run(this, q, cb);
   if (/^(mergeShows|unmergeShows|setOrder|setEpisodeGroup|relinkFile)$/.test(q.operation)) return require('./media-grouping').run(this, q, cb);

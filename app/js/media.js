@@ -1158,7 +1158,7 @@ var Media = (function () {
      metaWho(): who answers questions about titles now ('tmdb', 'tvdb' or '' for nobody); metaAuth(q): q marked for
      them (the token, or source 'tvdb').  A question about a title matched on TheTVDB ('tvdb:...') goes there anyway. */
   function tvdbOn() { return typeof Store !== 'undefined' && !!Store.settings && Store.settings.seriesTvdb !== false; }
-  function metaWho() { return MediaStore.tmdbToken() ? 'tmdb' : tvdbOn() ? 'tvdb' : ''; }
+  function metaWho() { return MediaStore.tmdbToken && MediaStore.tmdbToken() ? 'tmdb' : tvdbOn() ? 'tvdb' : ''; }
   function metaAuth(q) { var t = MediaStore.tmdbToken(); if (t) q.credential = t; else if (tvdbOn()) q.source = 'tvdb'; return q; }
   /* A My media show's ids, from its card: { tmdb, tvdb, imdb } (each '' when not known).  A show matched on TheTVDB
      brings its TMDB and IMDb links (service/tvdb.js), for subtitles and skip times by id. */
@@ -1197,10 +1197,15 @@ var Media = (function () {
     value = String(value || '').trim();
     if (!value) { MediaStore.setTmdbToken(''); refresh(); if (typeof Movies !== 'undefined') Movies.poke(); if (typeof Series !== 'undefined') Series.poke(); return Promise.resolve(MediaStore.preferences()); }
     if (!/^[A-Za-z0-9._-]{24,2048}$/.test(value)) return Promise.reject(new Error('Enter a valid TMDB API key or API Read Access Token.'));
+    var was = metaWho();
     return ask('metadata', { credential: value, check: true }, 15000).then(function (r) {
       if (version !== tokenVersion) throw new Error('TMDB setup changed while this token was being checked.');
       if (r.error || !r.ok) throw new Error(r.message || 'TMDB did not accept that token.');
-      MediaStore.setTmdbToken(value); refresh(); autoSoon(); if (typeof Movies !== 'undefined') Movies.poke(); if (typeof Series !== 'undefined') Series.poke(); return MediaStore.preferences();
+      MediaStore.setTmdbToken(value);
+      /* From TheTVDB to TMDB: the guide's series and movies are looked up again (TMDB first), and My media's
+         TheTVDB matches move to TMDB by the TMDB link TheTVDB gave them (autoSoon: needsDetails, MediaSeries). */
+      if (was === 'tvdb') { if (typeof Series !== 'undefined' && Series.reset) Series.reset(); if (typeof Movies !== 'undefined' && Movies.reset) Movies.reset(); }
+      refresh(); autoSoon(); if (typeof Movies !== 'undefined') Movies.poke(); if (typeof Series !== 'undefined') Series.poke(); return MediaStore.preferences();
     });
   }
   // Settings > My media > Test TMDB token, and the web editor: is the saved token still accepted?
@@ -1273,6 +1278,9 @@ var Media = (function () {
         setBusy('movies', list.length - at + 1);
         var id = m.metadata && m.metadata.id;
         var q = id && /^(tmdb:[1-9][0-9]*|tt[0-9]+)$/.test(id) ? { id: id } : namedIn(m);
+        // Matched on TheTVDB before the TMDB token: TMDB by the link TheTVDB gave, else by name; TheTVDB's id stays otherwise.
+        if (/^tvdb:/.test(id || '') && MediaStore.tmdbToken()) q = /^[1-9][0-9]*$/.test(m.metadata.tmdb || '') ? { id: 'tmdb:' + m.metadata.tmdb } : namedIn(m);
+        else if (/^tvdb:/.test(id || '')) q = { id: id };
         metadataRequest(q, language).then(function (r) {
           if (r.metadata) {
             var current = MediaStore.movies(m.src).filter(function (x) { return x.id === m.id; })[0];
@@ -1350,6 +1358,8 @@ var Media = (function () {
     // (missV 3: missed by the matcher of alpha 145, which also reads TMDB's year filter right; older misses try again)
     if (m.tmdbMiss && m.missV >= 3 && now - m.tmdbMiss < WEEK) return false;
     // Details from before collections, directors and plain backdrops (v 2) are fetched again by their ID.
+    // A TheTVDB match, once there's a TMDB token: moved to TMDB (by its TMDB link when it has one).
+    if (m.metadata && m.metadata.provider === 'TheTVDB' && MediaStore.tmdbToken()) return true;
     return !m.metadata || (!m.metadata.poster && m.metadata.provider !== 'TMDB') || (m.metadata.provider === 'TMDB' && /^tmdb:[0-9]+$/.test(m.metadata.id || '') && (m.metadata.v || 1) < 2);
   }
   function autoDetails() {

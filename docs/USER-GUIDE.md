@@ -539,7 +539,7 @@ Without a TMDB token, movies and shows still get their posters, details, trailer
 - **Up next:** the show's logo art and the next episode's picture and summary.
 - **Skip intro and credits:** TheIntroDB and IntroDB find the times by TheTVDB's and IMDb's ids, so they work without a token too.
 
-Only titles (and a year, your language and the channel's country) leave the TV; TiviBro's service holds TheTVDB's key, so there's none on the TV.  TheTVDB has no ratings, so those are left out.  A TMDB token, when you add one, comes first.  TMDB-only extras stay with the token: the Trending and Popular shelves, and episode orders (TMDB's episode groups).  Metadata provided by [TheTVDB](https://thetvdb.com).
+Only titles (and a year, your language and the channel's country) leave the TV; TiviBro's service holds TheTVDB's key, so there's none on the TV.  TheTVDB has no ratings, so those are left out.  A TMDB token, when you add one, comes first: what was matched on TheTVDB moves to TMDB on its own (by the TMDB link TheTVDB gave, else by name).  TMDB-only extras stay with the token: the Trending and Popular shelves, and episode orders (TMDB's episode groups).  Metadata provided by [TheTVDB](https://thetvdb.com).
 
 ### My media
 
