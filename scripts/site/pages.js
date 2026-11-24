@@ -464,7 +464,7 @@ module.exports = [
     '<li><b>A page for every movie and show:</b> details, trailer (played inside TiviBro), the rest of its collection, seasons and episodes with pictures and summaries, and every copy you have with the best one for this TV marked.</li>',
     '<li><b>A library grid</b> with letters to jump to, sort, and filters: not watched, in progress, 4K, HDR, Dolby Vision, genre, year, director, actor and more.</li>',
     '<li><b>Watched marks</b> on posters, an unwatched count on shows, and Mark as watched for a movie, a season or a whole show.</li>',
-    '<li><b>Picture and sound:</b> 4K, HDR10, HLG and Dolby Vision (including profile 7 from UHD Blu-ray remuxes), Atmos where the TV plays it, seek previews, chapters, Skip intro and Up next.</li>',
+    '<li><b>Picture and sound:</b> 4K, HDR10, HLG and Dolby Vision (including profile 7 from UHD Blu-ray remuxes), Atmos where the TV plays it, seek previews, chapters, Up next, and Skip intro and Skip credits as a button or automatically (free, where Plex asks for Plex Pass), with times from TheIntroDB and IntroDB when a file has no chapters.</li>',
     '<li><b>Subtitles</b> beside the video as Plex reads them, inside episodes, from DLNA servers, or found on OpenSubtitles, remembered for each movie and episode.</li>',
     '</ul>',
     '<h2 id="trakt">Trakt on an LG TV</h2>',

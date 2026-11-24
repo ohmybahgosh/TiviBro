@@ -72,9 +72,11 @@
 
 ### ✨ New lately
 
+- **Skip intro and Skip credits, free.**  What Plex keeps for Plex Pass: a Skip intro (and Skip recap) button, or skipped automatically; Skip credits brings up the next episode with its countdown, or jumps to a scene after the credits.  Times come from the file's chapters, else from [TheIntroDB](https://theintrodb.org) and [IntroDB](https://introdb.app), two free community databases.  For My media and your provider's movies and shows.  [Settings](docs/USER-GUIDE.md#settings-playback)
+- **German**, everywhere: the TV, the web editor and the phone app.  And **a warning before your subscription ends**, 3 days ahead unless you pick otherwise.
 - **A free DVR on any TV: record and pause live TV to your PC or NAS.**  Choose a Windows or Samba share (a PC, Mac, NAS or router) or a WebDAV folder as the place for recordings, and live pause goes there too: hours of pause on a TV without root, where the TV's own storage keeps 10 minutes.  A recording on a Windows share plays while it records.  [How it works](docs/USER-GUIDE.md#recording-live-pause-and-rewind)
 - **My media from Windows and network shares (SMB).**  Your movies and shows straight from a PC, Mac, NAS or router, found on the network, with seeking and the subtitle files beside them.  SMB 2 and 3, signed and encrypted, so Windows 11 shares work.
-- **Up next, full screen.**  When an episode ends, the next one fills the screen with the show's logo art from TMDB, the episode's picture, title and summary, and a countdown ring on Play.  At the credits, **Next episode** plays it at once.
+- **Up next, full screen.**  When an episode ends, the next one fills the screen with the show's logo art from TMDB, the episode's picture, title and summary, and a countdown ring on Play.  **Skip credits** brings it up early.
 - **Subtitles your way.**  Load a .srt from a USB drive or a network share on the TV, send one from the phone app or the web editor, or find one on OpenSubtitles (by name too, for revivals filed under their own show).
 - **Logos from Worldwide TV Logos**, cleaned up and in white for dark screens, with tv-logos and iptv-org standing in where it has none.
 - **Multiview: two channels at once, the first on a webOS IPTV app.**  Two games side by side: the one you hear plays as normal video, the other as smooth live video beside it, up to 30 frames a second.  OK swaps the sound, Blue goes fullscreen, and channels are picked from your groups as in the guide.  webOS lets an app play only one video, so the second picture is made by TiviBro's helper on the TV.  On any webOS TV, rooted or not.  [How it works](docs/USER-GUIDE.md#multiview-two-channels-side-by-side)
@@ -95,7 +97,7 @@ Every change is in the [changelog](CHANGELOG.md).
 <p align="center"><a href="docs/media/guide.mp4"><img src="docs/media/guide.gif" width="100%" alt="The TiviBro guide, preview and fullscreen"></a></p>
 <p align="center"><sub>The guide is home: browse, preview in the window, OK again for fullscreen.  <a href="docs/media/guide.mp4">Watch the full-quality MP4</a>.</sub></p>
 
-TiviBro plays your own IPTV subscription (Xtream Codes, M3U with XMLTV, or a Stalker portal) on LG webOS TVs, in English, Spanish, French, Portuguese or Russian.  The guide is the home screen, the Magic Remote works everywhere, and a companion web editor lets you clean up hundreds of groups from your phone or computer instead of with a TV remote.
+TiviBro plays your own IPTV subscription (Xtream Codes, M3U with XMLTV, or a Stalker portal) on LG webOS TVs, in English, German, Spanish, French, Portuguese or Russian.  The guide is the home screen, the Magic Remote works everywhere, and a companion web editor lets you clean up hundreds of groups from your phone or computer instead of with a TV remote.
 
 ### 📱 Set it up from your phone
 
@@ -387,7 +389,7 @@ Follow your NFL, NBA, NHL, MLB, WNBA and MLS teams, college football and men's c
 
 ### My media
 
-Your own movies and TV shows next to your playlist: from a home media server (DLNA / UPnP, like a Fritz!Box), a Windows or network share (SMB: a PC, Mac, NAS or router), a WebDAV cloud (like premiumize), Google Drive or a Dropbox folder (sign in with the phone app), on **Continue watching**, **Favorites**, **Movies** and **TV shows** shelves, with resume, favorites and the normal movie player.  Shows open into seasons and episodes, and when one ends **Up next** fills the screen with the next one and counts down to it.  Add your own free TMDB token for posters, plots and details in your language.  Trailers and extras are left out.  It joins the menu once you add a source in **Settings > My media**.  Browse it in the phone app too, and tap **Play on TV**.  Thanks to [moritzm784](https://github.com/moritzm784) for building it.
+Your own movies and TV shows next to your playlist: from a home media server (DLNA / UPnP, like a Fritz!Box), a Windows or network share (SMB: a PC, Mac, NAS or router), a WebDAV cloud (like premiumize), Google Drive or a Dropbox folder (sign in with the phone app), on **Continue watching**, **Favorites**, **Movies** and **TV shows** shelves, with resume, favorites and the normal movie player.  Shows open into seasons and episodes, and when one ends **Up next** fills the screen with the next one and counts down to it.  **Skip intro** and **Skip credits** work as a button or by themselves, from the file's chapters or the free TheIntroDB and IntroDB databases.  Add your own free TMDB token for posters, plots and details in your language.  Trailers and extras are left out, and an unmatched file you don't want can be excluded.  It joins the menu once you add a source in **Settings > My media**.  Browse it in the phone app too, and tap **Play on TV**.  Thanks to [moritzm784](https://github.com/moritzm784) for building it.
 
 <p align="center"><a href="https://tivibro.app/view/#tv-my-media"><img src="docs/screenshots/tv-my-media.png" width="49%" alt="My media"></a> <a href="https://tivibro.app/view/#tv-my-media-all"><img src="docs/screenshots/tv-my-media-all.png" width="49%" alt="My media: All movies"></a></p>
 

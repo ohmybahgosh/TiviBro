@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 208, 2026-11-23)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 208
 
 - **Exclude unmatched movies.**  Unmatched movies (Settings > My media > the library, the web editor and the phone app) now offer Exclude beside Fix match, for a sample or a clip you don't want in My media.  Rescans keep them out; Excluded movies brings one back.
 - **Skip intro and Skip credits, by button or automatically.**  Settings > Playback > Skip intro and Skip credits: Show a button, Skip automatically or Off, each on its own.  Skip credits brings up Up next with its countdown, or jumps to a scene after the credits.
@@ -8,11 +12,7 @@
 - Settings' first page with the corner picture showing: the last line of sections is no longer cut off.  The page is a little tighter there, and it scrolls to keep the one you're on in view.
 - Trakt stays signed in when its sign-in is renewed: two renewals at once (right after TiviBro starts, say) used the same one-time key, Trakt refused the second, and TiviBro signed out.
 
-## 0.6.0 (alpha 207, 2026-11-23)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 207
+### In alpha 207
 
 - **German.**  TiviBro in German on the TV, in the web editor and in the phone app, picked from the TV's, the browser's or the phone's language, or in Settings > Language.
 - **A warning before your subscription ends.**  The TV says so 3 days before a playlist's subscription ends, and once it has ended, at most once a day.  Settings > Playlists and accounts > Warn before a subscription ends picks 1, 3, 7 or 14 days, or Off.
