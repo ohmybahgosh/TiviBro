@@ -1,17 +1,17 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 215, 2026-11-24)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 215
 
 - **Switch several playlists on or off, then act** (discussion #36).  Under Playlists and accounts > Playlists on or off, a switch is saved at once, and the channel lists change when you leave the page, not at each press.  Turning off the playlist in use moves to the next one only when you leave Settings, so you aren't taken to the channel list partway through.
 - **Settings home: the other sections as cards.**  Everything else under the tiles is now small cards with an icon each, instead of pills that looked like tags.
 - **Up next after skipping to the end of an episode.**  An episode skipped through to its credits isn't marked watched, and so it went back to the season page with no Up next, and the arrows did nothing there.  Up next now comes either way, and the season page answers the remote.
 - **The public guide is read again once after updating**, so a guide kept from epg.pw with times 8 hours off is replaced right away rather than within the day.
 
-## 0.6.0 (alpha 214, 2026-11-24)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 214
+### In alpha 214
 
 - **A big portal's categories sorted out** (issue #173).  A portal lists every category under both Movies and Shows; ones whose name says they're the other kind ("WEB SERIES" in Movies) now go to the end, under Probably shows or Probably movies, until you open one.  Categories are also grouped under each language when their names say it (Hindi, Tamil, English...).
 - **A public guide with wrong times is left out.**  epg.pw's US guide lists every programme 8 hours late (the morning news at noon).  TiviBro now checks titles that say their own time ("News at 4:30am") against when they're listed, and a public guide that's hours off is left out, so the next one fills those channels.
