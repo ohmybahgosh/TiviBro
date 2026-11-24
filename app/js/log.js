@@ -33,7 +33,11 @@ var Log = (function () {
       // A Stalker portal's server, when its link carries the MAC or a play token.
       .replace(/(\b[a-z][a-z0-9+.-]*:\/\/)([^\/\s"'<>]+)(\/[^\s"'<>]*?[?&](?:mac|play_token)=)/gi, function (m, a, h, b) { return /^(localhost|127\.)/.test(h) ? m : a + '<provider>' + b; })
       .replace(/\/media-stream\/[a-f0-9]{48}/gi, '/media-stream/***')
-      .replace(/([?&](?:sig|signature|token|auth|key|expires|hash|stb|play_token|stream_token|mac|sn|serial|device_id)=)[^&\s"']*/gi, '$1***')
+      .replace(/([?&](?:sig|signature|token|auth|key|expires|hash|md5|stb|play_token|stream_token|mac|sn|serial|device_id)=)[^&\s"']*/gi, '$1***')
+      /* A login or token as a part of a link's path (http://server/iptv/LFHEHUY57267Z8/204/index.m3u8, issues #169 and
+         #170): a part of 10 or more letters and digits mixed, no dot, is masked.  A channel number, a file name
+         (index.m3u8, 1795496553000.ts) or a word stays. */
+      .replace(/(\b[a-z][a-z0-9+.-]*:\/\/[^\/\s"'<>]+)(\/[^\s"'<>?#]*)/gi, function (m, a, path) { return a + path.replace(/\/(?=[^\/]*[0-9])(?=[^\/]*[A-Za-z])[A-Za-z0-9_-]{10,}(?=\/|$)/g, '/***'); })
       .replace(/\b([0-9A-F]{2}[:-]){5}[0-9A-F]{2}\b/gi, function (m) { return m.slice(0, 8) + ':**:**:**'; })     // a box's MAC (Stalker portals)
       .replace(/((?:password|pass|pwd|api_key|access_token)=)[^&\s"']*/gi, '$1***')
       // Tokens in headers and JSON: "Bearer …", a JWT (TMDB's read token is one), and named fields.

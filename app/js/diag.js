@@ -132,8 +132,11 @@ var Diag = (function () {
     // Any other server in a link, say one typed on the first screen and not saved yet, becomes <server>.
     // Kept: TiviBro's own sites, the logo projects, and addresses on this TV or the home network.
     var KEEP = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|(.*\.)?(tivibro\.app|github\.com|githubusercontent\.com|jsdelivr\.net|iptv-org\.github\.io)$)/i;
+    // Adult channels' names (Filter.adultNames) leave a report as "(an adult channel)".
+    var adult = typeof Filter !== 'undefined' && Filter.adultNames ? Filter.adultNames() : function () { return false; };
     return function (s) {
       s = Log.redact(s);
+      s = s.replace(/"([^"\n]{1,160})"/g, function (m, n) { return adult(n) ? '"(an adult channel)"' : m; });
       hosts.forEach(function (h) { s = s.split(h[0]).join(h[1]); s = s.split(h[0].toUpperCase()).join(h[1]); });
       s = s.replace(/(\b[a-z][a-z0-9+.-]*:\/\/)(?:[^\/\s@]*@)?([^\/\s:'"?#<>]+)/gi, function (m, scheme, host) { return KEEP.test(host) ? m : scheme + '<server>'; });
       /* And server names in the helper's network errors ("getaddrinfo ENOTFOUND name", "connect ECONNREFUSED

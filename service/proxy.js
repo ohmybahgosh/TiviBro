@@ -93,6 +93,8 @@ function sameHost(h) {
   if (!h) return true;                                       // HTTP/1.0 tools send none
   return /^(?:127\.0\.0\.1|localhost|\[::1\])(?::\d{1,5})?$/i.test(String(h));
 }
+/* A link or message as the helper's log keeps it (and a problem report shows it): logins, tokens, MACs, signed links
+   and keys masked, by the same rules as app/js/log.js redact.  Run on every line before it is kept. */
 function redact(u) {
   var s = String(u);
   (Media.signedHosts || []).forEach(function (h) { s = s.replace(new RegExp('(' + escRx(h) + ')[/?][^\\s"\'<>\\\\]*', 'gi'), '$1/***'); });
@@ -102,7 +104,9 @@ function redact(u) {
       .replace(/(?:[A-Za-z0-9._~!*'()+-]|%[0-9A-Fa-f]{2})*%3[Aa]%2[Ff]%2[Ff](?:[A-Za-z0-9._~!*'()+-]|%[0-9A-Fa-f]{2})*/g, function (m) { try { return decodeURIComponent(m); } catch (e) { return m; } })
       .replace(/(\b[a-z][a-z0-9+.-]*:\/\/)([^\/\s"'<>]+)(\/[^\s"'<>]*?[?&](?:mac|play_token)=)/gi, function (m, a, h, b) { return /^(localhost|127\.)/.test(h) ? m : a + '<provider>' + b; })
       .replace(/\b([0-9A-F]{2}[:-]){5}[0-9A-F]{2}\b/gi, function (m) { return m.slice(0, 8) + ':**:**:**'; })     // a box's MAC (Stalker portals)
-      .replace(/\/media-stream\/[a-f0-9]{48}/gi, '/media-stream/***').replace(/([?&](?:sig|signature|token|auth|key|expires|hash|stb|play_token|stream_token|mac|sn|serial|device_id)=)[^&\s]*/gi, '$1***')
+      .replace(/\/media-stream\/[a-f0-9]{48}/gi, '/media-stream/***').replace(/([?&](?:sig|signature|token|auth|key|expires|hash|md5|stb|play_token|stream_token|mac|sn|serial|device_id)=)[^&\s]*/gi, '$1***')
+      // A login or token as a part of a link's path (/iptv/LFHEHUY57267Z8/204/index.m3u8, issues #169 and #170).
+      .replace(/(\b[a-z][a-z0-9+.-]*:\/\/[^\/\s"'<>]+)(\/[^\s"'<>?#]*)/gi, function (m, a, path) { return a + path.replace(/\/(?=[^\/]*[0-9])(?=[^\/]*[A-Za-z])[A-Za-z0-9_-]{10,}(?=\/|$)/g, '/***'); })
       .replace(/((?:password|pass|pwd|api_key|access_token)=)[^&\s]*/gi, '$1***').replace(/(username=)([^&\s]{0,2})[^&\s]*/gi, '$1$2***')
       // Tokens in headers and JSON: "Bearer …", a JWT (TMDB's read token is one), and named fields.
       .replace(/(Bearer\s+)[A-Za-z0-9._~+\/-]{8,}=*/gi, '$1***').replace(/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{4,}/g, 'eyJ***')

@@ -26,7 +26,7 @@ function setup(opts) {
   const mpegts = {
     Events: { MEDIA_INFO: 'mi', ERROR: 'err', LOADING_COMPLETE: 'lc' }, ErrorTypes: { NETWORK_ERROR: 'NetworkError', MEDIA_ERROR: 'MediaError' },
     getFeatureList: () => ({ mseLivePlayback: true }),
-    createPlayer(src) { const p = { kind: 'ts', src, h: handlers(), dead: false, on(e, f) { this.h[e] = f; }, attachMediaElement() {}, load() {}, pause() {}, unload() {}, detachMediaElement() {}, destroy() { this.dead = true; }, statisticsInfo: {}, held: 0, _player_engine: { _onRequestPauseTransmuxer() { p.held++; } } }; made.push(p); return p; }
+    createPlayer(src) { const p = { kind: 'ts', src, h: handlers(), dead: false, on(e, f) { this.h[e] = (e === 'err' || e === 'lc') ? (...a) => { f(...a); flushNow(); } : f; }, attachMediaElement() {}, load() {}, pause() {}, unload() {}, detachMediaElement() {}, destroy() { this.dead = true; }, statisticsInfo: {}, held: 0, _player_engine: { _onRequestPauseTransmuxer() { p.held++; } } }; made.push(p); return p; }
   };
   function Hls(cfg) { this.cfg = cfg; this.kind = 'hls'; this.h = {}; this.levels = []; made.push(this); }
   Hls.isSupported = () => true;
@@ -71,6 +71,12 @@ function setup(opts) {
   const states = [], notices = [];
   P.on('state', (s, m) => states.push(s + (m ? ': ' + m : '')));
   P.on('notice', m => notices.push(m));
+  /* What player.js handles just outside the demuxer's error and end events (setTimeout 0, issue #168): run at once,
+     as the TV does a moment later, so the checks read as if it were straight away. */
+  function flushNow() {
+    let due;
+    while ((due = timers.filter(t => t.at <= now && !t.every).sort((a, b) => a.at - b.at)[0])) { clear(due.id); due.fn(); }
+  }
   // Advance the clock in 100ms steps.  A playing video moves through what is buffered.
   function run(ms) {
     const end = now + ms;

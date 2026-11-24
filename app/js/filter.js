@@ -64,7 +64,19 @@ var Filter = (function () {
   function addWord(w) { w = String(w || '').trim(); if (!w) return; edit(function (f) { if (f.words.indexOf(w) < 0) f.words.push(w); }); }
   function remove(kind, v) { edit(function (f) { f[kind] = f[kind].filter(function (x) { return x !== v; }); }); }
 
-  return { apply: apply, matches: matches, active: active, conf: conf, setAdult: setAdult, addChannel: addChannel, addGroup: addGroup, addWord: addWord, remove: remove,
+  /* A channel name an adult channel goes by, whatever the filter is set to: its name or its group's has an adult
+     word, or the provider marks it adult.  For problem reports, which go public as GitHub issues: such a name is
+     left out of them (issue #170 named one).  The channels in the lists now are looked through once per report. */
+  function adultNames() {
+    var out = {};
+    try {
+      var d = Library.data || {}, gn = {};
+      (d.groups || []).forEach(function (g) { gn[g.id] = g.name; });
+      (d.channels || []).forEach(function (c) { if (c.adult || ADULT.test(c.n || '') || ADULT.test(gn[c.g] || '')) out[c.n] = 1; });
+    } catch (e) {}
+    return function (name) { name = String(name || ''); return !!out[name] || ADULT.test(name); };
+  }
+  return { adultNames: adultNames, apply: apply, matches: matches, active: active, conf: conf, setAdult: setAdult, addChannel: addChannel, addGroup: addGroup, addWord: addWord, remove: remove,
     get last() { return last; }, ADULT: ADULT };
 })();
 if (typeof module !== 'undefined') module.exports = Filter;

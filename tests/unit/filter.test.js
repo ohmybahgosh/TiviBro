@@ -39,5 +39,10 @@ Filter.remove('chans', 'CNN'); Filter.remove('groups', 'Shopping'); Filter.remov
 out = Filter.apply(d);
 ok('off again: everything is back, the same object', out === d && Filter.last.channels === 0 && !Filter.active());
 ok('turning it off counts as answered', settings.filter.asked === true);
+// Problem reports (diag.js) leave adult channels' names out, with the filter off too: by name, by group, by the provider's mark.
+global.Library = { data: d };
+const isAdult = Filter.adultNames();
+ok('reports: an adult channel by its group, its name or the provider\'s mark, filter off', isAdult('Hot Girls') && isAdult('Playboy TV') && isAdult('Flagged') && isAdult('XXX Anything'), [isAdult('Hot Girls'), isAdult('Playboy TV'), isAdult('Flagged')].join());
+ok('...and not an ordinary one', !isAdult('CNN') && !isAdult('WDIV Detroit') && !isAdult('ADULT SWIM HD'));
 console.log(fails ? fails + ' FAILED' : 'all content filter checks passed');
 process.exit(fails ? 1 : 0);

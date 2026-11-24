@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- A 1 GB TV with two or more playlists on no longer closes TiviBro 15 to 30 seconds after it starts (issues #169, #170): the playlists together count toward the careful start for big lists, which loads the guide and channel logos a little later.
+- A 4K channel whose connection drops no longer takes TiviBro down with it on some TVs (issue #168): the player reconnects a moment after the drop instead of from inside it.
+- Problem reports keep more out of the public issue: a login or token in a link's path, a stream piece's md5, and the names of adult channels.
+
 ## 0.6.0 (alpha 208, 2026-11-23)
 
 Pre-release: expect rough edges, and keep a backup before installing.

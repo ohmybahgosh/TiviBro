@@ -36,6 +36,9 @@ const get = (port, p, headers) => new Promise((res) => {
     // A Stalker portal's link inside the helper's link, percent-encoded (issue #91): no MAC, token or server.
     const enc = f('http://127.0.0.1:47811/st/a/449.ts?stb=k&cmd=ffmpeg%20http%3A%2F%2Fmag.portal.example%3A80%2Fplay%2Flive.php%3Fmac%3D00%3A1A%3A79%3AD3%3A5C%3A20%26stream%3D449%26play_token%3D28sQIO2Iz6');
     ok(who + ': a portal link inside a link loses its MAC, play token and server', !/D3|5C:20|28sQIO2Iz6|portal\.example/.test(enc) && /stream=449/.test(enc), enc);
+    // A token as a part of the path, and a segment's md5 (issues #169, #170); channel numbers and file names stay.
+    const pt = f('http://srv.example/iptv/LFHEHUY57267Z8/6303/1795496553000.ts?md5=n0wI2FjDqcwOFzNR4_KOjQ http://srv.example/ch2914/index.m3u8');
+    ok(who + ': a token in a link\'s path and an md5 are masked, numbers and file names stay', !/LFHEHUY|n0wI2F/.test(pt) && /\/\*\*\*\/6303\/1795496553000\.ts/.test(pt) && /ch2914\/index\.m3u8/.test(pt), pt);
     ok(who + ': Bearer tokens, JWTs and secret JSON fields are masked', !/ABCDEFGHIJKLMNOP|eyJhdWQ|0123456789abcdef0123|ABCDEFGH12345678/.test(out) && /"x":1/.test(out), out);
   }
 

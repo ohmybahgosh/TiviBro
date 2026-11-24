@@ -415,16 +415,21 @@ var Player = (function () {
       }
       media(Caps.fromMpegts(mi));
     });
-    m.on(mpegts.Events.ERROR, function (type, detail, info) {
+    /* The demuxer's own errors and its stream ending are handled a moment later, not inside its event: handling them
+       tears this player down (a reconnect), and destroying mpegts.js from inside its own error event, mid-read, is
+       when a 2 GB TV closed TiviBro on a 4K channel three times in an evening (issue #168, each right after
+       "UnrecoverableEarlyEof"; a reconnect from the freeze watchdog, outside its events, never did). */
+    m.on(mpegts.Events.ERROR, function (type, detail, info) { setTimeout(function () { tsError(type, detail, info); }, 0); });
+    function tsError(type, detail, info) {
       // Only a fetch the browser refused outright ("Exception": CORS, TLS) says the host needs the
       // TV player.  An HTTP error before data is usually the provider's connection limit while
       // the last channel hangs up, and a reconnect a moment later fixes it.
       var net = type === mpegts.ErrorTypes.NETWORK_ERROR;
       if (!net && /SourceBuffer/.test(String(detail) + ' ' + (info && info.msg || '')) && cur.media && (cur.media.audio || []).indexOf('mp3') >= 0) mp3Native(true);
       fail(net ? 'net' : 'media', detail + (info && info.code ? ' (HTTP ' + info.code + ')' : '') + (info && info.msg ? ' (' + info.msg + ')' : ''), !gotData && net && detail === 'Exception', false, !gotData && info && info.code >= 400 ? info.code : 0);
-    });
-    // Live TS that "completes" means the server hung up.  Reconnect right away.
-    if (live) m.on(mpegts.Events.LOADING_COMPLETE, function () { fail('net', 'server closed stream', false, true); });
+    }
+    // Live TS that "completes" means the server hung up.  Reconnect right away (just outside the event, as above).
+    if (live) m.on(mpegts.Events.LOADING_COMPLETE, function () { setTimeout(function () { fail('net', 'server closed stream', false, true); }, 0); });
     // Closed captions: the caption SEIs the patched demuxer hands over (vendor/PATCHES.md).
     // Lined up with the picture's timeline (captions.js feedAt): a jump in the stream's clock left them unseen until a reconnect.
     m.on(mpegts.Events.PES_PRIVATE_DATA_ARRIVED, function (d) {

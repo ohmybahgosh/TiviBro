@@ -382,7 +382,8 @@ var App = (function () {
        library and the guide one after the other later, so they never all build at once. */
     var lean = leanStart();
     if (lean) Log.info('app', 'Big list on a TV short of memory: the guide in ' + lean.guide / 1000 + 's, the logo library in ' + lean.logos / 1000 + 's');
-    if (lean) setTimeout(function () { Logos.load(Library.data); }, lean.logos); else Logos.load(data);
+    leanLogosAt = lean ? Date.now() + lean.logos : 0;
+    if (lean) setTimeout(function () { leanLogosAt = 0; Logos.load(Library.data); }, lean.logos); else Logos.load(data);
     Vod.reset();
     if (!ready) { Views.init(); Watch.start(); if (typeof Burnin !== 'undefined') Burnin.start(); if (typeof Memwatch !== 'undefined') Memwatch.start(); Remind.start(); ready = true; if (typeof Media !== 'undefined' && Media.autoSoon) Media.autoSoon(45000); if (typeof Media !== 'undefined' && Media.newMediaSoon) Media.newMediaSoon(60000); if (typeof Movies !== 'undefined') Movies.start(); if (typeof Trakt !== 'undefined') MediaStore.load().then(function () { Trakt.start(); }).catch(function () {}); }   // movies still without details or posters
     window.__tbBooted = true;              // compat.js shows an error screen if errors stop the start
@@ -482,13 +483,18 @@ var App = (function () {
   var loadFail = {};
   function failed(p, e) { if (p && p.id && !(e && e.kind === 'stopped')) loadFail[p.id] = { at: Date.now(), msg: String(e && e.message || 'no answer').slice(0, 160) }; }
   function memSafe() { return !!(window.Player && Player.memSafe); }
-  // Startup on a TV short of memory (1 GB or less, or memory-safe after closes) with more than 8,000 channels: when the
-  // guide and the logo library load (ms after start), or null for everything at once as usual.
+  /* Startup on a TV short of memory (1 GB or less, or memory-safe after closes) with more than 8,000 channels: when the
+     guide and the logo library load (ms after start), or null for everything at once as usual.  Every playlist that is
+     on counts (the others by their size at their last load, p.chans): two lists of 4,200 closed a 1 GB TV 15 to 30 s
+     after every start, the first alone being under the line (issues #169, #170). */
   function leanStart() {
     var gb = (navigator.deviceMemory || 0), n = Library.count ? Library.count() : 0;
+    Store.others().forEach(function (p) { n += +p.chans || 0; });
     if (n <= 8000 || !(memSafe() || (gb && gb <= 1))) return null;
     return { guide: 20000, logos: 40000 };
   }
+  // A lean start's logo library still to come (its time, ms since the epoch): the other playlists wait for it.
+  var leanLogosAt = 0;
   /* A TV short of memory with something playing: the channel list and the guide aren't read again by themselves
      (both hold the old and the new copy for a while, on top of the video; issues #61 and #64).  They are read
      once nothing plays; Reload channels and Reload guide still work at once. */
@@ -522,7 +528,9 @@ var App = (function () {
     return chain.then(function () {
       if (gen !== startGen) return;
       if (Library.multi) {
-        Logos.load(Library.data); Views.refreshLists(true); if (window.Settings && Settings.live) Settings.live();
+        // The logo library with them, unless a lean start's load is still to come (it reads every list then).
+        if (!leanLogosAt) Logos.load(Library.data);
+        Views.refreshLists(true); if (window.Settings && Settings.live) Settings.live();
         // Their movies and shows (Movies and Shows show every playlist's), checked like the first's.
         Library.otherIds().forEach(function (id) { var o = Store.byId(id); if (o) { if (noteVod(o, Library.partOf(id))) Views.buildTabs(); checkVod(o); } });
       }
