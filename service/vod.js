@@ -37,18 +37,16 @@ var PLOT_MAX = 300;
 var BODY_MAX = 64 * 1024;
 
 function str(v) { return v == null ? '' : String(v); }
+// One title as a compact row (movie or show), or null for anything that isn't one.
+function slimOne(kind, x) {
+  if (!x || typeof x !== 'object') return null;
+  if (kind === 'series') return [x.series_id, str(x.name), str(x.cover), str(x.plot).slice(0, PLOT_MAX), str(x.rating),
+    str(x.releaseDate || x.release_date).slice(0, 4), str(x.category_id), +x.last_modified || 0];
+  return [x.stream_id, str(x.name), str(x.stream_icon), str(x.rating), str(x.container_extension) || 'mp4', str(x.category_id), +x.added || 0];
+}
 function slim(kind, list) {
   var rows = [];
-  for (var i = 0; i < list.length; i++) {
-    var x = list[i];
-    if (!x || typeof x !== 'object') continue;
-    if (kind === 'series') {
-      rows.push([x.series_id, str(x.name), str(x.cover), str(x.plot).slice(0, PLOT_MAX), str(x.rating),
-        str(x.releaseDate || x.release_date).slice(0, 4), str(x.category_id), +x.last_modified || 0]);
-    } else {
-      rows.push([x.stream_id, str(x.name), str(x.stream_icon), str(x.rating), str(x.container_extension) || 'mp4', str(x.category_id), +x.added || 0]);
-    }
-  }
+  for (var i = 0; i < list.length; i++) { var r = slimOne(kind, list[i]); if (r) rows.push(r); }
   return rows;
 }
 
@@ -77,6 +75,9 @@ function getJSON(url, cb, ms) {
   req.on('error', function (e) { finish(e); });
   req.setTimeout(ms || 180000, function () { req.abort(); finish(new Error('timed out')); });
 }
+
+// A big list read as it arrives, a title at a time (service/jsonstream.js).
+var streamArray = require('./jsonstream').streamArray;
 
 /* ---------- the full lists, kept here ---------- */
 var memo = {}, MEMO_MS = 3 * 60000;
@@ -212,20 +213,22 @@ function list(q, res, ALLOW, log, port) {
      helper's own, here on the TV. */
   var slow = /\/stalker\/xc\//.test(str(q.u)) ? 30 * 60000 : 0;
   getJSON(str(q.uc), function (e1, cats) {
-    getJSON(str(q.u), function (e, j) {
-      if (e || !Array.isArray(j)) {
+    // The titles, slimmed one by one as they arrive (streamArray): never the whole answer in memory at once.
+    var rows = [];
+    streamArray(str(q.u), function (x) { var r = slimOne(kind, x); if (r) rows.push(r); }, function (e, got) {
+      if (e || !got.array) {
         var why = e ? e.message : 'the provider did not send a list';
         if (log) log({ lv: 'warn', event: 'vod list failed', kind: kind, e: why });
         return done(new Error(why));
       }
       // An empty answer (a provider mid-outage) never replaces a list that had something: the next load tries again.
-      if (!j.length && d && d.rows && d.rows.length) {
+      if (!got.n && d && d.rows && d.rows.length) {
         if (log) log({ lv: 'warn', event: 'vod list empty, kept the last one', kind: kind, n: d.rows.length });
         return done(null, d);
       }
-      var nd = { v: 2, at: Date.now(), sig: sig, rows: slim(kind, j),
+      var nd = { v: 2, at: Date.now(), sig: sig, rows: rows,
         cats: (Array.isArray(cats) ? cats : []).map(function (x) { return { id: str(x && x.category_id), name: str(x && x.category_name) || 'Other' }; }) };
-      j = null;
+      rows = null;
       if (e1 && d) nd.cats = d.cats;                                          // keep the old categories over none
       if (log) log({ lv: 'info', event: 'vod list', kind: kind, n: nd.rows.length, ms: Date.now() - t0 });
       writeList(pl, kind, { v: 2, at: nd.at, sig: sig, rows: nd.rows, cats: nd.cats }, function (we) { if (we && log) log({ lv: 'warn', event: 'vod list not saved', kind: kind, e: we.message }); });
@@ -278,11 +281,10 @@ function handle(req, res, ALLOW, log, port) {
     var mine = new RegExp('^http://127\\.0\\.0\\.1:' + port + '/(?:(?:ua/[A-Za-z0-9_-]+/)?x/https?/|stalker/xc/player_api\\.php\\?)');   // a Stalker portal's, as Xtream (stalker.js)
     if (!mine.test(u)) return send(res, ALLOW, 400, { error: 'not a relay address' });
     var t0 = Date.now();
-    getJSON(u, function (e, j) {
+    var rows = [];
+    streamArray(u, function (x) { var r = slimOne(kind, x); if (r) rows.push(r); }, function (e, got) {
       if (e) { if (log) log({ lv: 'warn', event: 'vod list failed', kind: kind, e: e.message }); return send(res, ALLOW, 502, { error: e.message }); }
-      if (!Array.isArray(j)) return send(res, ALLOW, 502, { error: 'the provider did not send a list' });
-      var rows = slim(kind, j);
-      j = null;
+      if (!got.array) return send(res, ALLOW, 502, { error: 'the provider did not send a list' });
       if (log) log({ lv: 'info', event: 'vod list', kind: kind, n: rows.length, ms: Date.now() - t0 });
       send(res, ALLOW, 200, { v: 1, kind: kind, n: rows.length, rows: rows });
     });
@@ -299,4 +301,4 @@ function readBody(req, res, ALLOW, cb) {
   });
 }
 
-module.exports = { handle: handle, find: find, slim: slim, shown: shown, forget: forget, saveM3u: saveM3u };
+module.exports = { handle: handle, find: find, slim: slim, shown: shown, forget: forget, saveM3u: saveM3u, _streamArray: streamArray };

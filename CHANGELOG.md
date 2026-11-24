@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The network helper reads a provider's channel, movie and show lists as they arrive, a title at a time, instead of the whole answer at once: far less memory on a TV with a big playlist, and it keeps answering TiviBro while it reads (issue #166).
 - Problem reports from a TV that closed TiviBro show what it was doing up to the end: the log on the TV was saved only once things went quiet, so a busy start that ended in a crash left a log that stopped in its first second.
 
 ## 0.6.0 (alpha 209, 2026-11-24)

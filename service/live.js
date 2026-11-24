@@ -95,9 +95,12 @@ function handle(req, res, ALLOW, log, port) {
     if (route === '/live/xtream') {
       getJSON(uc, function (e1, cats) {
         if (e1) return send(res, ALLOW, 502, { error: 'categories: ' + e1.message });
-        getJSON(u, function (e, streams) {
+        /* The channels read as they arrive (jsonstream.js): never the provider's whole answer as one string and
+           its parse at once (57,000 channels on a 1 GB TV, issues #140 to #171). */
+        var streams = [];
+        require('./jsonstream').streamArray(u, function (x) { streams.push(x); }, function (e, got) {
           if (e) { if (log) log({ lv: 'warn', event: 'live list failed', e: e.message }); return send(res, ALLOW, 502, { error: e.message }); }
-          if (!Array.isArray(streams)) return send(res, ALLOW, 502, { error: 'the provider did not send a list' });
+          if (!got.array) return send(res, ALLOW, 502, { error: 'the provider did not send a list' });
           var d = PlShape.xtream(cats, streams), n = streams.length, nc = Array.isArray(cats) ? cats.length : 0;
           streams = null; cats = null;
           if (log) log({ lv: 'info', event: 'live list', n: n, ms: Date.now() - t0 });
