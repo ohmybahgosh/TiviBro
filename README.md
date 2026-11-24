@@ -22,6 +22,21 @@
   <a href="https://github.com/tolgakurtuluss/awesome-webos"><img alt="Listed in awesome-webos" src="https://img.shields.io/badge/listed%20in-awesome--webos-fc60a8?style=flat-square"></a>
 </p>
 
+## Top features
+
+| | |
+|---|---|
+| 📺 **Guide first, like TiviMate**<br>Live preview, details and groups on one screen.  OK previews, OK again goes fullscreen. | ⏸️ **Pause and rewind any live channel**<br>Free timeshift on every channel, not only the ones with catch-up. |
+| ⏺️ **Free DVR**<br>Record from the guide to a USB drive or a network share (Windows share or WebDAV). | ⏪ **Catch-up**<br>Rewind the guide into the past and replay what you missed. |
+| 🗓️ **A guide that fixes itself**<br>Channels with no guide filled from free public guides, a guide in the wrong time zone moved back, and a public guide with wrong times left out. | 🏈 **Sports and My teams**<br>Live scores, a page per game, your teams' scores in the corner while you watch something else. |
+| 🎬 **Movies and shows**<br>Posters, seasons, trailers, resume, My list and a Languages filter for huge libraries. | 📂 **My media**<br>Your own movies and shows from network shares, DLNA, WebDAV, Dropbox, Google Drive and media servers, with TMDB details and Trakt. |
+| ⏭️ **Skip intro, skip credits, Up next**<br>A button or automatic, like Plex Pass, with the next episode counting down.  Free. | 📱 **Phone app and set up from your phone**<br>Scan a QR code to type your login on the phone.  A remote, the guide, Sports and every setting in your pocket. |
+| 🖥️ **A real web editor**<br>Hide, sort, rename and match guides for thousands of channels from any browser, then Send to TV. | 📺📺 **Multiview**<br>Two channels at once on an LG TV, something no other webOS IPTV app does. |
+| 🖼️ **Logos for every channel**<br>Missing logos filled in from open logo projects, or one matching style for the whole list. | 🔁 **Switches to a working copy**<br>Same channel in FHD, HD and SD: when one dies, TiviBro moves to the next by itself. |
+| 🔊 **Sound the TV can't play**<br>DTS and Dolby TrueHD converted to Dolby Digital while you watch.  Nothing to install. | 🌈 **HDR, Dolby Vision and Atmos**<br>Each stream sent to the player that shows it best. |
+| 🧭 **A set-up tour and clean names**<br>Countries, East or West, your city's locals and clutter sorted in a few presses; "USA \| FHD ⚽" becomes a plain name. | 🌍 **In 11 languages**<br>English, German, Spanish, French, Italian, Dutch, Polish, Portuguese, Russian, Turkish, on the TV, the phone and the editor. |
+| 🔐 **Locked backups and restore points**<br>One encrypted file with everything, restored onto a new TV from the first screen. | 💸 **Free and open source**<br>Every feature free.  MIT licensed, no account, no ads, no tracking. |
+
 <h3 align="center">🏈 New in alpha 189: Sports</h3>
 <p align="center">Today's games with <b>live scores and logos</b>, your teams first, each tied to the channel of yours that has it.  A <b>page for every game</b> with the box score, leaders and standings.  And while you watch something else, <b>your teams' live scores sit in the corner</b>, with an alert when a game is close near the end.</p>
 <p align="center"><a href="#sports"><img src="docs/screenshots/tv-sports.png" width="49%" alt="The Sports screen: your teams first, then a row per league"></a> <a href="#sports"><img src="docs/screenshots/tv-sports-corner.png" width="49%" alt="Your teams' live score in the corner while another channel plays"></a></p>
@@ -42,6 +57,7 @@
 
 <p align="center">
   <a href="https://tivibro.app"><b>tivibro.app</b></a> ·
+  <a href="#top-features">Top features</a> ·
   <a href="#what-no-other-iptv-player-does">What's different</a> ·
   <a href="#see-it-in-action">See it in action</a> ·
   <a href="#the-web-editor">Web editor</a> ·
@@ -155,6 +171,7 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | 📺📺 **Multiview on an LG TV** | webOS lets an app play one video at a time, which is why no IPTV app for LG TVs could show two channels.  TiviBro plays the channel you hear as normal video and makes the second one itself, on the TV, as smooth live video beside it (up to 30 frames a second).  Two games at once, OK to swap the sound, no extra box. |
 | ⏸️ **Pause and rewind any live channel** | TiviMate can only rewind channels your provider keeps catch-up for.  TiviBro keeps the channel itself, on a USB drive or, for a short pause, in the TV's own storage: pause, carry on, move back and forth, and with the rewind buffer on, ◀ goes back to what you just missed.  Recording and pausing the same channel share one connection to your provider. |
 | 🎬 **Movies on now** | With your own free TMDB token, the movies in your guide get posters, years, genres and ratings.  The **Movies on now** screen shows them as big posters: on now, starting soon, then a shelf for each genre. |
+| 🗓️ **A guide that checks itself** | Channels your provider's guide misses are filled from free public guides.  A full guide in your server's time zone is moved back by comparing it with the provider's own times.  And a public guide whose times are hours off (one listed every US station's programmes 8 hours late) is spotted from titles that say their own time, like "News at 4:30am", and left out so a correct one fills those channels instead. |
 | 🔁 **Switches to a working copy by itself** | Same channel in FHD, HD and SD?  When one dies, TiviBro moves to the next version on its own and tells you. |
 | 🧹 **Clean-up that already knows IPTV** | Pick your city once and every local group (ABC, CBS, NBC, FOX, CW, PBS…) keeps only your stations.  Keep East or West feeds in one click.  Name rules preloaded for about 250 country codes, quality tags, symbols and emoji (no typing prefix lists by hand), countries read from any naming style, duplicates in different qualities, and **Smart match** for channels without a guide. |
 | 🙈 **Hides channels with nothing on** | Event channels that say "Off Air" or "No Event Scheduled", empty slots like "PPV 09 \|", and channels whose event in the name ended hours ago stay out of the way.  Each comes back by itself as soon as the provider names a new event on it. |
