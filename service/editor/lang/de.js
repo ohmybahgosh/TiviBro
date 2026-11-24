@@ -2078,5 +2078,9 @@ I18n.add('de', {
   "Updating library…": "Mediathek wird aktualisiert…",
   "Use for the Quick Settings tile": "Für die Schnelleinstellungs-Kachel verwenden",
   "Use on the TV": "Auf dem TV verwenden",
-  "Use only your own sources": "Nur eigene Quellen verwenden"
+  "Use only your own sources": "Nur eigene Quellen verwenden",
+  "Exclude": "Ausschließen",
+  "Excluded ({n})": "Ausgeschlossen ({n})",
+  "Include": "Wieder aufnehmen",
+  "No movies excluded.": "Keine Filme ausgeschlossen."
 });

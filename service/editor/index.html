@@ -3954,8 +3954,10 @@ function loadMedia() {
       }
       var box = document.createElement('div'); box.className = 'lib-unmatched hidden';
       if (s.unmatched) btn('Unmatched (' + s.unmatched + ')', '', function () { if (!box.classList.toggle('hidden')) unmatchedList(s, box); });
+      var exBox = document.createElement('div'); exBox.className = 'lib-unmatched hidden';
+      if (s.excluded) btn(tr('Excluded ({n})', { n: s.excluded }), 'ghost', function () { if (!exBox.classList.toggle('hidden')) excludedList(s, exBox); });
       btn(tr('Remove'), 'ghost danger', function (b) { ask(tr('Remove this library?'), tr('Your files stay where they are.'), tr('Remove'), function () { b.disabled = true; command('mediaRemove', { id: s.id }, 160000, cmdMsg('mediaMsg', tr('Working…'))).then(function (r) { msg('mediaMsg', 'ok', r.msg); loadMedia(); }).catch(function (e) { b.disabled = false; msg('mediaMsg', 'bad', e.message); }); }, true); });
-      card.appendChild(box);
+      card.appendChild(box); card.appendChild(exBox);
       list.appendChild(card);
     });
   }).catch(function (e) { msg('mediaMsg', 'bad', e.message); });
@@ -3986,8 +3988,27 @@ function unmatchedList(s, box) {
           });
         }, function (e) { go.disabled = false; picks.textContent = e.message; });
       };
-      line.appendChild(q); line.appendChild(go); row.appendChild(line); row.appendChild(picks);
+      // Not a movie wanted here (a sample, a clip): left out of My media on the TV, back from Excluded.
+      var ex = document.createElement('button'); ex.type = 'button'; ex.className = 'ghost'; ex.textContent = tr('Exclude');
+      ex.onclick = function () { ex.disabled = true; command('mediaExclude', { movie: m.id, on: true }).then(function (r) { row.remove(); msg('mediaMsg', 'ok', r.msg); }, function (e) { ex.disabled = false; msg('mediaMsg', 'bad', e.message); }); };
+      line.appendChild(q); line.appendChild(go); line.appendChild(ex); row.appendChild(line); row.appendChild(picks);
       box.appendChild(row);
+    });
+  }, function (e) { box.textContent = e.message; });
+}
+// A library's movies excluded by hand, each with Include to bring it back into My media on the TV.
+function excludedList(s, box) {
+  box.textContent = tr('Loading…');
+  command('mediaExcluded', { id: s.id }).then(function (r) {
+    box.textContent = '';
+    if (!r.data.length) { box.textContent = tr('No movies excluded.'); return; }
+    r.data.forEach(function (m) {
+      var row = document.createElement('div'); row.className = 'um';
+      var name = document.createElement('div'); name.textContent = m.title + (m.year ? ' (' + m.year + ')' : ''); row.appendChild(name);
+      var file = document.createElement('div'); file.className = 'muted small'; file.textContent = m.file; row.appendChild(file);
+      var inc = document.createElement('button'); inc.type = 'button'; inc.className = 'ghost'; inc.textContent = tr('Include');
+      inc.onclick = function () { inc.disabled = true; command('mediaExclude', { movie: m.id, on: false }).then(function (x) { row.remove(); msg('mediaMsg', 'ok', x.msg); }, function (e) { inc.disabled = false; msg('mediaMsg', 'bad', e.message); }); };
+      row.appendChild(inc); box.appendChild(row);
     });
   }, function (e) { box.textContent = e.message; });
 }

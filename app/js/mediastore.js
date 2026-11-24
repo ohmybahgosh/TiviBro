@@ -223,7 +223,21 @@ var MediaStore = (function () {
   }
   function sortList(list) { var p = preferences(); if (p.sort === 'added') { firstSeen = Infinity; lib.forEach(function (m) { if ((m.addedAt || 0) < firstSeen) firstSeen = m.addedAt || 0; }); } list.sort(compare(p.sort)); if (p.sortReverse) list.reverse(); return list; }
   function movies(srcId) {
-    return sortList(lib.filter(function (m) { var s = source(m.src); return (!srcId || m.src === srcId) && (!s || s.contentMode !== 'shows'); }));
+    return sortList(lib.filter(function (m) { var s = source(m.src); return (!srcId || m.src === srcId) && (!s || s.contentMode !== 'shows') && !isExcluded(m.id); }));
+  }
+  /* Movies left out of My media by hand (an unmatched file that isn't a movie you want: a sample, a home video, a
+     clip): their ids, kept with the sources (localStorage), so a rescan doesn't bring them back.  They stay in the
+     library underneath, so Include brings one back at once with what it had (and Undo after removing a source
+     keeps them excluded). */
+  function isExcluded(id) { return !!(state.excluded && state.excluded[id]); }
+  function setExcluded(id, on) {
+    if (!state.excluded) state.excluded = {};
+    if (on) state.excluded[id] = Date.now(); else delete state.excluded[id];
+    save();
+  }
+  // A library's excluded movies (all libraries without srcId), newest first.
+  function excludedMovies(srcId) {
+    return lib.filter(function (m) { return (!srcId || m.src === srcId) && isExcluded(m.id); }).sort(function (a, b) { return state.excluded[b.id] - state.excluded[a.id]; });
   }
   function load() {
     if (reading) return reading;
@@ -274,6 +288,7 @@ var MediaStore = (function () {
     gdriveKeys: gdriveKeys, gdriveAccounts: function () { return gdriveKeys().map(function (k) { return k.account; }); },
     preferredSource: function () { return state.preferredMediaSource || null; }, sourcePreference: sourcePreference, migrationError: function () { return migrationError; }, sources: function () { return state.sources.slice(); }, source: source, sourceMode: sourceMode, publicSources: publicSources, addSource: addSource, removeSource: removeSource, smbMoved: smbMoved, setLogin: setLogin, restoreSource: restoreSource,
     tmdbToken: function () { return state.tmdbToken || ''; }, trakt: trakt, setTrakt: setTrakt, sourceUpdate: sourceUpdate, setCheck: setCheck, sortList: sortList, compare: compare, setTmdbToken: setTmdbToken, isFavorite: isFavorite, toggleFavorite: toggleFavorite, sections: sections, preferences: preferences, setMetadata: setMetadata, setFormat: setFormat, markMissed: markMissed, flush: flush, applyScan: applyScan, movies: movies, load: load,
-    resume: function (id) { return state.resume[id] || null; }, saveResume: saveResume, saveEpisodeResume: saveEpisodeResume, importResume: importResume, clearResume: clearResume, markWatched: markWatched, isWatched: isWatched
+    resume: function (id) { return state.resume[id] || null; }, saveResume: saveResume, saveEpisodeResume: saveEpisodeResume, importResume: importResume, clearResume: clearResume, markWatched: markWatched, isWatched: isWatched,
+    isExcluded: isExcluded, setExcluded: setExcluded, excludedMovies: excludedMovies
   };
 })();

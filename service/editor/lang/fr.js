@@ -2084,5 +2084,9 @@ I18n.add('fr', {
   "Unknown request": "Requête inconnue",
   "TiviBro isn't on the TV's screen right now, so its settings can't be read.": "TiviBro n'est pas à l'écran de la TV pour l'instant, ses réglages ne peuvent donc pas être lus.",
   "TiviBro isn't on the TV's screen.": "TiviBro n'est pas à l'écran de la TV.",
-  "{n} settings": ["{n} réglage", "{n} réglages"]
+  "{n} settings": ["{n} réglage", "{n} réglages"],
+  "Exclude": "Exclure",
+  "Excluded ({n})": "Exclus ({n})",
+  "Include": "Inclure",
+  "No movies excluded.": "Aucun film exclu."
 });

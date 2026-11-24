@@ -434,13 +434,23 @@ var WebEdit = (function () {
     mediaTokenTest: function () { return Media.testTmdbToken().then(function (m) { return { msg: m }; }); },
     mediaList: function () {
       return MediaStore.load().then(function () { return { msg: M('Media sources'), data: MediaStore.publicSources().map(function (s) { var st = Media.libraryStats ? Media.libraryStats(s.id) : null; return { id: s.id, type: s.type, name: s.name, root: s.type === 'dropbox' || s.type === 'gdrive' || s.type === 'smb' ? s.root || '' : undefined, account: s.type === 'gdrive' ? s.account || '' : undefined, count: s.count,contentMode:s.contentMode||'movies',episodeFiles:s.episodeFiles||0,
-        unmatched: st ? st.unmatched.length : 0, shows: st ? st.shows : 0, unmatchedShows: st ? st.unmatchedShows : 0, fourK: st ? st.fourK : 0, scanning: st ? st.scanning : false, homeOff: st ? st.homeOff : false }; }) }; });
+        unmatched: st ? st.unmatched.length : 0, shows: st ? st.shows : 0, unmatchedShows: st ? st.unmatchedShows : 0, excluded: MediaStore.excludedMovies ? MediaStore.excludedMovies(s.id).length : 0, fourK: st ? st.fourK : 0, scanning: st ? st.scanning : false, homeOff: st ? st.homeOff : false }; }) }; });
     },
     // A library's name and Show on Home; its unmatched movies; Fix match (search, then save the pick).
     mediaSourceUpdate: function (a) { var s = mediaSource(a), next = {}; if (typeof a.name === 'string') next.name = clean(a.name); if (typeof a.homeOff === 'boolean') next.homeOff = a.homeOff; MediaStore.sourceUpdate(s.id, next); Media.refresh(); Settings.live(); return { msg: M('Library saved.') }; },
     mediaUnmatched: function (a) { var s = mediaSource(a); return { data: Media.libraryStats(s.id).unmatched.slice(0, 500).map(function (m) { return { id: m.id, title: m.title || '', year: m.year || '', file: m.file || m.path || '' }; }) }; },
     mediaMatchSearch: function (a) { return Media.searchDetails(clean(a.title)).then(function (l) { return { data: l }; }); },
     mediaMatchSave: function (a) { return Media.applyDetails(clean(a.movie), clean(a.tmdb)).then(function () { return { msg: M('Match saved.') }; }); },
+    /* Exclude an unmatched movie from My media, or include one back (Media.excludeMovie): { movie, on }.  And a
+       library's excluded movies. */
+    mediaExclude: function (a) {
+      var id = clean(a.movie), m = MediaStore.movies(null).concat(MediaStore.excludedMovies(null)).filter(function (x) { return x.id === id; })[0];
+      if (!m) throw fail('That movie is no longer in My media.  Rescan on the TV.');
+      if (a.on === false) Media.includeMovie(m); else Media.excludeMovie(m);
+      Settings.live();
+      return { msg: a.on === false ? M('Back in My media: {x}', { x: m.title || m.file || '' }) : M('Excluded from My media: {x}', { x: m.title || m.file || '' }) };
+    },
+    mediaExcluded: function (a) { var s = mediaSource(a); return { data: MediaStore.excludedMovies(s.id).slice(0, 500).map(function (m) { return { id: m.id, title: m.title || '', year: m.year || '', file: m.file || m.path || '' }; }) }; },
     mediaLibraryDetails: function (a) { var s = mediaSource(a); Media.libraryDetails(s.id); return { msg: M('Fetching details for {x} on the TV.', { x: s.name }) }; },
     /* Trakt (app/js/trakt.js): the sign-in code, switches, lists added like Radarr and Sonarr take them. */
     trakt: function (a) {

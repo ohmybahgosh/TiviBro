@@ -28,7 +28,8 @@ Your libraries, like Plex's: each one is a folder of movies or TV shows on a med
 | **Fetch movie details** / **Fetch show details** | From TMDB, for this library. |
 | **Change login** *(shares and WebDAV)* | A new user name and password, checked with the server before it's saved.  The library and its matches stay.  In the phone app it's in the library's form, in the web editor on its card. |
 | **More for this library** | Its folder, Dropbox sign-in, pause or restart a scan.  In the phone app: the phone's own form. |
-| **Unmatched movies ›** | The movies TMDB didn't recognise, each with **Fix match**: type the title, pick the right movie. |
+| **Unmatched movies ›** | The movies TMDB didn't recognise, each with **Fix match** (type the title, pick the right movie) or **Exclude from My media** (a sample, a clip or anything else you don't want there).  The web editor and the phone app have an **Exclude** button beside Fix match. |
+| **Excluded movies ›** | Movies you excluded by hand, kept out through rescans.  **Include** brings one back.  A movie's options on My media can exclude it too. |
 | **Shows that need review** | Episodes TiviBro couldn't place and shows without a match, on the TV shows tab. |
 | **Excluded files** | Trailers, extras and samples left out; include one back. |
 | **Remove library** | Takes it off My media.  Your files stay where they are. |

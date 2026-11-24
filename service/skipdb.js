@@ -5,7 +5,8 @@
    TheIntroDB is asked first; IntroDB fills in what it has not timed (an intro, a recap, the credits).
 
      POST /media/skipdb { kind: 'movie'|'episode', tmdb, imdb, season, episode, dur (seconds), credential }
-       -> { intro: [s, e] | null, recap: [s, e] | null, credits: s | -1, from: ['TheIntroDB', ...] }  (seconds)
+       -> { intro: [s, e] | null, recap: [s, e] | null, credits: s | -1, creditsEnd: e | -1, from: ['TheIntroDB', ...] }
+          (seconds; an end of -1 is the end of the file)
    credential: the viewer's TMDB key, only to find a show's or movie's IMDb id for IntroDB when TiviBro knows
    just its TMDB id; nothing else leaves the TV (no file name, no provider, no link).
 
@@ -102,7 +103,7 @@ function theIntroDb(q, cb) {
     if (r.status !== 200 || !r.json) return cb(null, r.status !== 404);
     function first(list) { var x = list && list[0]; return x ? span(sec(x.start_ms), sec(x.end_ms)) : null; }
     var j = r.json, cr = first(j.credits);
-    cb({ intro: first(j.intro), recap: first(j.recap), credits: cr ? cr[0] : -1 });
+    cb({ intro: first(j.intro), recap: first(j.recap), credits: cr ? cr[0] : -1, creditsEnd: cr ? cr[1] : -1 });
   });
 }
 /* IntroDB: { intro: { start_ms, end_ms }, recap, outro, post_credits } (one each, null when nobody timed it;
@@ -117,7 +118,8 @@ function introDb(q, cb) {
     if (r.status !== 200 || !r.json) return cb(null, r.status !== 404);
     function one(x) { return x ? span(sec(x.start_ms), sec(x.end_ms)) : null; }
     var j = r.json, out = one(j.outro);
-    cb({ intro: j.no_intro ? null : one(j.intro), recap: j.no_recap ? null : one(j.recap), credits: out && !j.no_outro ? out[0] : -1 });
+    var ok = out && !j.no_outro;
+    cb({ intro: j.no_intro ? null : one(j.intro), recap: j.no_recap ? null : one(j.recap), credits: ok ? out[0] : -1, creditsEnd: ok ? out[1] : -1 });
   });
 }
 /* The IMDb id for a TMDB id, from TMDB with the viewer's own key (only when there is one): IntroDB knows titles
@@ -145,13 +147,13 @@ function clean(q) {
 }
 // TheIntroDB's answer with IntroDB's for what it lacks.  from: the databases that gave something.
 function merge(a, b) {
-  var out = { intro: null, recap: null, credits: -1, from: [] };
+  var out = { intro: null, recap: null, credits: -1, creditsEnd: -1, from: [] };
   [[a, 'TheIntroDB'], [b, 'IntroDB']].forEach(function (x) {
     var r = x[0], used = false;
     if (!r) return;
     if (!out.intro && r.intro) { out.intro = r.intro; used = true; }
     if (!out.recap && r.recap) { out.recap = r.recap; used = true; }
-    if (out.credits < 0 && r.credits >= 0) { out.credits = r.credits; used = true; }
+    if (out.credits < 0 && r.credits >= 0) { out.credits = r.credits; out.creditsEnd = r.creditsEnd; used = true; }
     if (used) out.from.push(x[1]);
   });
   return out;
@@ -159,7 +161,7 @@ function merge(a, b) {
 // JSON has no Infinity: an end at the end of the file goes out as -1 (app/js/skipper.js reads it so).
 function wire(r) {
   function w(s) { return s ? [s[0], isFinite(s[1]) ? s[1] : -1] : null; }
-  return { intro: w(r.intro), recap: w(r.recap), credits: r.credits, from: r.from };
+  return { intro: w(r.intro), recap: w(r.recap), credits: r.credits, creditsEnd: r.credits >= 0 && isFinite(r.creditsEnd) ? r.creditsEnd : -1, from: r.from };
 }
 
 /* The skip times for one movie or episode: cb(answer).  Asked once for the same title at a time; kept; a

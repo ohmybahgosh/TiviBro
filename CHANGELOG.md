@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-- **Skip intro, recap and credits without chapters.**  A movie or episode whose file has no chapters now gets Skip intro, Skip recap and Up next from TheIntroDB and IntroDB, two free community databases.  Settings > Playback > Skip times from online databases, on the TV, the phone and the web editor.
+- **Exclude unmatched movies.**  Unmatched movies (Settings > My media > the library, the web editor and the phone app) now offer Exclude beside Fix match, for a sample or a clip you don't want in My media.  Rescans keep them out; Excluded movies brings one back.
+- **Skip intro and Skip credits, by button or automatically.**  Settings > Playback > Skip intro and Skip credits: Show a button, Skip automatically or Off, each on its own.  Skip credits brings up Up next with its countdown, or jumps to a scene after the credits.
+- **Skip times without chapters.**  A movie or episode whose file has no chapters now gets its intro, recap and credits from TheIntroDB and IntroDB, two free community databases.  Settings > Playback > Skip times from online databases, on the TV, the phone and the web editor.
 - Settings' first page with the corner picture showing: the last line of sections is no longer cut off.  The page is a little tighter there, and it scrolls to keep the one you're on in view.
 - Trakt stays signed in when its sign-in is renewed: two renewals at once (right after TiviBro starts, say) used the same one-time key, Trakt refused the second, and TiviBro signed out.
 

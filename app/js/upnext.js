@@ -2,8 +2,8 @@
    the screen.  Its picture behind everything (the episode's own still, else the show's or movie's backdrop), the
    show's title as artwork from TMDB (its logo; the title in large type when it has none), the season and episode,
    the episode's title and a few lines of its summary.  Play counts down in a ring inside the button and starts it
-   at 0; OK starts it at once; Back to episodes (or Back) stops the run.  The Next episode button at the credits
-   (skipper.js) skips all this: it plays the next one straight away.
+   at 0; OK starts it at once; Back to episodes (or Back) stops the run.  Skip credits (skipper.js, a button or
+   by itself) brings this up too, as if the file had ended.
 
    The countdown is Settings > Movies and shows > Up next countdown (5, 10, 15 or 20 seconds); with Play the next
    one automatically off there's no countdown and the screen waits for OK.  With Hide spoilers on, an episode you

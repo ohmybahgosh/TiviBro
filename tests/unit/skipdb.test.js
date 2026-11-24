@@ -21,7 +21,7 @@ const reset = () => { K.reset(); asked = []; answers = {}; };
   reset();
   answers['api.theintrodb.org'] = (p, cb) => cb(null, { status: 200, json: { intro: [{ start_ms: null, end_ms: 58000 }], recap: [{ start_ms: 0, end_ms: 30500 }], credits: [{ start_ms: 2700000, end_ms: null }] } });
   let r = await look({ kind: 'episode', tmdb: '1396', season: 1, episode: 1, dur: 2900 });
-  ok('TheIntroDB: intro, recap and credits in seconds', JSON.stringify(r) === JSON.stringify({ intro: [0, 58], recap: [0, 30.5], credits: 2700, from: ['TheIntroDB'] }), r);
+  ok('TheIntroDB: intro, recap and credits in seconds', JSON.stringify(r) === JSON.stringify({ intro: [0, 58], recap: [0, 30.5], credits: 2700, creditsEnd: -1, from: ['TheIntroDB'] }), r);
   ok('asked by TMDB id, season, episode and length', asked.length === 1 && asked[0].p === '/v4/media?tmdb_id=1396&season=1&episode=1&duration_ms=2900000', asked);
   r = await look({ kind: 'episode', tmdb: '1396', season: 1, episode: 1 });
   ok('the same title again comes from what was kept', asked.length === 1 && r.credits === 2700);
@@ -35,7 +35,7 @@ const reset = () => { K.reset(); asked = []; answers = {}; };
   answers['api.themoviedb.org'] = (p, cb) => cb(null, { status: 200, json: { imdb_id: 'tt0903747' } });
   answers['api.introdb.app'] = (p, cb) => cb(null, { status: 200, json: { intro: { start_ms: 1, end_ms: 2 }, recap: null, outro: { start_ms: 3431000, end_ms: 3500000 }, no_recap: true } });
   r = await look({ kind: 'episode', tmdb: '1396', season: 1, episode: 1, credential: 'eyJhbGciOi.token' });
-  ok('the intro from TheIntroDB, the credits from IntroDB', JSON.stringify(r) === JSON.stringify({ intro: [10, 70], recap: null, credits: 3431, from: ['TheIntroDB', 'IntroDB'] }), r);
+  ok('the intro from TheIntroDB, the credits from IntroDB', JSON.stringify(r) === JSON.stringify({ intro: [10, 70], recap: null, credits: 3431, creditsEnd: 3500, from: ['TheIntroDB', 'IntroDB'] }), r);
   ok('the IMDb id from TMDB with a Bearer token, IntroDB by it', asked[1].host === 'api.themoviedb.org' && asked[1].p === '/3/tv/1396/external_ids' && asked[1].headers.Authorization === 'Bearer eyJhbGciOi.token' && asked[2].p === '/segments?imdb_id=tt0903747&season=1&episode=1', asked);
   ok('the TMDB key goes to TMDB only', !asked.some((a) => a.host !== 'api.themoviedb.org' && (JSON.stringify(a).indexOf('token') >= 0)));
 
@@ -44,7 +44,7 @@ const reset = () => { K.reset(); asked = []; answers = {}; };
   answers['api.theintrodb.org'] = (p, cb) => cb(null, { status: 404, json: { code: 'no_submissions' } });
   answers['api.introdb.app'] = (p, cb) => cb(null, { status: 200, json: { intro: { start_ms: 0, end_ms: 9000 }, no_intro: true, outro: { start_ms: 7000000, end_ms: 7300000 } } });
   r = await look({ kind: 'movie', imdb: 'tt0371746' });
-  ok('a movie: is_movie=true, no intro where IntroDB says there is none', JSON.stringify(r) === JSON.stringify({ intro: null, recap: null, credits: 7000, from: ['IntroDB'] }) && asked[1].p === '/segments?imdb_id=tt0371746&is_movie=true', [r, asked]);
+  ok('a movie: is_movie=true, no intro where IntroDB says there is none', JSON.stringify(r) === JSON.stringify({ intro: null, recap: null, credits: 7000, creditsEnd: 7300, from: ['IntroDB'] }) && asked[1].p === '/segments?imdb_id=tt0371746&is_movie=true', [r, asked]);
 
   // Nobody timed it: kept as a miss.  A database that couldn't be reached: not kept, asked again.
   reset();
@@ -80,6 +80,38 @@ const reset = () => { K.reset(); asked = []; answers = {}; };
   ok('an intro "to the end" (-1) stops at the file\'s end, and a too long one is left out', S.dbIntroAt([], { intro: [100, -1] }, 120, 400).e === 400 && !S.dbIntroAt([], { intro: [100, -1] }, 120, 3000));
   ok('the databases\' credits in the second half only', S.creditsStart([], db, 2900) === 2700 && S.creditsStart([], { credits: 600 }, 2900) === -1 && S.creditsStart([], { credits: 2898 }, 2900) === -1);
   ok('a credits chapter comes first', S.creditsStart([{ s: 2600, e: 2900, t: 'End Credits' }], db, 2900) === 2600);
+
+  // The credits' end: a scene after them is jumped to; credits to the end end the file (Up next or the movie's end).
+  ok('credits from the databases with their end, -1 to the end', JSON.stringify(S.credits([], { credits: 2700, creditsEnd: 2800 }, 2900)) === '{"s":2700,"e":2800}' && S.credits([], { credits: 2700, creditsEnd: -1 }, 2900).e === 2900);
+  ok('a credits chapter ends where the chapter does', S.credits([{ s: 2600, e: 2850, t: 'End Credits' }], null, 2900).e === 2850);
+
+  // Modes: a button, by itself, or off; the old switch (skipIntro false) still turns both off.
+  ok('Show a button unless set', S.mode('intro') === 'button' && S.mode('credits') === 'button');
+  ctx.Store.settings = { skipIntro: false }; ok('the old switch off: both off', S.mode('intro') === 'off' && S.mode('credits') === 'off');
+  ctx.Store.settings = { skipIntroMode: 'auto', skipCreditsMode: 'off' }; ok('each its own', S.mode('intro') === 'auto' && S.mode('credits') === 'off');
+
+  // Playing: the video, the player and the screen as tick() sees them.
+  const video = { currentTime: 20, duration: 2900, paused: false, addEventListener() {} }, toasts = [], ended = [];
+  const box = { classList: { add() {}, remove() {}, contains: () => false }, appendChild() {}, set innerHTML(v) {} };
+  ctx.document.getElementById = () => video; ctx.document.body.appendChild = () => {};
+  ctx.U = { el: () => box, toast: (m) => toasts.push(m) };
+  ctx.Views = { mode: 'vod', vodMeta: { seriesKey: 's1' }, endVod: (f) => ended.push(f) };
+  const play = (t, c, x) => { video.currentTime = t; S.dbIntroAt(c, x, 0, 1); S.tick(); };
+  S.setHidden({});
+  play(20, [], { intro: [10, 70], credits: 2700, creditsEnd: -1 });
+  ok('auto: the intro is skipped by itself, with a word', video.currentTime === 70 && toasts[0] === 'Intro skipped', [video.currentTime, toasts]);
+  play(30, [], { intro: [10, 70], credits: 2700, creditsEnd: -1 });
+  ok('...once: seeking back into it plays it', video.currentTime === 30);
+  ctx.Store.settings = { skipIntroMode: 'button', skipCreditsMode: 'auto' }; S.setHidden({});
+  play(2710, [], { intro: null, credits: 2700, creditsEnd: -1 });
+  ok('auto credits with a next episode: Up next with its countdown (not straight on)', ended.length === 1 && ended[0] === false && toasts.pop() === 'Credits skipped', ended);
+  S.setHidden({}); ended.length = 0;
+  play(2710, [], { intro: null, credits: 2700, creditsEnd: 2800 });
+  ok('a scene after the credits: jumped to, the file plays on', video.currentTime === 2800 && !ended.length, video.currentTime);
+  S.setHidden({}); ended.length = 0; ctx.Views.vodMeta = {};
+  play(1600, [], { intro: null, credits: 1500, creditsEnd: -1 });
+  ok('auto never ends a movie before its last quarter: the button instead', !ended.length && S.mode('credits') === 'auto');
+  ctx.Store.settings = {};
 
   // What the title is asked by.
   ctx.Media = { showTmdb: () => '1396', request: () => Promise.resolve({ metadata: { id: 'tmdb:tv:42' } }) };

@@ -2084,5 +2084,9 @@ I18n.add('ru', {
   "Unknown request": "Неизвестный запрос",
   "TiviBro isn't on the TV's screen right now, so its settings can't be read.": "TiviBro сейчас не на экране телевизора, поэтому его настройки не прочитать.",
   "TiviBro isn't on the TV's screen.": "TiviBro не на экране телевизора.",
-  "{n} settings": ["{n} настройка", "{n} настройки", "{n} настроек"]
+  "{n} settings": ["{n} настройка", "{n} настройки", "{n} настроек"],
+  "Exclude": "Исключить",
+  "Excluded ({n})": "Исключённые ({n})",
+  "Include": "Вернуть",
+  "No movies excluded.": "Нет исключённых фильмов."
 });

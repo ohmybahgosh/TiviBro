@@ -176,7 +176,13 @@ var Settings = (function () {
       ['auto', 'on', 'off'], ['Automatic', 'On, 4K too', 'Off'], function () { return s.seekPreviews || 'auto'; }, function (v) { s.seekPreviews = v; save(); }));
     out.push(choice('Dolby Vision 7 (UHD Blu-ray)', 'A UHD Blu-ray remux\'s Dolby Vision (profile 7) shows only as HDR10 on LG TVs.  Automatic: played as profile 8.1 through the converter, in Dolby Vision (the base picture with its Dolby Vision brightness data, as dovi_tool makes it).  Off: HDR10, as before.',
       ['auto', 'off'], ['Automatic, in Dolby Vision', 'Off, HDR10'], function () { return s.dv7 === 'off' ? 'off' : 'auto'; }, function (v) { s.dv7 = v; save(); }));
-    out.push(toggle('Skip intro and Up next', 'From the file\'s chapters, or the online databases below: "Skip intro" while an intro or recap plays, and "Up next" when the credits start (the next episode, or the next movie of a collection you play).  OK does it, Back hides it.', function () { return s.skipIntro !== false; }, function (v) { s.skipIntro = v; save(); }));
+    /* Skip intro and Skip credits (skipper.js), each a button, by itself or off, as Plex Pass has them.  Before
+       these, one switch (skipIntro) turned both off: Off there is Off here. */
+    var skipMode = function (key) { var v = s[key]; return v === 'button' || v === 'auto' || v === 'off' ? v : s.skipIntro === false ? 'off' : 'button'; };
+    out.push(choice('Skip intro', 'An intro or a recap marked in the file\'s chapters or by the online databases below.  Show a button: "Skip intro" while it plays, OK skips it.  Automatically: skipped by itself, once (seek back to watch it).',
+      ['button', 'auto', 'off'], ['Show a button', 'Skip automatically', 'Off'], function () { return skipMode('skipIntroMode'); }, function (v) { s.skipIntroMode = v; save(); }));
+    out.push(choice('Skip credits', 'End credits marked the same way.  Skipping them brings up Up next with its countdown (the next episode, or the next movie of a collection you play), jumps to a scene after the credits, or ends the movie.  Automatically: only in the last quarter of a movie or episode.',
+      ['button', 'auto', 'off'], ['Show a button', 'Skip automatically', 'Off'], function () { return skipMode('skipCreditsMode'); }, function (v) { s.skipCreditsMode = v; save(); }));
     // The intro, recap and credits of a file without chapters, from TheIntroDB and IntroDB (skipper.js, service/skipdb.js).
     out.push(toggle('Skip times from online databases', 'For a movie or episode whose file has no chapters: where its intro, recap and credits are, from TheIntroDB and IntroDB, two free community databases.  Only the title\'s TMDB or IMDb number, season and episode are sent.', function () { return s.skipOnline !== false; }, function (v) { s.skipOnline = v; save(); }));
     // Live pause and the rewind buffer, from Recording and live pause: people look for them under Playback too.
@@ -383,15 +389,28 @@ var Settings = (function () {
     if (st.kind !== 'shows' && st.waiting) out.push(action('Not looked up yet', 'Movies TMDB hasn\'t been asked about yet (a lookup that stopped, or no token then).  OK looks them up now; it also happens by itself.', heavy(function () { Media.lookUpWaiting(id); }), function () { return String(st.waiting); }));
     if (st.kind !== 'shows') out.push(page('Unmatched movies', 'Movies TMDB didn\'t recognise.  Fix match searches by the title you type.', 'Unmatched in ' + I18n.raw(s.name), function () { return unmatched(id); }, function () { var x = Media.libraryStats(id); return String(x.unmatched.length - (x.waiting || 0)); }));
     if (st.kind !== 'movies') out.push(action('Shows that need review', 'Episodes TiviBro couldn\'t place, and shows without a match.  Opens TV shows on My media.', function () { MediaSeries.review(); }, function () { return st.unmatchedShows ? String(st.unmatchedShows) : ''; }));
+    if (st.kind !== 'shows') out.push(page('Excluded movies', 'Movies you left out of My media by hand.  Include one back from here.', 'Excluded in ' + I18n.raw(s.name), function () { return excludedMovies(id); }, function () { return String(MediaStore.excludedMovies(id).length); }));
     out.push(action('Excluded files', 'Trailers, extras and samples left out.  Include one back from here.', function () { MediaSeries.excluded(regain); }, function () { return '›'; }),
       head('Remove'),
       action('Remove library', 'Takes it off My media.  Your files stay where they are.', function () { Media.removeLibrary(s); }));
     return out.filter(Boolean);
   }
+  // A library's movies excluded by hand (Media.excludeMovie), each with Include to bring it back.
+  function excludedMovies(id) {
+    var list = MediaStore.excludedMovies(id);
+    if (!list.length) return [info('No movies excluded.  Exclude one from Unmatched movies, or from a movie\'s options on My media.', '')];
+    return list.slice(0, 200).map(function (m) { return action(I18n.raw(m.title || m.file || '?'), I18n.raw(m.file || m.path || ''), function () { Media.includeMovie(m); paint(); }, function () { return 'Include'; }); });
+  }
   function unmatched(id) {
     var list = Media.libraryStats(id).unmatched;
     if (!list.length) return [info('Everything in this library matched.', '')];
-    return list.slice(0, 200).map(function (m) { return action(I18n.raw(m.title || m.file || '?'), I18n.raw(m.file || m.path || ''), function () { Media.findDetails(m); }, function () { return 'Fix match'; }); })
+    // Each one: Fix match (search TMDB by the title you type), or Exclude (not a movie you want in My media).
+    return list.slice(0, 200).map(function (m) { return action(I18n.raw(m.title || m.file || '?'), I18n.raw(m.file || m.path || ''), function () {
+      UI.menu(I18n.raw(m.title || m.file || '?'), [
+        { label: 'Fix match', sub: 'Search TMDB by the title you type', action: function () { Media.findDetails(m); } },
+        { label: 'Exclude from My media', sub: 'Not a movie you want here (a sample, a clip).  Excluded movies brings it back.', action: function () { Media.excludeMovie(m); paint(); } }
+      ]);
+    }, function () { return 'Fix match'; }); })
       .concat(list.length > 200 ? [info(list.length - 200 + ' more', 'The web editor lists them all.')] : []);
   }
   // One setting, in Movies and shows and in My media: the next episode, or the next movie of a collection you play.
@@ -423,7 +442,7 @@ var Settings = (function () {
       toggle('Mark what\'s new', 'A small dot by what came in since your last visit, and a shelf of them.  Gone once you open it.', function () { return S().mediaNew !== false; }, function (v) { S().mediaNew = v; save(); Media.refresh(); }),
       toggle('Open where you left off', 'My media opens on the tab, and the library grid, you were last on.  Off: always on Home.', function () { return S().mediaResume !== false; }, function (v) { S().mediaResume = v; save(); }),
       autoNextRow(),
-      upNextRow()].concat(also('playback', ['Skip intro and Up next', 'Skip times from online databases']), [
+      upNextRow()].concat(also('playback', ['Skip intro', 'Skip credits', 'Skip times from online databases']), [
       toggle('Favorites also in lists', 'On: a favorite movie or show is in Favorites and also in Movies or TV shows.  Off: only in Favorites.', function () { return MediaStore.preferences().favoritesInLists; }, function (v) { Media.updatePreferences({ favoritesInLists: v }); paint(); }),
       choice('Metadata language', 'Shared with the web editor.  Refreshes saved movie and show matches in this language.  Missing translations fall back to English.', Object.keys(names), Object.keys(names).map(function (k) { return names[k]; }), function () { return MediaStore.preferences().language; }, function (v) { Media.updatePreferences({ language: v }); paint(); })
     ]).filter(Boolean);
@@ -1501,7 +1520,7 @@ var Settings = (function () {
     out.push(action('Arrange the Shows home', 'Move its shelves up or down, switch them off, and pin categories.  Red on the Shows home too.', function () { Vod.arrange('series'); }));
     out.push(autoNextRow());
     if (upNextRow()) out.push(upNextRow());
-    out = out.concat(also('playback', ['Skip intro and Up next', 'Skip times from online databases']));          // the credits' Up next button, from Playback
+    out = out.concat(also('playback', ['Skip intro', 'Skip credits', 'Skip times from online databases']));          // the credits' Up next button, from Playback
     out.push(toggle('Hide spoilers', 'In the guide, new episodes and episodes or movies that haven\'t aired yet (not news or sport), and on the Shows screen, episodes you haven\'t started, keep only their title, season and episode, and when they air: no summary, episode title or picture from the episode.',
       function () { return !!s.noSpoilers; }, function (v) { s.noSpoilers = v; save(); if (window.Guide && Guide.draw) Guide.draw(); }));
     out.push(head('Details from TMDB'));

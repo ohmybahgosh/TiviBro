@@ -210,6 +210,21 @@ const titles = l => Array.from(l).map(m => m.title);
     ok('one at a time, waiting for each: one write each, still in order', writes === 20, writes);
   }
 
+  // Excluded by hand (an unmatched file you don't want): off every list, kept through a rescan and a restart, back with Include.
+  {
+    const w = world(), X = w.M, src = X.addSource({ type: 'webdav', name: 'Ex', address: 'https://ex/', user: 'u', pass: 'p' });
+    X.applyScan(src, { movies: [movie('Keep', 'k1'), movie('sample', 's1')] });
+    const s1 = X.movies(src).filter((m) => m.title === 'sample')[0];
+    X.setExcluded(s1.id, true);
+    ok('an excluded movie leaves the lists', JSON.stringify(titles(X.movies(src))) === '["Keep"]' && X.isExcluded(s1.id));
+    ok('...and is listed as excluded', JSON.stringify(titles(X.excludedMovies(src))) === '["sample"]');
+    X.applyScan(src, { movies: [movie('Keep', 'k1'), movie('sample', 's1')] });
+    ok('a rescan doesn\'t bring it back', JSON.stringify(titles(X.movies(src))) === '["Keep"]');
+    ok('kept with the sources (a restart)', world(w.ls).M.isExcluded(s1.id));
+    X.setExcluded(s1.id, false);
+    ok('Include brings it back at once', titles(X.movies(src)).length === 2 && !X.excludedMovies(src).length);
+  }
+
   console.log(fail ? fail + ' FAILED' : 'ALL PASS');
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });
