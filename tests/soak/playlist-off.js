@@ -40,6 +40,20 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     const sw2 = pls.rows.find((x) => x.kind === 'toggle' && x.label === 'Second provider');
     if (sw2) await sa('playlists', [], sw2.i, 'toggle', { on: false });
     ok('and off again', await ev(() => !!Store.settings.playlists.find((p) => p.id === 'p2').off));
+    // On the TV, on that page: saved at once, but the lists change only once you leave it (discussion #36: switch
+    // several, then act on them).
+    await tv.waitForTimeout(1500);                        // the switch before it, made (the TV wasn't on that page)
+    await ev(() => { Views.switchTab('settings'); Settings.open(); Settings.section('playlists'); });
+    await tv.waitForTimeout(600);
+    const tvSw = await ev(() => Settings.phone.page('playlists', []).rows.find((x) => x.kind === 'toggle' && x.label === 'Second provider').i);
+    await ev((i) => Settings.phone.change('playlists', [], i, 'toggle', { on: true }), tvSw);
+    await tv.waitForTimeout(1500);
+    ok('switched on the TV while on the page: saved, its channels not in yet', await ev(() => !Store.settings.playlists.find((p) => p.id === 'p2').off && Library.otherIds().indexOf('p2') < 0), await ev(() => Library.otherIds()));
+    await ev(() => Views.switchTab('guide'));
+    await tv.waitForFunction(() => Library.otherIds().indexOf('p2') >= 0, null, { timeout: 20000 }).catch(() => {});
+    ok('...and in once you leave it', await ev(() => Library.otherIds().indexOf('p2') >= 0), await ev(() => Library.otherIds()));
+    await ev((i) => { Views.switchTab('settings'); Settings.open(); Settings.section('playlists'); Settings.phone.change('playlists', [], i, 'toggle', { on: false }); Views.switchTab('guide'); }, tvSw);
+    await tv.waitForTimeout(1500);
     pls = await sa('playlists', []);
     // The one in use can't be turned off while it is the only one on.
     const first = pls.rows.find((x) => x.kind === 'page' && !/^Second provider/.test(x.label));

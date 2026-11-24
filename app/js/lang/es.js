@@ -2579,5 +2579,7 @@ I18n.add('es', {
   "◀ ▶  move      ▲ ▼  switch row      OK  choose      Back  close": "◀ ▶  mover      ▲ ▼  cambiar de fila      OK  elegir      Atrás  cerrar",
   "Probably shows": "Probablemente series",
   "Probably movies": "Probablemente películas",
-  "Other categories": "Otras categorías"
+  "Other categories": "Otras categorías",
+  "Saved.  Your channels change when you leave this page.": "Guardado.  Tus canales cambian cuando salgas de esta página.",
+  "\"{x}\" is off.  Switching to \"{y}\".": "\"{x}\" está desactivada.  Cambiando a \"{y}\"."
 });

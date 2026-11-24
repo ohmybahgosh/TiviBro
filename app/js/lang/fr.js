@@ -1735,5 +1735,7 @@ I18n.add('fr', {
   "{n} teams": "{n} équipes",
   "Probably shows": "Probablement des séries",
   "Probably movies": "Probablement des films",
-  "Other categories": "Autres catégories"
+  "Other categories": "Autres catégories",
+  "Saved.  Your channels change when you leave this page.": "Enregistré.  Vos chaînes changent quand vous quittez cette page.",
+  "\"{x}\" is off.  Switching to \"{y}\".": "« {x} » est désactivée.  Passage à « {y} »."
 });

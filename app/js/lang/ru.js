@@ -2582,5 +2582,7 @@ I18n.add('ru', {
   "◀ ▶  move      ▲ ▼  switch row      OK  choose      Back  close": "◀ ▶  перемещение      ▲ ▼  сменить ряд      OK  выбрать      Назад  закрыть",
   "Probably shows": "Вероятно, сериалы",
   "Probably movies": "Вероятно, фильмы",
-  "Other categories": "Другие категории"
+  "Other categories": "Другие категории",
+  "Saved.  Your channels change when you leave this page.": "Сохранено.  Каналы изменятся, когда вы уйдёте с этой страницы.",
+  "\"{x}\" is off.  Switching to \"{y}\".": "«{x}» выключен.  Переключение на «{y}»."
 });

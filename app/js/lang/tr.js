@@ -2455,5 +2455,7 @@ I18n.add('tr', {
   "◀ ▶  move      ▲ ▼  switch row, ▲ at the top: timeline      OK  choose      Back  close": "◀ ▶  hareket      ▲ ▼  satır değiştir, en üstte ▲: zaman çizelgesi      OK  seç      Geri  kapat",
   "Probably shows": "Muhtemelen diziler",
   "Probably movies": "Muhtemelen filmler",
-  "Other categories": "Diğer kategoriler"
+  "Other categories": "Diğer kategoriler",
+  "Saved.  Your channels change when you leave this page.": "Kaydedildi.  Kanallarınız bu sayfadan çıktığınızda değişir.",
+  "\"{x}\" is off.  Switching to \"{y}\".": "\"{x}\" kapalı.  \"{y}\" listesine geçiliyor."
 });

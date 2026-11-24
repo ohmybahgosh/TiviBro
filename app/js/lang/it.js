@@ -2455,5 +2455,7 @@ I18n.add('it', {
   "◀ ▶  move      ▲ ▼  switch row, ▲ at the top: timeline      OK  choose      Back  close": "◀ ▶  sposta      ▲ ▼  cambia riga, ▲ in cima: timeline      OK  scegli      Indietro  chiudi",
   "Probably shows": "Probabilmente serie",
   "Probably movies": "Probabilmente film",
-  "Other categories": "Altre categorie"
+  "Other categories": "Altre categorie",
+  "Saved.  Your channels change when you leave this page.": "Salvato.  I tuoi canali cambiano quando lasci questa pagina.",
+  "\"{x}\" is off.  Switching to \"{y}\".": "\"{x}\" è disattivata.  Passaggio a \"{y}\"."
 });

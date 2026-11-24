@@ -3089,5 +3089,7 @@ I18n.add('pt-BR', {
   "◀ ▶  move      ▲ ▼  switch row      OK  choose      Back  close": "◀ ▶  mover      ▲ ▼  trocar de linha      OK  escolher      Voltar  fechar",
   "Probably shows": "Provavelmente séries",
   "Probably movies": "Provavelmente filmes",
-  "Other categories": "Outras categorias"
+  "Other categories": "Outras categorias",
+  "Saved.  Your channels change when you leave this page.": "Salvo.  Seus canais mudam quando você sair desta página.",
+  "\"{x}\" is off.  Switching to \"{y}\".": "\"{x}\" está desligada.  Mudando para \"{y}\"."
 });

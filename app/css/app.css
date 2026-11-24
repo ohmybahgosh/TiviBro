@@ -1250,7 +1250,7 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 #viewSettings.home > .set-nav,#viewSettings.home > .set-main{display:none}
 .set-home{flex:1;min-width:0;display:flex;flex-direction:column;gap:22px;overflow:hidden;padding:4px 24px 20px 18px;margin-left:-18px;position:relative}
 /* With the corner picture the chips wrap to a third line: a little tighter, and homePaint scrolls the focus into view. */
-#viewSettings.pip.home .set-home{display:flex;flex-direction:column;gap:16px}#viewSettings.pip.home .sh-tile{display:flex;flex-direction:column;padding:18px 22px;gap:8px}#viewSettings.pip.home .sh-chips{display:flex;flex-wrap:wrap;gap:12px}#viewSettings.pip.home .sh-chip{padding:10px 18px;font-size:22px}#viewSettings.pip.home .sh-status{padding:16px 24px}
+#viewSettings.pip.home .set-home{display:flex;flex-direction:column;gap:16px}#viewSettings.pip.home .sh-tile{display:flex;flex-direction:column;padding:18px 22px;gap:8px}#viewSettings.pip.home .sh-chip{width:calc(33.333% - 14px);min-height:60px;padding:8px 12px;font-size:20px}#viewSettings.pip.home .sh-status{padding:16px 24px}
 .set-home.hidden{display:none}
 .sh-top{display:flex;align-items:center;gap:28px}
 .sh-title{flex:1;font-size:52px;font-weight:700;letter-spacing:-.02em}
@@ -1264,8 +1264,12 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .sh-tile{display:flex;flex-direction:column;gap:10px;box-sizing:border-box;width:calc(25% - 20px);margin:10px;padding:24px 26px;border-radius:22px;background:var(--panel);border:2px solid rgba(255,255,255,.08);min-width:0}
 .sh-tile b{font-size:29px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sh-tile span{font-size:20px;color:var(--muted);min-height:26px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sh-chips{display:flex;flex-wrap:wrap;gap:14px}
-.sh-chip{padding:12px 22px;border-radius:999px;background:var(--panel);border:2px solid rgba(255,255,255,.08);font-size:23px;color:#c7cee6}
+/* Everything else: six small cards a row, an icon and the name (two lines at most), not pills that read as tags. */
+.sh-chips{display:flex;flex-wrap:wrap;margin:-7px}
+.sh-chip{display:flex;align-items:center;box-sizing:border-box;width:calc(16.666% - 14px);min-height:72px;margin:7px;padding:12px 14px;border-radius:16px;background:var(--panel);border:2px solid rgba(255,255,255,.08);font-size:21px;font-weight:600;line-height:1.2;color:#e8ecf8}
+.sh-chip .sh-ico{flex:0 0 auto;width:40px;height:40px;margin-right:12px;border-radius:11px}
+.sh-chip .sh-ico svg{left:8px;top:8px;width:24px;height:24px}
+.sh-chip span{min-width:0;overflow:hidden;overflow-wrap:break-word;word-break:break-word;-webkit-hyphens:auto;hyphens:auto}
 .set-home .focus{background:var(--raised);border-color:#fff;color:var(--text);transform:scale(1.03);box-shadow:0 14px 36px rgba(0,0,0,.45)}
 .sh-ico{display:block;width:44px;height:44px;border-radius:12px;background:rgba(91,140,255,.18);color:var(--accent-text);position:relative}
 .sh-ico svg{position:absolute;left:9px;top:9px;width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}

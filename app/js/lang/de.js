@@ -2458,5 +2458,7 @@ I18n.add('de', {
   "◀ ▶  move      ▲ ▼  switch row, ▲ at the top: timeline      OK  choose      Back  close": "◀ ▶  bewegen      ▲ ▼  Reihe wechseln, ▲ ganz oben: Zeitleiste      OK  wählen      Zurück  schließen",
   "Probably shows": "Wahrscheinlich Serien",
   "Probably movies": "Wahrscheinlich Filme",
-  "Other categories": "Andere Kategorien"
+  "Other categories": "Andere Kategorien",
+  "Saved.  Your channels change when you leave this page.": "Gespeichert.  Deine Sender ändern sich, wenn du diese Seite verlässt.",
+  "\"{x}\" is off.  Switching to \"{y}\".": "„{x}\" ist aus.  Wechsel zu „{y}\"."
 });

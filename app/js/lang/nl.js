@@ -2455,5 +2455,7 @@ I18n.add('nl', {
   "◀ ▶  move      ▲ ▼  switch row, ▲ at the top: timeline      OK  choose      Back  close": "◀ ▶  verplaatsen      ▲ ▼  andere rij, ▲ bovenaan: tijdlijn      OK  kiezen      Terug  sluiten",
   "Probably shows": "Waarschijnlijk series",
   "Probably movies": "Waarschijnlijk films",
-  "Other categories": "Andere categorieën"
+  "Other categories": "Andere categorieën",
+  "Saved.  Your channels change when you leave this page.": "Opgeslagen.  Je zenders veranderen zodra je deze pagina verlaat.",
+  "\"{x}\" is off.  Switching to \"{y}\".": "\"{x}\" staat uit.  Overschakelen naar \"{y}\"."
 });

@@ -704,14 +704,32 @@ var Settings = (function () {
     return toggle(label, p.off ? 'Off: kept with everything you set, out of the way.  Turn it on to use it again.' : 'Turn it off to keep it, with its login and everything you set, without deleting it.',
       function () { return !p.off; }, function (v) {
         var s = S();
-        if (!v && p.id === s.active) {
-          var next = s.playlists.filter(function (x) { return x.id !== p.id && !x.off; })[0];
-          if (!next) { U.toast('This is the only playlist that is on.  Turn another one on (or add one) first.', 6000); return paint(); }
-          p.off = true; persist(p); stack = []; U.toast('"' + (p.name || 'Playlist') + '" is off.  Switching to "' + (next.name || 'the next playlist') + '".', 5000); App.switchPlaylist(next.id); return;
-        }
+        if (!v && p.id === s.active && !s.playlists.some(function (x) { return x.id !== p.id && !x.off; })) { U.toast('This is the only playlist that is on.  Turn another one on (or add one) first.', 6000); return paint(); }
         p.off = !v; persist(p); build();
-        App.playlistsChanged();          // its channels join the lists, or leave them
+        plLater();                       // its channels join the lists, or leave them, once you're done here
       });
+  }
+  /* Playlists switched on or off are saved at once, but the lists change once you're done (discussion #36: switch
+     several, then act on them, and not straight to the channel list).  The others' channels join or leave when you
+     leave this page; the one in use being off hands over to the next one that is on only when you leave Settings,
+     since that starts TiviBro again on the playlist (App.switchPlaylist). */
+  var plPending = null;
+  function plLater() {
+    if (plPending) { plPending.others = false; plPending.key = lastKey; return; }       // another switch: the lists again
+    U.toast(T('Saved.  Your channels change when you leave this page.'), 4000);
+    plPending = { key: lastKey, others: false, t: setInterval(function () {
+      var g = plPending, s = S(), inSettings = typeof Views !== 'undefined' && Views.tab === 'settings' && !document.getElementById('viewSettings').classList.contains('hidden');
+      if (inSettings && lastKey === g.key) return;
+      if (!g.others) { g.others = true; App.playlistsChanged(); }
+      var act = s.playlists.filter(function (x) { return x.id === s.active; })[0], next = s.playlists.filter(function (x) { return !x.off; })[0];
+      if (act && act.off && next) {
+        if (inSettings) return;                                       // the hand-over waits until you leave Settings
+        clearInterval(g.t); plPending = null;
+        U.toast(I18n.t('"{x}" is off.  Switching to "{y}".', { x: act.name || I18n.t('Playlist'), y: next.name || I18n.t('the next playlist') }), 5000);
+        return App.switchPlaylist(next.id);
+      }
+      clearInterval(g.t); plPending = null;
+    }, 500) };
   }
 
   /* The DNS choices (Settings > Playlists and accounts > DNS, and the first setup screen, discussion #60). */
@@ -2596,13 +2614,26 @@ var Settings = (function () {
      OK opens a section's page; Back from a section's list comes back here. ---------- */
   var homeEl = null, onHome = false, hsel = -1, hitems = [];
   var TILES = ['guide', 'sports', 'playback', 'audio', 'recording', 'reminders', 'vod', 'media'];
-  var TILE_ICON = { guide: 'guide', sports: 'sports', playback: 'play', audio: 'audio', recording: 'rec', reminders: 'bell', vod: 'movies', media: 'media' };
+  var TILE_ICON = { guide: 'guide', sports: 'sports', playback: 'play', audio: 'audio', recording: 'rec', reminders: 'bell', vod: 'movies', media: 'media',
+    // Everything else: small cards with an icon too, so they don't read as tags (discussion #36).
+    language: 'globe', playlists: 'list', connect: 'phone', channels: 'grid', names: 'text', remote: 'remote', parental: 'lock', look: 'palette', keys: 'key', backups: 'box', about: 'gear' };
   /* Each tile's line icon (inline SVG on a 24 grid, drawn in the tile colour), the same shapes as the side menu's
      where there's one.  They were CSS boxes before, and four of them came out as plain squares. */
   var TILE_SVG = {
     guide: '<path d="M3 5h18M3 12h18M3 19h18M9 3v18"/>',
     sports: '<path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4.5a2.5 2.5 0 0 0 2.6 4M17 6h2.5a2.5 2.5 0 0 1-2.6 4M12 14v3.5M8.5 20.5h7M9.5 17.5h5v3h-5z"/>',
     play: '<path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/>',
+    globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/>',
+    list: '<path d="M4 6h12M4 12h12M4 18h8M18 15v6M15 18h6"/>',
+    phone: '<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/>',
+    grid: '<rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="13" width="7" height="7" rx="1.5"/><rect x="14" y="13" width="7" height="7" rx="1.5"/>',
+    text: '<path d="M4 7V5h16v2M12 5v14M9 19h6"/>',
+    remote: '<rect x="7" y="2" width="10" height="20" rx="4"/><circle cx="12" cy="8" r="2"/><path d="M10 14h4M10 17h4"/>',
+    lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    palette: '<path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-1.5-1-2.5S14 15 15 15h2a4 4 0 0 0 4-4c0-4.4-4-8-9-8z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/>',
+    key: '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/>',
+    box: '<path d="M4 7h16v13H4zM3 4h18v3H3zM10 11h4"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
     audio: '<path d="M4 9.5h4l5-4.5v14l-5-4.5H4z"/><path d="M16.5 9a4 4 0 0 1 0 6M19 6.5a7.5 7.5 0 0 1 0 11"/>',
     rec: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor"/>',
     bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
@@ -2661,7 +2692,7 @@ var Settings = (function () {
     var chips = U.el('div', 'sh-chips'); col = 0;
     ids.filter(function (id) { return TILES.indexOf(id) < 0; }).forEach(function (id) {
       var i = -1; SECTIONS.forEach(function (x, k) { if (x[0] === id) i = k; });
-      var c = U.el('div', 'sh-chip', navTitle(SECTIONS[i])); chips.appendChild(c);
+      var c = U.el('div', 'sh-chip'); if (TILE_ICON[id]) c.appendChild(tileIcon(id)); c.appendChild(U.el('span', '', navTitle(SECTIONS[i]))); chips.appendChild(c);
       hitems.push({ el: c, chip: true, row: row + Math.floor(col / 6), col: col % 6, go: function () { goSection(id); } }); col++;
     });
     homeEl.appendChild(chips);
