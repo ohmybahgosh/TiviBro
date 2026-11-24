@@ -174,7 +174,7 @@ var MediaSeries = (function () {
   // noMark: skipped to the end, so not marked watched; the next episode is still offered (Up next).
   function completed(file,handoff,now,noMark) {
     if (!file || !file.episodeHandle) return false;
-    function finish(){if(handoff)return handoff.cancel();if(file.returnTo)return file.returnTo();open();}
+    function finish(){if(typeof UpNext!=='undefined')UpNext.release();if(handoff)return handoff.cancel();if(file.returnTo)return file.returnTo();open();}
     function launch(detail){
       var version=preferredVersion(detail,file.src);
       if(!version){detail.beforePlay=handoff&&function(chosen,ep){var range=(chosen.boundaries||[]).filter(function(r){return r.episode===ep.handle;})[0];if(chosen.handle===file.id&&range&&Math.abs(range.startSec-file.endSec)<0.1){ep.originPage=file.returnTo||origin(ep);handoff.continue(ep,range);return false;}handoff.stop();return true;};detail.originPage=finish;return showEpisode(detail,finish);}

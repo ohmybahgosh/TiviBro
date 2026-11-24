@@ -1132,6 +1132,7 @@ var Vod = (function () {
     };
     if (nx && force) return playNext();
     stopped();
+    if (nx) UpNext.hold();   // the curtain (upnext.js): no flash of the page before Up next
     Views.stopAll();
     open(kind, true);
     if (nx) upNext(nx, playNext);

@@ -1506,7 +1506,7 @@ var Media = (function () {
     clearTimeout(queueTimer); queueTimer = null;
     if (!queue || queue.item !== finished) return;
     var q = queue, next = q.list[q.at + 1];
-    if (!next) { queue = null; U.toast('That was the last movie of the collection.', 4000); return; }
+    if (!next) { queue = null; UpNext.release(); U.toast('That was the last movie of the collection.', 4000); return; }
     var go = function () { clearTimeout(queueTimer); queueTimer = null; if (queue === q) playQueued(q.at + 1); };
     var stop = function () { clearTimeout(queueTimer); queueTimer = null; if (queue === q) queue = null; };
     if (now) return go();
@@ -1616,12 +1616,14 @@ var Media = (function () {
     var eligible = !finished || finished.kind !== 'episode' || playingMeta.continuous >= ((finished.endSec || Player.duration) > 0 ? Math.min(30,((finished.endSec || Player.duration) - (finished.startSec || 0)) * 0.1) : 5);
     if (playingMeta) { if (playingMeta.item && playingMeta.item.kind !== 'episode') MediaStore.markWatched(playingMeta.id, true); else MediaStore.clearResume(playingMeta.id); }
     playingMeta = null;
+    // Up next comes after a lookup or two: the curtain (upnext.js) keeps the page from flashing by meanwhile.
+    if (finished && (finished.kind === 'episode' || (queue && queue.item === finished)) && typeof UpNext !== 'undefined') UpNext.hold();
     Views.stopAll();
     open(true);
     /* An episode skipped to its end isn't marked watched (eligible), but still gets Up next, and its season page
        back with the remote on it: without this it came back with the remote left on My media's own screen, so the
        arrows did nothing (Cunk on Cinema, skipped through to the credits). */
-    if (finished && finished.kind === 'episode' && typeof MediaSeries !== 'undefined') MediaSeries.completed(finished, null, now === true, !eligible);
+    if (finished && finished.kind === 'episode' && !(typeof MediaSeries !== 'undefined' && MediaSeries.completed(finished, null, now === true, !eligible)) && typeof UpNext !== 'undefined') UpNext.release();
     if (finished && finished.kind !== 'episode') queueNext(finished, now === true);
     // Trakt (Settings > My media > Trakt > Mark as watched on Trakt): what you finished.
     if (finished && typeof Trakt !== 'undefined') { if (finished.kind === 'episode') { if (eligible) Trakt.watchedEpisode(finished.episodeHandle); } else Trakt.watchedMovie(finished.metadata && finished.metadata.id); }

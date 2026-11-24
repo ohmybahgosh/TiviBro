@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Up next without the flash.**  Before Up next appeared, and again between Play and the next episode starting, the show's page flashed by for a moment.  The screen now stays dark through both, for My media's shows and collections and your provider's series.
+
 ## 0.6.0 (alpha 215, 2026-11-24)
 
 Pre-release: expect rough edges, and keep a backup before installing.

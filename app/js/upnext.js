@@ -12,7 +12,8 @@
    Used by My media's shows (media-series.js), its collections (media.js) and the provider's series (vod.js).
      UpNext.show({ kicker, image, logo, show, line, title, desc, play, cancel, playLabel, cancelLabel, auto })
    image: the picture behind; logo: the show's title as artwork (TMDB), else show is set in large type.
-   auto: false for a screen that only asks (an episode is missing before it). */
+   auto: false for a screen that only asks (an episode is missing before it).
+     UpNext.hold() / UpNext.release(): the curtain (below), for callers between an ending and show(). */
 var UpNext = (function () {
   'use strict';
   var timer = null, run = 0, RING = 2 * Math.PI * 20;
@@ -65,15 +66,37 @@ var UpNext = (function () {
     return function (n) { label.textContent = T('Play in {n}', { n: Math.max(0, n) }); if (left) left.style.strokeDashoffset = RING * (1 - n / secs); };
   }
 
+  /* The curtain: a plain screen in Up next's own dark colour, over the pages and under menus.  It covers the gaps
+     where the show's page used to flash by: from the end of an episode until Up next is ready (the next one is
+     looked up first), and from Play until the player is fullscreen.  Fullscreen hides it (CSS), playing or an
+     error takes it away, and it never stays longer than HOLD_MAX, so a lookup that fails can't leave it up. */
+  var curtain = null, curtainTimer = null, HOLD_MAX = 10000;
+  function hold() {
+    if (!curtain) {
+      curtain = U.el('div', 'un-hold hidden');
+      document.body.appendChild(curtain);
+      if (typeof Player !== 'undefined' && Player.on) Player.on('state', function (st) { if (st === 'playing' || st === 'error') release(); });
+    }
+    curtain.classList.remove('hidden');
+    clearTimeout(curtainTimer);
+    curtainTimer = setTimeout(release, HOLD_MAX);
+  }
+  function release() {
+    clearTimeout(curtainTimer); curtainTimer = null;
+    if (curtain) curtain.classList.add('hidden');
+  }
+
   /* Shows the screen for o and starts the countdown; at 0 the next one plays.  A screen closed any other way stops
-     it, so nothing starts by itself later. */
+     it, so nothing starts by itself later.  Play keeps the curtain up until the player takes over; going back
+     takes it away. */
   function show(o) {
     stop();
     var secs = o.auto === false ? 0 : seconds(), mine = run, done = false;
     var body = screen(o);
-    function finish(fn) { if (done) return; done = true; stop(); if (fn) fn(); }
+    function finish(fn) { if (done) return; done = true; stop(); if (fn === o.play) hold(); else release(); if (fn) fn(); }
     var buttons = [{ label: o.playLabel || 'Play now', action: function () { finish(o.play); } }, { label: o.cancelLabel || 'Back to episodes', action: function () { finish(o.cancel); } }];
     UI.panel(o.kicker || 'Up next', body, buttons, function () { finish(o.cancel); }, { look: 'upnext' });
+    release();   // Up next itself covers the screen now
     if (!secs) return;
     var btn = body.parentNode && body.parentNode.querySelector('.mbtns .btn'), paint = btn ? ring(btn, secs) : function () {};
     var left = secs;
@@ -82,9 +105,9 @@ var UpNext = (function () {
       if (mine !== run || !document.body.contains(body)) { if (mine === run) stop(); return; }
       left--;
       paint(left);
-      if (left <= 0) { UI.close(); finish(o.play); }
+      if (left <= 0) { hold(); UI.close(); finish(o.play); }
     }, 1000);
   }
 
-  return { show: show, stop: stop, seconds: seconds };
+  return { show: show, stop: stop, seconds: seconds, hold: hold, release: release };
 })();
