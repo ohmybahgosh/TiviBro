@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Settings' first page with the corner picture showing: the last line of sections is no longer cut off.  The page is a little tighter there, and it scrolls to keep the one you're on in view.
 - Trakt stays signed in when its sign-in is renewed: two renewals at once (right after TiviBro starts, say) used the same one-time key, Trakt refused the second, and TiviBro signed out.
 
 ## 0.6.0 (alpha 207, 2026-11-23)

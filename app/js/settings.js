@@ -2644,7 +2644,15 @@ var Settings = (function () {
     hsel = U.clamp(hsel, 0, hitems.length - 1);
     homePaint();
   }
-  function homePaint() { hitems.forEach(function (h, n) { h.el.classList.toggle('focus', n === hsel); }); }
+  // The focus lit, and kept in view: the home scrolls when it's taller than the screen (the corner picture
+  // narrows it and the chips wrap to more lines), the search box and the top back in view on the way up.
+  function homePaint() {
+    hitems.forEach(function (h, n) { h.el.classList.toggle('focus', n === hsel); });
+    var h = hitems[hsel]; if (!h || !homeEl) return;
+    var top = hsel === 0 ? 0 : h.el.offsetTop - 16, bottom = h.el.offsetTop + h.el.offsetHeight + 24;
+    if (bottom > homeEl.scrollTop + homeEl.clientHeight) homeEl.scrollTop = bottom - homeEl.clientHeight;
+    else if (top < homeEl.scrollTop) homeEl.scrollTop = Math.max(0, top);
+  }
   function homeShow(on) {
     onHome = on;
     if (on) cameFrom = '';
