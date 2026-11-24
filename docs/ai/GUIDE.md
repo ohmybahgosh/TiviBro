@@ -45,6 +45,10 @@ Also here: `site/` (tivibro.app, GitHub Pages), `relay/` (a Cloudflare Worker th
 
 **Shared files stay in sync.**  `app/js/names.js`, `tidy.js`, `pubepg.js`, `links.js` and `events.js` are copied into `service/editor/` by `npm run build`; lint fails if a copy differs.  Edit the `app/js/` original and run the build (or copy the file).
 
+**Every text in every language.**  The TV app, the web editor and the phone app are translated (the list is `i18n/langs.json`), and `npm test` fails while any language is missing any text, in any part.  So a change that adds or rewords text the viewer sees ships its translations in the same commit: `node scripts/i18n-todo.js <code>` lists what each language is missing, translate it, then `node scripts/i18n-import.js <code> done.json`.  When a row's text changes, remove its old key from the dictionaries.  Text the checker can't see (a label passed through a variable) gets a local `T('...')` so it's found.  CONTRIBUTING.md (Translations) has the details.  The user guide, changelog, README and site stay English.
+
+**Every setting everywhere.**  A setting goes in `app/js/settings.js`, never a TV-only panel, so the phone app and the web editor get it with no code of their own, and `tests/soak/phone-asks.js` gets a check that the phone sees it and can change it.  A row the phone changes while TiviBro is behind another app is made through `Settings.phone.change` with only `{ op, on | v }` (`app/js/setsnap.js`, `service/companion.js`).
+
 **Writing style for anything a person reads** (UI text, the user guide, the changelog, release notes, issue replies): plain words for viewers, not developers; two spaces between sentences; never an em dash (use a colon, a comma or a new sentence).  Say what happens and what to press, with screen names in bold in docs (**Settings > Playback and buffering**).
 
 ## How a change is made
@@ -52,7 +56,7 @@ Also here: `site/` (tivibro.app, GitHub Pages), `relay/` (a Cloudflare Worker th
 1. Read the files you will touch.  Each source file starts with a comment that explains what it does and why; keep it accurate when you change the file.
 2. Make the change in the right layer (see "Where things go" below).
 3. Add or update tests: a unit test in `tests/unit/` (plain Node, `ok(name, condition)` style, added to `test:unit` in `package.json`), and for anything on screen a soak test in `tests/soak/` that drives the app in Playwright against the mock provider.
-4. User-facing change: a line under `## Unreleased` in `CHANGELOG.md` with a **bold headline that makes sense on its own** (release notes show only the headline), and the user guide (`docs/USER-GUIDE.md`; the wiki is built from it with `node scripts/wiki/build.js`).  New settings go in the guide's settings tables.
+4. Text a viewer sees: its translations in every language (see "Every text in every language").  User-facing change: a line under `## Unreleased` in `CHANGELOG.md` with a **bold headline that makes sense on its own** (release notes show only the headline), and the user guide (`docs/USER-GUIDE.md`; the wiki is built from it with `node scripts/wiki/build.js`).  New settings go in the guide's settings tables.
 5. Run `npm run lint` and `npm test`.  For screens, run the soak test (`node tests/mock/mock_provider.js`, `npm run serve`, then `node tests/soak/<name>.js`).  For old TVs, `bash tests/engines/run.sh browser`.
 6. Open a pull request against `main` and fill in the template.  Don't edit the `homebrew` branch, release files, the version number or release notes: maintainers cut releases.
 

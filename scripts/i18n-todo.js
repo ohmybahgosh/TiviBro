@@ -26,12 +26,19 @@ const reused = L.write('tv', code, toTv) + L.write('ed', code, toEd);
 if (reused) console.error('copied ' + reused + ' translations from one part to the other');
 Object.assign(tv, toTv); Object.assign(ed, toEd);
 
+/* A piece of a sentence put together while the app runs ('Hidden (' + n + ')') is covered by a pattern that
+   starts with it ("Hidden ({n})"), as scripts/i18n-check.js counts it: nothing left to translate there. */
+function covered(d, k) {
+  if (k in d) return true;
+  if (!/[(#"]$|\s$|\b(of|to|for|as|at|with)$/.test(k)) return false;
+  return Object.keys(d).some((x) => x.indexOf(k) === 0 && /\{[nxyz]\}/.test(x.slice(k.length, k.length + 4)));
+}
 const items = {}, g = L.glossary(code), f = L.forms(code);
 function add(k, where) {
   if (!items[k]) items[k] = { key: k, where: [], plural: /\{n\}/.test(k) ? f.n : 0 };
   where.forEach((w) => { if (items[k].where.indexOf(w) < 0) items[k].where.push(w); });
 }
-for (const k of Object.keys(tvKeys)) if (!(k in tv)) add(k, ['tv: ' + tvKeys[k].join(', ')]);
+for (const k of Object.keys(tvKeys)) if (!covered(tv, k)) add(k, ['tv: ' + tvKeys[k].join(', ')]);
 for (const k of Object.keys(edKeys)) if (!(k in ed)) add(k, edKeys[k].map((w) => w === 'editor' ? 'web editor' : w));
 // The glossary's own terms first (the rest should use the same words), each text with the words it uses.
 const isTerm = (k) => g.terms.indexOf(k) >= 0;
@@ -43,7 +50,7 @@ const list = Object.keys(items).sort((a, b) => (isTerm(b) - isTerm(a)) || (a < b
 });
 
 if (countOnly) {
-  const tvLeft = Object.keys(tvKeys).filter((k) => !(k in tv)).length, edLeft = Object.keys(edKeys).filter((k) => !(k in ed)).length;
+  const tvLeft = Object.keys(tvKeys).filter((k) => !covered(tv, k)).length, edLeft = Object.keys(edKeys).filter((k) => !(k in ed)).length;
   console.log(lg.english + ': ' + list.length + ' to translate (TV app ' + tvLeft + ' of ' + Object.keys(tvKeys).length + ', editor and phone ' + edLeft + ' of ' + Object.keys(edKeys).length + ')');
   process.exit(0);
 }
