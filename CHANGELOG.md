@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Problem reports from a TV that closed TiviBro show what it was doing up to the end: the log on the TV was saved only once things went quiet, so a busy start that ended in a crash left a log that stopped in its first second.
+
 ## 0.6.0 (alpha 209, 2026-11-24)
 
 Pre-release: expect rough edges, and keep a backup before installing.

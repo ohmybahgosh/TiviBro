@@ -59,7 +59,11 @@ var Log = (function () {
   }
 
   function persistNow() { try { localStorage.setItem('tivibro.log', JSON.stringify(saved.concat(buf).slice(-KEEP))); } catch (e) {} }
-  var persist = U.debounce(persistNow, 1500);
+  /* Kept at most 1.5 s after a line comes (not 1.5 s after the last one: a start that logs a line every second or so
+     kept pushing it back, so a TV that closed 15 to 45 s after starting left a log that stopped at its first second,
+     issues #140 to #167, and nobody could see what it was doing). */
+  var persistT = null;
+  function persist() { if (!persistT) persistT = setTimeout(function () { persistT = null; persistNow(); }, 1500); }
 
   /* Did TiviBro close on its own?  webOS ends an app that runs out of memory without a word, so no
      error is ever logged.  A marker in storage says the app is open and what it is doing (state():
