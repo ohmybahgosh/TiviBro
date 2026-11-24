@@ -1,16 +1,16 @@
 # Changelog
 
-## Unreleased
-
-- **A big portal's movies and shows stay read.**  On a Stalker portal browsed by category, the categories you had opened were read all over again after a day (often right after an update, issue #173).  The copy on the TV now lasts a week: past a day its categories and newest titles are read again in the background, and what you opened stays.
-- **Movies and Shows open on the category you were on**, not the first one.
-- **No more freezing at the start on a busy TV.**  On a 1 GB TV with a huge playlist, the network helper could be busy for minutes, and TiviBro started it again: the next start froze while webOS dealt with the old one, and webOS closed TiviBro (issue #172).  A helper that is busy (it takes the connection but hasn't answered yet) is now waited for, never started again, and TiviBro opens without it meanwhile.
-
-## 0.6.0 (alpha 212, 2026-11-24)
+## 0.6.0 (alpha 213, 2026-11-24)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 212
+### New in alpha 213
+
+- **No more freezing at the start on a busy TV.**  On a 1 GB TV with a huge playlist, the network helper could be busy for minutes, and TiviBro started it again: the next start froze while webOS dealt with the old one, and webOS closed TiviBro (issue #172).  A helper that is busy (it takes the connection but hasn't answered yet) is now waited for, never started again, and TiviBro opens without it meanwhile.
+- **A big portal's movies and shows stay read.**  On a Stalker portal browsed by category, the categories you had opened were read all over again after a day (often right after an update, issue #173).  The copy on the TV now lasts a week: past a day its categories and newest titles are read again in the background, and what you opened stays.
+- **Movies and Shows open on the category you were on**, not the first one.
+
+### In alpha 212
 
 - **Italian, Dutch, Polish and Turkish.**  TiviBro, the web editor and the phone app now come in Italian, Dutch, Polish and Turkish too, picked from the TV's language or in Settings > Language.
 - **More of TiviBro in every language.**  Some hints along the bottom of the screen (OK or ▶ its channels, Hold OK group options) and a few lines (the Settings home's "8 teams", "1 reminder", Audio sync's "Sound 40 ms later") stayed in English in every language: they're translated now.
