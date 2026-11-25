@@ -259,7 +259,7 @@ module.exports = [
     '<li><b>Root or not:</b> <a href="https://cani.rootmy.tv/" rel="nofollow">cani.rootmy.tv</a> tells you whether your firmware can be rooted, and <a href="https://www.webosbrew.org/pages/rooting/" rel="nofollow">webosbrew.org</a> explains how.  You don\'t need root for Developer Mode.</li>',
     '</ul>',
     '<h2 id="homebrew">Way 1: the Homebrew Channel (rooted TVs)</h2>',
-    '<p>The easiest way, and the TV updates TiviBro by itself.</p>',
+    '<p>The easiest way, and the TV updates TiviBro by itself.  Compatible with Homebrew Channel 0.8.0 (and 0.7).</p>',
     '<ol class="steps-list">',
     '<li id="step-1"><b>Add the repository.</b>  Open the <b>Homebrew Channel</b>, go to <b>Settings</b>, choose <b>Add repository</b> and enter:' + REPO + '</li>',
     '<li id="step-2"><b>Install.</b>  TiviBro appears in the app list.  Choose <b>Install</b>.  New versions show up as <b>Update</b>, and inside TiviBro under <b>Settings &gt; System</b>.</li>',

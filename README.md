@@ -599,7 +599,7 @@ Before the report leaves the TV, usernames, passwords and tokens are masked and 
 
 ### Homebrew Channel (rooted TVs)
 
-The easiest way on a rooted TV, with updates from the TV itself:
+The easiest way on a rooted TV, with updates from the TV itself.  Compatible with Homebrew Channel 0.8.0 (and 0.7):
 
 1. Open the **Homebrew Channel**, go to **Settings**, and choose **Add repository**.
 2. Enter `https://tivibro.app/repo`
