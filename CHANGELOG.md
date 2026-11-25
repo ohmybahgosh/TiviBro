@@ -1,15 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 217, 2026-11-24)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 217
 
 - **Choose where details come from, like Plex's agents.**  Settings > Movies and shows > Where details come from: for movies and for shows on their own, TMDB with your token else TheTVDB (as before), TheTVDB always, or TMDB only.  The guide and My media move to the new choice on their own.  The phone app and the web editor have it too.
 - **Reports from a helper that froze for good.**  The helper now notes what it is doing every few seconds.  If webOS had to stop it (or the TV lost power), the next start logs its last notes, so the next problem report shows what held it up.
 
-## 0.6.0 (alpha 216, 2026-11-24)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 216
+### In alpha 216
 
 - **Everything without a TMDB token.**  Movies and shows now get posters, backdrops, logo art, summaries, cast, trailers and skip times from TheTVDB for everyone, through TiviBro's own service: no token, no account.  In the guide (series and Movies on now), Movies and Shows, My media (matched on its own) and Up next.  A TMDB token still comes first: add one later and what was matched on TheTVDB moves to TMDB on its own.  Settings > Movies and shows > Details from TheTVDB.  Metadata provided by TheTVDB.
 - **Update first, then Still happening** (issue #91).  When the developer's reply says a problem was fixed in a newer TiviBro, Still happening now offers the update first, and the report service asks a TV on an older version to update before sending.
