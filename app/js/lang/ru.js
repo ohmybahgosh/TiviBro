@@ -2611,7 +2611,7 @@ I18n.add('ru', {
   "Posters and details for titles without them": "Постеры и описания для названий без них",
   "Metadata provided by TheTVDB": "Метаданные предоставлены TheTVDB",
   "No summary for this show yet.": "Описания этого сериала пока нет.",
-  "A folder for each language, when your provider's category names say the language (\"HINDI MOVIES\", \"|EN| Action\"): open a language to see its categories.  Nothing more is loaded, so it suits TVs with little memory too.  Not with categories ordered by name.": "Папка для каждого языка, если названия категорий у провайдера указывают язык («HINDI MOVIES», «|EN| Action»): откройте язык, чтобы увидеть его категории.  Ничего лишнего не загружается, поэтому подходит и для телевизоров с малым объёмом памяти.  Не при сортировке категорий по названию.",
+  "A folder for each language, when your provider's category names say the language (\"HINDI MOVIES\", \"|EN| Action\"): open a language to see its categories.  Nothing more is loaded, so it suits TVs with little memory too.": "Папка для каждого языка, если названия категорий у провайдера указывают язык («HINDI MOVIES», «|EN| Action»): откройте язык, чтобы увидеть его категории.  Ничего лишнего не загружается, поэтому подходит и для телевизоров с малым объёмом памяти.",
   "Categories by language": "Категории по языкам",
   "Every language": "Все языки",
   "OK goes back to every language": "OK возвращает ко всем языкам",

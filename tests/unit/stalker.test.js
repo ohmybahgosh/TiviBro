@@ -140,6 +140,17 @@ const req = (method, u, body, headers) => new Promise((res, rej) => {
   x = await X4('get_series_categories');
   ok('a shows module: its own categories', x.status === 200 && x.j.map((c) => c.category_name).join() === 'HINDI | TV SERIALS,URDU | TV SERIALS', JSON.stringify(x.j));
   ok('HTTP 429: waited and asked again', m4.seen.limited === 2, m4.seen.limited);
+
+  // Issue #173: the shows' categories failing once (a busy portal) never puts the movie categories under Shows.
+  const m9 = Mock.create({ stream: 'http://127.0.0.1:1/live/stream.ts', series: true, seriesFailOnce: true });
+  await new Promise((f) => m9.server.listen(0, '127.0.0.1', f));
+  const login9 = b64({ portal: 'http://127.0.0.1:' + m9.server.address().port + '/stalker_portal/c/', mac: '00:1a:79:00:00:01' });
+  const X9 = (q) => req('GET', H + '/stalker/xc/player_api.php?stb=' + login9 + '&action=' + q).then((r) => ({ status: r.status, j: JSON.parse(r.body || 'null') }));
+  const f9 = await X9('get_series_categories');
+  ok('a failed ask for the shows\' categories is an error, not the movie categories', f9.status !== 200 || !JSON.stringify(f9.j).includes('Films'), JSON.stringify(f9));
+  const g9 = await X9('get_series_categories');
+  ok('asked again: the shows\' own categories', g9.status === 200 && g9.j.map((c) => c.category_name).join() === 'HINDI | TV SERIALS,URDU | TV SERIALS', JSON.stringify(g9.j));
+  m9.server.close();
   x = await X4('get_series&category_id=70');
   ok('every show in a category from the shows module, not the few the movie module marks', x.status === 200 && x.j.length === 30 && x.j[0].series_id === '901', x.j && x.j.length);
   ok('a poster that is a path on the portal gets the portal\'s address', x.j[0].cover === base4 + '/stalker_portal/screenshots/1.jpg', x.j[0].cover);

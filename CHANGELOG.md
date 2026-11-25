@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Language folders on more portals.**  Categories by language now finds the language anywhere in a category's name ("BOLLYWOOD HINDI", "AMAZON PRIME TAMIL"), and works with categories ordered by name too.  On a Stalker portal, Shows no longer fills with the movie categories after the portal is slow to answer once (issue #173).
 - **Up next shows whole again.**  After a long menu, Up next could open as a dark screen with only its heading and a strip of the show's page at the top, then play the next episode by itself.  It also no longer lets the show's page show through while it fades in.
 - **No reminder for an event channel's "Next:" block.**  A pay-per-view or sports pass channel that fills the hours before a game with "NHL 9 - Next: Wed 7:30 PM" no longer sets a My teams reminder at midnight, and one already set is dropped.  A listing longer than 8 hours is never taken for a game.
 

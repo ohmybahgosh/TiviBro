@@ -338,7 +338,11 @@ function seriesCats(L, cb) {
   if (S.cats && Date.now() - S.catsAt < VOD_FOR) return cb(null, S.cats);
   act(L, { type: 'series', action: 'get_categories' }, function (e, js) {
     var list = !e && Array.isArray(js) ? js.filter(function (c) { return c && c.id != null && String(c.id) !== '*'; }) : [];
-    if (!list.length) { if (!(e && e.auth)) S.own = false; return e && e.auth ? cb(e) : vodCats(L, cb); }
+    /* Only a portal that answers with no series categories has none of its own (its shows are among the movies).
+       One that fails to answer (a timeout on a busy portal) is asked again next time: taking that for "none" put the
+       movie categories under Shows until the helper restarted (issue #173). */
+    if (e) return cb(e);
+    if (!list.length) { S.own = false; return vodCats(L, cb); }
     S.own = true;
     S.cats = list.map(function (c) { return { category_id: String(c.id), category_name: String(c.title || c.name || 'Shows'), parent_id: 0 }; });
     S.catsAt = Date.now(); cb(null, S.cats);
@@ -347,7 +351,7 @@ function seriesCats(L, cb) {
 function showItems(L, cat, cb, max) {
   var S = seriesOf(L);
   function fromVod() { vodItems(L, cat, function (e, items) { cb(e, e ? null : items.filter(function (x) { return x.series; })); }, max); }
-  if (S.own === null) return seriesCats(L, function () { S.own === null ? fromVod() : showItems(L, cat, cb, max); });
+  if (S.own === null) return seriesCats(L, function (e) { if (S.own === null) return e ? cb(e) : fromVod(); showItems(L, cat, cb, max); });
   if (!S.own) return fromVod();
   var key = (cat || '*') + (max > 0 ? '~' + max : ''), hit = S.lists[key];
   if (hit && Date.now() - hit.at < VOD_FOR) return cb(null, hit.items);

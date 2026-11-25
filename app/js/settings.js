@@ -1533,7 +1533,7 @@ var Settings = (function () {
       ['85', '90', '95', '98'], ['85%', '90% (as Plex)', '95%', '98%'], function () { return String(+s.watchedAt || 90); }, function (v) { s.watchedAt = +v; save(); }));
     out.push(choice('Order categories', 'The provider\'s order, or by name from A to Z.  Continue watching, My list and the newest titles stay at the top.',
       ['provider', 'name'], ['The provider\'s order', 'Name (A–Z)'], function () { return s.vodCatSort === 'name' ? 'name' : 'provider'; }, function (v) { s.vodCatSort = v; save(); if (typeof Vod !== 'undefined' && Vod.recats) Vod.recats(); }));
-    out.push(toggle('Categories by language', 'A folder for each language, when your provider\'s category names say the language ("HINDI MOVIES", "|EN| Action"): open a language to see its categories.  Nothing more is loaded, so it suits TVs with little memory too.  Not with categories ordered by name.',
+    out.push(toggle('Categories by language', 'A folder for each language, when your provider\'s category names say the language ("HINDI MOVIES", "|EN| Action"): open a language to see its categories.  Nothing more is loaded, so it suits TVs with little memory too.',
       function () { return !!s.vodLangFolders; }, function (v) { s.vodLangFolders = v; save(); if (typeof Vod !== 'undefined' && Vod.recats) Vod.recats(); }));
     out.push(choice('Open a category as', 'A list beside the categories, or a full-screen wall of posters (Back goes to the categories).',
       ['list', 'wall'], ['List', 'Posters, full screen'], function () { return s.vodCatWall ? 'wall' : 'list'; }, function (v) { s.vodCatWall = v === 'wall'; save(); }));

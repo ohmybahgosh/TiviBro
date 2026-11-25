@@ -686,17 +686,21 @@ var Vod = (function () {
   /* A category's language from its name, for a big portal's headings (issue #173: "by language folder"):
      "HINDI | MOVIES", "TAMIL SERIES", "|EN| ...", "DE - ...".  '' when the name doesn't say. */
   var LANG_WORDS = /^\W*(hindi|english|tamil|telugu|malayalam|kannada|marathi|bengali|bangla|gujarati|punjabi|urdu|odia|nepali|sinhala|arabic|turkish|persian|farsi|kurdish|spanish|french|german|italian|portuguese|dutch|polish|russian|ukrainian|romanian|greek|albanian|serbian|croatian|bosnian|bulgarian|hungarian|czech|swedish|norwegian|danish|finnish|korean|japanese|chinese|thai|vietnamese|filipino|tagalog|indonesian|malay)\b/i;
-  function catLang(name) {
-    var n = String(name || ''), w = LANG_WORDS.exec(n);
+  /* The same words anywhere in a name ("BOLLYWOOD HINDI", "NEW TAMIL MOVIES", "AMAZON PRIME TELUGU"; issue #173), for
+     folders by language, where a word later in the name is as good a sign. */
+  var LANG_ANY = new RegExp('\\b' + LANG_WORDS.source.slice(4), 'i');
+  function catLang(name, any) {
+    var n = String(name || ''), w = LANG_WORDS.exec(n) || (any ? LANG_ANY.exec(n) : null);
     if (w) return w[1].charAt(0).toUpperCase() + w[1].slice(1).toLowerCase();
     var m = /^\s*[|\[]\s*([A-Za-z]{2,4})\s*[|\]]/.exec(n) || /^\s*([A-Z]{2,3})\s*(?:[|:]|\s[-–])\s/.exec(n);
     var code = m && m[1].toUpperCase();
     return code && VodView.known(code) ? VodView.langName(code) : '';
   }
   // A big portal's categories by language, each language where its first category was, with a heading each.
-  function byLang(cats) {
+  // any: a language word anywhere in a name counts (folders by language).
+  function byLang(cats, any) {
     var groups = [], at = {};
-    cats.forEach(function (c) { var l = catLang(c.name); if (at[l] === undefined) { at[l] = groups.length; groups.push({ l: l, cats: [] }); } groups[at[l]].cats.push(c); });
+    cats.forEach(function (c) { var l = catLang(c.name, any); if (at[l] === undefined) { at[l] = groups.length; groups.push({ l: l, cats: [] }); } groups[at[l]].cats.push(c); });
     if (groups.filter(function (g) { return g.l && g.cats.length > 1; }).length < 2) return cats;
     var out = [];
     groups.forEach(function (g) { if (g.l) out.push({ id: '@lang:' + g.l, head: true, name: g.l }); else if (out.length) out.push({ id: '@lang:', head: true, name: I18n.t('Other categories') }); out = out.concat(g.cats); });
@@ -709,7 +713,8 @@ var Vod = (function () {
   var FOLDER = '@folder:', UP = '@up';
   function folderOpen() { try { return localStorage.getItem('tivibro.vodFolder.' + kind) || ''; } catch (e) { return ''; } }
   function setFolder(f) { try { if (f) localStorage.setItem('tivibro.vodFolder.' + kind, f); else localStorage.removeItem('tivibro.vodFolder.' + kind); } catch (e) {} }
-  function foldersOn() { return !!Store.settings.vodLangFolders && Store.settings.vodCatSort !== 'name'; }
+  // With categories ordered by name too: each folder's categories then come from A to Z.
+  function foldersOn() { return !!Store.settings.vodLangFolders; }
   // The categories (after byLang) as folders, or one folder's categories when it's open.
   function inFolders(cats) {
     if (!cats.some(function (c) { return c.head; })) return cats;     // no languages found: the plain list
@@ -747,7 +752,8 @@ var Vod = (function () {
     if (Store.settings.vodCatSort === 'name') cats = d.cats.slice().sort(function (a, b) { return d.multi && (a.pl || '') !== (b.pl || '') ? 0 : String(labels[a.id] || a.name).localeCompare(String(labels[b.id] || b.name), undefined, { sensitivity: 'base', numeric: true }); });
     var elsewhere = [];
     // A big portal by language, when its category names say (no playlist headings then: one portal).
-    if (!d.multi && Store.settings.vodCatSort !== 'name' && (d.browse || foldersOn())) cats = byLang(cats);
+    if (!d.multi && foldersOn()) cats = byLang(cats, true);
+    else if (!d.multi && Store.settings.vodCatSort !== 'name' && d.browse) cats = byLang(cats);
     if (!d.multi && foldersOn()) cats = inFolders(cats);
     cats.forEach(function (c) {
       if (c.head || c.folder || c.up) { out.push(c); return; }

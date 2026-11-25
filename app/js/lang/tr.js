@@ -2484,7 +2484,7 @@ I18n.add('tr', {
   "Posters and details for titles without them": "Afişi ve ayrıntısı olmayan adlar için afiş ve ayrıntılar",
   "Metadata provided by TheTVDB": "Meta veriler TheTVDB tarafından sağlanır",
   "No summary for this show yet.": "Bu dizi için henüz özet yok.",
-  "A folder for each language, when your provider's category names say the language (\"HINDI MOVIES\", \"|EN| Action\"): open a language to see its categories.  Nothing more is loaded, so it suits TVs with little memory too.  Not with categories ordered by name.": "Sağlayıcınızın kategori adları dili belirttiğinde her dil için bir klasör (\"HINDI MOVIES\", \"|EN| Action\"): kategorilerini görmek için bir dil açın.  Fazladan bir şey yüklenmez, bu yüzden belleği az TV'lere de uygundur.  Kategoriler ada göre sıralıyken olmaz.",
+  "A folder for each language, when your provider's category names say the language (\"HINDI MOVIES\", \"|EN| Action\"): open a language to see its categories.  Nothing more is loaded, so it suits TVs with little memory too.": "Sağlayıcınızın kategori adları dili belirttiğinde her dil için bir klasör (\"HINDI MOVIES\", \"|EN| Action\"): kategorilerini görmek için bir dil açın.  Fazladan bir şey yüklenmez, bu yüzden belleği az TV'lere de uygundur.",
   "Categories by language": "Dile göre kategoriler",
   "Every language": "Tüm diller",
   "OK goes back to every language": "OK tüm dillere geri döner",

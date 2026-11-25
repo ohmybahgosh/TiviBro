@@ -2484,7 +2484,7 @@ I18n.add('pl', {
   "Posters and details for titles without them": "Plakaty i szczegóły dla tytułów, które ich nie mają",
   "Metadata provided by TheTVDB": "Metadane dostarcza TheTVDB",
   "No summary for this show yet.": "Brak jeszcze opisu tego serialu.",
-  "A folder for each language, when your provider's category names say the language (\"HINDI MOVIES\", \"|EN| Action\"): open a language to see its categories.  Nothing more is loaded, so it suits TVs with little memory too.  Not with categories ordered by name.": "Folder dla każdego języka, gdy nazwy kategorii u dostawcy podają język („HINDI MOVIES”, „|EN| Action”): otwórz język, aby zobaczyć jego kategorie.  Nic więcej się nie wczytuje, więc nadaje się też do telewizorów z małą pamięcią.  Nie przy kategoriach sortowanych według nazwy.",
+  "A folder for each language, when your provider's category names say the language (\"HINDI MOVIES\", \"|EN| Action\"): open a language to see its categories.  Nothing more is loaded, so it suits TVs with little memory too.": "Folder dla każdego języka, gdy nazwy kategorii u dostawcy podają język („HINDI MOVIES”, „|EN| Action”): otwórz język, aby zobaczyć jego kategorie.  Nic więcej się nie wczytuje, więc nadaje się też do telewizorów z małą pamięcią.",
   "Categories by language": "Kategorie według języka",
   "Every language": "Wszystkie języki",
   "OK goes back to every language": "OK wraca do wszystkich języków",

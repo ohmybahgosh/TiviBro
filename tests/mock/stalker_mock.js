@@ -49,6 +49,8 @@ function create(o) {
     if (q.action === 'get_all_channels') return js(res, { total_items: chans.length, data: chans });
     if (q.type === 'vod' && q.action === 'get_categories') return js(res, [{ id: '*', title: 'All' }, { id: '10', title: 'Films' }, { id: '11', title: 'More films' }]);
     if (limit > 0 && seen.profile && q.action !== 'handshake' && q.action !== 'get_profile') { limit--; seen.limited = (seen.limited || 0) + 1; res.writeHead(429, { 'Retry-After': '1' }); return res.end('slow down'); }
+    // seriesFailOnce: the first ask for the shows' categories fails (a busy portal), the next one answers.
+    if (o.series && o.seriesFailOnce && q.type === 'series' && q.action === 'get_categories' && !seen.seriesFailed) { seen.seriesFailed = true; res.writeHead(500); return res.end(); }
     if (o.series && q.type === 'series' && q.action === 'get_categories') return js(res, [{ id: '*', title: 'All' }, { id: '70', title: 'HINDI | TV SERIALS' }, { id: '71', title: 'URDU | TV SERIALS' }]);
     /* o.epCoords: an episode plays only from its own file (by show, season and episode), not from the season's command with series=. */
     if (o.series && o.epCoords && q.type === 'series' && q.action === 'get_ordered_list' && q.movie_id && q.movie_id !== '0' && q.season_id && q.season_id !== '0') {
