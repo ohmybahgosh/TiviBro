@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **The full provider guide no longer swamps TVs with 1 GB.**  With a big playlist and the provider's full XMLTV guide, the network helper kept over 400 MB after reading the guide, and peaked near 900 MB while reading it.  On a 1 GB TV that froze the helper until the TV restarted.  It now peaks under 200 MB and settles near 115 MB on a 57,000-channel list (issue #178).
 - **A stuck network helper is explained on screen.**  On some 1 GB TVs the helper can get stuck until the TV restarts.  After three tries TiviBro now says so once: channels still play without it, and restarting the TV frees it (issue #178).
 - **Better reports when the helper freezes right after it starts.**  For its first minutes it now notes what it's doing every 2 seconds and whenever it logs something, so the next report names the job it froze in (issue #178).
 - **The open language folder's name stays in sight.**  With Categories by language on, the heading above the categories shows the language whose folder is open, so you always know where you are while scrolling (issue #173).

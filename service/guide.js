@@ -225,7 +225,9 @@ function start(body, log) {
      per channel (winner). */
   var winner = {}, look = {}, LOOK_FROM = Date.now() - 3 * 3600e3, LOOK_TO = Date.now() + 26 * 3600e3;
   function keepLook(ix, si, s, e, t) {
-    if (e <= LOOK_FROM || s >= LOOK_TO) return;
+    // Only worth keeping when a later source may be compared with it: the provider's guide alone (issue #178's
+    // TV) kept a day of every channel's programmes, over a million entries, for nothing.
+    if (srcs.length < 2 || e <= LOOK_FROM || s >= LOOK_TO) return;
     var l = look[ix] || (look[ix] = {}), a = l[si] || (l[si] = []);
     if (a.length < 80) a.push({ s: s, e: e, t: t.slice(0, 80) });
   }
@@ -409,6 +411,7 @@ function start(body, log) {
     job.phase = 'error'; job.error = String(e && e.message || e); job.at = Date.now();
     buckets.forEach(function (w) { try { w.end(); } catch (x) {} });
     log({ lv: 'error', event: 'guide load failed', kind: k, e: job.error });
+    letGo();
   }
 
   var srcs = d.sources || [], si = -1;
@@ -475,7 +478,7 @@ function start(body, log) {
         rmdir(tmp);
         job.phase = 'failed'; job.error = report[0].error; job.report = report; job.at = Date.now();
         log({ lv: 'warn', event: 'guide load failed, kept the stored one', kind: k, e: job.error });
-        return;
+        return letGo();
       }
       var meta = { sig: job.sig, at: Date.now(), extra: body.extra || null, report: report, matches: matches, icons: pub ? keepIcons(icons, keep) : icons, channels: chans, pubMatch: pubMatch,
         kept: kept, programmes: total, took: Date.now() - job.started };
@@ -491,10 +494,20 @@ function start(body, log) {
       delete descIdx[k];
       job.phase = 'done'; job.at = meta.at; job.programmes = total; job.channels = kept;
       log({ lv: 'info', event: 'guide stored', kind: k, channels: kept, programmes: total, ms: meta.took });
+      letGo();
     }
     bucket();
   }
   function keepIcons(all, keep) { var o = {}; for (var i in all) if (keep[i]) o[i] = all[i]; return o; }
+  /* A finished or failed load lets go of what it read with.  The job stays in jobs[] for status, and its cancel()
+     kept this whole load's state alive with it: on issue #178's TV (57,000 channels, a full provider guide) the
+     helper held over 400 MB after the guide was stored, on a TV with 1 GB for everything. */
+  function letGo() {
+    job.cancel = function () { stopped = true; };
+    look = {}; winner = {}; idx = {}; ids = []; firstSrc = []; count = []; since = {}; want = {};
+    icons = {}; chans = []; matches = {}; best = {}; claimed = {}; pubMatch = {}; pubWant = {}; pk = {}; names = {}; past = {};
+    buckets = []; current = null; d = {}; body = { extra: null };
+  }
 
   next();
   return job;
