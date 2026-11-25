@@ -9,7 +9,10 @@ const ls = {};
 const ctx = { console, I18n: { t: (s) => s }, Store: { settings: { vodLangFolders: true } },
   localStorage: { getItem: (k) => (k in ls ? ls[k] : null), setItem: (k, v) => { ls[k] = String(v); }, removeItem: (k) => { delete ls[k]; } },
   VodView: { known: (c) => /^(EN|DE)$/.test(c), langName: (c) => ({ EN: 'English', DE: 'German' })[c] || c, tag: () => '' },
-  U: { debounce: (f) => { f.cancel = () => {}; return f; }, el: () => ({}) }, window: {}, document: {} };
+  U: { debounce: (f) => { f.cancel = () => {}; return f; }, el: () => ({}) }, window: {},
+  // The category column and its heading, which names the open folder.
+  document: { getElementById: (id) => (id === 'vodCats' ? { parentNode: { querySelector: () => title } } : null) } };
+const title = { textContent: 'Categories' };
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js/vod.js'), 'utf8') + '\n;this.Vod = Vod;', ctx);
 const { byLang, inFolders } = ctx.Vod._test;
@@ -27,10 +30,12 @@ ctx.localStorage.setItem('tivibro.vodFolder.movie', 'Tamil');
 let open = inFolders(byLang(cats));
 if (!open[0].up) { ctx.localStorage.setItem('tivibro.vodFolder.series', 'Tamil'); open = inFolders(byLang(cats)); }
 assert.ok(open[0].up && open.slice(1).map((c) => c.id).join() === '3,4', 'an open folder: a row back, then its categories: ' + JSON.stringify(open));
+assert.strictEqual(title.textContent, 'Tamil', 'the column heading names the open folder, so it stays in sight while scrolling');
 
 // A folder name that no longer exists (the provider renamed it): all folders again.
 ctx.localStorage.setItem('tivibro.vodFolder.movie', 'Klingon'); ctx.localStorage.setItem('tivibro.vodFolder.series', 'Klingon');
 assert.ok(inFolders(byLang(cats)).every((f) => f.folder), 'a folder that is gone shows every folder');
+assert.strictEqual(title.textContent, 'Categories', 'every folder: the heading is Categories again');
 
 // Names that say no language: the plain list, unchanged.
 const plain = [{ id: 1, name: 'Action' }, { id: 2, name: 'Drama' }];

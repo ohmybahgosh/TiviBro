@@ -736,12 +736,20 @@ var Vod = (function () {
   function setFolder(f) { try { if (f) localStorage.setItem('tivibro.vodFolder.' + kind, f); else localStorage.removeItem('tivibro.vodFolder.' + kind); } catch (e) {} }
   // With categories ordered by name too: each folder's categories then come from A to Z.
   function foldersOn() { return !!Store.settings.vodLangFolders; }
+  /* The column's heading names the language folder that's open (issue #173), so it stays in sight while the
+     list scrolls; "Categories" otherwise. */
+  function colTitle(name) {
+    var list = typeof document !== 'undefined' && document.getElementById && document.getElementById('vodCats');
+    var t = list && list.parentNode.querySelector('.col-title');
+    if (t) t.textContent = name || I18n.t('Categories');
+  }
   // The categories (after byLang) as folders, or one folder's categories when it's open.
   function inFolders(cats) {
     if (!cats.some(function (c) { return c.head; })) return cats;     // no languages found: the plain list
     var groups = [], g = null;
     cats.forEach(function (c) { if (c.head) { g = { name: c.name, cats: [] }; groups.push(g); } else if (g) g.cats.push(c); });
     var open = folderOpen(), mine = groups.filter(function (x) { return x.name === open; })[0];
+    colTitle(mine ? mine.name : '');
     if (mine) return [{ id: UP, name: '‹ ' + I18n.t('Every language'), up: true }].concat(mine.cats);
     return groups.map(function (x) { return { id: FOLDER + x.name, name: x.name, folder: x.name, count: x.cats.length, cats: x.cats }; });
   }
@@ -775,6 +783,7 @@ var Vod = (function () {
     // A big portal by language, when its category names say (no playlist headings then: one portal).
     if (!d.multi && foldersOn()) cats = byLang(cats, true);
     else if (!d.multi && Store.settings.vodCatSort !== 'name' && d.browse) cats = byLang(cats);
+    colTitle('');
     if (!d.multi && foldersOn()) cats = inFolders(cats);
     cats.forEach(function (c) {
       if (c.head || c.folder || c.up) { out.push(c); return; }

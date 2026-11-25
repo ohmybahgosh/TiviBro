@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **The open language folder's name stays in sight.**  With Categories by language on, the heading above the categories shows the language whose folder is open, so you always know where you are while scrolling (issue #173).
+- **No false error report on older TVs when a channel can't play.**  webOS 4 to 6 reported "Cannot read property 'emit' of null" while TiviBro tried a channel another way; it was harmless and is now only noted in the log (issue #181).
+
 ## 0.6.0 (alpha 221, 2026-11-25)
 
 Pre-release: expect rough edges, and keep a backup before installing.
