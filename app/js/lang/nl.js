@@ -2483,5 +2483,10 @@ I18n.add('nl', {
   "For the series in your guide and on the Shows screen: a poster, when it started, its network, genres and rating, and each episode's own title and summary (in the guide when it gives the season and episode).  On the Shows screen it fills in what your provider's details leave out.  From TMDB or TheTVDB, as set above.  Only a show's name and episode numbers leave the TV.": "Voor de series in je gids en op het scherm Series: een poster, wanneer de serie begon, de zender, genres en waardering, en de eigen titel en samenvatting van elke aflevering (in de gids als die het seizoen en de aflevering opgeeft).  Op het scherm Series vult het aan wat de gegevens van je provider missen.  Van TMDB of TheTVDB, zoals hierboven ingesteld.  Alleen de naam van een serie en de afleveringsnummers verlaten de tv.",
   "Posters and details for titles without them": "Posters en details voor titels zonder",
   "Metadata provided by TheTVDB": "Metadata geleverd door TheTVDB",
-  "No summary for this show yet.": "Nog geen samenvatting voor deze serie."
+  "No summary for this show yet.": "Nog geen samenvatting voor deze serie.",
+  "A folder for each language, when your provider's category names say the language (\"HINDI MOVIES\", \"|EN| Action\"): open a language to see its categories.  Nothing more is loaded, so it suits TVs with little memory too.  Not with categories ordered by name.": "Een map per taal, als de categorienamen van je provider de taal noemen (\"HINDI MOVIES\", \"|EN| Action\"): open een taal om de categorieën te zien.  Er wordt niets extra geladen, dus ook geschikt voor tv's met weinig geheugen.  Niet als categorieën op naam staan.",
+  "Categories by language": "Categorieën per taal",
+  "Every language": "Alle talen",
+  "OK goes back to every language": "OK gaat terug naar alle talen",
+  "OK opens this language's categories": "OK opent de categorieën van deze taal"
 });

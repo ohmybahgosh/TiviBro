@@ -2610,5 +2610,10 @@ I18n.add('ru', {
   "For the series in your guide and on the Shows screen: a poster, when it started, its network, genres and rating, and each episode's own title and summary (in the guide when it gives the season and episode).  On the Shows screen it fills in what your provider's details leave out.  From TMDB or TheTVDB, as set above.  Only a show's name and episode numbers leave the TV.": "Для сериалов в телегиде и на экране «Сериалы»: постер, год начала, телесеть, жанры и рейтинг, а также название и описание каждой серии (в телегиде, если он указывает сезон и серию).  На экране «Сериалы» дополняет то, чего нет в описаниях провайдера.  Из TMDB или TheTVDB, как выбрано выше.  Телевизор покидают только название сериала и номера серий.",
   "Posters and details for titles without them": "Постеры и описания для названий без них",
   "Metadata provided by TheTVDB": "Метаданные предоставлены TheTVDB",
-  "No summary for this show yet.": "Описания этого сериала пока нет."
+  "No summary for this show yet.": "Описания этого сериала пока нет.",
+  "A folder for each language, when your provider's category names say the language (\"HINDI MOVIES\", \"|EN| Action\"): open a language to see its categories.  Nothing more is loaded, so it suits TVs with little memory too.  Not with categories ordered by name.": "Папка для каждого языка, если названия категорий у провайдера указывают язык («HINDI MOVIES», «|EN| Action»): откройте язык, чтобы увидеть его категории.  Ничего лишнего не загружается, поэтому подходит и для телевизоров с малым объёмом памяти.  Не при сортировке категорий по названию.",
+  "Categories by language": "Категории по языкам",
+  "Every language": "Все языки",
+  "OK goes back to every language": "OK возвращает ко всем языкам",
+  "OK opens this language's categories": "OK открывает категории этого языка"
 });

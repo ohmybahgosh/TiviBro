@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Movies and Shows by language folder** (issue #173).  Settings > Movies and shows > **Categories by language** (off unless you turn it on): when your provider's category names say the language, Movies and Shows open on a folder per language (Hindi, Tamil, English...), each with its categories.  Back leaves a folder.  Nothing more is loaded, so TVs with little memory handle it too.
 - **TheTVDB credited where its details show.**  On the phone app too (a tap opens thetvdb.com).  My media, movie pages, your provider's Movies and Shows, About this show, Movies on now and Recordings say "Metadata provided by TheTVDB · thetvdb.com" under details that came from TheTVDB, as its terms ask.
 - **Phone app links from tivibro.app open the app.**  The site now serves the link check file Android and Google Play look for.
 - **tivibro.app in ten languages.**  The website, its install guide, comparisons and video pages now come in German, Spanish, French, Italian, Dutch, Polish, Portuguese, Russian and Turkish too, with a flag menu at the top and search engines told about each version.

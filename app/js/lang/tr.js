@@ -2483,5 +2483,10 @@ I18n.add('tr', {
   "For the series in your guide and on the Shows screen: a poster, when it started, its network, genres and rating, and each episode's own title and summary (in the guide when it gives the season and episode).  On the Shows screen it fills in what your provider's details leave out.  From TMDB or TheTVDB, as set above.  Only a show's name and episode numbers leave the TV.": "Rehberinizdeki ve Diziler ekranındaki diziler için: afiş, başlangıç tarihi, yayıncı kanalı, türler ve puan, ayrıca her bölümün kendi başlığı ve özeti (rehberde sezon ve bölüm numarası verildiğinde).  Diziler ekranında sağlayıcınızın ayrıntılarında eksik kalanları tamamlar.  Yukarıdaki ayara göre TMDB'den veya TheTVDB'den.  TV'den yalnızca dizinin adı ve bölüm numaraları çıkar.",
   "Posters and details for titles without them": "Afişi ve ayrıntısı olmayan adlar için afiş ve ayrıntılar",
   "Metadata provided by TheTVDB": "Meta veriler TheTVDB tarafından sağlanır",
-  "No summary for this show yet.": "Bu dizi için henüz özet yok."
+  "No summary for this show yet.": "Bu dizi için henüz özet yok.",
+  "A folder for each language, when your provider's category names say the language (\"HINDI MOVIES\", \"|EN| Action\"): open a language to see its categories.  Nothing more is loaded, so it suits TVs with little memory too.  Not with categories ordered by name.": "Sağlayıcınızın kategori adları dili belirttiğinde her dil için bir klasör (\"HINDI MOVIES\", \"|EN| Action\"): kategorilerini görmek için bir dil açın.  Fazladan bir şey yüklenmez, bu yüzden belleği az TV'lere de uygundur.  Kategoriler ada göre sıralıyken olmaz.",
+  "Categories by language": "Dile göre kategoriler",
+  "Every language": "Tüm diller",
+  "OK goes back to every language": "OK tüm dillere geri döner",
+  "OK opens this language's categories": "OK bu dilin kategorilerini açar"
 });

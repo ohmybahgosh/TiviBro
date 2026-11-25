@@ -350,6 +350,10 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const vodPg = await sa({ op: 'page', sec: 'vod' }), shw = vodPg.rows.find((r) => r.label === 'Shows: details from'), mov = vodPg.rows.find((r) => r.label === 'Movies: details from');
   ok('the phone has where details come from, for movies and for shows', shw && mov && shw.kind === 'choice' && shw.options.length === 3 && mov.options.length === 3, JSON.stringify(vodPg.rows.map((r) => r.label)).slice(0, 300));
   if (shw) { await sa({ op: 'choice', sec: 'vod', i: shw.i, v: 1 }); ok('...and sets shows to TheTVDB on the TV', await ev(() => Store.settings.metaShows) === 'tvdb'); await sa({ op: 'choice', sec: 'vod', i: shw.i, v: 0 }); }
+  // Categories by language (issue #173): a toggle on the phone too, off at first, that turns the folders on on the TV.
+  const lf = vodPg.rows.find((r) => r.label === 'Categories by language');
+  ok('the phone has Categories by language, off at first', lf && lf.kind === 'toggle' && lf.on === false, JSON.stringify(vodPg.rows.map((r) => r.label)).slice(0, 300));
+  if (lf) { await sa({ op: 'toggle', sec: 'vod', i: lf.i, on: true }); ok('...and turns the folders on on the TV', await ev(() => Store.settings.vodLangFolders) === true); await sa({ op: 'toggle', sec: 'vod', i: lf.i, on: false }); }
   const dePg = await ask('settings', { op: 'page', sec: 'playback' }, { seal: true, lang: 'de' });
   ok('a phone in German gets it in German', (dePg.rows || []).some((r) => r.label === 'Überspring-Zeiten aus Online-Datenbanken'), JSON.stringify((dePg.rows || []).map((r) => r.label)).slice(0, 300));
   const grp = await sa({ op: 'page', sec: 'channels' });

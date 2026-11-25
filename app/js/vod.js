@@ -597,7 +597,7 @@ var Vod = (function () {
     UI.menu('Languages', items, function () { langMenu.last = null; });
   }
   function catMenu(c) {
-    if (!c || c.head) return;
+    if (!c || c.head || c.folder || c.up) return;
     // Hidden by the category's own playlist (several playlists on).
     var home = catHome(c.id), p = prefs(home.p), h = p.hide || (p.hide = {}), list = h[kind] || (h[kind] = []);
     var items = [];
@@ -702,6 +702,23 @@ var Vod = (function () {
     groups.forEach(function (g) { if (g.l) out.push({ id: '@lang:' + g.l, head: true, name: g.l }); else if (out.length) out.push({ id: '@lang:', head: true, name: I18n.t('Other categories') }); out = out.concat(g.cats); });
     return out;
   }
+  /* Folders by language (Settings > Movies and shows > Categories by language, off at first; issue #173: "separate
+     folders for movies and TV shows based on language").  The language headings above, each turned into one row that
+     opens its categories, with a row back to every language.  Only rows change: nothing more is read or kept, so a
+     1 GB TV with a 60,000-title portal is no worse off.  The open folder is kept per kind, like the category. */
+  var FOLDER = '@folder:', UP = '@up';
+  function folderOpen() { try { return localStorage.getItem('tivibro.vodFolder.' + kind) || ''; } catch (e) { return ''; } }
+  function setFolder(f) { try { if (f) localStorage.setItem('tivibro.vodFolder.' + kind, f); else localStorage.removeItem('tivibro.vodFolder.' + kind); } catch (e) {} }
+  function foldersOn() { return !!Store.settings.vodLangFolders && Store.settings.vodCatSort !== 'name'; }
+  // The categories (after byLang) as folders, or one folder's categories when it's open.
+  function inFolders(cats) {
+    if (!cats.some(function (c) { return c.head; })) return cats;     // no languages found: the plain list
+    var groups = [], g = null;
+    cats.forEach(function (c) { if (c.head) { g = { name: c.name, cats: [] }; groups.push(g); } else if (g) g.cats.push(c); });
+    var open = folderOpen(), mine = groups.filter(function (x) { return x.name === open; })[0];
+    if (mine) return [{ id: UP, name: '‹ ' + I18n.t('Every language'), up: true }].concat(mine.cats);
+    return groups.map(function (x) { return { id: FOLDER + x.name, name: x.name, folder: x.name, count: x.cats.length }; });
+  }
   function catList() {
     var d = data[kind], counts = {};
     if (!d) return [];
@@ -730,9 +747,10 @@ var Vod = (function () {
     if (Store.settings.vodCatSort === 'name') cats = d.cats.slice().sort(function (a, b) { return d.multi && (a.pl || '') !== (b.pl || '') ? 0 : String(labels[a.id] || a.name).localeCompare(String(labels[b.id] || b.name), undefined, { sensitivity: 'base', numeric: true }); });
     var elsewhere = [];
     // A big portal by language, when its category names say (no playlist headings then: one portal).
-    if (d.browse && !d.multi && Store.settings.vodCatSort !== 'name') cats = byLang(cats);
+    if (!d.multi && Store.settings.vodCatSort !== 'name' && (d.browse || foldersOn())) cats = byLang(cats);
+    if (!d.multi && foldersOn()) cats = inFolders(cats);
     cats.forEach(function (c) {
-      if (c.head) { out.push(c); return; }
+      if (c.head || c.folder || c.up) { out.push(c); return; }
       if ((!counts[c.id] && !d.browse) || hid[c.id]) return;
       /* A big portal lists every category under both Movies and Shows (issue #118: "ENGLISH | SERIES" in Movies, with
          0 movies, its shows in Shows only): one found empty leaves the list, unless it's the one you're on. */
@@ -782,11 +800,13 @@ var Vod = (function () {
       });
     })();
   }
+  // A folder row or the row back out of one: rows that open other rows, not titles.
+  function isNav(cid) { return cid === UP || String(cid).indexOf(FOLDER) === 0; }
   function itemsFor(cid) {
     var d = data[kind];
     if (!d) return [];
     if (cid === CW) return continueList();
-    if (cid === LANGS) return [];
+    if (cid === LANGS || isNav(cid)) return [];
     if (cid === NEW) return recentList();
     if (cid === MY) { var m = E().myList; return sorted(d.items.filter(function (it) { return m.indexOf(key(it)) >= 0; })); }
     if (cid === ALL) return sorted((d.browse ? d.recent : d.items).filter(function (it) { return !it.adult; }), 'added');
@@ -881,7 +901,7 @@ var Vod = (function () {
     if (episodes) { if (c && c.season != null) { itemsVL.setItems(seasonEps(c.season), 0); onItem(); } return; }
     if (!c || c.head) return;
     var shut = c.adult && !adultOpen();
-    itemsVL.empty = c.id === LANGS ? 'Press OK to pick which languages show' : shut ? 'Press OK and enter the PIN' : 'Nothing here';
+    itemsVL.empty = c.id === LANGS ? 'Press OK to pick which languages show' : c.folder ? T('OK opens this language\'s categories') : c.up ? T('OK goes back to every language') : shut ? 'Press OK and enter the PIN' : 'Nothing here';
     itemsVL.setItems(shut ? [] : itemsFor(c.id), 0); onItem();
   }, 200);
   // With a PIN set (Settings > Parental controls, for channels), adult categories open only after it.
@@ -1262,6 +1282,7 @@ var Vod = (function () {
       else if (a === 'chup') catsVL.page(-1);
       else if (a === 'chdown') catsVL.page(1);
       else if ((a === 'ok' || a === 'right') && catsVL.current() && catsVL.current().id === LANGS) { if (a === 'ok') langMenu(); }
+      else if ((a === 'ok' || a === 'right') && catsVL.current() && (catsVL.current().folder || catsVL.current().up)) openFolder(catsVL.current());
       else if (a === 'right' || a === 'ok') {
         catDeb.cancel(); var c = catsVL.current();
         var go = function () {
@@ -1271,6 +1292,7 @@ var Vod = (function () {
         if (c && c.adult && !adultOpen()) Parental.gate('channels', null, function () { adultUnlocked = true; go(); }); else go();
       }
       else if (a === 'red' || a === 'hold' || a === 'info') catMenu(catsVL.current());
+      else if (a === 'back' && foldersOn() && folderOpen() && catList().some(function (x) { return x.up; })) openFolder({ up: true });   // out of a language's folder first
       else if (a === 'back' || a === 'left') { if (homeOn()) toHome(); else Views.tabBar(restore); }
       else if (a === 'green') { if (homeOn()) toHome(); else Views.switchTab('guide'); }
       else if (a === 'blue') Views.switchTab('settings');
@@ -1486,6 +1508,13 @@ var Vod = (function () {
 
   function arrange(k) { U.toast('Loading ' + (k === 'series' ? 'shows' : 'movies') + '…'); load(k).then(function () { kind = k; VodHome.arrange(k, homeApi); }, function (e) { U.toast('Could not load the list: ' + (e && e.message || e), 5000); }); }
   // Settings > Movies and shows > Order categories changed: the list again, on the same category.
+  // Into a language's folder (its first category), or back out to the folders (on the one just left).
+  function openFolder(c) {
+    var left = folderOpen();
+    setFolder(c.up ? '' : c.folder);
+    var cl = catList(), at = c.up ? cl.findIndex(function (x) { return x.folder === left; }) : cl.findIndex(function (x) { return !x.up && !x.head; });
+    catsVL.setItems(cl, Math.max(0, at)); onCat(catsVL.sel, catsVL.current());
+  }
   function recats() { if (!catsVL || !data[kind]) return; var c = catsVL.current(), cl = catList(); catsVL.setItems(cl, Math.max(0, cl.findIndex(function (x) { return c && x.id === c.id; }))); }
-  return { arrange: arrange, movieTmdb: movieTmdb, recats: recats, reloadNow: reloadNow, homeApi: function () { return homeApi; }, _test: { catLang: catLang, byLang: byLang, nameSays: nameSays, curCat: function () { var c = catsVL && catsVL.current(); return c ? String(c.id) : ''; }, homeApi: function () { return homeApi; }, catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, lean: lean, findRemote: findRemote, titleCount: titleCount, countsFor: countsFor, get searchState() { return searchState(); }, offered: offered, reset: function (fresh) { if (fresh) freshAt = Date.now(); gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; seriesAsk++; spClose(); } };
+  return { arrange: arrange, movieTmdb: movieTmdb, recats: recats, reloadNow: reloadNow, homeApi: function () { return homeApi; }, _test: { catLang: catLang, byLang: byLang, inFolders: inFolders, nameSays: nameSays, curCat: function () { var c = catsVL && catsVL.current(); return c ? String(c.id) : ''; }, homeApi: function () { return homeApi; }, catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, lean: lean, findRemote: findRemote, titleCount: titleCount, countsFor: countsFor, get searchState() { return searchState(); }, offered: offered, reset: function (fresh) { if (fresh) freshAt = Date.now(); gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; seriesAsk++; spClose(); } };
 })();

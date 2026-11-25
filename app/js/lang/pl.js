@@ -2483,5 +2483,10 @@ I18n.add('pl', {
   "For the series in your guide and on the Shows screen: a poster, when it started, its network, genres and rating, and each episode's own title and summary (in the guide when it gives the season and episode).  On the Shows screen it fills in what your provider's details leave out.  From TMDB or TheTVDB, as set above.  Only a show's name and episode numbers leave the TV.": "Dla seriali w przewodniku i na ekranie Seriale: plakat, data rozpoczęcia, stacja, gatunki i ocena oraz tytuł i opis każdego odcinka (w przewodniku, gdy podaje sezon i odcinek).  Na ekranie Seriale uzupełnia to, czego brakuje w danych dostawcy.  Z TMDB lub TheTVDB, zgodnie z ustawieniem powyżej.  Telewizor opuszcza tylko nazwa serialu i numery odcinków.",
   "Posters and details for titles without them": "Plakaty i szczegóły dla tytułów, które ich nie mają",
   "Metadata provided by TheTVDB": "Metadane dostarcza TheTVDB",
-  "No summary for this show yet.": "Brak jeszcze opisu tego serialu."
+  "No summary for this show yet.": "Brak jeszcze opisu tego serialu.",
+  "A folder for each language, when your provider's category names say the language (\"HINDI MOVIES\", \"|EN| Action\"): open a language to see its categories.  Nothing more is loaded, so it suits TVs with little memory too.  Not with categories ordered by name.": "Folder dla każdego języka, gdy nazwy kategorii u dostawcy podają język („HINDI MOVIES”, „|EN| Action”): otwórz język, aby zobaczyć jego kategorie.  Nic więcej się nie wczytuje, więc nadaje się też do telewizorów z małą pamięcią.  Nie przy kategoriach sortowanych według nazwy.",
+  "Categories by language": "Kategorie według języka",
+  "Every language": "Wszystkie języki",
+  "OK goes back to every language": "OK wraca do wszystkich języków",
+  "OK opens this language's categories": "OK otwiera kategorie tego języka"
 });

@@ -1764,5 +1764,10 @@ I18n.add('fr', {
   "For the series in your guide and on the Shows screen: a poster, when it started, its network, genres and rating, and each episode's own title and summary (in the guide when it gives the season and episode).  On the Shows screen it fills in what your provider's details leave out.  From TMDB or TheTVDB, as set above.  Only a show's name and episode numbers leave the TV.": "Pour les séries de votre guide et sur l'écran Séries : une affiche, sa date de début, sa chaîne, ses genres et sa note, et le titre et le résumé propres de chaque épisode (dans le guide quand il donne la saison et l'épisode).  Sur l'écran Séries, cela complète ce que les détails de votre fournisseur laissent de côté.  Depuis TMDB ou TheTVDB, selon le réglage ci-dessus.  Seuls le nom d'une série et les numéros d'épisode quittent la TV.",
   "Posters and details for titles without them": "Affiches et détails pour les titres qui n'en ont pas",
   "Metadata provided by TheTVDB": "Métadonnées fournies par TheTVDB",
-  "No summary for this show yet.": "Pas encore de résumé pour cette série."
+  "No summary for this show yet.": "Pas encore de résumé pour cette série.",
+  "A folder for each language, when your provider's category names say the language (\"HINDI MOVIES\", \"|EN| Action\"): open a language to see its categories.  Nothing more is loaded, so it suits TVs with little memory too.  Not with categories ordered by name.": "Un dossier par langue, quand les noms des catégories de votre fournisseur indiquent la langue (« HINDI MOVIES », « |EN| Action ») : ouvrez une langue pour voir ses catégories.  Rien de plus n'est chargé, cela convient donc aussi aux TV avec peu de mémoire.  Pas avec les catégories triées par nom.",
+  "Categories by language": "Catégories par langue",
+  "Every language": "Toutes les langues",
+  "OK goes back to every language": "OK revient à toutes les langues",
+  "OK opens this language's categories": "OK ouvre les catégories de cette langue"
 });
