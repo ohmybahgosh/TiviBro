@@ -1264,7 +1264,6 @@ I18n.add('it', {
   "On, none here": "Attivo, nessuno qui",
   "On: a favorite movie or show is in Favorites and also in Movies or TV shows.  Off: only in Favorites.": "Attivo: un film o una serie preferiti sono in Preferiti e anche in Film o Serie TV.  Disattivo: solo in Preferiti.",
   "On: the full guide was {x} {y}, and is corrected.": "Attivo: la guida completa era {x} {y} ed è stata corretta.",
-  "Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.": "Una volta al giorno, e quando si avvia per la prima volta una nuova versione, TiviBro dice qual è la versione (e se è nuova o un aggiornamento) e quale webOS ha questa TV.  Nient'altro: nessun indirizzo viene conservato, nessun ID, niente sui tuoi canali o sulle tue playlist.",
   "One group with your stations, by city and network.": "Un gruppo con le tue emittenti, per città e rete.",
   "One movie after another, in order": "Un film dopo l'altro, in ordine",
   "One or two addresses, IPv4 or IPv6 (192.168.1.1, 2001:de4::101), or a DNS-over-HTTPS link (https://dns.example/dns-query).": "Uno o due indirizzi, IPv4 o IPv6 (192.168.1.1, 2001:de4::101), oppure un link DNS-over-HTTPS (https://dns.example/dns-query).",
@@ -2481,5 +2480,6 @@ I18n.add('it', {
   "TMDB only": "Solo TMDB",
   "TMDB, else TheTVDB": "TMDB, altrimenti TheTVDB",
   "TheTVDB": "TheTVDB",
-  "Where details come from": "Origine dei dettagli"
+  "Where details come from": "Origine dei dettagli",
+  "Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  The count also notes the country it came from, to see which languages to add next.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.": "Una volta al giorno, e quando si avvia per la prima volta una nuova versione, TiviBro dice qual è la versione (e se è nuova o un aggiornamento) e quale webOS ha questa TV.  Il conteggio annota anche il paese da cui arriva, per capire quali lingue aggiungere dopo.  Nient'altro: nessun indirizzo viene conservato, nessun ID, niente sui tuoi canali o sulle tue playlist."
 });

@@ -607,7 +607,6 @@ I18n.add('es', {
   "On the Channels screen": "En la pantalla Canales",
   "On your phone or computer, open opensubtitles.com": "En tu teléfono o computadora, abre opensubtitles.com",
   "On: a favorite movie or show is in Favorites and also in Movies or TV shows.  Off: only in Favorites.": "Sí: una película o serie favorita está en Favoritos y también en Películas o Series.  No: solo en Favoritos.",
-  "Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.": "Una vez al día, y cuando una versión nueva inicia por primera vez, TiviBro informa qué versión es (y si es nueva o una actualización) y qué webOS tiene este TV.  Nada más: no se guarda ninguna dirección, ningún ID, nada de tus canales o listas.",
   "One group with your stations, by city and network.": "Un grupo con tus estaciones, por ciudad y cadena.",
   "Only for channels with no other guide.": "Solo para canales sin otra guía.",
   "Only if your provider asks for a specific one.  Sent by the network helper for this playlist.": "Solo si tu proveedor pide uno específico.  Lo envía el asistente de red para esta lista.",
@@ -2604,5 +2603,6 @@ I18n.add('es', {
   "TMDB only": "Solo TMDB",
   "TMDB, else TheTVDB": "TMDB; si no, TheTVDB",
   "TheTVDB": "TheTVDB",
-  "Where details come from": "De dónde vienen los detalles"
+  "Where details come from": "De dónde vienen los detalles",
+  "Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  The count also notes the country it came from, to see which languages to add next.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.": "Una vez al día, y cuando una versión nueva inicia por primera vez, TiviBro informa qué versión es (y si es nueva o una actualización) y qué webOS tiene este TV.  El recuento también anota el país desde donde llega, para saber qué idiomas añadir después.  Nada más: no se guarda ninguna dirección, ningún ID, nada de tus canales o listas."
 });

@@ -615,7 +615,6 @@ I18n.add('ru', {
   "On the Channels screen": "На экране «Каналы»",
   "On your phone or computer, open opensubtitles.com": "На телефоне или компьютере откройте opensubtitles.com",
   "On: a favorite movie or show is in Favorites and also in Movies or TV shows.  Off: only in Favorites.": "Вкл: избранный фильм или сериал есть в «Избранном», а также в «Фильмах» или «Сериалах».  Выкл: только в «Избранном».",
-  "Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.": "Раз в день и при первом запуске новой версии TiviBro сообщает свою версию (новая установка или обновление) и версию webOS телевизора.  Больше ничего: ни адреса, ни ID, ни данных о ваших каналах и плейлистах.",
   "One group with your stations, by city and network.": "Одна группа с вашими станциями по городу и сети.",
   "Only for channels with no other guide.": "Только для каналов без другого телегида.",
   "Only if your provider asks for a specific one.  Sent by the network helper for this playlist.": "Только если провайдер требует конкретный.  Отправляется сетевым помощником для этого плейлиста.",
@@ -2607,5 +2606,6 @@ I18n.add('ru', {
   "TMDB only": "Только TMDB",
   "TMDB, else TheTVDB": "TMDB, иначе TheTVDB",
   "TheTVDB": "TheTVDB",
-  "Where details come from": "Откуда берутся сведения"
+  "Where details come from": "Откуда берутся сведения",
+  "Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  The count also notes the country it came from, to see which languages to add next.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.": "Раз в день и при первом запуске новой версии TiviBro сообщает свою версию (новая установка или обновление) и версию webOS телевизора.  При подсчёте также отмечается страна, откуда он пришёл, чтобы понять, какие языки добавить следующими.  Больше ничего: ни адреса, ни ID, ни данных о ваших каналах и плейлистах."
 });

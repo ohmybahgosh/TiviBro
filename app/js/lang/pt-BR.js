@@ -994,7 +994,6 @@ I18n.add('pt-BR', {
   "On the Channels screen": "Na tela Canais",
   "On your phone or computer, open opensubtitles.com": "No seu celular ou computador, abra opensubtitles.com",
   "On: a favorite movie or show is in Favorites and also in Movies or TV shows.  Off: only in Favorites.": "Sim: um filme ou série favorito fica em Favoritos e também em Filmes ou Séries.  Não: só em Favoritos.",
-  "Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.": "Uma vez por dia, e quando uma versão nova inicia pela primeira vez, o TiviBro informa qual versão é (e se é nova ou uma atualização) e qual webOS esta TV tem.  Nada mais: nenhum endereço, nenhum ID, nada dos seus canais ou listas é guardado.",
   "One group with your stations, by city and network.": "Um grupo com suas emissoras, por cidade e rede.",
   "Only for channels with no other guide.": "Só para canais sem outro guia.",
   "Only if your provider asks for a specific one.  Sent by the network helper for this playlist.": "Só se o seu provedor pedir um específico.  O assistente de rede envia para esta lista.",
@@ -3114,5 +3113,6 @@ I18n.add('pt-BR', {
   "TMDB only": "Somente TMDB",
   "TMDB, else TheTVDB": "TMDB, senão TheTVDB",
   "TheTVDB": "TheTVDB",
-  "Where details come from": "De onde vêm os detalhes"
+  "Where details come from": "De onde vêm os detalhes",
+  "Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  The count also notes the country it came from, to see which languages to add next.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.": "Uma vez por dia, e quando uma versão nova inicia pela primeira vez, o TiviBro informa qual versão é (e se é nova ou uma atualização) e qual webOS esta TV tem.  A contagem também registra o país de onde veio, para saber quais idiomas adicionar em seguida.  Nada mais: nenhum endereço, nenhum ID, nada dos seus canais ou listas é guardado."
 });

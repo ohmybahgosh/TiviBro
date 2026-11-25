@@ -4,145 +4,339 @@
 <link rel="icon" href="/img/icon-32.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-:root{--ink:#0B0E1A;--panel:#141A2E;--panel2:#1B2340;--line:#263052;--accent:#5B8CFF;--accent2:#33E1FF;--text:#E8ECF8;--muted:#8E97B5;--good:#3DDC97}
-*{box-sizing:border-box}html,body{margin:0;background:var(--ink);color:var(--text);font:15px/1.45 Inter,system-ui,-apple-system,Segoe UI,sans-serif}
-header{display:flex;align-items:center;gap:14px;padding:22px 24px 6px;max-width:1240px;margin:0 auto}
-header img{height:34px}header h1{font-size:18px;font-weight:600;color:var(--muted);margin:0}
-header .sp{flex:1}header small{color:var(--muted)}
-main{max-width:1240px;margin:0 auto;padding:12px 24px 60px}
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin:10px 0 18px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
-.card b{display:block;font-size:28px;font-weight:700;letter-spacing:-.5px}.card span{color:var(--muted);font-size:13px}.card i{font-style:normal;color:var(--accent2);font-size:12px;display:block;margin-top:2px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-@media(max-width:860px){.grid{grid-template-columns:1fr}}
-.box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 18px;min-width:0}
-.box h2{font-size:14px;font-weight:600;color:var(--muted);margin:0 0 10px;text-transform:uppercase;letter-spacing:.6px}
-.box canvas{width:100%!important;height:240px!important}
-table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:7px 4px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--muted);font-weight:500}td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
-.wide{grid-column:1/-1}
-.key{max-width:440px;margin:80px auto;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:26px}
-.key input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--ink);color:var(--text);font:inherit;margin:12px 0}
-.key button{background:var(--accent);color:#fff;border:0;border-radius:12px;padding:12px 18px;font:inherit;font-weight:600;cursor:pointer}
-.msg{color:var(--muted);text-align:center;margin:60px 0}.err{color:#ff8a95}
-.note{color:var(--muted);font-size:13px;margin-top:22px}
-.empty{color:var(--muted);height:240px;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 24px;margin:0;border:1px dashed var(--line);border-radius:10px}
+/* The site's "Midnight Electric" palette (site/style.css). */
+:root{--bg:#07091a;--bg2:#0b0e1f;--panel:#11162b;--panel2:#151b33;--line:#222a47;--line2:#2d3760;--text:#e8ecf8;--mute:#9aa4c4;--dim:#6c7699;
+  --acc:#5b8cff;--acc2:#33e1ff;--violet:#8b5cf6;--ok:#3ddc97;--warn:#f5c451;--bad:#ff7a8a;--r:18px}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+body{background:radial-gradient(1200px 600px at 85% -10%,rgba(91,140,255,.13),transparent 60%),radial-gradient(900px 500px at -10% 10%,rgba(139,92,246,.10),transparent 60%),var(--bg);min-height:100vh}
+a{color:var(--acc2);text-decoration:none}
+.top{position:sticky;top:0;z-index:10;background:rgba(7,9,26,.78);backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%);border-bottom:1px solid rgba(45,55,96,.6)}
+.bar{max-width:1280px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.bar img{height:28px}.bar .tag{font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--bg);background:linear-gradient(90deg,var(--acc2),var(--acc));padding:3px 9px;border-radius:99px}
+.bar nav{display:flex;gap:4px;margin-left:8px}.bar nav a{color:var(--mute);padding:6px 10px;border-radius:10px;font-size:14px}.bar nav a:hover{color:var(--text);background:var(--panel2)}
+.sp{flex:1}
+.seg{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:3px}
+.seg button{all:unset;cursor:pointer;padding:5px 11px;border-radius:9px;font-size:13px;color:var(--mute);font-weight:600}
+.seg button.on{background:linear-gradient(180deg,#2a3a78,#1d2858);color:#fff;box-shadow:inset 0 0 0 1px rgba(91,140,255,.45)}
+.upd{color:var(--dim);font-size:12.5px}
+.btn{all:unset;cursor:pointer;color:var(--mute);border:1px solid var(--line);border-radius:10px;padding:5px 10px;font-size:13px}.btn:hover{color:var(--text);border-color:var(--line2)}
+main{max-width:1280px;margin:0 auto;padding:18px 24px 70px}
+section{scroll-margin-top:70px;margin-top:30px}
+section>h2{font-size:20px;font-weight:700;margin:0 0 12px;letter-spacing:-.2px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+section>h2 small{font-size:13px;font-weight:500;color:var(--dim)}
+section>p.lead{color:var(--mute);margin:-6px 0 14px;font-size:14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(205px,1fr));gap:12px}
+.kpi{position:relative;overflow:hidden;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:var(--r);padding:14px 16px 12px;min-height:118px}
+.kpi span{color:var(--mute);font-size:12.5px;font-weight:600;letter-spacing:.3px}
+.kpi b{display:block;font-size:30px;font-weight:750;letter-spacing:-.8px;margin-top:2px;font-variant-numeric:tabular-nums}
+.kpi i{font-style:normal;font-size:12.5px;color:var(--dim);position:relative;z-index:1}
+.kpi .d{font-weight:700;font-size:12.5px;margin-right:6px;position:relative;z-index:1}.d.up{color:var(--ok)}.d.down{color:var(--bad)}.d.flat{color:var(--dim)}
+.kpi svg{position:absolute;left:0;right:0;bottom:0;width:100%;height:34px;opacity:.85}
+.kpi.spark{padding-bottom:40px}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+.box{grid-column:span 6;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;min-width:0}
+.box.w12{grid-column:span 12}.box.w8{grid-column:span 8}.box.w4{grid-column:span 4}
+@media(max-width:980px){.box,.box.w8,.box.w4{grid-column:span 12}}
+.box h3{font-size:13px;font-weight:650;color:var(--mute);margin:0 0 12px;text-transform:uppercase;letter-spacing:.7px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.box h3 small{text-transform:none;letter-spacing:0;font-weight:500;color:var(--dim)}
+.cv{position:relative;height:250px}.cv.tall{height:300px}
+.bars{display:flex;flex-direction:column;gap:7px}
+.br{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;font-size:13.5px}
+.br .l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.br .v{color:var(--mute);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.br .t{grid-column:1/-1;height:6px;border-radius:6px;background:rgba(45,55,96,.55);overflow:hidden}
+.br .t i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--acc),var(--acc2))}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+td,th{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{color:var(--dim);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;min-width:52px;text-align:center;padding:2px 8px;border-radius:99px;font-weight:650;font-size:12.5px}
+.scroll{overflow-x:auto}
+.empty{color:var(--dim);min-height:120px;display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;border:1px dashed var(--line2);border-radius:12px;font-size:14px}
+.note{color:var(--dim);font-size:12.5px;margin-top:34px;line-height:1.6;max-width:900px}
+.key{max-width:440px;margin:90px auto;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:26px}
+.key input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit;margin:12px 0}
+.key button{background:var(--acc);color:#fff;border:0;border-radius:12px;padding:12px 18px;font:inherit;font-weight:650;cursor:pointer}
+.msg{color:var(--mute);text-align:center;margin:80px 0}.err{color:var(--bad)}
+@media(max-width:700px){.bar{padding:10px 16px}.bar nav,.upd{display:none}main{padding:12px 16px 60px}.kpi b{font-size:26px}.kpis{grid-template-columns:1fr 1fr}}
 </style></head><body>
-<header><img src="/img/wordmark.png" alt="tiviBro"><h1>Stats</h1><span class="sp"></span><small id="upd"></small></header>
+<div class="top"><div class="bar"><img src="/img/wordmark.png" alt="tiviBro"><span class="tag">Stats</span>
+<nav><a href="#overview">Overview</a><a href="#tvs">TVs</a><a href="#site">Website</a><a href="#github">GitHub</a></nav>
+<span class="sp"></span><div class="seg" id="range"><button data-d="7">7 days</button><button data-d="30">30 days</button><button data-d="90">90 days</button><button data-d="0">All</button></div>
+<span class="upd" id="upd"></span><button class="btn" id="reload" title="Load again">Refresh</button></div></div>
 <main id="main"><p class="msg">Loading…</p></main>
 <script>
+/* tivibro.app/stats: TiviBro's numbers, private to whoever has the key.
+   Data: the report relay (relay/worker.js GET /stats): each day's TV counts (Eastern time) (active, install, update by version;
+   webOS; country) and the daily Stats workflow's snapshot (scripts/stats/collect.js: GitHub's traffic, stars,
+   forks, release downloads, and tivibro.app's GA4 numbers).  Everything is drawn here from those days. */
 (function () {
   'use strict';
   var RELAY = 'https://tivibro-report.theboxmod.workers.dev';
-  var main = document.getElementById('main');
+  var main = document.getElementById('main'), charts = [], M = null, range = 30;
+  try { var kept = localStorage.getItem('tb.stats.range'); if (kept != null && /^(0|7|30|90)$/.test(kept)) range = +kept; } catch (e) {}
   var m = /[#&]k=([A-Za-z0-9_-]{16,128})/.exec(location.hash), key = m ? m[1] : '';
   if (m) { try { localStorage.setItem('tb.stats.key', key); } catch (e) {} history.replaceState(null, '', location.pathname); }
   if (!key) { try { key = localStorage.getItem('tb.stats.key') || ''; } catch (e) {} }
-  if (!key) return askKey('');
-  load();
+  document.querySelectorAll('#range button').forEach(function (b) {
+    b.classList.toggle('on', +b.dataset.d === range);
+    b.onclick = function () { range = +b.dataset.d; try { localStorage.setItem('tb.stats.range', String(range)); } catch (e) {} document.querySelectorAll('#range button').forEach(function (x) { x.classList.toggle('on', x === b); }); if (M) draw(); };
+  });
+  document.getElementById('reload').onclick = function () { if (key) load(); };
+  if (!key) askKey(''); else load();
 
   function askKey(why) {
-    main.innerHTML = '<div class="key"><h2 style="margin:0">TiviBro stats</h2><p style="color:var(--muted)">These numbers are private.  Open the link with the key, or paste the key.</p>' +
+    main.innerHTML = '<div class="key"><h2 style="margin:0">TiviBro stats</h2><p style="color:var(--mute)">These numbers are private.  Open the link with the key, or paste the key.</p>' +
       (why ? '<p class="err">' + why + '</p>' : '') + '<input id="k" type="password" placeholder="Stats key" autocomplete="off"><button id="go">Show the stats</button></div>';
     document.getElementById('go').onclick = function () { key = document.getElementById('k').value.trim(); try { localStorage.setItem('tb.stats.key', key); } catch (e) {} load(); };
   }
   function load() {
-    main.innerHTML = '<p class="msg">Loading…</p>';
-    fetch(RELAY + '/stats?days=365', { headers: { 'X-Stats-Key': key }, cache: 'no-store' }).then(function (r) {
+    if (!M) main.innerHTML = '<p class="msg">Loading…</p>';
+    fetch(RELAY + '/stats?days=730', { headers: { 'X-Stats-Key': key }, cache: 'no-store' }).then(function (r) {
       if (r.status === 403) { try { localStorage.removeItem('tb.stats.key'); } catch (e) {} throw new Error('key'); }
       return r.json();
-    }).then(draw, function (e) { if (e.message === 'key') askKey('That key is not right.'); else main.innerHTML = '<p class="msg err">Could not load the stats: ' + e.message + '</p>'; });
+    }).then(function (data) { M = model(data); draw(); }, function (e) { if (e.message === 'key') askKey('That key is not right.'); else main.innerHTML = '<p class="msg err">Could not load the stats: ' + esc(e.message) + '</p>'; });
   }
 
-  var fmt = function (n) { return (n || 0).toLocaleString(); };
+  /* ---------- helpers ---------- */
+  var fmt = function (n, d) { return n == null || isNaN(n) ? '–' : (+n).toLocaleString(undefined, { maximumFractionDigits: d || 0 }); };
   var sum = function (o) { return Object.keys(o || {}).reduce(function (a, k) { return a + (+o[k] || 0); }, 0); };
   var d10 = function (t) { return String(t).slice(0, 10); };
+  var addDays = function (d, n) { return new Date(Date.parse(d + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10); };
+  // Days are US Eastern, like the relay's (relay/worker.js day()).
+  var TZ = 'America/New_York';
+  var today = function () { return new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()); };
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function add(o, k, n) { o[k] = (o[k] || 0) + (n || 0); }
+  function sorted(o) { return Object.keys(o).map(function (k) { return [k, o[k]]; }).sort(function (a, b) { return b[1] - a[1]; }); }
+  var alphaOf = function (v) { var x = /alpha\.(\d+)/.exec(v || ''); return x ? +x[1] : 0; };
+  var regions = null; try { regions = new Intl.DisplayNames(['en'], { type: 'region' }); } catch (e) {}
+  function country(cc) {
+    if (!cc || cc === '?') return 'Unknown';
+    var flag = String.fromCodePoint.apply(null, cc.split('').map(function (c) { return 127397 + c.charCodeAt(0); }));
+    var name = cc; try { name = regions ? regions.of(cc) : cc; } catch (e) {}
+    return flag + '  ' + name;
+  }
+  var WEBOS = { 3: 'webOS 3 (2016-17)', 4: 'webOS 4 (2018-19)', 5: 'webOS 5 (2020)', 6: 'webOS 6 (2021)', 22: 'webOS 22 (2022)', 23: 'webOS 23 (2023)', 24: 'webOS 24 (2024)', 25: 'webOS 25 (2025)', 26: 'webOS 26 (2026)' };
 
-  function draw(data) {
-    var days = data.days || [], snaps = days.filter(function (d) { return d.github; }), last = snaps.length ? snaps[snaps.length - 1].github : null;
-    // Traffic: each day's numbers from the newest snapshot that has that day (GitHub keeps 14 days).
-    var views = {}, clones = {};
+  /* ---------- the data, shaped once per load ---------- */
+  // Every day from the first one with anything to today: TV counts, and the GitHub/GA4 snapshots merged by date.
+  function model(data) {
+    var raw = data.days || [], byDate = {};
+    raw.forEach(function (d) { byDate[d.date] = d; });
+    var snaps = raw.filter(function (d) { return d.github; }), last = snaps.length ? snaps[snaps.length - 1].github : null;
+    var first = raw.length ? raw[0].date : today(), days = [];
+    for (var d = first; d <= today(); d = addDays(d, 1)) days.push(d);
+    var tv = days.map(function (date) {
+      var c = (byDate[date] || {}).counts || {};
+      return { date: date, active: sum(c.active), install: sum(c.install), update: sum(c.update), versions: c.active || {}, webos: c.webos || {}, cc: (c.cc || {}).active || null };
+    });
+    // GitHub traffic and GA4's daily numbers: each date from the newest snapshot that has it.
+    var views = {}, clones = {}, ga = {}, gaLast = null;
     snaps.forEach(function (s) {
       (s.github.views || []).forEach(function (v) { views[d10(v.timestamp)] = v; });
       (s.github.clones || []).forEach(function (v) { clones[d10(v.timestamp)] = v; });
+      if (s.github.ga) { gaLast = s.github.ga; (s.github.ga.daily || []).forEach(function (g) { ga[g.date] = g; }); }
     });
-    var vDays = Object.keys(views).sort(), cDays = Object.keys(clones).sort();
-    var lastN = function (o, keys, n, f) { return keys.slice(-n).reduce(function (a, k) { return a + o[k][f]; }, 0); };
-    // Downloads by kind, from the newest snapshot; and new downloads per day from the change between snapshots.
+    // Downloads: totals from the newest snapshot; new ones per day from the change between snapshots.
     function dl(g) {
       var t = { tv: 0, phone: 0, other: 0 };
-      (g && g.releases || []).forEach(function (r) { r.assets.forEach(function (a) { var k = /\.ipk$/.test(a.name) ? 'tv' : /\.apk$/.test(a.name) ? 'phone' : 'other'; t[k] += a.downloads; }); });
+      (g && g.releases || []).forEach(function (r) { r.assets.forEach(function (a) { t[/\.ipk$/.test(a.name) ? 'tv' : /\.apk$/.test(a.name) ? 'phone' : 'other'] += a.downloads; }); });
       return t;
     }
-    var dlNow = dl(last), dlDaily = [], prev = null;
-    snaps.forEach(function (s) { var t = dl(s.github); if (prev) dlDaily.push({ date: s.date, tv: Math.max(0, t.tv - prev.tv), phone: Math.max(0, t.phone - prev.phone) }); prev = t; });
-    // TVs: active per day, installs and updates.
-    var act = days.map(function (d) { return { date: d.date, active: sum(d.counts && d.counts.active), install: sum(d.counts && d.counts.install), update: sum(d.counts && d.counts.update) }; });
-    var latestActive = act.filter(function (a) { return a.active; }).slice(-1)[0];
-    var since = function (n) { var t = Date.now() - n * 86400000; return function (d) { return Date.parse(d.date) >= t; }; };
-    var inst30 = act.filter(since(30)).reduce(function (a, d) { return a + d.install; }, 0), upd30 = act.filter(since(30)).reduce(function (a, d) { return a + d.update; }, 0);
-    var versions = {}, webos = {};
-    days.filter(since(7)).forEach(function (d) {
-      Object.keys(d.counts && d.counts.active || {}).forEach(function (v) { versions[v] = (versions[v] || 0) + d.counts.active[v]; });
-      Object.keys(d.counts && d.counts.webos || {}).forEach(function (w) { webos[w] = (webos[w] || 0) + d.counts.webos[w]; });
-    });
-
-    document.getElementById('upd').textContent = last ? 'GitHub numbers from ' + new Date(last.at).toLocaleString() : 'No GitHub numbers yet';
-    var cards = [
-      ['Views, 14 days', fmt(lastN(views, vDays, 14, 'count')), fmt(lastN(views, vDays, 14, 'uniques')) + ' unique visitors'],
-      ['Views, all kept', fmt(vDays.reduce(function (a, k) { return a + views[k].count; }, 0)), 'since ' + (vDays[0] || 'now')],
-      ['Clones, 14 days', fmt(lastN(clones, cDays, 14, 'count')), fmt(lastN(clones, cDays, 14, 'uniques')) + ' unique (mostly bots)'],
-      ['Stars', fmt(last && last.repo.stars), fmt(last && last.repo.watchers) + ' watching'],
-      ['Forks', fmt(last && last.repo.forks), fmt(last && last.repo.issues) + ' open issues'],
-      ['TV downloads', fmt(dlNow.tv), 'every IPK, all releases'],
-      ['Phone app downloads', fmt(dlNow.phone), 'every APK'],
-      ['TVs running TiviBro', fmt(latestActive && latestActive.active), latestActive ? 'on ' + latestActive.date : 'none counted yet'],
-      ['Installs, 30 days', fmt(inst30), fmt(upd30) + ' updates']
-    ];
-    var h = '<div class="cards">' + cards.map(function (c) { return '<div class="card"><span>' + c[0] + '</span><b>' + c[1] + '</b><i>' + c[2] + '</i></div>'; }).join('') + '</div><div class="grid">' +
-      box('Views and unique visitors', '<canvas id="cViews"></canvas>') + box('Clones', '<canvas id="cClones"></canvas>') +
-      box('TVs running TiviBro, per day', '<canvas id="cActive"></canvas>') + box('Installs and updates, per day', '<canvas id="cInst"></canvas>') +
-      box('Stars and forks', '<canvas id="cStars"></canvas>') + box('Downloads per day (new)', '<canvas id="cDl"></canvas>') +
-      box('Versions in use (last 7 days)', table(['Version', 'TV-days'], obj(versions))) + box('webOS versions (last 7 days)', table(['webOS', 'TV-days'], obj(webos).map(function (r) { return [r[0] === '?' ? 'unknown' : 'webOS ' + r[0], r[1]]; }))) +
-      box('Where visitors come from (14 days)', table(['Site', 'Views', 'Unique'], (last && last.referrers || []).map(function (r) { return [r.referrer, r.count, r.uniques]; }))) +
-      box('Most visited (14 days)', table(['Page', 'Views', 'Unique'], (last && last.paths || []).map(function (p) { return [p.path.replace(/^\/ohmybahgosh\/TiviBro/, '') || '/', p.count, p.uniques]; }))) +
-      box('Downloads by release', table(['Release', 'TV', 'Phone', 'Installer'], (last && last.releases || []).map(function (r) { var t = dl({ releases: [r] }); return [r.tag, t.tv, t.phone, t.other]; })), 'wide') +
-      '</div><p class="note">GitHub keeps traffic for 14 days; the Stats workflow saves it every morning, so this history grows from the day it started.  TVs count themselves once a day (version and webOS only, no address or ID, off in Settings, System); a new install or an update is counted the first time that version starts on a TV (from alpha 43; before that only the install script counted them, so Homebrew Channel and Developer Mode installs were missed).</p>';
-    main.innerHTML = h;
-    if (!window.Chart) return;
-    Chart.defaults.color = '#8E97B5'; Chart.defaults.borderColor = 'rgba(38,48,82,.7)'; Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
-    var opt = function (stack) { return { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { labels: { boxWidth: 10 } } }, scales: { x: { stacked: !!stack, grid: { display: false } }, y: { stacked: !!stack, beginAtZero: true, ticks: { precision: 0 } } } }; };
-    var line = function (label, data, color, fill) { return { label: label, data: data, borderColor: color, backgroundColor: fill ? color + '33' : color, fill: !!fill, tension: .3, pointRadius: 0, borderWidth: 2, spanGaps: true }; };
-    var bar = function (label, data, color) { return { label: label, data: data, backgroundColor: color, borderRadius: 4 }; };
-    new Chart(el('cViews'), { type: 'line', data: { labels: vDays, datasets: [line('Views', vDays.map(function (k) { return views[k].count; }), '#5B8CFF', true), line('Unique', vDays.map(function (k) { return views[k].uniques; }), '#33E1FF')] }, options: opt() });
-    new Chart(el('cClones'), { type: 'line', data: { labels: cDays, datasets: [line('Clones', cDays.map(function (k) { return clones[k].count; }), '#5B8CFF', true), line('Unique', cDays.map(function (k) { return clones[k].uniques; }), '#33E1FF')] }, options: opt() });
-    var a2 = act.filter(function (a) { return a.active || a.install || a.update; });
-    var noTv = 'No TVs counted yet.  Counting starts with the first release after alpha 31.';
-    chart('cActive', a2.map(function (a) { return a.date; }), 'bar', [bar('TVs', a2.map(function (a) { return a.active; }), '#3DDC97')], false, noTv);
-    chart('cInst', a2.map(function (a) { return a.date; }), 'bar', [bar('Installs', a2.map(function (a) { return a.install; }), '#5B8CFF'), bar('Updates', a2.map(function (a) { return a.update; }), '#33E1FF')], true, 'No installs counted yet.  TVs count them from alpha 43 (before that, only the install script did).');
-    // An empty chart says why instead of drawing bare axes; a line with only a few days shows its points.
-    function chart(id, labels, type, sets, stack, empty) {
-      var c = el(id);
-      if (!labels.length) { c.outerHTML = '<p class="empty">' + (empty || 'Nothing yet.') + '</p>'; return; }
-      if (type === 'line' && labels.length < 4) sets.forEach(function (d) { d.pointRadius = 4; d.spanGaps = true; });
-      new Chart(c, { type: type, data: { labels: labels, datasets: sets }, options: opt(stack === true) });
-    }
-    // Stars and forks: dated history when GitHub gave it, plus each stored day's own count.
-    var cum = function (dates) { var s = dates.map(d10).sort(), out = {}; s.forEach(function (d, i) { out[d] = i + 1; }); return out; };
-    var st = cum(last && last.stars || []), fk = cum(last && last.forks || []);
-    snaps.forEach(function (s) { var r = s.github.repo || {}; if (r.stars != null) st[s.date] = Math.max(st[s.date] || 0, r.stars); if (r.forks != null) fk[s.date] = Math.max(fk[s.date] || 0, r.forks); });
-    var sd = Object.keys(Object.assign({}, st, fk)).sort(), cs = null, cf = null;  // null until known, so no false zero
-    chart('cStars', sd, 'line', [line('Stars', sd.map(function (d) { cs = st[d] || cs; return cs; }), '#F5C451'), line('Forks', sd.map(function (d) { cf = fk[d] || cf; return cf; }), '#5B8CFF')], false);
-    chart('cDl', dlDaily.map(function (d) { return d.date; }), 'bar', [bar('TV', dlDaily.map(function (d) { return d.tv; }), '#5B8CFF'), bar('Phone', dlDaily.map(function (d) { return d.phone; }), '#33E1FF')], true,
-      'Starts after the second daily run: each bar is the downloads added since the day before.');
+    var dlDaily = {}, prev = null;
+    snaps.forEach(function (s) { var t = dl(s.github); if (prev) dlDaily[s.date] = { tv: Math.max(0, t.tv - prev.tv), phone: Math.max(0, t.phone - prev.phone) }; prev = t; });
+    // Stars and forks: dated history when GitHub gave it, plus each snapshot's own count.
+    var cum = function (dates) { var out = {}; (dates || []).map(d10).sort().forEach(function (x, i) { out[x] = i + 1; }); return out; };
+    var stars = cum(last && last.stars), forks = cum(last && last.forks);
+    snaps.forEach(function (s) { var r = s.github.repo || {}; if (r.stars != null) stars[s.date] = Math.max(stars[s.date] || 0, r.stars); if (r.forks != null) forks[s.date] = Math.max(forks[s.date] || 0, r.forks); });
+    return { days: days, tv: tv, last: last, at: last && last.at, views: views, clones: clones, ga: ga, gaLast: gaLast, dl: dl, dlNow: dl(last), dlDaily: dlDaily, stars: stars, forks: forks,
+      releases: (last && last.releases || []).filter(function (r) { return /alpha\.\d+/.test(r.tag); }) };
   }
-  function el(id) { return document.getElementById(id); }
-  function box(title, inner, cls) { return '<div class="box ' + (cls || '') + '"><h2>' + title + '</h2>' + inner + '</div>'; }
-  function obj(o) { return Object.keys(o).map(function (k) { return [k, o[k]]; }).sort(function (a, b) { return b[1] - a[1]; }); }
+
+  /* ---------- drawing ---------- */
+  // The whole page for the chosen range.  Today (Eastern) is still counting, so totals and trends use complete days only.
+  function draw() {
+    charts.forEach(function (c) { c.destroy(); }); charts = [];
+    var T = today(), done = M.tv.filter(function (d) { return d.date < T; }), now = M.tv.filter(function (d) { return d.date === T; })[0];
+    var n = range || done.length, win = done.slice(-n), before = done.slice(-2 * n, -n);
+    var dates = win.map(function (d) { return d.date; });
+    var tot = function (rows, f) { return rows.reduce(function (a, d) { return a + (d[f] || 0); }, 0); };
+    var avg = function (rows, f) { return rows.length ? tot(rows, f) / rows.length : 0; };
+    var gaRows = function (rows) { return rows.map(function (d) { return M.ga[d.date]; }).filter(Boolean); };
+    var y = done[done.length - 1] || { active: 0 }, wk = done.slice(-7), wk0 = done.slice(-14, -7);
+    document.getElementById('upd').textContent = (now ? 'Today so far: ' + fmt(now.active) + ' TVs.  ' : '') + (M.at ? 'Updated ' + new Date(M.at).toLocaleString([], { timeZone: TZ, month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }) : '');
+
+    // Countries over the range (counting began Nov 25, 2026; days before have none).
+    var ccs = {}, ccDays = 0; win.forEach(function (d) { if (d.cc) { ccDays++; Object.keys(d.cc).forEach(function (k) { add(ccs, k, d.cc[k]); }); } });
+    if (!ccDays && now && now.cc) Object.keys(now.cc).forEach(function (k) { add(ccs, k, now.cc[k]); });
+    var gaW = gaRows(win), gaB = gaRows(before), g = M.gaLast;
+    var copies = g ? (g.installs || []).reduce(function (a, r) { return a + r.eventCount; }, 0) : null;
+    var lab = range ? range + ' days' : 'all time';
+
+    var h = '<section id="overview"><h2>Overview <small>' + (range ? 'last ' + lab : 'since ' + (dates[0] || 'now')) + ', complete days, Eastern time</small></h2><div class="kpis">' +
+      kpi('TVs yesterday', fmt(y.active), delta(y.active, (done[done.length - 8] || {}).active, 'vs a week before'), done.slice(-30).map(function (d) { return d.active; }), '#3ddc97') +
+      kpi('TVs, 7-day average', fmt(avg(wk, 'active'), 1), delta(avg(wk, 'active'), wk0.length ? avg(wk0, 'active') : null, 'vs the week before'), null) +
+      kpi('Installs', fmt(tot(win, 'install')), delta(tot(win, 'install'), before.length === n ? tot(before, 'install') : null, 'vs previous ' + lab), win.map(function (d) { return d.install; }), '#5b8cff') +
+      kpi('Updates', fmt(tot(win, 'update')), delta(tot(win, 'update'), before.length === n ? tot(before, 'update') : null, 'vs previous ' + lab), win.map(function (d) { return d.update; }), '#33e1ff') +
+      kpi('Site visitors', gaW.length ? fmt(tot(gaW, 'activeUsers')) : '–', gaW.length ? delta(tot(gaW, 'activeUsers'), gaB.length === gaW.length ? tot(gaB, 'activeUsers') : null, 'daily visitors added up') : '<i>from the next daily run</i>', gaW.map(function (r) { return r.activeUsers; }), '#8b5cf6') +
+      kpi('Install copies', copies == null ? '–' : fmt(copies), '<i>on tivibro.app, 28 days</i>', null) +
+      kpi('Countries', fmt(Object.keys(ccs).filter(function (k) { return k !== '?'; }).length), '<i>' + (ccDays ? 'with a TV, ' + lab : now && now.cc ? 'today so far (counting began Nov 25)' : 'counting begins with the relay update') + '</i>', null) +
+      kpi('GitHub views, 14 days', fmt(lastN(M.views, 14, 'count')), '<i>' + fmt(lastN(M.views, 14, 'uniques')) + ' unique</i>', null) +
+      kpi('Stars', fmt(M.last && M.last.repo.stars), '<i>' + fmt(M.last && M.last.repo.forks) + ' forks, ' + fmt(M.last && M.last.repo.watchers) + ' watching</i>', null) +
+      kpi('Downloads', fmt(M.dlNow.tv + M.dlNow.phone), '<i>' + fmt(M.dlNow.tv) + ' TV, ' + fmt(M.dlNow.phone) + ' phone, all releases</i>', null) +
+      '</div></section>';
+
+    // TVs
+    var vTot = {}; win.forEach(function (d) { Object.keys(d.versions).forEach(function (v) { add(vTot, v, d.versions[v]); }); });
+    var wTot = {}; done.slice(-7).forEach(function (d) { Object.keys(d.webos).forEach(function (w) { add(wTot, w, d.webos[w]); }); });
+    h += '<section id="tvs"><h2>TVs <small>each TV counts itself once a day</small></h2><div class="grid">' +
+      box('TVs running TiviBro', 'per day, the line is the 7-day average', '<div class="cv tall"><canvas id="cActive"></canvas></div>', 'w8') +
+      box('webOS', 'TV-days, last 7 days', bars(sorted(wTot).map(function (r) { return [WEBOS[r[0]] || (r[0] === '?' ? 'Unknown' : 'webOS ' + r[0]), r[1]]; }), true), 'w4') +
+      box('Installs and updates', 'per day', '<div class="cv"><canvas id="cInst"></canvas></div>') +
+      box('Countries', ccDays ? 'TV-days, ' + lab : 'today so far', Object.keys(ccs).length ? bars(sorted(ccs).slice(0, 14).map(function (r) { return [country(r[0]), r[1]]; }), true) :
+        '<div class="empty">Countries are counted from the relay update on Nov 25, 2026.  They fill in as TVs check in.</div>') +
+      box('Versions in use', 'share of TVs each day', '<div class="cv tall"><canvas id="cVers"></canvas></div>', 'w8') +
+      box('Top versions', 'TV-days, ' + lab, bars(sorted(vTot).slice(0, 10).map(function (r) { return [r[0].replace(/^0\.6\.0-/, ''), r[1]]; }), true), 'w4') +
+      box('How fast TVs update', 'share of TVs on that release or newer, days after it came out', uptake(), 'w12') +
+      '</div></section>';
+
+    // Website (GA4)
+    h += '<section id="site"><h2>Website <small>tivibro.app, Google Analytics</small></h2><p class="lead">Only visitors who chose Allow on the cookie banner are counted, so the real numbers are higher.</p>';
+    if (!g) h += '<div class="empty">The GA4 numbers arrive with the next daily Stats run.</div>';
+    else {
+      var t = g.totals || {};
+      h += '<div class="kpis">' +
+        kpi('Visitors, 28 days', fmt(t.activeUsers), '<i>' + fmt(t.newUsers) + ' new</i>', null) +
+        kpi('Sessions, 28 days', fmt(t.sessions), '<i>' + fmt(t.screenPageViews) + ' page views</i>', null) +
+        kpi('Engaged', fmt((t.engagementRate || 0) * 100) + '%', '<i>of sessions</i>', null) +
+        kpi('Time on site', mmss(t.averageSessionDuration), '<i>average session</i>', null) +
+        '</div><div class="grid" style="margin-top:14px">' +
+        box('Visitors and sessions', 'per day', '<div class="cv"><canvas id="cGa"></canvas></div>', 'w8') +
+        box('How they arrive', 'sessions, 28 days', bars((g.channels || []).map(function (r) { return [r.sessionDefaultChannelGroup, r.sessions]; }), true), 'w4') +
+        box('Top pages', 'views, 28 days', bars((g.pages || []).slice(0, 10).map(function (r) { return [r.pagePath, r.screenPageViews, fmt(r.activeUsers) + ' visitors']; }))) +
+        box('Sources', 'sessions, 28 days', bars((g.sources || []).slice(0, 10).map(function (r) { return [r.sessionSource, r.sessions]; }))) +
+        box('Visitor countries', '28 days', bars((g.countries || []).slice(0, 12).map(function (r) { return [r.country, r.activeUsers]; }))) +
+        box('Install steps copied', 'by method, 28 days', bars((g.installs || []).map(function (r) { var k = r['customEvent:install_method']; return [{ homebrew: 'Homebrew Channel', rooted: 'Rooted TV', devmode: 'Developer Mode', '(not set)': 'Not said' }[k] || k, r.eventCount]; }), true)) +
+        box('Devices', 'visitors, 28 days', bars((g.devices || []).map(function (r) { return [r.deviceCategory.replace(/^./, function (c) { return c.toUpperCase(); }), r.activeUsers]; }), true), 'w4') +
+        box('Events', '28 days', bars((g.events || []).slice(0, 10).map(function (r) { return [r.eventName, r.eventCount]; })), 'w8') +
+        '</div>';
+    }
+    h += '</section>';
+
+    // GitHub
+    var last = M.last;
+    h += '<section id="github"><h2>GitHub <small>ohmybahgosh/TiviBro</small></h2><div class="grid">' +
+      box('Repo views', 'per day', '<div class="cv"><canvas id="cViews"></canvas></div>') + box('New downloads', 'per day', '<div class="cv"><canvas id="cDl"></canvas></div>') +
+      box('Stars and forks', '', '<div class="cv"><canvas id="cStars"></canvas></div>') + box('Clones', 'per day, mostly bots', '<div class="cv"><canvas id="cClones"></canvas></div>') +
+      box('Where visitors come from', '14 days', bars((last && last.referrers || []).map(function (r) { return [r.referrer, r.count, fmt(r.uniques) + ' unique']; }))) +
+      box('Most visited', '14 days', bars((last && last.paths || []).slice(0, 10).map(function (p) { return [p.path.replace(/^\/ohmybahgosh\/TiviBro/, '') || '/', p.count, fmt(p.uniques) + ' unique']; }))) +
+      box('Downloads by release', '', '<div class="scroll">' + table(['Release', 'Published', 'TV', 'Phone', 'Installer'], (last && last.releases || []).slice(0, 15).map(function (r) { var t = M.dl({ releases: [r] }); return [r.tag, d10(r.published || ''), t.tv, t.phone, t.other]; })) + '</div>', 'w12') +
+      '</div></section>' +
+      '<p class="note">TVs count themselves once a day with their version, webOS version and (from Nov 25, 2026) the country Cloudflare sees, never an address or an ID, and only if Count this TV is on.  An install or update is counted the first time that version starts.  Days are Eastern time (UTC before Nov 25, 2026); today is left out of totals and trends until it ends.  GitHub keeps traffic for 14 days and GA4 is read for the last 30, so the daily Stats run keeps the history.  Site numbers count only visitors who chose Allow.</p>';
+    main.innerHTML = h;
+    if (window.Chart) charts_(win, done, dates, n, vTot, g, T);
+  }
+
+  // The charts for the range (after the page's boxes are in place).
+  function charts_(win, done, dates, n, vTot, g, T) {
+    Chart.defaults.color = '#9aa4c4'; Chart.defaults.borderColor = 'rgba(34,42,71,.8)'; Chart.defaults.font.family = 'Inter, system-ui, sans-serif'; Chart.defaults.font.size = 12;
+    var short = function (d) { return new Date(d + 'T12:00:00Z').toLocaleDateString([], { month: 'short', day: 'numeric', timeZone: 'UTC' }); };
+    var inRange = function (d) { return !range || (d >= addDays(T, -range) && d < T); };
+    var labels = dates.map(short);
+    // TVs per day with a 7-day average over all complete days (so the line starts right at the range's edge).
+    var all = done.map(function (d) { return d.active; }), ma = all.map(function (v, i) { var s = all.slice(Math.max(0, i - 6), i + 1); return s.length < 3 ? null : Math.round(s.reduce(function (a, b) { return a + b; }, 0) / s.length * 10) / 10; }).slice(-n);
+    mk('cActive', 'bar', labels, [Object.assign(bar('TVs', win.map(function (d) { return d.active; }), 'rgba(61,220,151,.5)'), { order: 2 }), Object.assign(line('7-day average', ma, '#3ddc97'), { type: 'line', order: 1 })]);
+    mk('cInst', 'bar', labels, [bar('Installs', win.map(function (d) { return d.install; }), '#5b8cff'), bar('Updates', win.map(function (d) { return d.update; }), '#33e1ff')], { stack: true });
+    // Version share: the range's six biggest versions, the rest together, as a share of each day's TVs.
+    var top = sorted(vTot).slice(0, 6).map(function (r) { return r[0]; }).sort(function (a, b) { return alphaOf(b) - alphaOf(a); });
+    var pal = ['#33e1ff', '#5b8cff', '#8b5cf6', '#3ddc97', '#f5c451', '#ff7a8a'];
+    var share = function (d, f) { var all = sum(d.versions); return all ? Math.round(f(d) / all * 1000) / 10 : null; };
+    var vsets = top.map(function (v, i) { return bar(v.replace(/^0\.6\.0-/, ''), win.map(function (d) { return share(d, function (x) { return x.versions[v] || 0; }); }), pal[i]); });
+    vsets.push(bar('Older', win.map(function (d) { return share(d, function (x) { return sum(x.versions) - top.reduce(function (a, v) { return a + (x.versions[v] || 0); }, 0); }); }), '#2d3760'));
+    mk('cVers', 'bar', labels, vsets, { stack: true, pct: true });
+    if (g) {
+      var gd = Object.keys(M.ga).sort().filter(inRange);
+      mk('cGa', 'line', gd.map(short), [line('Visitors', gd.map(function (d) { return M.ga[d].activeUsers; }), '#8b5cf6', true), line('Sessions', gd.map(function (d) { return M.ga[d].sessions; }), '#33e1ff')]);
+    }
+    var vd = Object.keys(M.views).sort().filter(inRange), cd = Object.keys(M.clones).sort().filter(inRange);
+    mk('cViews', 'line', vd.map(short), [line('Views', vd.map(function (k) { return M.views[k].count; }), '#5b8cff', true), line('Unique', vd.map(function (k) { return M.views[k].uniques; }), '#33e1ff')]);
+    mk('cClones', 'line', cd.map(short), [line('Clones', cd.map(function (k) { return M.clones[k].count; }), '#5b8cff', true), line('Unique', cd.map(function (k) { return M.clones[k].uniques; }), '#33e1ff')]);
+    var dd = Object.keys(M.dlDaily).sort().filter(function (d) { return !range || d >= addDays(T, -range); });
+    mk('cDl', 'bar', dd.map(short), [bar('TV', dd.map(function (k) { return M.dlDaily[k].tv; }), '#5b8cff'), bar('Phone', dd.map(function (k) { return M.dlDaily[k].phone; }), '#33e1ff')], { stack: true });
+    var sd = Object.keys(Object.assign({}, M.stars, M.forks)).sort(), cs = null, cf = null;
+    var sv = sd.map(function (d) { cs = M.stars[d] || cs; return cs; }), fv = sd.map(function (d) { cf = M.forks[d] || cf; return cf; });
+    var keep = sd.map(function (d) { return !range || d >= addDays(T, -range); });
+    mk('cStars', 'line', sd.filter(function (d, i) { return keep[i]; }).map(short), [line('Stars', sv.filter(function (x, i) { return keep[i]; }), '#f5c451'), line('Forks', fv.filter(function (x, i) { return keep[i]; }), '#5b8cff')]);
+  }
+
+  // How many TVs were on each recent release (or newer) 1, 3 and 7 days after it came out.
+  function uptake() {
+    var byDate = {}; M.tv.forEach(function (d) { byDate[d.date] = d; });
+    var rows = M.releases.slice(0, 10).map(function (r) {
+      var N = alphaOf(r.tag), p = d10(r.published || '');
+      var at = function (k) {
+        var d = byDate[addDays(p, k)];
+        if (!d || d.date >= today()) return null;
+        var all = sum(d.versions); if (!all) return null;
+        return Object.keys(d.versions).reduce(function (a, v) { return a + (alphaOf(v) >= N ? d.versions[v] : 0); }, 0) / all;
+      };
+      return [r.tag.replace(/^v0\.6\.0-/, ''), p, at(1), at(3), at(7)];
+    });
+    if (!rows.length) return '<div class="empty">No releases yet.</div>';
+    var pill = function (x) { if (x == null) return '<span style="color:var(--dim)">–</span>'; var h = Math.round(x * 120); return '<span class="pill" style="background:hsla(' + h + ',70%,45%,.22);color:hsl(' + h + ',75%,70%)">' + Math.round(x * 100) + '%</span>'; };
+    return '<div class="scroll"><table><tr><th>Release</th><th>Published</th><th class="n">After 1 day</th><th class="n">After 3 days</th><th class="n">After 7 days</th></tr>' +
+      rows.map(function (r) { return '<tr><td>' + esc(r[0]) + '</td><td>' + esc(r[1]) + '</td><td class="n">' + pill(r[2]) + '</td><td class="n">' + pill(r[3]) + '</td><td class="n">' + pill(r[4]) + '</td></tr>'; }).join('') + '</table></div>';
+  }
+
+  /* ---------- pieces ---------- */
+  function lastN(o, n, f) { return Object.keys(o).sort().slice(-n).reduce(function (a, k) { return a + o[k][f]; }, 0); }
+  function mmss(s) { s = Math.round(s || 0); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+  function delta(a, b, what) {
+    if (b == null || !isFinite(b)) return '<i>' + (what || '') + '</i>';
+    if (!b) return a ? '<span class="d up">new</span><i>' + what + '</i>' : '<i>' + what + '</i>';
+    var p = Math.round((a - b) / b * 100);
+    return '<span class="d ' + (p > 0 ? 'up' : p < 0 ? 'down' : 'flat') + '">' + (p > 0 ? '▲ ' : p < 0 ? '▼ ' : '') + Math.abs(p) + '%</span><i>' + what + '</i>';
+  }
+  // A number with an optional sparkline (inline SVG, so it draws at once).
+  function kpi(label, value, sub, series, color) {
+    var svg = '';
+    if (series && series.length > 2) {
+      var mx = Math.max.apply(null, series) || 1, w = 120, hgt = 40, st = w / (series.length - 1);
+      var pts = series.map(function (v, i) { return (i * st).toFixed(1) + ',' + (hgt - 3 - (v || 0) / mx * (hgt - 8)).toFixed(1); });
+      var id = 'g' + Math.random().toString(36).slice(2, 8);
+      svg = '<svg viewBox="0 0 ' + w + ' ' + hgt + '" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="' + id + '" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="' + color + '" stop-opacity=".35"/><stop offset="1" stop-color="' + color + '" stop-opacity="0"/></linearGradient></defs>' +
+        '<path d="M0,' + hgt + ' L' + pts.join(' L') + ' L' + w + ',' + hgt + 'Z" fill="url(#' + id + ')"/><polyline points="' + pts.join(' ') + '" fill="none" stroke="' + color + '" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg>';
+    }
+    return '<div class="kpi' + (svg ? ' spark' : '') + '"><span>' + label + '</span><b>' + value + '</b>' + sub + svg + '</div>';
+  }
+  function box(title, small, inner, cls) { return '<div class="box ' + (cls || '') + '"><h3>' + title + (small ? ' <small>' + small + '</small>' : '') + '</h3>' + inner + '</div>'; }
+  // A ranked list as bars: rows of [label, value, optional note]; pct adds each row's share.
+  function bars(rows, pct) {
+    if (!rows.length) return '<div class="empty">Nothing yet.</div>';
+    var mx = Math.max.apply(null, rows.map(function (r) { return r[1]; })) || 1, all = rows.reduce(function (a, r) { return a + r[1]; }, 0) || 1;
+    return '<div class="bars">' + rows.map(function (r) {
+      return '<div class="br"><span class="l" title="' + esc(r[0]) + '">' + esc(r[0]) + '</span><span class="v">' + fmt(r[1]) + (pct ? '  ·  ' + Math.round(r[1] / all * 100) + '%' : '') + (r[2] ? '  ·  ' + esc(r[2]) : '') + '</span><span class="t"><i style="width:' + Math.max(2, r[1] / mx * 100).toFixed(1) + '%"></i></span></div>';
+    }).join('') + '</div>';
+  }
   function table(head, rows) {
-    if (!rows.length) return '<p style="color:var(--muted)">Nothing yet.</p>';
-    return '<table><tr>' + head.map(function (h, i) { return '<th' + (i ? ' class="n"' : '') + '>' + h + '</th>'; }).join('') + '</tr>' +
-      rows.map(function (r) { return '<tr>' + r.map(function (c, i) { return '<td' + (i ? ' class="n"' : '') + '>' + esc(i ? fmt(c) : c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</table>';
+    if (!rows.length) return '<div class="empty">Nothing yet.</div>';
+    return '<table><tr>' + head.map(function (h, i) { return '<th' + (i > 1 ? ' class="n"' : '') + '>' + h + '</th>'; }).join('') + '</tr>' +
+      rows.map(function (r) { return '<tr>' + r.map(function (c, i) { return '<td' + (i > 1 ? ' class="n"' : '') + '>' + esc(i > 1 ? fmt(c) : c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</table>';
+  }
+  function line(label, data, color, fill) { return { label: label, data: data, borderColor: color, backgroundColor: fill ? color + '30' : color, fill: !!fill, tension: .35, pointRadius: 0, pointHoverRadius: 4, borderWidth: 2, spanGaps: true }; }
+  function bar(label, data, color) { return { label: label, data: data, backgroundColor: color, borderRadius: 4, maxBarThickness: 26 }; }
+  // One chart; an empty one says so instead of drawing bare axes.
+  function mk(id, type, labels, sets, o) {
+    var c = document.getElementById(id); if (!c) return;
+    o = o || {};
+    if (!labels.length) { c.parentNode.outerHTML = '<div class="empty">Nothing in this range yet.</div>'; return; }
+    if (type === 'line' && labels.length < 4) sets.forEach(function (d) { d.pointRadius = 3; });
+    charts.push(new Chart(c, { type: type, data: { labels: labels, datasets: sets }, options: {
+      responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, animation: { duration: 350 },
+      plugins: { legend: { labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true } }, tooltip: { backgroundColor: '#0b0e1f', borderColor: '#2d3760', borderWidth: 1, padding: 10,
+        callbacks: o.pct ? { label: function (x) { return ' ' + x.dataset.label + ': ' + (x.raw == null ? '–' : x.raw + '%'); } } : {} } },
+      scales: { x: { stacked: !!o.stack, grid: { display: false }, ticks: { maxRotation: 0, autoSkipPadding: 14 } },
+        y: { stacked: !!o.stack, beginAtZero: true, max: o.pct ? 100 : undefined, ticks: { precision: 0, callback: o.pct ? function (v) { return v + '%'; } : undefined }, grid: { color: 'rgba(34,42,71,.6)' } } } } }));
   }
 })();
 </script>

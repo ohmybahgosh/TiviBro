@@ -1263,7 +1263,6 @@ I18n.add('pl', {
   "On, none here": "Włączone, brak tutaj",
   "On: a favorite movie or show is in Favorites and also in Movies or TV shows.  Off: only in Favorites.": "Włączone: ulubiony film lub serial jest w Ulubionych, a także w Filmach lub Serialach.  Wyłączone: tylko w Ulubionych.",
   "On: the full guide was {x} {y}, and is corrected.": "Włączone: cały przewodnik był {x} {y} i został skorygowany.",
-  "Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.": "Raz dziennie oraz przy pierwszym uruchomieniu nowej wersji TiviBro podaje, która to wersja (i czy jest nowa, czy to aktualizacja) oraz jaki webOS ma ten telewizor.  Nic więcej: żaden adres, żaden identyfikator, nic o Twoich kanałach ani playlistach.",
   "One group with your stations, by city and network.": "Jedna grupa z Twoimi stacjami, według miasta i sieci.",
   "One movie after another, in order": "Jeden film po drugim, po kolei",
   "One or two addresses, IPv4 or IPv6 (192.168.1.1, 2001:de4::101), or a DNS-over-HTTPS link (https://dns.example/dns-query).": "Jeden lub dwa adresy, IPv4 lub IPv6 (192.168.1.1, 2001:de4::101), albo link DNS-over-HTTPS (https://dns.example/dns-query).",
@@ -2481,5 +2480,6 @@ I18n.add('pl', {
   "TMDB only": "Tylko TMDB",
   "TMDB, else TheTVDB": "TMDB, a jeśli brak, TheTVDB",
   "TheTVDB": "TheTVDB",
-  "Where details come from": "Skąd pochodzą szczegóły"
+  "Where details come from": "Skąd pochodzą szczegóły",
+  "Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  The count also notes the country it came from, to see which languages to add next.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.": "Raz dziennie oraz przy pierwszym uruchomieniu nowej wersji TiviBro podaje, która to wersja (i czy jest nowa, czy to aktualizacja) oraz jaki webOS ma ten telewizor.  Licznik zapisuje też kraj, z którego pochodzi zgłoszenie, żeby wiedzieć, jakie języki dodać w następnej kolejności.  Nic więcej: żaden adres, żaden identyfikator, nic o Twoich kanałach ani playlistach."
 });

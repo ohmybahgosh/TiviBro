@@ -124,7 +124,8 @@ var Update = (function () {
   }
   // At start: once a day at most, quietly, well after the guide has loaded.
   /* Install numbers (relay/worker.js, tivibro.app/stats): once a day TiviBro says which version runs on
-     which webOS version, nothing else (no address kept, no ID, nothing about channels).  Off in
+     which webOS version (the relay also notes the country Cloudflare sees, to choose languages to add), nothing else
+     (no address kept, no ID, nothing about channels).  Off in
      Settings, System. */
   function countMe() {
     if (Store.settings.countMe === false) return;

@@ -3,6 +3,8 @@
      TB_STATS_TOKEN  fine-grained token, this repo, Administration: read (traffic needs it)
      GITHUB_TOKEN    the workflow's own, used only when TB_STATS_TOKEN is missing (its stargazer list is refused)
      TB_STATS_KEY    the relay's stats key;  STATS_URL  the relay (default below)
+     GA_CREDENTIALS  a service account's JSON key with Viewer access to the GA4 property (GA_PROPERTY, default below);
+                     tivibro.app's visits come along when it is set (scripts/stats/ga4.js)
      node scripts/stats/collect.js [--dry]     --dry prints instead of sending */
 'use strict';
 const REPO = process.env.REPO || 'ohmybahgosh/TiviBro';
@@ -53,8 +55,14 @@ async function all(path, token, accept) {
     out.views = views.views; out.clones = clones.clones;
     out.referrers = referrers; out.paths = paths.map((p) => ({ path: p.path, title: p.title, count: p.count, uniques: p.uniques }));
   } else out.trafficError = 'TB_STATS_TOKEN is not set';
+  // tivibro.app's own visits (GA4), when the workflow has the key.  A failure here never stops GitHub's numbers.
+  if (process.env.GA_CREDENTIALS) {
+    try { out.ga = await require('./ga4.js').collect(process.env.GA_CREDENTIALS, process.env.GA_PROPERTY || '561631629'); }
+    catch (e) { out.gaError = String(e.message || e).slice(0, 300); }
+  }
   const summary = `${out.date}: ${out.repo.stars} stars, ${out.repo.forks} forks, ${out.releases.length} releases, ` +
-    (out.views ? `${out.views.reduce((a, v) => a + v.count, 0)} views and ${out.clones.reduce((a, v) => a + v.count, 0)} clones in 14 days` : 'no traffic (' + out.trafficError + ')');
+    (out.views ? `${out.views.reduce((a, v) => a + v.count, 0)} views and ${out.clones.reduce((a, v) => a + v.count, 0)} clones in 14 days` : 'no traffic (' + out.trafficError + ')') +
+    (out.ga ? ', ' + (out.ga.totals.activeUsers || 0) + ' site visitors in 28 days' : out.gaError ? ', no GA4 (' + out.gaError + ')' : '');
   if (dry) { console.log(JSON.stringify(out, null, 2).slice(0, 3000)); return console.log(summary); }
   const r = await fetch(RELAY + '/stats/github', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Stats-Key': process.env.TB_STATS_KEY || '' }, body: JSON.stringify(out) });
   if (!r.ok) throw new Error('The relay said ' + r.status + ': ' + (await r.text()).slice(0, 200));

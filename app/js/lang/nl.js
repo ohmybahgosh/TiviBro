@@ -1264,7 +1264,6 @@ I18n.add('nl', {
   "On, none here": "Aan, hier geen",
   "On: a favorite movie or show is in Favorites and also in Movies or TV shows.  Off: only in Favorites.": "Aan: een favoriete film of serie staat in Favorieten en ook in Films of Series.  Uit: alleen in Favorieten.",
   "On: the full guide was {x} {y}, and is corrected.": "Aan: de volledige gids was {x} {y} en wordt gecorrigeerd.",
-  "Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.": "Eén keer per dag, en wanneer een nieuwe versie voor het eerst start, meldt TiviBro welke versie het is (en of die nieuw is of een update) en welke webOS deze tv heeft.  Niets anders: er wordt geen adres bewaard, geen ID, niets over je zenders of afspeellijsten.",
   "One group with your stations, by city and network.": "Eén groep met je zenders, per stad en netwerk.",
   "One movie after another, in order": "De ene film na de andere, op volgorde",
   "One or two addresses, IPv4 or IPv6 (192.168.1.1, 2001:de4::101), or a DNS-over-HTTPS link (https://dns.example/dns-query).": "Een of twee adressen, IPv4 of IPv6 (192.168.1.1, 2001:de4::101), of een DNS-over-HTTPS-link (https://dns.example/dns-query).",
@@ -2481,5 +2480,6 @@ I18n.add('nl', {
   "TMDB only": "Alleen TMDB",
   "TMDB, else TheTVDB": "TMDB, anders TheTVDB",
   "TheTVDB": "TheTVDB",
-  "Where details come from": "Waar details vandaan komen"
+  "Where details come from": "Waar details vandaan komen",
+  "Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  The count also notes the country it came from, to see which languages to add next.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.": "Eén keer per dag, en wanneer een nieuwe versie voor het eerst start, meldt TiviBro welke versie het is (en of die nieuw is of een update) en welke webOS deze tv heeft.  De telling noteert ook uit welk land die komt, om te zien welke talen er hierna bij moeten.  Niets anders: er wordt geen adres bewaard, geen ID, niets over je zenders of afspeellijsten."
 });

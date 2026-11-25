@@ -1,6 +1,6 @@
 name: Stats
 
-# Every day: GitHub's numbers for TiviBro (traffic, stars, forks, release downloads) to the relay, which
+# Every day: GitHub's numbers for TiviBro (traffic, stars, forks, release downloads) and tivibro.app's GA4 visits to the relay, which
 # keeps them past GitHub's 14 days, for the dashboard at tivibro.app/stats.  See scripts/stats/collect.js.
 on:
   schedule:
@@ -23,4 +23,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           TB_STATS_TOKEN: ${{ secrets.TB_STATS_TOKEN }}
           TB_STATS_KEY: ${{ secrets.TB_STATS_KEY }}
+          # The Play upload service account, also a Viewer on the GA4 property (read-only).
+          GA_CREDENTIALS: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
         run: node scripts/stats/collect.js

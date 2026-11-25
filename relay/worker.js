@@ -31,7 +31,7 @@
      POST /count  JSON { e: 'install' | 'update' | 'active', v: '0.6.0-alpha.31', w: '25' }
        install.sh counts an install or an update; TiviBro counts itself once a day ("active"),
        unless switched off in Settings, Updates.  Each network is counted once a day per kind; only
-       the day's totals are kept (by kind, version and webOS version), never an address or an id.
+       the day's totals are kept (by kind, version, webOS version and the country Cloudflare saw), never an address or an id.
      POST /stats/github  (the Stats workflow, with X-Stats-Key)  the day's GitHub numbers
      GET  /stats?days=N  (X-Stats-Key, or ?k= from tivibro.app/stats)  everything, for the dashboard
    STATS: KV namespace for those totals.  STATS_KEY: secret shared with the workflow and dashboard. */
@@ -257,7 +257,10 @@ async function fixed(request, env) {
 /* ---------- install numbers ---------- */
 const KINDS = ['install', 'update', 'active'];
 const VER = /^\d+\.\d+\.\d+(-[a-z]+\.\d+)?$/;
-function day(d) { return (d || new Date()).toISOString().slice(0, 10); }
+// The day a count belongs to, in US Eastern time (the dashboard's days; since Nov 24, 2026, UTC before that).
+const TZ = 'America/New_York';
+function day(d) { return new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d || new Date()); }
+const back = (d, n) => new Date(Date.parse(d + 'T12:00:00Z') - n * 86400000).toISOString().slice(0, 10);
 async function count(request, env) {
   if (!env.STATS) return json({ ok: false }, 503);
   let j;
@@ -271,8 +274,16 @@ async function count(request, env) {
   const key = 'n:' + d, cur = JSON.parse(await env.STATS.get(key) || '{}');
   cur[e] = cur[e] || {}; cur[e][v] = (cur[e][v] || 0) + 1;
   if (e === 'active') { cur.webos = cur.webos || {}; cur.webos[w] = (cur.webos[w] || 0) + 1; }
+  // The country Cloudflare saw the count come from (two letters, never the address): per kind, in the same day's totals.
+  const cc = country(request);
+  cur.cc = cur.cc || {}; cur.cc[e] = cur.cc[e] || {}; cur.cc[e][cc] = (cur.cc[e][cc] || 0) + 1;
   await env.STATS.put(key, JSON.stringify(cur));
   return json({ ok: true, counted: true });
+}
+// Cloudflare's two-letter country for a request; '?' when it has none (XX), it is Tor (T1), or it doesn't look like one.
+function country(request) {
+  const c = String(request.cf && request.cf.country || '').toUpperCase();
+  return /^[A-Z]{2}$/.test(c) && c !== 'XX' && c !== 'T1' ? c : '?';
 }
 function keyOk(request, env, url) {
   const k = request.headers.get('x-stats-key') || url.searchParams.get('k') || '';
@@ -290,9 +301,9 @@ async function putGithub(request, env) {
 }
 async function getStats(env, url) {
   const days = Math.min(730, Math.max(1, +url.searchParams.get('days') || 365)), out = [];
-  const end = new Date();
+  const end = day();
   const keys = [];
-  for (let i = days - 1; i >= 0; i--) { const d = day(new Date(end.getTime() - i * 86400000)); keys.push(d); }
+  for (let i = days - 1; i >= 0; i--) keys.push(back(end, i));
   // KV reads in parallel, a few dozen at a time.
   for (let i = 0; i < keys.length; i += 50) {
     const part = keys.slice(i, i + 50);

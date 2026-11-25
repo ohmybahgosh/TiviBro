@@ -1235,7 +1235,6 @@ I18n.add('de', {
   "On, none here": "An, hier keine",
   "On: a favorite movie or show is in Favorites and also in Movies or TV shows.  Off: only in Favorites.": "An: Ein favorisierter Film oder eine favorisierte Serie erscheint in Favoriten und auch in Filme oder Serien.  Aus: nur in Favoriten.",
   "On: the full guide was {x} {y}, and is corrected.": "An: Der gesamte TV-Guide war um {x} {y} verschoben und wird korrigiert.",
-  "Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.": "Einmal am Tag und wenn eine neue Version zum ersten Mal startet, meldet TiviBro, welche Version es ist (und ob sie neu oder ein Update ist) und welches webOS dieser TV hat.  Sonst nichts: Es wird keine Adresse gespeichert, keine ID, nichts über deine Sender oder Playlists.",
   "One group with your stations, by city and network.": "Eine Gruppe mit deinen Sendern, nach Stadt und Netz.",
   "One movie after another, in order": "Ein Film nach dem anderen, der Reihe nach",
   "One or two addresses, IPv4 or IPv6 (192.168.1.1, 2001:de4::101), or a DNS-over-HTTPS link (https://dns.example/dns-query).": "Eine oder zwei Adressen, IPv4 oder IPv6 (192.168.1.1, 2001:de4::101), oder ein DNS-over-HTTPS-Link (https://dns.example/dns-query).",
@@ -2484,5 +2483,6 @@ I18n.add('de', {
   "TMDB only": "Nur TMDB",
   "TMDB, else TheTVDB": "TMDB, sonst TheTVDB",
   "TheTVDB": "TheTVDB",
-  "Where details come from": "Woher die Details kommen"
+  "Where details come from": "Woher die Details kommen",
+  "Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  The count also notes the country it came from, to see which languages to add next.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.": "Einmal am Tag und wenn eine neue Version zum ersten Mal startet, meldet TiviBro, welche Version es ist (und ob sie neu oder ein Update ist) und welches webOS dieser TV hat.  Dabei wird auch das Land vermerkt, aus dem die Meldung kommt, um zu sehen, welche Sprachen als Nächstes dazukommen sollten.  Sonst nichts: Es wird keine Adresse gespeichert, keine ID, nichts über deine Sender oder Playlists."
 });

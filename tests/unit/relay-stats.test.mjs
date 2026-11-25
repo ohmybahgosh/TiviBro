@@ -28,7 +28,12 @@ r = await post('/stats/github', { date: '2026-10-31', repo: { stars: 12 } }, '1.
 ok('the workflow can store the day\'s GitHub numbers', r.status === 200);
 const all = await (await worker.fetch(req('/stats?days=30', { headers: { 'X-Stats-Key': env.STATS_KEY } }), env)).json();
 const today = all.days.find((d) => d.counts);
-ok('the dashboard gets them', today && today.counts.active['0.6.0-alpha.31'] === 1 && today.counts.active['0.6.0-alpha.30'] === 1 && today.counts.webos['25'] === 1 && today.counts.webos['6'] === 1 && today.counts.install['0.6.0-alpha.31'] === 1, JSON.stringify(all));
+// The country Cloudflare saw (request.cf), never a header anyone can send.
+const fromCc = (cc, ip) => { const r = req('/count', { method: 'POST', body: JSON.stringify({ e: 'active', v: '0.6.0-alpha.31', w: '6' }), headers: { 'cf-connecting-ip': ip, 'cf-ipcountry': 'FR' } }); if (cc) Object.defineProperty(r, 'cf', { value: { country: cc } }); return worker.fetch(r, env); };
+await fromCc('DE', '7.7.7.1'); await fromCc('de', '7.7.7.2'); await fromCc('T1', '7.7.7.3'); await fromCc(null, '7.7.7.4');
+const cc = JSON.parse(kv.get('n:' + new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date()))).cc;
+ok('countries per kind: from Cloudflare, Tor and none as unknown, a header ignored', cc.active.DE === 2 && cc.active['?'] >= 2 && !cc.active.FR && cc.install['?'] === 1, JSON.stringify(cc));
+ok('the dashboard gets them', today && today.counts.active['0.6.0-alpha.31'] >= 1 && today.counts.active['0.6.0-alpha.30'] === 1 && today.counts.webos['25'] === 1 && today.counts.webos['6'] === 1 && today.counts.install['0.6.0-alpha.31'] === 1, JSON.stringify(all));
 ok('with GitHub\'s', all.days.some((d) => d.github && d.github.repo.stars === 12));
 console.log(fails ? fails + ' FAILED' : 'all relay stats checks passed');
 process.exit(fails ? 1 : 0);

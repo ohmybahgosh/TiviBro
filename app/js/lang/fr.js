@@ -394,7 +394,6 @@ I18n.add('fr', {
   "Off, HDR10": 'Désactivé, HDR10', "On My media": 'Sur Mes médias', "On Trakt": 'Sur Trakt', "On the Channels screen": 'Sur l\'écran Chaînes', "On time": 'À l\'heure',
   "On, 4K too": 'Activé, 4K aussi',
   "On: a favorite movie or show is in Favorites and also in Movies or TV shows.  Off: only in Favorites.": 'Activé : un film ou une série favori est dans Favoris et aussi dans Films ou Séries.  Désactivé : seulement dans Favoris.',
-  "Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.": 'Une fois par jour, et au premier démarrage d\'une nouvelle version, TiviBro indique quelle version c\'est (et s\'il s\'agit d\'une nouvelle installation ou d\'une mise à jour) et quel webOS a cette TV.  Rien d\'autre : aucune adresse conservée, aucun identifiant, rien sur vos chaînes ou listes de lecture.',
   "One or two addresses, IPv4 or IPv6 (192.168.1.1, 2001:de4::101), or a DNS-over-HTTPS link (https://dns.example/dns-query).": 'Une ou deux adresses, IPv4 ou IPv6 (192.168.1.1, 2001:de4::101), ou un lien DNS-over-HTTPS (https://dns.example/dns-query).',
   "Only if your provider asks for a specific one.  Sent by the network helper for this playlist.": 'Seulement si votre fournisseur en demande un spécifique.  Envoyé par l\'assistant réseau pour cette liste de lecture.',
   "Only phones you pair here can connect.  The pairing code never crosses the network, and everything a phone sends is signed with a key only that phone and this TV have.": 'Seuls les téléphones associés ici peuvent se connecter.  Le code d\'association ne transite jamais sur le réseau, et tout ce qu\'un téléphone envoie est signé avec une clé que seuls ce téléphone et cette TV possèdent.',
@@ -1760,5 +1759,6 @@ I18n.add('fr', {
   "TMDB only": "TMDB uniquement",
   "TMDB, else TheTVDB": "TMDB, sinon TheTVDB",
   "TheTVDB": "TheTVDB",
-  "Where details come from": "Origine des détails"
+  "Where details come from": "Origine des détails",
+  "Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  The count also notes the country it came from, to see which languages to add next.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.": "Une fois par jour, et au premier démarrage d'une nouvelle version, TiviBro indique quelle version c'est (et s'il s'agit d'une nouvelle installation ou d'une mise à jour) et quel webOS a cette TV.  Le comptage note aussi le pays d'où il vient, pour savoir quelles langues ajouter ensuite.  Rien d'autre : aucune adresse conservée, aucun identifiant, rien sur vos chaînes ou listes de lecture."
 });

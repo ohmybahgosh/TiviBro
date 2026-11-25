@@ -1264,7 +1264,6 @@ I18n.add('tr', {
   "On, none here": "Açık, burada yok",
   "On: a favorite movie or show is in Favorites and also in Movies or TV shows.  Off: only in Favorites.": "Açık: favori bir film veya dizi Favoriler'de ve ayrıca Filmler veya Diziler'de yer alır.  Kapalı: yalnızca Favoriler'de.",
   "On: the full guide was {x} {y}, and is corrected.": "Açık: tam rehber {x} {y} idi ve düzeltilir.",
-  "Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.": "Günde bir kez ve yeni bir sürüm ilk kez başladığında TiviBro hangi sürüm olduğunu (ve yeni mi yoksa güncelleme mi olduğunu) ve bu TV'de hangi webOS olduğunu bildirir.  Başka hiçbir şey yok: adres saklanmaz, kimlik numarası saklanmaz, kanallarınız veya oynatma listeleriniz hakkında hiçbir şey gönderilmez.",
   "One group with your stations, by city and network.": "İstasyonlarınızın bulunduğu tek bir grup, şehre ve ağa göre.",
   "One movie after another, in order": "Filmler sırayla, art arda",
   "One or two addresses, IPv4 or IPv6 (192.168.1.1, 2001:de4::101), or a DNS-over-HTTPS link (https://dns.example/dns-query).": "Bir veya iki adres, IPv4 veya IPv6 (192.168.1.1, 2001:de4::101) ya da bir DNS-over-HTTPS bağlantısı (https://dns.example/dns-query).",
@@ -2481,5 +2480,6 @@ I18n.add('tr', {
   "TMDB only": "Yalnızca TMDB",
   "TMDB, else TheTVDB": "TMDB, yoksa TheTVDB",
   "TheTVDB": "TheTVDB",
-  "Where details come from": "Ayrıntılar nereden gelsin"
+  "Where details come from": "Ayrıntılar nereden gelsin",
+  "Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  The count also notes the country it came from, to see which languages to add next.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.": "Günde bir kez ve yeni bir sürüm ilk kez başladığında TiviBro hangi sürüm olduğunu (ve yeni mi yoksa güncelleme mi olduğunu) ve bu TV'de hangi webOS olduğunu bildirir.  Sayım, sıradaki hangi dillerin ekleneceğini görmek için geldiği ülkeyi de kaydeder.  Başka hiçbir şey yok: adres saklanmaz, kimlik numarası saklanmaz, kanallarınız veya oynatma listeleriniz hakkında hiçbir şey gönderilmez."
 });
