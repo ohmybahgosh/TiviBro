@@ -99,7 +99,25 @@ function audioArgs(track) {
   if (ch <= 2) return { args: ['-c:a', 'ac3', '-b:a', '224k'].concat(ar), out: 'ac3 224k ' + (ch === 1 ? 'mono' : 'stereo') + note };
   return { args: ['-c:a', 'ac3', '-b:a', '640k'].concat(ar), out: 'ac3 640k ' + ch + ' channels' + note };
 }
-// o: { input, pipe, t, a, fmt, track }
+/* Dialogue boost and night mode (app/js/dialog.js, from ffmpeg-7.1-tb6): the sound folded to stereo (a surround
+   track's centre goes to both sides), what both speakers share lifted over what differs (pan), the low rumble
+   and boom trimmed, the voice band around 2.8 kHz brought forward, then a compressor and a limiter so nothing
+   clips.  High is the chain tried on a C2 against the plain sound (Nov 25: "perfect"); Low is a gentler one.
+   Night mode compresses harder, for loud scenes with the volume low.  '' when neither is on. */
+var BOOST = {
+  low: 'pan=stereo|c0=0.8*c0+0.2*c1|c1=0.2*c0+0.8*c1,highpass=f=100,equalizer=f=250:t=q:w=1:g=-2,equalizer=f=2800:t=q:w=0.9:g=5',
+  high: 'pan=stereo|c0=0.65*c0+0.35*c1|c1=0.35*c0+0.65*c1,highpass=f=120,equalizer=f=250:t=q:w=1:g=-4,equalizer=f=2800:t=q:w=0.9:g=9'
+};
+function fxChain(boost, night) {
+  var b = BOOST[boost] ? boost : '';
+  if (!b && !night) return '';
+  var f = ['aresample=48000', 'aformat=channel_layouts=stereo'];
+  if (b) f.push(BOOST[b]);
+  f.push(night ? 'acompressor=threshold=0.05:ratio=6:attack=5:release=300:makeup=3' : 'acompressor=threshold=0.1:ratio=3:attack=5:release=200:makeup=2');
+  f.push('alimiter=limit=0.9');
+  return f.join(',');
+}
+// o: { input, pipe, t, a, fmt, track, fx }
 function args(o) {
   var a = ['-hide_banner', '-nostdin', '-loglevel', 'error', '-stats', '-stats_period', '5'];
   var t = o.t > 0 ? String(Math.round(o.t * 1000) / 1000) : '';
@@ -118,7 +136,8 @@ function args(o) {
      TiviBro's patch: scripts/ffmpeg/patches/dovi-rpu-p81.patch).  The picture is the base layer's, as dovi_tool's
      "convert --discard" makes it; nothing is decoded. */
   if (o.p81) a.push('-bsf:v', 'dovi_rpu=p81=1');
-  a = a.concat(audioArgs(o.track).args);
+  // Dialogue boost or night mode: the chosen sound through fxChain, out as stereo Dolby Digital (the TV plays it).
+  a = a.concat(o.fx ? ['-af', o.fx, '-c:a', 'ac3', '-b:a', '224k', '-ac', '2'] : audioArgs(o.track).args);
   a.push('-sn', '-dn', '-max_muxing_queue_size', '1024');
   if (o.fmt === 'ts') a.push('-f', 'mpegts', 'pipe:1');
   // Not "-live 1": LG's player takes a live-marked MKV for a live stream, fills a few seconds and stops
@@ -363,7 +382,9 @@ function stream(req, res, ALLOW, log, port, redact) {
   var rg = /bytes=(\d+)-/.exec(req.headers.range || ''), from = rg ? +rg[1] : 0;
   var dir = pipe ? '' : spoolDir();
   var h = Object.assign({ 'Content-Type': fmt === 'ts' ? 'video/mp2t' : 'video/x-matroska', 'Cache-Control': 'no-store', 'Accept-Ranges': dir ? 'bytes' : 'none' }, ALLOW);
-  var key = [fmt, q.u, q.ua || '', t, a, q.c || '', q.dv || ''].join('|');
+  // &b=low|high, &n=1: dialogue boost and night mode (fxChain).
+  var fx = fxChain(q.b, q.n === '1');
+  var key = [fmt, q.u, q.ua || '', t, a, q.c || '', q.dv || '', fx].join('|');
   var S = session && session.key === key && !session.stopped ? session : null;
   log({ lv: 'info', event: 'convert request', range: req.headers.range || undefined, joins: S ? Math.round(S.written / 1048576) + ' MB converted' : undefined, method: req.method === 'HEAD' ? 'HEAD' : undefined });
   if (req.method === 'HEAD') { res.writeHead(200, h); return res.end(); }
@@ -391,7 +412,8 @@ function stream(req, res, ALLOW, log, port, redact) {
   if (!track && /^[a-z0-9_]{1,20}$/i.test(q.c || '')) track = { codec: q.c.toLowerCase(), channels: Math.max(0, Math.min(16, +q.ch | 0)), rate: Math.max(0, Math.min(384000, +q.sr | 0)) };
   // &dv=81: the app wants profile 7 as 8.1 (a TV with Dolby Vision); only when the file is profile 7 and this converter can.
   var p81 = q.dv === '81' && !!(info && info.dv === 7 && P81);
-  var list = args({ input: input, pipe: pipe, t: t, a: a, fmt: fmt, track: track, p81: p81 });
+  var list = args({ input: input, pipe: pipe, t: t, a: a, fmt: fmt, track: track, p81: p81, fx: fx });
+  if (fx) log({ lv: 'info', event: 'convert dialogue boost', boost: q.b || '', night: q.n === '1' });
   if (p81) log({ lv: 'info', event: 'convert dolby vision 7 to 8.1' });
   var p;
   try { p = spawn(bin, list); } catch (e) { res.writeHead(500, ALLOW); return res.end('could not start the converter'); }
@@ -443,5 +465,5 @@ function busy() { return current ? { pid: current.p.pid, since: current.at, spee
 // Tests: the spool's sizes.
 function _sizes(seg, ahead, behind, idle, wait) { SEG = seg; AHEAD = ahead; BEHIND = behind; if (idle) IDLE_MS = idle; if (wait) WAIT_MS = wait; }
 
-module.exports = { parseProbe: parseProbe, args: args, audioArgs: audioArgs, inputFor: inputFor, isStream: isStream, stream: stream, control: control,
+module.exports = { parseProbe: parseProbe, args: args, audioArgs: audioArgs, fxChain: fxChain, inputFor: inputFor, isStream: isStream, stream: stream, control: control,
   busy: busy, stats: stats, _sizes: _sizes, get session() { return session; }, get key() { return KEY; }, _forget: function () { probes = {}; probeOrder = []; } };

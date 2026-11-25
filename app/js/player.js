@@ -149,16 +149,17 @@ var Player = (function () {
        buffering; the TV's player plays it, and seeks in it.  One still recording keeps the MPEG-TS player (it grows). */
     if (cur && !cur.live && !cur.timeshift && !isHls && cur.meta && cur.meta.item && cur.meta.item.recording && !cur.meta.item.growing && s !== 'mse') return 'native';
     if (isDash(url)) return mse() && s !== 'native' ? 'dash' : 'native';
-    // Audio sync on this channel (avsync.js), or dialogue boost (dialog.js), needs TiviBro's own player: the TV's plays the sound in hardware.
+    // Audio sync on this channel (avsync.js) needs TiviBro's own player: the TV's has no way to move the sound.
     if ((s === 'native' && !syncing()) || !mse() || fallbackHosts[hostOf(url)] === 'native') return 'native';
     if (isHls) return window.Hls && Hls.isSupported() ? 'hls' : 'native';
     if (window.mpegts && mpegts.getFeatureList().mseLivePlayback) return 'ts';
     return 'native';
   }
 
-  /* Is a sound delay set for what plays (Audio sync), or dialogue boost or night mode on (dialog.js)?  Either needs
-     the sound to come through the page: TiviBro's own player, and a movie through the converter as MPEG-TS. */
-  function syncing() { return !!(window.AvSync && AvSync.wanted()) || !!(window.Dialog && Dialog.wanted()); }
+  // Is a sound delay set for what plays (Audio sync)?
+  function syncing() { return !!(window.AvSync && AvSync.wanted()); }
+  // Dialogue boost or night mode (dialog.js): { b, n } for the converter, or null.
+  function dialogFx() { return window.Dialog ? Dialog.fx() : null; }
   /* Why this plays on the TV's own player although a sound delay is set (that player can't move the sound), in words
      for the Audio sync bar.  Discussion #60: a channel only the TV's player played showed nothing being moved. */
   function whyNative(url) {
@@ -617,8 +618,8 @@ var Player = (function () {
   function state(s, msg) {
     if (s === 'playing' || s === 'error' || s === 'idle' || s === 'ended') releaseFrame();
     if (st) st.state = s; if (lastStats) lastStats.state = s;
-    // Dialogue boost and night mode (dialog.js) on TiviBro's own players, whose sound comes through the page.
-    if (s === 'playing' && window.Dialog && st && st.kind !== 'native') Dialog.apply(video);
+    // A channel whose details never came (the TV's player): dialogue boost once it plays.
+    if (s === 'playing') liveBoost(token);
     emit('state', s, msg);
   }
   function notice(msg) { emit('notice', msg); }
@@ -645,7 +646,7 @@ var Player = (function () {
       if (r0.engine === 'native') { cur.routed = true; cur.routeWhy = r0.reason; Log.info('player', r0.reason); useEngine('native'); kind = 'native'; }
     }
     cur.syncWhy = kind === 'native' && syncing() ? whyNative(url) : '';
-    if (cur.syncWhy) Log.info('player', 'Audio sync and dialogue boost can\'t reach the sound here: ' + cur.syncWhy);
+    if (cur.syncWhy) Log.info('player', 'Audio sync can\'t move the sound here: ' + cur.syncWhy);
     Log.state('player', 'playing ' + (cur.ch && cur.ch.n ? '"' + cur.ch.n + '"' : 'a video') + ' with the ' + kind + ' engine');
     Log.info('player', 'Start ' + (cur.ch && cur.ch.n ? '"' + cur.ch.n + '" ' : '') + 'with ' + kind + ' engine' + (kind !== 'native' && Net.active ? ' via helper' : '') + ', profile ' + p.label + ' (prebuffer ' + p.prebuffer + 's)' + (cur.retries ? ', attempt ' + (cur.retries + 1) : '') + (cur.startAt ? ', from ' + Math.round(cur.startAt) + 's' : '') + (conv ? ', sound converted from ' + Math.round(conv.t) + 's' : '') + '  ' + (conv ? cur.url : url));
     var gen = cur.gen = (cur.gen || 0) + 1;     // a torn-down engine's late events are ignored
@@ -741,6 +742,8 @@ var Player = (function () {
       cur.media = merge(cur.media, m);
       var r = Caps.route(cur.media, hdrPolicy());
       if (r.engine !== 'native' && kind === 'ts' && mp3Native() && (cur.media.audio || []).indexOf('mp3') >= 0) { r.engine = 'native'; r.reason = 'MP3 sound plays through the TV player on this TV'; }
+      // Dialogue boost or night mode on (dialog.js), on a channel whose sound plays as it is: through the converter.
+      if (!r.unplayable && liveBoost(myToken)) return;
       // A live channel whose sound this TV can't play: the converter, if it's on.
       if (r.unplayable && cur.live && !cur.timeshift && !cur.convTried && window.Convert && Convert.on()) {
         cur.convTried = true;
@@ -1473,7 +1476,7 @@ var Player = (function () {
       var my = token, item = cur.meta && cur.meta.item || {};
       teardown(); st = null;
       state('loading');
-      Convert.plan({ url: cur.url, media: cur.media, title: (cur.meta && cur.meta.title) || '', container: item.ext || item.container_extension || '', sync: syncing() })
+      Convert.plan({ url: cur.url, media: cur.media, title: (cur.meta && cur.meta.title) || '', container: item.ext || item.container_extension || '', sync: syncing(), boost: dialogFx() })
         .then(function (r) { applyPlan(r, my); }, function () { if (my === token) start(my); });
       return;
     }
@@ -1577,7 +1580,7 @@ var Player = (function () {
     function again() {
       if (my !== token || !cur) return;
       var at = Math.max(0, position());
-      Convert.plan({ url: cur.url, media: cur.media, title: (cur.meta && cur.meta.title) || '', container: item.ext || item.container_extension || '', sync: syncing() }).then(function (r) {
+      Convert.plan({ url: cur.url, media: cur.media, title: (cur.meta && cur.meta.title) || '', container: item.ext || item.container_extension || '', sync: syncing(), boost: dialogFx() }).then(function (r) {
         if (my !== token || !cur) return;
         if (!r || r.offer) return silent();
         Log.info('player', 'Sound: ' + what + ' found while playing; restarting at ' + Math.round(at) + 's with the converter');
@@ -1608,7 +1611,7 @@ var Player = (function () {
       return Convert.offer(r.offer, r.guessed, function (got) {
         if (my !== token || !cur) return;
         if (!got) { cur.noSound = r.offer; return start(my); }
-        Convert.plan({ url: cur.url, media: cur.media, title: (cur.meta && cur.meta.title) || '', sync: syncing() }).then(function (r2) { applyPlan(r2 && r2.offer ? null : r2, my); });
+        Convert.plan({ url: cur.url, media: cur.media, title: (cur.meta && cur.meta.title) || '', sync: syncing(), boost: dialogFx() }).then(function (r2) { applyPlan(r2 && r2.offer ? null : r2, my); });
       });
     }
     if (r && r.conv) useConv(r.conv, r.notice);
@@ -1641,6 +1644,19 @@ var Player = (function () {
     cur.conv = null; cur.convNotice = ''; cur.noSound = Caps.unplayable(conv.codec, conv.channels, null, conv.rate) || '';
     if (cur.live) cur.convTried = true;
     start(my);
+  }
+  /* A live channel with dialogue boost or night mode on (dialog.js): once, through the converter with the boost
+     (Convert.planBoost).  Not the rewind buffer's copy or catch-up: those play as they are.  true when it's asked. */
+  function liveBoost(my) {
+    if (!cur || !cur.live || cur.timeshift || cur.conv || cur.convTried || !window.Convert || !Convert.on() || !Convert.planBoost || !dialogFx()) return false;
+    cur.convTried = true;
+    var m = cur.media || {};
+    Convert.planBoost(cur.origUrl || cur.url, (m.audio && m.audio[0]) || '', m.channels, m.rate).then(function (pl) {
+      if (my !== token || !cur) return;
+      if (pl && pl.conv) livePlan(pl, my, '');
+      else Log.info('player', 'Dialogue boost: this channel plays as it is (the audio converter isn\'t ready)');
+    });
+    return true;
   }
   function livePlan(pl, my, codec) {
     if (my !== token || !cur) return;
@@ -1850,7 +1866,12 @@ var Player = (function () {
      asking the converter again (a movie's sound only moves through it as MPEG-TS). */
   function resync() {
     if (!cur) return;
-    if (cur.live && !cur.timeshift) { cur.usual = pickEngine(cur.origUrl || cur.url); if (cur.firstKind === 'native' && syncing()) cur.firstKind = null; return retryNow(); }
+    if (cur.live && !cur.timeshift) {
+      cur.usual = pickEngine(cur.origUrl || cur.url); if (cur.firstKind === 'native' && syncing()) cur.firstKind = null;
+      // Dialogue boost turned on or off: the converter asked again (or let go), with the boost as it is now.
+      if (cur.conv || dialogFx()) { cur.conv = null; cur.convTried = false; }
+      return retryNow();
+    }
     var o = {}, k;
     for (k in cur.opts) o[k] = cur.opts[k];
     o.startAt = Math.max(0.1, position());
@@ -1921,8 +1942,6 @@ var Player = (function () {
     get media() { return cur && cur.media ? Caps.label(cur.media) : ''; },
     get mediaInfo() { return cur && cur.media; },
     get engine() { return st ? ENGINE_NAMES[st.kind] || st.kind : ''; },
-    // The sound comes through the page (TiviBro's own players), where dialogue boost can reach it (dialog.js).
-    get pageSound() { return !!(st && st.kind && st.kind !== 'native'); },
     get position() { return position(); },
     get duration() { return cur && cur.conv && cur.conv.dur ? cur.conv.dur : video && isFinite(video.duration) && video.duration > 0 ? video.duration : cur && cur.knownDur ? cur.knownDur : 0; },
     // Sound being converted right now: { codec, track, from } (Stream info, tests).

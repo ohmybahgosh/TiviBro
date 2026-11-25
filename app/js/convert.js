@@ -107,7 +107,9 @@ var Convert = (function () {
     var ua = typeof Net !== 'undefined' ? Net.ua : '';
     return base() + '/convert/' + key + '/movie.' + (conv.fmt === 'ts' ? 'ts' : 'mkv') + '?u=' + encodeURIComponent(conv.src) +
       '&t=' + (Math.round((conv.t || 0) * 1000) / 1000) + '&a=' + (conv.a | 0) +
-      (conv.codec ? '&c=' + encodeURIComponent(conv.codec) + '&ch=' + (conv.channels | 0) + (conv.rate ? '&sr=' + (conv.rate | 0) : '') : '') + (conv.dv === 81 ? '&dv=81' : '') + (ua ? '&ua=' + encodeURIComponent(ua) : '');
+      (conv.codec ? '&c=' + encodeURIComponent(conv.codec) + '&ch=' + (conv.channels | 0) + (conv.rate ? '&sr=' + (conv.rate | 0) : '') : '') + (conv.dv === 81 ? '&dv=81' : '') +
+      // Dialogue boost and night mode (dialog.js): the converter's filters on the sound (service/convert.js fxChain).
+      (conv.fx && conv.fx.b ? '&b=' + conv.fx.b : '') + (conv.fx && conv.fx.n ? '&n=1' : '') + (ua ? '&ua=' + encodeURIComponent(ua) : '');
   }
   function probe(url) {
     var k = url + '|' + (typeof Net !== 'undefined' ? Net.ua : '');
@@ -136,10 +138,13 @@ var Convert = (function () {
     var bad = known && known.every(function (a) { return Caps.unplayable(a, m.channels || 0, c); });
     /* o.sync: Audio sync moves this movie's sound (avsync.js), which only TiviBro's own player can do, so the file
        goes through the converter as MPEG-TS even when the TV plays its sound as it is (the sound copied). */
-    if (known && !bad && !o.sync) return Promise.resolve(null);       // the movie's own sound plays here
+    /* o.boost: dialogue boost or night mode (dialog.js), which only the converter can do on a TV: the file goes
+       through it too, its sound processed (and whatever it finds, the boost goes along: withFx). */
+    var fx = o.boost || null;
+    if (known && !bad && !o.sync && !fx) return Promise.resolve(null);       // the movie's own sound plays here
     var hint = !known && HINT.test((o.title || '') + ' ' + decodeURIComponentSafe(o.url));
     var fileLike = FILE.test(o.url) || /^(mkv|mp4|m4v|mov|avi|ts|m2ts|webm)$/i.test(o.container || '');
-    if (!bad && !hint && !fileLike && !o.sync) return Promise.resolve(null);
+    if (!bad && !hint && !fileLike && !o.sync && !fx) return Promise.resolve(null);
     return status().then(function (s) {
       // A release carries the converter: unpacking it takes a second, so nothing is asked.
       if (s.state !== 'ready' && s.bundled && s.state !== 'failed') return get().catch(function () { return s; });
@@ -166,6 +171,7 @@ var Convert = (function () {
               notice: d.action === 'convert' ? 'Dolby Vision 7 as 8.1, and ' + (NAMES[d.codec] || d.codec.toUpperCase()) + ' audio converted' : 'Dolby Vision 7 played as 8.1' };
           });
         }
+        if ((d.action === 'play' || d.action === 'track') && fx) return ensureKey().then(function () { return forBoost(info, d, o.url, fx); });
         if ((d.action === 'play' || d.action === 'track') && o.sync) { var sy = forSync(info, d, c, o.url); if (sy) return ensureKey().then(function () { return sy; }); }
         if (d.action === 'play') return null;
         if (d.action === 'track') return { track: d.a, tracks: info.audio, bad: d.bad, dur: info.duration, video: info.video || '' };
@@ -174,7 +180,16 @@ var Convert = (function () {
             notice: 'Converting ' + (NAMES[d.codec] || d.why || d.codec.toUpperCase()) + ' audio for this TV' };
         });
       });
-    }).catch(function (e) { if (typeof Log !== 'undefined') Log.warn('convert', 'Could not check the sound: ' + e.message); return null; });
+    }).then(function (r) { return withFx(r, fx); }).catch(function (e) { if (typeof Log !== 'undefined') Log.warn('convert', 'Could not check the sound: ' + e.message); return null; });
+  }
+  // A plan that goes through the converter anyway (a sound the TV can't play, Dolby Vision 8.1): the boost along.
+  function withFx(r, fx) { if (r && r.conv && fx) r.conv.fx = fx; return r; }
+  /* A movie whose sound plays here, with dialogue boost or night mode on: through the converter, the picture copied
+     and the chosen sound processed (stereo Dolby Digital out), for the TV's own player (MKV) or TiviBro's (MPEG-TS). */
+  function forBoost(info, d, url, fx) {
+    var a = d.a != null ? d.a : Math.max(0, info.audio.map(function (x) { return !!x.def; }).indexOf(true)), t = info.audio[a] || {};
+    return { conv: { src: url, a: a, fmt: fmtFor(info.video), video: info.video || '', codec: t.codec || '', channels: t.channels || 0, rate: t.rate || 0, tracks: info.audio, bad: d.bad || [], dur: info.duration || 0, fx: fx },
+      notice: 'Dialogue boost: the sound goes through the audio converter' };
   }
   /* A movie whose sound plays here, with Audio sync on it: through the converter as MPEG-TS, the picture and the
      chosen sound copied, when TiviBro's own player (MSE) takes both.  null: it can't, and plays as it is. */
@@ -194,7 +209,23 @@ var Convert = (function () {
     return status().then(function (s) {
       if (s.state !== 'ready') return { offer: what };
       return ensureKey().then(function () {
-        return { conv: { src: url, a: 0, fmt: 'ts', codec: codec, channels: channels || 0, rate: rate || 0, tracks: [], bad: [], dur: 0 }, notice: 'Converting ' + what + ' audio for this TV' };
+        return { conv: { src: url, a: 0, fmt: 'ts', codec: codec, channels: channels || 0, rate: rate || 0, tracks: [], bad: [], dur: 0, fx: typeof Dialog !== 'undefined' ? Dialog.fx() : null }, notice: 'Converting ' + what + ' audio for this TV' };
+      });
+    }).catch(function () { return null; });
+  }
+  /* A live channel with dialogue boost or night mode on (dialog.js), whose sound the TV plays as it is: through the
+     converter with the boost.  A release carries the converter, so it's unpacked if needed; without it, null (the
+     channel plays as it is, said once in the log). */
+  function planBoost(url, codec, channels, rate) {
+    var fx = typeof Dialog !== 'undefined' ? Dialog.fx() : null;
+    if (!fx || !on() || !base()) return Promise.resolve(null);
+    return status().then(function (s) {
+      if (s.state !== 'ready' && s.bundled && s.state !== 'failed') return get().then(status, function () { return s; });
+      return s;
+    }).then(function (s) {
+      if (s.state !== 'ready') { if (typeof Log !== 'undefined') Log.warn('convert', 'Dialogue boost needs the audio converter, which isn\'t ready'); return null; }
+      return ensureKey().then(function () {
+        return { conv: { src: url, a: 0, fmt: 'ts', codec: codec || '', channels: channels || 0, rate: rate || 0, tracks: [], bad: [], dur: 0, fx: fx }, notice: 'Dialogue boost: the sound goes through the audio converter' };
       });
     }).catch(function () { return null; });
   }
@@ -226,6 +257,6 @@ var Convert = (function () {
   }
   function noSound(what) { return what + ' sound, which this TV can\'t play.  Settings > Audio and subtitles can get the audio converter, or pick another audio track.'; }
 
-  return { _forSync: forSync, fmtFor: fmtFor, on: on, status: status, get: get, remove: remove, describe: describe, decide: decide, link: link, plan: plan, planLive: planLive, offer: offer, noSound: noSound,
+  return { _forSync: forSync, fmtFor: fmtFor, on: on, status: status, get: get, remove: remove, describe: describe, decide: decide, link: link, plan: plan, planLive: planLive, planBoost: planBoost, offer: offer, noSound: noSound,
     probe: probe, ensureKey: ensureKey, NAMES: NAMES, _dv81: dv81, get key() { return key; }, _reset: function () { key = ''; st = null; probes = {}; } };
 })();

@@ -1542,7 +1542,8 @@ var Views = (function () {
      straight from the provider meanwhile.  Without this, going back to live started the buffer again, it failed
      again, and no channel played at all. */
   var bufBroken = 0, BUF_REST = 10 * 60e3;
-  function tsAlways() { var m = +Store.settings.rewindBuffer || 0; return m > 0 && tsOn() && Record.canBuffer() && Date.now() - bufBroken > BUF_REST ? m : 0; }
+  // Not while dialogue boost is on: the converter reads the channel itself (dialog.js).
+  function tsAlways() { var m = +Store.settings.rewindBuffer || 0; return m > 0 && !(window.Dialog && Dialog.wanted()) && tsOn() && Record.canBuffer() && Date.now() - bufBroken > BUF_REST ? m : 0; }
   function startBuffered(c) {
     var my = tsh = { c: c, at: Date.now(), id: null, always: true };
     Player.stop();
@@ -2489,10 +2490,11 @@ var Views = (function () {
      once on TiviBro's own player; from the TV's, the stream starts again on TiviBro's. */
   function dialogMenu() {
     var pick = function (lvl, night) {
+      var was = Dialog.fx();
       Dialog.set(lvl, night);
-      if (!Player.pageSound && Dialog.wanted()) Player.resync();
-      if (Dialog.failed) U.toast(T('Dialogue boost isn\'t available on this TV: {x}', { x: Dialog.failed }), 6000);
-      else U.toast(T('Dialogue boost: {x}', { x: Dialog.label() }), 3000);
+      // The converter takes the setting when the stream starts, so what plays starts again with it.
+      if (Player.current && JSON.stringify(was) !== JSON.stringify(Dialog.fx())) Player.resync();
+      U.toast(T('Dialogue boost: {x}', { x: Dialog.label() }), 3000);
     };
     var lvl = Dialog.level(), night = Store.settings.nightMode === true;
     UI.menu('Dialogue boost', [

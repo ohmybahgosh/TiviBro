@@ -28,11 +28,11 @@ var crypto = require('crypto'), zlib = require('zlib'), cp = require('child_proc
 var Storage = require('./storage');
 
 /* ---------- the release (the lead fills in the hashes after running the build) ---------- */
-var TAG = 'ffmpeg-7.1-tb5';   // tb5: built for speed (-O3, not --enable-small) and with HLS, for Multiview; tb4: no L5 letterbox for a cropped remux; tb3: dovi_rpu with p81 (Dolby Vision 7 as 8.1, convert.js); tb2: video decoders and JPEG for seek previews
+var TAG = 'ffmpeg-7.1-tb6';   // tb6: the dialogue boost filters (highpass, equalizer, acompressor, alimiter); tb5: built for speed (-O3, not --enable-small) and with HLS, for Multiview; tb4: no L5 letterbox for a cropped remux; tb3: dovi_rpu with p81 (Dolby Vision 7 as 8.1, convert.js); tb2: video decoders and JPEG for seek previews
 var BASE = 'https://github.com/ohmybahgosh/TiviBro/releases/download/' + TAG + '/';
 var SHA256 = {
-  armv7: '228570c04b3212e918c2f1d0a965f5c6a90afc14f813568e848f22b7814d335e',
-  aarch64: 'a4718b42e15f611feb290a1d09c365853aa1347c0b2544f8a53c5aa6e359a000'
+  armv7: 'd9312f77beb353de29cf4f9e11a519f3a46c97261a3a5d792b10420d68af2382',
+  aarch64: '0b69cd0c75c9cce16c32e9777d728824d00311eadbcb8e0aea7482534142215f'
 };
 var MAX_BYTES = 16 * 1024 * 1024;           // the .gz is about 3 MB; anything far bigger is not it
 
