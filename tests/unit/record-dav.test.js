@@ -62,8 +62,15 @@ const dav = http.createServer((req, res) => {
   }
   res.writeHead(405); res.end();
 });
-// A channel: 188-byte packets, a steady 60 KB/s.
+// A channel: 188-byte packets, a steady 60 KB/s; and an HLS one, for live pause (issue #180).
 const ch = http.createServer((req, res) => {
+  if (/^\/live\.m3u8/.test(req.url)) {
+    res.writeHead(200, { 'Content-Type': 'application/vnd.apple.mpegurl' });
+    const s = Math.floor(Date.now() / 1000);
+    return res.end('#EXTM3U\n#EXT-X-TARGETDURATION:1\n#EXT-X-MEDIA-SEQUENCE:' + s + '\n' + [0, 1, 2].map((k) => '#EXTINF:1.0,\nseg' + (s + k) + '.ts\n').join(''));
+  }
+  const m = /^\/seg(\d+)\.ts$/.exec(req.url);
+  if (m) { res.writeHead(200, { 'Content-Type': 'video/mp2t' }); return res.end('[piece ' + m[1] + ']'); }
   res.writeHead(200, { 'Content-Type': 'video/mp2t' });
   const iv = setInterval(() => res.write(Buffer.alloc(188 * 6, 0x47)), 20);
   req.on('close', () => clearInterval(iv));
@@ -115,6 +122,24 @@ const ch = http.createServer((req, res) => {
   r = await call('POST', '/record/delete', { id });
   await wait(1900);
   ok('delete takes its files and its folder', r.j.ok && ![...files.keys()].some((k) => k.startsWith(mdir)) && !dirs.has(mdir), [...files.keys()].join(' | ') + ' / ' + [...dirs].join(' | '));
+  // Live pause with no USB drive: on the WebDAV share (issue #180: every channel stopped playing with it on).
+  const chan = 'http://127.0.0.1:' + ch.address().port;
+  r = await call('POST', '/record/ts/start', { url: chan + '/live.m3u8' });
+  const tid = r.j.id;
+  ok('live pause goes to the WebDAV share', r.code === 200 && r.j.share === true && !!tid, JSON.stringify(r.j));
+  await wait(2500);
+  r = await call('POST', '/record/ts/ping', { id: tid });
+  ok('pieces arrive and it says ready', r.j.pieces >= 2 && r.j.ready && !r.j.error, JSON.stringify(r.j));
+  const onDav = [...files.keys()].filter((k) => k.indexOf('/.timeshift/' + tid + '/') >= 0);
+  ok('written on the share', onDav.length >= 2, [...files.keys()].join(' | '));
+  const pl = (await call('GET', '/record/ts/' + tid + '/live.m3u8')).body.toString();
+  const first = pl.split('\n').filter((l) => /^\d+\.ts$/.test(l))[0];
+  const piece = first ? await call('GET', '/record/ts/' + tid + '/' + first) : { code: 0, body: Buffer.alloc(0), hdr: {} };
+  ok('a piece plays back from the share', piece.code === 200 && /^\[piece \d+\]$/.test(piece.body.toString()), piece.code + ' ' + piece.body.toString() + ' | ' + pl);
+  await call('POST', '/record/ts/stop', { id: tid });
+  await wait(4800);
+  ok('stopped: its pieces are gone from the share', ![...files.keys()].some((k) => k.indexOf('/.timeshift/' + tid + '/') >= 0), [...files.keys()].join(' | '));
+
   r = await call('POST', '/record/target', { type: '' });
   ok('the share can be taken away', r.j.ok && !(await call('GET', '/record/list')).j.target);
   dav.close(); ch.close();

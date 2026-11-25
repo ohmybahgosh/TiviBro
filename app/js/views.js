@@ -1538,18 +1538,32 @@ var Views = (function () {
      plays from its copy on the drive the whole time (a few seconds behind live), so ◀ goes back without pausing
      first.  The first piece is cut a second in (timeshift.js), and the drive's playlist waits for it, so a channel
      starts about as fast as it does directly. */
-  function tsAlways() { var m = +Store.settings.rewindBuffer || 0; return m > 0 && tsOn() && Record.canBuffer() ? m : 0; }
+  /* A rewind buffer that failed (a share that refuses the pieces, issue #180) rests for BUF_REST: channels play
+     straight from the provider meanwhile.  Without this, going back to live started the buffer again, it failed
+     again, and no channel played at all. */
+  var bufBroken = 0, BUF_REST = 10 * 60e3;
+  function tsAlways() { var m = +Store.settings.rewindBuffer || 0; return m > 0 && tsOn() && Record.canBuffer() && Date.now() - bufBroken > BUF_REST ? m : 0; }
   function startBuffered(c) {
     var my = tsh = { c: c, at: Date.now(), id: null, always: true };
     Player.stop();
     Record.tsStart(c, tsAlways() * 60).then(function (r) {
       if (tsh !== my) { Record.tsStop(r.id); return; }
       my.id = r.id; my.url = Record.base() + r.playlist;
-      my.ping = setInterval(function () {
+      // The buffer gone or failing: say so once, rest it, and play the channel directly.
+      var broke = function (why) {
         if (tsh !== my) return;
-        Record.tsPing(my.id).then(function (st) { if (tsh === my && st && st.error) { U.toast(T('Live pause stopped: {e}', { e: st.error }), 6000); backFromPause(); } },
-          function (e) { if (tsh === my && e && e.gone) backFromPause(); });
-      }, 10000);
+        bufBroken = Date.now();
+        Log.warn('player', 'Rewind buffer stopped, playing without it for 10 minutes: ' + why);
+        if (why !== 'gone') U.toast(T('Live pause stopped: {e}', { e: why }), 6000);
+        backFromPause();
+      };
+      var check = function () {
+        if (tsh !== my) return;
+        Record.tsPing(my.id).then(function (st) { if (st && st.error) broke(st.error); }, function (e) { if (e && e.gone) broke('gone'); });
+      };
+      // Soon after the start (a refused first piece shows within a second or two), then every 10 s.
+      my.wait = setTimeout(check, 3000);
+      my.ping = setInterval(check, 10000);
       Player.play(c, { url: my.url, tshift: true, tsFrom: -1 });
       Log.info('player', 'Playing ' + L.name(c) + ' from the rewind buffer on ' + TS_PLACE[tsPlace(r)]);
     }, function (e) {

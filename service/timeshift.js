@@ -70,6 +70,16 @@ function keep(S, f, buf, done) {
 }
 function nextPut(S) {
   var job = S.queue[0]; if (!job || S.stopped) return;
+  /* The session's folder first, once: a WebDAV share refuses a file in a folder that isn't there (409), so every
+     piece failed and the pause ended at once, and no channel played with it on (issue #180).  Samba's put makes
+     them itself; mkdirs on a folder already there is fine on both. */
+  if (!S.made && S.net.M.mkdirs) {
+    return S.net.M.mkdirs(S.net.t, S.rdir, function (e) {
+      if (S.stopped) return;
+      if (e) { S.queue.shift(); job.done(e); return nextPut(S); }
+      S.made = true; nextPut(S);
+    });
+  }
   S.net.M.put(S.net.t, S.rdir + '/' + job.f, job.buf, 'application/octet-stream', function (e) {
     S.queue.shift();
     if (!S.stopped) job.done(e);
@@ -120,7 +130,7 @@ function begin(url, max, folder, key, alt, small, net) {
     pieces: [], n: 0, disc: 0, cutDisc: false, stopped: false, error: '', kind: '', init: null, folder: folder, alt: alt || '', minFree: small ? SMALL_FREE_MB : MIN_FREE_MB, small: !!small,
     net: net || null, queue: [], toDel: [], free: -1 };
   if (net) {
-    // On a share: "<recordings folder>/.timeshift/<id>", made with the first piece (its folders are made as it's written).
+    // On a share: "<recordings folder>/.timeshift/<id>", made before the first piece is written (nextPut).
     var nbase = folder + '/.timeshift'; clearOldNet(net, nbase);
     S.rdir = nbase + '/' + S.id; S.dir = '';
   } else {

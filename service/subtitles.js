@@ -181,7 +181,7 @@ var CP = {
   '1256': "\u20ac\u067e\u201a\u0192\u201e\u2026\u2020\u2021\u02c6\u2030\u0679\u2039\u0152\u0686\u0698\u0688\u06af\u2018\u2019\u201c\u201d\u2022\u2013\u2014\u06a9\u2122\u0691\u203a\u0153\u200c\u200d\u06ba\u00a0\u060c\u00a2\u00a3\u00a4\u00a5\u00a6\u00a7\u00a8\u00a9\u06be\u00ab\u00ac\u00ad\u00ae\u00af\u00b0\u00b1\u00b2\u00b3\u00b4\u00b5\u00b6\u00b7\u00b8\u00b9\u061b\u00bb\u00bc\u00bd\u00be\u061f\u06c1\u0621\u0622\u0623\u0624\u0625\u0626\u0627\u0628\u0629\u062a\u062b\u062c\u062d\u062e\u062f\u0630\u0631\u0632\u0633\u0634\u0635\u0636\u00d7\u0637\u0638\u0639\u063a\u0640\u0641\u0642\u0643\u00e0\u0644\u00e2\u0645\u0646\u0647\u0648\u00e7\u00e8\u00e9\u00ea\u00eb\u0649\u064a\u00ee\u00ef\u064b\u064c\u064d\u064e\u00f4\u064f\u0650\u00f7\u0651\u00f9\u0652\u00fb\u00fc\u200e\u200f\u06d2",
   '1257': "\u20ac\ufffd\u201a\ufffd\u201e\u2026\u2020\u2021\ufffd\u2030\ufffd\u2039\ufffd\u00a8\u02c7\u00b8\ufffd\u2018\u2019\u201c\u201d\u2022\u2013\u2014\ufffd\u2122\ufffd\u203a\ufffd\u00af\u02db\ufffd\u00a0\ufffd\u00a2\u00a3\u00a4\ufffd\u00a6\u00a7\u00d8\u00a9\u0156\u00ab\u00ac\u00ad\u00ae\u00c6\u00b0\u00b1\u00b2\u00b3\u00b4\u00b5\u00b6\u00b7\u00f8\u00b9\u0157\u00bb\u00bc\u00bd\u00be\u00e6\u0104\u012e\u0100\u0106\u00c4\u00c5\u0118\u0112\u010c\u00c9\u0179\u0116\u0122\u0136\u012a\u013b\u0160\u0143\u0145\u00d3\u014c\u00d5\u00d6\u00d7\u0172\u0141\u015a\u016a\u00dc\u017b\u017d\u00df\u0105\u012f\u0101\u0107\u00e4\u00e5\u0119\u0113\u010d\u00e9\u017a\u0117\u0123\u0137\u012b\u013c\u0161\u0144\u0146\u00f3\u014d\u00f5\u00f6\u00f7\u0173\u0142\u015b\u016b\u00fc\u017c\u017e\u02d9"
 };
-var LANG_CP = { pl: '1250', cs: '1250', sk: '1250', hu: '1250', hr: '1250', sl: '1250', ro: '1250', bs: '1250', sq: '1250',
+var LANG_CP = { pl: '1250', cs: '1250', sk: '1250', hu: '1250', hr: '1250', sl: '1250', ro: '1250', bs: '1250', sq: '1250', sh: '1250', me: '1250',
   ru: '1251', uk: '1251', bg: '1251', mk: '1251', be: '1251', el: '1253', tr: '1254', az: '1254', he: '1255', ar: '1256', fa: '1256', ur: '1256',
   lt: '1257', lv: '1257', et: '1257' };
 function singleByte(buf, page) {
@@ -189,16 +189,42 @@ function singleByte(buf, page) {
   for (var i = 0; i < buf.length; i++) { var c = buf[i]; out += c < 0x80 ? String.fromCharCode(c) : t ? t.charAt(c - 0x80) : String.fromCharCode(c); }
   return out;
 }
+/* Windows-1252's upper half where it differs from Latin-1 (0x80 to 0x9F); 0xA0 to 0xFF are Latin-1's own. */
+var W1252 = "\u20ac\ufffd\u201a\u0192\u201e\u2026\u2020\u2021\u02c6\u2030\u0160\u2039\u0152\ufffd\u017d\ufffd\ufffd\u2018\u2019\u201c\u201d\u2022\u2013\u2014\u02dc\u2122\u0161\u203a\u0153\ufffd\u017e\u0178";
+function byte1252(ch) {
+  var c = ch.charCodeAt(0);
+  if (c < 0x80 || (c >= 0xa0 && c <= 0xff)) return c;
+  var i = W1252.indexOf(ch);
+  return i >= 0 && ch !== '\ufffd' ? 0x80 + i : -1;
+}
+/* A file already in UTF-8 that was read as Western (1252) on its way there, OpenSubtitles' own conversion included
+   (issue: Croatian ć came out as æ, č as è; š and ž sit at the same place in both pages, so they looked right).
+   Every letter outside ASCII is one 1252 has, and read back as the language's page at least three become letters
+   1252 doesn't have: it's read that way.  Text with any letter 1252 lacks is left as it is. */
+function repaired(s, page) {
+  if (!page || !CP[page]) return s;
+  var bytes = [], gained = 0;
+  for (var i = 0; i < s.length; i++) {
+    var b = byte1252(s.charAt(i));
+    if (b < 0) return s;
+    bytes.push(b);
+  }
+  var t = singleByte(bytes, page);
+  for (var j = 0; j < t.length; j++) if (t.charCodeAt(j) >= 0x80 && byte1252(t.charAt(j)) < 0) gained++;
+  return gained >= 3 ? t : s;
+}
 function decode(buf, lang) {
   var s = buf.toString('utf8');
   if (s.charCodeAt(0) === 0xfeff) s = s.slice(1);
-  if (s.indexOf('\ufffd') < 0) return s;                                // UTF-8
   var l = String(lang || '').toLowerCase().slice(0, 2), page = LANG_CP[l];
+  // Serbian in Latin letters is a Central European file (1250), like Croatian and Bosnian.
+  if (s.indexOf('\ufffd') < 0) return repaired(s, page || (l === 'sr' ? '1250' : ''));   // UTF-8
   if (!page && (!l || l === 'sr')) {
     // Cyrillic letters in 1251 are 0xC0 to 0xFF; Western text has few of them in a row.
     var hi = 0, run = 0, runs = 0;
     for (var i = 0; i < buf.length; i++) { var c = buf[i]; if (c >= 0xc0) { hi++; if (++run === 3) runs++; } else run = 0; }
     if (runs > 20 && hi > buf.length * 0.15) page = '1251';
+    else if (l === 'sr') page = '1250';
   }
   return page ? singleByte(buf, page) : buf.toString('binary');        // Latin-1 for 1252; old Node knows it by this name
 }
@@ -211,4 +237,4 @@ function login(q, cb) {
     cb({ token: j.token, allowed: j.user && j.user.allowed_downloads || 0, level: j.user && str(j.user.level, 40) || '' });
   });
 }
-module.exports = { search: search, get: get, login: login, _test: { searchUrl: searchUrl, decode: decode, singleByte: singleByte, UA: UA, score: score, rank: rank } };
+module.exports = { search: search, get: get, login: login, _test: { searchUrl: searchUrl, decode: decode, CP1250: CP['1250'], singleByte: singleByte, UA: UA, score: score, rank: rank } };
