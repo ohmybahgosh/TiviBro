@@ -31,7 +31,7 @@ The sections, in the order the TV lists them.  Every option is explained, with i
 | [**Audio and subtitles**](Settings-Audio-and-subtitles) | Audio language, surround and the audio converter, subtitles and closed captions and how they look, subtitle languages for OpenSubtitles |
 | [**Recording and live pause**](Settings-Recording-and-live-pause) | Recording to a USB drive, pausing live TV and the rewind buffer |
 | [**Remote and buttons**](Settings-Remote-and-buttons) | Up and Down in fullscreen, each button in the player, the guide and the Channels screen, the quick menu's buttons, learning a button |
-| [**Movies and shows**](Settings-Movies-and-shows) | Where they open, the order, next episode, hiding spoilers, details from TMDB |
+| [**Movies and shows**](Settings-Movies-and-shows) | Where they open, the order, next episode, hiding spoilers, where details come from (TMDB or TheTVDB) |
 | [**My media**](Settings-My-media) | Your libraries (each with its own page), add a library, look for new files, display and shelves, and Trakt |
 | [**Reminders and watchlist**](Settings-Reminders-and-watchlist) | When reminders come up, the watchlist, every reminder coming up, holding notices during movies |
 | [**Parental controls**](Settings-Parental-controls) | Content filter, PIN, what it protects, blocked groups and channels |

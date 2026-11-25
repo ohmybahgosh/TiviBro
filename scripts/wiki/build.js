@@ -86,7 +86,7 @@ fs.readdirSync(OUT).forEach(f => {
   const OLD = { 'Settings-Updates-about-and-diagnostics': 'Settings-System', 'Settings-Updates-and-about': 'Settings-System', 'Settings-Diagnostics': 'Settings-System', 'Settings-Playlists': 'Settings-Playlists-and-accounts',
     'Settings-Playlists-and-guide': 'Settings-Playlists-and-accounts', 'Settings-Appearance-and-start-screen': 'Settings-Appearance', 'Settings-Playback-and-buffering': 'Settings-Playback', 'Settings-Remote-control': 'Settings-Playback#settings-remote-and-buttons',
     'Settings-Groups-sorting-hidden': 'Settings-Channels-and-groups', 'Settings-Phone-app': 'Settings-Playlists-and-accounts#settings-phone-app-and-web-editor', 'Settings-Edit-on-a-computer': 'Settings-Playlists-and-accounts#settings-phone-app-and-web-editor',
-    'Settings-Edit-on-a-phone-or-computer': 'Settings-Playlists-and-accounts#settings-phone-app-and-web-editor', 'Settings-Guide-start-screen-reminders': 'Settings-Guide' };
+    'Settings-Edit-on-a-phone-or-computer': 'Settings-Playlists-and-accounts#settings-phone-app-and-web-editor', 'Settings-Guide-start-screen-reminders': 'Settings-Guide', 'TV-series-from-TMDB': 'TV-series-in-the-guide' };
   const to = OLD[name] || anchors[slug(title)] || anchors[slug(title.replace(/^Settings /, 'Settings: '))] || (/^Settings-/.test(name) ? 'Settings' : 'Home');
   const body = MARK + '\n\n**This page has moved.**  It is now [here](' + to + ').\n';
   if (old !== body) fs.writeFileSync(path.join(OUT, f), body);

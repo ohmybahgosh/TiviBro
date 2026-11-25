@@ -24,7 +24,7 @@
 - [Recording, live pause and rewind](Recording-live-pause-and-rewind)
 - [Movies and shows](Movies-and-shows)
 - [Movies on now](Movies-on-now)
-- [TV series from TMDB](TV-series-from-TMDB)
+- [TV series in the guide](TV-series-in-the-guide)
 - [No TMDB token? TheTVDB](No-TMDB-token-TheTVDB)
 - [My media](My-media)
 - [Search](Search)

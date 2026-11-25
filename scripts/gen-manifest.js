@@ -28,7 +28,7 @@ const manifest = {
   version: app.version,                    // what webOS reports once installed (see pkg-version.js)
   type: app.type,
   title: app.title,
-  appDescription: (pre ? 'Test build ' + full + '.  ' : 'Version ' + full + '.  ') + 'Free, guide-first IPTV player for your own Xtream Codes, M3U or Stalker portal subscription, with live sports scores and Multiview',
+  appDescription: (pre ? 'Test build ' + full + '.  ' : 'Version ' + full + '.  ') + 'Free, guide-first IPTV player for your own Xtream Codes, M3U or Stalker portal subscription: a free DVR, live pause, Multiview, Skip intro and live sports scores',
   iconUri: icon,
   sourceUrl: `https://github.com/${repo}`,
   rootRequired: false,

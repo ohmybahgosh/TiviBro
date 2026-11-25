@@ -2,7 +2,7 @@
 
 *Every setting*
 
-The Movies and Shows screens, and the TMDB details for them and the guide.
+The Movies and Shows screens, and the details (TMDB or TheTVDB) for them and the guide.
 
 <p align="center"><a href="https://tivibro.app/view/#tv-set-vod"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-vod.png" width="60%" alt="Movies and shows"></a></p>
 
@@ -16,11 +16,11 @@ The Movies and Shows screens, and the TMDB details for them and the guide.
 | **Play the next one automatically** | **On** · Off | When an episode ends, Up next shows the next one and starts it when its countdown ends; the same for the next movie of a collection you play.  Off: Up next waits for OK.  Also in My media. |
 | **Up next countdown** *(Play the next one automatically on)* | 5 · **10** · 15 · 20 seconds | How long Up next counts down before the next one starts.  Also in My media. |
 | **Hide spoilers** | On · **Off** | In the guide, new episodes and episodes or movies that haven't aired yet (not news or sport), and on the Shows screen, episodes you haven't started, keep only their title, season and episode, and when they air: no summary, episode title or picture from the episode. |
-| **Movie details from TMDB** | **On** · Off | Under **Details from TMDB**.  With a TMDB token: posters and details for movies in the guide, the **Movie** tag, the [Movies on now](Movies-on-now) group and the Movies on now screen.  Only programme titles go to TMDB. |
-| **Series details from TMDB** | **On** · Off | Under **Details from TMDB**.  With a TMDB token: a series' poster, network, genres and rating in the guide, each episode's own title and summary when the guide gives its season and episode, and what your provider leaves out on the Shows screen ([TV series from TMDB](TV-series-from-TMDB)).  Only a show's name and episode numbers go to TMDB. |
 | **Movies: details from** | **TMDB, else TheTVDB** · TheTVDB · TMDB only | Under **Where details come from**.  Where movies get their posters, details, trailers and skip times: the guide (Movies on now), your provider's Movies and My media.  TMDB needs your token; TheTVDB needs nothing (TiviBro's own service, only titles leave the TV).  See [No TMDB token?](No-TMDB-token-TheTVDB) |
 | **Shows: details from** | **TMDB, else TheTVDB** · TheTVDB · TMDB only | The same for shows: the guide, your provider's Shows, My media and Up next. |
-| **TMDB API token ›** | | Under **Details from TMDB**.  Opens [API keys](Settings-API-keys), where the token is added, tested or removed. |
+| **Movie details in the guide** | **On** · Off | Under **Details in the guide**.  Posters and details for movies in the guide, the **Movie** tag, the [Movies on now](Movies-on-now) group and the Movies on now screen, from TMDB or TheTVDB as set under **Where details come from**.  Only programme titles leave the TV. |
+| **Series details in the guide** | **On** · Off | Under **Details in the guide**.  A series' poster, network, genres and rating in the guide, each episode's own title and summary when the guide gives its season and episode, and what your provider leaves out on the Shows screen ([TV series in the guide](TV-series-in-the-guide)), from TMDB or TheTVDB as set under **Where details come from**.  Only a show's name and episode numbers leave the TV. |
+| **TMDB API token ›** | | Under **Details in the guide**.  Opens [API keys](Settings-API-keys), where the token is added, tested or removed. |
 
 ---
 

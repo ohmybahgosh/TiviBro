@@ -43,5 +43,17 @@ Not without your passphrase.  See [Backup and restore](Backup-and-restore) and [
 **Can I watch two channels at once?**
 Yes, with Multiview: in fullscreen, quick menu > **Multiview**, or hold OK on a channel > **Watch in Multiview**.  webOS lets an app play only one video at a time, so the channel you hear plays as normal video and the network helper on the TV makes the second one itself, as live video beside it at up to 30 frames a second.  It works on any webOS TV, rooted or not, and each box uses one of your provider's connections.  See [Multiview: two channels side by side](Multiview-two-channels-side-by-side).
 
+**Can TiviBro record, or pause live TV?**
+Yes, for free.  Record from the guide to a USB drive on a rooted TV, or to a Windows share or WebDAV folder on your PC or NAS from any TV.  Pause and rewind any live channel, not only catch-up ones.  See [Recording, live pause and rewind](Recording-live-pause-and-rewind).
+
+**Does it skip intros and credits?**
+Yes, for free (Plex keeps it for Plex Pass): Skip intro, Skip recap and Skip credits, as a button or automatically.  See [Settings: Playback](Settings-Playback).
+
+**Do I need a TMDB token for posters and details?**
+No.  Without one, movies and shows get their details from TheTVDB through TiviBro's own service.  With your own free TMDB token you can choose TMDB instead, for movies and shows on their own.  See [No TMDB token? TheTVDB](No-TMDB-token-TheTVDB).
+
+**Which languages is it in?**
+🇺🇸 English, 🇩🇪 German, 🇪🇸 🇲🇽 Spanish, 🇫🇷 French, 🇮🇹 Italian, 🇳🇱 Dutch, 🇵🇱 Polish, 🇧🇷 🇵🇹 Portuguese, 🇷🇺 Russian and 🇹🇷 Turkish, on the TV, the phone app and the web editor.  See [Language](Language).
+
 **Something else?**
 Try [Troubleshooting](Troubleshooting), or open an [issue](https://github.com/ohmybahgosh/TiviBro/issues) with a copy of **Settings > System > View app log** (it hides usernames and passwords).

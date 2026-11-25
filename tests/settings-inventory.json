@@ -643,7 +643,7 @@
   "kind": "action",
   "where": "My media > Trakt > Add a Trakt list"
  },
- "Movie details from TMDB": {
+ "Movie details in the guide": {
   "kind": "toggle",
   "where": "Movies and shows"
  },
@@ -911,7 +911,7 @@
   "kind": "action",
   "where": "My media > Trakt > Add a Trakt list"
  },
- "Series details from TMDB": {
+ "Series details in the guide": {
   "kind": "toggle",
   "where": "Movies and shows"
  },

@@ -36,6 +36,7 @@
 TiviBro talks to:
 
 - Your provider, and guide sources you add.
+- **Details without a TMDB token (TheTVDB).**  Movies and shows (in the guide, your provider's Movies and Shows, My media, Up next and recordings) get their details from TheTVDB through TiviBro's own small service on Cloudflare (tivibro-meta), which holds TheTVDB's key so none is on your TV.  Only titles, a year, your language and the channel's country are sent, and pictures load from artworks.thetvdb.com.  **Settings > Movies and shows > Where details come from** picks TMDB, TheTVDB or both, for movies and shows on their own.  Metadata provided by TheTVDB.
 - Media servers you add to **My media**.  With your saved TMDB token, movie and TV-show details are fetched at startup, after scans and when you choose **Fetch details**.  Titles and years or saved TMDB IDs, season numbers and your preferred language go to api.themoviedb.org; posters and episode pictures load from image.tmdb.org.  Source logins and playback links never go to TMDB.  Your token stays on the TV outside backups and problem reports.
 - The public guide sources (epg.pw and iptv-epg.org, and i.mjh.nz for Pluto TV channels), to fill in channels your provider has no guide for.  On by default; switch it off per playlist under **Settings > Guide > Public guide fill-in (another playlist: Settings > Playlists and accounts > the playlist > Guide)**.  They see a request from your network for a country's guide, nothing from your playlist.
 - GitHub (api.github.com), to check for updates.
@@ -47,7 +48,7 @@ No ads, no accounts, no tracking IDs.
 
 ## Install numbers
 
-Once a day TiviBro tells tivibro.app which version it is and which webOS the TV has, so we know how many TVs run each version.  Nothing else: no address is kept (each network is counted once a day with a hash that is forgotten after two days), no ID, nothing about your channels or playlists.  The install script says whether it installed or updated, and which version.  Switch it off in **Settings > System > Count this TV in the install numbers**, or run the install script with `TIVIBRO_NO_COUNT=1`.  Only the totals are kept, on tivibro.app's Cloudflare server.
+Once a day TiviBro tells tivibro.app which version it is and which webOS the TV has, so we know how many TVs run each version.  The counter also notes the country the count came from, to see which languages to add next.  Nothing else: no address is kept (each network is counted once a day with a hash that is forgotten after two days), no ID, nothing about your channels or playlists.  The install script says whether it installed or updated, and which version.  Switch it off in **Settings > System > Count this TV in the install numbers**, or run the install script with `TIVIBRO_NO_COUNT=1`.  Only the totals are kept, on tivibro.app's Cloudflare server.
 
 ## The website
 

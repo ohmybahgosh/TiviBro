@@ -1837,7 +1837,7 @@ var Media = (function () {
     var m = itemsVL.current(), s = shelves[shelfAt], p = MediaStore.preferences(), show = (s && s.id === 'shows') || (split && section === 'shows') || (!split && has().shows && !has().movies), src = p.sourceFilter && MediaStore.source(p.sourceFilter);
     UI.menu('My media', [
       { label: 'Search My media', sub: 'A movie or show, a collection or a director', action: askSearch },
-      { label: 'Fetch missing details', sub: 'Posters and details from TMDB for titles without them', action: function () { fetchMissingDetails(detailsKindNow()); } },
+      { label: 'Fetch missing details', sub: 'Posters and details for titles without them', action: function () { fetchMissingDetails(detailsKindNow()); } },
       { label: (show ? 'Sort TV shows: ' : 'Sort movies: ') + sortName(show ? 'show' : 'movie'), action: function () { sortMenu(show ? 'show' : 'movie'); } },
       { label: 'Go to a shelf', sub: count(shelves.length, '1 shelf', '{n} shelves'), action: function () { UI.menu('Go to a shelf', shelves.map(function (x) { return { label: RAW(x.title), sub: String(x.movies.length), current: x === s, action: function () { goShelf(x.id); } }; })); } },
       { label: 'Arrange shelves', sub: 'Move shelves up or down, switch them off', action: function () { arrangeMenu(s && (s.id.indexOf('holiday:') === 0 ? 'holidays' : s.genre ? 'genres' : s.id)); } },

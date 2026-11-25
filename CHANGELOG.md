@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Settings say where details come from.**  Settings > Movies and shows: **Movie details in the guide** and **Series details in the guide** (were "from TMDB") work with TheTVDB too, and My media's Fetch missing details no longer says TMDB.
 - **Homebrew Channel 0.8.0.**  Checked against the new Homebrew Channel: updates from the TV, USB recording and reminders use only calls it keeps as they were, so TiviBro works with 0.8.0 (and 0.7).
 - **A new stats page.**  tivibro.app/stats has a new look and more in it: TVs per day with a 7-day average, versions in use over time, how fast TVs update after a release, webOS versions and countries, the website's visitors from Google Analytics (top pages, sources, countries, install steps copied), and GitHub.  Days are in Eastern time.  The daily count now also notes the country it came from, to see which languages to add next; Settings > Updates and the privacy page say so.
 

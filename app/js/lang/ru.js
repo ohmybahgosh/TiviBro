@@ -159,7 +159,7 @@ I18n.add('ru', {
   "Other versions": "Другие версии", "Other versions…": "Другие версии…", "Switch to another version": "Переключиться на другую версию", "Media sources": "Источники медиа",
   "Add media": "Добавить медиа", "Media servers": "Медиасерверы", "No media sources yet": "Источников медиа пока нет", "Rescan": "Пересканировать", "Change login": "Сменить логин",
   "Rescan media sources": "Пересканировать источники медиа", "Your media library": "Ваша медиатека", "No items in this view": "Здесь пока ничего нет",
-  "Movie details from TMDB": "Сведения о фильмах из TMDB", "Fetch movie details": "Загрузить сведения о фильмах", "Movie title": "Название фильма",
+  "Fetch movie details": "Загрузить сведения о фильмах", "Movie title": "Название фильма",
   "Season and episode": "Сезон и серия", "Show title": "Название сериала", "Correct details": "Исправить сведения", "Correction saved": "Исправление сохранено",
   // Updates, reports, phone
   "Check for updates": "Проверить обновления", "Check now": "Проверить сейчас", "Check automatically": "Проверять автоматически",
@@ -420,7 +420,6 @@ I18n.add('ru', {
   "Find a home media server with media sharing turned on": "Найдите домашний медиасервер с включённым общим доступом",
   "Find show details": "Найти данные сериала",
   "Find subtitles is in Subtitles while a movie or episode plays": "«Найти субтитры»: в меню «Субтитры» во время просмотра фильма или серии",
-  "Finds the movies in your guide with your TMDB token: a poster, year, genres and rating in the guide, a Movie tag on them, the Movies on now group and the Movies on now screen.  Only programme titles go to TMDB.": "По вашему токену TMDB находит фильмы в телегиде: постер, год, жанры и рейтинг в телегиде, метка «Фильм», группа и экран «Фильмы сейчас».  В TMDB отправляются только названия передач.",
   "Finds this TV, works as a remote with the guide, On now, Movies, Shows and My media, changes every setting here (questions are asked on the phone), lists and cancels reminders, keeps backups, types into the TV, opens the web editor and wakes the TV.  Pair a phone once; it stays paired.": "Находит этот ТВ, работает как пульт с телегидом, «Сейчас в эфире», фильмами, сериалами и «Мои медиа», меняет любые настройки (вопросы задаются на телефоне), показывает и отменяет напоминания, хранит резервные копии, вводит текст на ТВ, открывает веб-редактор и включает ТВ.  Телефон сопрягается один раз и остаётся подключённым.",
   "Finnish": "Финский",
   "Fixed width, slashed zero": "Моноширинный, перечёркнутый ноль",
@@ -710,7 +709,6 @@ I18n.add('ru', {
   "Send with the log": "Отправить с журналом",
   "Separate": "Отделить",
   "Serbian": "Сербский",
-  "Series details from TMDB": "Описания сериалов из TMDB",
   "Set episode start": "Задать начало серии",
   "Set up OpenSubtitles (step by step)": "Настроить OpenSubtitles (пошагово)",
   "Set up OpenSubtitles first": "Сначала настройте OpenSubtitles",
@@ -894,7 +892,6 @@ I18n.add('ru', {
   "When the playlist and the guide both have a logo": "Если логотип есть и в плейлисте, и в телегиде",
   "Which buttons show when you press OK in fullscreen.": "Какие кнопки показываются при нажатии OK на весь экран.",
   "Which logo to use when both the playlist and the guide have one.": "Какой логотип использовать, если он есть и в плейлисте, и в телегиде.",
-  "With your TMDB token, for the series in your guide and on the Shows screen: a poster, when it started, its network, genres and rating, and each episode's own title and summary (in the guide when it gives the season and episode).  On the Shows screen it fills in what your provider's details leave out.  Only a show's name and episode numbers go to TMDB.": "С вашим токеном TMDB для сериалов в телегиде и на экране «Сериалы»: постер, год начала, телесеть, жанры и рейтинг, а также название и описание каждой серии (в телегиде, если он указывает сезон и серию).  На экране «Сериалы» дополняет то, чего нет в описаниях провайдера.  В TMDB отправляются только название сериала и номера серий.",
   "Without catch-up, ◀ always goes to the last channel.": "Без архива ◀ всегда переключает на предыдущий канал.",
   "Without signing in: 5 a day (100 with \"Under dev\" ticked).  Signed in with your free account: 20.": "Без входа: 5 в день (100 с отметкой «Under dev»).  С бесплатным аккаунтом: 20.",
   "XMLTV address": "Адрес XMLTV",
@@ -1084,7 +1081,6 @@ I18n.add('ru', {
   // Settings sections reorganised
   "All channels, Recent, Favorites, Movies on now, events by time and new channels: which show, and how.": "Все каналы, Недавние, Избранное, Фильмы сейчас, события по времени и новые каналы: какие показывать и как.",
   "Catch-up and seeking": "Архив и перемотка",
-  "Details from TMDB": "Данные из TMDB",
   "Groups in the list": "Группы в списке",
   "How it looks": "Внешний вид",
   "Movies and shows": "Фильмы и сериалы",
@@ -2181,7 +2177,6 @@ I18n.add('ru', {
   "Pick a group that isn't ticked; the ticked ones go into it.": "Выберите неотмеченную группу; отмеченные войдут в неё.",
   "Pick a share first.": "Сначала выберите общую папку.",
   "Pick which ticked group the others go into.": "Выберите отмеченную группу, в которую войдут остальные.",
-  "Posters and details from TMDB for titles without them": "Постеры и сведения из TMDB для фильмов и сериалов без них",
   "Quick menu buttons in the usual order": "Кнопки быстрого меню в обычном порядке",
   "Record to a USB drive on a rooted TV, or to a network share on any TV.  webOS keeps USB drives from apps installed in developer mode; on a rooted TV (the Homebrew Channel) TiviBro's helper reaches them.  A network share works without root: a Windows or Samba share (a PC, Mac, NAS or router) or WebDAV (Synology, QNAP, TrueNAS, Unraid, Nextcloud).  Add it as a library in My media, then choose it below.  Live pause then goes there too, for hours.  Without either, live pause keeps up to 10 minutes in the TV's own storage.": "Запись на USB-накопитель на ТВ с root или в сетевую папку на любом ТВ.  webOS не даёт приложениям, установленным в режиме разработчика, доступ к USB-накопителям; на ТВ с root (Homebrew Channel) помощник TiviBro до них добирается.  Сетевая папка работает без root: общая папка Windows или Samba (ПК, Mac, NAS или роутер) или WebDAV (Synology, QNAP, TrueNAS, Unraid, Nextcloud).  Добавьте её как библиотеку в Моих медиа, затем выберите ниже.  Пауза эфира тоже будет туда, на часы.  Без них пауза эфира хранит до 10 минут в памяти ТВ.",
   "Record to a share on your network (a PC, Mac or NAS): no USB drive or root needed.  Choose one of your My media libraries on a Windows share or WebDAV.  Live pause goes there too.": "Запись в папку в вашей сети (ПК, Mac или NAS): без USB-накопителя и root.  Выберите одну из библиотек Моих медиа в общей папке Windows или WebDAV.  Пауза эфира тоже будет туда.",
@@ -2607,5 +2602,11 @@ I18n.add('ru', {
   "TMDB, else TheTVDB": "TMDB, иначе TheTVDB",
   "TheTVDB": "TheTVDB",
   "Where details come from": "Откуда берутся сведения",
-  "Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  The count also notes the country it came from, to see which languages to add next.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.": "Раз в день и при первом запуске новой версии TiviBro сообщает свою версию (новая установка или обновление) и версию webOS телевизора.  При подсчёте также отмечается страна, откуда он пришёл, чтобы понять, какие языки добавить следующими.  Больше ничего: ни адреса, ни ID, ни данных о ваших каналах и плейлистах."
+  "Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  The count also notes the country it came from, to see which languages to add next.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.": "Раз в день и при первом запуске новой версии TiviBro сообщает свою версию (новая установка или обновление) и версию webOS телевизора.  При подсчёте также отмечается страна, откуда он пришёл, чтобы понять, какие языки добавить следующими.  Больше ничего: ни адреса, ни ID, ни данных о ваших каналах и плейлистах.",
+  "Details in the guide": "Данные в телегиде",
+  "Movie details in the guide": "Сведения о фильмах в телегиде",
+  "Series details in the guide": "Описания сериалов в телегиде",
+  "Finds the movies in your guide: a poster, year, genres and rating in the guide, a Movie tag on them, the Movies on now group and the Movies on now screen.  From TMDB or TheTVDB, as set above.  Only programme titles leave the TV.": "Находит фильмы в телегиде: постер, год, жанры и рейтинг в телегиде, метка «Фильм», группа и экран «Фильмы сейчас».  Из TMDB или TheTVDB, как выбрано выше.  Телевизор покидают только названия передач.",
+  "For the series in your guide and on the Shows screen: a poster, when it started, its network, genres and rating, and each episode's own title and summary (in the guide when it gives the season and episode).  On the Shows screen it fills in what your provider's details leave out.  From TMDB or TheTVDB, as set above.  Only a show's name and episode numbers leave the TV.": "Для сериалов в телегиде и на экране «Сериалы»: постер, год начала, телесеть, жанры и рейтинг, а также название и описание каждой серии (в телегиде, если он указывает сезон и серию).  На экране «Сериалы» дополняет то, чего нет в описаниях провайдера.  Из TMDB или TheTVDB, как выбрано выше.  Телевизор покидают только название сериала и номера серий.",
+  "Posters and details for titles without them": "Постеры и описания для названий без них"
 });

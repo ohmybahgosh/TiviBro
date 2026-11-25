@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img alt="Platform: LG webOS" src="https://img.shields.io/badge/platform-LG%20webOS%204%2B%20%C2%B7%20built%20for%2025-5B8CFF?style=flat-square">
+  <img alt="Platform: LG webOS" src="https://img.shields.io/badge/platform-LG%20webOS%204%20to%2026-5B8CFF?style=flat-square">
   <img alt="Version" src="https://img.shields.io/badge/version-0.6.0%20alpha-33E1FF?style=flat-square">
   <img alt="Price: free" src="https://img.shields.io/badge/price-free-3DDC97?style=flat-square">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-8F9BBF?style=flat-square">
@@ -29,13 +29,32 @@
 | 📺 **Guide first, like TiviMate**<br>Live preview, details and groups on one screen.  OK previews, OK again goes fullscreen. | ⏸️ **Pause and rewind any live channel**<br>Free timeshift on every channel, not only the ones with catch-up. |
 | ⏺️ **Free DVR**<br>Record from the guide to a USB drive or a network share (Windows share or WebDAV). | ⏪ **Catch-up**<br>Rewind the guide into the past and replay what you missed. |
 | 🗓️ **A guide that fixes itself**<br>Channels with no guide filled from free public guides, a guide in the wrong time zone moved back, and a public guide with wrong times left out. | 🏈 **Sports and My teams**<br>Live scores, a page per game, your teams' scores in the corner while you watch something else. |
-| 🎬 **Movies and shows**<br>Posters, seasons, trailers, resume, My list and a Languages filter for huge libraries. | 📂 **My media**<br>Your own movies and shows from network shares, DLNA, WebDAV, Dropbox, Google Drive and media servers, with TMDB details and Trakt. |
+| 🎬 **Movies and shows**<br>Posters, seasons, trailers, resume, My list and a Languages filter for huge libraries. | 📂 **My media**<br>Your own movies and shows from network shares, DLNA, WebDAV, Dropbox, Google Drive and media servers, with TMDB or TheTVDB details and Trakt. |
 | ⏭️ **Skip intro, skip credits, Up next**<br>A button or automatic, like Plex Pass, with the next episode counting down.  Free. | 📱 **Phone app and set up from your phone**<br>Scan a QR code to type your login on the phone.  A remote, the guide, Sports and every setting in your pocket. |
 | 🖥️ **A real web editor**<br>Hide, sort, rename and match guides for thousands of channels from any browser, then Send to TV. | 📺📺 **Multiview**<br>Two channels at once on an LG TV, something no other webOS IPTV app does. |
 | 🖼️ **Logos for every channel**<br>Missing logos filled in from open logo projects, or one matching style for the whole list. | 🔁 **Switches to a working copy**<br>Same channel in FHD, HD and SD: when one dies, TiviBro moves to the next by itself. |
 | 🔊 **Sound the TV can't play**<br>DTS and Dolby TrueHD converted to Dolby Digital while you watch.  Nothing to install. | 🌈 **HDR, Dolby Vision and Atmos**<br>Each stream sent to the player that shows it best. |
-| 🧭 **A set-up tour and clean names**<br>Countries, East or West, your city's locals and clutter sorted in a few presses; "USA \| FHD ⚽" becomes a plain name. | 🌍 **In 11 languages**<br>English, German, Spanish, French, Italian, Dutch, Polish, Portuguese, Russian, Turkish, on the TV, the phone and the editor. |
+| 🧭 **A set-up tour and clean names**<br>Countries, East or West, your city's locals and clutter sorted in a few presses; "USA \| FHD ⚽" becomes a plain name. | 🌍 **In 10 languages**<br>🇺🇸 English · 🇩🇪 German · 🇪🇸 🇲🇽 Spanish · 🇫🇷 French · 🇮🇹 Italian · 🇳🇱 Dutch · 🇵🇱 Polish · 🇧🇷 🇵🇹 Portuguese · 🇷🇺 Russian · 🇹🇷 Turkish, on the TV, the phone and the editor. |
 | 🔐 **Locked backups and restore points**<br>One encrypted file with everything, restored onto a new TV from the first screen. | 💸 **Free and open source**<br>Every feature free.  MIT licensed, no account, no ads, no tracking. |
+
+## Free here, paid elsewhere
+
+Everything in TiviBro is free, including the things other players and media servers sell as an upgrade:
+
+| Feature | In TiviBro | Elsewhere |
+|---|---|---|
+| ⏺️ **DVR: record from the guide** | ✅ Free, to a USB drive or to a PC or NAS share on any TV | TiviMate Premium, Plex Pass |
+| ⏸️ **Pause and rewind live TV** | ✅ Free, on every channel | TiviMate: catch-up channels only, Premium |
+| ⏭️ **Skip intro, recap and credits** | ✅ Free, as a button or automatic | Plex Pass |
+| 📺📺 **Multiview** | ✅ Free, two channels at once | TiviMate Premium |
+| 📚 **Multiple playlists** | ✅ Free, as many as you like | TiviMate Premium |
+| ⏪ **Catch-up** | ✅ Free | TiviMate Premium |
+| ⭐ **Favorites, your own groups, sorting and renaming** | ✅ Free, from the TV, your phone or a computer | TiviMate Premium |
+| ⏰ **Reminders and parental controls** | ✅ Free | TiviMate Premium |
+| 🔐 **Backups and restore** | ✅ Free, one locked file | TiviMate Premium |
+| 🎬 **Movie and show details, Up next, Trakt** | ✅ Free, with no token needed | Usually a media server |
+
+<sub>As listed on TiviMate's and Plex's own sites, November 2026.  No account, no ads, nothing locked.</sub>
 
 <h3 align="center">⏭️ New in alpha 208: Skip intro and credits, free</h3>
 <p align="center">Plex charges for this with Plex Pass.  TiviBro does it for free: <b>Skip intro</b>, <b>Skip recap</b> and <b>Skip credits</b> on your movies and episodes, as a button or <b>automatically</b>.  The times come from the file's own chapters, or from <b><a href="https://theintrodb.org">TheIntroDB</a></b> and <b><a href="https://introdb.app">IntroDB</a></b>, two free community databases.  Skip credits brings up <b>Up next</b>, counting down to the next episode.</p>
@@ -92,11 +111,14 @@
 
 ### ✨ New lately
 
+- **Everything works without a TMDB token.**  Movies and shows get posters, details, trailers and skip times from TheTVDB through TiviBro's own service: in the guide, Movies on now, your provider's Movies and Shows, My media, Up next and recordings.  **Where details come from** picks TMDB or TheTVDB for movies and for shows on their own, like Plex's agents.
+- **Four more languages:** 🇮🇹 Italian, 🇳🇱 Dutch, 🇵🇱 Polish and 🇹🇷 Turkish, next to 🇩🇪 German, 🇪🇸 Spanish, 🇫🇷 French, 🇧🇷 Portuguese and 🇷🇺 Russian, on the TV, the phone app and the web editor.
+- **Ready for Homebrew Channel 0.8.0**, and a helper that leaves a note of what it was doing if the TV ever has to stop it, so a problem report says why.
 - **Skip intro and Skip credits, free.**  What Plex keeps for Plex Pass: a Skip intro (and Skip recap) button, or skipped automatically; Skip credits brings up the next episode with its countdown, or jumps to a scene after the credits.  Times come from the file's chapters, else from [TheIntroDB](https://theintrodb.org) and [IntroDB](https://introdb.app), two free community databases.  For My media and your provider's movies and shows.  [Settings](docs/USER-GUIDE.md#settings-playback)
-- **German**, everywhere: the TV, the web editor and the phone app.  And **a warning before your subscription ends**, 3 days ahead unless you pick otherwise.
+- **A warning before your subscription ends**, 3 days ahead unless you pick otherwise.
 - **A free DVR on any TV: record and pause live TV to your PC or NAS.**  Choose a Windows or Samba share (a PC, Mac, NAS or router) or a WebDAV folder as the place for recordings, and live pause goes there too: hours of pause on a TV without root, where the TV's own storage keeps 10 minutes.  A recording on a Windows share plays while it records.  [How it works](docs/USER-GUIDE.md#recording-live-pause-and-rewind)
 - **My media from Windows and network shares (SMB).**  Your movies and shows straight from a PC, Mac, NAS or router, found on the network, with seeking and the subtitle files beside them.  SMB 2 and 3, signed and encrypted, so Windows 11 shares work.
-- **Up next, full screen.**  When an episode ends, the next one fills the screen with the show's logo art from TMDB, the episode's picture, title and summary, and a countdown ring on Play.  **Skip credits** brings it up early.
+- **Up next, full screen.**  When an episode ends, the next one fills the screen with the show's logo art, the episode's picture, title and summary, and a countdown ring on Play.  **Skip credits** brings it up early.
 - **Subtitles your way.**  Load a .srt from a USB drive or a network share on the TV, send one from the phone app or the web editor, or find one on OpenSubtitles (by name too, for revivals filed under their own show).
 - **Logos from Worldwide TV Logos**, cleaned up and in white for dark screens, with tv-logos and iptv-org standing in where it has none.
 - **Multiview: two channels at once, the first on a webOS IPTV app.**  Two games side by side: the one you hear plays as normal video, the other as smooth live video beside it, up to 30 frames a second.  OK swaps the sound, Blue goes fullscreen, and channels are picked from your groups as in the guide.  webOS lets an app play only one video, so the second picture is made by TiviBro's helper on the TV.  On any webOS TV, rooted or not.  [How it works](docs/USER-GUIDE.md#multiview-two-channels-side-by-side)
@@ -174,7 +196,7 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | 🏈 **Your teams, wherever they're playing** | Follow your NFL, NBA, NHL, MLB, WNBA and MLS teams, college football and college basketball, and **My teams** gathers their games near the top of the guide, tinted while they're on: on now first, then the ones starting soon, from league passes, event channels, your local station (even when the teams are only in the guide's description) and the team's own channel.  Optional reminders. |
 | 📺📺 **Multiview on an LG TV** | webOS lets an app play one video at a time, which is why no IPTV app for LG TVs could show two channels.  TiviBro plays the channel you hear as normal video and makes the second one itself, on the TV, as smooth live video beside it (up to 30 frames a second).  Two games at once, OK to swap the sound, no extra box. |
 | ⏸️ **Pause and rewind any live channel** | TiviMate can only rewind channels your provider keeps catch-up for.  TiviBro keeps the channel itself, on a USB drive or, for a short pause, in the TV's own storage: pause, carry on, move back and forth, and with the rewind buffer on, ◀ goes back to what you just missed.  Recording and pausing the same channel share one connection to your provider. |
-| 🎬 **Movies on now** | With your own free TMDB token, the movies in your guide get posters, years, genres and ratings.  The **Movies on now** screen shows them as big posters: on now, starting soon, then a shelf for each genre. |
+| 🎬 **Movies on now** | The movies in your guide get posters, years, genres and ratings, from TheTVDB with nothing to set up or from TMDB with your own free token.  The **Movies on now** screen shows them as big posters: on now, starting soon, then a shelf for each genre. |
 | 🗓️ **A guide that checks itself** | Channels your provider's guide misses are filled from free public guides.  A full guide in your server's time zone is moved back by comparing it with the provider's own times.  And a public guide whose times are hours off (one listed every US station's programmes 8 hours late) is spotted from titles that say their own time, like "News at 4:30am", and left out so a correct one fills those channels instead. |
 | 🔁 **Switches to a working copy by itself** | Same channel in FHD, HD and SD?  When one dies, TiviBro moves to the next version on its own and tells you. |
 | 🧹 **Clean-up that already knows IPTV** | Pick your city once and every local group (ABC, CBS, NBC, FOX, CW, PBS…) keeps only your stations.  Keep East or West feeds in one click.  Name rules preloaded for about 250 country codes, quality tags, symbols and emoji (no typing prefix lists by hand), countries read from any naming style, duplicates in different qualities, and **Smart match** for channels without a guide. |
@@ -204,7 +226,7 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | Guided set-up built from your playlist | ✅ Countries, feeds, city, events, logos, look | ❌ |
 | Set up by scanning a QR code with your phone | ✅ From the first screen | ❌ Type it with the remote |
 | Fills in missing channel logos | ✅ Two open logo libraries, two styles | ❌ |
-| Recording | ✅ Free, to a USB drive (rooted TVs) | ✅ Premium |
+| Recording | ✅ Free, to a USB drive (rooted TVs) or a PC or NAS share (any TV) | ✅ Premium |
 | Two channels at once (Multiview) | ✅ Free, on LG webOS | ✅ Premium, on Android TV |
 | Pause and rewind any live channel, not only catch-up | ✅ With a timeline and a rewind buffer | ❌ |
 | Link a channel's other copies yourself | ✅ | ❌ |
@@ -378,7 +400,7 @@ The logo library matches your channels to [Worldwide TV Logos](https://worldwide
 
 ### Movies on now
 
-Save your own free TMDB token (**Settings > API keys**) and TiviBro finds the movies in your guide: the guide's Movie category, a year in the title, long programmes on movie channels, and other long programmes that TMDB knows well as films.  They get a poster, year, runtime, genres and rating in the guide, a **Movie** tag in the grid, and a **Movies on now** group: what's on (most left first), then what starts within the hour.  **Movies on now** in the menu shows them as big posters: **On now**, **Starting soon**, then a shelf for each genre (Action, Comedy, Family…).  Only titles go to TMDB, and answers are kept on the TV for 30 days.
+With nothing to set up (details from TheTVDB), or with your own free TMDB token (**Settings > API keys**), TiviBro finds the movies in your guide: the guide's Movie category, a year in the title, long programmes on movie channels, and other long programmes that TMDB knows well as films.  They get a poster, year, runtime, genres and rating in the guide, a **Movie** tag in the grid, and a **Movies on now** group: what's on (most left first), then what starts within the hour.  **Movies on now** in the menu shows them as big posters: **On now**, **Starting soon**, then a shelf for each genre (Action, Comedy, Family…).  Only titles go to TMDB, and answers are kept on the TV for 30 days.
 
 TV series get the same in the guide: a poster, when the show started, its network, genres and rating, and the episode's own title and summary when the guide gives the season and episode.  **Info** on a series opens **About this show**, with its seasons, cast and next showings.
 
@@ -410,7 +432,7 @@ Follow your NFL, NBA, NHL, MLB, WNBA and MLS teams, college football and men's c
 
 ### My media
 
-Your own movies and TV shows next to your playlist: from a home media server (DLNA / UPnP, like a Fritz!Box), a Windows or network share (SMB: a PC, Mac, NAS or router), a WebDAV cloud (like premiumize), Google Drive or a Dropbox folder (sign in with the phone app), on **Continue watching**, **Favorites**, **Movies** and **TV shows** shelves, with resume, favorites and the normal movie player.  Shows open into seasons and episodes, and when one ends **Up next** fills the screen with the next one and counts down to it.  **Skip intro** and **Skip credits** work as a button or by themselves, from the file's chapters or the free TheIntroDB and IntroDB databases.  Add your own free TMDB token for posters, plots and details in your language.  Trailers and extras are left out, and an unmatched file you don't want can be excluded.  It joins the menu once you add a source in **Settings > My media**.  Browse it in the phone app too, and tap **Play on TV**.  Thanks to [moritzm784](https://github.com/moritzm784) for building it.
+Your own movies and TV shows next to your playlist: from a home media server (DLNA / UPnP, like a Fritz!Box), a Windows or network share (SMB: a PC, Mac, NAS or router), a WebDAV cloud (like premiumize), Google Drive or a Dropbox folder (sign in with the phone app), on **Continue watching**, **Favorites**, **Movies** and **TV shows** shelves, with resume, favorites and the normal movie player.  Shows open into seasons and episodes, and when one ends **Up next** fills the screen with the next one and counts down to it.  **Skip intro** and **Skip credits** work as a button or by themselves, from the file's chapters or the free TheIntroDB and IntroDB databases.  Posters, plots and details in your language come from TheTVDB with nothing to set up, or from TMDB with your own free token (pick per kind under **Where details come from**, like Plex's agents).  Trailers and extras are left out, and an unmatched file you don't want can be excluded.  It joins the menu once you add a source in **Settings > My media**.  Browse it in the phone app too, and tap **Play on TV**.  Thanks to [moritzm784](https://github.com/moritzm784) for building it.
 
 <p align="center"><a href="https://tivibro.app/view/#tv-my-media"><img src="docs/screenshots/tv-my-media.png" width="49%" alt="My media"></a> <a href="https://tivibro.app/view/#tv-my-media-all"><img src="docs/screenshots/tv-my-media-all.png" width="49%" alt="My media: All movies"></a></p>
 
@@ -752,7 +774,7 @@ The [Release workflow](.github/workflows/release.yml) then runs the tests, build
 - Backups are always encrypted with a passphrase you choose.  Without it the file cannot be opened.
 - Logs mask usernames and passwords.  **Report a problem** also replaces every provider, guide and unknown server name before anything leaves the TV, and nothing is sent until you choose to send it (on your phone, or **Send a report now** on the TV after a crash).
 - **Install numbers.**  Once a day TiviBro tells tivibro.app which version it is and which webOS the TV has, and the install script says whether it installed or updated which version.  The counter also notes the country the count came from, to see which languages to add next.  Nothing else: no address is kept (a network is counted once a day using a hash that is forgotten after two days), no ID, nothing about your channels or playlists.  Switch it off in **Settings > System > Count this TV in the install numbers**, or run the install script with `TIVIBRO_NO_COUNT=1`.
-- **My media** contacts only the sources you add.  Their logins stay on the TV and out of backups and problem reports.  For Dropbox, the phone app signs in with Dropbox and hands the TV only the sign-in it needs to read your files; removing the source signs it out.  When movie details are fetched (by you, on their own for new movies once you've saved a token, or for the movies in your guide), only a title and year (or its TMDB id) and your language go to TMDB, with your own token.
+- **My media** contacts only the sources you add.  Their logins stay on the TV and out of backups and problem reports.  For Dropbox, the phone app signs in with Dropbox and hands the TV only the sign-in it needs to read your files; removing the source signs it out.  When movie details are fetched (by you, on their own for new movies once you've saved a token, or for the movies in your guide), only a title and year (or its id) and your language go to TMDB with your own token, or to TheTVDB through TiviBro's own service (which holds its key), as set under **Where details come from**.
 - The logo library, when you turn it on, downloads lists of logo addresses from tivibro.app, one per country in your playlist, then each logo from its project.  Only the country is in the request: no channel names, logins or anything else from your playlist.
 
 ## Special thanks

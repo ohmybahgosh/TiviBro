@@ -1554,10 +1554,10 @@ var Settings = (function () {
       ['auto', 'tvdb', 'tmdb'], ['TMDB, else TheTVDB', 'TheTVDB', 'TMDB only'], function () { return Media.metaPref('movie'); }, srcSet('metaMovies')));
     out.push(choice('Shows: details from', 'Posters, details, episodes, trailers and skip times for shows: in the guide, your provider\'s Shows, My media and Up next.  TMDB needs your token.  TheTVDB needs nothing: it comes through TiviBro\'s own service, and only titles leave the TV.  Metadata provided by TheTVDB (thetvdb.com).',
       ['auto', 'tvdb', 'tmdb'], ['TMDB, else TheTVDB', 'TheTVDB', 'TMDB only'], function () { return Media.metaPref('show'); }, srcSet('metaShows')));
-    out.push(head('Details from TMDB'));
-    out.push(toggle('Movie details from TMDB', 'Finds the movies in your guide with your TMDB token: a poster, year, genres and rating in the guide, a Movie tag on them, the Movies on now group and the Movies on now screen.  Only programme titles go to TMDB.',
+    out.push(head('Details in the guide'));
+    out.push(toggle('Movie details in the guide', 'Finds the movies in your guide: a poster, year, genres and rating in the guide, a Movie tag on them, the Movies on now group and the Movies on now screen.  From TMDB or TheTVDB, as set above.  Only programme titles leave the TV.',
       function () { return s.guideMovies !== false; }, function (v) { s.guideMovies = v; save(true); if (typeof Movies !== 'undefined') Movies.poke(); }));
-    out.push(toggle('Series details from TMDB', 'With your TMDB token, for the series in your guide and on the Shows screen: a poster, when it started, its network, genres and rating, and each episode\'s own title and summary (in the guide when it gives the season and episode).  On the Shows screen it fills in what your provider\'s details leave out.  Only a show\'s name and episode numbers go to TMDB.',
+    out.push(toggle('Series details in the guide', 'For the series in your guide and on the Shows screen: a poster, when it started, its network, genres and rating, and each episode\'s own title and summary (in the guide when it gives the season and episode).  On the Shows screen it fills in what your provider\'s details leave out.  From TMDB or TheTVDB, as set above.  Only a show\'s name and episode numbers leave the TV.',
       function () { return s.guideSeries !== false; }, function (v) { s.guideSeries = v; save(true); if (typeof Series !== 'undefined') Series.poke(); }));
     out.push(tmdbLink());
     if (!MediaStore.preferences().tmdbConfigured && (Media.metaPref('movie') === 'tmdb' || Media.metaPref('show') === 'tmdb')) out.push(info('Needs a TMDB token: add one under API keys (above), free from themoviedb.org.  The same token gives My media its posters.', ''));

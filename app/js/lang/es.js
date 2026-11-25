@@ -157,7 +157,7 @@ I18n.add('es', {
   "Other versions": "Otras versiones", "Other versions…": "Otras versiones…", "Switch to another version": "Cambiar a otra versión", "Media sources": "Fuentes de medios",
   "Add media": "Añadir medios", "Media servers": "Servidores de medios", "No media sources yet": "Todavía no hay fuentes de medios", "Rescan": "Volver a escanear", "Change login": "Cambiar inicio de sesión",
   "Rescan media sources": "Volver a escanear las fuentes de medios", "Your media library": "Tu biblioteca de medios", "No items in this view": "No hay elementos en esta vista",
-  "Movie details from TMDB": "Datos de películas de TMDB", "Fetch movie details": "Obtener datos de películas", "Movie title": "Título de la película",
+  "Fetch movie details": "Obtener datos de películas", "Movie title": "Título de la película",
   "Season and episode": "Temporada y episodio", "Show title": "Título de la serie", "Correct details": "Corregir datos", "Correction saved": "Corrección guardada",
   // Updates, reports, phone
   "Check for updates": "Buscar actualizaciones", "Check now": "Comprobar ahora", "Check automatically": "Comprobar automáticamente",
@@ -413,7 +413,6 @@ I18n.add('es', {
   "Find a home media server with media sharing turned on": "Busca un servidor de medios en casa con el uso compartido de medios activado",
   "Find show details": "Buscar detalles de la serie",
   "Find subtitles is in Subtitles while a movie or episode plays": "Buscar subtítulos está en Subtítulos mientras se reproduce una película o episodio",
-  "Finds the movies in your guide with your TMDB token: a poster, year, genres and rating in the guide, a Movie tag on them, the Movies on now group and the Movies on now screen.  Only programme titles go to TMDB.": "Encuentra las películas de tu guía con tu token de TMDB: póster, año, géneros y calificación en la guía, una etiqueta Película, el grupo Películas ahora y la pantalla Películas ahora.  Solo se envían a TMDB los títulos de los programas.",
   "Finds this TV, works as a remote with the guide, On now, Movies, Shows and My media, changes every setting here (questions are asked on the phone), lists and cancels reminders, keeps backups, types into the TV, opens the web editor and wakes the TV.  Pair a phone once; it stays paired.": "Encuentra esta TV, funciona como control remoto con la guía, Ahora en emisión, Películas, Series y Mis medios, cambia cada ajuste de aquí (las preguntas se hacen en el teléfono), lista y cancela recordatorios, guarda copias de seguridad, escribe en la TV, abre el editor web y enciende la TV.  Empareja un teléfono una vez; queda emparejado.",
   "Finnish": "Finlandés",
   "Fixed width, slashed zero": "Ancho fijo, cero tachado",
@@ -702,7 +701,6 @@ I18n.add('es', {
   "Send with the log": "Enviar con el registro",
   "Separate": "Separar",
   "Serbian": "Serbio",
-  "Series details from TMDB": "Detalles de series de TMDB",
   "Set episode start": "Fijar inicio del episodio",
   "Set up OpenSubtitles (step by step)": "Configurar OpenSubtitles (paso a paso)",
   "Set up OpenSubtitles first": "Configura OpenSubtitles primero",
@@ -883,7 +881,6 @@ I18n.add('es', {
   "When the playlist and the guide both have a logo": "Cuando la lista y la guía tienen logo",
   "Which buttons show when you press OK in fullscreen.": "Qué botones aparecen al presionar OK en pantalla completa.",
   "Which logo to use when both the playlist and the guide have one.": "Qué logo usar cuando la lista y la guía tienen uno.",
-  "With your TMDB token, for the series in your guide and on the Shows screen: a poster, when it started, its network, genres and rating, and each episode's own title and summary (in the guide when it gives the season and episode).  On the Shows screen it fills in what your provider's details leave out.  Only a show's name and episode numbers go to TMDB.": "Con tu token de TMDB, para las series de tu guía y de la pantalla Series: un póster, cuándo empezó, su cadena, géneros y calificación, y el título y resumen de cada episodio (en la guía cuando indica temporada y episodio).  En la pantalla Series completa lo que falta en los detalles de tu proveedor.  Solo el nombre de la serie y los números de episodio van a TMDB.",
   "Without catch-up, ◀ always goes to the last channel.": "Sin catch-up, ◀ siempre va al último canal.",
   "Without signing in: 5 a day (100 with \"Under dev\" ticked).  Signed in with your free account: 20.": "Sin iniciar sesión: 5 al día (100 con \"Under dev\" marcado).  Con tu cuenta gratis: 20.",
   "XMLTV address": "Dirección XMLTV",
@@ -1072,7 +1069,6 @@ I18n.add('es', {
   // Settings sections reorganised
   "All channels, Recent, Favorites, Movies on now, events by time and new channels: which show, and how.": "Todos los canales, Recientes, Favoritos, Películas ahora, eventos por hora y canales nuevos: cuáles se muestran y cómo.",
   "Catch-up and seeking": "Catch-up y avance",
-  "Details from TMDB": "Detalles de TMDB",
   "Groups in the list": "Grupos de la lista",
   "How it looks": "Cómo se ve",
   "Movies and shows": "Películas y series",
@@ -2178,7 +2174,6 @@ I18n.add('es', {
   "Pick a group that isn't ticked; the ticked ones go into it.": "Elige un grupo que no esté marcado; los marcados entran en él.",
   "Pick a share first.": "Elige primero una carpeta compartida.",
   "Pick which ticked group the others go into.": "Elige en qué grupo marcado entran los demás.",
-  "Posters and details from TMDB for titles without them": "Pósteres y datos de TMDB para los títulos que no los tienen",
   "Quick menu buttons in the usual order": "Botones del menú rápido en el orden habitual",
   "Record to a USB drive on a rooted TV, or to a network share on any TV.  webOS keeps USB drives from apps installed in developer mode; on a rooted TV (the Homebrew Channel) TiviBro's helper reaches them.  A network share works without root: a Windows or Samba share (a PC, Mac, NAS or router) or WebDAV (Synology, QNAP, TrueNAS, Unraid, Nextcloud).  Add it as a library in My media, then choose it below.  Live pause then goes there too, for hours.  Without either, live pause keeps up to 10 minutes in the TV's own storage.": "Graba en una memoria USB en una TV con root, o en una recurso de red en cualquier TV.  webOS no deja usar memorias USB a las apps instaladas en modo desarrollador; en una TV con root (Homebrew Channel) el ayudante de TiviBro sí llega a ellas.  Una recurso de red funciona sin root: una carpeta compartida de Windows o Samba (un PC, Mac, NAS o router) o WebDAV (Synology, QNAP, TrueNAS, Unraid, Nextcloud).  Añádela como biblioteca en Mis medios y elígela abajo.  La pausa en vivo también va allí, durante horas.  Sin ninguna, la pausa en vivo guarda hasta 10 minutos en el almacenamiento de la TV.",
   "Record to a share on your network (a PC, Mac or NAS): no USB drive or root needed.  Choose one of your My media libraries on a Windows share or WebDAV.  Live pause goes there too.": "Graba en una carpeta de tu red (un PC, Mac o NAS): sin memoria USB ni root.  Elige una de tus bibliotecas de Mis medios en una carpeta de Windows o WebDAV.  La pausa en vivo también va allí.",
@@ -2604,5 +2599,11 @@ I18n.add('es', {
   "TMDB, else TheTVDB": "TMDB; si no, TheTVDB",
   "TheTVDB": "TheTVDB",
   "Where details come from": "De dónde vienen los detalles",
-  "Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  The count also notes the country it came from, to see which languages to add next.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.": "Una vez al día, y cuando una versión nueva inicia por primera vez, TiviBro informa qué versión es (y si es nueva o una actualización) y qué webOS tiene este TV.  El recuento también anota el país desde donde llega, para saber qué idiomas añadir después.  Nada más: no se guarda ninguna dirección, ningún ID, nada de tus canales o listas."
+  "Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  The count also notes the country it came from, to see which languages to add next.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.": "Una vez al día, y cuando una versión nueva inicia por primera vez, TiviBro informa qué versión es (y si es nueva o una actualización) y qué webOS tiene este TV.  El recuento también anota el país desde donde llega, para saber qué idiomas añadir después.  Nada más: no se guarda ninguna dirección, ningún ID, nada de tus canales o listas.",
+  "Details in the guide": "Detalles en la guía",
+  "Movie details in the guide": "Datos de películas en la guía",
+  "Series details in the guide": "Detalles de series en la guía",
+  "Finds the movies in your guide: a poster, year, genres and rating in the guide, a Movie tag on them, the Movies on now group and the Movies on now screen.  From TMDB or TheTVDB, as set above.  Only programme titles leave the TV.": "Encuentra las películas de tu guía: póster, año, géneros y calificación en la guía, una etiqueta Película, el grupo Películas ahora y la pantalla Películas ahora.  De TMDB o TheTVDB, según lo elegido arriba.  Solo los títulos de los programas salen del TV.",
+  "For the series in your guide and on the Shows screen: a poster, when it started, its network, genres and rating, and each episode's own title and summary (in the guide when it gives the season and episode).  On the Shows screen it fills in what your provider's details leave out.  From TMDB or TheTVDB, as set above.  Only a show's name and episode numbers leave the TV.": "Para las series de tu guía y de la pantalla Series: un póster, cuándo empezó, su cadena, géneros y calificación, y el título y resumen de cada episodio (en la guía cuando indica temporada y episodio).  En la pantalla Series completa lo que falta en los detalles de tu proveedor.  De TMDB o TheTVDB, según lo elegido arriba.  Solo el nombre de la serie y los números de episodio salen del TV.",
+  "Posters and details for titles without them": "Pósteres y detalles para los títulos que no los tienen"
 });

@@ -1,4 +1,4 @@
-/* TV series from TMDB, with your own token (Settings > Movies and shows > Series details from TMDB), or without one
+/* TV series from TMDB, with your own token (Settings > Movies and shows > Series details in the guide), or without one
    from TheTVDB (Series details from TheTVDB, service/tvdb.js): for a series in
    the guide, a poster, year, network, genres and rating in the details above it, and the episode's own
    title and summary when the guide gives its season and episode; and on the Shows screen, what the

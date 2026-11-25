@@ -16,4 +16,4 @@ Only titles (and a year, your language and the channel's country) leave the TV; 
 
 ---
 
-← [TV series from TMDB](TV-series-from-TMDB)  ·  [Home](Home)  ·  [My media](My-media) →
+← [TV series in the guide](TV-series-in-the-guide)  ·  [Home](Home)  ·  [My media](My-media) →
