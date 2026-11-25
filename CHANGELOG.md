@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **No reminder for an event channel's "Next:" block.**  A pay-per-view or sports pass channel that fills the hours before a game with "NHL 9 - Next: Wed 7:30 PM" no longer sets a My teams reminder at midnight, and one already set is dropped.  A listing longer than 8 hours is never taken for a game.
+
 ## 0.6.0 (alpha 218, 2026-11-25)
 
 Pre-release: expect rough edges, and keep a backup before installing.

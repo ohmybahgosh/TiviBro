@@ -426,6 +426,9 @@ var Teams = (function () {
     function theirs(k) { return whose[k] && !whose[k].some(function (id) { return mineIds[id]; }); }
     function take(c, p, team) {
       if (!c || !shown(c) || !p.t || p.e <= gone || p.s > to) return;
+      /* A reminder never comes from a listing longer than a game can be: an event channel's filler block, "NHL 9 -
+         Next: Wed Nov 25, 7:30 PM EST" from midnight, named the game only through the channel's name. */
+      if (one && p.e - p.s > LONGEST) return;
       // Another team's own channel (the opponent's) shows the same game: yours is enough.
       if (theirs(c.k)) return;
       if (!one) {
@@ -578,9 +581,11 @@ var Teams = (function () {
   var SPORTY = /\b(nfl|nba|nhl|mlb|wnba|mls|football|basketball|hockey|baseball|soccer)\b/i;
   // Not the game: placeholders ("not found yet"), and the shows around it.
   // Guide placeholders, never a programme to be reminded of (the helper's remind.js has the same list).
-  var PLACEHOLDER = /^\s*next (?:game|event|match)\b|not found|no (?:future |upcoming |more |scheduled )?(?:games?|events?|matches)\b|not scheduled|nothing scheduled/i;
+  var PLACEHOLDER = /^\s*next (?:game|event|match)\b|(?:^|[\s|:–-])next\s*:|\bup next\b|\bcoming up\s*:|not found|no (?:future |upcoming |more |scheduled )?(?:games?|events?|matches)\b|not scheduled|nothing scheduled/i;
+  // The longest listing a reminder takes as a game (a long one is a filler block or a whole day's channel slot).
+  var LONGEST = 8 * 3600e3;
   function placeholder(t) { return PLACEHOLDER.test(t || ''); }
-  var NOGAME = /not found|no (?:future |upcoming |more |scheduled )?(?:games?|events?|matches)\b|not scheduled|nothing scheduled|off ?air|to be (?:announced|determined)|\btb[ad]\b|^\s*next game|\b(?:pre|post)[- ]?game\b|\bhighlights\b|\brecap\b|\bcountdown\b|\bgame ?day\b|\bpreview\b|\bfantasy\b|\bnfl sunday\b|\binside the\b|\bshow\b|\bpodcast\b|\btalk\b|\bpress conference\b|\bovertime\b|\breplay\b|\bre-?airs?\b|\bencore\b|\brebroadcast\b|\(r\)/i;
+  var NOGAME = /not found|no (?:future |upcoming |more |scheduled )?(?:games?|events?|matches)\b|not scheduled|nothing scheduled|off ?air|to be (?:announced|determined)|\btb[ad]\b|^\s*next game|(?:^|[\s|:–-])next\s*:|\bup next\b|\bcoming up\s*:|\b(?:pre|post)[- ]?game\b|\bhighlights\b|\brecap\b|\bcountdown\b|\bgame ?day\b|\bpreview\b|\bfantasy\b|\bnfl sunday\b|\binside the\b|\bshow\b|\bpodcast\b|\btalk\b|\bpress conference\b|\bovertime\b|\breplay\b|\bre-?airs?\b|\bencore\b|\brebroadcast\b|\(r\)/i;
 
   /* Is this a game?  Two teams of one league named, and not a placeholder or a show around the game.  For
      reminders set by an earlier TiviBro, which put team channels' "Future events for Detroit Tigers not

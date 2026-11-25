@@ -55,6 +55,7 @@ ok('club cities', ids(Teams.named('MLS on TSN: Atlanta vs. Toronto', '', all)) =
 ok('nickname after a colon', ids(Teams.named('NFL on TSN: Browns vs. Steelers', '', all)) === 'nfl:cle,nfl:pit');
 ok('nickname after its own city', ids(Teams.named('Hockey: Wild vs. Capitals (Capitals Broadcast)', 'USA ESPN+ 133', all)) === 'nhl:min,nhl:wsh');
 ok('a game is a game', Teams.isGame('Minnesota Vikings at Detroit Lions', 'NFL | DETROIT LIONS') && Teams.isGame('WPG VS CAR (TVAS Feed )', 'USA NHL 02'));
+ok('an event channel\'s "Next:" block is no game, and a reminder for one is dropped', !Teams.isGame('NHL 9 - Next: Wed Nov 25, 7:30 PM EST', 'NHL 9 | Detroit Red Wings @ Los Angeles Kings') && Teams.placeholder('NHL 9 - Next: Wed Nov 25, 7:30 PM EST') && Teams.placeholder('Up next: Red Wings at Kings') && !Teams.placeholder('Detroit Red Wings at Los Angeles Kings'));
 ok('a placeholder is no game', !Teams.isGame('Future Events for Detroit Tigers not found yet', 'MLB | DETROIT TIGERS') && !Teams.isGame('No Future Events Scheduled', 'NHL | DETROIT RED WINGS'));
 ok('a "Next game" block is no game to remind at', !Teams.isGame('Next game: Detroit Red Wings at Florida Panthers at 11/02/2026 07:00 PM (US/Eastern)', 'NHL | FLORIDA PANTHERS'));
 // A school's full name doesn't say the sport (a FOX ONE event channel, Nov 11: basketball, Marquette has no football).
