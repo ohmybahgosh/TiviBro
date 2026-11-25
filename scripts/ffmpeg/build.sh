@@ -210,7 +210,8 @@ FF_COMPONENTS=(
   # dovi_rpu with TiviBro's p81 (patches/dovi-rpu-p81.patch): Dolby Vision profile 7 played as profile 8.1.
   --enable-bsf=h264_mp4toannexb,hevc_mp4toannexb,aac_adtstoasc,extract_extradata,vp9_superframe,av1_frame_split,dovi_rpu
   --enable-muxer=matroska,mpegts,mp4,adts,null,mjpeg,image2pipe,hevc
-  --enable-filter=aresample,aformat,anull,pan,abuffer,abuffersink,atrim,asetpts,anullsink,buffer,buffersink,scale,format,null
+  # highpass, equalizer, acompressor, alimiter: dialogue boost and night mode (service/convert.js fxChain), from tb6.
+  --enable-filter=aresample,aformat,anull,pan,abuffer,abuffersink,atrim,asetpts,anullsink,buffer,buffersink,scale,format,null,highpass,equalizer,acompressor,alimiter
 )
 
 FF_BASE=(
