@@ -164,6 +164,7 @@ var Recordings = (function () {
       var total = 0, bytes = 0; it.list.forEach(function (x) { total += x.dur || 0; bytes += x.bytes || 0; });
       el.appendChild(U.el('div', 'rc-facts', T('{n} recordings', { n: it.list.length }) + '   ·   ' + len(total) + '   ·   ' + Record.sizeOf(bytes)));
       if (mt && mt.plot) el.appendChild(U.el('p', 'rc-plot', RAW(mt.plot)));
+      var credit = U.tvdbCredit ? U.tvdbCredit(mt) : null; if (credit) el.appendChild(credit);
       return;
     }
     var st = { recording: T('Recording now'), scheduled: T('Scheduled'), done: T('Recorded'), failed: T('Didn\'t record'), missed: T('Missed'), cancelled: T('Cancelled') }[r.status] || r.status;
@@ -185,6 +186,7 @@ var Recordings = (function () {
     if (r.status === 'done' && r.folder) el.appendChild(U.el('div', 'rc-facts', T('On the drive: {x}', { x: 'TiviBro Recordings/' + r.folder }) + (r.kind === 'mp4' || r.kind === 'mkv' ? '   ·   ' + r.kind.toUpperCase() : '')));
     var plot = mt && mt.plot || r.desc;
     if (plot) el.appendChild(U.el('p', 'rc-plot', RAW(plot)));
+    var credit2 = U.tvdbCredit ? U.tvdbCredit(mt) : null; if (credit2) el.appendChild(credit2);
     var p = Record.posOf(r.id), f = seen(r);
     if (r.status === 'done' && p && f > 0.02) {
       var w = U.el('div', 'rc-watched'), bar = U.el('i', 'rc-seen big'), fill = U.el('b'); fill.style.width = Math.round(f * 100) + '%'; bar.appendChild(fill);

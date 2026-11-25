@@ -68,6 +68,7 @@ var Vod = (function () {
     if (facts) info.appendChild(U.el('div', 'media-facts', facts));
     var plot = s.plot && s.plot.length >= 40 ? s.plot : (tv && tv.plot) || s.plot || '';
     if (plot) info.appendChild(U.el('div', 'media-summary shp-plot', plot));
+    var credit = U.tvdbCredit ? U.tvdbCredit(tv) : null; if (credit) info.appendChild(credit);
     // The show's trailer, like a movie's page: ▲ from the seasons, OK plays it.
     var trl = trailerOf(s);
     if (trl) { var tb = U.el('div', 'mmp-btn shp-trl' + (sp.zone === 'trl' ? ' sel' : ''), '▶  Trailer'); tb.onclick = function () { watchTrailer(trl); }; info.appendChild(tb); }
@@ -1035,6 +1036,7 @@ var Vod = (function () {
     if (tv && plot.length < 40) plot = (it.ep ? te && te.plot : tv.plot) || plot;
     if (spoil && plot) plot = 'Summary hidden until you watch it (Hide spoilers is on).';
     if (plot) box.appendChild(U.el('p', 'vod-plot' + (spoil ? ' spoil' : ''), plot));
+    var credit = U.tvdbCredit ? U.tvdbCredit(tv) : null; if (credit) box.appendChild(credit);
     if (m && m.cast) box.appendChild(U.el('div', 'vod-meta', 'Cast: ' + m.cast));
     else if (tv && !it.ep && tv.cast) box.appendChild(U.el('div', 'vod-meta', 'Cast: ' + tv.cast));
     if (m && m.director) box.appendChild(U.el('div', 'vod-meta', 'Director: ' + m.director));

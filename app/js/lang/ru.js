@@ -2608,5 +2608,7 @@ I18n.add('ru', {
   "Series details in the guide": "Описания сериалов в телегиде",
   "Finds the movies in your guide: a poster, year, genres and rating in the guide, a Movie tag on them, the Movies on now group and the Movies on now screen.  From TMDB or TheTVDB, as set above.  Only programme titles leave the TV.": "Находит фильмы в телегиде: постер, год, жанры и рейтинг в телегиде, метка «Фильм», группа и экран «Фильмы сейчас».  Из TMDB или TheTVDB, как выбрано выше.  Телевизор покидают только названия передач.",
   "For the series in your guide and on the Shows screen: a poster, when it started, its network, genres and rating, and each episode's own title and summary (in the guide when it gives the season and episode).  On the Shows screen it fills in what your provider's details leave out.  From TMDB or TheTVDB, as set above.  Only a show's name and episode numbers leave the TV.": "Для сериалов в телегиде и на экране «Сериалы»: постер, год начала, телесеть, жанры и рейтинг, а также название и описание каждой серии (в телегиде, если он указывает сезон и серию).  На экране «Сериалы» дополняет то, чего нет в описаниях провайдера.  Из TMDB или TheTVDB, как выбрано выше.  Телевизор покидают только название сериала и номера серий.",
-  "Posters and details for titles without them": "Постеры и описания для названий без них"
+  "Posters and details for titles without them": "Постеры и описания для названий без них",
+  "Metadata provided by TheTVDB": "Метаданные предоставлены TheTVDB",
+  "No summary for this show yet.": "Описания этого сериала пока нет."
 });

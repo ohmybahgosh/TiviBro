@@ -3611,7 +3611,8 @@ var Guide = (function () {
     var status = /ended|canceled/i.test(sh.status || '') ? 'ended' : /returning|production|planned/i.test(sh.status || '') ? 'still running' : '';
     col.appendChild(U.el('div', 'sp-line', [sh.year ? 'Since ' + sh.year : '', sh.network, sh.seasons ? sh.seasons + (sh.seasons === 1 ? ' season' : ' seasons') : '', status, sh.rating ? '★ ' + sh.rating + ' TMDB' : ''].filter(Boolean).join('   ·   ')));
     if (sh.genre) col.appendChild(U.el('div', 'sp-genre', sh.genre));
-    col.appendChild(U.el('p', 'sp-plot', sh.plot || 'TMDB has no summary for this show.'));
+    col.appendChild(U.el('p', 'sp-plot', sh.plot || T('No summary for this show yet.')));
+    var credit = U.tvdbCredit ? U.tvdbCredit(sh) : null; if (credit) col.appendChild(credit);
     if (sh.cast) col.appendChild(U.el('div', 'sp-cast', 'With ' + sh.cast));
     col.appendChild(U.el('div', 'sp-head', 'Coming up on ' + L.name(c)));
     var eps = U.el('div', 'sp-eps'); col.appendChild(eps);

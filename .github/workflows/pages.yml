@@ -58,6 +58,8 @@ jobs:
         run: node scripts/logos/build-index.js _site/logos
       - name: Guides, comparisons and video pages (scripts/site/pages.js, videos.js)
         run: node scripts/site/build-pages.js _site
+      - name: The site in every TiviBro language (scripts/site/i18n-site.js, site/i18n/*.json)
+        run: node scripts/site/i18n-site.js build _site
       - name: Ideas and their votes (tivibro.app/ideas, scripts/site/ideas.js)
         continue-on-error: true       # the page still goes out, pointing to GitHub, if GitHub doesn't answer
         env:
@@ -72,6 +74,9 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
+          # .well-known/assetlinks.json (the phone app's tivibro.app links and Google's credential sharing) is a
+          # hidden folder, which the upload leaves out unless told.
+          include-hidden-files: true
   deploy:
     needs: build
     runs-on: ubuntu-latest

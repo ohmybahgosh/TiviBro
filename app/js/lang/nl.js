@@ -2481,5 +2481,7 @@ I18n.add('nl', {
   "Series details in the guide": "Seriegegevens in de gids",
   "Finds the movies in your guide: a poster, year, genres and rating in the guide, a Movie tag on them, the Movies on now group and the Movies on now screen.  From TMDB or TheTVDB, as set above.  Only programme titles leave the TV.": "Zoekt de films in je gids: een poster, jaar, genres en beoordeling in de gids, een label Film erop, de groep Films nu bezig en het scherm Films nu bezig.  Van TMDB of TheTVDB, zoals hierboven ingesteld.  Alleen titels van programma's verlaten de tv.",
   "For the series in your guide and on the Shows screen: a poster, when it started, its network, genres and rating, and each episode's own title and summary (in the guide when it gives the season and episode).  On the Shows screen it fills in what your provider's details leave out.  From TMDB or TheTVDB, as set above.  Only a show's name and episode numbers leave the TV.": "Voor de series in je gids en op het scherm Series: een poster, wanneer de serie begon, de zender, genres en waardering, en de eigen titel en samenvatting van elke aflevering (in de gids als die het seizoen en de aflevering opgeeft).  Op het scherm Series vult het aan wat de gegevens van je provider missen.  Van TMDB of TheTVDB, zoals hierboven ingesteld.  Alleen de naam van een serie en de afleveringsnummers verlaten de tv.",
-  "Posters and details for titles without them": "Posters en details voor titels zonder"
+  "Posters and details for titles without them": "Posters en details voor titels zonder",
+  "Metadata provided by TheTVDB": "Metadata geleverd door TheTVDB",
+  "No summary for this show yet.": "Nog geen samenvatting voor deze serie."
 });

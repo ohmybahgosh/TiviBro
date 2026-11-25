@@ -2481,5 +2481,7 @@ I18n.add('tr', {
   "Series details in the guide": "Rehberde dizi ayrıntıları",
   "Finds the movies in your guide: a poster, year, genres and rating in the guide, a Movie tag on them, the Movies on now group and the Movies on now screen.  From TMDB or TheTVDB, as set above.  Only programme titles leave the TV.": "Rehberinizdeki filmleri bulur: rehberde afiş, yıl, türler ve puan, üzerlerinde Film etiketi, Şu an gösterilen filmler grubu ve Şu an gösterilen filmler ekranı.  Yukarıdaki ayara göre TMDB'den veya TheTVDB'den.  TV'den yalnızca program adları çıkar.",
   "For the series in your guide and on the Shows screen: a poster, when it started, its network, genres and rating, and each episode's own title and summary (in the guide when it gives the season and episode).  On the Shows screen it fills in what your provider's details leave out.  From TMDB or TheTVDB, as set above.  Only a show's name and episode numbers leave the TV.": "Rehberinizdeki ve Diziler ekranındaki diziler için: afiş, başlangıç tarihi, yayıncı kanalı, türler ve puan, ayrıca her bölümün kendi başlığı ve özeti (rehberde sezon ve bölüm numarası verildiğinde).  Diziler ekranında sağlayıcınızın ayrıntılarında eksik kalanları tamamlar.  Yukarıdaki ayara göre TMDB'den veya TheTVDB'den.  TV'den yalnızca dizinin adı ve bölüm numaraları çıkar.",
-  "Posters and details for titles without them": "Afişi ve ayrıntısı olmayan adlar için afiş ve ayrıntılar"
+  "Posters and details for titles without them": "Afişi ve ayrıntısı olmayan adlar için afiş ve ayrıntılar",
+  "Metadata provided by TheTVDB": "Meta veriler TheTVDB tarafından sağlanır",
+  "No summary for this show yet.": "Bu dizi için henüz özet yok."
 });

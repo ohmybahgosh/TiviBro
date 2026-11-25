@@ -286,8 +286,14 @@ var U = (function () {
      last minute.  Movies and shows from the provider, My media and recordings all use it. */
   function watchedFrac() { var p = typeof Store !== 'undefined' && Store.settings ? +Store.settings.watchedAt : 0; return (p >= 50 && p <= 100 ? p : 90) / 100; }
   function isWatchedAt(pos, dur) { return dur > 0 && (pos >= dur * watchedFrac() || pos > dur - 60); }
+  /* TheTVDB's terms: whoever sees details that came from TheTVDB sees "Metadata provided by TheTVDB" with its address
+     (thetvdb.com/api-information).  A line for a details screen, or null when these details aren't TheTVDB's. */
+  function tvdbCredit(md) {
+    if (!md || !(md.provider === 'TheTVDB' || /^tvdb:/.test(String(md.id || '')))) return null;
+    return el('div', 'tvdb-credit', (typeof T === 'function' ? T('Metadata provided by TheTVDB') : 'Metadata provided by TheTVDB') + '  ·  thetvdb.com');
+  }
   return {
-    watchedFrac: watchedFrac, isWatchedAt: isWatchedAt,
+    watchedFrac: watchedFrac, isWatchedAt: isWatchedAt, tvdbCredit: tvdbCredit,
     lines: lines, notice: notice, hsl: hsl, luminance: luminance, onColor: onColor, mix: mix,
     runtime: runtime, secretShape: secretShape, KEY: KEY, $: $, el: el, clamp: clamp, debounce: debounce, hhmm: hhmm, day: day, dateShort: dateShort, tvLocale: tvLocale, LANGS: LANGS, lang: lang, hash: hash,
     b64utf8: b64utf8, request: request, readJSON: readJSON, httpSays: httpSays, getJSON: getJSON, getText: getText, toast: toast, idle: idle, pad: pad, loc: loc };

@@ -2481,5 +2481,7 @@ I18n.add('it', {
   "Series details in the guide": "Dettagli delle serie nella guida",
   "Finds the movies in your guide: a poster, year, genres and rating in the guide, a Movie tag on them, the Movies on now group and the Movies on now screen.  From TMDB or TheTVDB, as set above.  Only programme titles leave the TV.": "Trova i film nella tua guida: locandina, anno, generi e valutazione nella guida, un'etichetta Film su di essi, il gruppo Film in onda ora e la schermata Film in onda ora.  Da TMDB o TheTVDB, come impostato sopra.  Escono dalla TV solo i titoli dei programmi.",
   "For the series in your guide and on the Shows screen: a poster, when it started, its network, genres and rating, and each episode's own title and summary (in the guide when it gives the season and episode).  On the Shows screen it fills in what your provider's details leave out.  From TMDB or TheTVDB, as set above.  Only a show's name and episode numbers leave the TV.": "Per le serie nella tua guida e nella schermata Serie TV: una locandina, quando è iniziata, la rete, i generi e la valutazione, oltre al titolo e alla trama di ogni episodio (nella guida quando indica stagione ed episodio).  Nella schermata Serie TV completa ciò che manca nei dettagli del tuo provider.  Da TMDB o TheTVDB, come impostato sopra.  Escono dalla TV solo il nome della serie e i numeri degli episodi.",
-  "Posters and details for titles without them": "Locandine e dettagli per i titoli che non li hanno"
+  "Posters and details for titles without them": "Locandine e dettagli per i titoli che non li hanno",
+  "Metadata provided by TheTVDB": "Metadati forniti da TheTVDB",
+  "No summary for this show yet.": "Ancora nessuna trama per questa serie."
 });

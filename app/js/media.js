@@ -739,6 +739,7 @@ var Media = (function () {
     var bottom = m.kind === 'live' ? liveLine(m.live) + '  ·  ' + (m.live.live ? 'OK to watch' : 'OK for a reminder') : m.continueEpisode && m.nextUp ? 'Up next: ' + (m.label || 'the next episode') + '  ·  OK to play' : m.continueEpisode ? 'Continue with ' + (m.label || 'the next episode') + (m.progressPercent ? ',  ' + m.progressPercent + '% watched' : '')
       : r ? 'Resume at ' + RT(Math.max(1, Math.floor(r.pos / 60))) + ' of ' + RT(Math.floor(r.dur / 60)) : m.kind === 'show' ? (m.newLine ? m.newLine + '  ·  ' : '') + 'OK for episodes' : 'Ready to watch';
     box.appendChild(U.el('div', 'media-caption', bottom + (src ? '   ·   ' + src.name : '')));
+    var credit = U.tvdbCredit ? U.tvdbCredit(md) : null; if (credit) box.appendChild(credit);
     if (md.provider && ((md.fallbackFields || []).length || MediaStore.preferences().language !== (md.requestedLanguage || md.language || 'en'))) box.appendChild(U.el('span', 'media-language-note', (md.fallbackFields || []).length ? 'English fallback: ' + md.fallbackFields.join(', ') : 'Saved metadata language differs from your preference'));
   }
   function makeShelf() {

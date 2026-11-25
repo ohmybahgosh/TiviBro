@@ -145,6 +145,7 @@ var OnNow = (function () {
     info.appendChild(U.el('div', 'on-where', g.list.length > 1 ? T('On {x} and {n} more', { x: Library.name(g.c), n: g.list.length - 1 }) : T('On {x}', { x: Library.name(g.c) })));
     info.appendChild(U.el('div', 'on-facts', [m.year, U.runtime(m.runtime), m.genre, m.rating ? '★ ' + m.rating : ''].filter(Boolean).join('   ·   ')));
     if (m.plot) info.appendChild(U.el('p', 'on-plot', m.plot));
+    var credit = U.tvdbCredit ? U.tvdbCredit(m) : null; if (credit) info.appendChild(credit);
   }
   function hints() {
     if (!open_ || Views.tab !== 'onnow') return;

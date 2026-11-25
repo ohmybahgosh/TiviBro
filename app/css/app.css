@@ -950,6 +950,7 @@ video.mkv-captions-active::cue,video.subs-drawn::cue{color:transparent;backgroun
 .media-title{font-size:62px;line-height:1.05;font-weight:800;margin-bottom:14px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
 .media-facts{font-size:25px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .media-summary{font-size:24px;line-height:1.38;opacity:.92;margin-top:10px;max-width:740px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.tvdb-credit{font-size:17px;color:var(--text-dim,#8e97b5);margin-top:10px;opacity:.85}
 .media-caption{font-size:23px;color:var(--accent-text);margin-top:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .media-language-note{display:block;font-size:18px;color:var(--dim);margin-top:6px}
 /* top + one row (ROW_H 492) + the next shelf's title (~40px) stays above the hint bar (view ends at 1016), so the next shelf's name shows whole */

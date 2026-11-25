@@ -98,6 +98,7 @@ var MediaMoviePage = (function () {
       MediaStore.isWatched && MediaStore.isWatched(m.id) ? '✓ Watched' : ''].filter(Boolean).join('   ·   ');
     if (facts) info.appendChild(tel('div', 'media-facts', facts));
     if (d.plot) info.appendChild(tel('div', 'media-summary shp-plot mmp-plot', RAW(d.plot)));
+    var credit = U.tvdbCredit ? U.tvdbCredit(d) : null; if (credit) info.appendChild(credit);
     var who = [(d.directors || []).length ? 'Directed by ' + d.directors.join(', ') : '', d.cast ? 'With ' + d.cast : ''].filter(Boolean).join('   ·   ');
     if (who) info.appendChild(tel('div', 'mmp-who', RAW(who)));
     b.appendChild(info);
