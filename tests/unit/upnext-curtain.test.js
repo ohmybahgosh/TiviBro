@@ -73,4 +73,10 @@ assert.ok(last && last.ms <= 15000, 'it has a time limit');
 last.f();
 assert.ok(!w.up(), 'and is gone after it, whatever happened');
 
-console.log('PASS Up next curtain: up on hold, gone once Up next has faded in, back, playing and the time limit');
+// Its picture full screen: a TMDB still asked for at 1280 px, also through the helper's encoded link; others as they are.
+const sharp = world().U._sharp;
+assert.equal(sharp('https://image.tmdb.org/t/p/w500/Hk1.jpg'), 'https://image.tmdb.org/t/p/w1280/Hk1.jpg');
+assert.equal(sharp('http://127.0.0.1:47811/img?u=https%3A%2F%2Fimage.tmdb.org%2Ft%2Fp%2Fw300%2FHk1.jpg'), 'http://127.0.0.1:47811/img?u=https%3A%2F%2Fimage.tmdb.org%2Ft%2Fp%2Fw1280%2FHk1.jpg');
+assert.equal(sharp('https://image.tmdb.org/t/p/original/Hk1.jpg'), 'https://image.tmdb.org/t/p/original/Hk1.jpg');
+assert.equal(sharp('https://artworks.thetvdb.com/banners/x.jpg'), 'https://artworks.thetvdb.com/banners/x.jpg');
+console.log('PASS Up next curtain: up on hold, gone once Up next has faded in, back, playing and the time limit; its picture sharp');

@@ -27,11 +27,19 @@ var UpNext = (function () {
   }
   function stop() { clearInterval(timer); timer = null; run++; }
   function T(x, v) { return typeof I18n !== 'undefined' ? I18n.t(x, v) : String(x).replace(/\{([a-z]+)\}/g, function (a, k) { return v && v[k] != null ? v[k] : a; }); }
-  function pic(src, cls, gone) {
+  /* A TMDB picture asked for full screen at 1280 px: episode stills come at 500 px (a card's size), which looked
+     blocky stretched across the TV.  Also through the helper's picture link, where the address is encoded. */
+  var TMDB_SMALL = /(image\.tmdb\.org(?:\/|%2F)t(?:\/|%2F)p(?:\/|%2F))w(?:92|154|185|300|342|500|780)(?=\/|%2F)/i;
+  function sharp(src) { return String(src || '').replace(TMDB_SMALL, '$1w1280'); }
+  function pic(src, cls, gone, small) {
     var img = U.el('img', cls); img.decoding = 'async'; img.src = src;
-    // The logo (gone given): no second try, the title in type takes its place at once.  A picture: tried again through
-    // the helper first (Net.retryImage), as everywhere.
-    img.onerror = function () { if (!gone && typeof Net !== 'undefined' && Net.retryImage && Net.retryImage(this, true)) return; this.remove(); if (gone) gone(); };
+    // The logo (gone given): no second try, the title in type takes its place at once.  A sharper copy (small given)
+    // that doesn't load: the size it came in.  A picture: tried again through the helper first (Net.retryImage), as everywhere.
+    img.onerror = function () {
+      if (small && this.src !== small) { var s = small; small = null; this.src = s; return; }
+      if (!gone && typeof Net !== 'undefined' && Net.retryImage && Net.retryImage(this, true)) return;
+      this.remove(); if (gone) gone();
+    };
     return img;
   }
 
@@ -40,7 +48,7 @@ var UpNext = (function () {
   function screen(o) {
     var box = U.el('div', 'un-screen');
     var bg = U.el('div', 'un-bg');
-    if (o.image) bg.appendChild(pic(o.image, 'un-bgimg'));
+    if (o.image) bg.appendChild(pic(sharp(o.image), 'un-bgimg', null, sharp(o.image) !== o.image ? o.image : null));
     box.appendChild(bg);
     box.appendChild(U.el('div', 'un-shade'));
     var words = U.el('div', 'un-words');
@@ -111,5 +119,5 @@ var UpNext = (function () {
     }, 1000);
   }
 
-  return { show: show, stop: stop, seconds: seconds, hold: hold, release: release };
+  return { show: show, stop: stop, seconds: seconds, hold: hold, release: release, _sharp: sharp };
 })();
