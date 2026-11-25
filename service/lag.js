@@ -27,19 +27,24 @@ function create(o) {
   return { tick: tick, stop: function () { clearInterval(timer); } };
 }
 
-var BOX_EVERY = 15000, BOX_KEEP = 6;
+var BOX_EVERY = 15000, BOX_KEEP = 6, BOX_EARLY = 120000, BOX_EARLY_EVERY = 2000, BOX_MARK_GAP = 1000, BOX_MARK_FOR = 600000;
 /* The black box (issues #176-#178): a helper that freezes for good never fires its timer again, so it can't say
    what held it up, and webOS ends it without a word.  Every few seconds the helper writes what it is doing (its
    memory, requests, a guide being read, its latest log events) to a small file; a helper that ends normally marks
    the file closed.  The next helper reads it: still open means the one before was killed (frozen and stopped by
    webOS, or the TV losing power), and its last snapshots are logged as an error (so they reach the next problem report), oldest first to show memory climbing.
 
-   Every 15 s keeps flash writes low (under 6,000 a day) and still holds the minute before a freeze.
-   blackbox({ file, spare, doing(), recent(), log(o), every, keep, now, fs })  file, doing and log are needed;
-   spare is a second place to write (a temp folder) for a TV where the first can't be written.
-   Returns { write(), close(), stop() }: write() is what the timer calls, close() on a normal exit. */
+   Every 15 s keeps flash writes low (under 6,000 a day) and still holds the minute before a freeze.  The first two
+   minutes look every 2 s, and for its first ten minutes mark() writes at once (at most once a second) when the helper
+   logs something: issue #178's helper froze within 15 s of starting, so its box only ever held the look taken as it
+   started.  After that only the 15 s looks, to spare the TV's flash while a channel plays for hours.
+   blackbox({ file, spare, doing(), recent(), log(o), every, keep, early, earlyEvery, now, fs })  file, doing and
+   log are needed; spare is a second place to write (a temp folder) for a TV where the first can't be written.
+   Returns { write(), tick(), mark(), close(), stop() }: tick() is what the timer calls (it writes when a look is
+   due), write() looks now, mark() looks now unless one was just taken, close() on a normal exit. */
 function blackbox(o) {
   var fs = o.fs || require('fs'), every = o.every || BOX_EVERY, keep = o.keep || BOX_KEEP, now = o.now || Date.now, shots = [], timer = null, started = now();
+  var early = o.early != null ? o.early : BOX_EARLY, earlyEvery = o.earlyEvery || BOX_EARLY_EVERY, lastWrite = 0, closed = false;
   // What the helper before left: open (it didn't end normally) with its last snapshots.
   var file = o.file;
   try {
@@ -58,16 +63,23 @@ function blackbox(o) {
     try { fs.writeFileSync(file, body); } catch (e) { if (o.spare && file !== o.spare) { file = o.spare; try { fs.writeFileSync(file, body); } catch (e2) {} } }
   }
   function write() {
+    if (closed) return;
     var d = {};
     try { d = o.doing() || {}; } catch (e) { d = { error: String(e && e.message || e) }; }
     d.t = now(); d.up = Math.round((d.t - started) / 1000);
     try { if (o.recent) d.last = o.recent(); } catch (e) {}
     shots.push(d); if (shots.length > keep) shots.shift();
+    lastWrite = d.t;
     save(true);
   }
+  // The timer's look: every 2 s in the first two minutes, every 15 s after.
+  function tick() { var t = now(); if (t - lastWrite >= (t - started < early ? earlyEvery : every) - 50) write(); }
+  // Something was logged: a look now, so the last one before a freeze names the job that was running.
+  function mark() { var t = now(); if (t - started < BOX_MARK_FOR && t - lastWrite >= BOX_MARK_GAP) write(); }
   write();                                   // this helper's own first look at once: what came before is told only once
-  if (o.timer !== false) { timer = setInterval(write, every); if (timer.unref) timer.unref(); }
-  return { write: write, close: function () { clearInterval(timer); save(false); }, stop: function () { clearInterval(timer); } };
+  if (o.timer !== false) { timer = setInterval(tick, Math.min(earlyEvery, every)); if (timer.unref) timer.unref(); }
+  return { write: write, tick: tick, mark: mark,
+    close: function () { closed = true; clearInterval(timer); save(false); }, stop: function () { clearInterval(timer); } };
 }
 
 // Memory now, in MB (heap and the whole process), for what the helper was doing.

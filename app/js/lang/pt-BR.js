@@ -3141,5 +3141,6 @@ I18n.add('pt-BR', {
   "a little clearer": "um pouco mais claro",
   "loud scenes down, quiet talk up": "cenas altas mais baixas, falas baixas mais altas",
   "voices clearer, night mode": "vozes mais claras, modo noturno",
-  "voices well forward": "vozes bem à frente"
+  "voices well forward": "vozes bem à frente",
+  "TiviBro's network helper is stuck on this TV.  Channels still play without it; restarting the TV frees it.": "O assistente de rede do TiviBro travou nesta TV.  Os canais continuam funcionando sem ele; reiniciar a TV o libera."
 });

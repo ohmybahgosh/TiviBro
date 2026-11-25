@@ -119,7 +119,8 @@ var Net = (function () {
       var gen = ++startGen;
       // The helper from before still busy: webOS is asked once it isn't (or after three minutes), not now.
       check(lastPort(), 1500).then(function (how) {
-        if (how !== 'busy') return call();
+        if (how !== 'busy') { busyStarts = 0; return call(); }
+        busyStarts++;
         Log.warn('net', 'The network helper from before is still busy (its port takes the connection but doesn\'t answer); asking webOS for it once it is free');
         var since = Date.now();
         (function wait() {
@@ -139,6 +140,16 @@ var Net = (function () {
     });
   }
   var startGen = 0;
+  /* Starts in a row that found the helper from before still busy (issue #178: on a 1 GB TV it can stay stuck until
+     the TV restarts).  From the third, the viewer is told once: channels still play without it, and what frees it. */
+  var busyStarts = 0, toldStuck = false;
+  function tellStuck() {
+    if (toldStuck || busyStarts < 3) return;
+    toldStuck = true;
+    Log.warn('net', 'The network helper from before has stayed stuck through ' + busyStarts + ' starts; the viewer was told');
+    function T(x) { return typeof I18n !== 'undefined' ? I18n.t(x) : x; }
+    if (typeof U !== 'undefined' && U.toast) U.toast(T('TiviBro\'s network helper is stuck on this TV.  Channels still play without it; restarting the TV frees it.'), 12000);
+  }
 
   /* The helper carries every stream, so it must not stay gone.  When its subscription drops (it exited:
      webOS stopped it, or its own watchdog found it stuck, service/watchdog.js) it is started again at once,
@@ -224,6 +235,7 @@ var Net = (function () {
       restarting = false;
       if (!p) {
         Log.error('net', 'The network helper did not start again: ' + lastError);
+        tellStuck();
         return againLater();
       }
       againTries = 0;

@@ -40,4 +40,25 @@ box({ file: 'locked.json', spare: 'tmp.json', fs: ro }).write();
 assert.ok(JSON.parse(files['tmp.json']).open, 'written to the spare');
 box({ file: 'locked.json', spare: 'tmp.json', fs: ro });
 assert.equal(logs.length, 1, 'and read from it by the next helper');
+// Issue #178: a helper that froze 13 s after starting.  The first two minutes look every 2 s and whenever it logs, so
+// the box holds what it did last, not only its first look.
+{
+  for (const k of Object.keys(files)) delete files[k];
+  logs.length = 0; t = 5000000;
+  const c = box({ recent: () => [step] });
+  let step = 'start';
+  t += 1000; step = 'relay listening'; c.mark();
+  t += 400; step = 'too soon'; c.mark();
+  assert.equal(JSON.parse(files['state.json']).shots.length, 2, 'a mark within a second of the last look waits');
+  t += 1600; step = 'guide read'; c.tick();
+  t += 1000; c.tick();
+  assert.equal(JSON.parse(files['state.json']).shots.length, 3, 'early on, the timer looks every 2 s');
+  t += 9000; step = '200 player_api.php?action=get_live_streams'; c.mark();
+  const last = JSON.parse(files['state.json']).shots.pop();
+  assert.ok(last.up === 13 && last.last[0] === step, 'the last look before the freeze names the request: ' + JSON.stringify(last));
+  t += 20 * 60000; step = 'later'; const n = JSON.parse(files['state.json']).shots.length; c.mark();
+  assert.equal(JSON.parse(files['state.json']).shots.length, n, 'after ten minutes, logging no longer writes (the TV\'s flash)');
+  c.tick();
+  assert.equal(JSON.parse(files['state.json']).shots.pop().last[0], 'later', '...the 15 s looks carry on');
+}
 console.log('PASS helper black box: a frozen helper\'s last looks reach the next start, a normal end says nothing, a locked folder uses the spare');

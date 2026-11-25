@@ -233,10 +233,19 @@ function lagDoing() {
   return d;
 }
 Lag.create({ log: function (o) { proxy.log(o); }, doing: lagDoing });
-/* And a black box for a freeze it never comes back from (issues #176-#178): what it was doing every 5 s, in a file
-   the next helper reads.  The latest log events say which job was running. */
+/* And a black box for a freeze it never comes back from (issues #176-#178): what it was doing (every 2 s at first,
+   then every 15 s, and whenever something is logged), in a file the next helper reads.  The latest log events say
+   which job was running: an event's name, or a request's status and the end of its path (no host, no login). */
+function recentLine(x) {
+  if (x.event) return x.event;
+  if (!x.u) return '';
+  var path = String(x.u).replace(/^[a-z]+:\/\/[^\/]*/i, ''), q = path.indexOf('?'), action = /[?&]action=([\w-]+)/.exec(path);
+  path = (q >= 0 ? path.slice(0, q) : path).split('/').pop().slice(0, 40);
+  return (x.s || '...') + ' ' + path + (action ? '?action=' + action[1] : '');
+}
 var box = Lag.blackbox({ file: require('path').join(__dirname, 'helper-state.json'), spare: require('path').join(require('os').tmpdir(), 'tivibro-helper-state.json'), log: function (o) { proxy.log(o); }, doing: lagDoing,
-  recent: function () { return proxy.LOG.slice(-4).map(function (x) { return x.event || ''; }); } });
+  recent: function () { return proxy.LOG.slice(-4).map(recentLine); } });
+proxy.watchLog(function () { box.mark(); });
 process.on('exit', function () { box.close(); });
 // webOS ends an idle helper with SIGTERM: a normal end, so the box is closed first (Node's default would skip 'exit').
 ['SIGTERM', 'SIGINT'].forEach(function (sig) { try { process.on(sig, function () { box.close(); process.exit(0); }); } catch (e) {} });

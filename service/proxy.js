@@ -119,9 +119,13 @@ function redact(u) {
    storage, last 30, so a report made after the helper restarted still has them (/log "earlier"). */
 var ERRS = require('path').join(__dirname, 'helper-errors.json'), EARLIER = [];
 try { EARLIER = JSON.parse(require('fs').readFileSync(ERRS, 'utf8')) || []; } catch (e) {}
+// Something that wants to know when the helper logs (the black box, service.js); one at a time.
+var onLog = null;
+function watchLog(f) { onLog = f; }
 function log(entry) {
   entry.t = Date.now();
   LOG.push(entry);
+  if (onLog) { try { onLog(entry); } catch (x) {} }
   if (LOG.length > LOG_MAX) LOG.splice(0, LOG.length - LOG_MAX);
   if (entry.e || entry.lv === 'error') console.error('[tivibro-helper]', JSON.stringify(entry));
   if (entry.lv === 'error' && entry.event) {
@@ -643,5 +647,5 @@ function create(opts) {
   return { server: server, stats: stats, editor: editor };
 }
 
-module.exports = { _ownOrigin: ownOrigin, _sameHost: sameHost, SYS: SYS, sys: sys, create: create, target: target, liveKey: liveKey, keyStart: keyStart, pesPts: pesPts, lastPts: lastPts, relayed: relayed, rewriteHls: rewriteHls, log: log, redact: redact, LOG: LOG,
+module.exports = { _ownOrigin: ownOrigin, _sameHost: sameHost, SYS: SYS, sys: sys, create: create, target: target, liveKey: liveKey, keyStart: keyStart, pesPts: pesPts, lastPts: lastPts, relayed: relayed, rewriteHls: rewriteHls, log: log, watchLog: watchLog, redact: redact, LOG: LOG,
   _dns: { lookup: cachedLookup, cache: dnsCache, forget: forgetHost } };

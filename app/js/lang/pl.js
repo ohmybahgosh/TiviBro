@@ -2508,5 +2508,6 @@ I18n.add('pl', {
   "a little clearer": "trochę wyraźniej",
   "loud scenes down, quiet talk up": "głośne sceny ciszej, ciche głosy głośniej",
   "voices clearer, night mode": "wyraźniejsze głosy, tryb nocny",
-  "voices well forward": "głosy wyraźnie z przodu"
+  "voices well forward": "głosy wyraźnie z przodu",
+  "TiviBro's network helper is stuck on this TV.  Channels still play without it; restarting the TV frees it.": "Pomocnik sieciowy TiviBro zawiesił się na tym telewizorze.  Kanały działają bez niego; ponowne uruchomienie telewizora go odblokuje."
 });

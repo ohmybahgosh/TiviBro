@@ -2508,5 +2508,6 @@ I18n.add('tr', {
   "a little clearer": "biraz daha net",
   "loud scenes down, quiet talk up": "yüksek sahneler kısılır, alçak konuşmalar yükselir",
   "voices clearer, night mode": "daha net sesler, gece modu",
-  "voices well forward": "sesler belirgin şekilde önde"
+  "voices well forward": "sesler belirgin şekilde önde",
+  "TiviBro's network helper is stuck on this TV.  Channels still play without it; restarting the TV frees it.": "TiviBro'nun ağ yardımcısı bu TV'de takıldı.  Kanallar onsuz da oynar; TV'yi yeniden başlatmak onu kurtarır."
 });

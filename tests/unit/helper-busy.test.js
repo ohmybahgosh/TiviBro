@@ -17,12 +17,12 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms || 30));
 function sandbox() {
   // tick: the first 15 s timer in net.js, the pings (the second one checks the control secret).
   // pingOk: answered; refused: nothing on the port (fails at once); else the port takes it and no answer comes (busy).
-  const t = { calls: [], logs: [], pingOk: true, refused: false, statusAnswers: true, tick: null, bridges: [], ls: {} };
+  const t = { calls: [], logs: [], toasts: [], startAnswers: true, pingOk: true, refused: false, statusAnswers: true, tick: null, bridges: [], ls: {} };
   const ctx = {
     console, Promise, setTimeout: (f, ms) => setTimeout(f, Math.min(ms, 20)), clearTimeout, setInterval: (f, ms) => { if (ms === 15000 && !t.tick) t.tick = f; return 0; }, clearInterval() {},
     localStorage: { getItem: (k) => (k in t.ls ? t.ls[k] : null), setItem: (k, v) => { t.ls[k] = String(v); } }, document: { hidden: false },
     Log: { info: (c, m) => t.logs.push(m), warn: (c, m) => t.logs.push(m), error: (c, m) => t.logs.push(m), debug() {} },
-    Store: { settings: { network: 'auto' }, playlist: {} },
+    Store: { settings: { network: 'auto' }, playlist: {} }, U: { toast: (m) => t.toasts.push(m) },
     fetch: () => t.pingOk ? Promise.resolve({ ok: true, json: () => ({ ok: true, node: 'v8' }) }) : t.refused ? Promise.reject(new TypeError('Failed to fetch')) : new Promise(() => {}),
     btoa: (s) => Buffer.from(s, 'binary').toString('base64'), unescape, encodeURIComponent,
     PalmServiceBridge: function () {
@@ -30,7 +30,7 @@ function sandbox() {
       this.cancel = function () { me.cancelled = true; };
       this.call = function (url) {
         t.calls.push(url.replace(/^.*\//, ''));
-        if (/\/start$/.test(url)) setTimeout(() => me.onservicecallback(JSON.stringify({ returnValue: true, port: 47811 })), 1);
+        if (/\/start$/.test(url)) { if (t.startAnswers) setTimeout(() => me.onservicecallback(JSON.stringify({ returnValue: true, port: 47811 })), 1); }
         else if (t.statusAnswers) setTimeout(() => me.onservicecallback(JSON.stringify({ returnValue: true, port: 47811, subscribers: 1 })), 1);
       };
     }
@@ -97,6 +97,14 @@ function sandbox() {
   t.bridges[0].onservicecallback(JSON.stringify({ returnValue: false, errorText: 'Message status unknown' }));
   await wait(120);
   ok('its subscription dropping still starts it again at once', t.calls.join() === 'start,start' && t.logs.some((m) => /subscription dropped/.test(m)), t.calls);
+
+  // Issue #178: the helper from before stays stuck start after start.  From the third, the viewer is told once.
+  t = sandbox();
+  t.ls['tivibro.helperPort'] = '47811'; t.pingOk = false; t.startAnswers = false;
+  await t.Net.start(3000);
+  for (let i = 0; i < 40 && t.logs.filter((m) => /did not start again/.test(m)).length < 4; i++) await wait(50);
+  ok('stuck through three starts: the viewer is told once that channels still play and a restart frees it',
+    t.toasts.length === 1 && /stuck on this TV/.test(t.toasts[0]) && t.logs.some((m) => /stayed stuck through 3 starts/.test(m)), { toasts: t.toasts, tries: t.logs.filter((m) => /did not start again/.test(m)).length });
 
   console.log(fails ? fails + ' failures' : 'all busy helper tests passed');
   process.exit(fails ? 1 : 0);
