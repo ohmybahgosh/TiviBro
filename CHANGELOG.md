@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Remove from Continue watching.**  Movies and Shows from your provider: Hold OK (or Red) on a title in Continue watching now offers Remove from Continue watching, and Mark unwatched also works on a title you're part-way through (it starts from the beginning next time).  My media: a show's Continue watching card offers it too, without marking anything watched.
 - **Hide a whole language.**  With Categories by language on, Red (or hold OK) on a language folder now offers Hide this language, which hides every category in it.  Show hidden categories brings them back (issue #173).
 - **Phone app changes made while TiviBro was away are kept in order.**  Settings changed from the phone while TiviBro wasn't on the TV could come back older after the network helper restarted.  Now the newest change is always the one kept.
 

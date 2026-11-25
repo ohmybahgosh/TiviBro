@@ -764,6 +764,7 @@ function libraryRequest(kind, q, req, res, ALLOW, log) {
     if (kind === 'source') { if (q.action === 'remove' && activeScanControls[q.sourceId]) activeScanControls[q.sourceId].paused = true; return lib.source(q, answer); }
     if (kind === 'progress') return lib.progress(q, answer);
     if (kind === 'continue') return lib.continuing(answer);
+    if (kind === 'forget') return lib.forgetProgress(q, answer);       // Remove from Continue watching (a show)
     // Subtitle files beside an episode (service/sidecar.js): its file's folder on the source.
     if (kind === 'sidecar') return lib.file(q.handle, function (err, file) {
       if (err || !file || !q.source || q.source.id !== file.sourceId) return answer(null, { subs: [] });

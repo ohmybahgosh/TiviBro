@@ -1774,5 +1774,6 @@ I18n.add('fr', {
   "Hide language": "Masquer la langue",
   "Hide this language": "Masquer cette langue",
   "Hold OK  hide language": "Maintenir OK  masquer la langue",
-  "its {n} categories, and their titles leave All and Search too": ["sa {n} catégorie, et ses titres quittent aussi Tout et Recherche", "ses {n} catégories, et leurs titres quittent aussi Tout et Recherche"]
+  "its {n} categories, and their titles leave All and Search too": ["sa {n} catégorie, et ses titres quittent aussi Tout et Recherche", "ses {n} catégories, et leurs titres quittent aussi Tout et Recherche"],
+  "Removed from Continue watching": "Retiré de Reprendre la lecture"
 });

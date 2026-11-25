@@ -837,6 +837,25 @@ Catalog.prototype.progress = function (q, cb) {
     });
   }, cb);
 };
+/* Remove from Continue watching (rogerinho131, discussion #36): a show's progress is forgotten, every file of it,
+   so the row lets it go without marking anything watched.  Its watched marks stay as they are.  { show } -> { removed } */
+Catalog.prototype.forgetProgress = function (q, cb) {
+  var self = this, sid = q && String(q.show || '');
+  if (!sid) return cb(failure('Which show?', 'INVALID_REQUEST'));
+  self.serial(function (done) {
+    self.context(function (e, ctx) {
+      if (e) return done(e);
+      self.progressStore.load(function (loadError, doc) {
+        if (loadError) return done(loadError);
+        var removed = 0;
+        Object.keys(doc.p).forEach(function (k) { if (ctx.handles[doc.p[k].handle] === sid) { delete doc.p[k]; removed++; } });
+        if (!removed) return done(null, { removed: 0 });
+        self.progressStore.dirty = true;
+        self.progressStore.flush(function (fe) { done(fe || null, { removed: removed }); });
+      });
+    });
+  }, cb);
+};
 Catalog.prototype.continuing = function (cb) {
   var self = this;
   self.serial(function (done) {

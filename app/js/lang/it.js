@@ -2493,5 +2493,6 @@ I18n.add('it', {
   "Hide language": "Nascondi lingua",
   "Hide this language": "Nascondi questa lingua",
   "Hold OK  hide language": "Tieni premuto OK  nascondi lingua",
-  "its {n} categories, and their titles leave All and Search too": ["la sua {n} categoria, e i suoi titoli escono anche da Tutti e Cerca", "le sue {n} categorie, e i loro titoli escono anche da Tutti e Cerca"]
+  "its {n} categories, and their titles leave All and Search too": ["la sua {n} categoria, e i suoi titoli escono anche da Tutti e Cerca", "le sue {n} categorie, e i loro titoli escono anche da Tutti e Cerca"],
+  "Removed from Continue watching": "Rimosso da Continua a guardare"
 });

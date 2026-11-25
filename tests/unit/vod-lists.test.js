@@ -193,7 +193,8 @@ const SERIES = [{ series_id: 9, name: '[SE] Nocturne', cover: 'c.jpg', plot: 'p'
     T.done('e9', 250, 300);
     ok('a short clip: its last minute counts too', T.isWatched('e9'));
 
-    // Hold OK offers one of the two, never both.
+    // Hold OK: Mark as watched when it isn't, Mark unwatched when it is or is part-way through, and Remove from
+    // Continue watching when it's there (discussion #36).
     const menus = []; ctx.UI = { menu: (t, items) => menus.push(items.filter(Boolean).map(x => x.label)) };
     const labels = (it) => { menus.length = 0; T.itemMenu(it); return menus[0]; };
     E.resume = {}; E.watched = {};
@@ -202,7 +203,11 @@ const SERIES = [{ series_id: 9, name: '[SE] Nocturne', cover: 'c.jpg', plot: 'p'
     ok('watched: Mark unwatched', labels({ id: 31, name: 'B' }).indexOf('Mark unwatched') >= 0 && labels({ id: 31, name: 'B' }).indexOf('Mark as watched') < 0);
     E.resume.m31 = { pos: 300, dur: 7200, at: 1 };
     const both = labels({ id: 31, name: 'B' });
-    ok('watched and being watched again: only Mark as watched', both.indexOf('Mark as watched') >= 0 && both.indexOf('Mark unwatched') < 0, JSON.stringify(both));
+    ok('watched and being watched again: Mark as watched, Mark unwatched and Remove from Continue watching', both.indexOf('Mark as watched') >= 0 && both.indexOf('Mark unwatched') >= 0 && both.indexOf('Remove from Continue watching') >= 0, JSON.stringify(both));
+    E.resume.m32 = { pos: 300, dur: 7200, at: 1 };
+    const started = labels({ id: 32, name: 'C' });
+    ok('started, not watched: Mark unwatched (from the beginning next time) and Remove from Continue watching', started.indexOf('Mark unwatched') >= 0 && started.indexOf('Remove from Continue watching') >= 0, JSON.stringify(started));
+    ok('not started: no Remove from Continue watching', labels({ id: 30, name: 'A' }).indexOf('Remove from Continue watching') < 0);
     // On a show, Resume goes to the episode you're on (it used to try to play the show itself).
     const showMenu = () => T.withKind('series', () => labels({ id: 9, name: 'Nocturne' }));
     E.resume = { s9: { pos: 61, dur: 1e6, at: 1, ep: 'e42', l: 'S1 E2' }, e42: { pos: 600, dur: 1200, at: 1 } };

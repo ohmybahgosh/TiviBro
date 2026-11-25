@@ -347,6 +347,8 @@ var MediaSeries = (function () {
     request('detail',{kind:'show',handle:item.handle},function (r) {
       var options = r.buckets.map(function (bucket) { return {label:bucket.title || (r.order === 'aired' && (!r.displayOrder || r.displayOrder === 'aired') ? bucket.key === '0' ? 'Specials' : 'Season ' + bucket.key : bucket.key),sub:bucket.count + ' episodes',action:function () { page(r.title,{kind:'episode',show:r.handle,bucket:bucket.key,limit:60},showEpisode,function () { show(item,back); }); }}; });
       options.push({label:r.favourite ? 'Remove favourite' : 'Add favourite',action:function () { edit(r,'setFavourite',{favourite:!r.favourite},function () { show(item,back); }); }});
+      // From its Continue watching card: off the row without marking anything watched (rogerinho131, discussion #36).
+      if (item.continueEpisode) options.push({label:'Remove from Continue watching',action:function () { Media.request('library/forget',{show:r.handle},15000).then(function () { if (Media.refreshShows) Media.refreshShows(); U.toast(T('Removed from Continue watching')); if (back) back(); },function (e) { U.toast(e && e.message || 'That didn\'t work.',5000); }); }});
       markItems(r,null).forEach(function (o) { options.push({label:o.label,action:function () { o.action(function () { show(item,back); }); }}); });
       options.push({label:'Merge with another show',action:function(){mergeShow(r,function(){show(item,back);});}});
       options.push({label:'Preferred source for every show',action:function(){UI.menu('Preferred source for every show',MediaStore.sources().map(function(source){return {label:source.name,action:function(){MediaStore.sourcePreference(source.id);show(item,back);}};}),function(){show(item,back);});}});

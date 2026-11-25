@@ -2493,5 +2493,6 @@ I18n.add('pl', {
   "Hide language": "Ukryj język",
   "Hide this language": "Ukryj ten język",
   "Hold OK  hide language": "Przytrzymaj OK  ukryj język",
-  "its {n} categories, and their titles leave All and Search too": ["jego {n} kategoria, a jej tytuły znikną też z Wszystkie i Szukaj", "jego {n} kategorie, a ich tytuły znikną też z Wszystkie i Szukaj", "jego {n} kategorii, a ich tytuły znikną też z Wszystkie i Szukaj"]
+  "its {n} categories, and their titles leave All and Search too": ["jego {n} kategoria, a jej tytuły znikną też z Wszystkie i Szukaj", "jego {n} kategorie, a ich tytuły znikną też z Wszystkie i Szukaj", "jego {n} kategorii, a ich tytuły znikną też z Wszystkie i Szukaj"],
+  "Removed from Continue watching": "Usunięto z Kontynuuj oglądanie"
 });

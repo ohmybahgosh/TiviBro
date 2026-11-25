@@ -2493,5 +2493,6 @@ I18n.add('tr', {
   "Hide language": "Dili gizle",
   "Hide this language": "Bu dili gizle",
   "Hold OK  hide language": "OK'a basılı tut  dili gizle",
-  "its {n} categories, and their titles leave All and Search too": ["{n} kategorisi; başlıkları Tümü ve Arama'dan da çıkar", "{n} kategorisi; başlıkları Tümü ve Arama'dan da çıkar"]
+  "its {n} categories, and their titles leave All and Search too": ["{n} kategorisi; başlıkları Tümü ve Arama'dan da çıkar", "{n} kategorisi; başlıkları Tümü ve Arama'dan da çıkar"],
+  "Removed from Continue watching": "İzlemeye devam et listesinden kaldırıldı"
 });

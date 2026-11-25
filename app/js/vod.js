@@ -1233,9 +1233,12 @@ var Vod = (function () {
         if (mine) E().myList = l.filter(function (x) { return x !== k; }); else l.push(k);
         Store.saveEdits(); itemsVL.refresh(); homeChanged(); U.toast(mine ? 'Removed from My list' : 'Added to My list');
       } },
-      // On a show (no file of its own) it only takes the show off Continue watching, as before.
-      (playable ? r || !w : r) && { label: 'Mark as watched', action: function () { if (playable) mark(id, true); else { delete E().resume[id]; Store.saveEdits(); } relist(); } },
-      playable && w && !r && { label: 'Mark unwatched', action: function () { mark(id, false); relist(); } }
+      playable && (r || !w) && { label: 'Mark as watched', action: function () { mark(id, true); relist(); homeChanged(); } },
+      /* Off Continue watching without marking it watched (rogerinho131, discussion #36: a few titles started just to
+         look); on a show, the show's place.  And not watched, also for one part-way through: it starts from the
+         beginning next time, as Plex has. */
+      r && { label: 'Remove from Continue watching', action: function () { delete E().resume[id]; Store.saveEdits(); relist(); homeChanged(); U.toast(T('Removed from Continue watching')); } },
+      playable && (w || r) && { label: 'Mark unwatched', sub: r && !w ? 'Starts from the beginning next time' : '', action: function () { mark(id, false); relist(); homeChanged(); } }
     ]);
   }
 

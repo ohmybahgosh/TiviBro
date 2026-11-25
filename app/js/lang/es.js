@@ -2617,5 +2617,6 @@ I18n.add('es', {
   "Hide language": "Ocultar idioma",
   "Hide this language": "Ocultar este idioma",
   "Hold OK  hide language": "Mantén OK  ocultar idioma",
-  "its {n} categories, and their titles leave All and Search too": ["su {n} categoría, y sus títulos también salen de Todo y Buscar", "sus {n} categorías, y sus títulos también salen de Todo y Buscar"]
+  "its {n} categories, and their titles leave All and Search too": ["su {n} categoría, y sus títulos también salen de Todo y Buscar", "sus {n} categorías, y sus títulos también salen de Todo y Buscar"],
+  "Removed from Continue watching": "Quitado de Seguir viendo"
 });

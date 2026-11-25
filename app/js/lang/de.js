@@ -2496,5 +2496,6 @@ I18n.add('de', {
   "Hide language": "Sprache ausblenden",
   "Hide this language": "Diese Sprache ausblenden",
   "Hold OK  hide language": "OK halten  Sprache ausblenden",
-  "its {n} categories, and their titles leave All and Search too": ["ihre {n} Kategorie, und ihre Titel verschwinden auch aus Alle und Suche", "ihre {n} Kategorien, und ihre Titel verschwinden auch aus Alle und Suche"]
+  "its {n} categories, and their titles leave All and Search too": ["ihre {n} Kategorie, und ihre Titel verschwinden auch aus Alle und Suche", "ihre {n} Kategorien, und ihre Titel verschwinden auch aus Alle und Suche"],
+  "Removed from Continue watching": "Aus Weiterschauen entfernt"
 });

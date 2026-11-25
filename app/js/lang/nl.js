@@ -2493,5 +2493,6 @@ I18n.add('nl', {
   "Hide language": "Taal verbergen",
   "Hide this language": "Deze taal verbergen",
   "Hold OK  hide language": "Houd OK ingedrukt  taal verbergen",
-  "its {n} categories, and their titles leave All and Search too": ["de {n} categorie ervan, en de titels verdwijnen ook uit Alles en Zoeken", "de {n} categorieën ervan, en de titels verdwijnen ook uit Alles en Zoeken"]
+  "its {n} categories, and their titles leave All and Search too": ["de {n} categorie ervan, en de titels verdwijnen ook uit Alles en Zoeken", "de {n} categorieën ervan, en de titels verdwijnen ook uit Alles en Zoeken"],
+  "Removed from Continue watching": "Verwijderd uit Verder kijken"
 });

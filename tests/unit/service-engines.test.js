@@ -77,8 +77,21 @@ function child(dir) {
                         c.query({ kind: 'episode', show: shows.items[0].handle }, function (e10, after) {
                           if (e10) return fail('after correction', e10);
                           check('corrected file joined the show', after.total === 4 && after.items[0].watchState === 'watched');
-                          console.log('SMOKE OK ' + process.version);
-                          process.exit(0);
+                          // Remove from Continue watching (discussion #36): the show's progress forgotten, nothing marked watched.
+                          c.forgetProgress({ show: shows.items[0].handle }, function (ef, fr) {
+                            if (ef) return fail('forget', ef);
+                            check('remove from continue watching forgets the show\'s progress', fr.removed === 1);
+                            c.continuing(function (eg, cont2) {
+                              if (eg) return fail('continue after forget', eg);
+                              check('...it leaves the row', cont2.items.length === 0);
+                              c.detail({ kind: 'episode', handle: eps.items[1].handle }, function (eh, ep2) {
+                                if (eh) return fail('detail after forget', eh);
+                                check('...and its episode is not marked watched', ep2.watchState !== 'watched');
+                                console.log('SMOKE OK ' + process.version);
+                                process.exit(0);
+                              });
+                            });
+                          });
                         });
                       });
                     });
