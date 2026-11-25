@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 219, 2026-11-25)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 219
 
 - **Rewind buffer on a WebDAV share works.**  With a WebDAV share as the recording place, the rewind buffer failed at once and no live channel played (issue #180).  Its folder on the share is now made first.  And if the buffer ever fails, the channel plays straight from the provider and the buffer rests for 10 minutes, instead of trying again and again.
 - **Croatian, Serbian and Bosnian subtitles read right.**  Older OpenSubtitles files in the Central European code page no longer show æ for ć and è for č, whether the file arrives in that code page or already converted wrongly to UTF-8.  Serbian in Latin letters is read the same way.
@@ -8,11 +12,7 @@
 - **Up next shows whole again.**  After a long menu, Up next could open as a dark screen with only its heading and a strip of the show's page at the top, then play the next episode by itself.  It also no longer lets the show's page show through while it fades in, and its episode picture is loaded at 1280 pixels instead of 500, so it's sharp full screen.
 - **No reminder for an event channel's "Next:" block.**  A pay-per-view or sports pass channel that fills the hours before a game with "NHL 9 - Next: Wed 7:30 PM" no longer sets a My teams reminder at midnight, and one already set is dropped.  A listing longer than 8 hours is never taken for a game.
 
-## 0.6.0 (alpha 218, 2026-11-25)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 218
+### In alpha 218
 
 - **Movies and Shows by language folder** (issue #173).  Settings > Movies and shows > **Categories by language** (off unless you turn it on): when your provider's category names say the language, Movies and Shows open on a folder per language (Hindi, Tamil, English...), each with its categories.  Back leaves a folder.  Nothing more is loaded, so TVs with little memory handle it too.
 - **TheTVDB credited where its details show.**  On the phone app too (a tap opens thetvdb.com).  My media, movie pages, your provider's Movies and Shows, About this show, Movies on now and Recordings say "Metadata provided by TheTVDB · thetvdb.com" under details that came from TheTVDB, as its terms ask.
