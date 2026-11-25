@@ -1,14 +1,15 @@
 # Changelog
 
-## Unreleased
-
-- **Turning off the playlist in use keeps you where you went.**  When the next playlist takes over as you leave Settings, you stay on the screen you went to (Search, Movies, the guide) instead of being sent to the channel list.
-
-## 0.6.0 (alpha 219, 2026-11-25)
+## 0.6.0 (alpha 220, 2026-11-25)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 219
+### New in alpha 220
+
+- **Updates and backups checked for anything lost.**  Every release is now tested against saves and backups from older versions, so updating or restoring keeps your playlists, Favorites, watched marks, reminders and settings.
+- **Turning off the playlist in use keeps you where you went.**  When the next playlist takes over as you leave Settings, you stay on the screen you went to (Search, Movies, the guide) instead of being sent to the channel list.
+
+### In alpha 219
 
 - **Rewind buffer on a WebDAV share works.**  With a WebDAV share as the recording place, the rewind buffer failed at once and no live channel played (issue #180).  Its folder on the share is now made first.  And if the buffer ever fails, the channel plays straight from the provider and the buffer rests for 10 minutes, instead of trying again and again.
 - **Croatian, Serbian and Bosnian subtitles read right.**  Older OpenSubtitles files in the Central European code page no longer show æ for ć and è for č, whether the file arrives in that code page or already converted wrongly to UTF-8.  Serbian in Latin letters is read the same way.
