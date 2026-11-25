@@ -911,7 +911,7 @@ var Vod = (function () {
   }
   function tmdbOn() {
     tokenCheck();
-    // TMDB's with a token, else TheTVDB's (Details from TheTVDB, media.js metaWho).
+    // TMDB's or TheTVDB's, as Movies/Shows: details from say (media.js metaWho).
     var on = typeof MediaMoviePage !== 'undefined' && typeof MediaStore !== 'undefined' && typeof Media !== 'undefined' && !!Media.metaWho && !!Media.metaWho();
     // Said once in the log, so a report shows why a title has no trailer (discussion #36).
     if (!on && !saidNoToken) { saidNoToken = true; Log.info('vod', 'Trailers: no TMDB token and TheTVDB off, so only the provider\'s own trailers show'); }

@@ -15,8 +15,8 @@ var Series = (function () {
   var KEY = 'tvseries', VER = 4, KEEP = 30 * 86400e3, MAX_SHOWS = 3000, MAX_SEASONS = 200, MAX_LOW = { shows: 1200, seasons: 60 }, GAP = 350, QUEUE = 4;
   var shows = {}, seasons = {}, loaded = null, ready = false, queue = [], queued = {}, busy = false, saveT = null, listeners = [], paused = 0;
   function S() { return Store.settings; }
-  // On with a TMDB token, or without one when Series details from TheTVDB is on (media.js tvdbOn).
-  function on() { return S().guideSeries !== false && typeof MediaStore !== 'undefined' && (!!MediaStore.tmdbToken() || (typeof Media !== 'undefined' && !!Media.tvdbOn && Media.tvdbOn())); }
+  // On when someone answers questions about shows (media.js metaWho: Show details from, a TMDB token or TheTVDB).
+  function on() { return S().guideSeries !== false && typeof MediaStore !== 'undefined' && (typeof Media !== 'undefined' && Media.metaWho ? !!Media.metaWho('show') : !!MediaStore.tmdbToken()); }
   function norm(t) { return String(t || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, ''); }
 
   /* The show's own name from what providers and guides put around it:

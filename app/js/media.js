@@ -1141,25 +1141,41 @@ var Media = (function () {
     ]);
   }
   function metadataRequest(q, language) {
-    if (!metaWho()) return Promise.reject(new Error('Add your TMDB token in Settings > My media first.'));
-    metaAuth(q);
+    var kind = q.kind === 'tv' ? 'show' : 'movie';
+    if (!metaWho(kind)) return Promise.reject(new Error('Add your TMDB token in Settings > My media first.'));
+    metaAuth(q, kind);
     q.language = language || MediaStore.preferences().language;
     return ask('metadata', q, 25000).then(function (r) { if (r.error) throw new Error(r.message); return r; });
   }
   // A guide programme that may be a movie (movies.js): { metadata } or { miss }.
   // description: the guide's, which tells apart films of one name when there's no year (media-metadata.js).
   function guideLookup(title, year, strength, description) {
-    if (!metaWho()) return Promise.reject(new Error('No TMDB token'));
+    if (!metaWho('movie')) return Promise.reject(new Error('No TMDB token'));
     return ask('metadata', metaAuth({ guide: strength || 'weak', title: title, year: year || '', description: String(description || '').slice(0, 1500), language: MediaStore.preferences().language }), 25000)
       .then(function (r) { if (r.error) throw new Error(r.message); return r; });
   }
-  /* Details from TheTVDB (Settings > Movies and shows), for viewers without a TMDB token: the helper asks TiviBro's
-     metadata relay (service/tvdb.js), with no key on the TV.  A TMDB token, when there is one, comes first.
-     metaWho(): who answers questions about titles now ('tmdb', 'tvdb' or '' for nobody); metaAuth(q): q marked for
-     them (the token, or source 'tvdb').  A question about a title matched on TheTVDB ('tvdb:...') goes there anyway. */
-  function tvdbOn() { return typeof Store !== 'undefined' && !!Store.settings && Store.settings.seriesTvdb !== false; }
-  function metaWho() { return MediaStore.tmdbToken && MediaStore.tmdbToken() ? 'tmdb' : tvdbOn() ? 'tvdb' : ''; }
-  function metaAuth(q) { var t = MediaStore.tmdbToken(); if (t) q.credential = t; else if (tvdbOn()) q.source = 'tvdb'; return q; }
+  /* Where details come from, per kind (Settings > Movies and shows > Movie details from, Show details from), like
+     Plex's agents: 'auto' TMDB with a token, else TheTVDB; 'tvdb' TheTVDB always (through TiviBro's metadata relay,
+     service/tvdb.js: no key on the TV); 'tmdb' TMDB only.  Before these settings, the switch Details from TheTVDB
+     (seriesTvdb false) meant TMDB only for both.
+     metaWho(kind): who answers questions about movies or shows now ('tmdb', 'tvdb' or '' for nobody; no kind: anyone
+     for either); metaAuth(q, kind): q marked for them (the token, or source 'tvdb').  A question about a title already
+     matched on TheTVDB ('tvdb:...') goes there whatever is chosen. */
+  function metaPref(kind) {
+    var s = typeof Store !== 'undefined' && Store.settings || {}, v = kind === 'show' ? s.metaShows : s.metaMovies;
+    return v === 'tvdb' || v === 'tmdb' || v === 'auto' ? v : s.seriesTvdb === false ? 'tmdb' : 'auto';
+  }
+  function tvdbOn(kind) { return metaPref(kind || 'show') !== 'tmdb'; }
+  function metaWho(kind) {
+    if (!kind) return metaWho('movie') || metaWho('show');
+    var p = metaPref(kind), token = !!(MediaStore.tmdbToken && MediaStore.tmdbToken());
+    return p === 'tvdb' ? 'tvdb' : token ? 'tmdb' : p === 'auto' ? 'tvdb' : '';
+  }
+  function metaAuth(q, kind) {
+    var who = metaWho(kind || (q.kind === 'tv' ? 'show' : 'movie'));
+    if (who === 'tmdb') q.credential = MediaStore.tmdbToken(); else if (who === 'tvdb') q.source = 'tvdb';
+    return q;
+  }
   /* A My media show's ids, from its card: { tmdb, tvdb, imdb } (each '' when not known).  A show matched on TheTVDB
      brings its TMDB and IMDb links (service/tvdb.js), for subtitles and skip times by id. */
   function showIds(h) {
@@ -1174,10 +1190,8 @@ var Media = (function () {
   }
   // A TV series by name, for the guide and the Shows screen (series.js): { metadata } (the show) or { miss }.
   function tvByName(title, year, strength, country) {
-    var token = MediaStore.tmdbToken(), q = { kind: 'tv', guide: strength || 'weak', title: title, year: year || '', country: country || '', language: MediaStore.preferences().language };
-    if (token) q.credential = token;
-    else if (tvdbOn()) q.source = 'tvdb';
-    else return Promise.reject(new Error('No TMDB token'));
+    if (!metaWho('show')) return Promise.reject(new Error('No TMDB token'));
+    var q = metaAuth({ kind: 'tv', guide: strength || 'weak', title: title, year: year || '', country: country || '', language: MediaStore.preferences().language }, 'show');
     return ask('metadata', q, 25000).then(function (r) { if (r.error) throw new Error(r.message); return r; });
   }
   // One season of a show TMDB knows ('tmdb:tv:1399') or TheTVDB does ('tvdb:372264'): { metadata: { episodes: [...] } }.
@@ -1189,7 +1203,7 @@ var Media = (function () {
   function movieById(id) {
     var tvdb = /^tvdb:/.test(String(id || ''));
     if (!tvdb && !MediaStore.tmdbToken()) return Promise.reject(new Error('No TMDB token'));
-    return ask('metadata', tvdb ? { id: id, language: MediaStore.preferences().language } : metaAuth({ id: id, language: MediaStore.preferences().language }), 25000).then(function (r) { if (r.error) throw new Error(r.message); return r; });
+    return ask('metadata', tvdb ? { id: id, language: MediaStore.preferences().language } : metaAuth({ id: id, language: MediaStore.preferences().language }, 'movie'), 25000).then(function (r) { if (r.error) throw new Error(r.message); return r; });
   }
   var tokenVersion = 0;
   function setTmdbToken(value) {
@@ -1197,16 +1211,26 @@ var Media = (function () {
     value = String(value || '').trim();
     if (!value) { MediaStore.setTmdbToken(''); refresh(); if (typeof Movies !== 'undefined') Movies.poke(); if (typeof Series !== 'undefined') Series.poke(); return Promise.resolve(MediaStore.preferences()); }
     if (!/^[A-Za-z0-9._-]{24,2048}$/.test(value)) return Promise.reject(new Error('Enter a valid TMDB API key or API Read Access Token.'));
-    var was = metaWho();
+    var was = { movie: metaWho('movie'), show: metaWho('show') };
     return ask('metadata', { credential: value, check: true }, 15000).then(function (r) {
       if (version !== tokenVersion) throw new Error('TMDB setup changed while this token was being checked.');
       if (r.error || !r.ok) throw new Error(r.message || 'TMDB did not accept that token.');
       MediaStore.setTmdbToken(value);
       /* From TheTVDB to TMDB: the guide's series and movies are looked up again (TMDB first), and My media's
          TheTVDB matches move to TMDB by the TMDB link TheTVDB gave them (autoSoon: needsDetails, MediaSeries). */
-      if (was === 'tvdb') { if (typeof Series !== 'undefined' && Series.reset) Series.reset(); if (typeof Movies !== 'undefined' && Movies.reset) Movies.reset(); }
+      sourcesChanged(was);
       refresh(); autoSoon(); if (typeof Movies !== 'undefined') Movies.poke(); if (typeof Series !== 'undefined') Series.poke(); return MediaStore.preferences();
     });
+  }
+  /* Who answers changed for movies or shows (a token added or removed, Movie details from / Show details from): the
+     guide's answers for that kind are looked up again, and My media's matches move to the new source on their own
+     (needsDetails for movies, MediaSeries for shows).  was: { movie, show } before the change. */
+  function sourcesChanged(was) {
+    if (was.show !== metaWho('show') && typeof Series !== 'undefined' && Series.reset) Series.reset();
+    if (was.movie !== metaWho('movie') && typeof Movies !== 'undefined' && Movies.reset) Movies.reset();
+    if (typeof Movies !== 'undefined' && Movies.poke) Movies.poke();
+    if (typeof Series !== 'undefined' && Series.poke) Series.poke();
+    autoSoon();
   }
   // Settings > My media > Test TMDB token, and the web editor: is the saved token still accepted?
   function testTmdbToken() {
@@ -1227,7 +1251,7 @@ var Media = (function () {
   function includeMovie(m) { MediaStore.setExcluded(m.id, false); refresh(); U.toast(T('Back in My media: {x}', { x: RAW(m.title || m.file || '') })); }
   function findDetails(m) {
     if (needToken()) return;
-    UI.confirm(metaWho() === 'tvdb' ? T('Search TheTVDB for movie details?  The movie title is sent to TheTVDB through TiviBro\'s service.  Images load from artworks.thetvdb.com.')
+    UI.confirm(metaWho('movie') === 'tvdb' ? T('Search TheTVDB for movie details?  The movie title is sent to TheTVDB through TiviBro\'s service.  Images load from artworks.thetvdb.com.')
       : T('Search TMDB for movie details?  The movie title is sent to TMDB using your saved token.  Images load from image.tmdb.org.'), 'Search', function () {
       UI.prompt('Movie title', m.title, function (title) {
         U.toast('Looking for movie details…');
@@ -1278,9 +1302,11 @@ var Media = (function () {
         setBusy('movies', list.length - at + 1);
         var id = m.metadata && m.metadata.id;
         var q = id && /^(tmdb:[1-9][0-9]*|tt[0-9]+)$/.test(id) ? { id: id } : namedIn(m);
-        // Matched on TheTVDB before the TMDB token: TMDB by the link TheTVDB gave, else by name; TheTVDB's id stays otherwise.
-        if (/^tvdb:/.test(id || '') && MediaStore.tmdbToken()) q = /^[1-9][0-9]*$/.test(m.metadata.tmdb || '') ? { id: 'tmdb:' + m.metadata.tmdb } : namedIn(m);
+        // Matched by the other source than the one chosen now: TMDB by the link TheTVDB gave, else by name either way.
+        var want = metaWho('movie');
+        if (/^tvdb:/.test(id || '') && want === 'tmdb') q = /^[1-9][0-9]*$/.test(m.metadata.tmdb || '') ? { id: 'tmdb:' + m.metadata.tmdb } : namedIn(m);
         else if (/^tvdb:/.test(id || '')) q = { id: id };
+        else if (/^tmdb:/.test(id || '') && want === 'tvdb') q = namedIn(m);
         metadataRequest(q, language).then(function (r) {
           if (r.metadata) {
             var current = MediaStore.movies(m.src).filter(function (x) { return x.id === m.id; })[0];
@@ -1341,7 +1367,7 @@ var Media = (function () {
     if (needToken()) return;
     var k = detailsKind(s);
     if (fetchingDetails && k !== 'shows') return U.toast('Movie details are already being fetched.');
-    var tvdb = metaWho() === 'tvdb';
+    var tvdb = metaWho(k === 'shows' ? 'show' : 'movie') === 'tvdb';
     UI.confirm(k === 'shows' ? (tvdb ? T('Fetch show details from TheTVDB?  Show names and years or saved show IDs are sent to TheTVDB through TiviBro\'s service.  Images load from artworks.thetvdb.com.  Your source logins are never sent.')
       : T('Fetch show details from TMDB?  Show names and years or saved show IDs are sent to TMDB.  Images load from image.tmdb.org.  Your source logins are never sent.'))
       : tvdb ? T('Fetch movie details from TheTVDB?  Titles and years or saved movie IDs are sent to TheTVDB through TiviBro\'s service.  Images load from artworks.thetvdb.com.  Your source logins are never sent.')
@@ -1358,14 +1384,16 @@ var Media = (function () {
     // (missV 3: missed by the matcher of alpha 145, which also reads TMDB's year filter right; older misses try again)
     if (m.tmdbMiss && m.missV >= 3 && now - m.tmdbMiss < WEEK) return false;
     // Details from before collections, directors and plain backdrops (v 2) are fetched again by their ID.
-    // A TheTVDB match, once there's a TMDB token: moved to TMDB (by its TMDB link when it has one).
-    if (m.metadata && m.metadata.provider === 'TheTVDB' && MediaStore.tmdbToken()) return true;
+    // Matched by the other source than the one chosen now (Movie details from): moved, once a week at most on a miss.
+    var want = metaWho('movie'), prov = m.metadata && m.metadata.provider;
+    if ((prov === 'TheTVDB' && want === 'tmdb') || (prov === 'TMDB' && want === 'tvdb')) return !(m.tmdbMiss && now - m.tmdbMiss < WEEK);
     return !m.metadata || (!m.metadata.poster && m.metadata.provider !== 'TMDB') || (m.metadata.provider === 'TMDB' && /^tmdb:[0-9]+$/.test(m.metadata.id || '') && (m.metadata.v || 1) < 2);
   }
   function autoDetails() {
     if (!metaWho() || fetchingDetails || scanningAll || Object.keys(scanning).length || !MediaStore.sources().length) return Promise.resolve({ skipped: true });
     return MediaStore.load().then(function () {
-      var now = Date.now(), list = MediaStore.movies(null).filter(function (m) { return needsDetails(m, now); });
+      // Movies only when someone answers for them (Movies: details from); shows go on by their own choice (showDetails).
+      var now = Date.now(), list = metaWho('movie') ? MediaStore.movies(null).filter(function (m) { return needsDetails(m, now); }) : [];
       if (!list.length) return { updated: 0 };
       note('info', 'Looking up details for ' + list.length + ' movie(s) on their own');
       return fetchDetails(list, MediaStore.preferences().language, true);
@@ -1724,7 +1752,7 @@ var Media = (function () {
       { label: MediaStore.isFavorite(m.id) ? 'Remove from Favorites' : 'Add to Favorites', action: function () { MediaStore.toggleFavorite(m.id); refresh(); } },
       r && { label: 'Resume', sub: RT(Math.max(1, Math.floor(r.pos / 60))), action: function () { play(m, false); } },
       { label: r ? 'Play from beginning' : 'Play', action: function () { play(m, true); } },
-      { label: m.metadata ? 'Change movie details' : 'Find movie details', sub: metaWho() === 'tvdb' ? T('Search TheTVDB and choose the correct match') : T('Search TMDB and choose the correct match'), action: function () { findDetails(m); } },
+      { label: m.metadata ? 'Change movie details' : 'Find movie details', sub: metaWho('movie') === 'tvdb' ? T('Search TheTVDB and choose the correct match') : T('Search TMDB and choose the correct match'), action: function () { findDetails(m); } },
       m.metadata && { label: 'Remove movie details', action: function () { MediaStore.setMetadata(m.id, null); refresh(); } },
       { label:'TV shows',action:function () { MediaSeries.open(); } },
       reviewCards.length > 0 && { label:'Needs review',action:function () { MediaSeries.review(); } },
@@ -1927,9 +1955,9 @@ var Media = (function () {
     quickMarkMovie: quickMarkMovie, movieCard: movieCard,
     reviewCount: function () { return reviewCards.length; },      // how many need a look (the show options offer Needs review)
     refreshShows:refreshSeries, playNow: function (m) { playNow(m); }, foundText: foundText, discover: discover, addServer: addServer, sourceDetailsNow: sourceDetailsNow, isScanning: function (id) { return !!scanning[id]; }, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); visitEnd(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress, addDropbox: addDropbox, dropboxFolders: dropboxFolders, addGdrive: addGdrive, gdrivePlaces: gdrivePlaces, addSmb: addSmb, smbDiscover: smbDiscover, smbSaved: smbSaved, smbLoginOf: smbLoginOf, setLogin: setLogin, changeLogin: changeLogin, smbShares: smbShares, smbFolders: smbFolders, smbAddress: smbAddress, gdriveFolders: gdriveFolders, gdriveKey: gdriveKey, signOut: signOut,
-    rescanAll: rescanAll, newMedia: newMedia, newMediaSoon: newMediaSoon, guideLookup: guideLookup, movieById: movieById, tvByName: tvByName, tvSeason: tvSeason, tvdbOn: tvdbOn, metaWho: metaWho, metaAuth: metaAuth, idsOfMeta: idsOfMeta, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, libraryStats: libraryStats, removeLibrary: removeLibrary,
+    rescanAll: rescanAll, newMedia: newMedia, newMediaSoon: newMediaSoon, guideLookup: guideLookup, movieById: movieById, tvByName: tvByName, tvSeason: tvSeason, tvdbOn: tvdbOn, metaWho: metaWho, metaAuth: metaAuth, metaPref: metaPref, sourcesChanged: sourcesChanged, idsOfMeta: idsOfMeta, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, libraryStats: libraryStats, removeLibrary: removeLibrary,
     // The web editor's Fix match: search TMDB by a typed title, then save the one picked.
-    searchDetails: function (title) { if (!metaWho()) return Promise.reject(new Error('Add a TMDB API token first.')); return metadataRequest({ title: String(title || '').slice(0, 200) }).then(function (r) { return (r.matches || []).slice(0, 10).map(function (x) { return { id: x.id, title: x.title, year: x.year || '' }; }); }); },
+    searchDetails: function (title) { if (!metaWho('movie')) return Promise.reject(new Error('Add a TMDB API token first.')); return metadataRequest({ title: String(title || '').slice(0, 200) }).then(function (r) { return (r.matches || []).slice(0, 10).map(function (x) { return { id: x.id, title: x.title, year: x.year || '' }; }); }); },
     applyDetails: function (movieId, tmdbId) { return metadataRequest({ id: tmdbId }).then(function (r) { if (!r.metadata) throw new Error('TMDB has no details for that.'); return MediaStore.setMetadata(movieId, r.metadata); }).then(function () { refresh(); }); }, findDetails: findDetails, excludeMovie: excludeMovie, includeMovie: includeMovie, libraryDetails: function (id) { var s = MediaStore.source(id); if (s) sourceDetails(s); }, lookUpWaiting: function (id) { if (needToken()) return; if (fetchingDetails) return U.toast('Movie details are already being fetched.'); MediaStore.load().then(function () { var list = MediaStore.movies(id).filter(function (m) { return !(m.metadata && m.metadata.id) && !m.tmdbMiss; }); if (!list.length) return U.toast('Every movie here has been looked up.', 4000); return fetchDetails(list, MediaStore.preferences().language); }).catch(function (e) { U.toast(why(e), 6000); }); }, detailsLabel: detailsLabel, arrangeShelves: function (sec) { arrangeMenu(null, sec || 'home'); }, bothKinds: function () { var h = has(); return !!(h.movies && h.shows); }, busyText: busyText, setBusy: setBusy,
     // The web editor's shelf list: with movies and shows, each shelf says which tab it's on (Continue watching: Home).
     shelfList: function () { var ar = arrangement(), h = has(), both = h.movies && h.shows; return ar.order.filter(function (k) { return fits(k, h); }).map(function (k) { return { key: k, name: NAMES[k], off: ar.off(k), section: !both ? '' : traktOf(k) ? traktOf(k).tab : k === 'continue' || inSection(k, 'home') ? 'home' : TV_ONLY[k] ? 'shows' : 'movies' }; }); }, holidaysNow: holidaysNow, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,

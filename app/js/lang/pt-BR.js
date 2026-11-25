@@ -3105,5 +3105,14 @@ I18n.add('pt-BR', {
   "Search TheTVDB for this show?  Its title is sent to TheTVDB through TiviBro's service.": "Buscar esta série no TheTVDB?  O título dela é enviado ao TheTVDB pelo serviço do TiviBro.",
   "Without a TMDB token, movies and shows still get their posters, details, trailers and skip times: from TheTVDB, through TiviBro's own service, with no token or account.  In the guide, Movies on now, Movies and Shows, My media and Up next.  Only titles leave the TV.  A TMDB token, when you add one, comes first.  Metadata provided by TheTVDB (thetvdb.com).": "Sem um token do TMDB, filmes e séries ainda recebem pôsteres, detalhes, trailers e tempos de pular: do TheTVDB, pelo serviço do próprio TiviBro, sem token nem conta.  No guia, em Filmes agora, Filmes e Séries, Minhas mídias e A seguir.  Só os títulos saem da TV.  Um token do TMDB, quando você adiciona um, tem prioridade.  Metadados fornecidos pelo TheTVDB (thetvdb.com).",
   "You have {x}; the fix is in {y}.": "Você tem {x}; a correção está na {y}.",
-  "The log goes too, with logins and server names taken out.": "O registro também vai, sem logins nem nomes de servidor."
+  "The log goes too, with logins and server names taken out.": "O registro também vai, sem logins nem nomes de servidor.",
+  "A group of the movies on now, most left first, then the ones starting within the hour.  Needs a TMDB token, or TheTVDB under Movies: details from (Settings > Movies and shows).": "Um grupo com os filmes que estão passando agora, os que têm menos tempo restante primeiro, depois os que começam dentro de uma hora.  Precisa de um token do TMDB, ou do TheTVDB em Filmes: detalhes de (Configurações > Filmes e séries).",
+  "Movies: details from": "Filmes: detalhes de",
+  "Posters, details, episodes, trailers and skip times for shows: in the guide, your provider's Shows, My media and Up next.  TMDB needs your token.  TheTVDB needs nothing: it comes through TiviBro's own service, and only titles leave the TV.  Metadata provided by TheTVDB (thetvdb.com).": "Pôsteres, detalhes, episódios, trailers e tempos para pular de séries: no guia, em Séries do seu provedor, Minhas mídias e A seguir.  O TMDB precisa do seu token.  O TheTVDB não precisa de nada: ele vem pelo serviço do próprio TiviBro, e só os títulos saem da TV.  Metadados fornecidos pelo TheTVDB (thetvdb.com).",
+  "Posters, details, trailers and skip times for movies: in the guide (Movies on now), your provider's Movies and My media.  TMDB needs your token.  TheTVDB needs nothing: it comes through TiviBro's own service, and only titles leave the TV.  Metadata provided by TheTVDB (thetvdb.com).": "Pôsteres, detalhes, trailers e tempos para pular de filmes: no guia (Filmes no ar agora), em Filmes do seu provedor e Minhas mídias.  O TMDB precisa do seu token.  O TheTVDB não precisa de nada: ele vem pelo serviço do próprio TiviBro, e só os títulos saem da TV.  Metadados fornecidos pelo TheTVDB (thetvdb.com).",
+  "Shows: details from": "Séries: detalhes de",
+  "TMDB only": "Somente TMDB",
+  "TMDB, else TheTVDB": "TMDB, senão TheTVDB",
+  "TheTVDB": "TheTVDB",
+  "Where details come from": "De onde vêm os detalhes"
 });

@@ -531,7 +531,9 @@ A show is looked up when you land on it, not ahead of time, and only by its name
 
 ### No TMDB token? TheTVDB
 
-Without a TMDB token, movies and shows still get their posters, details, trailers and skip times, from TheTVDB through TiviBro's own service (Settings > Movies and shows > **Details from TheTVDB**, on by default).  There's nothing to set up: no token, no account.
+Without a TMDB token, movies and shows still get their posters, details, trailers and skip times, from TheTVDB through TiviBro's own service.  There's nothing to set up: no token, no account.
+
+**Where details come from** (Settings > Movies and shows), like Plex's agents, for movies and for shows on their own: **TMDB, else TheTVDB** (the default: TMDB with your token, TheTVDB without one), **TheTVDB** (always, token or not) or **TMDB only**.  Change one and the guide and My media move to it on their own; a title the new source doesn't have keeps what it had.
 
 - **The guide:** series details, each episode's title and summary, and **Movies on now**.
 - **Movies and Shows:** what your provider leaves out of a show, and trailers.
@@ -539,7 +541,7 @@ Without a TMDB token, movies and shows still get their posters, details, trailer
 - **Up next:** the show's logo art and the next episode's picture and summary.
 - **Skip intro and credits:** TheIntroDB and IntroDB find the times by TheTVDB's and IMDb's ids, so they work without a token too.
 
-Only titles (and a year, your language and the channel's country) leave the TV; TiviBro's service holds TheTVDB's key, so there's none on the TV.  TheTVDB has no ratings, so those are left out.  A TMDB token, when you add one, comes first: what was matched on TheTVDB moves to TMDB on its own (by the TMDB link TheTVDB gave, else by name).  TMDB-only extras stay with the token: the Trending and Popular shelves, and episode orders (TMDB's episode groups).  Metadata provided by [TheTVDB](https://thetvdb.com).
+Only titles (and a year, your language and the channel's country) leave the TV; TiviBro's service holds TheTVDB's key, so there's none on the TV.  TheTVDB has no ratings, so those are left out.  With the default, a TMDB token, when you add one, comes first: what was matched on TheTVDB moves to TMDB on its own (by the TMDB link TheTVDB gave, else by name).  TMDB-only extras stay with the token: the Trending and Popular shelves, and episode orders (TMDB's episode groups).  Metadata provided by [TheTVDB](https://thetvdb.com).
 
 ### My media
 
@@ -1030,7 +1032,7 @@ Which groups show, in what order, the special groups (Recent, Favorites, My team
 | **Recent channels kept** *(Groups in the list)* | 10 · **20** · 30 · 50 | How many channels Recent remembers. |
 | **Show Favorites group** *(Groups in the list)* | **On** · Off | The Favorites group. |
 | **My teams ›** | | The teams you follow, for the [My teams](#my-teams) group: **Show the My teams group** (**On**), **Games starting within** (3 · **6** · 12 · 24 hours), **Remind me before their games** (**Off**), and a page for each league in your playlist to pick teams. |
-| **Show Movies on now** *(Groups in the list)* | **On** · Off | The [Movies on now](#movies-on-now) group.  Needs a TMDB token (Settings > API keys), or **Details from TheTVDB**. |
+| **Show Movies on now** *(Groups in the list)* | **On** · Off | The [Movies on now](#movies-on-now) group.  Needs a TMDB token (Settings > API keys), or TheTVDB under **Movies: details from**. |
 | **Event channels ›** | **On** · Off | Pay-per-view and league pass channels whose names carry the game and its time, read into the guide (below). |
 | **Show Events by time** *(Groups in the list)* | **On** · Off | With event channels on: the group of events on now or starting in the next two weeks.  The same switch as **Events by time** in Event channels; brings the group back after **Turn off Events by time** in its menu. |
 | **Recently added channels** *(Groups in the list)* | Off · 3 days · **7 days** · 14 days | A **Recently added** group with the channels that are new in your playlist since it last loaded, newest first, and a **NEW** tag in the lists. |
@@ -1232,7 +1234,8 @@ The Movies and Shows screens, and the TMDB details for them and the guide.
 | **Hide spoilers** | On · **Off** | In the guide, new episodes and episodes or movies that haven't aired yet (not news or sport), and on the Shows screen, episodes you haven't started, keep only their title, season and episode, and when they air: no summary, episode title or picture from the episode. |
 | **Movie details from TMDB** | **On** · Off | Under **Details from TMDB**.  With a TMDB token: posters and details for movies in the guide, the **Movie** tag, the [Movies on now](#movies-on-now) group and the Movies on now screen.  Only programme titles go to TMDB. |
 | **Series details from TMDB** | **On** · Off | Under **Details from TMDB**.  With a TMDB token: a series' poster, network, genres and rating in the guide, each episode's own title and summary when the guide gives its season and episode, and what your provider leaves out on the Shows screen ([TV series from TMDB](#tv-series-from-tmdb)).  Only a show's name and episode numbers go to TMDB. |
-| **Details from TheTVDB** | **On** · Off | Under **Details from TMDB**.  Without a TMDB token, movies and shows still get posters, details, trailers and skip times from TheTVDB through TiviBro's own service: no token or account.  In the guide, Movies on now, Movies and Shows, My media and Up next.  Only titles leave the TV.  A TMDB token, when you add one, comes first.  See [No TMDB token?](#no-tmdb-token-thetvdb) |
+| **Movies: details from** | **TMDB, else TheTVDB** · TheTVDB · TMDB only | Under **Where details come from**.  Where movies get their posters, details, trailers and skip times: the guide (Movies on now), your provider's Movies and My media.  TMDB needs your token; TheTVDB needs nothing (TiviBro's own service, only titles leave the TV).  See [No TMDB token?](#no-tmdb-token-thetvdb) |
+| **Shows: details from** | **TMDB, else TheTVDB** · TheTVDB · TMDB only | The same for shows: the guide, your provider's Shows, My media and Up next. |
 | **TMDB API token ›** | | Under **Details from TMDB**.  Opens [API keys](#settings-api-keys), where the token is added, tested or removed. |
 
 ### Settings: My media

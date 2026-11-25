@@ -2472,5 +2472,14 @@ I18n.add('nl', {
   "Search TheTVDB for this show?  Its title is sent to TheTVDB through TiviBro's service.": "TheTVDB doorzoeken naar deze serie?  De titel wordt via de service van TiviBro naar TheTVDB gestuurd.",
   "Without a TMDB token, movies and shows still get their posters, details, trailers and skip times: from TheTVDB, through TiviBro's own service, with no token or account.  In the guide, Movies on now, Movies and Shows, My media and Up next.  Only titles leave the TV.  A TMDB token, when you add one, comes first.  Metadata provided by TheTVDB (thetvdb.com).": "Ook zonder TMDB-token krijgen films en series hun posters, details, trailers en overslaantijden: van TheTVDB, via de eigen service van TiviBro, zonder token of account.  Dit werkt in de Gids, Films nu, Films en Series, Mijn media en Hierna.  Alleen titels verlaten de tv.  Een TMDB-token, als je er een toevoegt, gaat voor.  Metadata geleverd door TheTVDB (thetvdb.com).",
   "You have {x}; the fix is in {y}.": "Je hebt {x}; de oplossing zit in {y}.",
-  "The log goes too, with logins and server names taken out.": "Het logboek gaat mee, zonder inloggegevens en servernamen."
+  "The log goes too, with logins and server names taken out.": "Het logboek gaat mee, zonder inloggegevens en servernamen.",
+  "A group of the movies on now, most left first, then the ones starting within the hour.  Needs a TMDB token, or TheTVDB under Movies: details from (Settings > Movies and shows).": "Een groep met de films die nu lopen, eerst die waarvan het meeste nog te zien is, daarna die binnen een uur beginnen.  Vereist een TMDB-token, of TheTVDB onder Films: details van (Instellingen > Films en series).",
+  "Movies: details from": "Films: details van",
+  "Posters, details, episodes, trailers and skip times for shows: in the guide, your provider's Shows, My media and Up next.  TMDB needs your token.  TheTVDB needs nothing: it comes through TiviBro's own service, and only titles leave the TV.  Metadata provided by TheTVDB (thetvdb.com).": "Posters, details, afleveringen, trailers en overslaantijden voor series: in de gids, bij Series van je provider, Mijn media en Hierna.  TMDB heeft je token nodig.  TheTVDB heeft niets nodig: het loopt via de eigen service van TiviBro en alleen titels verlaten de tv.  Metadata geleverd door TheTVDB (thetvdb.com).",
+  "Posters, details, trailers and skip times for movies: in the guide (Movies on now), your provider's Movies and My media.  TMDB needs your token.  TheTVDB needs nothing: it comes through TiviBro's own service, and only titles leave the TV.  Metadata provided by TheTVDB (thetvdb.com).": "Posters, details, trailers en overslaantijden voor films: in de gids (Films die nu lopen), bij Films van je provider en Mijn media.  TMDB heeft je token nodig.  TheTVDB heeft niets nodig: het loopt via de eigen service van TiviBro en alleen titels verlaten de tv.  Metadata geleverd door TheTVDB (thetvdb.com).",
+  "Shows: details from": "Series: details van",
+  "TMDB only": "Alleen TMDB",
+  "TMDB, else TheTVDB": "TMDB, anders TheTVDB",
+  "TheTVDB": "TheTVDB",
+  "Where details come from": "Waar details vandaan komen"
 });

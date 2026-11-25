@@ -168,7 +168,7 @@ var Skipper = (function () {
       if (id) return { kind: 'movie', tmdb: id };
       // No TMDB id from the provider: the movie by its name (Movies on now's lookup: TMDB with a token, else TheTVDB).
       var c = typeof Movies !== 'undefined' && Movies.clean ? Movies.clean(String(it.name || '')) : { t: it.name, y: '' };
-      if (!c.t || !Media.guideLookup || !Media.metaWho || !Media.metaWho()) return null;
+      if (!c.t || !Media.guideLookup || !Media.metaWho || !Media.metaWho('movie')) return null;
       return Media.guideLookup(c.t, it.year || c.y, 'strong').then(function (r) { return r && r.metadata ? pick('movie', of(r.metadata)) : null; }, function () { return null; });
     });
     return Promise.resolve(null);

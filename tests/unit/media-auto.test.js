@@ -13,7 +13,7 @@ const movies = [
   { id: 'g', src: 's', title: 'Old Miss', tmdbMiss: now - 86400e3 }                                                // missed by the older matcher: tried again
 ];
 const notices = [];
-const c = { Promise, setTimeout, clearTimeout, Date, Net: { port: 1, ctlHeaders: h => h, ctlFetch: (u, i) => c.fetch(u, i) }, U: { toast: s => notices.push(s) },
+const c = { Store: { settings: {} }, Promise, setTimeout, clearTimeout, Date, Net: { port: 1, ctlHeaders: h => h, ctlFetch: (u, i) => c.fetch(u, i) }, U: { toast: s => notices.push(s) },
   MediaStore: { tmdbToken: () => token, sources: () => [{ id: 's' }], load: () => Promise.resolve(), movies: () => movies, source: () => ({ id: 's' }), preferences: () => ({ language: 'en' }),
     setMetadata: (id, m) => { movies.find(x => x.id === id).metadata = m; return Promise.resolve(); },
     markMissed: (id) => { const x = movies.find(x => x.id === id); x.tmdbMiss = Date.now(); x.missV = 3; return Promise.resolve(); } },
@@ -34,8 +34,11 @@ vm.createContext(c); vm.runInContext(fs.readFileSync('app/js/media.js', 'utf8'),
   assert(notices.some(s => /added for 4 movies/.test(s)), 'one word at the end: ' + notices.join(' | '));
   requests = []; await c.Media.autoDetails();
   assert.equal(requests.length, 0, 'nothing left to look up: ' + JSON.stringify(requests));
-  token = ''; requests = []; const r2 = await c.Media.autoDetails();
-  assert(r2.skipped && !requests.length, 'no token: nothing sent');
+  token = ''; c.Store.settings.metaMovies = 'tmdb'; requests = []; const r2 = await c.Media.autoDetails();
+  assert(!requests.length, 'no token and TMDB only: nothing sent: ' + JSON.stringify(requests));
+  // No token, the default (TMDB, else TheTVDB): what's left is asked of TheTVDB, never with a token.
+  c.Store.settings.metaMovies = 'auto'; requests = []; await c.Media.autoDetails();
+  assert(requests.filter(q => !q.check).every(q => q.source === 'tvdb' && !q.credential), 'no token: asked of TheTVDB, never with a token: ' + JSON.stringify(requests));
   console.log('PASS movies without details or posters are looked up on their own');
 
   token = 'mock-user-token-123456789012345'; requests = [];

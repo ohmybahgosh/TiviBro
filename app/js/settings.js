@@ -1306,7 +1306,7 @@ var Settings = (function () {
       out.push(toggle('Show Recent channels', '', function () { return s.showRecent; }, function (v) { s.showRecent = v; apply(); }));
       out.push(choice('Recent channels kept', '', [10, 20, 30, 50], ['10', '20', '30', '50'], function () { return +s.recentCount; }, function (v) { s.recentCount = v; save(); }));
       out.push(toggle('Show Favorites group', '', function () { return s.showFav !== false; }, function (v) { s.showFav = v; apply(); }));
-      out.push(toggle('Show Movies on now', 'A group of the movies on now, most left first, then the ones starting within the hour.  Needs a TMDB token, or Details from TheTVDB (Settings > Movies and shows).',
+      out.push(toggle('Show Movies on now', 'A group of the movies on now, most left first, then the ones starting within the hour.  Needs a TMDB token, or TheTVDB under Movies: details from (Settings > Movies and shows).',
         function () { return s.moviesGroup !== false; }, function (v) { s.moviesGroup = v; apply(); if (typeof Movies !== 'undefined') Movies.poke(); }));
       if (Events.onAny()) out.push(toggle('Show Events by time', 'The group of event channels on now or starting in the next two weeks, soonest first.  The same switch as in Event channels.',
         // Several playlists on: the same switch for each of them (each playlist's Event channels page has its own).
@@ -1543,16 +1543,24 @@ var Settings = (function () {
     out = out.concat(also('playback', ['Skip intro', 'Skip credits', 'Skip times from online databases']));          // the credits' Up next button, from Playback
     out.push(toggle('Hide spoilers', 'In the guide, new episodes and episodes or movies that haven\'t aired yet (not news or sport), and on the Shows screen, episodes you haven\'t started, keep only their title, season and episode, and when they air: no summary, episode title or picture from the episode.',
       function () { return !!s.noSpoilers; }, function (v) { s.noSpoilers = v; save(); if (window.Guide && Guide.draw) Guide.draw(); }));
+    /* Where details come from, per kind, like Plex's agents (media.js metaPref): TMDB with a token else TheTVDB, TheTVDB
+       always (TiviBro's metadata relay, service/tvdb.js), or TMDB only.  A change moves the guide's answers and My
+       media's matches to the new source on their own (Media.sourcesChanged). */
+    function srcSet(key) {
+      return function (v) { var was = { movie: Media.metaWho('movie'), show: Media.metaWho('show') }; s[key] = v; save(true); if (Media.sourcesChanged) Media.sourcesChanged(was); };
+    }
+    out.push(head('Where details come from'));
+    out.push(choice('Movies: details from', 'Posters, details, trailers and skip times for movies: in the guide (Movies on now), your provider\'s Movies and My media.  TMDB needs your token.  TheTVDB needs nothing: it comes through TiviBro\'s own service, and only titles leave the TV.  Metadata provided by TheTVDB (thetvdb.com).',
+      ['auto', 'tvdb', 'tmdb'], ['TMDB, else TheTVDB', 'TheTVDB', 'TMDB only'], function () { return Media.metaPref('movie'); }, srcSet('metaMovies')));
+    out.push(choice('Shows: details from', 'Posters, details, episodes, trailers and skip times for shows: in the guide, your provider\'s Shows, My media and Up next.  TMDB needs your token.  TheTVDB needs nothing: it comes through TiviBro\'s own service, and only titles leave the TV.  Metadata provided by TheTVDB (thetvdb.com).',
+      ['auto', 'tvdb', 'tmdb'], ['TMDB, else TheTVDB', 'TheTVDB', 'TMDB only'], function () { return Media.metaPref('show'); }, srcSet('metaShows')));
     out.push(head('Details from TMDB'));
     out.push(toggle('Movie details from TMDB', 'Finds the movies in your guide with your TMDB token: a poster, year, genres and rating in the guide, a Movie tag on them, the Movies on now group and the Movies on now screen.  Only programme titles go to TMDB.',
       function () { return s.guideMovies !== false; }, function (v) { s.guideMovies = v; save(true); if (typeof Movies !== 'undefined') Movies.poke(); }));
     out.push(toggle('Series details from TMDB', 'With your TMDB token, for the series in your guide and on the Shows screen: a poster, when it started, its network, genres and rating, and each episode\'s own title and summary (in the guide when it gives the season and episode).  On the Shows screen it fills in what your provider\'s details leave out.  Only a show\'s name and episode numbers go to TMDB.',
       function () { return s.guideSeries !== false; }, function (v) { s.guideSeries = v; save(true); if (typeof Series !== 'undefined') Series.poke(); }));
-    // Without a token, the same details from TheTVDB through TiviBro's metadata relay (service/tvdb.js, media.js metaWho).
-    out.push(toggle('Details from TheTVDB', 'Without a TMDB token, movies and shows still get their posters, details, trailers and skip times: from TheTVDB, through TiviBro\'s own service, with no token or account.  In the guide, Movies on now, Movies and Shows, My media and Up next.  Only titles leave the TV.  A TMDB token, when you add one, comes first.  Metadata provided by TheTVDB (thetvdb.com).',
-      function () { return s.seriesTvdb !== false; }, function (v) { s.seriesTvdb = v; save(true); if (typeof Series !== 'undefined') Series.poke(); }));
     out.push(tmdbLink());
-    if (!MediaStore.preferences().tmdbConfigured && s.seriesTvdb === false) out.push(info('Needs a TMDB token: add one under API keys (above), free from themoviedb.org.  The same token gives My media its posters.', ''));
+    if (!MediaStore.preferences().tmdbConfigured && (Media.metaPref('movie') === 'tmdb' || Media.metaPref('show') === 'tmdb')) out.push(info('Needs a TMDB token: add one under API keys (above), free from themoviedb.org.  The same token gives My media its posters.', ''));
     return out;
   }
 
