@@ -2488,5 +2488,10 @@ I18n.add('nl', {
   "Categories by language": "Categorieën per taal",
   "Every language": "Alle talen",
   "OK goes back to every language": "OK gaat terug naar alle talen",
-  "OK opens this language's categories": "OK opent de categorieën van deze taal"
+  "OK opens this language's categories": "OK opent de categorieën van deze taal",
+  "{x} hidden": "{x} verborgen",
+  "Hide language": "Taal verbergen",
+  "Hide this language": "Deze taal verbergen",
+  "Hold OK  hide language": "Houd OK ingedrukt  taal verbergen",
+  "its {n} categories, and their titles leave All and Search too": ["de {n} categorie ervan, en de titels verdwijnen ook uit Alles en Zoeken", "de {n} categorieën ervan, en de titels verdwijnen ook uit Alles en Zoeken"]
 });

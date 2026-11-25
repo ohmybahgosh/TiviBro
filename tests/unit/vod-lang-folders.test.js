@@ -19,6 +19,8 @@ const cats = [{ id: 1, name: 'HINDI MOVIES' }, { id: 2, name: 'HINDI | ACTION' }
 const folders = inFolders(byLang(cats));
 assert.strictEqual(folders.map((f) => f.name + ':' + f.count).join(), 'Hindi:2,Tamil:2,English:2,Other categories:1', 'one folder per language, with how many categories');
 assert.ok(folders.every((f) => f.folder && !f.head), 'folders, not headings');
+// Red on a folder hides the whole language (issue #173): each folder carries its categories.
+assert.strictEqual(folders.map((f) => f.cats.map((c) => c.id).join('+')).join(), '1+2,3+4,5+6,7', 'each folder knows its categories, for Hide this language');
 
 // Into a folder (kept per kind; whichever kind the module is on): its categories, after a row back.
 ctx.localStorage.setItem('tivibro.vodFolder.movie', 'Tamil');

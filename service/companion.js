@@ -401,9 +401,26 @@ function create(opts) {
   (function () {
     try { var o = JSON.parse(fs.readFileSync(SNAP_FILE, 'utf8')); if (o && o.snap && o.snap.langs) { snap = o.snap; pending = Array.isArray(o.pending) ? o.pending : []; } } catch (e) {}
   })();
+  /* The copy and the waiting changes on disk, one write at a time, always ending on the newest.  Each change used to
+     start its own write to the same .tmp file; they could finish out of order, so an older state landed last and a
+     helper restart brought back a change the phone had already changed again.  stop() writes what's waiting at once. */
+  var snapWriting = false, snapAgain = false, snapFinal = false;
+  function snapBody() { return JSON.stringify({ snap: snap, pending: pending }); }
   function saveSnap() {
+    if (snapWriting) { snapAgain = true; return; }
+    snapWriting = true; snapAgain = false;
     var tmp = SNAP_FILE + '.tmp';
-    fs.writeFile(tmp, JSON.stringify({ snap: snap, pending: pending }), { mode: 384 }, function (e) { if (!e) fs.rename(tmp, SNAP_FILE, function () {}); });
+    fs.writeFile(tmp, snapBody(), { mode: 384 }, function (e) {
+      var next = function () { snapWriting = false; if (snapAgain) saveSnap(); };
+      if (e || snapFinal) return next();                 // stop() already wrote the newest
+      fs.rename(tmp, SNAP_FILE, next);
+    });
+  }
+  // Now, before the helper goes (only when a save is still waiting to be made).
+  function flushSnap() {
+    if (!snapAgain && !snapWriting) return;
+    var tmp = SNAP_FILE + '.stop';                        // not the .tmp a write in flight may still be filling
+    try { fs.writeFileSync(tmp, snapBody(), { mode: 384 }); fs.renameSync(tmp, SNAP_FILE); snapAgain = false; snapFinal = true; } catch (e) {}
   }
   // Exactly U.hash in app/js/util.js (a double multiply, then >>> 0), so the same PIN gives the same hash.
   function fnv(x) { var h = 0x811c9dc5; for (var i = 0; i < x.length; i++) { h ^= x.charCodeAt(i); h = (h * 0x01000193) >>> 0; } return h.toString(36); }
@@ -585,6 +602,7 @@ function create(opts) {
     } catch (e) { log({ lv: 'warn', event: 'companion discovery off', e: e.message }); udp = null; }
   }
   function start(cb) {
+    snapFinal = false;                                   // saving again after a stop
     cb = cb || function () {};
     if (!st.on) return cb(null, status());
     if (server) return cb(null, status());
@@ -599,6 +617,7 @@ function create(opts) {
     });
   }
   function stop() {
+    flushSnap();
     if (server) { try { server.close(); } catch (e) {} log({ lv: 'info', event: 'companion stopped' }); }
     if (udp) { try { udp.close(); } catch (e) {} }
     clearInterval(busyTimer); busyTimer = null;

@@ -2615,5 +2615,10 @@ I18n.add('ru', {
   "Categories by language": "Категории по языкам",
   "Every language": "Все языки",
   "OK goes back to every language": "OK возвращает ко всем языкам",
-  "OK opens this language's categories": "OK открывает категории этого языка"
+  "OK opens this language's categories": "OK открывает категории этого языка",
+  "{x} hidden": "Скрыто: {x}",
+  "Hide language": "Скрыть язык",
+  "Hide this language": "Скрыть этот язык",
+  "Hold OK  hide language": "Удерживать OK  скрыть язык",
+  "its {n} categories, and their titles leave All and Search too": ["его {n} категория, и её фильмы и сериалы пропадут также из «Все» и поиска", "его {n} категории, и их фильмы и сериалы пропадут также из «Все» и поиска", "его {n} категорий, и их фильмы и сериалы пропадут также из «Все» и поиска"]
 });

@@ -2612,5 +2612,10 @@ I18n.add('es', {
   "Categories by language": "Categorías por idioma",
   "Every language": "Todos los idiomas",
   "OK goes back to every language": "OK vuelve a todos los idiomas",
-  "OK opens this language's categories": "OK abre las categorías de este idioma"
+  "OK opens this language's categories": "OK abre las categorías de este idioma",
+  "{x} hidden": "{x} ocultos",
+  "Hide language": "Ocultar idioma",
+  "Hide this language": "Ocultar este idioma",
+  "Hold OK  hide language": "Mantén OK  ocultar idioma",
+  "its {n} categories, and their titles leave All and Search too": ["su {n} categoría, y sus títulos también salen de Todo y Buscar", "sus {n} categorías, y sus títulos también salen de Todo y Buscar"]
 });

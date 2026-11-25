@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Hide a whole language.**  With Categories by language on, Red (or hold OK) on a language folder now offers Hide this language, which hides every category in it.  Show hidden categories brings them back (issue #173).
+- **Phone app changes made while TiviBro was away are kept in order.**  Settings changed from the phone while TiviBro wasn't on the TV could come back older after the network helper restarted.  Now the newest change is always the one kept.
+
 ## 0.6.0 (alpha 220, 2026-11-25)
 
 Pre-release: expect rough edges, and keep a backup before installing.

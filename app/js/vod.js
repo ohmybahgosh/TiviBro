@@ -597,7 +597,8 @@ var Vod = (function () {
     UI.menu('Languages', items, function () { langMenu.last = null; });
   }
   function catMenu(c) {
-    if (!c || c.head || c.folder || c.up) return;
+    if (c && c.folder) return folderMenu(c);
+    if (!c || c.head || c.up) return;
     // Hidden by the category's own playlist (several playlists on).
     var home = catHome(c.id), p = prefs(home.p), h = p.hide || (p.hide = {}), list = h[kind] || (h[kind] = []);
     var items = [];
@@ -610,6 +611,26 @@ var Vod = (function () {
     if (hidAll) items.push({ label: 'Show hidden categories (' + hidAll + ')', action: function () { vodPls().forEach(function (q) { var x = prefs(q).hide; if (x && x[kind] && x[kind].length) { x[kind] = []; Store.upsertPlaylist(q); } }); U.toast('Hidden categories are back'); reshow(); } });
     if (!items.length) return;
     UI.menu(RAW(c.name), items);
+  }
+
+  /* Red on a language folder (issue #173): hide the whole language, every category in it, each in its own playlist's
+     hidden list as Hide this category does.  Show hidden categories brings them back. */
+  function folderMenu(f) {
+    var cats = (f.cats || []).filter(function (c) { return c && c.id != null && !c.head; }), items = [];
+    if (cats.length) items.push({ label: 'Hide this language', sub: T('its {n} categories, and their titles leave All and Search too', { n: cats.length }), action: function () {
+      var touched = [];
+      cats.forEach(function (c) {
+        var home = catHome(c.id), p = prefs(home.p), h = p.hide || (p.hide = {}), list = h[kind] || (h[kind] = []);
+        if (list.indexOf(home.id) < 0) list.push(home.id);
+        if (touched.indexOf(home.p) < 0) touched.push(home.p);
+      });
+      touched.forEach(function (q) { Store.upsertPlaylist(q); });
+      U.toast(T('{x} hidden', { x: f.name }));
+      reshow();
+    } });
+    var hidAll = 0; vodPls().forEach(function (q) { hidAll += hiddenCats(kind, q).length; });
+    if (hidAll) items.push({ label: 'Show hidden categories (' + hidAll + ')', action: function () { vodPls().forEach(function (q) { var x = prefs(q).hide; if (x && x[kind] && x[kind].length) { x[kind] = []; Store.upsertPlaylist(q); } }); reshow(); } });
+    if (items.length) UI.menu(RAW(f.name), items);
   }
 
   // Providers send 01:25:00, 85 (minutes) or 0; show 1 h 25 min, 43 min, or nothing.
@@ -722,7 +743,7 @@ var Vod = (function () {
     cats.forEach(function (c) { if (c.head) { g = { name: c.name, cats: [] }; groups.push(g); } else if (g) g.cats.push(c); });
     var open = folderOpen(), mine = groups.filter(function (x) { return x.name === open; })[0];
     if (mine) return [{ id: UP, name: '‹ ' + I18n.t('Every language'), up: true }].concat(mine.cats);
-    return groups.map(function (x) { return { id: FOLDER + x.name, name: x.name, folder: x.name, count: x.cats.length }; });
+    return groups.map(function (x) { return { id: FOLDER + x.name, name: x.name, folder: x.name, count: x.cats.length, cats: x.cats }; });
   }
   function catList() {
     var d = data[kind], counts = {};
@@ -1266,6 +1287,8 @@ var Vod = (function () {
     if (zone === 'cats') {
       var c = catsVL && catsVL.current();
       return UI.hints(c && c.id === LANGS ? [['', 'OK  pick languages'], ['', homeOn() ? 'Back  home' : 'Back  menu bar', 'back'], ['green', homeOn() ? 'Home' : 'Guide'], ['blue', 'Settings']]
+        // A language folder (issue #173): Red hides the whole language.
+        : c && c.folder ? [['', 'OK  open'], ['', 'Hold OK  hide language', 'hold'], ['', homeOn() ? 'Back  home' : 'Back  menu bar', 'back'], ['red', 'Hide language'], ['green', homeOn() ? 'Home' : 'Guide'], ['blue', 'Settings']]
         : [['', 'OK  open'], ['', homeOn() ? 'Hold OK  pin or hide' : 'Hold OK  hide category', 'hold'], ['', homeOn() ? 'Back  home' : 'Back  menu bar', 'back'], ['red', homeOn() ? 'Pin or hide' : 'Hide category'], ['green', homeOn() ? 'Home' : 'Guide'], ['blue', 'Settings']]);
     }
     UI.hints([['', 'OK  ' + (kind === 'series' ? 'open' : 'play')], ['', 'Hold OK  options', 'hold'], ['', episodes && showFromHome ? 'Back  home' : 'Back  categories', 'back'], ['red', 'Options'], kind === 'movie' || episodes ? ['yellow', 'Watched'] : null, ['green', homeOn() ? 'Home' : 'Guide'], ['blue', 'Settings']]);

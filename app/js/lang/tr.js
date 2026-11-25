@@ -2488,5 +2488,10 @@ I18n.add('tr', {
   "Categories by language": "Dile göre kategoriler",
   "Every language": "Tüm diller",
   "OK goes back to every language": "OK tüm dillere geri döner",
-  "OK opens this language's categories": "OK bu dilin kategorilerini açar"
+  "OK opens this language's categories": "OK bu dilin kategorilerini açar",
+  "{x} hidden": "{x} gizlendi",
+  "Hide language": "Dili gizle",
+  "Hide this language": "Bu dili gizle",
+  "Hold OK  hide language": "OK'a basılı tut  dili gizle",
+  "its {n} categories, and their titles leave All and Search too": ["{n} kategorisi; başlıkları Tümü ve Arama'dan da çıkar", "{n} kategorisi; başlıkları Tümü ve Arama'dan da çıkar"]
 });
