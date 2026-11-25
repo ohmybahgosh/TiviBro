@@ -2621,5 +2621,20 @@ I18n.add('ru', {
   "Hide this language": "Скрыть этот язык",
   "Hold OK  hide language": "Удерживать OK  скрыть язык",
   "its {n} categories, and their titles leave All and Search too": ["его {n} категория, и её фильмы и сериалы пропадут также из «Все» и поиска", "его {n} категории, и их фильмы и сериалы пропадут также из «Все» и поиска", "его {n} категорий, и их фильмы и сериалы пропадут также из «Все» и поиска"],
-  "Removed from Continue watching": "Убрано из «Продолжить просмотр»"
+  "Removed from Continue watching": "Убрано из «Продолжить просмотр»",
+  "Dialogue": "Диалоги",
+  "Dialogue boost": "Усиление диалогов",
+  "Dialogue boost isn't available on this TV: {x}": "Усиление диалогов недоступно на этом телевизоре: {x}",
+  "Dialogue boost: {x}": "Усиление диалогов: {x}",
+  "High": "Сильное",
+  "Low": "Слабое",
+  "Night mode": "Ночной режим",
+  "Night mode: on": "Ночной режим: вкл",
+  "Night mode: off": "Ночной режим: выкл",
+  "Loud scenes brought down and quiet talk brought up, for watching with the volume low.  Works with or without dialogue boost.": "Громкие сцены тише, а тихая речь громче, для просмотра на низкой громкости.  Работает с усилением диалогов и без него.",
+  "Voices clearer over music and effects: what both speakers share (where voices are) is lifted, the rest turned down a little.  Plays on TiviBro's own player; a movie goes through the audio converter.  Sound sent straight to a soundbar (passthrough) is decoded here while it's on.": "Голоса чётче на фоне музыки и эффектов: то, что общее для обоих динамиков (там голоса), становится громче, остальное немного тише.  Воспроизводится плеером TiviBro; фильм проходит через аудиоконвертер.  Звук, который идёт напрямую на саундбар (passthrough), пока это включено, декодируется здесь.",
+  "a little clearer": "немного чётче",
+  "loud scenes down, quiet talk up": "громкие сцены тише, тихая речь громче",
+  "voices clearer, night mode": "голоса чётче, ночной режим",
+  "voices well forward": "голоса заметно впереди"
 });

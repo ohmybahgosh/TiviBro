@@ -244,6 +244,17 @@ var Settings = (function () {
       var n = AvSync.count();
       if (n) out.push(action(I18n.raw(I18n.t('Forget audio sync for {n} channels and movies', { n: n })), 'Every one plays its sound as sent again.', function () { AvSync.forgetAll(); U.toast('Audio sync forgotten'); build(); }));
     }
+    /* Turned on while the TV's player has the sound: the stream starts again on TiviBro's (Player.resync).  On
+       TiviBro's player already, Dialog.set changed it in place. */
+    function dialogMoved() { if (typeof Player !== 'undefined' && Player.current && !Player.pageSound && Dialog.wanted() && Player.resync) Player.resync(); }
+    // Dialogue boost and night mode (dialog.js): last, after Audio sync, so the rows above keep their places for the phone app.
+    if (typeof Dialog !== 'undefined') {
+      out.push(head('Dialogue'));
+      out.push(choice('Dialogue boost', 'Voices clearer over music and effects: what both speakers share (where voices are) is lifted, the rest turned down a little.  Plays on TiviBro\'s own player; a movie goes through the audio converter.  Sound sent straight to a soundbar (passthrough) is decoded here while it\'s on.',
+        ['off', 'low', 'high'], ['Off', 'Low', 'High'], function () { return Dialog.level(); }, function (v) { Dialog.set(v, null); dialogMoved(); }));
+      out.push(toggle('Night mode', 'Loud scenes brought down and quiet talk brought up, for watching with the volume low.  Works with or without dialogue boost.',
+        function () { return S().nightMode === true; }, function (v) { Dialog.set(null, v); dialogMoved(); }));
+    }
     return out;
   }
 

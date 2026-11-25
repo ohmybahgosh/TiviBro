@@ -23,4 +23,4 @@ Many playlists carry the same channel several times: in Full HD, HD and SD, in t
 
 ---
 
-← [Audio sync: sound ahead of or behind the picture](Audio-sync-sound-ahead-of-or-behind-the-picture)  ·  [Home](Home)  ·  [Event channels: pay-per-view and sports passes](Event-channels-pay-per-view-and-sports-passes) →
+← [Dialogue boost and night mode](Dialogue-boost-and-night-mode)  ·  [Home](Home)  ·  [Event channels: pay-per-view and sports passes](Event-channels-pay-per-view-and-sports-passes) →

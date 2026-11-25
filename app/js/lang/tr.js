@@ -2494,5 +2494,20 @@ I18n.add('tr', {
   "Hide this language": "Bu dili gizle",
   "Hold OK  hide language": "OK'a basılı tut  dili gizle",
   "its {n} categories, and their titles leave All and Search too": ["{n} kategorisi; başlıkları Tümü ve Arama'dan da çıkar", "{n} kategorisi; başlıkları Tümü ve Arama'dan da çıkar"],
-  "Removed from Continue watching": "İzlemeye devam et listesinden kaldırıldı"
+  "Removed from Continue watching": "İzlemeye devam et listesinden kaldırıldı",
+  "Dialogue": "Diyalog",
+  "Dialogue boost": "Diyalog güçlendirme",
+  "Dialogue boost isn't available on this TV: {x}": "Diyalog güçlendirme bu TV'de kullanılamıyor: {x}",
+  "Dialogue boost: {x}": "Diyalog güçlendirme: {x}",
+  "High": "Yüksek",
+  "Low": "Düşük",
+  "Night mode": "Gece modu",
+  "Night mode: on": "Gece modu: açık",
+  "Night mode: off": "Gece modu: kapalı",
+  "Loud scenes brought down and quiet talk brought up, for watching with the volume low.  Works with or without dialogue boost.": "Yüksek sahneler kısılır, alçak sesli konuşmalar yükselir; sesi kısık izlemek için.  Diyalog güçlendirme açıkken de kapalıyken de çalışır.",
+  "Voices clearer over music and effects: what both speakers share (where voices are) is lifted, the rest turned down a little.  Plays on TiviBro's own player; a movie goes through the audio converter.  Sound sent straight to a soundbar (passthrough) is decoded here while it's on.": "Sesler müzik ve efektlerin üstünde daha net: iki hoparlörün ortak olarak çaldığı kısım (seslerin olduğu yer) yükseltilir, geri kalanı biraz kısılır.  TiviBro'nun kendi oynatıcısında çalar; film ses dönüştürücüden geçer.  Doğrudan bir soundbar'a giden ses (passthrough), bu açıkken burada çözülür.",
+  "a little clearer": "biraz daha net",
+  "loud scenes down, quiet talk up": "yüksek sahneler kısılır, alçak konuşmalar yükselir",
+  "voices clearer, night mode": "daha net sesler, gece modu",
+  "voices well forward": "sesler belirgin şekilde önde"
 });

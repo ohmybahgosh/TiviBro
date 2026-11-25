@@ -1775,5 +1775,20 @@ I18n.add('fr', {
   "Hide this language": "Masquer cette langue",
   "Hold OK  hide language": "Maintenir OK  masquer la langue",
   "its {n} categories, and their titles leave All and Search too": ["sa {n} catégorie, et ses titres quittent aussi Tout et Recherche", "ses {n} catégories, et leurs titres quittent aussi Tout et Recherche"],
-  "Removed from Continue watching": "Retiré de Reprendre la lecture"
+  "Removed from Continue watching": "Retiré de Reprendre la lecture",
+  "Dialogue": "Dialogues",
+  "Dialogue boost": "Renforcement des dialogues",
+  "Dialogue boost isn't available on this TV: {x}": "Le renforcement des dialogues n'est pas disponible sur ce téléviseur : {x}",
+  "Dialogue boost: {x}": "Renforcement des dialogues : {x}",
+  "High": "Élevé",
+  "Low": "Faible",
+  "Night mode": "Mode nuit",
+  "Night mode: on": "Mode nuit : activé",
+  "Night mode: off": "Mode nuit : désactivé",
+  "Loud scenes brought down and quiet talk brought up, for watching with the volume low.  Works with or without dialogue boost.": "Les scènes fortes baissées et les voix faibles remontées, pour regarder à faible volume.  Fonctionne avec ou sans renforcement des dialogues.",
+  "Voices clearer over music and effects: what both speakers share (where voices are) is lifted, the rest turned down a little.  Plays on TiviBro's own player; a movie goes through the audio converter.  Sound sent straight to a soundbar (passthrough) is decoded here while it's on.": "Des voix plus nettes au-dessus de la musique et des effets : ce que les deux haut-parleurs partagent (là où sont les voix) est relevé, le reste un peu baissé.  Lu dans le lecteur de TiviBro ; un film passe par le convertisseur audio.  Le son envoyé directement à une barre de son (passthrough) est décodé ici tant qu'il est activé.",
+  "a little clearer": "un peu plus net",
+  "loud scenes down, quiet talk up": "scènes fortes baissées, voix faibles relevées",
+  "voices clearer, night mode": "voix plus nettes, mode nuit",
+  "voices well forward": "voix bien en avant"
 });

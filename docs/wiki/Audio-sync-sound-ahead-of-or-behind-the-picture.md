@@ -13,4 +13,4 @@ Some channels and files arrive with the sound a little early or late, so lips an
 
 ---
 
-← [Sound the TV can't play](Sound-the-TV-cant-play)  ·  [Home](Home)  ·  [Other versions of a channel](Other-versions-of-a-channel) →
+← [Sound the TV can't play](Sound-the-TV-cant-play)  ·  [Home](Home)  ·  [Dialogue boost and night mode](Dialogue-boost-and-night-mode) →

@@ -2618,5 +2618,20 @@ I18n.add('es', {
   "Hide this language": "Ocultar este idioma",
   "Hold OK  hide language": "Mantén OK  ocultar idioma",
   "its {n} categories, and their titles leave All and Search too": ["su {n} categoría, y sus títulos también salen de Todo y Buscar", "sus {n} categorías, y sus títulos también salen de Todo y Buscar"],
-  "Removed from Continue watching": "Quitado de Seguir viendo"
+  "Removed from Continue watching": "Quitado de Seguir viendo",
+  "Dialogue": "Diálogos",
+  "Dialogue boost": "Realce de diálogos",
+  "Dialogue boost isn't available on this TV: {x}": "El realce de diálogos no está disponible en este TV: {x}",
+  "Dialogue boost: {x}": "Realce de diálogos: {x}",
+  "High": "Alto",
+  "Low": "Bajo",
+  "Night mode": "Modo noche",
+  "Night mode: on": "Modo noche: sí",
+  "Night mode: off": "Modo noche: no",
+  "Loud scenes brought down and quiet talk brought up, for watching with the volume low.  Works with or without dialogue boost.": "Baja las escenas fuertes y sube las voces bajas, para ver con el volumen bajo.  Funciona con o sin realce de diálogos.",
+  "Voices clearer over music and effects: what both speakers share (where voices are) is lifted, the rest turned down a little.  Plays on TiviBro's own player; a movie goes through the audio converter.  Sound sent straight to a soundbar (passthrough) is decoded here while it's on.": "Voces más claras sobre la música y los efectos: lo que comparten los dos altavoces (donde están las voces) se sube y el resto se baja un poco.  Se reproduce en el reproductor propio de TiviBro; una película pasa por el conversor de audio.  El sonido que va directo a una barra de sonido (passthrough) se decodifica aquí mientras está activo.",
+  "a little clearer": "un poco más claro",
+  "loud scenes down, quiet talk up": "escenas fuertes más bajas, voces bajas más altas",
+  "voices clearer, night mode": "voces más claras, modo noche",
+  "voices well forward": "voces bien al frente"
 });

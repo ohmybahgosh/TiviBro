@@ -349,6 +349,15 @@ Some channels and files arrive with the sound a little early or late, so lips an
 - Audio sync needs TiviBro's own player, so a channel with a delay plays on it even if **Playback > Player** is the TV's.  A movie file plays through the [audio converter](#sound-the-tv-cant-play) with its picture and sound copied.  A stream whose sound and picture come in one piece can't be moved apart, and the bar says so.
 - To open it with one button, give **Audio sync** to Red, Green or Yellow in **Settings > Remote and buttons**.
 
+### Dialogue boost and night mode
+
+Voices clearer over music and effects, and loud scenes no louder than talk, free (Plex has this with Plex Pass).  While something plays, open **OK > Dialogue boost**, or set it in **Settings > Audio and subtitles > Dialogue**.
+
+- **Dialogue boost:** Off, Low or High.  What both speakers share, where voices are mixed (and where a surround track's centre channel goes), is lifted with a little extra clarity; the rest is turned down a bit.  High also narrows the stereo a little, on purpose.
+- **Night mode:** loud scenes brought down and quiet talk brought up, for watching with the volume low.  It works with or without dialogue boost.
+- Like Audio sync, it needs TiviBro's own player, so a channel plays on it while either one is on, and a movie file plays through the [audio converter](#sound-the-tv-cant-play) as MPEG-TS.
+- Sound that normally goes straight to a soundbar (passthrough, Dolby Digital) is decoded on the TV while it's on, so the soundbar gets stereo.  Turn both off to get passthrough back.  Your TV's own **Clear Voice** sound setting is another option for the TV speakers.
+
 ### Other versions of a channel
 
 Many playlists carry the same channel several times: in Full HD, HD and SD, in two groups, or as a backup copy.  TiviBro recognises them by name and treats them as versions of one channel.
@@ -1149,6 +1158,8 @@ Which audio track plays, sound the TV can't play, subtitles and captions, and su
 | **Sign in (optional)** | | Shows once a key is saved.  Your OpenSubtitles account: 20 downloads a day instead of 5.  Kept on this TV only.  In the phone app the username and then the password are asked on the phone. |
 | **Keep downloaded subtitles** | Off · 1 day · 3 days · **A week** | Under **Subtitles from OpenSubtitles**.  A movie or episode you come back to gets its subtitles and timing again, without another download.  Kept on this TV only. |
 | **Forget audio sync for N channels and movies** | | Under **Audio sync**, once one is set.  Every channel, movie and episode plays its sound as sent again.  See [Audio sync](#audio-sync-sound-ahead-of-or-behind-the-picture). |
+| **Dialogue boost** | **Off** · Low · High | Under **Dialogue**.  Voices clearer over music and effects.  See [Dialogue boost and night mode](#dialogue-boost-and-night-mode). |
+| **Night mode** | On · **Off** | Under **Dialogue**.  Loud scenes down, quiet talk up. |
 
 **Subtitles in MKV and MP4 movies and episodes.**  Open **Subtitles** from the player menu to choose a language or **Off**.  The menu has two parts: **Settings** at the top (**Find subtitles…**, **Timing** and **Line up with another track…**), then the subtitles the video has, under **In this movie** or **In this episode** with how many there are.  It opens on the subtitle that is on, so switching language is a press or two even in a movie with dozens of languages.  The menu is available as soon as playback starts and shows **Finding subtitles…** while tracks are discovered.  The automatic subtitle language setting above also applies.  Supported embedded SRT, ASS/SSA and WebVTT tracks appear with their language names, and your selection survives seeking and reconnects.  Only the selected subtitle track is shown, even if another track becomes active while subtitles load.  ASS/SSA and WebVTT show as plain text.  My media uses the file's known type even when its signed playback link has no extension.  Files without supported tracks show an unavailable message; bitmap subtitles are not supported.  Some MKV files do not index their subtitle tracks and cannot expose them here.  **Find subtitles** offers another way to add them.
 

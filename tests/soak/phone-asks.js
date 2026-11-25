@@ -346,6 +346,11 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const sc = pg.rows.find((r) => r.label === 'Skip credits'), sIntro = pg.rows.find((r) => r.label === 'Skip intro');
   ok('the phone has Skip intro and Skip credits: button, automatically, off', sc && sIntro && sc.kind === 'choice' && sc.options.length === 3 && sIntro.options.length === 3, JSON.stringify(sc));
   if (sc) { await sa({ op: 'choice', sec: 'playback', i: sc.i, v: 1 }); ok('...and sets Skip credits to automatic on the TV', await ev(() => Store.settings.skipCreditsMode) === 'auto'); await sa({ op: 'choice', sec: 'playback', i: sc.i, v: 0 }); }
+  // Dialogue boost and night mode (dialog.js): on the phone, last on Audio and subtitles, and they set the TV.
+  const auPg = await sa({ op: 'page', sec: 'audio' }), db = auPg.rows.find((r) => r.label === 'Dialogue boost'), nm = auPg.rows.find((r) => r.label === 'Night mode');
+  ok('the phone has Dialogue boost (off, low, high) and Night mode', db && nm && db.kind === 'choice' && db.options.length === 3 && nm.kind === 'toggle', JSON.stringify(auPg.rows.map((r) => r.label)).slice(-300));
+  if (db) { await sa({ op: 'choice', sec: 'audio', i: db.i, v: 2 }); ok('...and sets dialogue boost to High on the TV', await ev(() => Store.settings.dialogBoost) === 'high'); await sa({ op: 'choice', sec: 'audio', i: db.i, v: 0 }); }
+  if (nm) { await sa({ op: 'toggle', sec: 'audio', i: nm.i, on: true }); ok('...and turns night mode on on the TV', await ev(() => Store.settings.nightMode) === true); await sa({ op: 'toggle', sec: 'audio', i: nm.i, on: false }); }
   // Where details come from (Movies: details from, Shows: details from): on the phone, as choices that switch the TV.
   const vodPg = await sa({ op: 'page', sec: 'vod' }), shw = vodPg.rows.find((r) => r.label === 'Shows: details from'), mov = vodPg.rows.find((r) => r.label === 'Movies: details from');
   ok('the phone has where details come from, for movies and for shows', shw && mov && shw.kind === 'choice' && shw.options.length === 3 && mov.options.length === 3, JSON.stringify(vodPg.rows.map((r) => r.label)).slice(0, 300));

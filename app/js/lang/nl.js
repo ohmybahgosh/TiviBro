@@ -2494,5 +2494,20 @@ I18n.add('nl', {
   "Hide this language": "Deze taal verbergen",
   "Hold OK  hide language": "Houd OK ingedrukt  taal verbergen",
   "its {n} categories, and their titles leave All and Search too": ["de {n} categorie ervan, en de titels verdwijnen ook uit Alles en Zoeken", "de {n} categorieën ervan, en de titels verdwijnen ook uit Alles en Zoeken"],
-  "Removed from Continue watching": "Verwijderd uit Verder kijken"
+  "Removed from Continue watching": "Verwijderd uit Verder kijken",
+  "Dialogue": "Dialoog",
+  "Dialogue boost": "Dialoogversterking",
+  "Dialogue boost isn't available on this TV: {x}": "Dialoogversterking werkt niet op deze tv: {x}",
+  "Dialogue boost: {x}": "Dialoogversterking: {x}",
+  "High": "Hoog",
+  "Low": "Laag",
+  "Night mode": "Nachtmodus",
+  "Night mode: on": "Nachtmodus: aan",
+  "Night mode: off": "Nachtmodus: uit",
+  "Loud scenes brought down and quiet talk brought up, for watching with the volume low.  Works with or without dialogue boost.": "Harde scènes zachter en zachte stemmen harder, om met het volume laag te kijken.  Werkt met of zonder dialoogversterking.",
+  "Voices clearer over music and effects: what both speakers share (where voices are) is lifted, the rest turned down a little.  Plays on TiviBro's own player; a movie goes through the audio converter.  Sound sent straight to a soundbar (passthrough) is decoded here while it's on.": "Stemmen helderder boven muziek en effecten: wat beide speakers delen (waar de stemmen zitten) gaat omhoog, de rest iets omlaag.  Speelt af in de eigen speler van TiviBro; een film gaat door de audio-omzetter.  Geluid dat rechtstreeks naar een soundbar gaat (passthrough) wordt hier gedecodeerd zolang het aan staat.",
+  "a little clearer": "iets helderder",
+  "loud scenes down, quiet talk up": "harde scènes zachter, zachte stemmen harder",
+  "voices clearer, night mode": "helderdere stemmen, nachtmodus",
+  "voices well forward": "stemmen goed naar voren"
 });

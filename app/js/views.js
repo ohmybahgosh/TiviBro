@@ -2485,6 +2485,23 @@ var Views = (function () {
 
   /* Audio sync (avsync.js): the panel over the picture that moves the sound later or earlier, kept for this channel
      or this movie.  The OSD steps aside while it's open so the lips stay in sight. */
+  /* Dialogue boost and night mode (dialog.js), while something plays: the level, and night mode on or off.  Heard at
+     once on TiviBro's own player; from the TV's, the stream starts again on TiviBro's. */
+  function dialogMenu() {
+    var pick = function (lvl, night) {
+      Dialog.set(lvl, night);
+      if (!Player.pageSound && Dialog.wanted()) Player.resync();
+      if (Dialog.failed) U.toast(T('Dialogue boost isn\'t available on this TV: {x}', { x: Dialog.failed }), 6000);
+      else U.toast(T('Dialogue boost: {x}', { x: Dialog.label() }), 3000);
+    };
+    var lvl = Dialog.level(), night = Store.settings.nightMode === true;
+    UI.menu('Dialogue boost', [
+      { label: 'Off', current: lvl === 'off', action: function () { pick('off', null); } },
+      { label: 'Low', sub: 'a little clearer', current: lvl === 'low', action: function () { pick('low', null); } },
+      { label: 'High', sub: 'voices well forward', current: lvl === 'high', action: function () { pick('high', null); } },
+      { label: night ? T('Night mode: on') : T('Night mode: off'), raw: true, sub: 'loud scenes down, quiet talk up', action: function () { pick(null, !night); } }
+    ]);
+  }
   function audioSync() {
     if (typeof AvSync === 'undefined') return;
     if (full) osd(false);
@@ -2504,6 +2521,7 @@ var Views = (function () {
     var tracks = Player.audioTracks();
     if (tracks.length > 1) items.push({ label: 'Audio track', sub: (tracks.filter(function (t) { return t.on; })[0] || {}).label, action: audioMenu });
     items.push({ label: 'Audio sync', sub: syncLabel() + '  ·  when the sound and the lips don\'t match', action: audioSync });
+    if (typeof Dialog !== 'undefined') items.push({ label: 'Dialogue boost', sub: Dialog.label() + '  ·  ' + T('voices clearer, night mode'), action: dialogMenu });
     items.push({ label: 'Aspect', sub: Player.aspectName(Player.displayFor(aspectTarget())), action: pictureMenu });
     if (Player.qualities().length > 1) items.push({ label: 'Video quality', sub: qualityLabel(), action: qualityMenu });
     if (mode === 'vod' && typeof SeekPrev !== 'undefined' && SeekPrev.chapters.length > 1) items.push({ label: 'Chapters', sub: SeekPrev.chapters.length + ' in this ' + (vod && vod.meta && vod.meta.item && vod.meta.item.kind === 'episode' || vod && vod.meta && vod.meta.seriesKey ? 'episode' : 'movie') + '  ·  CH+ CH− go from one to the next', action: function () { SeekPrev.openChapters(function (t) { vs.pending = t; vodSeekCommit(); }); } });

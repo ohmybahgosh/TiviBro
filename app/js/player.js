@@ -149,15 +149,16 @@ var Player = (function () {
        buffering; the TV's player plays it, and seeks in it.  One still recording keeps the MPEG-TS player (it grows). */
     if (cur && !cur.live && !cur.timeshift && !isHls && cur.meta && cur.meta.item && cur.meta.item.recording && !cur.meta.item.growing && s !== 'mse') return 'native';
     if (isDash(url)) return mse() && s !== 'native' ? 'dash' : 'native';
-    // Audio sync on this channel (avsync.js) needs TiviBro's own player: the TV's has no way to move the sound.
+    // Audio sync on this channel (avsync.js), or dialogue boost (dialog.js), needs TiviBro's own player: the TV's plays the sound in hardware.
     if ((s === 'native' && !syncing()) || !mse() || fallbackHosts[hostOf(url)] === 'native') return 'native';
     if (isHls) return window.Hls && Hls.isSupported() ? 'hls' : 'native';
     if (window.mpegts && mpegts.getFeatureList().mseLivePlayback) return 'ts';
     return 'native';
   }
 
-  // Is a sound delay set for what plays (Audio sync)?
-  function syncing() { return !!(window.AvSync && AvSync.wanted()); }
+  /* Is a sound delay set for what plays (Audio sync), or dialogue boost or night mode on (dialog.js)?  Either needs
+     the sound to come through the page: TiviBro's own player, and a movie through the converter as MPEG-TS. */
+  function syncing() { return !!(window.AvSync && AvSync.wanted()) || !!(window.Dialog && Dialog.wanted()); }
   /* Why this plays on the TV's own player although a sound delay is set (that player can't move the sound), in words
      for the Audio sync bar.  Discussion #60: a channel only the TV's player played showed nothing being moved. */
   function whyNative(url) {
@@ -613,7 +614,13 @@ var Player = (function () {
     }
   }
 
-  function state(s, msg) { if (s === 'playing' || s === 'error' || s === 'idle' || s === 'ended') releaseFrame(); if (st) st.state = s; if (lastStats) lastStats.state = s; emit('state', s, msg); }
+  function state(s, msg) {
+    if (s === 'playing' || s === 'error' || s === 'idle' || s === 'ended') releaseFrame();
+    if (st) st.state = s; if (lastStats) lastStats.state = s;
+    // Dialogue boost and night mode (dialog.js) on TiviBro's own players, whose sound comes through the page.
+    if (s === 'playing' && window.Dialog && st && st.kind !== 'native') Dialog.apply(video);
+    emit('state', s, msg);
+  }
   function notice(msg) { emit('notice', msg); }
   function isFile() { return cur && !cur.live && !cur.timeshift; }
   function hdrPolicy() { return Store.settings.hdrRoute || 'auto'; }
@@ -638,7 +645,7 @@ var Player = (function () {
       if (r0.engine === 'native') { cur.routed = true; cur.routeWhy = r0.reason; Log.info('player', r0.reason); useEngine('native'); kind = 'native'; }
     }
     cur.syncWhy = kind === 'native' && syncing() ? whyNative(url) : '';
-    if (cur.syncWhy) Log.info('player', 'Audio sync can\'t move the sound here: ' + cur.syncWhy);
+    if (cur.syncWhy) Log.info('player', 'Audio sync and dialogue boost can\'t reach the sound here: ' + cur.syncWhy);
     Log.state('player', 'playing ' + (cur.ch && cur.ch.n ? '"' + cur.ch.n + '"' : 'a video') + ' with the ' + kind + ' engine');
     Log.info('player', 'Start ' + (cur.ch && cur.ch.n ? '"' + cur.ch.n + '" ' : '') + 'with ' + kind + ' engine' + (kind !== 'native' && Net.active ? ' via helper' : '') + ', profile ' + p.label + ' (prebuffer ' + p.prebuffer + 's)' + (cur.retries ? ', attempt ' + (cur.retries + 1) : '') + (cur.startAt ? ', from ' + Math.round(cur.startAt) + 's' : '') + (conv ? ', sound converted from ' + Math.round(conv.t) + 's' : '') + '  ' + (conv ? cur.url : url));
     var gen = cur.gen = (cur.gen || 0) + 1;     // a torn-down engine's late events are ignored
@@ -1838,8 +1845,8 @@ var Player = (function () {
     start(token);
   }
 
-  /* Audio sync changed (avsync.js): the stream starts again so the new delay is heard at once, not after what's
-     already buffered plays out.  Live TV on the player the delay needs; a movie or catch-up from where it was,
+  /* Audio sync changed (avsync.js), or dialogue boost or night mode turned on (dialog.js): the stream starts again so
+     the change is heard at once, not after what's already buffered plays out (and on the player it needs).  Live TV on the player the delay needs; a movie or catch-up from where it was,
      asking the converter again (a movie's sound only moves through it as MPEG-TS). */
   function resync() {
     if (!cur) return;
@@ -1914,6 +1921,8 @@ var Player = (function () {
     get media() { return cur && cur.media ? Caps.label(cur.media) : ''; },
     get mediaInfo() { return cur && cur.media; },
     get engine() { return st ? ENGINE_NAMES[st.kind] || st.kind : ''; },
+    // The sound comes through the page (TiviBro's own players), where dialogue boost can reach it (dialog.js).
+    get pageSound() { return !!(st && st.kind && st.kind !== 'native'); },
     get position() { return position(); },
     get duration() { return cur && cur.conv && cur.conv.dur ? cur.conv.dur : video && isFinite(video.duration) && video.duration > 0 ? video.duration : cur && cur.knownDur ? cur.knownDur : 0; },
     // Sound being converted right now: { codec, track, from } (Stream info, tests).
