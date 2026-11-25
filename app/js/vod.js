@@ -1464,6 +1464,7 @@ var Vod = (function () {
           // What the provider leaves out, from TMDB when it is already known (series.js): no waiting here.
           var tv = typeof Series !== 'undefined' ? Series.show(it.name, it.year, 'strong') : null;
           if (tv) {
+            if (/^tvdb:/.test(String(tv.id || ''))) out.tvdb = 1;   // the phone credits TheTVDB under these details
             out.c = out.c || tv.poster || ''; if (String(out.plot || '').length < 40) out.plot = tv.plot || out.plot; out.genre = out.genre || tv.genre || ''; out.cast = out.cast || tv.cast || ''; out.r = out.r || tv.rating || '';
             seasons.forEach(function (sn) { sn.eps.forEach(function (e) { var te = Series.episode(tv, sn.s, e.e); if (!te) return; e.t = e.t || te.t; if (!e.plot) e.plot = te.plot; e.c = e.c || te.still; }); });
           }

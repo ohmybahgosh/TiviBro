@@ -2085,5 +2085,6 @@ I18n.add('it', {
   "✕ The guide did not load": "✕ La guida non si è caricata",
   "✦ Smart match": "✦ Abbinamento intelligente",
   "＋ New group": "＋ Nuovo gruppo",
-  "＋ New group…": "＋ Nuovo gruppo…"
+  "＋ New group…": "＋ Nuovo gruppo…",
+  "Metadata provided by TheTVDB": "Metadati forniti da TheTVDB"
 });

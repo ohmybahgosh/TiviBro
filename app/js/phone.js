@@ -205,6 +205,7 @@ var Phone = (function () {
       var t = m || sh;
       if (t) {
         x.tm = { k: m ? 'm' : 's', poster: t.poster || '', backdrop: t.backdropHd || t.backdrop || '', plot: t.plot || '', year: t.year || '', genre: t.genre || '', rating: t.rating || '', runtime: U.runtime(t.runtime) || '', network: t.network || '' };
+        if (/^tvdb:/.test(String(t.id || '')) || t.provider === 'TheTVDB') x.tm.tvdb = 1;   // credited on the phone (TheTVDB's terms)
         var e = sh && p.ep && Series.episode ? Series.episode(sh, p.ep) : null;
         if (e) x.tm.ep = { t: e.t || '', plot: e.plot || '', still: e.still || '' };
       }

@@ -2091,5 +2091,6 @@ I18n.add('fr', {
   "No movies excluded.": "Aucun film exclu.",
   "Made when TiviBro is back on the TV": "Appliqué quand TiviBro revient sur la TV",
   "That needs TiviBro on the TV's screen.  Open TiviBro on the TV, then press it again.": "Cela nécessite TiviBro à l'écran de la TV.  Ouvrez TiviBro sur la TV, puis appuyez à nouveau.",
-  "TiviBro isn't on the TV's screen, so this is its last copy.  Switches and choices you change are made when TiviBro is back; buttons need TiviBro on screen.": "TiviBro n'est pas à l'écran de la TV, voici donc sa dernière copie.  Les interrupteurs et choix que vous modifiez sont appliqués quand TiviBro revient ; les boutons nécessitent TiviBro à l'écran."
+  "TiviBro isn't on the TV's screen, so this is its last copy.  Switches and choices you change are made when TiviBro is back; buttons need TiviBro on screen.": "TiviBro n'est pas à l'écran de la TV, voici donc sa dernière copie.  Les interrupteurs et choix que vous modifiez sont appliqués quand TiviBro revient ; les boutons nécessitent TiviBro à l'écran.",
+  "Metadata provided by TheTVDB": "Métadonnées fournies par TheTVDB"
 });

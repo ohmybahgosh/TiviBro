@@ -30,7 +30,7 @@ data class Programme(val title: String, val start: Long, val end: Long, val desc
 
 /** Everything the TV knows about one programme (ask "prog"), for the phone's details sheet. */
 data class ProgTmdb(val series: Boolean, val poster: String, val backdrop: String, val plot: String, val year: String, val genre: String, val rating: String,
-                    val runtime: String, val network: String, val epTitle: String, val epPlot: String, val epStill: String) {
+                    val runtime: String, val network: String, val epTitle: String, val epPlot: String, val epStill: String, val tvdb: Boolean = false) {
     val facts get() = listOf(if (series) tr("Series") else tr("Movie"), year, runtime, network, genre, if (rating.isNotBlank()) "★ $rating" else "").filter { it.isNotBlank() }.joinToString("  ·  ")
 }
 data class Showing(val key: String, val channel: String, val start: Long, val end: Long)
@@ -44,7 +44,7 @@ data class ProgDetail(val prog: Programme, val key: String, val channel: String,
             val t = j.optJSONObject("tm")?.let { m ->
                 val e = m.optJSONObject("ep")
                 ProgTmdb(m.optString("k") == "s", m.optString("poster"), m.optString("backdrop"), m.optString("plot"), m.optString("year"), m.optString("genre"),
-                    m.optString("rating"), m.optString("runtime"), m.optString("network"), e?.optString("t").orEmpty(), e?.optString("plot").orEmpty(), e?.optString("still").orEmpty())
+                    m.optString("rating"), m.optString("runtime"), m.optString("network"), e?.optString("t").orEmpty(), e?.optString("plot").orEmpty(), e?.optString("still").orEmpty(), m.optInt("tvdb") == 1)
             }
             return ProgDetail(p, j.optString("k"), j.optString("ch"), j.optInt("arch"), j.optInt("cu") == 1, t,
                 j.optJSONArray("more").list { Showing(it.optString("k"), it.optString("ch"), it.optLong("s"), it.optLong("e")) }, j.optInt("dp") == 1, j.optString("recId", ""))
@@ -154,6 +154,8 @@ data class Season(val number: Int, val episodes: List<Episode>)
 data class VodInfo(
     val id: String, val name: String, val cover: String, val plot: String, val genre: String, val cast: String, val year: String,
     val duration: String, val rating: String, val media: String, val pos: Int, val len: Int, val seasons: List<Season>,
+    /** The details came from TheTVDB (they're credited under them). */
+    val tvdb: Boolean = false,
 ) {
     companion object {
         fun from(j: JSONObject) = VodInfo(
@@ -164,6 +166,7 @@ data class VodInfo(
                     Episode(e.opt("id")?.toString() ?: "", e.optInt("e"), e.optString("t"), e.optString("dur"), e.optString("plot"), e.optInt("pos"), e.optInt("len"))
                 })
             },
+            j.optInt("tvdb") == 1,
         )
     }
 }

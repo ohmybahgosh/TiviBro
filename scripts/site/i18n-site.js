@@ -115,14 +115,16 @@ function save(code, d) {
   const o = {}; Object.keys(d).sort().forEach((k) => { o[k] = d[k]; });
   fs.writeFileSync(path.join(DICT_DIR, code + '.json'), JSON.stringify(o, null, 1) + '\n');
 }
-const tagsOf = (s) => (s.match(/<[^>]+>/g) || []).map((t) => t.replace(/\s+/g, ' ')).sort().join('');
+// A text's tags, for comparing with its translation: the labels inside a tag (aria-label, title, alt) may be translated.
+const tagsOf = (s) => (s.match(/<[^>]+>/g) || []).map((t) => t.replace(/\s(aria-label|title|alt)="[^"]*"/g, '').replace(/\s+/g, ' ')).sort().join('');
 /* Is a translation usable?  The same tags (links, bold, code) in any order, no em dash, nothing empty, and an
    attribute value with no quote or angle bracket. */
 function problem(key, val) {
   if (typeof val !== 'string' || !val.trim()) return 'empty';
   if (tagsOf(key) !== tagsOf(val)) return 'its tags differ from the English';
   if (/—/.test(val)) return 'an em dash';
-  if (!/</.test(key) && /[<>"]/.test(val)) return 'a quote or angle bracket';
+  if (!/</.test(key) && /[<>]/.test(val)) return 'an angle bracket';
+  if (!/"/.test(key) && /"/.test(val)) return 'a straight quote';   // attribute values can't hold one
   return '';
 }
 
@@ -139,13 +141,18 @@ function allKeys(root) {
 const urlIn = (lang, page) => '/' + (lang.dir ? lang.dir + '/' : '') + page.replace(/index\.html$/, '').replace(/^404\.html$/, '404.html');
 function picker(cur, page) {
   const all = [EN].concat(LANGS);
-  return '<details class="lang-pick"><summary aria-label="Language">' + cur.flag + '</summary><div class="lang-menu">' +
+  return '<details class="lang-pick"><summary aria-label="Language">' + cur.flag + '<span class="lang-name"> ' + cur.name + '</span></summary><div class="lang-menu">' +
     all.map((l) => '<a href="' + urlIn(l, page) + '" hreflang="' + (l.code === 'pt-BR' ? 'pt' : l.code) + '"' + (l === cur ? ' aria-current="true"' : '') + '>' + l.flag + ' ' + l.name + '</a>').join('') + '</div></details>';
 }
 const PICK_CSS = '<style>.links a{white-space:nowrap}@media (min-width:961px) and (max-width:1399px){.links{gap:18px}.links a[href$="/videos/"],.links a[href*="/wiki"]{display:none}}.lang-pick{position:relative;margin-left:6px}.lang-pick summary{list-style:none;cursor:pointer;font-size:20px;line-height:1;padding:6px 8px;border-radius:10px}' +
-  '.lang-pick summary::-webkit-details-marker{display:none}.lang-pick summary:hover{background:rgba(255,255,255,.06)}' +
+  '.lang-pick summary::-webkit-details-marker{display:none}.lang-name{display:none}.lang-pick summary:hover{background:rgba(255,255,255,.06)}' +
   '.lang-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:50;min-width:170px;background:#11162b;border:1px solid #2d3760;border-radius:14px;padding:6px;box-shadow:0 18px 40px rgba(0,0,0,.45)}' +
-  '.lang-menu a{display:block;padding:8px 10px;border-radius:9px;color:#e8ecf8;font-size:15px;white-space:nowrap}.lang-menu a:hover,.lang-menu a[aria-current]{background:#1b2340;text-decoration:none}</style>';
+  '.lang-menu a{display:block;padding:8px 10px;border-radius:9px;color:#e8ecf8;font-size:15px;white-space:nowrap}.lang-menu a:hover,.lang-menu a[aria-current]{background:#1b2340;text-decoration:none}' +
+  // Phones: the list sits inside the open menu as a grid, instead of a dropdown that runs off the screen.
+  '@media (max-width:960px){.links{max-height:calc(100vh - 62px);overflow-y:auto}.lang-name{display:inline}.lang-pick{margin:10px 0 0;width:100%}.lang-pick summary{font-size:16px;padding:10px 0}.lang-pick summary::after{content:" ' + '\\25BE' + '"}' +
+  '.lang-menu{position:static;display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-top:4px;box-shadow:none;min-width:0}}</style>' +
+  // It closes when anything else is tapped (the menu's close button included).
+  '<script>document.addEventListener("click",function(e){var d=document.querySelectorAll(".lang-pick[open]");for(var i=0;i<d.length;i++)if(!d[i].contains(e.target))d[i].open=false;});</script>';
 
 /* One page in one language (or English, for its picker and alternates).  Texts are replaced from the end of the
    page backwards, so earlier positions stay right; then attributes, head tags, links, lang and the picker. */

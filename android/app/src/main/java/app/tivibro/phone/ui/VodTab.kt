@@ -272,6 +272,7 @@ private fun DetailsSheet(model: AppModel, id: String, kind: String, item: VodIte
                 i == null -> item { Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
                 else -> {
                     if (i.plot.isNotBlank()) item { Text(i.plot, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(16.dp, 0.dp, 16.dp, 8.dp)) }
+                    if (i.tvdb) item { TvdbCredit() }
                     if (i.cast.isNotBlank()) item { Text("Cast: " + i.cast, color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(16.dp, 0.dp, 16.dp, 12.dp)) }
                     if (kind == "series") {
                         if (i.seasons.isEmpty()) item { Text(tr("No episodes yet."), color = Muted, modifier = Modifier.padding(16.dp)) }

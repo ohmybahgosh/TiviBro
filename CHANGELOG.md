@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **TheTVDB credited where its details show.**  My media, movie pages, your provider's Movies and Shows, About this show, Movies on now and Recordings say "Metadata provided by TheTVDB · thetvdb.com" under details that came from TheTVDB, as its terms ask.
+- **TheTVDB credited where its details show.**  On the phone app too (a tap opens thetvdb.com).  My media, movie pages, your provider's Movies and Shows, About this show, Movies on now and Recordings say "Metadata provided by TheTVDB · thetvdb.com" under details that came from TheTVDB, as its terms ask.
 - **Phone app links from tivibro.app open the app.**  The site now serves the link check file Android and Google Play look for.
 - **tivibro.app in ten languages.**  The website, its install guide, comparisons and video pages now come in German, Spanish, French, Italian, Dutch, Polish, Portuguese, Russian and Turkish too, with a flag menu at the top and search engines told about each version.
 - **Settings say where details come from.**  Settings > Movies and shows: **Movie details in the guide** and **Series details in the guide** (were "from TMDB") work with TheTVDB too, and My media's Fetch missing details no longer says TMDB.

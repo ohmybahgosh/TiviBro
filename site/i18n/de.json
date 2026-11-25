@@ -1,6 +1,7 @@
 {
  "\"HTTP 502\" and \"helper answered 403\" now say what happened and what to try, in your language. Empty groups say why they're empty.": "„HTTP 502“ und „helper answered 403“ sagen dir jetzt in deiner Sprache, was passiert ist und was du versuchen kannst. Leere Gruppen zeigen, warum sie leer sind.",
  "\"Off Air\" and \"No Event Scheduled\" channels, empty slots like \"PPV 09 |\", and channels whose event in the name ended hours ago stay out of the way, and come back by themselves when a new event is named.": "Kanäle mit „Off Air“ und „No Event Scheduled“, leere Plätze wie „PPV 09 |“ und Kanäle, deren Event im Namen schon vor Stunden zu Ende ging, sind aus dem Weg und kommen von selbst zurück, sobald ein neues Event benannt wird.",
+ "\"USA | ESPN FHD ◉\" shows as \"ESPN\". Hundreds of tags handled.": "\"USA | ESPN FHD ◉\" wird als \"ESPN\" angezeigt. Hunderte Tags werden verarbeitet.",
  "*Public guides with wrong times left out": "*Öffentliche Programmführer mit falschen Zeiten werden weggelassen",
  "10 languages": "10 Sprachen",
  "7-day trial, then a paid licence": "7 Tage testen, danach eine kostenpflichtige Lizenz",

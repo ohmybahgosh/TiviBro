@@ -2085,5 +2085,6 @@ I18n.add('tr', {
   "✕ The guide did not load": "✕ Rehber yüklenemedi",
   "✦ Smart match": "✦ Akıllı eşleştirme",
   "＋ New group": "＋ Yeni grup",
-  "＋ New group…": "＋ Yeni grup…"
+  "＋ New group…": "＋ Yeni grup…",
+  "Metadata provided by TheTVDB": "Meta veriler TheTVDB tarafından sağlanır"
 });

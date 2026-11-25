@@ -2085,5 +2085,6 @@ I18n.add('pl', {
   "✕ The guide did not load": "✕ Nie udało się wczytać przewodnika",
   "✦ Smart match": "✦ Inteligentne dopasowanie",
   "＋ New group": "＋ Nowa grupa",
-  "＋ New group…": "＋ Nowa grupa…"
+  "＋ New group…": "＋ Nowa grupa…",
+  "Metadata provided by TheTVDB": "Metadane dostarcza TheTVDB"
 });

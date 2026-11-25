@@ -2085,5 +2085,6 @@ I18n.add('nl', {
   "＋ New group": "＋ Nieuwe groep",
   "＋ New group…": "＋ Nieuwe groep…",
   "All {n} reminders waiting on the TV are cancelled, including the ones your watchlist set.  Your watchlist itself stays, so it can set new ones.": ["De {n} herinnering die op de tv wacht, is geannuleerd, ook als die door je kijklijst is ingesteld.  Je kijklijst zelf blijft staan, dus die kan een nieuwe instellen.", "Alle {n} herinneringen die op de tv wachten, zijn geannuleerd, ook de herinneringen die je kijklijst heeft ingesteld.  Je kijklijst zelf blijft staan, dus die kan nieuwe instellen."],
-  "Ticked groups show inside {x} on the TV, their channels after its own.  New channels the provider adds to them come along.  Split undoes it.": "Aangevinkte groepen worden op de tv binnen {x} getoond, met hun zenders achter de eigen zenders.  Nieuwe zenders die de provider eraan toevoegt komen automatisch mee.  Met Splitsen maak je het ongedaan."
+  "Ticked groups show inside {x} on the TV, their channels after its own.  New channels the provider adds to them come along.  Split undoes it.": "Aangevinkte groepen worden op de tv binnen {x} getoond, met hun zenders achter de eigen zenders.  Nieuwe zenders die de provider eraan toevoegt komen automatisch mee.  Met Splitsen maak je het ongedaan.",
+  "Metadata provided by TheTVDB": "Metadata geleverd door TheTVDB"
 });

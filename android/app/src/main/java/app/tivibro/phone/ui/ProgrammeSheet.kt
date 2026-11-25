@@ -185,8 +185,9 @@ fun ProgrammeSheet(model: AppModel, id: String, key: String, start: Long, first:
                 }
                 val more = tm?.epPlot?.ifBlank { null } ?: tm?.plot?.ifBlank { null }
                 if (more != null && !desc.contains(more.take(40))) {
-                    Text(if (tm?.epPlot.isNullOrBlank()) tr("From TMDB") else tr("This episode, from TMDB"), color = Muted, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 12.dp))
-                    Text(more, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 2.dp))
+                    if (tm?.tvdb != true) Text(if (tm?.epPlot.isNullOrBlank()) tr("From TMDB") else tr("This episode, from TMDB"), color = Muted, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 12.dp))
+                    Text(more, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = if (tm?.tvdb == true) 12.dp else 2.dp))
+                    if (tm?.tvdb == true) TvdbCredit(Modifier.padding(top = 4.dp))
                 }
             }
             if (x != null) {

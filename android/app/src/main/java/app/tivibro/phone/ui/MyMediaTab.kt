@@ -117,6 +117,7 @@ private fun MediaShows(model: AppModel, id: String) {
                     val sub = if (screen.level == "show") trn(row.optInt("count"), "{n} episode", "{n} episodes") else str(md?.optString("year"))
                     MediaPoster(label, pic, sub) { go(row, label) }
                 }
+                if (rows.any { r -> r.optJSONObject("metadata")?.let { fromTvdb(it.optString("id"), it.optString("provider")) } == true }) item(span = { GridItemSpan(maxLineSpan) }) { TvdbCredit(Modifier.padding(vertical = 8.dp)) }
                 if (next != null) item(span = { GridItemSpan(maxLineSpan) }) { TextButton(onClick = { cursor = next }) { Text(tr("Load more")) } }
                 if (loading) item(span = { GridItemSpan(maxLineSpan) }) { CircularProgressIndicator(Modifier.padding(16.dp)) }
             }
@@ -141,6 +142,7 @@ private fun MediaShows(model: AppModel, id: String) {
                         }
                     }
                 }
+                if (rows.any { r -> r.optJSONObject("metadata")?.let { fromTvdb(it.optString("id"), it.optString("provider")) } == true }) item { TvdbCredit(Modifier.padding(vertical = 8.dp)) }
                 if (next != null) item { TextButton(onClick = { cursor = next }) { Text(tr("Load more")) } }
                 if (loading) item { CircularProgressIndicator(Modifier.padding(16.dp)) }
             }

@@ -181,6 +181,7 @@ private fun MovieSheet(model: AppModel, id: String, m: OnNowMovie, now: Long, pl
             if (m.logo.isNotBlank()) Text(m.title, color = Muted, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(16.dp, 0.dp))
             Text(m.facts, color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(16.dp, 4.dp))
             if (m.plot.isNotBlank()) Text(m.plot, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(16.dp, 8.dp))
+            if (fromTvdb(m.id)) TvdbCredit()
             Text(if (m.live) tr("Playing now") else tr("Starting soon"), color = Muted, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(16.dp, 12.dp, 16.dp, 4.dp))
             m.chans.forEach { c ->
                 val set = c.key in reminded
