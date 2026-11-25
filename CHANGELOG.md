@@ -1,17 +1,17 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 221, 2026-11-25)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 221
 
 - **Dialogue boost and night mode, free.**  Voices clearer over music and effects (Off, Low, High), and night mode for loud scenes when the volume is low.  Both are off until you turn them on, in the player's menu (OK > Dialogue boost) or Settings > Audio and subtitles.  While on, the sound goes through the audio converter, so a channel takes a second or two longer to start.  Plex has this with Plex Pass.
 - **Remove from Continue watching.**  Movies and Shows from your provider: Hold OK (or Red) on a title in Continue watching now offers Remove from Continue watching, and Mark unwatched also works on a title you're part-way through (it starts from the beginning next time).  My media: a show's Continue watching card offers it too, without marking anything watched.
 - **Hide a whole language.**  With Categories by language on, Red (or hold OK) on a language folder now offers Hide this language, which hides every category in it.  Show hidden categories brings them back (issue #173).
 - **Phone app changes made while TiviBro was away are kept in order.**  Settings changed from the phone while TiviBro wasn't on the TV could come back older after the network helper restarted.  Now the newest change is always the one kept.
 
-## 0.6.0 (alpha 220, 2026-11-25)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 220
+### In alpha 220
 
 - **Updates and backups checked for anything lost.**  Every release is now tested against saves and backups from older versions, so updating or restoring keeps your playlists, Favorites, watched marks, reminders and settings.
 - **Turning off the playlist in use keeps you where you went.**  When the next playlist takes over as you leave Settings, you stay on the screen you went to (Search, Movies, the guide) instead of being sent to the channel list.
