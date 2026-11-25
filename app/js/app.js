@@ -388,8 +388,10 @@ var App = (function () {
     window.__tbBooted = true;              // compat.js shows an error screen if errors stop the start
     Views.stopAll();
     Views.reload(false);
-    Views.switchTab(Views.home());
-    Views.setZone('channels');
+    // A hand-over after Settings (stayOn): the screen you went to, not the start screen (discussion #36).
+    var to = stayOn || Views.home(); stayOn = '';
+    Views.switchTab(to);
+    if (to === 'live') Views.setZone('channels');
     setupEl.classList.add('hidden');
     checkVod();
     setTimeout(function () { bigList(Store.playlist); }, 8000);
@@ -892,7 +894,12 @@ var App = (function () {
 
   /* Another playlist becomes the first one (or the only one): everything opens again, the others
      beside it. */
-  function switchPlaylist(id) {
+  /* stay: keep the screen you're on once the playlist has opened, instead of the start screen.  Used when the
+     playlist in use was turned off in Settings and the next one takes over as you leave (discussion #36: "we don't
+     always want to go straight to the channel list"). */
+  var stayOn = '';
+  function switchPlaylist(id, stay) {
+    stayOn = stay && ready && Views.tab && Views.tab !== 'settings' ? Views.tab : '';
     if (ready) Views.stopAll();
     setupEl.classList.add('hidden');
     startGen++; otherQ = [];

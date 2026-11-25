@@ -74,6 +74,20 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     await ed.click('button[data-pl="off"][data-id="p2"]'); await ed.waitForTimeout(2500);
     ok('and Turn off turns it off', await ev(() => !!Store.settings.playlists.find((p) => p.id === 'p2').off));
     await ev(() => WebEdit.stop());
+    // The one in use turned off on the TV's page while another is on: the hand-over waits until you leave Settings,
+    // then keeps you on the screen you went to, not the start screen (discussion #36: not straight to the channel list).
+    await ev(() => { Views.switchTab('settings'); Settings.open(); Settings.section('playlists'); });
+    await tv.waitForTimeout(600);
+    await ev((i) => Settings.phone.change('playlists', [], i, 'toggle', { on: true }), tvSw);
+    const firstOn = await ev(() => { const r = Settings.phone.page('playlists', []).rows; return r.find((x) => x.kind === 'toggle' && x.label !== 'Second provider' && x.on === true && r.indexOf(x) > r.findIndex((h) => /Playlists on or off/.test(h.label))).i; });
+    await ev((i) => Settings.phone.change('playlists', [], i, 'toggle', { on: false }), firstOn);
+    await tv.waitForTimeout(1200);
+    ok('the one in use, off: still in use while you are in Settings', await ev((id) => Store.settings.active === id, one.id));
+    await ev(() => Views.switchTab('search'));
+    await tv.waitForFunction(() => Store.settings.active === 'p2', null, { timeout: 20000 }).catch(() => {});
+    await tv.waitForFunction(() => window.Library && Library.count() > 0, null, { timeout: 30000 }).catch(() => {}); await tv.waitForTimeout(1500);
+    ok('left for Search: the next playlist takes over, and you stay on Search', await ev(() => Store.settings.active === 'p2' && Views.tab === 'search'), await ev(() => Store.settings.active + ' ' + Views.tab));
+    await ev((id) => { const p = Store.settings.playlists.find((x) => x.id === id); p.off = false; Store.upsertPlaylist(p); App.switchPlaylist(id); }, one.id);
     ok('no page errors', !errs.length, errs.join(' | '));
   } catch (e) { ok('harness: ' + e.message, false); }
   await b.close();

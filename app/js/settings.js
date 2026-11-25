@@ -726,7 +726,7 @@ var Settings = (function () {
         if (inSettings) return;                                       // the hand-over waits until you leave Settings
         clearInterval(g.t); plPending = null;
         U.toast(I18n.t('"{x}" is off.  Switching to "{y}".', { x: act.name || I18n.t('Playlist'), y: next.name || I18n.t('the next playlist') }), 5000);
-        return App.switchPlaylist(next.id);
+        return App.switchPlaylist(next.id, true);             // on the screen you went to (discussion #36)
       }
       clearInterval(g.t); plPending = null;
     }, 500) };

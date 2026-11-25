@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Turning off the playlist in use keeps you where you went.**  When the next playlist takes over as you leave Settings, you stay on the screen you went to (Search, Movies, the guide) instead of being sent to the channel list.
+
 ## 0.6.0 (alpha 219, 2026-11-25)
 
 Pre-release: expect rough edges, and keep a backup before installing.
