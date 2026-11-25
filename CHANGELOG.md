@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 222, 2026-11-25)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 222
 
 - **The full provider guide no longer swamps TVs with 1 GB.**  With a big playlist and the provider's full XMLTV guide, the network helper kept over 400 MB after reading the guide, and peaked near 900 MB while reading it.  On a 1 GB TV that froze the helper until the TV restarted.  It now peaks under 200 MB and settles near 115 MB on a 57,000-channel list (issue #178).
 - **A stuck network helper is explained on screen.**  On some 1 GB TVs the helper can get stuck until the TV restarts.  After three tries TiviBro now says so once: channels still play without it, and restarting the TV frees it (issue #178).
@@ -8,11 +12,7 @@
 - **The open language folder's name stays in sight.**  With Categories by language on, the heading above the categories shows the language whose folder is open, so you always know where you are while scrolling (issue #173).
 - **No false error report on older TVs when a channel can't play.**  webOS 4 to 6 reported "Cannot read property 'emit' of null" while TiviBro tried a channel another way; it was harmless and is now only noted in the log (issue #181).
 
-## 0.6.0 (alpha 221, 2026-11-25)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 221
+### In alpha 221
 
 - **Dialogue boost and night mode, free.**  Voices clearer over music and effects (Off, Low, High), and night mode for loud scenes when the volume is low.  Both are off until you turn them on, in the player's menu (OK > Dialogue boost) or Settings > Audio and subtitles.  While on, the sound goes through the audio converter, so a channel takes a second or two longer to start.  Plex has this with Plex Pass.
 - **Remove from Continue watching.**  Movies and Shows from your provider: Hold OK (or Red) on a title in Continue watching now offers Remove from Continue watching, and Mark unwatched also works on a title you're part-way through (it starts from the beginning next time).  My media: a show's Continue watching card offers it too, without marking anything watched.
