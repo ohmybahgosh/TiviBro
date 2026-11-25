@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **Choose where details come from, like Plex's agents.**  Settings > Movies and shows > Where details come from: for movies and for shows on their own, TMDB with your token else TheTVDB (as before), TheTVDB always, or TMDB only.  The guide and My media move to the new choice on their own.  The phone app and the web editor have it too.
+- **Reports from a helper that froze for good.**  The helper now notes what it is doing every few seconds.  If webOS had to stop it (or the TV lost power), the next start logs its last notes, so the next problem report shows what held it up.
 
 ## 0.6.0 (alpha 216, 2026-11-24)
 

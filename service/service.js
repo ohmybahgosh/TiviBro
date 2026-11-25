@@ -226,12 +226,20 @@ function release() {
 watchdog = require('./watchdog').create({ port: function () { return relay ? port : 0; }, busy: function () { return subs > 0; }, log: function (o) { proxy.log(o); } });
 // And when its own work holds it up (a late timer), how long and what it was doing (lag.js, issue #172).
 var Lag = require('./lag');
-Lag.create({ log: function (o) { proxy.log(o); }, doing: function () {
+function lagDoing() {
   var d = Lag.mem();
   if (relay) d.requests = relay.stats.active;
   try { var g = require('./guide').busy(); if (g.length) d.guide = g; } catch (e) {}
   return d;
-} });
+}
+Lag.create({ log: function (o) { proxy.log(o); }, doing: lagDoing });
+/* And a black box for a freeze it never comes back from (issues #176-#178): what it was doing every 5 s, in a file
+   the next helper reads.  The latest log events say which job was running. */
+var box = Lag.blackbox({ file: require('path').join(__dirname, 'helper-state.json'), log: function (o) { proxy.log(o); }, doing: lagDoing,
+  recent: function () { return proxy.LOG.slice(-4).map(function (x) { return x.event || ''; }); } });
+process.on('exit', function () { box.close(); });
+// webOS ends an idle helper with SIGTERM: a normal end, so the box is closed first (Node's default would skip 'exit').
+['SIGTERM', 'SIGINT'].forEach(function (sig) { try { process.on(sig, function () { box.close(); process.exit(0); }); } catch (e) {} });
 
 service.register('start', function (message) {
   clearTimeout(idleTimer);
