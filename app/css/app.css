@@ -869,6 +869,8 @@ body.noguidenames .gch,body.noguidenames .guide-group{width:260px}
 @keyframes unIn{from{opacity:0}to{opacity:1}}
 .modal.upnext .modal-box,.modal.upnext .modal-box.enter{position:static;width:auto;max-height:none;padding:0;background:none;box-shadow:none;border-radius:0;animation:none}
 .modal.upnext .modal-body,.modal-box.panel .modal-body > .un-screen{position:static;overflow:visible}
+/* Never a menu's fades (a mask over the body would hide the whole screen). */
+.modal.upnext .modal-body{-webkit-mask-image:none;mask-image:none}
 .modal.upnext .modal-sub{display:none}
 .modal.upnext .modal-title{position:absolute;left:108px;top:84px;z-index:2;padding:0;font-size:22px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-text)}
 /* The curtain (upnext.js): Up next's dark colour over the pages while the next one is looked up or starting. */

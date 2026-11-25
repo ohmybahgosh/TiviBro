@@ -70,7 +70,7 @@ var UpNext = (function () {
      where the show's page used to flash by: from the end of an episode until Up next is ready (the next one is
      looked up first), and from Play until the player is fullscreen.  Fullscreen hides it (CSS), playing or an
      error takes it away, and it never stays longer than HOLD_MAX, so a lookup that fails can't leave it up. */
-  var curtain = null, curtainTimer = null, HOLD_MAX = 10000;
+  var curtain = null, curtainTimer = null, HOLD_MAX = 10000, FADE = 300;   // FADE: a little over Up next's fade in (app.css unIn)
   function hold() {
     if (!curtain) {
       curtain = U.el('div', 'un-hold hidden');
@@ -96,7 +96,9 @@ var UpNext = (function () {
     function finish(fn) { if (done) return; done = true; stop(); if (fn === o.play) hold(); else release(); if (fn) fn(); }
     var buttons = [{ label: o.playLabel || 'Play now', action: function () { finish(o.play); } }, { label: o.cancelLabel || 'Back to episodes', action: function () { finish(o.cancel); } }];
     UI.panel(o.kicker || 'Up next', body, buttons, function () { finish(o.cancel); }, { look: 'upnext' });
-    release();   // Up next itself covers the screen now
+    /* Up next covers the screen once it has faded in (unIn, 0.25 s): the curtain stays until then, or the page showed
+       through the fade.  Not if it was closed meanwhile (Play puts the curtain up again). */
+    setTimeout(function () { if (mine === run) release(); }, FADE);
     if (!secs) return;
     var btn = body.parentNode && body.parentNode.querySelector('.mbtns .btn'), paint = btn ? ring(btn, secs) : function () {};
     var left = secs;

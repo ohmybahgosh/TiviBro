@@ -407,6 +407,9 @@ var UI = (function () {
   function panel(title, body, buttons, onBack, opts) {
     heading(title, opts && opts.sub);
     if (opts && opts.look) { mLook = opts.look; modal.classList.add(mLook); }
+    /* A long menu before it leaves its fades on the body (drawMenu's more-up and more-down, a mask): a panel has
+       none of its own, and on Up next the mask hid all but a strip at the top. */
+    mBody.classList.remove('more-up', 'more-down');
     mBody.innerHTML = '';
     mBox.classList.add('wide');
     // Long text gives way to the buttons, which always show whole at the bottom (discussion #36).

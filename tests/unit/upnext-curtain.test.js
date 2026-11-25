@@ -1,5 +1,5 @@
 /* Up next's curtain (upnext.js): the dark screen that keeps the show's page from flashing by between an episode
-   ending and Up next, and between Play and the next one starting.  Shown by hold(), gone when Up next opens, when
+   ending and Up next, and between Play and the next one starting.  Shown by hold(), gone once Up next has faded in, when
    you go back, when the player plays or errors, and after HOLD_MAX at the latest. */
 'use strict';
 const assert = require('assert'), vm = require('vm'), fs = require('fs');
@@ -37,7 +37,19 @@ let w = world();
 w.U.hold();
 assert.ok(w.up(), 'hold() puts the curtain up');
 w.U.show({ title: 'Two', play() {}, cancel() {}, auto: false });
-assert.ok(!w.up(), 'Up next opening takes it away');
+assert.ok(w.up(), 'it stays while Up next fades in, so the page never shows through the fade');
+const fade = w.timers.filter(t => !t.off && t.ms < 1000).pop();
+assert.ok(fade, 'a short wait for the fade');
+fade.f();
+assert.ok(!w.up(), 'then Up next covers the screen and the curtain goes');
+
+// Play pressed during the fade: the curtain stays for the player, the fade's end doesn't take it away.
+w = world();
+w.U.hold();
+w.U.show({ title: 'Two', play() {}, cancel() {}, auto: false });
+w.panels[0].buttons[0].action();
+w.timers.filter(t => !t.off && t.ms < 1000).forEach(t => t.f());
+assert.ok(w.up(), 'Play during the fade keeps the curtain up');
 
 w = world();
 let played = 0;
@@ -61,4 +73,4 @@ assert.ok(last && last.ms <= 15000, 'it has a time limit');
 last.f();
 assert.ok(!w.up(), 'and is gone after it, whatever happened');
 
-console.log('PASS Up next curtain: up on hold, gone on Up next, back, playing and the time limit');
+console.log('PASS Up next curtain: up on hold, gone once Up next has faded in, back, playing and the time limit');
