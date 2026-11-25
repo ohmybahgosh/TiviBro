@@ -51,6 +51,7 @@ In 🇺🇸 English, 🇩🇪 German, 🇪🇸 🇲🇽 Spanish, 🇫🇷 French
 | ⏺️ **DVR: record from the guide** | ✅ Free, to a USB drive or to a PC or NAS share on any TV | TiviMate Premium, Plex Pass |
 | ⏸️ **Pause and rewind live TV** | ✅ Free, on every channel | TiviMate: catch-up channels only, Premium |
 | ⏭️ **Skip intro, recap and credits** | ✅ Free, as a button or automatic | Plex Pass |
+| 🗣️ **Dialogue boost and night mode** | ✅ Free, on channels, movies and shows | Plex Pass |
 | 📺📺 **Multiview** | ✅ Free, two channels at once | TiviMate Premium |
 | 📚 **Multiple playlists, catch-up, favorites and your own groups** | ✅ Free | TiviMate Premium |
 | ⏰ **Reminders, parental controls, backups** | ✅ Free | TiviMate Premium |

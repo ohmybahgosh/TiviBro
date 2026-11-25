@@ -47,6 +47,7 @@ Everything in TiviBro is free, including the things other players and media serv
 | ⏺️ **DVR: record from the guide** | ✅ Free, to a USB drive or to a PC or NAS share on any TV | TiviMate Premium, Plex Pass |
 | ⏸️ **Pause and rewind live TV** | ✅ Free, on every channel | TiviMate: catch-up channels only, Premium |
 | ⏭️ **Skip intro, recap and credits** | ✅ Free, as a button or automatic | Plex Pass |
+| 🗣️ **Dialogue boost and night mode** | ✅ Free, on channels, movies and shows | Plex Pass |
 | 📺📺 **Multiview** | ✅ Free, two channels at once | TiviMate Premium |
 | 📚 **Multiple playlists** | ✅ Free, as many as you like | TiviMate Premium |
 | ⏪ **Catch-up** | ✅ Free | TiviMate Premium |
@@ -56,6 +57,10 @@ Everything in TiviBro is free, including the things other players and media serv
 | 🎬 **Movie and show details, Up next, Trakt** | ✅ Free, with no token needed | Usually a media server |
 
 <sub>As listed on TiviMate's and Plex's own sites, November 2026.  No account, no ads, nothing locked.</sub>
+
+<h3 align="center">🗣️ New in alpha 221: Dialogue boost and night mode, free</h3>
+<p align="center">Can't hear the actors over the music?  <b>Dialogue boost</b> lifts voices over music and effects, Low or High, and <b>night mode</b> brings loud scenes down and quiet talk up for watching with the volume low.  On live channels, movies and shows, through the TV's speakers or a soundbar.  Plex keeps this for Plex Pass.</p>
+<p align="center"><sub><a href="docs/USER-GUIDE.md#dialogue-boost-and-night-mode">How to turn it on</a> (OK > Dialogue boost while something plays, or Settings > Audio and subtitles > Dialogue) · <a href="https://github.com/ohmybahgosh/TiviBro/releases/tag/v0.6.0-alpha.221">Alpha 221 release notes</a></sub></p>
 
 <h3 align="center">⏭️ New in alpha 208: Skip intro and credits, free</h3>
 <p align="center">Plex charges for this with Plex Pass.  TiviBro does it for free: <b>Skip intro</b>, <b>Skip recap</b> and <b>Skip credits</b> on your movies and episodes, as a button or <b>automatically</b>.  The times come from the file's own chapters, or from <b><a href="https://theintrodb.org">TheIntroDB</a></b> and <b><a href="https://introdb.app">IntroDB</a></b>, two free community databases.  Skip credits brings up <b>Up next</b>, counting down to the next episode.</p>
@@ -112,6 +117,7 @@ Everything in TiviBro is free, including the things other players and media serv
 
 ### ✨ New lately
 
+- **Dialogue boost and night mode, free.**  Voices clearer over music and effects (Off, Low or High), and night mode for loud scenes when the volume is low.  It works on the TV's speakers and a soundbar, on channels, movies and shows.  Plex keeps this for Plex Pass.
 - **Everything works without a TMDB token.**  Movies and shows get posters, details, trailers and skip times from TheTVDB through TiviBro's own service: in the guide, Movies on now, your provider's Movies and Shows, My media, Up next and recordings.  **Where details come from** picks TMDB or TheTVDB for movies and for shows on their own, like Plex's agents.
 - **Four more languages:** 🇮🇹 Italian, 🇳🇱 Dutch, 🇵🇱 Polish and 🇹🇷 Turkish, next to 🇩🇪 German, 🇪🇸 Spanish, 🇫🇷 French, 🇧🇷 Portuguese and 🇷🇺 Russian, on the TV, the phone app and the web editor.
 - **Ready for Homebrew Channel 0.8.0**, and a helper that leaves a note of what it was doing if the TV ever has to stop it, so a problem report says why.

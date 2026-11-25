@@ -49,6 +49,9 @@ Yes, for free.  Record from the guide to a USB drive on a rooted TV, or to a Win
 **Does it skip intros and credits?**
 Yes, for free (Plex keeps it for Plex Pass): Skip intro, Skip recap and Skip credits, as a button or automatically.  See [Settings: Playback](Settings-Playback).
 
+**I can't hear the dialogue over the music.  Can TiviBro help?**
+Yes, for free (Plex keeps it for Plex Pass): **Dialogue boost** (Low or High) lifts voices over music and effects, and **night mode** brings loud scenes down and quiet talk up.  While something plays, OK > **Dialogue boost**, or Settings > Audio and subtitles > Dialogue.  See [Dialogue boost and night mode](Dialogue-boost-and-night-mode).
+
 **Do I need a TMDB token for posters and details?**
 No.  Without one, movies and shows get their details from TheTVDB through TiviBro's own service.  With your own free TMDB token you can choose TMDB instead, for movies and shows on their own.  See [No TMDB token? TheTVDB](No-TMDB-token-TheTVDB).
 
