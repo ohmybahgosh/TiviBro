@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 218, 2026-11-25)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 218
 
 - **Movies and Shows by language folder** (issue #173).  Settings > Movies and shows > **Categories by language** (off unless you turn it on): when your provider's category names say the language, Movies and Shows open on a folder per language (Hindi, Tamil, English...), each with its categories.  Back leaves a folder.  Nothing more is loaded, so TVs with little memory handle it too.
 - **TheTVDB credited where its details show.**  On the phone app too (a tap opens thetvdb.com).  My media, movie pages, your provider's Movies and Shows, About this show, Movies on now and Recordings say "Metadata provided by TheTVDB · thetvdb.com" under details that came from TheTVDB, as its terms ask.
@@ -10,11 +14,7 @@
 - **Homebrew Channel 0.8.0.**  Checked against the new Homebrew Channel: updates from the TV, USB recording and reminders use only calls it keeps as they were, so TiviBro works with 0.8.0 (and 0.7).
 - **A new stats page.**  tivibro.app/stats has a new look and more in it: TVs per day with a 7-day average, versions in use over time, how fast TVs update after a release, webOS versions and countries, the website's visitors from Google Analytics (top pages, sources, countries, install steps copied), and GitHub.  Days are in Eastern time.  The daily count now also notes the country it came from, to see which languages to add next; Settings > Updates and the privacy page say so.
 
-## 0.6.0 (alpha 217, 2026-11-24)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 217
+### In alpha 217
 
 - **Choose where details come from, like Plex's agents.**  Settings > Movies and shows > Where details come from: for movies and for shows on their own, TMDB with your token else TheTVDB (as before), TheTVDB always, or TMDB only.  The guide and My media move to the new choice on their own.  The phone app and the web editor have it too.
 - **Reports from a helper that froze for good.**  The helper now notes what it is doing every few seconds.  If webOS had to stop it (or the TV lost power), the next start logs its last notes, so the next problem report shows what held it up.
