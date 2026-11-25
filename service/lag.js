@@ -27,20 +27,24 @@ function create(o) {
   return { tick: tick, stop: function () { clearInterval(timer); } };
 }
 
-var BOX_EVERY = 5000, BOX_KEEP = 6;
+var BOX_EVERY = 15000, BOX_KEEP = 6;
 /* The black box (issues #176-#178): a helper that freezes for good never fires its timer again, so it can't say
    what held it up, and webOS ends it without a word.  Every few seconds the helper writes what it is doing (its
    memory, requests, a guide being read, its latest log events) to a small file; a helper that ends normally marks
    the file closed.  The next helper reads it: still open means the one before was killed (frozen and stopped by
    webOS, or the TV losing power), and its last snapshots are logged as an error (so they reach the next problem report), oldest first to show memory climbing.
 
-   blackbox({ file, doing(), recent(), log(o), every, keep, now, fs })  file, doing and log are needed.
+   Every 15 s keeps flash writes low (under 6,000 a day) and still holds the minute before a freeze.
+   blackbox({ file, spare, doing(), recent(), log(o), every, keep, now, fs })  file, doing and log are needed;
+   spare is a second place to write (a temp folder) for a TV where the first can't be written.
    Returns { write(), close(), stop() }: write() is what the timer calls, close() on a normal exit. */
 function blackbox(o) {
   var fs = o.fs || require('fs'), every = o.every || BOX_EVERY, keep = o.keep || BOX_KEEP, now = o.now || Date.now, shots = [], timer = null, started = now();
   // What the helper before left: open (it didn't end normally) with its last snapshots.
+  var file = o.file;
   try {
-    var was = JSON.parse(fs.readFileSync(o.file, 'utf8'));
+    var was = null;
+    [o.file, o.spare].forEach(function (f) { if (was || !f) return; try { was = JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) {} });
     if (was && was.open && Array.isArray(was.shots) && was.shots.length) {
       var last = was.shots[was.shots.length - 1];
       o.log({ lv: 'error', event: 'helper before stopped without ending', shots: was.shots,
@@ -48,7 +52,11 @@ function blackbox(o) {
           JSON.stringify(was.shots.map(function (x) { var c = {}; Object.keys(x).forEach(function (k) { if (k !== 't') c[k] = x[k]; }); c.ago = Math.round((last.t - x.t) / 1000) + ' s before'; return c; })).slice(0, 560) });
     }
   } catch (e) {}
-  function save(open) { try { fs.writeFileSync(o.file, JSON.stringify({ open: open, shots: shots })); } catch (e) {} }
+  // Write where it can: the helper's own folder, else the spare (once moved there, it stays).
+  function save(open) {
+    var body = JSON.stringify({ open: open, shots: shots });
+    try { fs.writeFileSync(file, body); } catch (e) { if (o.spare && file !== o.spare) { file = o.spare; try { fs.writeFileSync(file, body); } catch (e2) {} } }
+  }
   function write() {
     var d = {};
     try { d = o.doing() || {}; } catch (e) { d = { error: String(e && e.message || e) }; }

@@ -33,4 +33,11 @@ const b = box(); b.write(); b.close();
 logs.length = 0;
 box();
 assert.equal(logs.length, 0, 'a normal end is not reported');
-console.log('PASS helper black box: a frozen helper\'s last looks reach the next start, a normal end says nothing');
+// A TV where the helper's folder can't be written: the spare (a temp folder) holds it, and is read next time.
+const ro = { readFileSync: fs.readFileSync, writeFileSync: (f, d) => { if (f === 'locked.json') throw new Error('EROFS'); files[f] = d; } };
+logs.length = 0;
+box({ file: 'locked.json', spare: 'tmp.json', fs: ro }).write();
+assert.ok(JSON.parse(files['tmp.json']).open, 'written to the spare');
+box({ file: 'locked.json', spare: 'tmp.json', fs: ro });
+assert.equal(logs.length, 1, 'and read from it by the next helper');
+console.log('PASS helper black box: a frozen helper\'s last looks reach the next start, a normal end says nothing, a locked folder uses the spare');

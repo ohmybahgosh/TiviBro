@@ -235,7 +235,7 @@ function lagDoing() {
 Lag.create({ log: function (o) { proxy.log(o); }, doing: lagDoing });
 /* And a black box for a freeze it never comes back from (issues #176-#178): what it was doing every 5 s, in a file
    the next helper reads.  The latest log events say which job was running. */
-var box = Lag.blackbox({ file: require('path').join(__dirname, 'helper-state.json'), log: function (o) { proxy.log(o); }, doing: lagDoing,
+var box = Lag.blackbox({ file: require('path').join(__dirname, 'helper-state.json'), spare: require('path').join(require('os').tmpdir(), 'tivibro-helper-state.json'), log: function (o) { proxy.log(o); }, doing: lagDoing,
   recent: function () { return proxy.LOG.slice(-4).map(function (x) { return x.event || ''; }); } });
 process.on('exit', function () { box.close(); });
 // webOS ends an idle helper with SIGTERM: a normal end, so the box is closed first (Node's default would skip 'exit').
