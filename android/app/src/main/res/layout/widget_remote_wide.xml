@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Remote widget, wide (about 4 x 2 cells): power, Back and Home down the left, the arrows, volume and channel rockers on the right, then mute, play, Info and the menu. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@android:id/background" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center_horizontal" android:padding="10dp" android:background="@drawable/widget_bg">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal" android:gravity="center">
+        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
+            <ImageView android:id="@+id/rw_power" android:layout_width="44dp" android:layout_height="44dp" android:layout_margin="4dp" android:background="@drawable/remote_round" android:padding="11dp" android:scaleType="fitCenter" android:src="@drawable/ic_power"/>
+            <ImageView android:id="@+id/rw_back" android:layout_width="44dp" android:layout_height="44dp" android:layout_margin="4dp" android:background="@drawable/remote_round" android:padding="11dp" android:scaleType="fitCenter" android:src="@drawable/ic_back"/>
+            <ImageView android:id="@+id/rw_home" android:layout_width="44dp" android:layout_height="44dp" android:layout_margin="4dp" android:background="@drawable/remote_round" android:padding="11dp" android:scaleType="fitCenter" android:src="@drawable/ic_home"/>
+        </LinearLayout>
+        <FrameLayout android:layout_width="156dp" android:layout_height="156dp" android:layout_margin="4dp" android:background="@drawable/remote_ring">
+            <TextView android:id="@+id/rw_up" android:layout_width="78dp" android:layout_height="46dp" android:layout_gravity="top|center_horizontal" android:gravity="center" android:text="▲" android:textColor="#FFC9D1E3" android:textSize="14sp"/>
+            <TextView android:id="@+id/rw_down" android:layout_width="78dp" android:layout_height="46dp" android:layout_gravity="bottom|center_horizontal" android:gravity="center" android:text="▼" android:textColor="#FFC9D1E3" android:textSize="14sp"/>
+            <TextView android:id="@+id/rw_left" android:layout_width="46dp" android:layout_height="78dp" android:layout_gravity="start|center_vertical" android:gravity="center" android:text="◀" android:textColor="#FFC9D1E3" android:textSize="14sp"/>
+            <TextView android:id="@+id/rw_right" android:layout_width="46dp" android:layout_height="78dp" android:layout_gravity="end|center_vertical" android:gravity="center" android:text="▶" android:textColor="#FFC9D1E3" android:textSize="14sp"/>
+            <TextView android:id="@+id/rw_ok" android:layout_width="65dp" android:layout_height="65dp" android:layout_gravity="center" android:background="@drawable/remote_ok" android:gravity="center" android:text="OK" android:textColor="#FFFFFFFF" android:textSize="16sp" android:textStyle="bold"/>
+        </FrameLayout>
+        <LinearLayout android:layout_width="52dp" android:layout_height="156dp" android:layout_margin="4dp" android:orientation="vertical" android:background="@drawable/remote_rocker">
+            <TextView android:id="@+id/rw_volup" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center" android:text="+" android:textColor="#FFFFFFFF" android:textSize="20sp"/>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="VOL" android:textColor="#FFC9D1E3" android:textSize="10sp" android:textStyle="bold" android:letterSpacing="0.06" android:importantForAccessibility="no"/>
+            <TextView android:id="@+id/rw_voldown" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center" android:text="−" android:textColor="#FFFFFFFF" android:textSize="20sp"/>
+        </LinearLayout>
+        <LinearLayout android:layout_width="52dp" android:layout_height="156dp" android:layout_margin="4dp" android:orientation="vertical" android:background="@drawable/remote_rocker">
+            <TextView android:id="@+id/rw_chup" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center" android:text="∧" android:textColor="#FFFFFFFF" android:textSize="20sp"/>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="CH" android:textColor="#FFC9D1E3" android:textSize="10sp" android:textStyle="bold" android:letterSpacing="0.06" android:importantForAccessibility="no"/>
+            <TextView android:id="@+id/rw_chdown" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center" android:text="∨" android:textColor="#FFFFFFFF" android:textSize="20sp"/>
+        </LinearLayout>
+    </LinearLayout>
+    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center">
+        <ImageView android:id="@+id/rw_mute" android:layout_width="56dp" android:layout_height="36dp" android:layout_margin="4dp" android:background="@drawable/remote_key" android:padding="8dp" android:scaleType="fitCenter" android:src="@drawable/ic_mute"/>
+        <ImageView android:id="@+id/rw_play" android:layout_width="56dp" android:layout_height="36dp" android:layout_margin="4dp" android:background="@drawable/remote_key" android:padding="8dp" android:scaleType="fitCenter" android:src="@drawable/ic_play_pause"/>
+        <ImageView android:id="@+id/rw_info" android:layout_width="56dp" android:layout_height="36dp" android:layout_margin="4dp" android:background="@drawable/remote_key" android:padding="8dp" android:scaleType="fitCenter" android:src="@drawable/ic_info"/>
+        <ImageView android:id="@+id/rw_menu" android:layout_width="56dp" android:layout_height="36dp" android:layout_margin="4dp" android:background="@drawable/remote_key" android:padding="8dp" android:scaleType="fitCenter" android:src="@drawable/ic_more"/>
+    </LinearLayout>
+</LinearLayout>

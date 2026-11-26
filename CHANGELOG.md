@@ -2,15 +2,16 @@
 
 ## Unreleased
 
+- **Scores and times on the phone app's home.**  Now on the TV shows the programme's start and end times, and the score when it's a game of one of your teams (with the Sports widget added).
 - **Smaller pop-ups for reminders and alerts on the TV.**  A reminder, a close game, a game ready to watch or a channel slow to start now shows as a small card in the bottom corner over the picture, not a panel down a third of the screen.
-- **Tap a game in the Sports widget for more.**  Its own card shows the score by period, scoring plays, the last play and win chance, leaders, standings and highlights, with **Watch on TV** for each channel your TV has it on.  The back arrow returns to your games.
+- **Tap a game in the Sports widget for more.**  Its own card shows the score by period, scoring plays, the last play and win chance, leaders, standings and highlights, with **Watch on TV** for each channel your TV has it on.  **All my teams** at the top, or the back arrow, returns to your games.
 - **A live, coloured log in the phone app.**  Settings > TiviBro log now follows along as TiviBro writes it, with no need to refresh, and stays at the newest line unless you scroll up.  Errors are red, warnings amber, and each part of TiviBro has its own colour.
 - **Clearer Settings in the phone app.**  Playback, Guide, Audio and subtitles and Sports are big cards at the top that say what each is set to now.  Search results are grouped by section and show each setting's value.  Long pages have chips that jump to each part, and picking a value opens a list from the bottom of the screen with big rows.
 - **Bigger tabs in the phone app.**  Remote, Channels, Guide and the rest are now rounded buttons with icons, easier to tap than the thin tabs they replace.
 - **A new home screen in the phone app.**  One TV at a time, with a power button, what's on the TV now, a big Remote next to Guide, the other shortcuts, and the reminders coming up.  With several TVs, swipe between them or tap the TV's name for a list of them all.
 - **No stuck time at the top of the Sports widget.**  The time it last read the scores stayed in its corner and looked like a clock that had stopped.  It now shows only when the scores are over 20 minutes old, as "Updated 1:39 PM".
 - **The Sports widget puts live games in the spotlight.**  A live game now fills the top of the widget in both teams' colours, with big logos, the score, the clock, where the ball is, and **Watch on TV** with the channel.  With nothing live, the next game does.  Live scores come in every minute, using a tiny fraction of the data they used to.
-- **The Remote widget keeps its shape.**  Made wider, its buttons stretched and OK became an oval.  The buttons now keep their size in the middle of the widget, and OK stays round.
+- **A Remote widget laid out like a real remote.**  The arrows sit on a ring round OK, volume and channel are up-and-down rockers, and Home, the menu, the guide, rewind and fast forward are there.  Its layout follows its size, so the buttons grow with it: a strip with just the essentials, a wide one, a tall one, and the full page with a number pad.
 
 ## 0.6.0 (alpha 226, 2026-11-26)
 

@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The Remote widget: 3 x 4 cells to start, resizable.  Nothing to refresh on a timer. -->
+<!-- The Remote widget: 3 x 4 cells to start, resizable from a strip (4 x 1.5) to the whole page; RemoteWidget picks
+     the layout for its size.  Nothing to refresh on a timer. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:initialLayout="@layout/widget_remote"
     android:minWidth="250dp"
     android:minHeight="320dp"
     android:minResizeWidth="240dp"
-    android:minResizeHeight="300dp"
+    android:minResizeHeight="110dp"
     android:targetCellWidth="3"
     android:targetCellHeight="4"
     android:maxResizeWidth="800dp"

@@ -2141,5 +2141,6 @@ I18n.add('ru', {
   "Score by period": "Счёт по периодам",
   "Scoring": "Набранные очки",
   "Win chance": "Шанс на победу",
-  "Leaders": "Лидеры"
+  "Leaders": "Лидеры",
+  "All my teams": "Все мои команды"
 });

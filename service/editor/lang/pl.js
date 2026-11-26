@@ -2135,5 +2135,6 @@ I18n.add('pl', {
   "Score by period": "Wynik w częściach",
   "Scoring": "Zdobyte punkty",
   "Win chance": "Szansa na wygraną",
-  "Leaders": "Liderzy"
+  "Leaders": "Liderzy",
+  "All my teams": "Wszystkie moje drużyny"
 });

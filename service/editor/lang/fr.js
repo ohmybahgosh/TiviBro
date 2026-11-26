@@ -2141,5 +2141,6 @@ I18n.add('fr', {
   "Score by period": "Score par période",
   "Scoring": "Points marqués",
   "Win chance": "Chances de victoire",
-  "Leaders": "Meneurs"
+  "Leaders": "Meneurs",
+  "All my teams": "Toutes mes équipes"
 });

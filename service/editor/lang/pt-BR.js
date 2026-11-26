@@ -2141,5 +2141,6 @@ I18n.add('pt-BR', {
   "Score by period": "Placar por período",
   "Scoring": "Pontuações",
   "Win chance": "Chance de vitória",
-  "Leaders": "Líderes"
+  "Leaders": "Líderes",
+  "All my teams": "Todos os meus times"
 });

@@ -2135,5 +2135,6 @@ I18n.add('de', {
   "Or on {x}": "Oder auf {x}",
   "Score by period": "Punkte nach Abschnitt",
   "Scoring": "Punkte",
-  "Win chance": "Siegchance"
+  "Win chance": "Siegchance",
+  "All my teams": "Alle meine Teams"
 });

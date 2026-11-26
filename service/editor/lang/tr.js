@@ -2135,5 +2135,6 @@ I18n.add('tr', {
   "Score by period": "Periyotlara göre skor",
   "Scoring": "Sayılar",
   "Win chance": "Kazanma şansı",
-  "Leaders": "Liderler"
+  "Leaders": "Liderler",
+  "All my teams": "Tüm takımlarım"
 });

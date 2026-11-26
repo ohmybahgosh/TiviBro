@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The guide (a grid), for the Remote widget. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FFFFFFFF" android:pathData="M3,5v14h18V5H3zM8,17H5v-3h3v3zM8,12H5V7h3v5zM19,17h-9v-3h9v3zM19,12h-9V7h9v5z"/>
+</vector>

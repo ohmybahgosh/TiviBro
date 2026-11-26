@@ -58,6 +58,8 @@ private sealed class Item(val key: String) {
     class Stat(val label: CharSequence, val value: CharSequence, k: String) : Item("s$k")
     class News(val n: DNews) : Item("n" + n.url)
     class Watch(val g: WGame, val chan: WChan?, val first: Boolean) : Item("w" + (chan?.k ?: "") + (chan?.name ?: ""))
+    /** Back to all the games: the inner card's first row, so there's a way back on any launcher. */
+    object Back : Item("back")
 }
 
 private class Rows(private val ctx: Context, private val widget: Int) : RemoteViewsService.RemoteViewsFactory {
@@ -79,7 +81,7 @@ private class Rows(private val ctx: Context, private val widget: Int) : RemoteVi
     override fun onDestroy() {}
     override fun getCount() = items.size
     override fun getLoadingView(): RemoteViews? = null
-    override fun getViewTypeCount() = 6
+    override fun getViewTypeCount() = 7
     override fun getItemId(position: Int) = items.getOrNull(position)?.key?.hashCode()?.toLong() ?: position.toLong()
     override fun hasStableIds() = true
 
@@ -92,6 +94,11 @@ private class Rows(private val ctx: Context, private val widget: Int) : RemoteVi
             setOnClickFillInIntent(R.id.nw_root, Intent().putExtra("url", it.n.url))
         }
         is Item.Watch -> watch(it)
+        is Item.Back -> RemoteViews(ctx.packageName, R.layout.widget_sports_head).apply {
+            setTextViewText(R.id.sh_text, "‹  " + tr("All my teams"))
+            setTextViewTextSize(R.id.sh_text, android.util.TypedValue.COMPLEX_UNIT_SP, 14f)
+            setOnClickFillInIntent(R.id.sh_text, Intent().putExtra("back", true))
+        }
     }
 
     // A game in the list (a Spotlight or one line), or the head of its own inner card (no Watch: the channels follow).
@@ -122,7 +129,7 @@ private class Rows(private val ctx: Context, private val widget: Int) : RemoteVi
     /* A game's inner card: its Spotlight, Watch on TV with each channel the TV has it on (before it ends), then what
        ESPN's summary says, or that it's on its way. */
     private fun inner(g: WGame, d: WDetail?): List<Item> {
-        val out = mutableListOf<Item>(Item.Game(g, head = true))
+        val out = mutableListOf<Item>(Item.Back, Item.Game(g, head = true))
         if (g.state != "post") {
             val cs = MyTeams.chanLists(ctx)[g.id].orEmpty().ifEmpty { if (g.net.isNotBlank()) listOf(WChan("", g.net)) else emptyList() }
             if (cs.isEmpty()) out.add(Item.Watch(g, null, true))

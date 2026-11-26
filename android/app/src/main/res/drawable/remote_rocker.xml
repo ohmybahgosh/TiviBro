@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Volume and channel in the Remote widget: one tall pill, + at the top and − at the bottom, like a real remote. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#FF1D2540" />
+    <corners android:radius="200dp" />
+</shape>

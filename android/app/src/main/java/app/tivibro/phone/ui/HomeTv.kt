@@ -57,8 +57,9 @@ fun stateOf(u: TvUi): Pair<Color, String> = when (u.power) {
     Power.UNPAIRED -> Bad to tr("This TV no longer knows this phone")
 }
 
-/* Now on the TV: the channel's logo and name, the programme, and how far into it (or the movie or episode playing).
-   Nothing when TiviBro isn't open or shows nothing playing. */
+/* Now on the TV: the channel's logo and name, the programme, how far into it with its start and end times (or the
+   movie or episode playing), and the score when it's a game of a followed team the Sports widget knows (its cache,
+   matched by both teams' names in the programme's title).  Nothing when TiviBro isn't open or shows nothing playing. */
 @Composable
 fun NowOnTv(u: TvUi) {
     val c = u.caps ?: return
@@ -79,13 +80,31 @@ fun NowOnTv(u: TvUi) {
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(tr("Now on the TV").uppercase(), color = Muted, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                Text(title, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(title, color = TextHi, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 if (c.vodTitle.isBlank() && c.channel.isNotBlank()) Text(c.channel, color = Muted, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            val game = if (c.vodTitle.isBlank()) gameIn(LocalContext.current, title) else null
+            if (game != null && game.state != "pre" && game.away.score != null) Column(horizontalAlignment = Alignment.End) {
+                Text("${game.away.score} – ${game.home.score}", fontWeight = FontWeight.Black, style = MaterialTheme.typography.titleMedium)
+                Text(game.detail, color = if (game.live) Bad else Muted, style = MaterialTheme.typography.labelSmall, maxLines = 1)
             }
         }
         if (frac >= 0f) LinearProgressIndicator(progress = { frac.coerceIn(0f, 1f) }, color = Accent, trackColor = Panel2, modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape))
+        // A programme's start and end under its bar.
+        val p = c.now
+        if (c.vodTitle.isBlank() && p != null && p.end > p.start) Row {
+            val f = DateFormat.getTimeInstance(DateFormat.SHORT)
+            Text(f.format(Date(p.start)), color = Muted, style = MaterialTheme.typography.labelSmall, modifier = Modifier.weight(1f))
+            Text(f.format(Date(p.end)), color = Muted, style = MaterialTheme.typography.labelSmall)
+        }
     }
 }
+
+/** A followed team's game the Sports widget has read whose teams are both named in [title] ("Bears at Lions"), or null. */
+private fun gameIn(ctx: android.content.Context, title: String): app.tivibro.phone.widget.WGame? =
+    app.tivibro.phone.widget.Cache.games(ctx).firstOrNull { g ->
+        listOf(g.away, g.home).all { t -> t.name.length > 2 && title.contains(t.name, ignoreCase = true) }
+    }
 
 /* The next reminders on this TV, from the phone's own copy (notify/PhoneReminders.kt, kept in step in the background),
    so it shows at once.  Nothing when there are none. */

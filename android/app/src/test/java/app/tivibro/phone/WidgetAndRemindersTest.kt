@@ -140,4 +140,12 @@ class WidgetAndRemindersTest {
         assertEquals("10", up.home.score); assertEquals("0", up.away.score); assertEquals("12:51 - 2nd", up.detail)
         assertEquals("DET · 2nd & 6 at CHI 34", up.sit)
     }
+
+    // The Remote widget's layout follows its size: the smallest, wide, tall, and the full page with the number pad.
+    @Test fun remoteLayoutBySize() {
+        assertEquals(R.layout.widget_remote_small, app.tivibro.phone.widget.RemoteWidget.layoutFor(320, 150))
+        assertEquals(R.layout.widget_remote_wide, app.tivibro.phone.widget.RemoteWidget.layoutFor(380, 280))
+        assertEquals(R.layout.widget_remote, app.tivibro.phone.widget.RemoteWidget.layoutFor(300, 560))
+        assertEquals(R.layout.widget_remote_full, app.tivibro.phone.widget.RemoteWidget.layoutFor(380, 760))
+    }
 }

@@ -2135,5 +2135,6 @@ I18n.add('it', {
   "Score by period": "Punteggio per periodo",
   "Scoring": "Marcature",
   "Win chance": "Probabilità di vittoria",
-  "Leaders": "Classifiche"
+  "Leaders": "Classifiche",
+  "All my teams": "Tutte le mie squadre"
 });

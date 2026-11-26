@@ -2135,5 +2135,6 @@ I18n.add('nl', {
   "Score by period": "Score per periode",
   "Scoring": "Scores",
   "Win chance": "Winkans",
-  "Leaders": "Koplopers"
+  "Leaders": "Koplopers",
+  "All my teams": "Al mijn teams"
 });

@@ -102,6 +102,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
@@ -336,6 +337,13 @@ private fun iconOf(s: Shortcut): ImageVector = when (s) {
     Shortcut.SETTINGS -> Icons.Rounded.Settings
 }
 
+/** Each shortcut's own colour (as in the design canvas's home), so they're quick to tell apart. */
+private fun tintOf(s: Shortcut): Color = when (s) {
+    Shortcut.SPORTS -> Color(0xFFFF7A45); Shortcut.ON_NOW -> Color(0xFFF5C842); Shortcut.MEDIA -> Good; Shortcut.REMINDERS -> Warn
+    Shortcut.RECORDINGS -> Bad; Shortcut.EDITOR -> Color(0xFFA78BFA); Shortcut.VOD -> Accent2; Shortcut.SETTINGS -> Color(0xFFC9D1E3)
+    else -> Accent
+}
+
 @Composable
 private fun ShortcutTile(s: Shortcut, enabled: Boolean, modifier: Modifier, live: Boolean = false, height: Int = 74, onClick: () -> Unit) {
     Column(
@@ -344,7 +352,7 @@ private fun ShortcutTile(s: Shortcut, enabled: Boolean, modifier: Modifier, live
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
     ) {
         // Recordings: red while something records on the TV.
-        Icon(iconOf(s), if (live) tr("Recording now") else null, tint = if (live) Bad else if (enabled) Accent else Muted, modifier = Modifier.size(24.dp))
+        Icon(iconOf(s), if (live) tr("Recording now") else null, tint = if (live) Bad else if (enabled) tintOf(s) else Muted, modifier = Modifier.size(24.dp))
         Spacer(Modifier.height(6.dp))
         Text(s.label, color = if (enabled) TextHi else Muted, style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
     }
@@ -405,7 +413,7 @@ private fun TvCard(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(8.dp).clip(CircleShape).background(dot))
                         Spacer(Modifier.width(6.dp))
-                        Text(listOfNotNull(status, if (count > 1) tr("TV {x} of {y}", "x" to position + 1, "y" to count) else tv.model.ifBlank { null }).joinToString("  ·  "),
+                        Text(listOfNotNull(status, if (count > 1) tr("TV {x} of {y}", "x" to position + 1, "y" to count) else tv.model.takeIf { it.isNotBlank() && !tv.name.contains(it, ignoreCase = true) }).joinToString("  ·  "),
                             style = MaterialTheme.typography.bodySmall, color = Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                     if (isTile) Text(tr("Quick Settings tile"), style = MaterialTheme.typography.labelSmall, color = Accent)

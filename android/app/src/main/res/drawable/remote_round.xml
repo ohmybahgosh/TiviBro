@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A round button in the Remote widget (power, mute, info). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#FF1D2540" />
+    <corners android:radius="200dp" />
+</shape>

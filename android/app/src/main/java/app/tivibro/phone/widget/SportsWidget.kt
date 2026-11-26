@@ -45,6 +45,7 @@ class SportsWidget : AppWidgetProvider() {
                 val widget = i.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, 0)
                 val app = ctx.applicationContext
                 when {
+                    i.hasExtra("back") -> { DetailOpen.close(app, widget); drawAll(app) }
                     i.hasExtra("open") -> open(app, widget, i.getStringExtra("open").orEmpty())
                     i.hasExtra("url") -> link(app, i.getStringExtra("url").orEmpty())
                     else -> play(app, i.getStringExtra("team").orEmpty(), i.getStringExtra("what").orEmpty(), i.getStringExtra("k").orEmpty())
