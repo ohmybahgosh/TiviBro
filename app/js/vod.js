@@ -1211,9 +1211,10 @@ var Vod = (function () {
     var s = series || {}, tv = typeof Series !== 'undefined' && s.name ? Series.show(s.name, s.year, 'strong') : null, te = tv ? Series.episode(tv, nx.season, nx.num) : null;
     var spoil = !!(Store.settings.noSpoilers && !isWatched(idOf(nx)) && !resumeOf(idOf(nx)));
     var still = spoil ? '' : (nx.cover && nx.cover !== s.cover ? nx.cover : (te && te.still) || '');
-    var title = String(nx.label || '').replace(/^S\d+ E\S*\s+/, '') || (!spoil && te && te.t) || '';
-    UpNext.show({ image: still || (tv && (tv.backdropHd || tv.backdrop)) || s.cover || '', logo: (tv && tv.logo) || '', show: (tv && tv.title) || s.name || '', line: T('Season {x}, episode {y}', { x: nx.season, y: nx.num || '?' }),
-      title: title, desc: spoil ? '' : String(nx.plotEp || (te && te.plot) || '').slice(0, 400), play: playNext, cancel: function () {}, cancelLabel: 'Back to episodes' });
+    // The provider's label is often the file's name ("S01E10 Show"); UpNext keeps only a real episode name, else TMDB's.
+    var own = String(nx.label || '').replace(/^S\d+ E\S*\s+/, ''), title = UpNext._ownTitle(own, (tv && tv.title) || s.name, '') || (!spoil && te && te.t) || '';
+    UpNext.show({ image: still || (tv && (tv.backdropHd || tv.backdrop)) || s.cover || '', logo: (tv && tv.logo) || '', show: (tv && tv.title) || s.name || '', season: nx.season, episode: nx.num || null,
+      line: T('Season {x}, episode {y}', { x: nx.season, y: nx.num || '?' }), title: title, runtime: nx.dur || '', aired: (te && te.air) || '', desc: spoil ? '' : String(nx.plotEp || (te && te.plot) || '').slice(0, 400), play: playNext, cancel: function () {}, cancelLabel: 'Back to episodes' });
   }
 
   /* Yellow: watched or not watched in one press, for a movie or an episode (no menu to open and close each time). */

@@ -2639,5 +2639,9 @@ I18n.add('ru', {
   "TiviBro's network helper is stuck on this TV.  Channels still play without it; restarting the TV frees it.": "Сетевой помощник TiviBro завис на этом телевизоре.  Каналы работают и без него; перезапуск телевизора освободит его.",
   "Sound and picture": "Звук и изображение",
   "Channel": "Канал",
-  "Organize": "Упорядочить"
+  "Organize": "Упорядочить",
+  "S{x} · E{y}": "С{x} · Э{y}",
+  "Season {n}": "Сезон {n}",
+  "Aired {x}": "Вышел {x}",
+  "Ends {x}": "Конец в {x}"
 });

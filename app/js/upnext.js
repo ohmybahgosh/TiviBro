@@ -10,8 +10,13 @@
    haven't seen shows the show's backdrop and no summary (the callers leave them out).
 
    Used by My media's shows (media-series.js), its collections (media.js) and the provider's series (vod.js).
-     UpNext.show({ kicker, image, logo, show, line, title, desc, play, cancel, playLabel, cancelLabel, auto })
+     UpNext.show({ kicker, image, logo, show, season, episode, line, title, runtime, aired, desc, play, cancel, playLabel, cancelLabel, auto })
    image: the picture behind; logo: the show's title as artwork (TMDB), else show is set in large type.
+   season and episode: the numbers, shown small in a chip ("S1 · E10") with the running time, when it first aired
+   and when it would end, so the episode's own name is what reads big.  An episode without a name of its own (none,
+   or only the file's "S01E10") has its number big instead ("Episode 10", "Season 1" in the small row).  line: the
+   number already written (an air date, an absolute episode), used the same way when season and episode aren't given.
+   runtime: minutes, "22 min" or "00:22:10"; aired: a date ("2026-11-18").
    auto: false for a screen that only asks (an episode is missing before it).
      UpNext.hold() / UpNext.release(): the curtain (below), for callers between an ending and show(). */
 var UpNext = (function () {
@@ -57,11 +62,55 @@ var UpNext = (function () {
     var typed = function () { name.innerHTML = ''; if (o.show) name.appendChild(U.el('div', 'un-showtitle', o.show)); };
     if (o.logo) name.appendChild(pic(o.logo, 'un-logo', typed)); else typed();
     words.appendChild(name);
-    if (o.line) words.appendChild(U.el('div', 'un-line', o.line));
-    if (o.title) words.appendChild(U.el('div', 'un-title', o.title));
+    var num = numbers(o), title = ownTitle(o.title, o.show, num.big);
+    words.appendChild(facts(title ? num.chip : num.small, o));
+    if (title || num.big) words.appendChild(U.el('div', 'un-title', title || num.big));
     if (o.desc) words.appendChild(U.el('div', 'un-desc', o.desc));
     box.appendChild(words);
     return box;
+  }
+  /* The episode's number three ways: chip (small, beside an episode's own name), and small plus big for one with no
+     name, where the number is the heading.  From season and episode, else from a line the caller wrote. */
+  function numbers(o) {
+    if (o.season != null && o.episode != null && o.episode !== '' && o.episode !== '?') {
+      return { chip: T('S{x} · E{y}', { x: o.season, y: o.episode }), small: T('Season {n}', { n: o.season }), big: T('Episode {n}', { n: +o.episode || o.episode }) };
+    }
+    return { chip: o.line || '', small: '', big: o.line || '' };
+  }
+  /* The episode's own name, or '' when it has none worth showing: a file's "S01E10 " or "1x10 - " in front is taken
+     off, and what's left being only a number, the show's name or the number itself counts as no name. */
+  var NUM_FIRST = /^\s*(?:s\d{1,3}\s*[ ._-]?\s*e\d{1,4}(?:\s*-?\s*e\d{1,4})?|\d{1,3}x\d{1,4}|ep\.?\s*\d{1,4})(?![a-z0-9])\s*[-–:.|]*\s*/i;
+  function ownTitle(t, show, big) {
+    t = String(t || '').replace(NUM_FIRST, '').trim();
+    var low = t.toLowerCase();
+    if (!t || /^\d+$/.test(t) || low === String(show || '').trim().toLowerCase() || low === String(big || '').toLowerCase()) return '';
+    return t;
+  }
+  // Minutes from a running time in any of the shapes the sources give: 22, "22 min", "1 h 32 min", "00:22:10".
+  function minutes(v) {
+    var s = String(v == null ? '' : v), hms = s.match(/^(\d+):(\d{2})(?::(\d{2}))?$/);
+    if (hms) return hms[3] != null ? +hms[1] * 60 + +hms[2] : +hms[1];
+    var h = s.match(/(\d+)\s*h/), m = s.match(/(\d+)\s*(?:min|m\b)/);
+    if (h || m) return (h ? +h[1] * 60 : 0) + (m ? +m[1] : 0);
+    return parseInt(s, 10) || 0;
+  }
+  /* The small row under the show's name: the number (a chip), then the running time, when it first aired and the
+     time it would end if it started now, each left out when it isn't known. */
+  function facts(first, o) {
+    var row = U.el('div', 'un-facts'), bits = [], mins = minutes(o.runtime), when = o.aired ? Date.parse(String(o.aired).slice(0, 10) + 'T12:00:00') : NaN;
+    if (first) row.appendChild(U.el('span', 'un-chip', first));
+    if (mins > 0 && mins < 1000) bits.push(U.runtime(mins));
+    if (!isNaN(when)) bits.push(T('Aired {x}', { x: airedDate(when) }));
+    if (mins > 0 && mins < 1000) bits.push(T('Ends {x}', { x: U.hhmm(Date.now() + mins * 60000) }));
+    bits.forEach(function (b, i) {
+      if (i || first) row.appendChild(U.el('span', 'un-dot', '·'));
+      row.appendChild(U.el('span', '', b));
+    });
+    return row;
+  }
+  // A first air date the way the TV writes dates, with the year: "Nov 18, 2026" in the US, "18 Nov 2026" in the UK.
+  function airedDate(ts) {
+    try { return new Date(ts).toLocaleDateString(U.tvLocale(), { month: 'short', day: 'numeric', year: 'numeric' }); } catch (e) { return new Date(ts).toDateString().slice(4); }
   }
   // The Play button with its ring: the ring empties as the seconds go, and the label says how many are left.
   function ring(btn, secs) {
@@ -119,5 +168,5 @@ var UpNext = (function () {
     }, 1000);
   }
 
-  return { show: show, stop: stop, seconds: seconds, hold: hold, release: release, _sharp: sharp };
+  return { show: show, stop: stop, seconds: seconds, hold: hold, release: release, _sharp: sharp, _ownTitle: ownTitle, _minutes: minutes };
 })();

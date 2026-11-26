@@ -227,9 +227,11 @@ var MediaSeries = (function () {
      it only asks: no countdown. */
   function upNext(ep, showRecord, gap, play, cancel) {
     var em = ep.metadata || {}, sm = (showRecord && showRecord.metadata) || {}, hide = !!Store.settings.noSpoilers && ep.watchState !== 'watched';
-    var still = !hide && em.still, number = ep.airDate && ep.order === 'date' ? ep.airDate : ep.absoluteNumber != null && ep.order === 'absolute' ? T('Episode {n}', { n: ep.absoluteNumber }) : T('Season {x}, episode {y}', { x: ep.season, y: ep.number });
+    var still = !hide && em.still, byDate = ep.airDate && ep.order === 'date', byAbs = !byDate && ep.absoluteNumber != null && ep.order === 'absolute';
+    var number = byDate ? ep.airDate : byAbs ? T('Episode {n}', { n: ep.absoluteNumber }) : '', seasonal = !byDate && !byAbs;
     UpNext.show({ kicker: gap ? 'An episode is missing' : 'Up next', auto: !gap, image: still || sm.backdropHd || sm.backdrop || sm.poster || em.poster || '', logo: sm.logo || '',
-      show: (showRecord && (sm.title || showRecord.title)) || '', line: number, title: em.title || ep.title || '', desc: hide ? '' : String(em.plot || '').slice(0, 400),
+      show: (showRecord && (sm.title || showRecord.title)) || '', season: seasonal ? ep.season : null, episode: seasonal ? ep.number : null, line: number,
+      title: em.title || ep.title || '', runtime: em.runtime || '', aired: byDate ? '' : em.airDate || ep.airDate || '', desc: hide ? '' : String(em.plot || '').slice(0, 400),
       play: play, cancel: cancel, cancelLabel: 'Back to episodes' });
   }
   function episodeLabel(item) {

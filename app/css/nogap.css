@@ -39,6 +39,8 @@
 .nogap .tour-remote-box > * + *{margin-left:56px}
 .nogap .pick-row > * + *{margin-left:22px}
 .nogap .un-words > * + *{margin-top:22px}
+.nogap .un-facts > *{margin-right:14px;margin-bottom:8px}
+.nogap .un-facts{margin-bottom:-8px}
 .nogap .media-tabs > * + *{margin-left:10px}
 .nogap .media-libart-icon > *{margin-right:8px;margin-bottom:8px}
 .nogap .media-libart-icon{margin-bottom:-8px}

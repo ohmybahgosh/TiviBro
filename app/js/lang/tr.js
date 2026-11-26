@@ -2512,5 +2512,9 @@ I18n.add('tr', {
   "TiviBro's network helper is stuck on this TV.  Channels still play without it; restarting the TV frees it.": "TiviBro'nun ağ yardımcısı bu TV'de takıldı.  Kanallar onsuz da oynar; TV'yi yeniden başlatmak onu kurtarır.",
   "Sound and picture": "Ses ve görüntü",
   "Channel": "Kanal",
-  "Organize": "Düzenle"
+  "Organize": "Düzenle",
+  "S{x} · E{y}": "S{x} · B{y}",
+  "Season {n}": "{n}. Sezon",
+  "Aired {x}": "Yayın {x}",
+  "Ends {x}": "Bitiş {x}"
 });

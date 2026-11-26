@@ -1793,5 +1793,9 @@ I18n.add('fr', {
   "TiviBro's network helper is stuck on this TV.  Channels still play without it; restarting the TV frees it.": "L'assistant réseau de TiviBro est bloqué sur ce téléviseur.  Les chaînes se lisent quand même sans lui ; redémarrer le téléviseur le débloque.",
   "Sound and picture": "Son et image",
   "Channel": "Chaîne",
-  "Organize": "Organiser"
+  "Organize": "Organiser",
+  "S{x} · E{y}": "S{x} · É{y}",
+  "Season {n}": "Saison {n}",
+  "Aired {x}": "Diffusé le {x}",
+  "Ends {x}": "Fin à {x}"
 });

@@ -889,14 +889,17 @@ body.noguidenames .gch,body.noguidenames .guide-group{width:260px}
 body.full .un-hold{display:none}
 .un-bg{position:absolute;top:0;right:0;bottom:0;left:0;background:radial-gradient(1300px 900px at 78% 32%,#2a3a66 0%,#141c36 45%,#05070f 82%)}
 .un-bgimg{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;object-fit:cover}
-.un-shade{position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(90deg,rgba(5,7,15,.95) 0%,rgba(5,7,15,.8) 40%,rgba(5,7,15,.1) 78%),linear-gradient(0deg,rgba(5,7,15,.96) 0%,rgba(5,7,15,.6) 30%,rgba(5,7,15,0) 55%)}
+/* The shade keeps the words readable over a bright picture: dark under them (to about 55% across), clear on the right. */
+.un-shade{position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(90deg,rgba(5,7,15,.95) 0%,rgba(5,7,15,.88) 45%,rgba(5,7,15,.45) 66%,rgba(5,7,15,.08) 85%),linear-gradient(0deg,rgba(5,7,15,.96) 0%,rgba(5,7,15,.6) 30%,rgba(5,7,15,0) 55%)}
 .un-words{position:absolute;left:108px;top:200px;width:930px;z-index:2;display:flex;flex-direction:column;gap:22px}
 .un-name{min-height:60px}
 .un-logo{display:block;max-width:840px;max-height:240px;object-fit:contain;object-position:left center;filter:drop-shadow(0 6px 30px rgba(0,0,0,.5))}
 .un-showtitle{font-size:86px;line-height:1.02;font-weight:800;letter-spacing:-1px;color:#fff;text-shadow:0 6px 34px rgba(0,0,0,.5);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
-.un-line{font-size:28px;font-weight:600;color:var(--accent-text)}
-.un-title{font-size:66px;line-height:1.08;font-weight:800;color:#fff;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
-.un-desc{font-size:27px;line-height:1.45;color:#c3cbe3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.un-facts{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;font-size:26px;font-weight:600;color:#d3d9ea;text-shadow:0 2px 12px rgba(0,0,0,.85)}
+.un-chip{padding:4px 12px;border-radius:8px;background:rgba(5,7,15,.55);border:1px solid rgba(255,255,255,.28);color:#fff}
+.un-dot{color:#8f99b8}
+.un-title{font-size:56px;line-height:1.08;font-weight:800;color:#fff;text-shadow:0 4px 24px rgba(0,0,0,.8);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.un-desc{font-size:28px;line-height:1.5;color:#d3d9ea;text-shadow:0 2px 12px rgba(0,0,0,.85);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
 .modal.upnext .mbtns{position:absolute;left:108px;bottom:84px;z-index:2;display:flex;align-items:center}
 .modal.upnext .mbtns .btn{display:flex;align-items:center;height:96px;margin:0 24px 0 0;padding:0 46px;box-sizing:border-box;border-radius:999px;font-size:30px;font-weight:600;background:rgba(255,255,255,.07);border:3px solid rgba(255,255,255,.25);color:#f2f4fa}
 .modal.upnext .mbtns .btn.focus{background:#f2f4fa;border-color:#f2f4fa;color:#05070f;font-weight:700}

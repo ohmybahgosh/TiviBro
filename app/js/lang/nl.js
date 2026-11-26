@@ -2512,5 +2512,9 @@ I18n.add('nl', {
   "TiviBro's network helper is stuck on this TV.  Channels still play without it; restarting the TV frees it.": "De netwerkhulp van TiviBro zit vast op deze tv.  Zenders spelen ook zonder; de tv opnieuw opstarten maakt hem vrij.",
   "Sound and picture": "Geluid en beeld",
   "Channel": "Zender",
-  "Organize": "Ordenen"
+  "Organize": "Ordenen",
+  "S{x} · E{y}": "S{x} · A{y}",
+  "Season {n}": "Seizoen {n}",
+  "Aired {x}": "Uitgezonden {x}",
+  "Ends {x}": "Eindigt {x}"
 });
