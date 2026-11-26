@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **The Remote widget keeps its shape.**  Made wider, its buttons stretched and OK became an oval.  The buttons now keep their size in the middle of the widget, and OK stays round.
+
 ## 0.6.0 (alpha 226, 2026-11-26)
 
 Pre-release: expect rough edges, and keep a backup before installing.

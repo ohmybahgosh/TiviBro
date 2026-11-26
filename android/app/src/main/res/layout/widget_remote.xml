@@ -1,67 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The Remote widget (widget/RemoteWidget.kt): power, the TV's name and mute on top, the arrows round OK, then Back,
-     play and pause, Info, volume and channel, and the four colour buttons.  Each button sends one press to the TV. -->
+     play and pause, Info, volume and channel, and the four colour buttons.  Each button sends one press to the TV.
+     The buttons have fixed widths and sit in the middle, so a wider widget only adds room around them (OK stays round). -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@android:id/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:gravity="center_horizontal"
     android:padding="10dp"
     android:background="@drawable/widget_bg">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="0.8" android:orientation="horizontal">
-        <ImageView android:id="@+id/rw_power" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp"
+    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="0.8" android:orientation="horizontal" android:gravity="center">
+        <ImageView android:id="@+id/rw_power" android:layout_width="52dp" android:layout_height="match_parent" android:layout_margin="3dp"
             android:background="@drawable/remote_key" android:padding="10dp" android:scaleType="fitCenter" android:src="@drawable/ic_power" />
-        <TextView android:id="@+id/rw_name" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="3" android:gravity="center"
+        <TextView android:id="@+id/rw_name" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center"
             android:textColor="#FFFFFFFF" android:textSize="15sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
-        <ImageView android:id="@+id/rw_mute" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp"
+        <ImageView android:id="@+id/rw_mute" android:layout_width="52dp" android:layout_height="match_parent" android:layout_margin="3dp"
             android:background="@drawable/remote_key" android:padding="10dp" android:scaleType="fitCenter" android:src="@drawable/ic_mute" />
     </LinearLayout>
-    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
-        <FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" />
-        <TextView android:id="@+id/rw_up" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp"
+    <LinearLayout android:layout_width="wrap_content" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal" android:gravity="center">
+        <FrameLayout android:layout_width="68dp" android:layout_height="match_parent" android:layout_margin="3dp" />
+        <TextView android:id="@+id/rw_up" android:layout_width="68dp" android:layout_height="match_parent" android:layout_margin="3dp"
             android:background="@drawable/remote_key" android:gravity="center" android:text="▲" android:textColor="#FFFFFFFF" android:textSize="18sp" android:textStyle="bold" />
-        <FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" />
+        <FrameLayout android:layout_width="68dp" android:layout_height="match_parent" android:layout_margin="3dp" />
     </LinearLayout>
-    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
-        <TextView android:id="@+id/rw_left" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp"
+    <LinearLayout android:layout_width="wrap_content" android:layout_height="74dp" android:orientation="horizontal" android:gravity="center">
+        <TextView android:id="@+id/rw_left" android:layout_width="68dp" android:layout_height="match_parent" android:layout_margin="3dp"
             android:background="@drawable/remote_key" android:gravity="center" android:text="◀" android:textColor="#FFFFFFFF" android:textSize="18sp" android:textStyle="bold" />
-        <TextView android:id="@+id/rw_ok" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp"
+        <TextView android:id="@+id/rw_ok" android:layout_width="68dp" android:layout_height="68dp" android:layout_margin="3dp"
             android:background="@drawable/remote_ok" android:gravity="center" android:text="OK" android:textColor="#FFFFFFFF" android:textSize="18sp" android:textStyle="bold" />
-        <TextView android:id="@+id/rw_right" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp"
+        <TextView android:id="@+id/rw_right" android:layout_width="68dp" android:layout_height="match_parent" android:layout_margin="3dp"
             android:background="@drawable/remote_key" android:gravity="center" android:text="▶" android:textColor="#FFFFFFFF" android:textSize="18sp" android:textStyle="bold" />
     </LinearLayout>
-    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
-        <FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" />
-        <TextView android:id="@+id/rw_down" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp"
+    <LinearLayout android:layout_width="wrap_content" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal" android:gravity="center">
+        <FrameLayout android:layout_width="68dp" android:layout_height="match_parent" android:layout_margin="3dp" />
+        <TextView android:id="@+id/rw_down" android:layout_width="68dp" android:layout_height="match_parent" android:layout_margin="3dp"
             android:background="@drawable/remote_key" android:gravity="center" android:text="▼" android:textColor="#FFFFFFFF" android:textSize="18sp" android:textStyle="bold" />
-        <FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" />
+        <FrameLayout android:layout_width="68dp" android:layout_height="match_parent" android:layout_margin="3dp" />
     </LinearLayout>
-    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
-        <ImageView android:id="@+id/rw_back" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp"
+    <LinearLayout android:layout_width="wrap_content" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal" android:gravity="center">
+        <ImageView android:id="@+id/rw_back" android:layout_width="68dp" android:layout_height="match_parent" android:layout_margin="3dp"
             android:background="@drawable/remote_key" android:padding="10dp" android:scaleType="fitCenter" android:src="@drawable/ic_back" />
-        <TextView android:id="@+id/rw_play" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp"
+        <TextView android:id="@+id/rw_play" android:layout_width="68dp" android:layout_height="match_parent" android:layout_margin="3dp"
             android:background="@drawable/remote_key" android:gravity="center" android:text="⏯" android:textColor="#FFFFFFFF" android:textSize="18sp" android:textStyle="bold" />
-        <TextView android:id="@+id/rw_info" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp"
+        <TextView android:id="@+id/rw_info" android:layout_width="68dp" android:layout_height="match_parent" android:layout_margin="3dp"
             android:background="@drawable/remote_key" android:gravity="center" android:text="ⓘ" android:textColor="#FFFFFFFF" android:textSize="18sp" android:textStyle="bold" />
     </LinearLayout>
-    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
-        <TextView android:id="@+id/rw_voldown" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp"
-            android:background="@drawable/remote_key" android:gravity="center" android:text="VOL −" android:textColor="#FFFFFFFF" android:textSize="14sp" android:textStyle="bold" />
-        <TextView android:id="@+id/rw_volup" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp"
-            android:background="@drawable/remote_key" android:gravity="center" android:text="VOL +" android:textColor="#FFFFFFFF" android:textSize="14sp" android:textStyle="bold" />
-        <TextView android:id="@+id/rw_chdown" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp"
-            android:background="@drawable/remote_key" android:gravity="center" android:text="CH −" android:textColor="#FFFFFFFF" android:textSize="14sp" android:textStyle="bold" />
-        <TextView android:id="@+id/rw_chup" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp"
-            android:background="@drawable/remote_key" android:gravity="center" android:text="CH +" android:textColor="#FFFFFFFF" android:textSize="14sp" android:textStyle="bold" />
+    <LinearLayout android:layout_width="wrap_content" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal" android:gravity="center">
+        <TextView android:id="@+id/rw_voldown" android:layout_width="52dp" android:layout_height="match_parent" android:layout_margin="3dp"
+            android:background="@drawable/remote_key" android:gravity="center" android:text="VOL −" android:textColor="#FFFFFFFF" android:textSize="13sp" android:textStyle="bold" />
+        <TextView android:id="@+id/rw_volup" android:layout_width="52dp" android:layout_height="match_parent" android:layout_margin="3dp"
+            android:background="@drawable/remote_key" android:gravity="center" android:text="VOL +" android:textColor="#FFFFFFFF" android:textSize="13sp" android:textStyle="bold" />
+        <TextView android:id="@+id/rw_chdown" android:layout_width="52dp" android:layout_height="match_parent" android:layout_margin="3dp"
+            android:background="@drawable/remote_key" android:gravity="center" android:text="CH −" android:textColor="#FFFFFFFF" android:textSize="13sp" android:textStyle="bold" />
+        <TextView android:id="@+id/rw_chup" android:layout_width="52dp" android:layout_height="match_parent" android:layout_margin="3dp"
+            android:background="@drawable/remote_key" android:gravity="center" android:text="CH +" android:textColor="#FFFFFFFF" android:textSize="13sp" android:textStyle="bold" />
     </LinearLayout>
-    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="0.5" android:orientation="horizontal">
-        <TextView android:id="@+id/rw_red" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp"
+    <LinearLayout android:layout_width="wrap_content" android:layout_height="0dp" android:layout_weight="0.5" android:orientation="horizontal" android:gravity="center">
+        <TextView android:id="@+id/rw_red" android:layout_width="52dp" android:layout_height="match_parent" android:layout_margin="3dp"
             android:background="@drawable/remote_red" android:gravity="center" android:text="" android:textColor="#FFFFFFFF" android:textSize="18sp" android:textStyle="bold" />
-        <TextView android:id="@+id/rw_green" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp"
+        <TextView android:id="@+id/rw_green" android:layout_width="52dp" android:layout_height="match_parent" android:layout_margin="3dp"
             android:background="@drawable/remote_green" android:gravity="center" android:text="" android:textColor="#FFFFFFFF" android:textSize="18sp" android:textStyle="bold" />
-        <TextView android:id="@+id/rw_yellow" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp"
+        <TextView android:id="@+id/rw_yellow" android:layout_width="52dp" android:layout_height="match_parent" android:layout_margin="3dp"
             android:background="@drawable/remote_yellow" android:gravity="center" android:text="" android:textColor="#FFFFFFFF" android:textSize="18sp" android:textStyle="bold" />
-        <TextView android:id="@+id/rw_blue" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp"
+        <TextView android:id="@+id/rw_blue" android:layout_width="52dp" android:layout_height="match_parent" android:layout_margin="3dp"
             android:background="@drawable/remote_blue" android:gravity="center" android:text="" android:textColor="#FFFFFFFF" android:textSize="18sp" android:textStyle="bold" />
     </LinearLayout>
 </LinearLayout>
