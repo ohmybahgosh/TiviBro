@@ -38,5 +38,23 @@ function lookup(client, q) { return new Promise((res, rej) => client.lookup(q, (
   assert.equal((await lookup(tv,{id:'tmdb:tv:42',groupId:'group_demo'})).group.id,'group_demo');
   await assert.rejects(lookup(tv,{id:'tmdb:tv:42',season:-1}),/valid season/);
   assert(!tvCalls.some(url => url.includes('/movie/')));
+  // Shelves from TMDB (discussion #184): a region's streaming services biggest first, genres, and one service's or genre's titles.
+  const shelfCalls = [];
+  const sh = M.create({ credential: 'demo-token', read: (url, headers, cb) => {
+    shelfCalls.push(url);
+    if (url.includes('/watch/providers/movie')) return cb(null, { results: [{ provider_id: 119, provider_name: 'Prime Video', display_priorities: { IN: 2 } }, { provider_id: 8, provider_name: 'Netflix', display_priorities: { IN: 1 } }, { provider_id: 'x', provider_name: 'Bad' }] });
+    if (url.includes('/genre/movie/list')) return cb(null, { genres: [{ id: 27, name: 'Horror' }, { id: 35, name: 'Comedy' }] });
+    if (url.includes('/discover/movie')) return cb(null, { total_pages: 1, results: [{ id: 5, title: 'Scary', original_title: 'Scary', release_date: '2024-02-02' }] });
+    cb(new Error('unexpected ' + url));
+  } });
+  const svcs = await lookup(sh, { list: 'services', kind: 'movie', region: 'IN', language: 'en' });
+  assert.deepEqual(svcs.items.map((x) => x.name), ['Netflix', 'Prime Video'], 'services by the region\'s order, bad ids left out');
+  assert(shelfCalls.some((u) => u.includes('watch_region=IN')));
+  assert.deepEqual((await lookup(sh, { list: 'genres', kind: 'movie', language: 'en' })).items, [{ id: 27, name: 'Horror' }, { id: 35, name: 'Comedy' }]);
+  const one = await lookup(sh, { list: 'service', provider: '8', region: 'IN', kind: 'movie', language: 'en' });
+  assert.equal(one.items[0].t, 'Scary'); assert(shelfCalls.some((u) => u.includes('with_watch_providers=8') && u.includes('watch_region=IN')));
+  await lookup(sh, { list: 'genre', genre: '27', kind: 'movie', language: 'en' }); assert(shelfCalls.some((u) => u.includes('with_genres=27')));
+  await assert.rejects(lookup(sh, { list: 'service', provider: '8&x=1', kind: 'movie' }), /streaming service/);
+  assert(!shelfCalls.some((u) => /watch_region=(?![A-Z]{2}(&|$))/.test(u)), 'a region is two letters or the US');
   console.log('PASS TMDB locale, per-field fallback, artwork, matching, IMDb migration and missing-key behavior');
 })().catch(e => { console.error(e); process.exitCode = 1; });

@@ -16,11 +16,14 @@
      -> { ok, movie: { id, title, year, releaseDate, plot, genre, country, originalLanguage, runtime, poster, backdrop,
                        backdropHd, logo, cast, directors, imdb, tmdb, trailer, score } }
    imdb and tmdb: the same title on IMDb and TMDB (skip times and subtitles are found by them); trailer: a YouTube id.
+   GET /v1/top10?country=US -> streaming services' Top 10s in a country, from FlixPatrol (see top10.js)
    GET /  -> { ok, service: 'tivibro-meta', ready }
 
    Answers are kept in Cloudflare's cache at the edge (search a week, a show 3 days, its episodes a day), so
    most asks never reach TheTVDB.  TheTVDB's login token (valid a month) is kept in the same cache for 20 days.
    Nothing about who asked is stored.  Settings: the secret TVDB_KEY (npx wrangler secret put TVDB_KEY). */
+
+import { top10 } from './top10.js';
 
 const API = 'https://api4.thetvdb.com/v4', ART = 'https://artworks.thetvdb.com', SHAPE = '2';
 const TTL = { search: 7 * 86400, series: 3 * 86400, movie: 7 * 86400, episodes: 86400, miss: 3600 };
@@ -201,6 +204,13 @@ async function route(request, env, ctx) {
   if (m) {
     const id = m[1], season = +m[2];
     return cached(request, ctx, TTL.episodes, async () => ({ ok: true, episodes: (await episodes(env, id, l3, ctx)).filter(e => e.season === season) }));
+  }
+  // Streaming Top 10s by country (top10.js): kept in KV and asked of FlixPatrol at most once a day.
+  if (p === '/v1/top10') {
+    if (!env.TOP10) return json({ ok: true, country: '', date: '', charts: [] }, 200, 3600);
+    // Kept at the edge an hour too, so TVs asking at once when a day's charts are due make one ask per place.
+    const c2 = String(url.searchParams.get('country') || '').toUpperCase().slice(0, 2);
+    return cached(new Request(url.origin + '/v1/top10?country=' + c2), ctx, 3600, () => top10(env, c2, ctx));
   }
   return json({ error: 'not found' }, 404);
 }

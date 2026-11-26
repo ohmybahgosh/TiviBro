@@ -1541,6 +1541,8 @@ var Settings = (function () {
       ['provider', 'added', 'name', 'year', 'rating'], ['The provider\'s order', 'Recently added first', 'Name (A–Z)', 'Release year (newest first)', 'Rating (highest first)'],
       function () { return s.vodSort || 'provider'; }, function (v) { s.vodSort = v; save(); if (typeof VodHome !== 'undefined') VodHome.changed(); }));
     out.push(toggle('Reverse the order', 'Turns the order round: Z to A, oldest, lowest or added longest ago first.', function () { return !!s.vodSortReverse; }, function (v) { s.vodSortReverse = v; save(); if (typeof VodHome !== 'undefined') VodHome.changed(); }));
+    // Discussion #144: the category on every poster of a shelf that mixes categories, not only above the one you're on.
+    out.push(toggle('Category under each poster', 'On shelves that mix categories (Recently added, Continue watching, My list, TMDB\'s lists), each poster says which category it\'s in, after its year and rating.  Long names are cut short.', function () { return !!s.vodPosterCat; }, function (v) { s.vodPosterCat = v; save(); if (typeof VodHome !== 'undefined') VodHome.changed(); }));
     out.push(choice('Count as watched at', 'A movie, an episode or a recording stopped this far in (or in its last minute) is marked watched and leaves Continue watching.  Plex uses 90%.',
       ['85', '90', '95', '98'], ['85%', '90% (as Plex)', '95%', '98%'], function () { return String(+s.watchedAt || 90); }, function (v) { s.watchedAt = +v; save(); }));
     out.push(choice('Order categories', 'The provider\'s order, or by name from A to Z.  Continue watching, My list and the newest titles stay at the top.',

@@ -9,6 +9,7 @@ The Movies and Shows screens, and the details (TMDB or TheTVDB) for them and the
 | Setting | Choices | What it does |
 |---|---|---|
 | **Order movies and shows** | **The provider's order** · Recently added first · Name (A–Z) · Rating (highest first) | The order of titles in each Movies and Shows category and My list.  All movies and All shows stay newest first in the provider's order; Recently added is always newest first. |
+| **Category under each poster** | On · **Off** | On shelves that mix categories (Recently added, Continue watching, My list, TMDB's lists), each poster says which category it's in, after its year and rating. |
 | **Count as watched at** | 85% · **90% (as Plex)** · 95% · 98% | A movie, an episode (from your provider or My media) or a recording stopped this far in, or in its last minute, is marked watched and leaves Continue watching. |
 | **Order categories** | **The provider's order** · Name (A–Z) | The order of the categories in the Movies and Shows lists.  Continue watching, My list and the newest titles stay at the top. |
 | **Categories by language** | On · **Off** | A folder for each language when your provider's category names say the language ("HINDI MOVIES", "\|EN\| Action"): open one to see its categories, Back to leave it.  Nothing more is loaded, so it suits TVs with little memory too.  Not with categories ordered by name. |

@@ -120,8 +120,22 @@ function create(opts) {
        top_rated, now_playing, upcoming (movies), airing_today (TV), or holiday: movies tagged with a holiday's
        keyword (q.keyword, "christmas"), most popular first.  Nothing about the viewer's library is sent; the
        TV matches the IDs against what it has.  q.kind 'tv' for shows.  Never answered from the cache. */
+    /* What the shelves can be built from (discussion #184): the streaming services in a region, biggest first
+       (q.list 'services', q.region "IN"), and TMDB's genres in the viewer's language (q.list 'genres'). */
+    if (q.list === 'services' || q.list === 'genres') {
+      var tk0 = q.kind === 'tv' ? 'tv' : 'movie', rg0 = /^[A-Z]{2}$/.test(String(q.region || '')) ? q.region : 'US';
+      var p0 = q.list === 'services' ? '/watch/providers/' + tk0 + '?watch_region=' + rg0 + '&language=' + locale : '/genre/' + tk0 + '/list?language=' + locale;
+      return request(p0, function (e, r) {
+        if (e) return cb(e);
+        var rows = q.list === 'services' ? (r && Array.isArray(r.results) ? r.results : []).map(function (x) {
+          var pr = x && x.display_priorities && x.display_priorities[rg0];
+          return { id: x && x.provider_id, name: str(x && x.provider_name, 80), p: pr != null ? +pr : +(x && x.display_priority) || 999 };
+        }).sort(function (a, b) { return a.p - b.p; }).slice(0, 12) : (r && Array.isArray(r.genres) ? r.genres : []).map(function (x) { return { id: x && x.id, name: str(x && x.name, 80) }; });
+        cb(null, { items: rows.filter(function (x) { return /^[1-9][0-9]*$/.test(String(x.id)) && x.name; }).map(function (x) { return { id: +x.id, name: x.name }; }) });
+      });
+    }
     if (q.list) {
-      var tv = q.kind === 'tv', kind = tv ? 'tv' : 'movie', ids = [], items = [], pages = q.list === 'top_rated' || q.list === 'holiday' ? 5 : 3, path;
+      var tv = q.kind === 'tv', kind = tv ? 'tv' : 'movie', ids = [], items = [], pages = q.list === 'top_rated' || q.list === 'holiday' || q.list === 'service' || q.list === 'genre' ? 5 : 3, path;
       var LISTS = { trending: '/trending/' + kind + '/week', popular: '/' + kind + '/popular', top_rated: '/' + kind + '/top_rated' };
       if (!tv) { LISTS.now_playing = '/movie/now_playing'; LISTS.upcoming = '/movie/upcoming'; } else LISTS.airing_today = '/tv/airing_today';
       var page = function (n) {
@@ -140,6 +154,13 @@ function create(opts) {
           if (n < pages && r && r.total_pages > n) page(n + 1); else cb(null, { ids: ids, items: items });
         });
       };
+      // A streaming service's titles in a region (q.provider, q.region), or a genre's (q.genre), most popular first.
+      if (q.list === 'service' || q.list === 'genre') {
+        var num = String(q.list === 'service' ? q.provider : q.genre || ''), rg = /^[A-Z]{2}$/.test(String(q.region || '')) ? q.region : 'US';
+        if (!/^[1-9][0-9]{0,6}$/.test(num)) return cb(new Error(q.list === 'service' ? 'Choose a streaming service.' : 'Choose a genre.'));
+        path = '/discover/' + kind + '?' + (q.list === 'service' ? 'with_watch_providers=' + num + '&watch_region=' + rg : 'with_genres=' + num) + '&sort_by=popularity.desc&include_adult=false';
+        return page(1);
+      }
       if (q.list !== 'holiday') {
         if (!LISTS[q.list]) return cb(new Error('Choose a valid TMDB list.'));
         path = LISTS[q.list]; return page(1);

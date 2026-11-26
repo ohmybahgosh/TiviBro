@@ -222,9 +222,9 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
   // The log for the phone (sealed): the Report a problem text.
   const logAns = await ask('logs', {}, { seal: true });
-  // Movies on now: off without a TMDB token; with one, the movies and their channels.
+  // Movies on now: without a TMDB token the details come from TheTVDB (alpha 216), so the phone still gets movies.
   const onOff = await ask('onnow', {});
-  ok('Movies on now: off without a TMDB token', onOff.off === true && /TMDB/.test(onOff.msg), JSON.stringify(onOff));
+  ok('Movies on now: without a TMDB token, from TheTVDB', !onOff.off && Array.isArray(onOff.on) && onOff.on.every((x) => /^tvdb:/.test(x.id)), JSON.stringify(onOff).slice(0, 300));
   await ev(() => {
     Movies.reset();
     let n = 0; const by = {};
@@ -359,6 +359,10 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const lf = vodPg.rows.find((r) => r.label === 'Categories by language');
   ok('the phone has Categories by language, off at first', lf && lf.kind === 'toggle' && lf.on === false, JSON.stringify(vodPg.rows.map((r) => r.label)).slice(0, 300));
   if (lf) { await sa({ op: 'toggle', sec: 'vod', i: lf.i, on: true }); ok('...and turns the folders on on the TV', await ev(() => Store.settings.vodLangFolders) === true); await sa({ op: 'toggle', sec: 'vod', i: lf.i, on: false }); }
+  // Category under each poster (discussion #144): a toggle on the phone too, off at first, that turns it on on the TV.
+  const pc = vodPg.rows.find((r) => r.label === 'Category under each poster');
+  ok('the phone has Category under each poster, off at first', pc && pc.kind === 'toggle' && pc.on === false, JSON.stringify(vodPg.rows.map((r) => r.label)).slice(0, 300));
+  if (pc) { await sa({ op: 'toggle', sec: 'vod', i: pc.i, on: true }); ok('...and turns it on on the TV', await ev(() => Store.settings.vodPosterCat) === true); await sa({ op: 'toggle', sec: 'vod', i: pc.i, on: false }); }
   const dePg = await ask('settings', { op: 'page', sec: 'playback' }, { seal: true, lang: 'de' });
   ok('a phone in German gets it in German', (dePg.rows || []).some((r) => r.label === 'Überspring-Zeiten aus Online-Datenbanken'), JSON.stringify((dePg.rows || []).map((r) => r.label)).slice(0, 300));
   const grp = await sa({ op: 'page', sec: 'channels' });
