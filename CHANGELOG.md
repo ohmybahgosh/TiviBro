@@ -1,16 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 225, 2026-11-26)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 225
 
 - **Reminders as notifications on the phone.**  A minute before a reminder starts, the Android app shows a notification with **Watch on TV**, which turns the TV on when it can and plays the programme there, trying the next channel showing it if one doesn't start.  It works wherever the phone is, and keeps in step with the TV in the background, even with TiviBro closed.  Reminders > **Also on this phone** turns it off.
 - **A Sports widget for your phone's home screen.**  **TiviBro Sports** shows your teams' games, live ones first with their score, then what's next and today's results.  It stretches from a strip to the whole page, keeps itself current from ESPN even with the TV off, and plays a game on the TV when you tap it.
 - **A Remote widget too.**  **TiviBro Remote** puts the arrows, OK, Back, play and pause, volume, channels and the colour buttons on your phone's home screen, with a power button that turns the TV on (and opens TiviBro) or off.
 
-## 0.6.0 (alpha 224, 2026-11-26)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 224
+### In alpha 224
 
 - **Top 10s from the streaming services.**  The Movies and Shows homes get a **Top 10 on Netflix** shelf: your provider's titles that were in Netflix's Top 10 in your region yesterday, in its order, with their place on the poster.  Red > **Add a Top 10…** adds Prime Video, Disney+, Max, Apple TV, Hulu, Paramount+, Peacock or JioHotstar.  The charts come from FlixPatrol; no token needed.
 - **A game on several channels tries the next one by itself.**  A game from a launcher or the TiviBro link, a reminder, or Watch in Sports plays the first channel showing it, and when that one fails or hasn't started in 12 seconds, the next one is tried, Favorites first, with a message saying so.  While it plays, Options (Channel) has **Same game on another channel…** to switch by hand.
