@@ -2120,5 +2120,13 @@ I18n.add('es', {
   "Volume up": "Subir volumen",
   "Today {x}": "Hoy {x}",
   "{x} vs {y}": "{x} vs {y}",
-  "Updated {x}": "Actualizado {x}"
+  "Updated {x}": "Actualizado {x}",
+  "Coming up": "A continuación",
+  "Add a TV": "Añadir una TV",
+  "All reminders": "Todos los recordatorios",
+  "Now on the TV": "Ahora en la TV",
+  "Off (standby)": "Apagada (en espera)",
+  "Showing": "En pantalla",
+  "Your TVs": "Tus TV",
+  "TV {x} of {y}": "TV {x} de {y}"
 });

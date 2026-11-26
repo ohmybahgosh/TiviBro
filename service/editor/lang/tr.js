@@ -2114,5 +2114,13 @@ I18n.add('tr', {
   "Volume up": "Sesi artır",
   "Today {x}": "Bugün {x}",
   "{x} vs {y}": "{x} - {y}",
-  "Updated {x}": "Güncellendi {x}"
+  "Updated {x}": "Güncellendi {x}",
+  "Coming up": "Yaklaşanlar",
+  "Add a TV": "TV ekle",
+  "All reminders": "Tüm hatırlatıcılar",
+  "Now on the TV": "Şu an TV'de",
+  "Off (standby)": "Kapalı (bekleme)",
+  "Showing": "Gösteriliyor",
+  "Your TVs": "TV'leriniz",
+  "TV {x} of {y}": "TV {x}/{y}"
 });

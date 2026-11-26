@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **A new home screen in the phone app.**  One TV at a time, with a power button, what's on the TV now, a big Remote next to Guide, the other shortcuts, and the reminders coming up.  With several TVs, swipe between them or tap the TV's name for a list of them all.
 - **No stuck time at the top of the Sports widget.**  The time it last read the scores stayed in its corner and looked like a clock that had stopped.  It now shows only when the scores are over 20 minutes old, as "Updated 1:39 PM".
 - **The Sports widget puts live games in the spotlight.**  A live game now fills the top of the widget in both teams' colours, with big logos, the score, the clock, where the ball is, and **Watch on TV** with the channel.  With nothing live, the next game does.  Live scores come in every minute, using a tiny fraction of the data they used to.
 - **The Remote widget keeps its shape.**  Made wider, its buttons stretched and OK became an oval.  The buttons now keep their size in the middle of the widget, and OK stays round.

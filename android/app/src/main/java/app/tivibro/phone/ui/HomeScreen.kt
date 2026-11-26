@@ -1,7 +1,8 @@
-/* The first screen: each paired TV as a card (on, off, TiviBro open) with shortcuts straight to the
-   Remote, Guide, On now, Movies and Shows, My media, Reminders, Edit channels, Backups and Settings (the
-   ones this TV has, see Shortcuts.kt), and in its menu Turn on, Open TiviBro, the Quick Settings tile and
-   Forget; plus adding a TV.  A TV that is off still offers Edit channels and its backups on the phone. */
+/* The first screen: one TV at a time (the one used last), as a card: its state with a power button, what's on it
+   now, a big Remote next to Guide, the other shortcuts it has (Shortcuts.kt) and its reminders coming up
+   (HomeTv.kt).  With several TVs, swipe the card for the next one (dots under it) or tap the TV's name for a list of
+   them all (Turn on, Open, Add a TV).  Its menu: the TV's address, the Quick Settings tile, Forget.  A TV that is off
+   still offers Edit channels and its backups on the phone. */
 package app.tivibro.phone.ui
 
 import app.tivibro.phone.tr
@@ -53,6 +54,7 @@ import androidx.compose.material.icons.rounded.SportsFootball
 import androidx.compose.material.icons.rounded.Theaters
 import androidx.compose.material.icons.rounded.VideoLibrary
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.LinkOff
 import androidx.compose.material.icons.rounded.MoreVert
@@ -188,7 +190,14 @@ fun HomeScreen(
     // About: the version, TiviBro's license and what the app is built with (THIRD-PARTY-NOTICES.md).
     var about by remember { mutableStateOf(false) }
     if (about) AboutDialog(current, onDismiss = { about = false }, onOpen = { url -> runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } })
-    val list = rememberLazyListState()
+    // One list per TV page (the update cards scroll back into view on the page showing).
+    val lists = remember { mutableMapOf<String, androidx.compose.foundation.lazy.LazyListState>() }
+    val prefs = remember { ctx.getSharedPreferences("app", android.content.Context.MODE_PRIVATE) }
+    // The TV shown: the one used last.
+    val pager = androidx.compose.foundation.pager.rememberPagerState(initialPage = tvs.indexOfFirst { it.tv.id == prefs.getString("homeTv", null) }.coerceAtLeast(0)) { tvs.size }
+    LaunchedEffect(pager.currentPage, tvs.size) { tvs.getOrNull(pager.currentPage)?.let { prefs.edit().putString("homeTv", it.tv.id).apply() } }
+    var switching by remember { mutableStateOf(false) }
+    suspend fun toTop() { tvs.getOrNull(pager.currentPage)?.let { lists[it.tv.id]?.animateScrollToItem(0) } }
     fun checkNow() {
         if (checking) return
         checking = true
@@ -197,7 +206,7 @@ fun HomeScreen(
             checking = false
             when {
                 n == null -> snack.showSnackbar(tr("Couldn't reach GitHub to check.  Try again in a moment."))
-                AppUpdate.key(current) != null && AppUpdate.newer(n.version, current) -> { rel = n; relHidden = false; list.animateScrollToItem(0) }
+                AppUpdate.key(current) != null && AppUpdate.newer(n.version, current) -> { rel = n; relHidden = false; toTop() }
                 else -> snack.showSnackbar(tr("This is the newest TiviBro app ({x}).", "x" to current))
             }
         }
@@ -211,11 +220,11 @@ fun HomeScreen(
             val gh = if (p == null) withContext(Dispatchers.IO) { AppUpdate.newest() } else null
             checking = false
             when {
-                p == true -> { playNew = true; playNote = ""; relHidden = false; list.animateScrollToItem(0) }
+                p == true -> { playNew = true; playNote = ""; relHidden = false; toTop() }
                 p == null && gh != null && AppUpdate.key(current) != null && AppUpdate.newer(gh.version, current) -> {
                     playNew = true; relHidden = false
                     playNote = tr("Version {x} is out.  Google Play can take a little while to offer it.", "x" to gh.version)
-                    list.animateScrollToItem(0)
+                    toTop()
                 }
                 p == false -> snack.showSnackbar(tr("This is the newest TiviBro app on Google Play ({x}).", "x" to current))
                 else -> PlayUpdate.open(ctx)
@@ -227,12 +236,13 @@ fun HomeScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Image(painterResource(R.drawable.wordmark), contentDescription = "TiviBro", modifier = Modifier.height(26.dp)) },
-                actions = { IconButton(onClick = { about = true }) { Icon(Icons.Rounded.Info, contentDescription = tr("About and licenses"), tint = Muted) } },
+                actions = {
+                    // One TV: Add a TV up here.  Several: it's in the list of TVs (tap the TV's name).
+                    if (tvs.size == 1) IconButton(onClick = onAdd) { Icon(Icons.Rounded.Add, contentDescription = tr("Add a TV"), tint = Muted) }
+                    IconButton(onClick = { about = true }) { Icon(Icons.Rounded.Info, contentDescription = tr("About and licenses"), tint = Muted) }
+                },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Ink),
             )
-        },
-        floatingActionButton = {
-            if (tvs.isNotEmpty()) ExtendedFloatingActionButton(onClick = onAdd, icon = { Icon(Icons.Rounded.Add, null) }, text = { Text("Add a TV") })
         },
         snackbarHost = { SnackbarHost(snack) },
     ) { pad ->
@@ -245,22 +255,30 @@ fun HomeScreen(
             onRefresh = { scope.launch { refreshing = true; onRefresh(); delay(400); refreshing = false } },
             modifier = Modifier.padding(pad).fillMaxSize(),
         ) {
-            LazyColumn(state = list, contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 96.dp), verticalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.fillMaxSize()) {
-                item(key = "app-update") {
-                    rel?.takeIf { !relHidden }?.let { AppUpdateCard(it) { relHidden = true } }
-                    if (playNew && !relHidden) PlayUpdateCard(playNote, onOpen = { PlayUpdate.open(ctx) }) { relHidden = true }
-                }
-                items(tvs, key = { it.tv.id }) { u ->
-                    // The App update tile goes on the first TV's card only (it is about this phone's app, not a TV).
-                    val first = u.tv.id == tvs.first().tv.id
-                    TvCard(u, isTile = tileTv == u.tv.id && tvs.size > 1, onEditor, onTab, onReminders, onOpen, onWake, onForget, onTile, onRepair, onBackups,
-                        bleLog = bleLog, onBleListen = onBleListen, onAddress = onAddress, onOff = onOff, onRecordings = onRecordings,
-                        appUpdate = if (!first) null else if (BuildConfig.SELF_UPDATE) AppUpdateTile(checking, rel != null && relHidden.not(), ::checkNow)
-                            else AppUpdateTile(checking, playNew && relHidden.not(), ::checkPlay))
+            androidx.compose.foundation.pager.HorizontalPager(state = pager, key = { tvs[it].tv.id }, verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxSize()) { page ->
+                val u = tvs[page]
+                LazyColumn(state = lists.getOrPut(u.tv.id) { androidx.compose.foundation.lazy.LazyListState() }, contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 32.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.fillMaxSize()) {
+                    item(key = "app-update") {
+                        rel?.takeIf { !relHidden }?.let { AppUpdateCard(it) { relHidden = true } }
+                        if (playNew && !relHidden) PlayUpdateCard(playNote, onOpen = { PlayUpdate.open(ctx) }) { relHidden = true }
+                    }
+                    item(key = "tv") {
+                        TvCard(u, isTile = tileTv == u.tv.id && tvs.size > 1, onEditor, onTab, onReminders, onOpen, onWake, onForget, onTile, onRepair, onBackups,
+                            bleLog = bleLog, onBleListen = onBleListen, onAddress = onAddress, onOff = onOff, onRecordings = onRecordings,
+                            appUpdate = if (BuildConfig.SELF_UPDATE) AppUpdateTile(checking, rel != null && relHidden.not(), ::checkNow)
+                                else AppUpdateTile(checking, playNew && relHidden.not(), ::checkPlay),
+                            position = page, count = tvs.size, onSwitch = { switching = true })
+                    }
+                    if (tvs.size > 1) item(key = "dots") { PageDots(tvs.size, page) }
+                    if (u.power == Power.ON) item(key = "soon") { ComingUp(u.tv.id) { onReminders(u.tv.id) } }
                 }
             }
         }
     }
+    if (switching) TvSwitchSheet(tvs, pager.currentPage,
+        onPick = { i -> switching = false; scope.launch { pager.animateScrollToPage(i) } },
+        onWake = onWake, onOpen = onOpen, onAdd = onAdd, onDismiss = { switching = false })
 }
 
 /* First run: no TV yet.  Three short steps, then the two ways to pair (scan the TV's code, or find it on
@@ -319,16 +337,16 @@ private fun iconOf(s: Shortcut): ImageVector = when (s) {
 }
 
 @Composable
-private fun ShortcutTile(s: Shortcut, enabled: Boolean, modifier: Modifier, live: Boolean = false, onClick: () -> Unit) {
+private fun ShortcutTile(s: Shortcut, enabled: Boolean, modifier: Modifier, live: Boolean = false, height: Int = 74, onClick: () -> Unit) {
     Column(
-        modifier.height(76.dp).clip(MaterialTheme.shapes.small).background(Panel2)
+        modifier.height(height.dp).clip(MaterialTheme.shapes.small).background(Panel2)
             .clickable(enabled = enabled, onClickLabel = s.label, onClick = onClick).padding(6.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
     ) {
         // Recordings: red while something records on the TV.
         Icon(iconOf(s), if (live) tr("Recording now") else null, tint = if (live) Bad else if (enabled) Accent else Muted, modifier = Modifier.size(24.dp))
         Spacer(Modifier.height(6.dp))
-        Text(s.label, color = if (enabled) TextHi else Muted, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Text(s.label, color = if (enabled) TextHi else Muted, style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -338,7 +356,7 @@ private class AppUpdateTile(val checking: Boolean, val ready: Boolean, val onCli
 @Composable
 private fun UpdateTile(t: AppUpdateTile, modifier: Modifier) {
     Column(
-        modifier.height(76.dp).clip(MaterialTheme.shapes.small).background(Panel2)
+        modifier.height(74.dp).clip(MaterialTheme.shapes.small).background(Panel2)
             .clickable(enabled = !t.checking, onClickLabel = tr("Check for app updates"), onClick = t.onClick).padding(6.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
     ) {
@@ -347,7 +365,7 @@ private fun UpdateTile(t: AppUpdateTile, modifier: Modifier) {
         Spacer(Modifier.height(6.dp))
         Text(
             if (t.checking) tr("Checking…") else if (t.ready) tr("Update ready") else tr("App update"),
-            color = TextHi, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis,
+            color = TextHi, style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -362,20 +380,15 @@ private fun TvCard(
     onAddress: (String, String) -> Unit = { _, _ -> },
     onOff: (String) -> Unit = {},
     onRecordings: (String) -> Unit = {},
+    /** Which of [count] TVs this is; [onSwitch] opens the list of them (tapping the name, with several). */
+    position: Int = 0, count: Int = 1, onSwitch: () -> Unit = {},
 ) {
     var addressing by remember { mutableStateOf<String?>(null) }
     val tv = u.tv
     var menu by remember { mutableStateOf(false) }
     var logText by remember { mutableStateOf<String?>(null) }
     var confirm by remember { mutableStateOf(false) }
-    val (dot, status) = when (u.power) {
-        Power.CHECKING -> Muted to tr("Checking…")
-        Power.WAKING -> Accent to tr("Turning on…")
-        Power.ON -> Good to (if (u.tivibroOpen) tr("On · TiviBro open") else tr("On"))
-        Power.STARTING -> Accent to tr("On · TiviBro's connection starting")
-        Power.OFF -> Muted to (if (u.standby) "Off (standby)" else tr("Off or not reachable"))
-        Power.UNPAIRED -> Bad to tr("This TV no longer knows this phone")
-    }
+    val (dot, status) = stateOf(u)
     ElevatedCard(colors = CardDefaults.elevatedCardColors(containerColor = Panel), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -383,16 +396,28 @@ private fun TvCard(
                     Icon(Icons.Rounded.Tv, null, tint = if (u.power == Power.ON || u.power == Power.STARTING) Accent else Muted)
                 }
                 Spacer(Modifier.width(14.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(tv.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                // The name: with several TVs, tap it for the list of them (▾).
+                Column(Modifier.weight(1f).then(if (count > 1) Modifier.clickable(onClickLabel = tr("Your TVs"), onClick = onSwitch) else Modifier)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(tv.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                        if (count > 1) Icon(Icons.Rounded.ExpandMore, null, tint = Muted, modifier = Modifier.size(22.dp))
+                    }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(8.dp).clip(CircleShape).background(dot))
                         Spacer(Modifier.width(6.dp))
-                        Text(listOfNotNull(status, tv.model.ifBlank { null }).joinToString("  ·  "), style = MaterialTheme.typography.bodySmall, color = Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(listOfNotNull(status, if (count > 1) tr("TV {x} of {y}", "x" to position + 1, "y" to count) else tv.model.ifBlank { null }).joinToString("  ·  "),
+                            style = MaterialTheme.typography.bodySmall, color = Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                     if (isTile) Text(tr("Quick Settings tile"), style = MaterialTheme.typography.labelSmall, color = Accent)
                 }
                 if (u.busy != null || u.power == Power.WAKING || u.power == Power.CHECKING || u.power == Power.STARTING) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                // Power: off when it's on, on when it's off (and can be woken).
+                if (u.power == Power.ON || (u.power == Power.OFF && tv.canWake())) {
+                    val on = u.power == Power.ON
+                    IconButton(onClick = { if (on) onOff(tv.id) else onWake(tv.id) }, modifier = Modifier.padding(start = 4.dp).size(44.dp).clip(CircleShape).background(Panel2)) {
+                        Icon(Icons.Rounded.PowerSettingsNew, if (on) tr("Turn off") else tr("Turn on"), tint = if (on) Bad else Good)
+                    }
+                }
                 Box {
                     IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, tr("More")) }
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
@@ -435,25 +460,31 @@ private fun TvCard(
                 }
                 else -> {
                     val on = u.power == Power.ON
-                    // null in the grid: the App update tile, last.
-                    val cells: List<Shortcut?> = Shortcut.forTv(u.caps) + (if (appUpdate != null) listOf(null) else emptyList())
+                    val grid: List<Shortcut?> = Shortcut.forTv(u.caps).filter { it != Shortcut.REMOTE && it != Shortcut.GUIDE } + (if (appUpdate != null) listOf(null) else emptyList())
+                    fun open(sc: Shortcut) = when (sc) {
+                        Shortcut.REMINDERS -> onReminders(tv.id)
+                        Shortcut.RECORDINGS -> onRecordings(tv.id)
+                        Shortcut.EDITOR -> onEditor(tv.id)
+                        Shortcut.BACKUPS -> onBackups(tv.id)
+                        else -> onTab(tv.id, Shortcut.tab(sc, u.caps) ?: tr("Remote"))
+                    }
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        cells.chunked(3).forEach { row ->
+                        NowOnTv(u)
+                        // The two used most: Remote big, Guide beside it.
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(onClick = { open(Shortcut.REMOTE) }, enabled = on, shape = MaterialTheme.shapes.medium, modifier = Modifier.weight(2f).height(60.dp)) {
+                                Icon(Icons.Rounded.SettingsRemote, null); Spacer(Modifier.width(10.dp)); Text(Shortcut.REMOTE.label, fontWeight = FontWeight.Bold)
+                            }
+                            ShortcutTile(Shortcut.GUIDE, enabled = on, modifier = Modifier.weight(1f), height = 60) { open(Shortcut.GUIDE) }
+                        }
+                        grid.chunked(4).forEach { row ->
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 row.forEach { sc ->
                                     if (sc == null) { if (appUpdate != null) UpdateTile(appUpdate, Modifier.weight(1f)); return@forEach }
-                                    ShortcutTile(sc, enabled = on || sc == Shortcut.BACKUPS, modifier = Modifier.weight(1f), live = sc == Shortcut.RECORDINGS && (u.caps?.recNow ?: 0) > 0) {
-                                        when (sc) {
-                                            Shortcut.REMINDERS -> onReminders(tv.id)
-                                            Shortcut.RECORDINGS -> onRecordings(tv.id)
-                                            Shortcut.EDITOR -> onEditor(tv.id)
-                                            Shortcut.BACKUPS -> onBackups(tv.id)
-                                            else -> onTab(tv.id, Shortcut.tab(sc, u.caps) ?: tr("Remote"))
-                                        }
-                                    }
+                                    ShortcutTile(sc, enabled = on || sc == Shortcut.BACKUPS, modifier = Modifier.weight(1f), live = sc == Shortcut.RECORDINGS && (u.caps?.recNow ?: 0) > 0) { open(sc) }
                                 }
                                 // Keeps the tiles of a short last row the same size.
-                                repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                                repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
                             }
                         }
                     }

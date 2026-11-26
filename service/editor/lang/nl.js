@@ -2114,5 +2114,13 @@ I18n.add('nl', {
   "Volume up": "Harder",
   "Today {x}": "Vandaag {x}",
   "{x} vs {y}": "{x} tegen {y}",
-  "Updated {x}": "Bijgewerkt {x}"
+  "Updated {x}": "Bijgewerkt {x}",
+  "Coming up": "Binnenkort",
+  "Add a TV": "Tv toevoegen",
+  "All reminders": "Alle herinneringen",
+  "Now on the TV": "Nu op de tv",
+  "Off (standby)": "Uit (stand-by)",
+  "Showing": "Getoond",
+  "Your TVs": "Je tv's",
+  "TV {x} of {y}": "Tv {x} van {y}"
 });
