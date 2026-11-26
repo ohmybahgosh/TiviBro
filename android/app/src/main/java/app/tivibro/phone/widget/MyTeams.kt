@@ -8,6 +8,9 @@ import app.tivibro.phone.proto.SportsList
 import org.json.JSONArray
 import org.json.JSONObject
 
+/** A channel the TV has a game on: its key on the TV ([k], blank from an older copy) and its name. */
+data class WChan(val k: String, val name: String)
+
 /** A followed team: TiviBro's id ("nhl:det"), ESPN's id when the TV sent it, and how it looks. */
 data class FollowedTeam(val id: String, val eid: String, val abbr: String, val name: String, val logo: String, val color: String) {
     /** Its league ("nhl"): the first part of TiviBro's id. */
@@ -37,17 +40,25 @@ object MyTeams {
     /** What the TV's Sports said: its followed teams added or brought up to date, and teams it no longer follows dropped. */
     fun learn(ctx: Context, l: SportsList) {
         save(ctx, merge(all(ctx), l))
-        // The channel the TV found for each game (ESPN's id for it), for the Spotlight's Watch on TV.
-        val names = channels(ctx).toMutableMap()
-        l.rows.flatMap { it.games }.forEach { g -> g.chans.firstOrNull()?.name?.takeIf { it.isNotBlank() }?.let { names[g.id] = it } }
-        val keep = names.entries.toList().takeLast(150)
-        prefs(ctx).edit().putString("chans", JSONObject().apply { keep.forEach { put(it.key, it.value) } }.toString()).apply()
+        /* The channels the TV found for each game (ESPN's id for it), best first, for Watch on TV: the Spotlight names
+           the first, the game's inner card offers each.  [{k, n}] per game; older copies kept just the first name. */
+        val all = chanLists(ctx).toMutableMap()
+        l.rows.flatMap { it.games }.forEach { g -> g.chans.filter { it.name.isNotBlank() }.take(4).takeIf { it.isNotEmpty() }?.let { all[g.id] = it.map { c -> WChan(c.key, c.name) } } }
+        val keep = all.entries.toList().takeLast(150)
+        prefs(ctx).edit().putString("chans", JSONObject().apply { keep.forEach { (id, cs) -> put(id, JSONArray().apply { cs.forEach { put(JSONObject().put("k", it.k).put("n", it.name)) } }) } }.toString()).apply()
     }
 
-    /** Game (ESPN's id) to the TV's channel for it, as the TV last said. */
-    fun channels(ctx: Context): Map<String, String> = runCatching {
-        val j = JSONObject(prefs(ctx).getString("chans", "{}")); j.keys().asSequence().associateWith { j.optString(it) }
+    /** Game (ESPN's id) to the TV's channels for it, best first, as the TV last said. */
+    fun chanLists(ctx: Context): Map<String, List<WChan>> = runCatching {
+        val j = JSONObject(prefs(ctx).getString("chans", "{}"))
+        j.keys().asSequence().associateWith { id ->
+            j.optJSONArray(id)?.let { a -> (0 until a.length()).mapNotNull { a.optJSONObject(it) }.map { WChan(it.optString("k"), it.optString("n")) } }
+                ?: listOf(WChan("", j.optString(id)))
+        }
     }.getOrDefault(emptyMap())
+
+    /** Game (ESPN's id) to the TV's best channel for it. */
+    fun channels(ctx: Context): Map<String, String> = chanLists(ctx).mapValues { it.value.firstOrNull()?.name.orEmpty() }
 
     /** Pure, for tests: [old] updated from the teams in [l] (each game's teams, followed or not). */
     fun merge(old: List<FollowedTeam>, l: SportsList): List<FollowedTeam> {

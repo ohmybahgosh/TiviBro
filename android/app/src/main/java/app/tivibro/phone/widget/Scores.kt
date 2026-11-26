@@ -124,7 +124,7 @@ object Scores {
             away = g.away.copy(score = a ?: g.away.score), home = g.home.copy(score = h ?: g.home.score), sit = sit)
     }
 
-    private fun getJson(url: String): JSONObject? = runCatching {
+    internal fun getJson(url: String): JSONObject? = runCatching {
         val c = URL(url).openConnection() as HttpURLConnection
         c.connectTimeout = 8000; c.readTimeout = 12000
         c.setRequestProperty("Accept", "application/json")

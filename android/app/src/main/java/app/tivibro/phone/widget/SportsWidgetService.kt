@@ -1,8 +1,10 @@
 /* The Sports widget's rows, from the worker's cache.  A live game is a Spotlight (big, in both teams' colours: logos,
    the score, the clock, where the ball is, Watch on TV with the TV's channel), every live game so, even when the widget
    then scrolls; with none live, the next game is.  The rest are one line each: the followed team's logo, "Michigan vs
-   Miami" (or the final score), the league and channel, and when.  Tapping either fills in the team for SportsWidget's
-   PLAY. */
+   Miami" (or the final score), the league and channel, and when.  Tapping a game opens its inner card (SportsWidget
+   OPEN); Watch on TV fills in the team for SportsWidget's PLAY.  With a game's inner card open (DetailOpen), the list
+   is that game: its Spotlight, Watch on TV with each of its channels, the score by period, the last play and win
+   chance, leaders, standings and highlights (GameDetail). */
 package app.tivibro.phone.widget
 
 import android.content.Context
@@ -22,7 +24,7 @@ import app.tivibro.phone.R
 import app.tivibro.phone.tr
 
 class SportsWidgetService : RemoteViewsService() {
-    override fun onGetViewFactory(intent: Intent): RemoteViewsFactory = Rows(applicationContext)
+    override fun onGetViewFactory(intent: Intent): RemoteViewsFactory = Rows(applicationContext, intent.getIntExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_ID, 0))
 }
 
 /** Colours for the widget from ESPN's team colours.  Pure, for tests. */
@@ -49,35 +51,127 @@ object TeamColors {
     fun card(team: Int): Int = mix(BASE, team, 0.32).let { if (lum(it) > 0.2) mix(it, 0, 0.4) else it }
 }
 
-private class Rows(private val ctx: Context) : RemoteViewsService.RemoteViewsFactory {
-    private var games: List<WGame> = emptyList()
+/** One row of the widget's list: a game (in the list, or the head of an inner card), or a part of the inner card. */
+private sealed class Item(val key: String) {
+    class Game(val g: WGame, val head: Boolean) : Item("g" + g.id)
+    class Head(val text: String) : Item("h$text")
+    class Stat(val label: CharSequence, val value: CharSequence, k: String) : Item("s$k")
+    class News(val n: DNews) : Item("n" + n.url)
+    class Watch(val g: WGame, val chan: WChan?, val first: Boolean) : Item("w" + (chan?.k ?: "") + (chan?.name ?: ""))
+}
+
+private class Rows(private val ctx: Context, private val widget: Int) : RemoteViewsService.RemoteViewsFactory {
+    private var items: List<Item> = emptyList()
     private var spot: Set<String> = emptySet()
     private var chans: Map<String, String> = emptyMap()
 
     override fun onCreate() {}
     override fun onDataSetChanged() {
         I18n.ensure(ctx)
-        games = Cache.games(ctx)
+        val games = Cache.games(ctx)
+        chans = MyTeams.channels(ctx)
+        val open = DetailOpen.of(ctx, widget)?.let { id -> games.firstOrNull { it.id == id } }
+        if (open != null) { spot = setOf(open.id); items = inner(open, GameDetail.cached(ctx, open.id)); return }
         // Every live game is a Spotlight; with none live, the first (next) one.
         spot = games.filter { it.live }.map { it.id }.toSet().ifEmpty { games.firstOrNull { it.state == "pre" }?.let { setOf(it.id) } ?: emptySet() }
-        chans = MyTeams.channels(ctx)
+        items = games.map { Item.Game(it, head = false) }
     }
     override fun onDestroy() {}
-    override fun getCount() = games.size
+    override fun getCount() = items.size
     override fun getLoadingView(): RemoteViews? = null
-    override fun getViewTypeCount() = 2
-    override fun getItemId(position: Int) = games.getOrNull(position)?.id?.hashCode()?.toLong() ?: position.toLong()
+    override fun getViewTypeCount() = 6
+    override fun getItemId(position: Int) = items.getOrNull(position)?.key?.hashCode()?.toLong() ?: position.toLong()
     override fun hasStableIds() = true
 
-    override fun getViewAt(position: Int): RemoteViews {
-        val g = games[position]
+    override fun getViewAt(position: Int): RemoteViews = when (val it = items[position]) {
+        is Item.Game -> game(it.g, it.head)
+        is Item.Head -> RemoteViews(ctx.packageName, R.layout.widget_sports_head).apply { setTextViewText(R.id.sh_text, it.text.uppercase()) }
+        is Item.Stat -> RemoteViews(ctx.packageName, R.layout.widget_sports_stat).apply { setTextViewText(R.id.st_label, it.label); setTextViewText(R.id.st_value, it.value) }
+        is Item.News -> RemoteViews(ctx.packageName, R.layout.widget_sports_news).apply {
+            setTextViewText(R.id.nw_mark, if (it.n.video) "▶" else "•"); setTextViewText(R.id.nw_title, it.n.title)
+            setOnClickFillInIntent(R.id.nw_root, Intent().putExtra("url", it.n.url))
+        }
+        is Item.Watch -> watch(it)
+    }
+
+    // A game in the list (a Spotlight or one line), or the head of its own inner card (no Watch: the channels follow).
+    private fun game(g: WGame, head: Boolean): RemoteViews {
         val v = if (g.id in spot) spotlight(g) else line(g)
-        val what = tr("{x} at {y}", "x" to g.away.name, "y" to g.home.name)
-        val fill = Intent().putExtra("team", g.team).putExtra("what", what)
-        v.setOnClickFillInIntent(if (g.id in spot) R.id.sp_root else R.id.swr_root, fill)
+        val fill = Intent().putExtra("team", g.team).putExtra("what", what(g))
+        if (head) { v.setViewVisibility(R.id.sp_watch, android.view.View.GONE); return v }
+        // Anywhere on a game opens its inner card; Watch on TV plays it.
+        v.setOnClickFillInIntent(if (g.id in spot) R.id.sp_root else R.id.swr_root, Intent().putExtra("open", g.id))
         if (g.id in spot) v.setOnClickFillInIntent(R.id.sp_watch, fill)
         return v
     }
+    private fun what(g: WGame) = tr("{x} at {y}", "x" to g.away.name, "y" to g.home.name)
+
+    // Watch on TV with one channel: the first (best) plays the game with the others tried after it, as the list's
+    // Watch does; each other one plays that channel.
+    private fun watch(w: Item.Watch): RemoteViews {
+        val v = RemoteViews(ctx.packageName, R.layout.widget_sports_watch)
+        val name = w.chan?.name.orEmpty()
+        v.setTextViewText(R.id.wt_button, if (w.first) "▶  " + tr("Watch on TV") + (if (name.isNotBlank()) " · $name" else "") else "▶  " + tr("Or on {x}", "x" to name))
+        if (!w.first) v.setInt(R.id.wt_button, "setBackgroundResource", R.drawable.widget_watch2_bg)
+        val fill = Intent().putExtra("team", w.g.team).putExtra("what", what(w.g))
+        if (!w.first && !w.chan?.k.isNullOrBlank()) fill.putExtra("k", w.chan!!.k).putExtra("what", name)
+        v.setOnClickFillInIntent(R.id.wt_button, fill)
+        return v
+    }
+
+    /* A game's inner card: its Spotlight, Watch on TV with each channel the TV has it on (before it ends), then what
+       ESPN's summary says, or that it's on its way. */
+    private fun inner(g: WGame, d: WDetail?): List<Item> {
+        val out = mutableListOf<Item>(Item.Game(g, head = true))
+        if (g.state != "post") {
+            val cs = MyTeams.chanLists(ctx)[g.id].orEmpty().ifEmpty { if (g.net.isNotBlank()) listOf(WChan("", g.net)) else emptyList() }
+            if (cs.isEmpty()) out.add(Item.Watch(g, null, true))
+            cs.forEachIndexed { n, c -> out.add(Item.Watch(g, c, n == 0)) }
+        }
+        if (d == null) { out.add(Item.Stat(muted(tr("Getting the game's details…")), "", "wait")); return out }
+        if (d.lines.any { it.periods.isNotEmpty() }) { out.add(Item.Head(tr("Score by period"))); out.add(Item.Stat(table(d.lines), "", "lines")) }
+        if (d.lastPlay.isNotBlank() && g.live) { out.add(Item.Head(tr("Last play"))); out.add(Item.Stat(d.lastPlay, "", "last")) }
+        if (d.chance.isNotBlank()) out.add(Item.Stat(tr("Win chance"), d.chance, "chance"))
+        if (d.scoring.isNotEmpty()) { out.add(Item.Head(tr("Scoring"))); d.scoring.forEachIndexed { n, x -> out.add(Item.Stat(x, "", "sc$n")) } }
+        if (d.leaders.isNotEmpty()) {
+            out.add(Item.Head(tr("Leaders")))
+            d.leaders.forEachIndexed { n, l -> out.add(Item.Stat(two(l.who, "${l.abbr} · ${l.what}"), l.value, "l$n")) }
+        }
+        d.standings.forEachIndexed { gi, gr ->
+            out.add(Item.Head(gr.name.ifBlank { tr("Standings") }))
+            gr.rows.forEachIndexed { n, r ->
+                val label: CharSequence = if (r.playing) SpannableString(r.team).also { it.setSpan(StyleSpan(Typeface.BOLD), 0, it.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE); it.setSpan(ForegroundColorSpan(0xFF9FB6FF.toInt()), 0, it.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) } else r.team
+                out.add(Item.Stat(label, listOf(r.rec, r.extra).filter { it.isNotBlank() }.joinToString("   "), "st$gi-$n"))
+            }
+        }
+        if (d.news.isNotEmpty()) { out.add(Item.Head(tr("Highlights"))); d.news.forEach { out.add(Item.News(it)) } }
+        if (d.venue.isNotBlank()) out.add(Item.Stat(muted(d.venue), "", "venue"))
+        return out
+    }
+
+    // The score by period as a small monospaced table: a header row of period numbers, then each team.
+    private fun table(lines: List<DLine>): CharSequence {
+        val n = lines.maxOf { it.periods.size }
+        val w = maxOf(2, lines.flatMap { it.periods + it.score }.maxOf { it.length })
+        val aw = lines.maxOf { it.abbr.length }
+        fun cell(x: String) = x.padStart(w + 1)
+        val head = "".padEnd(aw) + (1..n).joinToString("") { cell("$it") } + cell("T")
+        val body = lines.map { l -> l.abbr.padEnd(aw) + (0 until n).joinToString("") { cell(l.periods.getOrElse(it) { "" }) } + cell(l.score) }
+        val txt = (listOf(head) + body).joinToString("\n")
+        return SpannableString(txt).also {
+            it.setSpan(android.text.style.TypefaceSpan("monospace"), 0, txt.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            it.setSpan(ForegroundColorSpan(0xFF8A93A8.toInt()), 0, head.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+    }
+    // A name over a quieter line ("J. Goff" over "DET · Passing Yards").
+    private fun two(top: String, under: String): CharSequence {
+        val s = SpannableString("$top\n$under")
+        s.setSpan(StyleSpan(Typeface.BOLD), 0, top.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        s.setSpan(ForegroundColorSpan(0xFF8A93A8.toInt()), top.length + 1, s.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        s.setSpan(android.text.style.RelativeSizeSpan(0.85f), top.length + 1, s.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        return s
+    }
+    private fun muted(t: String): CharSequence = SpannableString(t).also { it.setSpan(ForegroundColorSpan(0xFF8A93A8.toInt()), 0, t.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) }
 
     private fun channel(g: WGame) = chans[g.id].orEmpty().ifBlank { g.net }
 

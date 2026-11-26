@@ -2132,5 +2132,14 @@ I18n.add('fr', {
   "Changes are made on the TV at once": "Les changements sont faits sur la TV tout de suite",
   "Tap one to save it.": "Touchez-en une pour l'enregistrer.",
   "Paused": "En pause",
-  "Newest": "Plus récent"
+  "Newest": "Plus récent",
+  "Couldn't open that": "Impossible d'ouvrir ceci",
+  "Getting the game's details…": "Chargement des détails du match…",
+  "Highlights": "Temps forts",
+  "Last play": "Dernière action",
+  "Or on {x}": "Ou sur {x}",
+  "Score by period": "Score par période",
+  "Scoring": "Points marqués",
+  "Win chance": "Chances de victoire",
+  "Leaders": "Meneurs"
 });

@@ -15,7 +15,17 @@
         android:orientation="horizontal"
         android:paddingStart="4dp"
         android:paddingBottom="8dp">
+        <!-- Back to the list, shown while a game's inner card is open (in place of the logo). -->
         <ImageView
+            android:id="@+id/sw_back"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="4dp"
+            android:src="@drawable/ic_arrow_back"
+            android:visibility="gone"
+            android:contentDescription="Back" />
+        <ImageView
+            android:id="@+id/sw_logo"
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:src="@drawable/ic_tile"

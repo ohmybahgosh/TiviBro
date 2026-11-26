@@ -2132,5 +2132,14 @@ I18n.add('ru', {
   "Changes are made on the TV at once": "Изменения сразу применяются на телевизоре",
   "Tap one to save it.": "Нажмите на вариант, чтобы сохранить его.",
   "Paused": "Пауза",
-  "Newest": "Новые"
+  "Newest": "Новые",
+  "Couldn't open that": "Не удалось открыть",
+  "Getting the game's details…": "Загрузка подробностей матча…",
+  "Highlights": "Лучшие моменты",
+  "Last play": "Последний розыгрыш",
+  "Or on {x}": "Или на {x}",
+  "Score by period": "Счёт по периодам",
+  "Scoring": "Набранные очки",
+  "Win chance": "Шанс на победу",
+  "Leaders": "Лидеры"
 });

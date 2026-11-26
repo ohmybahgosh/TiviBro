@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A line of figures in a game's inner card: the score by period (monospaced, two lines), a leader, a standings
+     row, the last play.  A label on the left, a value on the right; either may be empty. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/st_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:background="@drawable/widget_row_bg">
+    <TextView android:id="@+id/st_label" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+        android:textColor="#FFFFFFFF" android:textSize="13sp" />
+    <TextView android:id="@+id/st_value" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingStart="10dp"
+        android:textColor="#FFC9D1E3" android:textSize="13sp" android:textStyle="bold" android:gravity="end" />
+</LinearLayout>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A heading in a game's inner card in the Sports widget (Leaders, Standings, Highlights). -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/sh_text"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="6dp"
+    android:paddingTop="8dp"
+    android:textColor="#FF9FB6FF"
+    android:textSize="11sp"
+    android:textStyle="bold"
+    android:letterSpacing="0.08"
+    android:maxLines="1"
+    android:ellipsize="end" />

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A highlight in a game's inner card: a play mark for a video, the headline.  Opens on ESPN. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/nw_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:paddingTop="9dp"
+    android:paddingBottom="9dp"
+    android:background="@drawable/widget_row_bg">
+    <TextView android:id="@+id/nw_mark" android:layout_width="26dp" android:layout_height="wrap_content"
+        android:textColor="#FF5B8CFF" android:textSize="14sp" android:textStyle="bold" />
+    <TextView android:id="@+id/nw_title" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+        android:textColor="#FFFFFFFF" android:textSize="13sp" android:maxLines="2" android:ellipsize="end" />
+</LinearLayout>

@@ -47,6 +47,11 @@ class SportsWidgetWorker(ctx: Context, params: WorkerParameters) : CoroutineWork
         }
         games.flatMap { listOf(it.away.logo, it.home.logo) }.distinct().forEach { logo(app, it) }
         Cache.save(app, games, full)
+        // An open inner card: its summary again every two minutes while the game is live (it's about 400 KB).
+        DetailOpen.all(app).forEach { id -> games.firstOrNull { it.id == id }?.let { g ->
+            val d = GameDetail.cached(app, id)
+            if (d == null || inputData.getBoolean("full", false) || (g.live && now - d.at > 110_000L)) GameDetail.fetch(app, g)
+        } }
         SportsWidget.drawAll(app)
         // Live: again in a minute (WorkManager's periodic work can't run more often than every 15); a game that just
         // ended gets a full read then too.  A game about to start: around its start.

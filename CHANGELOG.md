@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Tap a game in the Sports widget for more.**  Its own card shows the score by period, scoring plays, the last play and win chance, leaders, standings and highlights, with **Watch on TV** for each channel your TV has it on.  The back arrow returns to your games.
 - **A live, coloured log in the phone app.**  Settings > TiviBro log now follows along as TiviBro writes it, with no need to refresh, and stays at the newest line unless you scroll up.  Errors are red, warnings amber, and each part of TiviBro has its own colour.
 - **Clearer Settings in the phone app.**  Playback, Guide, Audio and subtitles and Sports are big cards at the top that say what each is set to now.  Search results are grouped by section and show each setting's value.  Long pages have chips that jump to each part, and picking a value opens a list from the bottom of the screen with big rows.
 - **Bigger tabs in the phone app.**  Remote, Channels, Guide and the rest are now rounded buttons with icons, easier to tap than the thin tabs they replace.

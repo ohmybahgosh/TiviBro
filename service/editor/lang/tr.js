@@ -2126,5 +2126,14 @@ I18n.add('tr', {
   "Changes are made on the TV at once": "Değişiklikler TV'de hemen yapılır",
   "Tap one to save it.": "Kaydetmek için birine dokunun.",
   "Paused": "Duraklatıldı",
-  "Newest": "En yeni"
+  "Newest": "En yeni",
+  "Couldn't open that": "Açılamadı",
+  "Getting the game's details…": "Maç ayrıntıları alınıyor…",
+  "Highlights": "Öne çıkanlar",
+  "Last play": "Son oyun",
+  "Or on {x}": "Ya da {x} kanalında",
+  "Score by period": "Periyotlara göre skor",
+  "Scoring": "Sayılar",
+  "Win chance": "Kazanma şansı",
+  "Leaders": "Liderler"
 });

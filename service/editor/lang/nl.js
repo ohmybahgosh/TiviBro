@@ -2126,5 +2126,14 @@ I18n.add('nl', {
   "Changes are made on the TV at once": "Wijzigingen worden meteen op de tv doorgevoerd",
   "Tap one to save it.": "Tik op een optie om die op te slaan.",
   "Paused": "Gepauzeerd",
-  "Newest": "Nieuwste"
+  "Newest": "Nieuwste",
+  "Couldn't open that": "Kon dat niet openen",
+  "Getting the game's details…": "Wedstrijddetails worden geladen…",
+  "Highlights": "Hoogtepunten",
+  "Last play": "Laatste actie",
+  "Or on {x}": "Of op {x}",
+  "Score by period": "Score per periode",
+  "Scoring": "Scores",
+  "Win chance": "Winkans",
+  "Leaders": "Koplopers"
 });

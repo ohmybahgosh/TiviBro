@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Watch on TV with one of the game's channels, in its inner card. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/wt_button"
+    android:layout_width="match_parent"
+    android:layout_height="44dp"
+    android:background="@drawable/widget_watch_bg"
+    android:gravity="center"
+    android:textColor="#FFFFFFFF"
+    android:textSize="15sp"
+    android:textStyle="bold"
+    android:maxLines="1"
+    android:ellipsize="end" />

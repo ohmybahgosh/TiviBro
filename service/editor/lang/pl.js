@@ -2126,5 +2126,14 @@ I18n.add('pl', {
   "Changes are made on the TV at once": "Zmiany są od razu wprowadzane na telewizorze",
   "Tap one to save it.": "Dotknij jednej, aby ją zapisać.",
   "Paused": "Wstrzymano",
-  "Newest": "Najnowsze"
+  "Newest": "Najnowsze",
+  "Couldn't open that": "Nie udało się otworzyć",
+  "Getting the game's details…": "Pobieranie szczegółów meczu…",
+  "Highlights": "Skróty",
+  "Last play": "Ostatnia akcja",
+  "Or on {x}": "Albo na {x}",
+  "Score by period": "Wynik w częściach",
+  "Scoring": "Zdobyte punkty",
+  "Win chance": "Szansa na wygraną",
+  "Leaders": "Liderzy"
 });
