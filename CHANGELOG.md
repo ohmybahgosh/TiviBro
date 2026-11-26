@@ -1,20 +1,20 @@
 # Changelog
 
-## Unreleased
-
-- **Still happening works again on a report the developer fixed in a newer version.**  Pressing it did nothing; it now offers the update first, then sends the follow-up.
-- **Subtitles show at once in My media episodes played through the audio converter.**  With dialogue boost on, an episode from a share whose subtitles are inside the file could take minutes to show them, and the TV was sluggish meanwhile.  The helper now reads the lines from the file as it streams by, as it already did for your provider's movies.
-- **The audio converter no longer races ahead.**  It converted a whole episode at up to 8 times its speed, keeping the TV busy for minutes.  It now stays about 30 seconds ahead, at twice the pace.
-- **Menus open as a panel down the right, with tabs.**  Every menu now slides in from the right so the picture stays in view.  The player's Options (Red) is split into tabs, Sound and picture, Channel, Organize and Guide, so it's no longer one long list; ◀ ▶ change tabs.  It opens on Sound and picture, with Dialogue boost on top.
-- **A cleaner Up next screen.**  The episode's own name now reads big, with its number in a small chip next to the running time, when it first aired and when it would end.  An episode with no name of its own (only the file's S01E10) shows "Episode 10" instead of the number twice, and the words stay readable over bright pictures.
-- **Audio sync and the sleep timer in Options speak your language.**  Their short notes under the name were still in English in some languages.
-- **Dialogue boost in the quick menu.**  OK while watching shows Dialogue boost next to Audio, with what it's set to.  It can be moved or hidden in Settings > Remote and buttons > Quick menu buttons.
-
-## 0.6.0 (alpha 222, 2026-11-25)
+## 0.6.0 (alpha 223, 2026-11-25)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 222
+### New in alpha 223
+
+- **Menus open as a panel down the right, with tabs.**  Every menu now slides in from the right so the picture stays in view.  The player's Options (Red) is split into tabs, Sound and picture, Channel, Organize and Guide, so it's no longer one long list; ◀ ▶ change tabs.  It opens on Sound and picture, with Dialogue boost on top.
+- **A cleaner Up next screen.**  The episode's own name now reads big, with its number in a small chip next to the running time, when it first aired and when it would end.  An episode with no name of its own (only the file's S01E10) shows "Episode 10" instead of the number twice, and the words stay readable over bright pictures.
+- **Dialogue boost in the quick menu.**  OK while watching shows Dialogue boost next to Audio, with what it's set to.  It can be moved or hidden in Settings > Remote and buttons > Quick menu buttons.
+- **Subtitles show at once in My media episodes played through the audio converter.**  With dialogue boost on, an episode from a share whose subtitles are inside the file could take minutes to show them, and the TV was sluggish meanwhile.  The helper now reads the lines from the file as it streams by, as it already did for your provider's movies.
+- **The audio converter no longer races ahead.**  It converted a whole episode at up to 8 times its speed, keeping the TV busy for minutes.  It now stays about 30 seconds ahead, at twice the pace.
+- **Still happening works again on a report the developer fixed in a newer version.**  Pressing it did nothing; it now offers the update first, then sends the follow-up.
+- **Audio sync and the sleep timer in Options speak your language.**  Their short notes under the name were still in English in some languages.
+
+### In alpha 222
 
 - **The full provider guide no longer swamps TVs with 1 GB.**  With a big playlist and the provider's full XMLTV guide, the network helper kept over 400 MB after reading the guide, and peaked near 900 MB while reading it.  On a 1 GB TV that froze the helper until the TV restarted.  It now peaks under 200 MB and settles near 115 MB on a 57,000-channel list (issue #178).
 - **A stuck network helper is explained on screen.**  On some 1 GB TVs the helper can get stuck until the TV restarts.  After three tries TiviBro now says so once: channels still play without it, and restarting the TV frees it (issue #178).
