@@ -2516,5 +2516,8 @@ I18n.add('nl', {
   "S{x} · E{y}": "S{x} · A{y}",
   "Season {n}": "Seizoen {n}",
   "Aired {x}": "Uitgezonden {x}",
-  "Ends {x}": "Eindigt {x}"
+  "Ends {x}": "Eindigt {x}",
+  "Stops at {x}": "Stopt om {x}",
+  "when the sound and the lips don't match": "als geluid en lippen niet gelijklopen",
+  "as sent": "zoals verzonden"
 });

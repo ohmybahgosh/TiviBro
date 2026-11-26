@@ -2519,5 +2519,8 @@ I18n.add('de', {
   "S{x} · E{y}": "S{x} · F{y}",
   "Season {n}": "Staffel {n}",
   "Aired {x}": "Ausgestrahlt {x}",
-  "Ends {x}": "Endet {x}"
+  "Ends {x}": "Endet {x}",
+  "Stops at {x}": "Endet um {x}",
+  "when the sound and the lips don't match": "wenn Ton und Lippen nicht zusammenpassen",
+  "as sent": "wie gesendet"
 });

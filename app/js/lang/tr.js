@@ -2516,5 +2516,8 @@ I18n.add('tr', {
   "S{x} · E{y}": "S{x} · B{y}",
   "Season {n}": "{n}. Sezon",
   "Aired {x}": "Yayın {x}",
-  "Ends {x}": "Bitiş {x}"
+  "Ends {x}": "Bitiş {x}",
+  "Stops at {x}": "{x} itibarıyla durur",
+  "when the sound and the lips don't match": "ses dudaklarla uyuşmadığında",
+  "as sent": "gönderildiği gibi"
 });

@@ -3149,5 +3149,6 @@ I18n.add('pt-BR', {
   "S{x} · E{y}": "T{x} · E{y}",
   "Season {n}": "Temporada {n}",
   "Aired {x}": "Exibido em {x}",
-  "Ends {x}": "Termina {x}"
+  "Ends {x}": "Termina {x}",
+  "Stops at {x}": "Para às {x}"
 });

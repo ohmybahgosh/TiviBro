@@ -7,6 +7,7 @@
 - **The audio converter no longer races ahead.**  It converted a whole episode at up to 8 times its speed, keeping the TV busy for minutes.  It now stays about 30 seconds ahead, at twice the pace.
 - **Menus open as a panel down the right, with tabs.**  Every menu now slides in from the right so the picture stays in view.  The player's Options (Red) is split into tabs, Sound and picture, Channel, Organize and Guide, so it's no longer one long list; ◀ ▶ change tabs.  It opens on Sound and picture, with Dialogue boost on top.
 - **A cleaner Up next screen.**  The episode's own name now reads big, with its number in a small chip next to the running time, when it first aired and when it would end.  An episode with no name of its own (only the file's S01E10) shows "Episode 10" instead of the number twice, and the words stay readable over bright pictures.
+- **Audio sync and the sleep timer in Options speak your language.**  Their short notes under the name were still in English in some languages.
 - **Dialogue boost in the quick menu.**  OK while watching shows Dialogue boost next to Audio, with what it's set to.  It can be moved or hidden in Settings > Remote and buttons > Quick menu buttons.
 
 ## 0.6.0 (alpha 222, 2026-11-25)

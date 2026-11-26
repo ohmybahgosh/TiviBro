@@ -1797,5 +1797,6 @@ I18n.add('fr', {
   "S{x} · E{y}": "S{x} · É{y}",
   "Season {n}": "Saison {n}",
   "Aired {x}": "Diffusé le {x}",
-  "Ends {x}": "Fin à {x}"
+  "Ends {x}": "Fin à {x}",
+  "Stops at {x}": "S'arrête à {x}"
 });

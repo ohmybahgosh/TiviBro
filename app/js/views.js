@@ -2532,7 +2532,7 @@ var Views = (function () {
     if (typeof Dialog !== 'undefined' && (playing || vod)) items.push({ label: 'Dialogue boost', sub: Dialog.label() + '  ·  ' + T('voices clearer, night mode'), action: dialogMenu });
     var tracks = Player.audioTracks();
     if (tracks.length > 1) items.push({ label: 'Audio track', sub: (tracks.filter(function (t) { return t.on; })[0] || {}).label, action: audioMenu });
-    items.push({ label: 'Audio sync', sub: syncLabel() + '  ·  when the sound and the lips don\'t match', action: audioSync });
+    items.push({ label: 'Audio sync', sub: T(syncLabel()) + '  ·  ' + T('when the sound and the lips don\'t match'), action: audioSync });
     items.push({ label: 'Aspect', sub: Player.aspectName(Player.displayFor(aspectTarget())), action: pictureMenu });
     if (Player.qualities().length > 1) items.push({ label: 'Video quality', sub: qualityLabel(), action: qualityMenu });
     if (mode === 'vod' && typeof SeekPrev !== 'undefined' && SeekPrev.chapters.length > 1) items.push({ label: 'Chapters', sub: SeekPrev.chapters.length + ' in this ' + (vod && vod.meta && vod.meta.item && vod.meta.item.kind === 'episode' || vod && vod.meta && vod.meta.seriesKey ? 'episode' : 'movie') + '  ·  CH+ CH− go from one to the next', action: function () { SeekPrev.openChapters(function (t) { vs.pending = t; vodSeekCommit(); }); } });
@@ -2542,7 +2542,7 @@ var Views = (function () {
     var subs = subtitleTracks().filter(function (t) { return mode === 'vod' || t.kind === 'subtitles'; });
     if (subs.length || mode === 'vod') items.push({ label: 'Subtitles', sub: (subs.filter(function (t) { return t.mode === 'showing'; })[0] || {}).label || subtitleStatus(), action: subtitleMenu });
     if (mode !== 'vod') items.push({ label: 'Closed captions', sub: ccLabel(), action: ccToggle });
-    items.push({ label: 'Sleep timer', sub: sleepAt ? 'stops at ' + U.hhmm(sleepAt) : 'off', action: sleepMenu });
+    items.push({ label: 'Sleep timer', sub: sleepAt ? T('Stops at {x}', { x: U.hhmm(sleepAt) }) : 'Off', action: sleepMenu });
     items.push({ label: 'Stream info', sub: 'and the buffer', action: function () { streamInfo(); } });
     items.push({ label: 'Reconnect stream', action: function () { Player.retryNow(); } });
     items.forEach(function (it) { it.tab = 'Sound and picture'; });
