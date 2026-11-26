@@ -172,7 +172,7 @@ var UI = (function () {
   // Magic Remote: clicking outside the box is the same as Back.
   modal.addEventListener('click', function (e) { if (e.target === modal && modalH) dispatch('back', null); });
 
-  function close() { if (mSubStop) { mSubStop(); mSubStop = null; } modal.classList.add('hidden'); modal.classList.remove('side'); if (mTabs) mTabs.style.display = 'none'; modal.querySelector('.modal-box').classList.remove('wide', 'panel', 'tabbed'); if (mLook) { modal.classList.remove(mLook); mLook = ''; } modalH = null; mBody.innerHTML = ''; if (onClose) { var f = onClose; onClose = null; f(); } }
+  function close() { if (mSubStop) { mSubStop(); mSubStop = null; } modal.classList.add('hidden'); modal.classList.remove('side', 'notice'); if (mTabs) mTabs.style.display = 'none'; modal.querySelector('.modal-box').classList.remove('wide', 'panel', 'tabbed'); if (mLook) { modal.classList.remove(mLook); mLook = ''; } modalH = null; mBody.innerHTML = ''; if (onClose) { var f = onClose; onClose = null; f(); } }
   var onClose = null, mLook = '';     // mLook: a panel's own look (opts.look, on the overlay: Up next's card)
 
   /* Up to M_VIS rows show.  Rows that wrap onto two or three lines (long subtitle names, discussion
@@ -270,7 +270,7 @@ var UI = (function () {
   var mSub = null, mSubStop = null;
   function heading(title, sub) {
     if (mLook) { modal.classList.remove(mLook); mLook = ''; }      // a menu after a panel with its own look: the usual box
-    modal.classList.remove('side');                                // a dialog or panel: the centred card (menu() makes it a side panel again)
+    modal.classList.remove('side', 'notice');                      // a dialog or panel: the centred card (menu() makes it a side panel again)
     if (mTabs) mTabs.style.display = 'none';
     mBox.classList.remove('tabbed');
     mTitle.textContent = T(title); mTitle._en = title;
@@ -287,7 +287,9 @@ var UI = (function () {
   /* A menu, as a panel down the right of the screen (the picture stays in view on the left).  Rows that carry
      tab: 'Name' are shown a tab at a time, the tabs across the top in the order they first appear; ◀ ▶ (or a
      click) change tabs, ▲ ▼ move, OK picks, Back closes.  opts.tab: the tab to open on; else the one holding the
-     current row, else the first.  Rows with no tab go in the first.  Fewer than two tabs: one plain list. */
+     current row, else the first.  Rows with no tab go in the first.  Fewer than two tabs: one plain list.
+     opts.notice: something the TV brings up by itself (a reminder, a close game, a channel slow to start): a small
+     card in the bottom corner over the picture instead of the panel, answered the same way. */
   var mTabs = null;
   function menu(title, items, onBack, opts) {
     var all = items.filter(Boolean), tabs = [], tab = 0;
@@ -322,7 +324,7 @@ var UI = (function () {
     }
     heading(title, opts && opts.sub);
     mBox.classList.remove('panel');
-    modal.classList.add('side');
+    modal.classList.add(opts && opts.notice ? 'notice' : 'side');
     modal.classList.remove('hidden');
     show();
     modalH = function (a) {

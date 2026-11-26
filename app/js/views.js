@@ -411,7 +411,7 @@ var Views = (function () {
     Log.info('player', 'Still starting after ' + Math.round(s.ms / 1000) + 's: ' + seen + (s.tried.length ? '  tried ' + s.tried.join(', ') : ''));
     slowOpen = c;
     items.forEach(function (it) { var a = it.action; it.action = function () { slowOpen = null; a(); }; });
-    UI.menu(I18n.t('Still starting: {x}', { x: L.name(c) }), items, function () { slowOpen = null; slowAt.next = Date.now() + 60000; }, { sub: sub });
+    UI.menu(I18n.t('Still starting: {x}', { x: L.name(c) }), items, function () { slowOpen = null; slowAt.next = Date.now() + 60000; }, { sub: sub, notice: true });
   }
   function heartbeat() {
     var now = Date.now();
@@ -451,7 +451,7 @@ var Views = (function () {
         if (c.arch && r.s > now - c.arch * 86400e3) { UI.menu('You missed it:  ' + r.t, [
           { label: 'Watch it from the start', sub: 'catch-up on ' + L.name(c) + ', aired ' + U.hhmm(r.s), action: function () { playCatchup(c, p, 0); } },
           { label: 'Dismiss' }
-        ]); closeSoon(r.t); }
+        ], null, { notice: true }); closeSoon(r.t); }
         return;
       }
       var watchIt = function () { startChannel(c, false, function () { if (!full) goFull(); else osd(true); }); };
@@ -460,7 +460,7 @@ var Views = (function () {
         { label: 'Watch ' + L.name(c), sub: late ? 'live' : '', action: watchIt },
         late && c.arch && { label: 'Watch from the start', sub: 'catch-up', action: function () { playCatchup(c, p, 0); } },
         { label: 'Dismiss' }
-      ]);
+      ], null, { notice: true });
       closeSoon(r.t);
       return;
     }

@@ -145,7 +145,7 @@ var SportsLive = (function () {
     UI.menu(title, [
       { label: T('Watch on {x}', { x: Library.name(c) }), icon: 'play', action: function () { Views.startChannel(c, false, function () { Views.goFull(); }); } },
       { label: T('Not now'), icon: 'close', current: false }
-    ], null, { sub: text });
+    ], null, { sub: text, notice: true });
     setTimeout(function () { var mt = document.getElementById('modalTitle'); if (UI.modalOpen && mt && mt.textContent.indexOf(T(title)) >= 0) UI.close(); }, 15000);
   }
 

@@ -119,7 +119,7 @@ var Launch = (function () {
     // The game's other channels, Favorites first, to fall back on.
     var more = same.filter(function (x) { return x !== g; }).sort(function (a, b) { return (Library.isFav(b.c.k) ? 1 : 0) - (Library.isFav(a.c.k) ? 1 : 0); }).map(function (x) { return x.c; });
     if (g.p.s > now + 5 * 60000) {
-      UI.menu(g.p.t, [{ label: 'Watch ' + Library.name(g.c) + ' now', sub: 'The game starts at ' + U.hhmm(g.p.s), action: function () { play(g.c, more); } }, { label: 'Not now' }]);
+      UI.menu(g.p.t, [{ label: 'Watch ' + Library.name(g.c) + ' now', sub: 'The game starts at ' + U.hhmm(g.p.s), action: function () { play(g.c, more); } }, { label: 'Not now' }], null, { notice: true });
       return;
     }
     play(g.c, more);
