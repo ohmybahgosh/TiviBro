@@ -53,7 +53,7 @@ object TeamColors {
 
 /** One row of the widget's list: a game (in the list, or the head of an inner card), or a part of the inner card. */
 private sealed class Item(val key: String) {
-    class Game(val g: WGame, val head: Boolean) : Item("g" + g.id)
+    class Game(val g: WGame, val head: Boolean) : Item((if (head) "head" else "g") + g.id)
     class Head(val text: String) : Item("h$text")
     class Stat(val label: CharSequence, val value: CharSequence, k: String) : Item("s$k")
     class News(val n: DNews) : Item("n" + n.url)
@@ -105,7 +105,7 @@ private class Rows(private val ctx: Context, private val widget: Int) : RemoteVi
 
     // A game in the list (a Spotlight or one line), or the head of its own inner card (no Watch: the channels follow).
     private fun game(g: WGame, head: Boolean): RemoteViews {
-        val v = if (g.id in spot) spotlight(g) else line(g)
+        val v = if (head) spotlight(g, R.layout.widget_sports_game) else if (g.id in spot) spotlight(g) else line(g)
         val fill = Intent().putExtra("team", g.team).putExtra("what", what(g))
         if (head) { v.setViewVisibility(R.id.sp_watch, android.view.View.GONE); return v }
         // Anywhere on a game opens its inner card; Watch on TV plays it.
@@ -185,8 +185,9 @@ private class Rows(private val ctx: Context, private val widget: Int) : RemoteVi
     private fun channel(g: WGame) = chans[g.id].orEmpty().ifBlank { g.net }
 
     // The big one.
-    private fun spotlight(g: WGame): RemoteViews {
-        val v = RemoteViews(ctx.packageName, R.layout.widget_sports_spot)
+    // [layout]: the list's Spotlight, or the inner card's head (the same look in a layout of its own).
+    private fun spotlight(g: WGame, layout: Int = R.layout.widget_sports_spot): RemoteViews {
+        val v = RemoteViews(ctx.packageName, layout)
         val awayC = TeamColors.team(g.away.color, g.away.alt); val homeC = TeamColors.team(g.home.color, g.home.alt)
         val mineC = if (g.home.mine) homeC else awayC
         if (Build.VERSION.SDK_INT >= 31) {
@@ -198,8 +199,10 @@ private class Rows(private val ctx: Context, private val widget: Int) : RemoteVi
             v.setInt(R.id.sp_stripe_home, "setBackgroundColor", 0xFF000000.toInt() or homeC)
         }
         v.setTextViewText(R.id.sp_league, g.lg.uppercase())
-        v.setTextViewText(R.id.sp_pill, if (g.live) tr("Live").uppercase() else tr("Next").uppercase())
-        if (Build.VERSION.SDK_INT >= 31) v.setColorStateList(R.id.sp_pill, "setBackgroundTintList", ColorStateList.valueOf(if (g.live) 0xFFE5484D.toInt() else 0xFF5B8CFF.toInt()))
+        // Live, Final (a finished game's card), or Next.
+        val post = g.state == "post"
+        v.setTextViewText(R.id.sp_pill, (if (g.live) tr("Live") else if (post) tr("Final") else tr("Next")).uppercase())
+        if (Build.VERSION.SDK_INT >= 31) v.setColorStateList(R.id.sp_pill, "setBackgroundTintList", ColorStateList.valueOf(if (g.live) 0xFFE5484D.toInt() else if (post) 0xFF3A4566.toInt() else 0xFF5B8CFF.toInt()))
         logo(v, R.id.sp_away_logo, g.away); logo(v, R.id.sp_home_logo, g.home)
         v.setTextViewText(R.id.sp_away_name, name(g.away)); v.setTextViewText(R.id.sp_home_name, name(g.home))
         val started = g.state != "pre"
@@ -217,7 +220,7 @@ private class Rows(private val ctx: Context, private val widget: Int) : RemoteVi
             v.setTextViewTextSize(R.id.sp_mid, android.util.TypedValue.COMPLEX_UNIT_SP, 26f)
             v.setTextColor(R.id.sp_mid, Color.WHITE)
         }
-        v.setTextViewText(R.id.sp_state, if (g.live) g.detail else when_(g, short = false))
+        v.setTextViewText(R.id.sp_state, if (g.live || post) g.detail.ifBlank { tr("Final") } else when_(g, short = false))
         v.setTextColor(R.id.sp_state, if (g.live) 0xFFFF8F8F.toInt() else 0xFFC9D1E3.toInt())
         v.setTextViewText(R.id.sp_sit, g.sit)
         v.setViewVisibility(R.id.sp_sit, if (g.sit.isBlank()) android.view.View.GONE else android.view.View.VISIBLE)
@@ -252,9 +255,11 @@ private class Rows(private val ctx: Context, private val widget: Int) : RemoteVi
 
     private fun name(t: WTeam): CharSequence = SpannableString(t.name.ifBlank { t.abbr }).also { if (t.mine) it.setSpan(StyleSpan(Typeface.BOLD), 0, it.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) }
 
+    /* A team's logo, as an Icon rather than setImageViewBitmap: a list row Android recycles kept the bitmaps of the
+       game it showed before (every game's card had the first Spotlight's logos), while an Icon goes with its row. */
     private fun logo(v: RemoteViews, id: Int, t: WTeam) {
         val b = SportsWidgetWorker.logoBitmap(ctx, t.logo)
-        if (b != null) v.setImageViewBitmap(id, b) else v.setImageViewResource(id, R.drawable.ic_tile)
+        v.setImageViewIcon(id, if (b != null) android.graphics.drawable.Icon.createWithBitmap(b) else android.graphics.drawable.Icon.createWithResource(ctx, R.drawable.ic_tile))
     }
 
     // When a game starts: "3:30 PM" today, "Fri 3:00 PM" this week; [short]: the time alone today.
