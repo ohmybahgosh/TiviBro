@@ -168,11 +168,11 @@ var UI = (function () {
 
   /* ---------- modal list ---------- */
   var modal = U.$('modal'), mTitle = U.$('modalTitle'), mBody = U.$('modalBody');
-  var mItems = [], mSel = 0, mTop = 0, M_VIS = 9;
+  var mItems = [], mSel = 0, mTop = 0, M_VIS = 14;   // rows drawn at most; drawMenu() leaves out what doesn't fit the box
   // Magic Remote: clicking outside the box is the same as Back.
   modal.addEventListener('click', function (e) { if (e.target === modal && modalH) dispatch('back', null); });
 
-  function close() { if (mSubStop) { mSubStop(); mSubStop = null; } modal.classList.add('hidden'); modal.querySelector('.modal-box').classList.remove('wide', 'panel'); if (mLook) { modal.classList.remove(mLook); mLook = ''; } modalH = null; mBody.innerHTML = ''; if (onClose) { var f = onClose; onClose = null; f(); } }
+  function close() { if (mSubStop) { mSubStop(); mSubStop = null; } modal.classList.add('hidden'); modal.classList.remove('side'); if (mTabs) mTabs.style.display = 'none'; modal.querySelector('.modal-box').classList.remove('wide', 'panel', 'tabbed'); if (mLook) { modal.classList.remove(mLook); mLook = ''; } modalH = null; mBody.innerHTML = ''; if (onClose) { var f = onClose; onClose = null; f(); } }
   var onClose = null, mLook = '';     // mLook: a panel's own look (opts.look, on the overlay: Up next's card)
 
   /* Up to M_VIS rows show.  Rows that wrap onto two or three lines (long subtitle names, discussion
@@ -270,6 +270,9 @@ var UI = (function () {
   var mSub = null, mSubStop = null;
   function heading(title, sub) {
     if (mLook) { modal.classList.remove(mLook); mLook = ''; }      // a menu after a panel with its own look: the usual box
+    modal.classList.remove('side');                                // a dialog or panel: the centred card (menu() makes it a side panel again)
+    if (mTabs) mTabs.style.display = 'none';
+    mBox.classList.remove('tabbed');
     mTitle.textContent = T(title); mTitle._en = title;
     if (!mSub) { mSub = U.el('div', 'modal-sub'); mTitle.parentNode.insertBefore(mSub, mTitle.nextSibling); }
     if (mSubStop) { mSubStop(); mSubStop = null; }
@@ -281,23 +284,53 @@ var UI = (function () {
     if (sub) setTimeout(function () { var over = sp.offsetWidth - mSub.clientWidth; if (over > 4 && mSub.firstChild === sp) { mSub.classList.add('mq'); mSubStop = marquee(sp, over + 8); } }, 400);
     if (modal.classList.contains('hidden')) { mBox.classList.remove('enter'); void mBox.offsetWidth; mBox.classList.add('enter'); }
   }
+  /* A menu, as a panel down the right of the screen (the picture stays in view on the left).  Rows that carry
+     tab: 'Name' are shown a tab at a time, the tabs across the top in the order they first appear; ◀ ▶ (or a
+     click) change tabs, ▲ ▼ move, OK picks, Back closes.  opts.tab: the tab to open on; else the one holding the
+     current row, else the first.  Rows with no tab go in the first.  Fewer than two tabs: one plain list. */
+  var mTabs = null;
   function menu(title, items, onBack, opts) {
-    mItems = items.filter(Boolean); mTop = 0;
-    if (!mItems.length) mItems = [{ label: 'Nothing to choose from' }];      // an empty list is never a dead end
+    var all = items.filter(Boolean), tabs = [], tab = 0;
+    all.forEach(function (x) { if (x.tab && tabs.indexOf(x.tab) < 0) tabs.push(x.tab); });
+    if (tabs.length < 2) tabs = [];
+    if (tabs.length) {
+      var want = opts && opts.tab ? tabs.indexOf(opts.tab) : -1, cur = all.filter(function (x) { return x.current && !x.head; })[0];
+      tab = want >= 0 ? want : cur && cur.tab ? Math.max(0, tabs.indexOf(cur.tab)) : 0;
+    }
     var rows = [];
-    mItems.forEach(function (x, i) { if (!x.head) rows.push(i); });
-    if (!rows.length) { mItems.push({ label: 'Nothing to choose from' }); rows.push(mItems.length - 1); }
-    mSel = mItems.findIndex(function (x) { return x.current && !x.head; });
-    if (mSel < 0) mSel = rows[0];
+    function show() {
+      mItems = tabs.length ? all.filter(function (x) { return (x.tab || tabs[0]) === tabs[tab]; }) : all.slice();
+      mTop = 0; rows = [];
+      if (!mItems.length) mItems = [{ label: 'Nothing to choose from' }];      // an empty list is never a dead end
+      mItems.forEach(function (x, i) { if (!x.head) rows.push(i); });
+      if (!rows.length) { mItems.push({ label: 'Nothing to choose from' }); rows.push(mItems.length - 1); }
+      mSel = mItems.findIndex(function (x) { return x.current && !x.head; });
+      if (mSel < 0) mSel = rows[0];
+      drawTabs();
+      drawMenu();
+    }
+    function drawTabs() {
+      if (!mTabs) { mTabs = U.el('div', 'mtabs'); mBody.parentNode.insertBefore(mTabs, mBody); }
+      mTabs.innerHTML = '';
+      mTabs.style.display = tabs.length ? '' : 'none';
+      mBox.classList.toggle('tabbed', !!tabs.length);
+      tabs.forEach(function (name, i) {
+        var t = U.el('div', i === tab ? 'on' : '', T(name));
+        t.addEventListener('click', function () { if (tab !== i) { tab = i; show(); } });
+        mTabs.appendChild(t);
+      });
+    }
     heading(title, opts && opts.sub);
     mBox.classList.remove('panel');
+    modal.classList.add('side');
     modal.classList.remove('hidden');
-    drawMenu();
+    show();
     modalH = function (a) {
       // Past either end of a menu: round to the other end (one press, not while the arrow is held).
       var at = rows.indexOf(mSel);
       if (a === 'up') { if (at > 0) { mSel = rows[at - 1]; drawMenu(); } else if (rows.length > 2 && !repeating) { mSel = rows[rows.length - 1]; drawMenu(); } }
       else if (a === 'down') { if (at < rows.length - 1) { mSel = rows[at + 1]; drawMenu(); } else if (rows.length > 2 && !repeating) { mSel = rows[0]; drawMenu(); } }
+      else if ((a === 'left' || a === 'right') && tabs.length) { var n = tab + (a === 'left' ? -1 : 1); if (n >= 0 && n < tabs.length) { tab = n; show(); } }
       else if (a === 'ok') { var it = mItems[mSel]; close(); if (it && it.action) it.action(); }
       else if (a === 'back') { close(); if (onBack) onBack(); }
       return true;

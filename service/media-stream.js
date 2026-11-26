@@ -11,6 +11,14 @@ var sessions = {}, TTL = 24 * 3600000, MAX = 16, WAIT = 20000;
 var PASS = ['content-type', 'content-length', 'content-range', 'accept-ranges', 'etag', 'last-modified'];
 
 function origin(u) { return u.protocol + '//' + u.host; }
+/* An MKV whose subtitles the app asked the helper to watch for (subscan.js, a WEB-DL file whose index covers only
+   the video): its lines are read from these bytes on their way past, as proxy.js does for a provider's movies.
+   Without it, a My media episode played through the audio converter left the app to read the file again itself,
+   and the subtitles took minutes. */
+function tapSubs(contentRange, stream) {
+  var tap = contentRange ? require('./subscan').tap(contentRange) : null;
+  if (tap) stream.on('data', tap);
+}
 // A new session's address, with room made for it (expired ones, then the oldest, go).
 function add(session, ext) {
   var now = Date.now();
@@ -61,6 +69,7 @@ function serveReader(s, req, res, allow, ext, end) {
       if (closed) return stop();
       res.writeHead(r ? 206 : 200, h);
       stream.on('error', function () { res.destroy(); });
+      tapSubs(r ? h['Content-Range'] : '', stream);
       stream.pipe(res);
     });
   });
@@ -116,6 +125,7 @@ function handle(req, res, allow) {
       PASS.forEach(function (k) { if (remote.headers[k] != null) h[k] = remote.headers[k]; });
       res.writeHead(code, h);
       remote.on('error', function () { res.destroy(); });
+      tapSubs(code === 206 ? remote.headers['content-range'] : '', remote);
       remote.pipe(res);
     }
     up = attempt;

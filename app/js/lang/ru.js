@@ -2636,5 +2636,8 @@ I18n.add('ru', {
   "loud scenes down, quiet talk up": "громкие сцены тише, тихая речь громче",
   "voices clearer, night mode": "голоса чётче, ночной режим",
   "voices well forward": "голоса заметно впереди",
-  "TiviBro's network helper is stuck on this TV.  Channels still play without it; restarting the TV frees it.": "Сетевой помощник TiviBro завис на этом телевизоре.  Каналы работают и без него; перезапуск телевизора освободит его."
+  "TiviBro's network helper is stuck on this TV.  Channels still play without it; restarting the TV frees it.": "Сетевой помощник TiviBro завис на этом телевизоре.  Каналы работают и без него; перезапуск телевизора освободит его.",
+  "Sound and picture": "Звук и изображение",
+  "Channel": "Канал",
+  "Organize": "Упорядочить"
 });

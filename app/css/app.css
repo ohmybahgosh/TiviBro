@@ -344,6 +344,17 @@ body.pointer .set-preview{cursor:pointer}
   box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.07),inset 0 1px 0 rgba(255,255,255,.08)}
 .modal-box.enter{animation:menuIn .16s ease-out}
 @keyframes menuIn{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
+/* Menus (UI.menu) as a panel down the right: the picture stays in view on the left.  Tabs across the top when the
+   rows carry them (the player's Options: Sound and picture, Channel, Organize, Guide). */
+.modal.side{justify-content:flex-end;align-items:stretch;background:linear-gradient(90deg,rgba(7,9,18,0) 25%,rgba(7,9,18,.72))}
+.modal.side .modal-box{width:780px;max-height:none;height:100%;box-sizing:border-box;border-radius:0;padding:56px 26px 32px;
+  box-shadow:-30px 0 80px rgba(0,0,0,.5),-1px 0 0 rgba(255,255,255,.08)}
+.modal.side .modal-box.enter{animation:sideIn .18s ease-out}
+@keyframes sideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+.mtabs{display:flex;gap:4px;padding:0 10px;margin-top:22px;border-bottom:1px solid rgba(255,255,255,.08);flex:none}
+.mtabs div{font-size:24px;font-weight:500;color:var(--muted);padding:12px 18px 14px;border-bottom:4px solid transparent;cursor:pointer;white-space:nowrap}
+.mtabs div.on{color:var(--text);font-weight:600;border-bottom-color:var(--accent)}
+.modal-box.tabbed .modal-body{margin-top:6px;border-top:none}
 .modal-title{font-size:32px;font-weight:700;padding:0 22px 4px;line-height:1.2}
 .modal-sub{font-size:22px;color:var(--muted);padding:0 22px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .modal-sub span{display:inline-block;white-space:nowrap}

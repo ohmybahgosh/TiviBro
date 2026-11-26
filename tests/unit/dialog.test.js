@@ -61,4 +61,8 @@ const i = a.indexOf('-af');
 assert.ok(i > 0 && a[i + 1] === high && a.slice(i + 2, i + 8).join(' ') === '-c:a ac3 -b:a 224k -ac 2', a.join(' '));
 assert.ok(a.indexOf('0:a:1') > 0 && a[a.indexOf('-c:v') + 1] === 'copy', 'the chosen track, the picture untouched');
 assert.ok(C.args({ input: 'http://x.example/a.mkv', fmt: 'mkv', a: 0 }).indexOf('-af') < 0, 'off: no -af');
+// A file is read at twice its pace after a head start (an episode converted at 8x made the TV sluggish); live isn't paced.
+const paced = C.args({ input: 'http://x.example/a.mkv', fmt: 'ts', a: 0, fx: high, pace: true });
+assert.ok(paced.join(' ').indexOf('-readrate 2 -readrate_initial_burst 30 -i') > 0, paced.join(' '));
+assert.ok(C.args({ input: 'http://x.example/live.ts', fmt: 'ts', a: 0, fx: high }).indexOf('-readrate') < 0, 'live: as it comes');
 console.log('PASS dialogue boost: off by default, levels, night mode, saving, the link, the converter\'s filters and Dolby Digital out');

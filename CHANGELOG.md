@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **Subtitles show at once in My media episodes played through the audio converter.**  With dialogue boost on, an episode from a share whose subtitles are inside the file could take minutes to show them, and the TV was sluggish meanwhile.  The helper now reads the lines from the file as it streams by, as it already did for your provider's movies.
+- **The audio converter no longer races ahead.**  It converted a whole episode at up to 8 times its speed, keeping the TV busy for minutes.  It now stays about 30 seconds ahead, at twice the pace.
+- **Menus open as a panel down the right, with tabs.**  Every menu now slides in from the right so the picture stays in view.  The player's Options (Red) is split into tabs, Sound and picture, Channel, Organize and Guide, so it's no longer one long list; ◀ ▶ change tabs.  It opens on Sound and picture, with Dialogue boost on top.
+- **Dialogue boost in the quick menu.**  OK while watching shows Dialogue boost next to Audio, with what it's set to.  It can be moved or hidden in Settings > Remote and buttons > Quick menu buttons.
+
 ## 0.6.0 (alpha 222, 2026-11-25)
 
 Pre-release: expect rough edges, and keep a backup before installing.

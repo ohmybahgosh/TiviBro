@@ -117,7 +117,7 @@ function fxChain(boost, night) {
   f.push('alimiter=limit=0.9');
   return f.join(',');
 }
-// o: { input, pipe, t, a, fmt, track, fx }
+// o: { input, pipe, t, a, fmt, track, fx, pace }
 function args(o) {
   var a = ['-hide_banner', '-nostdin', '-loglevel', 'error', '-stats', '-stats_period', '5'];
   var t = o.t > 0 ? String(Math.round(o.t * 1000) / 1000) : '';
@@ -125,6 +125,9 @@ function args(o) {
   // Before -i: ffmpeg asks the server for that part (Range).  -noaccurate_seek: the sound starts at the
   // same keyframe as the picture (the picture can only start on one), not up to a few seconds after it.
   if (t && !o.pipe) a.push('-noaccurate_seek', '-ss', t);
+  /* A file (not a live channel): read it at twice its own pace after a 30 s head start, not as fast as the TV can.
+     Unpaced, an episode converted at 8x for minutes and the whole TV turned sluggish while it did. */
+  if (o.pace) a.push('-readrate', '2', '-readrate_initial_burst', '30');
   a.push('-i', o.pipe ? 'pipe:0' : o.input);
   if (t && o.pipe) a.push('-ss', t);                  // from a pipe: read and drop up to t
   // Movies keep their own times (a seek to 1:00:00 starts the stream at 1:00:00, see app/js/player.js).
@@ -412,7 +415,7 @@ function stream(req, res, ALLOW, log, port, redact) {
   if (!track && /^[a-z0-9_]{1,20}$/i.test(q.c || '')) track = { codec: q.c.toLowerCase(), channels: Math.max(0, Math.min(16, +q.ch | 0)), rate: Math.max(0, Math.min(384000, +q.sr | 0)) };
   // &dv=81: the app wants profile 7 as 8.1 (a TV with Dolby Vision); only when the file is profile 7 and this converter can.
   var p81 = q.dv === '81' && !!(info && info.dv === 7 && P81);
-  var list = args({ input: input, pipe: pipe, t: t, a: a, fmt: fmt, track: track, p81: p81, fx: fx });
+  var list = args({ input: input, pipe: pipe, t: t, a: a, fmt: fmt, track: track, p81: p81, fx: fx, pace: !!(info && info.duration > 0) });
   if (fx) log({ lv: 'info', event: 'convert dialogue boost', boost: q.b || '', night: q.n === '1' });
   if (p81) log({ lv: 'info', event: 'convert dolby vision 7 to 8.1' });
   var p;

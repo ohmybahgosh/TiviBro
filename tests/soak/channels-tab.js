@@ -33,7 +33,8 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   m = await menu();
   ok('starting on it keeps it in the menu', m[0] === 'live', m.join(','));
   await ev(() => { Store.settings.startTab = 'guide'; Views.buildTabs(); Views.switchTab('settings'); Settings.open(); Settings.section('look'); }); await page.waitForTimeout(500);
-  ok('Settings has the switch', /Channels screen in the menu/.test(await ev(() => document.body.innerText)));
+  // Appearance is longer than a screen now, so the rows are read from the page, not the screen.
+  ok('Settings has the switch', await ev(() => Settings.phone.page('look', []).rows.some((r) => r.label === 'Channels screen in the menu')));
 
   // The phone app and the web editor on one page, each saying what it is.
   await ev(() => { TIVIBRO_VERSION = '0.6.0-alpha.99'; Settings.open(); Settings.section('connect'); }); await page.waitForTimeout(1200);
@@ -41,7 +42,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const nav = await ev(() => [].map.call(document.querySelectorAll('#setNav > div'), (d) => d.innerText.trim()));
   const pl = await ev(() => Settings.phone.page('playlists', []).rows.map((r) => r.label));
   ok('the phone app and the web editor have their own section, not a page in Playlists and accounts', nav.some((x) => /^Phone app and web editor/.test(x)) && pl.indexOf('Phone app and web editor') < 0 && !nav.some((x) => /^Edit on a phone/.test(x) || x === 'Phone app'), nav.join(', '));
-  ok('it says the two are different and work without each other', /Each works without the other/.test(t) && /TiviBro phone app/i.test(t) && /Web editor/i.test(t) && (await ev(() => Settings.phone.page('connect', []).rows.some((r) => /does not pair the TiviBro app/.test(r.sub || '')))), t.slice(0, 600));
+  ok('it says the two are different and work without each other', /Each works without the other/.test(t) && /TiviBro app for Android/i.test(t) && /Web editor/i.test(t) && (await ev(() => Settings.phone.page('connect', []).rows.some((r) => /does not pair the TiviBro app/.test(r.sub || '')))), t.slice(0, 600));
   ok('the old section names still lead there', await ev(() => Settings.section('editor') && Settings.section('phone')));
   await page.screenshot({ path: path.join(__dirname, '..', '.shots', 'settings-phone-and-editor.png') });
   ok('no page errors', !errs.length, errs.join(' | '));

@@ -2509,5 +2509,8 @@ I18n.add('nl', {
   "loud scenes down, quiet talk up": "harde scènes zachter, zachte stemmen harder",
   "voices clearer, night mode": "helderdere stemmen, nachtmodus",
   "voices well forward": "stemmen goed naar voren",
-  "TiviBro's network helper is stuck on this TV.  Channels still play without it; restarting the TV frees it.": "De netwerkhulp van TiviBro zit vast op deze tv.  Zenders spelen ook zonder; de tv opnieuw opstarten maakt hem vrij."
+  "TiviBro's network helper is stuck on this TV.  Channels still play without it; restarting the TV frees it.": "De netwerkhulp van TiviBro zit vast op deze tv.  Zenders spelen ook zonder; de tv opnieuw opstarten maakt hem vrij.",
+  "Sound and picture": "Geluid en beeld",
+  "Channel": "Zender",
+  "Organize": "Ordenen"
 });

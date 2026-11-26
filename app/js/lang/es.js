@@ -2633,5 +2633,8 @@ I18n.add('es', {
   "loud scenes down, quiet talk up": "escenas fuertes más bajas, voces bajas más altas",
   "voices clearer, night mode": "voces más claras, modo noche",
   "voices well forward": "voces bien al frente",
-  "TiviBro's network helper is stuck on this TV.  Channels still play without it; restarting the TV frees it.": "El asistente de red de TiviBro está bloqueado en este TV.  Los canales se siguen viendo sin él; reiniciar el TV lo libera."
+  "TiviBro's network helper is stuck on this TV.  Channels still play without it; restarting the TV frees it.": "El asistente de red de TiviBro está bloqueado en este TV.  Los canales se siguen viendo sin él; reiniciar el TV lo libera.",
+  "Sound and picture": "Sonido e imagen",
+  "Channel": "Canal",
+  "Organize": "Organizar"
 });

@@ -2512,5 +2512,8 @@ I18n.add('de', {
   "loud scenes down, quiet talk up": "laute Szenen leiser, leise Stimmen lauter",
   "voices clearer, night mode": "klarere Stimmen, Nachtmodus",
   "voices well forward": "Stimmen deutlich vorn",
-  "TiviBro's network helper is stuck on this TV.  Channels still play without it; restarting the TV frees it.": "Der Netzwerk-Helfer von TiviBro hängt auf diesem TV.  Sender laufen auch ohne ihn; ein Neustart des TV löst ihn."
+  "TiviBro's network helper is stuck on this TV.  Channels still play without it; restarting the TV frees it.": "Der Netzwerk-Helfer von TiviBro hängt auf diesem TV.  Sender laufen auch ohne ihn; ein Neustart des TV löst ihn.",
+  "Sound and picture": "Ton und Bild",
+  "Channel": "Sender",
+  "Organize": "Ordnen"
 });

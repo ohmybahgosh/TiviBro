@@ -1998,6 +1998,11 @@ var Views = (function () {
     else if (a === 'back' || a === 'left') endListVis(true);
     return true;
   }
+  /* A channel's own rows, for its menu in the lists and the player's Options.  Each carries its tab (UI.menu shows
+     them a tab at a time): Channel (watching it another way), Organize (Favorites aside: groups, names, hiding) and
+     Guide.  The player's Options adds Sound and picture in front. */
+  // The tab names, for the translation checks (UI.menu translates them as it draws the tabs).
+  function TABS_FOR_I18N() { return [T('Sound and picture'), T('Channel'), T('Organize'), T('Guide')]; }
   function chanItems(c, gid) {
     var hidden = !!Store.edits.hiddenChannels[c.k];
     var renamed = !!Store.edits.renames[c.k];
@@ -2008,36 +2013,36 @@ var Views = (function () {
     // A movie on now (Movies on now, or any channel the guide shows a matched movie on): its trailer from TMDB.
     var nnM = Epg.nowNext ? Epg.nowNext(c) : null, onM = nnM && typeof Movies !== 'undefined' ? (nnM.now && Movies.of(c, nnM.now)) || (nnM.next && Movies.of(c, nnM.next)) : null;   // on now, or starting next (Movies on now lists both)
     return [
-      onM && onM.id && typeof MediaMoviePage !== 'undefined' && typeof PalmServiceBridge !== 'undefined' && { label: 'Watch the trailer', sub: RAW(onM.title || ''), action: function () { movieTrailer(onM); } },
+      onM && onM.id && typeof MediaMoviePage !== 'undefined' && typeof PalmServiceBridge !== 'undefined' && { tab: 'Channel', label: 'Watch the trailer', sub: RAW(onM.title || ''), action: function () { movieTrailer(onM); } },
       // Another playlist not mixed into Favorites and your groups: neither is offered (one already a favorite can still be taken out).
-      (fav || L.canGroup(c)) && { label: fav ? 'Remove from Favorites' : 'Add to Favorites', action: function () { var on = L.toggleFav(c.k); if (on == null) return; U.toast(on ? 'Added to Favorites' : 'Removed from Favorites'); refreshLists(true); } },
-      team && { label: RAW(T(follow ? 'Stop following the {x}' : 'Follow the {x}', { x: team.name })), sub: follow ? '' : 'in My teams, with its games', action: function () {
+      (fav || L.canGroup(c)) && { tab: 'Channel', label: fav ? 'Remove from Favorites' : 'Add to Favorites', action: function () { var on = L.toggleFav(c.k); if (on == null) return; U.toast(on ? 'Added to Favorites' : 'Removed from Favorites'); refreshLists(true); } },
+      team && { tab: 'Channel', label: RAW(T(follow ? 'Stop following the {x}' : 'Follow the {x}', { x: team.name })), sub: follow ? '' : 'in My teams, with its games', action: function () {
         Teams.follow(team.id, !follow); refreshLists(true);
         U.toast(follow ? 'Stopped following the ' + team.name : 'Following the ' + team.name + '.  Find them in My teams.');
       } },
-      L.canGroup(c) && { label: 'Copy to group…', action: function () { copyMenu([c.k], L.name(c)); } },
-      !full && tab === 'live' && { label: 'Select multiple…', sub: 'copy, favorite or hide several', action: function () { startPick(c.k); } },
-      L.versions(c).length ? { label: 'Other versions…', sub: versionsSummary(c), action: function () { versionsMenu(c); } } : { label: 'Link another version…', sub: 'a copy of this channel TiviBro didn\'t find', action: function () { linkVersionMenu(c); } },
-      Player.canSwitchFormat(c) && { label: 'Stream format…', sub: FORMAT_NAMES[Player.streamFormat(c)], action: function () { formatMenu(c); } },
-      typeof Multiview !== 'undefined' && { label: 'Watch in Multiview', sub: playing && playing.k !== c.k ? 'with ' + L.name(playing) : 'with other channels', action: function () { var with_ = playing && playing.k !== c.k ? playing : null; if (with_) Multiview.start(with_, [c]); else Multiview.start(c, lastPlayed ? [lastPlayed] : []); } },
-      c.arch && { label: 'Watch from start', action: function () { watchFromStart(c); } },
-      c.arch && { label: 'Catch-up…', sub: c.arch + ' days', action: function () { catchupList(c); } },
-      inCustom && gid !== L.FAV && { label: 'Remove from ' + L.groupName(gid), action: function () { L.removeFrom(gid, c.k); refreshLists(true); } },
-      !full && tab === 'live' && gid === curGroup && L.canReorder(gid) && { label: 'Move…', sub: 'change its place in ' + L.groupName(gid), action: function () { startMove(c); } },
-      { label: 'Rename…', sub: renamed ? 'renamed' : '', action: function () {
+      L.canGroup(c) && { tab: 'Organize', label: 'Copy to group…', action: function () { copyMenu([c.k], L.name(c)); } },
+      !full && tab === 'live' && { tab: 'Organize', label: 'Select multiple…', sub: 'copy, favorite or hide several', action: function () { startPick(c.k); } },
+      L.versions(c).length ? { tab: 'Channel', label: 'Other versions…', sub: versionsSummary(c), action: function () { versionsMenu(c); } } : { tab: 'Channel', label: 'Link another version…', sub: 'a copy of this channel TiviBro didn\'t find', action: function () { linkVersionMenu(c); } },
+      Player.canSwitchFormat(c) && { tab: 'Channel', label: 'Stream format…', sub: FORMAT_NAMES[Player.streamFormat(c)], action: function () { formatMenu(c); } },
+      typeof Multiview !== 'undefined' && { tab: 'Channel', label: 'Watch in Multiview', sub: playing && playing.k !== c.k ? 'with ' + L.name(playing) : 'with other channels', action: function () { var with_ = playing && playing.k !== c.k ? playing : null; if (with_) Multiview.start(with_, [c]); else Multiview.start(c, lastPlayed ? [lastPlayed] : []); } },
+      c.arch && { tab: 'Channel', label: 'Watch from start', action: function () { watchFromStart(c); } },
+      c.arch && { tab: 'Channel', label: 'Catch-up…', sub: c.arch + ' days', action: function () { catchupList(c); } },
+      inCustom && gid !== L.FAV && { tab: 'Organize', label: 'Remove from ' + L.groupName(gid), action: function () { L.removeFrom(gid, c.k); refreshLists(true); } },
+      !full && tab === 'live' && gid === curGroup && L.canReorder(gid) && { tab: 'Organize', label: 'Move…', sub: 'change its place in ' + L.groupName(gid), action: function () { startMove(c); } },
+      { tab: 'Organize', label: 'Rename…', sub: renamed ? 'renamed' : '', action: function () {
         UI.prompt('Rename channel', L.name(c), function (v) { L.renameChannel(c.k, v); refreshLists(true); }, 'Original: ' + c.n);
       } },
-      renamed && { label: 'Restore original name', action: function () { L.renameChannel(c.k, ''); refreshLists(true); } },
-      { label: 'Assign guide…', sub: Store.edits.epgMap[c.k] ? 'assigned' : Epg.pubSource(c) ? 'from the public guide (' + Epg.pubSource(c).name + ')' : Epg.hasData(c) ? '' : 'no guide yet', action: function () { Settings.assignGuide(c); } },
-      !Epg.hasData(c) || Library.noGuide(c) ? { label: Library.noGuide(c) ? 'Look for a guide again' : 'No guide for this channel', sub: Library.noGuide(c) ? 'it shows "No guide information" again, and guide matching includes it' : 'stops "No guide information" here, and guide matching leaves it out', action: function () { Library.setNoGuide(c.k, !Library.noGuide(c)); U.toast(Library.noGuide(c) ? 'No guide for ' + Library.name(c) : 'Looking for a guide for ' + Library.name(c) + ' again'); refreshLists(true); } } : null,
-      Parental.enabled() && { label: blocked ? 'Unblock channel' : 'Block channel', sub: 'needs the PIN to watch', action: function () {
+      renamed && { tab: 'Organize', label: 'Restore original name', action: function () { L.renameChannel(c.k, ''); refreshLists(true); } },
+      { tab: 'Guide', label: 'Assign guide…', sub: Store.edits.epgMap[c.k] ? 'assigned' : Epg.pubSource(c) ? 'from the public guide (' + Epg.pubSource(c).name + ')' : Epg.hasData(c) ? '' : 'no guide yet', action: function () { Settings.assignGuide(c); } },
+      !Epg.hasData(c) || Library.noGuide(c) ? { tab: 'Guide', label: Library.noGuide(c) ? 'Look for a guide again' : 'No guide for this channel', sub: Library.noGuide(c) ? 'it shows "No guide information" again, and guide matching includes it' : 'stops "No guide information" here, and guide matching leaves it out', action: function () { Library.setNoGuide(c.k, !Library.noGuide(c)); U.toast(Library.noGuide(c) ? 'No guide for ' + Library.name(c) : 'Looking for a guide for ' + Library.name(c) + ' again'); refreshLists(true); } } : null,
+      Parental.enabled() && { tab: 'Organize', label: blocked ? 'Unblock channel' : 'Block channel', sub: 'needs the PIN to watch', action: function () {
         var go = function () { L.block('channel', c.k, !blocked); U.toast(blocked ? 'Unblocked' : 'Blocked'); refreshLists(true); stopIfBlocked(); };
         if (blocked) Parental.gate('channels', c, go); else go();
       } },
-      canManage(gid) && { label: 'Show or hide channels…', sub: 'tick the channels to keep in ' + L.groupName(gid), action: function () { manageVisibility(gid, c); } },
-      hidden ? { label: 'Show channel', action: function () { L.hideChannel(c.k, false); U.toast('Channel restored'); refreshLists(true); } }
-             : { label: 'Hide channel', sub: 'restore from Settings', action: function () { L.hideChannel(c.k, true); U.toast('Hidden.  Restore it in Settings, Channels and groups, Hidden channels.'); refreshLists(true); } },
-      { label: 'Hide with the content filter', sub: 'gone from everything, not just this list', action: function () { filterOut('channel', c.n, L.name(c)); } }
+      canManage(gid) && { tab: 'Organize', label: 'Show or hide channels…', sub: 'tick the channels to keep in ' + L.groupName(gid), action: function () { manageVisibility(gid, c); } },
+      hidden ? { tab: 'Organize', label: 'Show channel', action: function () { L.hideChannel(c.k, false); U.toast('Channel restored'); refreshLists(true); } }
+             : { tab: 'Organize', label: 'Hide channel', sub: 'restore from Settings', action: function () { L.hideChannel(c.k, true); U.toast('Hidden.  Restore it in Settings, Channels and groups, Hidden channels.'); refreshLists(true); } },
+      { tab: 'Organize', label: 'Hide with the content filter', sub: 'gone from everything, not just this list', action: function () { filterOut('channel', c.n, L.name(c)); } }
     ];
   }
 
@@ -2097,7 +2102,7 @@ var Views = (function () {
      ◀ ▶ move along a row, ▲ ▼ switch rows, OK picks, Back closes.  Clickable with the pointer. */
   var qp = null;                  // { row, col, rows: [[items]], timer }
   // Quick menu buttons.  Each can be switched off in Settings > Remote and buttons > Quick menu buttons.
-  var QP_BUTTONS = [['pause', 'Pause and rewind'], ['rec', 'Record'], ['list', 'Channel guide'], ['start', 'Watch from start'], ['fav', 'Favorite'], ['guide', 'TV guide'], ['versions', 'Other versions'], ['multi', 'Multiview'], ['scores', 'My teams\' scores'], ['audio', 'Audio track'], ['sync', 'Audio sync'],
+  var QP_BUTTONS = [['pause', 'Pause and rewind'], ['rec', 'Record'], ['list', 'Channel guide'], ['start', 'Watch from start'], ['fav', 'Favorite'], ['guide', 'TV guide'], ['versions', 'Other versions'], ['multi', 'Multiview'], ['scores', 'My teams\' scores'], ['audio', 'Audio track'], ['dialog', 'Dialogue boost'], ['sync', 'Audio sync'],
     ['subs', 'Subtitles'], ['cc', 'Closed captions'], ['quality', 'Video quality'], ['picture', 'Aspect'], ['sleep', 'Sleep timer'],
     ['info', 'Stream info'], ['reconnect', 'Reconnect']];
   // Line icons for the quick actions, drawn like the side menu's (24 x 24, stroked).
@@ -2112,6 +2117,7 @@ var Views = (function () {
     versions: '<rect x="3" y="7" width="13" height="10" rx="2"/><path d="M19 9v8a2 2 0 0 1-2 2H8"/><path d="M21 11v6"/>',
     audio: '<path d="M9 18V6l11-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
     sync: '<path d="M3 12h3l2-5 3 10 2-7 2 4h6"/>',
+    dialog: '<path d="M4 5h16v10H9l-5 4z"/><path d="M9 9v2M12 8v4M15 9v2"/>',
     subs: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 15h4M13 15h4M7 11h2M11 11h6"/>',
     cc: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10.5 9.6a2.6 2.6 0 1 0 0 4.8M17 9.6a2.6 2.6 0 1 0 0 4.8"/>',
     quality: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9v6M11 9v6M7 12h4M14 9h2a3 3 0 0 1 0 6h-2z"/>',
@@ -2156,6 +2162,8 @@ var Views = (function () {
     } });
     var tracks = Player.audioTracks();
     if (tracks.length > 1) add('audio', { label: 'Audio', icon: 'audio', v: (tracks.filter(function (t) { return t.on; })[0] || {}).label || '', run: function () { closePanel(); audioMenu(); } });
+    // Dialogue boost and night mode (dialog.js): one press away, as on the Options list.
+    if ((c || mode === 'vod') && typeof Dialog !== 'undefined') add('dialog', { label: 'Dialogue boost', icon: 'dialog', v: Dialog.label(), run: function () { closePanel(); dialogMenu(); } });
     if (c || mode === 'vod') add('sync', { label: 'Audio sync', icon: 'sync', v: syncLabel(), run: function () { closePanel(); audioSync(); } });
     // Live captions (CEA-608) have their own switch; Subtitles is for real subtitle tracks.
     var subs = subtitleTracks().filter(function (t) { return mode === 'vod' || t.kind === 'subtitles'; });
@@ -2517,13 +2525,14 @@ var Views = (function () {
 
   function playerMenu() {
     var items = [];
-    if (mode === 'live' && playing) items = items.concat(chanItems(playing, curGroup));
+    /* As tabs (UI.menu): Sound and picture first, what you reach for while watching, with Dialogue boost on top;
+       then the channel's own rows (chanItems: Channel, Organize, Guide). */
     if (mode === 'catchup') items.push({ label: 'Back to live', action: backToLive });
     if (mode === 'vod' && vod) items.push({ label: 'Restart from beginning', action: function () { if (vod.meta.local && Media.seeking) Media.seeking(0); Player.seek(-1e7); } });
+    if (typeof Dialog !== 'undefined' && (playing || vod)) items.push({ label: 'Dialogue boost', sub: Dialog.label() + '  ·  ' + T('voices clearer, night mode'), action: dialogMenu });
     var tracks = Player.audioTracks();
     if (tracks.length > 1) items.push({ label: 'Audio track', sub: (tracks.filter(function (t) { return t.on; })[0] || {}).label, action: audioMenu });
     items.push({ label: 'Audio sync', sub: syncLabel() + '  ·  when the sound and the lips don\'t match', action: audioSync });
-    if (typeof Dialog !== 'undefined') items.push({ label: 'Dialogue boost', sub: Dialog.label() + '  ·  ' + T('voices clearer, night mode'), action: dialogMenu });
     items.push({ label: 'Aspect', sub: Player.aspectName(Player.displayFor(aspectTarget())), action: pictureMenu });
     if (Player.qualities().length > 1) items.push({ label: 'Video quality', sub: qualityLabel(), action: qualityMenu });
     if (mode === 'vod' && typeof SeekPrev !== 'undefined' && SeekPrev.chapters.length > 1) items.push({ label: 'Chapters', sub: SeekPrev.chapters.length + ' in this ' + (vod && vod.meta && vod.meta.item && vod.meta.item.kind === 'episode' || vod && vod.meta && vod.meta.seriesKey ? 'episode' : 'movie') + '  ·  CH+ CH− go from one to the next', action: function () { SeekPrev.openChapters(function (t) { vs.pending = t; vodSeekCommit(); }); } });
@@ -2536,12 +2545,14 @@ var Views = (function () {
     items.push({ label: 'Sleep timer', sub: sleepAt ? 'stops at ' + U.hhmm(sleepAt) : 'off', action: sleepMenu });
     items.push({ label: 'Stream info', sub: 'and the buffer', action: function () { streamInfo(); } });
     items.push({ label: 'Reconnect stream', action: function () { Player.retryNow(); } });
-    UI.menu(mode === 'vod' && vod ? RAW(vod.meta.title) : playing ? RAW(L.name(playing)) : 'Player', qpSlots(items));
+    items.forEach(function (it) { it.tab = 'Sound and picture'; });
+    if (mode === 'live' && playing) items = items.concat(chanItems(playing, curGroup).filter(Boolean));
+    UI.menu(mode === 'vod' && vod ? RAW(vod.meta.title) : playing ? RAW(L.name(playing)) : 'Player', qpSlots(items), null, { tab: 'Sound and picture' });
   }
   /* Options (Red) in the order of the quick menu buttons too (discussion #36: Stream info moved to the front there
-     stayed near the end here).  The rows that are also quick buttons trade places among themselves; the channel's
+     stayed near the end here).  They all sit in its Sound and picture tab, so a viewer's order applies there whole.  The rows that are also quick buttons trade places among themselves; the channel's
      own rows and the movie-only ones (Restart, Chapters, Playback speed) keep theirs. */
-  var QP_OF_ROW = { 'Audio track': 'audio', 'Audio sync': 'sync', 'Aspect': 'picture', 'Video quality': 'quality', 'Subtitles': 'subs',
+  var QP_OF_ROW = { 'Dialogue boost': 'dialog', 'Audio track': 'audio', 'Audio sync': 'sync', 'Aspect': 'picture', 'Video quality': 'quality', 'Subtitles': 'subs',
     'Closed captions': 'cc', 'Sleep timer': 'sleep', 'Stream info': 'info', 'Reconnect stream': 'reconnect' };
   function qpSlots(items) {
     if (!(Store.settings.qpOrder || []).length) return items;

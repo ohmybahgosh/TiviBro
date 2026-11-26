@@ -31,9 +31,11 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await x.ctx.close();
   x = await run('pl-PL');
   const pl = await x.ev((t) => U.hhmm(t), t);
-  ok('Clock: Automatic on a TV in Poland is 24 hours, the menus in English', pl === '19:30', pl);
+  ok('Clock: Automatic on a TV in Poland is 24 hours', pl === '19:30', pl);
 
-  // Deleting the only playlist: TiviBro starts again on the screen that adds one.
+  // Deleting the only playlist: TiviBro starts again on the screen that adds one.  (TiviBro is in Polish on this TV
+  // since alpha 212: English for the rows' names.)
+  await x.ev(() => new Promise((r) => I18n.use('en', r)));
   await x.ev(() => { Views.switchTab('settings'); Settings.open(); Settings.section('playlists'); }); await x.page.waitForTimeout(400);
   // The playlist's own page and its Delete row, as the phone and the TV build them.
   const found = await x.ev(() => {
