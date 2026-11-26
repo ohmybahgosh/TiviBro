@@ -600,9 +600,13 @@ var Phone = (function () {
       if (a.submit && UI.modalOpen && el.closest('#modal')) UI.press('submit');
       return { ok: true };
     },
-    // TiviBro's log for the phone (Settings tab > TiviBro log): the Report a problem text, names taken out.
-    logs: function () {
-      return Diag.report().then(function (r) { var t = r.text || ''; return { text: t.length > 600000 ? t.slice(-600000) : t }; });
+    /* TiviBro's log for the phone (Settings tab > TiviBro log): the Report a problem text, names taken out, and
+       where this session's log is up to (seq).  With since (a seq from before): only the lines written after it,
+       so the phone can follow the log live without reading it all every time (names taken out the same way). */
+    logs: function (a) {
+      if (a && a.since != null) { var t1 = Log.since(a.since); return { seq: t1.seq, lines: Diag.scrub(t1.lines), gap: t1.gap }; }
+      var at = Log.seq;
+      return Diag.report().then(function (r) { var t = r.text || ''; return { text: t.length > 600000 ? t.slice(-600000) : t, seq: at }; });
     },
     // A subtitle file sent from the phone (its text, decoded there): a track on what plays now, switched on.
     subfile: function (a, c) {

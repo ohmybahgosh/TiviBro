@@ -2124,5 +2124,7 @@ I18n.add('tr', {
   "Your TVs": "TV'leriniz",
   "TV {x} of {y}": "TV {x}/{y}",
   "Changes are made on the TV at once": "Değişiklikler TV'de hemen yapılır",
-  "Tap one to save it.": "Kaydetmek için birine dokunun."
+  "Tap one to save it.": "Kaydetmek için birine dokunun.",
+  "Paused": "Duraklatıldı",
+  "Newest": "En yeni"
 });

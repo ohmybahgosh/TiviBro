@@ -2130,5 +2130,7 @@ I18n.add('es', {
   "Your TVs": "Tus TV",
   "TV {x} of {y}": "TV {x} de {y}",
   "Changes are made on the TV at once": "Los cambios se aplican en la TV al instante",
-  "Tap one to save it.": "Toca una para guardarla."
+  "Tap one to save it.": "Toca una para guardarla.",
+  "Paused": "En pausa",
+  "Newest": "Lo más nuevo"
 });

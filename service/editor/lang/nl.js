@@ -2124,5 +2124,7 @@ I18n.add('nl', {
   "Your TVs": "Je tv's",
   "TV {x} of {y}": "Tv {x} van {y}",
   "Changes are made on the TV at once": "Wijzigingen worden meteen op de tv doorgevoerd",
-  "Tap one to save it.": "Tik op een optie om die op te slaan."
+  "Tap one to save it.": "Tik op een optie om die op te slaan.",
+  "Paused": "Gepauzeerd",
+  "Newest": "Nieuwste"
 });

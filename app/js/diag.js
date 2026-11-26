@@ -592,5 +592,6 @@ var Diag = (function () {
     });
   }
 
-  return { report: report, openReport: openReport, sendNow: sendNow, followup: followup, fixedNow: fixedNow, run: run, speedTest: speedTest, showLog: showLog, showHelperLog: showHelperLog, close: close, get open() { return box && !box.classList.contains('hidden'); } };
+  /* scrub: the report's name removal (scrubber()) for other text going off the TV, such as the phone's live log. */
+  return { scrub: function (lines) { var f = scrubber(); return lines.map(f); }, report: report, openReport: openReport, sendNow: sendNow, followup: followup, fixedNow: fixedNow, run: run, speedTest: speedTest, showLog: showLog, showHelperLog: showHelperLog, close: close, get open() { return box && !box.classList.contains('hidden'); } };
 })();

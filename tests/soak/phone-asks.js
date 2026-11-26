@@ -330,6 +330,11 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const clockHits = await sa({ op: 'find', q: 'show clock' });
   const clockHit = (clockHits.hits || []).find((h) => h.label === 'Show clock');
   ok('a search hit shows a switch\'s value', !!clockHit && clockHit.value === ((await ev(() => Store.settings.showClock)) ? 'On' : 'Off'), JSON.stringify(clockHit));
+  // The phone's live log: the whole log says where it's up to, then only newer lines come, names taken out.
+  const full = await ask('logs', {}, { seal: true });
+  await ev(() => Log.warn('player', 'live line from http://someprovider.example.net/live/1.ts'));
+  const tail = await ask('logs', { since: full.seq }, { seal: true });
+  ok('the phone\'s log follows along with only the new lines', typeof full.seq === 'number' && tail.lines.length >= 1 && tail.lines.some((l) => /live line/.test(l)) && !tail.lines.some((l) => /someprovider/.test(l)) && tail.seq > full.seq, JSON.stringify(tail).slice(0, 300));
   const esSecs = await ask('settings', { op: 'sections' }, { seal: true, lang: 'es' });
   ok('a phone in Spanish gets the pages in Spanish', esSecs.sections.some((x) => x.id === 'look' && x.title === 'Apariencia') && (await ev(() => I18n.t('Appearance'))) === 'Appearance', esSecs.sections.map((x) => x.title).join(', '));
   const esSnaps = await ask('snaps', { op: 'make', name: 'Phone check' }, { seal: true, lang: 'es' });

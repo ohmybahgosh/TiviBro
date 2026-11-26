@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **A live, coloured log in the phone app.**  Settings > TiviBro log now follows along as TiviBro writes it, with no need to refresh, and stays at the newest line unless you scroll up.  Errors are red, warnings amber, and each part of TiviBro has its own colour.
 - **Clearer Settings in the phone app.**  Playback, Guide, Audio and subtitles and Sports are big cards at the top that say what each is set to now.  Search results are grouped by section and show each setting's value.  Long pages have chips that jump to each part, and picking a value opens a list from the bottom of the screen with big rows.
 - **Bigger tabs in the phone app.**  Remote, Channels, Guide and the rest are now rounded buttons with icons, easier to tap than the thin tabs they replace.
 - **A new home screen in the phone app.**  One TV at a time, with a power button, what's on the TV now, a big Remote next to Guide, the other shortcuts, and the reminders coming up.  With several TVs, swipe between them or tap the TV's name for a list of them all.

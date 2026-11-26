@@ -10,6 +10,7 @@ var TIVIBRO_VERSION = '0.6.0';
 var Log = (function () {
   'use strict';
   var buf = [], MAX = 800, KEEP = 300, saved = [];
+  var seq = 0;           // lines kept this session so far: each line in buf has its number (n), for since()
   var verbose = localStorage.getItem('tivibro.logVerbose') === '1';
   var session = Date.now().toString(36);
 
@@ -133,6 +134,7 @@ var Log = (function () {
     var e = { t: Date.now(), lv: lv, c: cat, m: redact(msg + (data != null ? '  ' + fmt(data) : '')).slice(0, 1200), s: session };
     if (sinkOn) sinkQ.push(line(e));
     if (lv === 'debug' && !verbose) return;      // sink-only: keep the on-screen log readable
+    e.n = ++seq;
     buf.push(e);
     if (buf.length > MAX) buf.splice(0, buf.length - MAX);
     if (window.console) (lv === 'error' ? console.error : lv === 'warn' ? console.warn : console.log)('[tivibro:' + cat + '] ' + e.m);
@@ -220,6 +222,15 @@ var Log = (function () {
       });
       return out;
     },
+    /* This session's lines after line [n] (a number from an earlier since() or from seq), for the phone app's log
+       that follows along as it's written: { seq, lines, gap }.  gap: some were dropped from memory before they were
+       asked for (more than MAX came in between), so the caller should read the whole log again. */
+    since: function (n) {
+      n = Math.max(0, +n || 0);
+      var out = buf.filter(function (e) { return e.n > n; });
+      return { seq: seq, lines: out.map(line), gap: n < seq && (!out.length || out[0].n > n + 1) };
+    },
+    get seq() { return seq; },
     clear: function () { buf = []; saved = []; try { localStorage.removeItem('tivibro.log'); } catch (e) {} },
     get verbose() { return verbose; },
     set verbose(v) { verbose = !!v; localStorage.setItem('tivibro.logVerbose', v ? '1' : '0'); },

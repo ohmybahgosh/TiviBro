@@ -11,7 +11,7 @@ function boot(run) {
   const ctx = {
     localStorage: { getItem: (k) => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); }, removeItem: (k) => { delete store[k]; } },
     document: { hidden: false, addEventListener() {} }, window: { addEventListener() {} }, navigator: {}, location: { href: '' },
-    U: { debounce: (f) => f }, setInterval: () => 0, clearInterval() {}, setTimeout: () => 0, clearTimeout() {}, console: { log() {}, warn() {}, error() {} }, Date, JSON, Math
+    U: { debounce: (f) => f, pad: (n) => String(n).padStart(2, '0') }, setInterval: () => 0, clearInterval() {}, setTimeout: () => 0, clearTimeout() {}, console: { log() {}, warn() {}, error() {} }, Date, JSON, Math
   };
   ctx.window = Object.assign(ctx.window, { console: ctx.console });
   vm.createContext(ctx);
@@ -42,6 +42,16 @@ ok('with the helper and no power-off seen, a long gap is still a crash', !!L.set
   const run = (ms) => { const end = now + ms; while (now < end) { now += 100; timers.filter((t) => !t.done && t.at <= now).forEach((t) => { t.done = true; t.f(); }); } };
   for (let i = 0; i < 10; i++) { ctx.Log.info('app', 'step ' + i); run(1000); }
   ok('a line every second: the log is kept as it goes, not only once it goes quiet', /step 8/.test(store['tivibro.log'] || ''), (store['tivibro.log'] || '').slice(-200));
+}
+// The phone's live log (Log.since): only the lines after the number it had, and a gap when some left memory first.
+{
+  const L2 = boot({ t: Date.now(), s: 'old', open: false });
+  L2.info('app', 'one'); const at = L2.seq; L2.warn('player', 'two'); L2.error('net', 'three');
+  const t = L2.since(at);
+  ok('since() gives only the lines written after it', t.lines.length === 2 && /WARN\s+player\s+two/.test(t.lines[0]) && /ERROR\s+net\s+three/.test(t.lines[1]) && t.seq === at + 2 && !t.gap, t);
+  ok('nothing new: no lines and no gap', L2.since(L2.seq).lines.length === 0 && !L2.since(L2.seq).gap);
+  for (let i = 0; i < 900; i++) L2.info('app', 'x' + i);
+  ok('lines dropped from memory before they were asked for: a gap, so the phone reads it all again', L2.since(at).gap === true);
 }
 console.log(fails ? fails + ' failures' : 'all unclean close tests passed');
 process.exit(fails ? 1 : 0);

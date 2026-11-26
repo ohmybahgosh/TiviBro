@@ -807,7 +807,16 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** TiviBro's log from the TV (app and helper), as Report a problem makes it: names of providers and servers taken out. */
-    suspend fun tvLog(id: String): String = ask(id, "logs", seal = true, timeoutMs = 45_000, tries = 2).optString("text")
+    /** TiviBro's whole log, and where the TV's log is up to (seq, -1 from a TV too old to follow along). */
+    suspend fun tvLog(id: String): Pair<String, Int> = ask(id, "logs", seal = true, timeoutMs = 45_000, tries = 2).let { it.optString("text") to it.optInt("seq", -1) }
+
+    /** The lines written to the TV's log after [since] (a seq from before): the new seq, the lines, and whether some
+        were missed (gap: read the whole log again).  Never opens TiviBro: the log screen just stops following. */
+    suspend fun tvLogSince(id: String, since: Int): Triple<Int, List<String>, Boolean> =
+        ask(id, "logs", JSONObject().put("since", since), seal = true, timeoutMs = 10_000, tries = 1, noOpen = true).let { r ->
+            val a = r.optJSONArray("lines")
+            Triple(r.optInt("seq", since), (0 until (a?.length() ?: 0)).map { a!!.optString(it) }, r.optBoolean("gap"))
+        }
 
     suspend fun backupNow(id: String): SavedBackup = withContext(Dispatchers.IO) {
         val b = ask(id, "backup", seal = true, timeoutMs = 60_000).optJSONObject("backup") ?: throw TbException(tr("The TV sent no backup."))

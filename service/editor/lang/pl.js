@@ -2124,5 +2124,7 @@ I18n.add('pl', {
   "Your TVs": "Twoje telewizory",
   "TV {x} of {y}": "Telewizor {x} z {y}",
   "Changes are made on the TV at once": "Zmiany są od razu wprowadzane na telewizorze",
-  "Tap one to save it.": "Dotknij jednej, aby ją zapisać."
+  "Tap one to save it.": "Dotknij jednej, aby ją zapisać.",
+  "Paused": "Wstrzymano",
+  "Newest": "Najnowsze"
 });

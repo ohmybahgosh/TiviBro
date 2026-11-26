@@ -1447,7 +1447,7 @@ Your version, new versions from GitHub, and finding out what's wrong.  See [Upda
 
 **Diagnostics**, further down the same page:
 
-**On the phone:** the phone app's **Settings** tab has **TiviBro log** at the bottom of the section list (and **View app log** opens it too): the same log as Report a problem (the app's, this and earlier sessions, and the network helper's), with provider, guide and server names taken out.  **Problems only** shows the warnings and errors, and **Share** sends it to a message, an email or a GitHub issue.
+**On the phone:** the phone app's **Settings** tab has **TiviBro log** at the bottom of the section list (and **View app log** opens it too): the same log as Report a problem (the app's, this and earlier sessions, and the network helper's), with provider, guide and server names taken out.  It follows along while it's open: new lines appear every couple of seconds (**Live** at the top; **Paused** when the TV stops answering), and it stays at the newest line unless you scroll up to read, when **Newest** takes you back.  Lines are coloured: errors red, warnings amber, and each part of TiviBro (player, guide, net) in its own colour.  **Problems only** shows the warnings and errors, and **Share** sends it to a message, an email or a GitHub issue.
 
 <p align="center">
   <a href="https://tivibro.app/view/#tv-set-diag"><img src="screenshots/tv-set-diag.png" width="49%" alt="Diagnostics"></a>
