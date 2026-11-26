@@ -92,7 +92,8 @@ function connect(F) {
     }
     if (io.isPlaylist(res, at)) { res.resume(); return hls(F, at); }
     setKind(F, 'ts');
-    res.on('data', function (c) { if (F.stopped) return; flowing(F); keep(F, c); each(F, 'data', c); });
+    // Stopped meanwhile: let the connection go rather than read on for nobody.
+    res.on('data', function (c) { if (F.stopped) { try { res.destroy(); } catch (e) {} return; } flowing(F); keep(F, c); each(F, 'data', c); });
     res.on('end', function () { again(F, 'the provider closed the stream'); });
     res.on('error', function (e2) { again(F, e2.message); });
   });

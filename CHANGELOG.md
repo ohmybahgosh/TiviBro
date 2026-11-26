@@ -6,6 +6,7 @@ Pre-release: expect rough edges, and keep a backup before installing.
 
 ### New in alpha 223
 
+- **Channels no longer cut out when you change channel a lot with the rewind buffer on.**  With most providers, the rewind buffer kept the channel you left streaming for minutes, read by nobody.  A few channel changes went over the account's connection limit, and the provider kept cutting off the channel you were watching.
 - **Menus open as a panel down the right, with tabs.**  Every menu now slides in from the right so the picture stays in view.  The player's Options (Red) is split into tabs, Sound and picture, Channel, Organize and Guide, so it's no longer one long list; ◀ ▶ change tabs.  It opens on Sound and picture, with Dialogue boost on top.
 - **A cleaner Up next screen.**  The episode's own name now reads big, with its number in a small chip next to the running time, when it first aired and when it would end.  An episode with no name of its own (only the file's S01E10) shows "Episode 10" instead of the number twice, and the words stay readable over bright pictures.
 - **Dialogue boost in the quick menu.**  OK while watching shows Dialogue boost next to Audio, with what it's set to.  It can be moved or hidden in Settings > Remote and buttons > Quick menu buttons.

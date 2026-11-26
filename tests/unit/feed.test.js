@@ -35,6 +35,8 @@ function call(method, url, body) {
       req.on('close', () => { clearInterval(iv); open--; });
       return;
     }
+    // A provider that answers a channel with a redirect to a signed link, as most do.
+    if (/^\/hop\/\d+\.ts$/.test(req.url)) { res.writeHead(302, { Location: '/live/1.ts?token=x' }); return res.end(); }
     if (req.url === '/refuse.ts') { refused.push(Date.now()); res.writeHead(418); return res.end(); }
     res.writeHead(404); res.end();
   });
@@ -71,6 +73,17 @@ function call(method, url, body) {
   await wait(400);
   ok('different channels: a connection each', total === 3 && open === 2, total + ' made, ' + open + ' open');
   await call('POST', '/record/stop', { id: r.j.id }); await call('POST', '/record/ts/stop', { id: t2.j.id });
+
+  // A pause of a channel whose link redirects: stopping it closes the redirected connection too (it stayed open,
+  // read by nobody, until the relay gave up on it, and pushed accounts over their connection limit).
+  await wait(300);
+  const before = open;
+  const t3 = await call('POST', '/record/ts/start', { url: base + '/hop/7.ts', key: 'ch4' });
+  await wait(400);
+  ok('a pause through a redirect gets its connection', open === before + 1, open + ' open');
+  await call('POST', '/record/ts/stop', { id: t3.j.id });
+  await wait(300);
+  ok('stopping it closes the redirected connection', open === before && !Feed._feeds.ch4, open + ' open');
 
   // A provider refusing (HTTP 418): asked again more and more slowly, not every few seconds.
   const h = Feed.open('ref', base + '/refuse.ts', '', {});

@@ -205,15 +205,22 @@ function nameFor(r, ext, n) {
 }
 
 /* ---------- fetching through the relay ---------- */
-function get(u, cb) {
+/* A request through the relay, following redirects.  What it returns stops whichever request is current: most
+   providers answer a channel with a redirect to a signed link, and stopping only the first request left the
+   redirected one streaming with nobody reading it (a pause given up kept an account connection busy for
+   minutes, until the relay gave up reconnecting it, and pushed accounts over their connection limit). */
+function get(u, cb, h) {
+  h = h || { req: null, dead: false, abort: function () { this.dead = true; try { if (this.req) this.req.abort(); } catch (e) {} } };
+  if (h.dead) return h;
   var o = URL_.parse(u);
-  var req = http.get({ hostname: o.hostname, port: o.port, path: o.path, headers: { 'User-Agent': 'TiviBro recorder', 'Connection': 'close' } }, function (res) {
-    if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) { res.resume(); return get(URL_.resolve(u, res.headers.location), cb); }
+  var req = h.req = http.get({ hostname: o.hostname, port: o.port, path: o.path, headers: { 'User-Agent': 'TiviBro recorder', 'Connection': 'close' } }, function (res) {
+    if (h.dead) { res.resume(); req.abort(); return; }
+    if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) { res.resume(); return get(URL_.resolve(u, res.headers.location), cb, h); }
     cb(null, res, u);
   });
-  req.on('error', function (e) { cb(e); });
+  req.on('error', function (e) { if (!h.dead) cb(e); });
   req.setTimeout(20000, function () { req.abort(); });
-  return req;
+  return h;
 }
 function getText(u, cb) {
   get(u, function (e, res, at) {
@@ -748,8 +755,8 @@ function serveFile(req, res, ALLOW, r, part) {
 }
 /* ---------- the agent (rooted TVs) ---------- */
 /* Raised whenever record-agent.js or what it runs changes in a way an old agent would miss (2: it keeps the helper up
-   for the phone app; 3: recordings filed for media servers, Convert to MP4; 4: recording to a WebDAV share; 5: to a Windows share, and live pause there; 6: subtitle files on a USB drive).  The version can't tell: every alpha is 0.6.0 to the helper. */
-var AGENT_REV = 6;
+   for the phone app; 3: recordings filed for media servers, Convert to MP4; 4: recording to a WebDAV share; 5: to a Windows share, and live pause there; 6: subtitle files on a USB drive; 7: a pause's redirected connection closed when it stops).  The version can't tell: every alpha is 0.6.0 to the helper. */
+var AGENT_REV = 7;
 function agentUp(cb) {
   var r = http.get({ hostname: '127.0.0.1', port: AGENT_PORT, path: '/record/ping', headers: { 'X-TiviBro-Ctl': agentKey() } }, function (res) {
     var b = ''; res.on('data', function (d) { b += d; });
