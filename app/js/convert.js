@@ -185,10 +185,12 @@ var Convert = (function () {
   // A plan that goes through the converter anyway (a sound the TV can't play, Dolby Vision 8.1): the boost along.
   function withFx(r, fx) { if (r && r.conv && fx) r.conv.fx = fx; return r; }
   /* A movie whose sound plays here, with dialogue boost or night mode on: through the converter, the picture copied
-     and the chosen sound processed (stereo Dolby Digital out), for the TV's own player (MKV) or TiviBro's (MPEG-TS). */
+     and the chosen sound processed (stereo Dolby Digital out), for the TV's own player (MKV) or TiviBro's (MPEG-TS).
+     A Dolby Vision movie always goes to the TV's own player: TiviBro's (the browser's) shows only its HDR10 base,
+     so turning the boost on switched the picture from Dolby Vision to HDR. */
   function forBoost(info, d, url, fx) {
     var a = d.a != null ? d.a : Math.max(0, info.audio.map(function (x) { return !!x.def; }).indexOf(true)), t = info.audio[a] || {};
-    return { conv: { src: url, a: a, fmt: fmtFor(info.video), video: info.video || '', codec: t.codec || '', channels: t.channels || 0, rate: t.rate || 0, tracks: info.audio, bad: d.bad || [], dur: info.duration || 0, fx: fx },
+    return { conv: { src: url, a: a, fmt: info.dv ? 'mkv' : fmtFor(info.video), video: info.video || '', codec: t.codec || '', channels: t.channels || 0, rate: t.rate || 0, tracks: info.audio, bad: d.bad || [], dur: info.duration || 0, fx: fx },
       notice: 'Dialogue boost: the sound goes through the audio converter' };
   }
   /* A movie whose sound plays here, with Audio sync on it: through the converter as MPEG-TS, the picture and the
@@ -257,6 +259,6 @@ var Convert = (function () {
   }
   function noSound(what) { return what + ' sound, which this TV can\'t play.  Settings > Audio and subtitles can get the audio converter, or pick another audio track.'; }
 
-  return { _forSync: forSync, fmtFor: fmtFor, on: on, status: status, get: get, remove: remove, describe: describe, decide: decide, link: link, plan: plan, planLive: planLive, planBoost: planBoost, offer: offer, noSound: noSound,
+  return { _forSync: forSync, _forBoost: forBoost, fmtFor: fmtFor, on: on, status: status, get: get, remove: remove, describe: describe, decide: decide, link: link, plan: plan, planLive: planLive, planBoost: planBoost, offer: offer, noSound: noSound,
     probe: probe, ensureKey: ensureKey, NAMES: NAMES, _dv81: dv81, get key() { return key; }, _reset: function () { key = ''; st = null; probes = {}; } };
 })();

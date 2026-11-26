@@ -6,6 +6,7 @@ Pre-release: expect rough edges, and keep a backup before installing.
 
 ### New in alpha 227
 
+- **Dolby Vision stays on with dialogue boost.**  Turning on dialogue boost or night mode for a Dolby Vision movie switched its picture to plain HDR.  It now stays in Dolby Vision.
 - **Scores and times on the phone app's home.**  Now on the TV shows the programme's start and end times, and the score when it's a game of one of your teams (with the Sports widget added).
 - **Smaller pop-ups for reminders and alerts on the TV.**  A reminder, a close game, a game ready to watch or a channel slow to start now shows as a small card in the bottom corner over the picture, not a panel down a third of the screen.
 - **Tap a game in the Sports widget for more.**  Its own card shows the score by period, scoring plays, the last play and win chance, leaders, standings and highlights, with **Watch on TV** for each channel your TV has it on.  **All my teams** at the top, or the back arrow, returns to your games.

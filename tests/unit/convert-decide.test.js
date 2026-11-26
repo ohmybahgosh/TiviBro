@@ -129,6 +129,12 @@ Caps._model('OLED65C2PUA');
   ok('sync: the track chosen', r && r.conv.a === 1 && r.conv.codec === 'ac3', r);
   r = Convert._forSync({ video: 'h264', audio: [T(0, 'dts', 6, 'eng', true)] }, { action: 'play' }, Caps.probe(), 'u');
   ok('sync: not with sound MSE can\'t take', r === null, r);
+  // Dialogue boost: MPEG-TS for TiviBro's player, except a Dolby Vision movie, which stays on the TV's (MKV) so it
+  // keeps Dolby Vision (the browser's player shows only its HDR10 base).
+  r = Convert._forBoost(info, { action: 'play' }, 'http://x/m.mkv', 'fx');
+  ok('boost: MPEG-TS when TiviBro\'s player takes it', r && r.conv.fmt === 'ts' && r.conv.fx === 'fx', r);
+  r = Convert._forBoost(Object.assign({}, info, { video: 'hevc', dv: 8 }), { action: 'play' }, 'http://x/m.mkv', 'fx');
+  ok('boost: a Dolby Vision movie stays on the TV\'s own player (MKV)', r && r.conv.fmt === 'mkv', r);
   Caps.probe = probe0; delete ctx.mpegts;
 }
 ok('profile 7, a converter that can, a TV with Dolby Vision: as 8.1', Convert._dv81({ dv: 7, p81: true }, { tv: { dv8: true } }));
