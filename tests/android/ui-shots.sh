@@ -33,6 +33,8 @@ tap() {   # tap the first element whose text is $1
 }
 sleep 25; calm      # let the freshly booted emulator settle
 adb install -r "$APK"
+# Notifications allowed up front: the app asks once (for reminders), and the question would cover the screens.
+adb shell pm grant $PKG android.permission.POST_NOTIFICATIONS || true
 adb logcat -c
 adb shell am start -W -n $PKG/.MainActivity
 shot 1-empty 5
