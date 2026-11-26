@@ -96,7 +96,9 @@ private class Rows(private val ctx: Context, private val widget: Int) : RemoteVi
         is Item.Watch -> watch(it)
         is Item.Back -> RemoteViews(ctx.packageName, R.layout.widget_sports_head).apply {
             setTextViewText(R.id.sh_text, "‹  " + tr("All my teams"))
-            setTextViewTextSize(R.id.sh_text, android.util.TypedValue.COMPLEX_UNIT_SP, 14f)
+            setTextViewTextSize(R.id.sh_text, android.util.TypedValue.COMPLEX_UNIT_SP, 18f)
+            val dp = ctx.resources.displayMetrics.density; setViewPadding(R.id.sh_text, (8 * dp).toInt(), (10 * dp).toInt(), (8 * dp).toInt(), (10 * dp).toInt())
+            setTextColor(R.id.sh_text, 0xFFFFFFFF.toInt())
             setOnClickFillInIntent(R.id.sh_text, Intent().putExtra("back", true))
         }
     }

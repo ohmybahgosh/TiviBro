@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 227, 2026-11-26)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 227
 
 - **Scores and times on the phone app's home.**  Now on the TV shows the programme's start and end times, and the score when it's a game of one of your teams (with the Sports widget added).
 - **Smaller pop-ups for reminders and alerts on the TV.**  A reminder, a close game, a game ready to watch or a channel slow to start now shows as a small card in the bottom corner over the picture, not a panel down a third of the screen.
@@ -13,11 +17,7 @@
 - **The Sports widget puts live games in the spotlight.**  A live game now fills the top of the widget in both teams' colours, with big logos, the score, the clock, where the ball is, and **Watch on TV** with the channel.  With nothing live, the next game does.  Live scores come in every minute, using a tiny fraction of the data they used to.
 - **A Remote widget laid out like a real remote.**  The arrows sit on a ring round OK, volume and channel are up-and-down rockers, and Home, the menu, the guide, rewind and fast forward are there.  Its layout follows its size, so the buttons grow with it: a strip with just the essentials, a wide one, a tall one, and the full page with a number pad.
 
-## 0.6.0 (alpha 226, 2026-11-26)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 226
+### In alpha 226
 
 - **The Remote widget loads.**  In alpha 225 it showed "Can't load widget" on the home screen.
 
