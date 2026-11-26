@@ -20,6 +20,8 @@ import app.tivibro.phone.data.BackupTools
 import app.tivibro.phone.data.EditorCopies
 import app.tivibro.phone.data.SavedBackup
 import app.tivibro.phone.data.TvStore
+import app.tivibro.phone.notify.PhoneReminders
+import app.tivibro.phone.widget.MyTeams
 import app.tivibro.phone.proto.BleWake
 import app.tivibro.phone.proto.ChanEdit
 import app.tivibro.phone.proto.BackupFile
@@ -702,11 +704,14 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Sports on the TV (ESPN's scores, tied to the TV's channels): its rows, one game's page, a reminder, following a team. */
+    /** The TV's Sports; the teams it follows are kept for the Sports widget too (widget/MyTeams.kt). */
     suspend fun sports(id: String): SportsList = SportsList.from(ask(id, "sports", JSONObject().put("op", "list"), timeoutMs = 30_000))
+        .also { l -> runCatching { MyTeams.learn(getApplication(), l) } }
     suspend fun sportsGame(id: String, game: String): SportGame = SportGame.from(ask(id, "sports", JSONObject().put("op", "game").put("id", game), timeoutMs = 30_000))
     suspend fun sportsShow(id: String, game: String): SportGame = SportGame.from(ask(id, "sports", JSONObject().put("op", "show").put("id", game), tries = 1))
     suspend fun sportsRemind(id: String, game: String): Boolean = ask(id, "sports", JSONObject().put("op", "remind").put("id", game), tries = 1).optInt("on") == 1
-    suspend fun sportsFollow(id: String, team: String, on: Boolean): Boolean = ask(id, "sports", JSONObject().put("op", "follow").put("team", team).put("on", on), tries = 1).optInt("on") == 1
+    suspend fun sportsFollow(id: String, team: String, on: Boolean): Boolean = (ask(id, "sports", JSONObject().put("op", "follow").put("team", team).put("on", on), tries = 1).optInt("on") == 1)
+        .also { now -> if (!now) runCatching { MyTeams.forget(getApplication(), team) } }
 
     /** Movies on now on the TV's channels (TMDB, with the TV's token). */
     suspend fun onNow(id: String): OnNow = OnNow.from(ask(id, "onnow", JSONObject(), timeoutMs = 25_000))
@@ -766,7 +771,10 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         val a = JSONObject().put("op", op)
         if (op == "cancel") a.put("k", k).put("s", start)
         val r = ask(id, "reminders", a, timeoutMs = if (op == "list") 25_000 else 20_000, tries = if (op == "list") 2 else 1)
-        return r.optString("msg") to Reminder.list(r)
+        val list = Reminder.list(r)
+        // The phone's own notifications follow what the TV just said (notify/PhoneReminders.kt).
+        tv(id)?.let { t -> runCatching { PhoneReminders.update(getApplication(), t, list) } }
+        return r.optString("msg") to list
     }
 
     /** Recordings on the TV's USB drive: [op] list, add (a programme: [k], [start]; on now it records from now, later it's

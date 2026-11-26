@@ -26,6 +26,10 @@ calls = []; R.set({ pid: 'p1', before: 5, list: list.slice(1) });
 ok('changing how early reschedules', calls.filter(c => /create$/.test(c.uri)).length === 1);
 calls = []; R.set({ pid: 'p2', before: 5, list: [{ k: 'y', s: now + H, e: now + 2 * H, t: 'Other' }] });
 ok('another playlist\'s reminders are kept', !calls.some(c => /cancel$/.test(c.uri)) && Object.keys(R.state.lists).length === 2);
+const up = R.upcoming();
+ok('the phone gets the reminders of the playlist in use, soonest first', up.length === 1 && up[0].k === 'y' && up[0].t === 'Other' && up[0].live === 0, JSON.stringify(up));
+R.set({ pid: 'p1', before: 5, list: list.slice(1) });
+ok('and follows a switch of playlist', R.upcoming().map((x) => x.k).join() === 'x2', JSON.stringify(R.upcoming()));
 
 // Reminder time.
 const fire = p => new Promise(res => R.fire(p, res));

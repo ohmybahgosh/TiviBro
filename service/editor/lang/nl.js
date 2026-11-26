@@ -2086,5 +2086,20 @@ I18n.add('nl', {
   "＋ New group…": "＋ Nieuwe groep…",
   "All {n} reminders waiting on the TV are cancelled, including the ones your watchlist set.  Your watchlist itself stays, so it can set new ones.": ["De {n} herinnering die op de tv wacht, is geannuleerd, ook als die door je kijklijst is ingesteld.  Je kijklijst zelf blijft staan, dus die kan een nieuwe instellen.", "Alle {n} herinneringen die op de tv wachten, zijn geannuleerd, ook de herinneringen die je kijklijst heeft ingesteld.  Je kijklijst zelf blijft staan, dus die kan nieuwe instellen."],
   "Ticked groups show inside {x} on the TV, their channels after its own.  New channels the provider adds to them come along.  Split undoes it.": "Aangevinkte groepen worden op de tv binnen {x} getoond, met hun zenders achter de eigen zenders.  Nieuwe zenders die de provider eraan toevoegt komen automatisch mee.  Met Splitsen maak je het ongedaan.",
-  "Metadata provided by TheTVDB": "Metadata geleverd door TheTVDB"
+  "Metadata provided by TheTVDB": "Metadata geleverd door TheTVDB",
+  "My teams": "Mijn teams",
+  "A notification a minute before, with Watch on TV, wherever you are.": "Een melding een minuut van tevoren, met Kijk op tv, waar je ook bent.",
+  "A reminder set on the TV, a minute before it starts": "Een herinnering die op de tv is ingesteld, een minuut voor het begin",
+  "Also on this phone": "Ook op deze telefoon",
+  "Follow teams in My teams on the TV, then open the app's Sports tab once.": "Volg teams in Mijn teams op de tv en open daarna één keer het tabblad Sport in de app.",
+  "Getting the scores…": "Uitslagen ophalen…",
+  "No games this week": "Deze week geen wedstrijden",
+  "Notifications for TiviBro are off in Android's settings.": "Meldingen van TiviBro staan uit in de instellingen van Android.",
+  "On now on {x}": "Nu op {x}",
+  "Putting {x} on {y}…": "{x} op {y} zetten…",
+  "Starts at {x} on {y}": "Begint om {x} op {y}",
+  "That TV isn't paired with this phone any more.": "Die tv is niet meer gekoppeld aan deze telefoon.",
+  "Turning to {x} on {y}…": "Naar {x} op {y}…",
+  "Update TiviBro on {x} to play games from the widget.": "Werk TiviBro op {x} bij om wedstrijden vanuit de widget af te spelen.",
+  "{x} didn't answer.  Is the phone on the same network?": "{x} reageerde niet.  Zit de telefoon op hetzelfde netwerk?"
 });

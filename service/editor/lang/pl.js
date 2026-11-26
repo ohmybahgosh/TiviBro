@@ -2086,5 +2086,20 @@ I18n.add('pl', {
   "✦ Smart match": "✦ Inteligentne dopasowanie",
   "＋ New group": "＋ Nowa grupa",
   "＋ New group…": "＋ Nowa grupa…",
-  "Metadata provided by TheTVDB": "Metadane dostarcza TheTVDB"
+  "Metadata provided by TheTVDB": "Metadane dostarcza TheTVDB",
+  "My teams": "Moje drużyny",
+  "A notification a minute before, with Watch on TV, wherever you are.": "Powiadomienie minutę wcześniej, z Oglądaj w TV, gdziekolwiek jesteś.",
+  "A reminder set on the TV, a minute before it starts": "Przypomnienie ustawione w telewizorze, minutę przed początkiem",
+  "Also on this phone": "Także na tym telefonie",
+  "Follow teams in My teams on the TV, then open the app's Sports tab once.": "Obserwuj drużyny w Moje drużyny w telewizorze, a potem raz otwórz kartę Sport w aplikacji.",
+  "Getting the scores…": "Pobieranie wyników…",
+  "No games this week": "Brak meczów w tym tygodniu",
+  "Notifications for TiviBro are off in Android's settings.": "Powiadomienia TiviBro są wyłączone w ustawieniach Androida.",
+  "On now on {x}": "Teraz na {x}",
+  "Putting {x} on {y}…": "Włączam {x} na {y}…",
+  "Starts at {x} on {y}": "Zaczyna się o {x} na {y}",
+  "That TV isn't paired with this phone any more.": "Ten telewizor nie jest już sparowany z tym telefonem.",
+  "Turning to {x} on {y}…": "Przełączam na {x} na {y}…",
+  "Update TiviBro on {x} to play games from the widget.": "Zaktualizuj TiviBro na {x}, aby włączać mecze z widżetu.",
+  "{x} didn't answer.  Is the phone on the same network?": "{x} nie odpowiedział.  Czy telefon jest w tej samej sieci?"
 });

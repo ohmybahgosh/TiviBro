@@ -68,6 +68,13 @@ function create(opts) {
     state.names[name] = 1;
   }
 
+  /* The reminders still to come of the playlist TiviBro last sent (the one in use), soonest first, for the
+     phone app while TiviBro is closed (companion.js): what TiviBro's own list() gives, without logos. */
+  function upcoming() {
+    var t = now(), l = state.lists[state.last] || [];
+    return l.filter(function (r) { return r.e > t; }).sort(function (a, b) { return a.s - b.s; })
+      .map(function (r) { return { k: r.k, ch: r.ch || '', s: r.s, e: r.e, t: r.t || '', live: r.s <= t ? 1 : 0 }; });
+  }
   // The app's whole list for one playlist: schedule new ones, cancel ones that went away.
   function set(p) {
     var pid = clean(p.pid, 40), before = Math.max(0, Math.min(60, +p.before || 0)) * 60000, t = now();
@@ -83,6 +90,7 @@ function create(opts) {
     var gone = Object.keys(state.names).filter(function (n) { return !want[n]; });
     var old = {}; (state.lists[pid] || []).forEach(function (r) { old[nameOf(idOf(pid, r))] = r.at; });
     state.lists[pid] = list;
+    state.last = pid;                    // the playlist TiviBro uses now (upcoming())
     var made = 0;
     list.forEach(function (r) {
       var id = idOf(pid, r), name = nameOf(id);
@@ -203,7 +211,7 @@ function create(opts) {
     });
   }
 
-  return { set: set, fire: fire, setVisible: function (v) { visible = !!v; }, get visible() { return visible; }, get state() { return state; }, nameOf: nameOf, idOf: idOf };
+  return { set: set, upcoming: upcoming, fire: fire, setVisible: function (v) { visible = !!v; }, get visible() { return visible; }, get state() { return state; }, nameOf: nameOf, idOf: idOf };
 }
 
 module.exports = { create: create };

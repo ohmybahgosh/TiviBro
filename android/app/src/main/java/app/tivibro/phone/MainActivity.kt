@@ -2,7 +2,7 @@
    QR code), catches the Dropbox sign-in's return (https://tivibro.app/dropbox, or tivibro://dropbox from that
    page's button) and shows the Dropbox folder picker, takes a provider's link shared to TiviBro (Share, then
    TiviBro), runs the code scanner, asks for the Bluetooth permission the first time Turn on is used (to wake the
-   TV over Bluetooth, ble/BleWaker.kt), starts the weekly backups, and moves between the screens (home, add a TV, type the code, one TV on any of its
+   TV over Bluetooth, ble/BleWaker.kt), asks once to show reminders as notifications, starts the weekly backups and the reminders' sync, and moves between the screens (home, add a TV, type the code, one TV on any of its
    tabs, the editor on any of its pages, adding a shared playlist, backups and restore points, reminders). */
 package app.tivibro.phone
 
@@ -48,6 +48,11 @@ import app.tivibro.phone.ui.AddScreen
 import app.tivibro.phone.ui.BackupsScreen
 import app.tivibro.phone.ui.ShareScreen
 import app.tivibro.phone.work.BackupWorker
+import app.tivibro.phone.work.ReminderSyncWorker
+import app.tivibro.phone.notify.PhoneReminders
+import app.tivibro.phone.data.TvStore
+import android.Manifest
+import android.os.Build
 import app.tivibro.phone.update.Updater
 import app.tivibro.phone.ui.AppModel
 import app.tivibro.phone.ui.CodeScreen
@@ -70,6 +75,8 @@ class MainActivity : ComponentActivity() {
     private val model: AppModel by viewModels()
     private val link = MutableStateFlow<String?>(null)
     private val shared = MutableStateFlow<String?>(null)
+    // Notifications for reminders: whatever the answer, Android's own settings decide from then on.
+    private val askNotify = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,6 +84,13 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         handle(intent, fresh = savedInstanceState == null)
         runCatching { BackupWorker.schedule(this) }
+        // Reminders on the phone: kept in step in the background, the alarms set, and (Android 13 and later) the
+        // permission to notify asked for once, after a TV is paired.
+        runCatching { ReminderSyncWorker.schedule(this); PhoneReminders.reschedule(this) }
+        if (Build.VERSION.SDK_INT >= 33 && PhoneReminders.on(this) && !PhoneReminders.asked(this) && !PhoneReminders.allowed(this) && TvStore(this).load().isNotEmpty()) {
+            PhoneReminders.markAsked(this)
+            askNotify.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
         // A downloaded update left over from last time (installed, or cut short).
         if (savedInstanceState == null) Updater.cleanup(this)
         setContent { TbTheme { App(model, link, shared) } }

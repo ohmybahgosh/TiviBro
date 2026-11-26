@@ -94,12 +94,21 @@ var Phone = (function () {
       Log.info('phone', 'From ' + (c.from || 'a phone') + ': ' + c.type + ' ' + (c.key || c.action || c.k || c.text || ''));
       if (c.type === 'key') { UI.press(c.key); }
       else if (c.type === 'action') { if (UI.modalOpen) UI.close(); Views.runAction(c.action, Views.full ? 'player' : 'list'); }
+      else if (c.type === 'play' && c.team) {
+        // A followed team's game, from the phone's Sports widget: as a launcher's team link (launch.js), its
+        // channels tried in turn.
+        if (UI.modalOpen) UI.close();
+        Launch.handle({ open: { action: 'team', id: String(c.team) } });
+      }
       else if (c.type === 'play') {
         var ch = Library.find(c.k);
         if (!ch) { U.toast('That channel isn\'t in this playlist'); return; }
         if (!Parental.blockedOk(ch)) { U.toast(Library.name(ch) + ' is locked.  Open it on the TV with the PIN.'); return; }
         if (UI.modalOpen) UI.close();
-        Views.startChannel(ch, false, Views.goFull);
+        // A reminder's programme (s, from the phone's notification): with the other channels showing it to fall back on.
+        var pg = c.s ? (Epg.request(ch) || []).filter(function (x) { return x.s === c.s; })[0] : null;
+        if (pg && Views.playChain) Views.playChain(Views.sameShowing(ch, pg), 'phone');
+        else Views.startChannel(ch, false, Views.goFull);
         U.toast('Playing ' + Library.name(ch) + (c.from ? ', from ' + c.from : ''));
       }
       else if (c.type === 'text') { if (UI.modalOpen) UI.close(); if (Views.full) Views.runAction('exit', 'player'); Views.switchTab('search'); Search.query(c.text); }
@@ -300,7 +309,7 @@ var Phone = (function () {
        best channel, set or cancelled), 'follow' (a team, on or off).  A team whose scores you hide comes without them. */
     sports: function (a) {
       if (typeof Sports === 'undefined') return { off: true, msg: 'Update TiviBro on the TV for Sports.' };
-      function team(g, t) { var h = Sports.hidden(g); return { id: t.id || '', name: t.name, full: t.full, abbr: t.abbr, logo: t.logo, color: t.color, rec: t.rec, rank: t.rank || 0, score: h || g.state === 'pre' || t.score == null ? null : t.score, mine: t.id && Teams.follows(t.id) ? 1 : 0 }; }
+      function team(g, t) { var h = Sports.hidden(g); return { id: t.id || '', eid: t.eid || '', name: t.name, full: t.full, abbr: t.abbr, logo: t.logo, color: t.color, rec: t.rec, rank: t.rank || 0, score: h || g.state === 'pre' || t.score == null ? null : t.score, mine: t.id && Teams.follows(t.id) ? 1 : 0 }; }
       function chans(g) { return Sports.channels(g).slice(0, 8).map(function (x) { return { k: x.c.k, n: Library.name(x.c), logo: Views.logoOf(x.c) || '', what: x.p ? x.p.t : x.net ? x.net + ' shows it' : '' }; }); }
       function one(g, full) {
         var cs = full ? chans(g) : chans(g).slice(0, 1);

@@ -2092,5 +2092,20 @@ I18n.add('ru', {
   "Made when TiviBro is back on the TV": "Применится, когда TiviBro снова будет на TV",
   "That needs TiviBro on the TV's screen.  Open TiviBro on the TV, then press it again.": "Для этого TiviBro должен быть на экране TV.  Откройте TiviBro на TV и нажмите ещё раз.",
   "TiviBro isn't on the TV's screen, so this is its last copy.  Switches and choices you change are made when TiviBro is back; buttons need TiviBro on screen.": "TiviBro сейчас не на экране TV, поэтому это его последняя копия.  Переключатели и выбор, которые вы измените, применятся, когда TiviBro вернётся; кнопкам нужен TiviBro на экране.",
-  "Metadata provided by TheTVDB": "Метаданные предоставлены TheTVDB"
+  "Metadata provided by TheTVDB": "Метаданные предоставлены TheTVDB",
+  "My teams": "Мои команды",
+  "A notification a minute before, with Watch on TV, wherever you are.": "Уведомление за минуту до начала, с кнопкой «Смотреть на ТВ», где бы вы ни были.",
+  "A reminder set on the TV, a minute before it starts": "Напоминание, заданное на телевизоре, за минуту до начала",
+  "Also on this phone": "Также на этом телефоне",
+  "Follow teams in My teams on the TV, then open the app's Sports tab once.": "Отслеживайте команды в разделе «Мои команды» на телевизоре, затем один раз откройте вкладку «Спорт» в приложении.",
+  "Getting the scores…": "Загрузка счёта…",
+  "No games this week": "На этой неделе матчей нет",
+  "Notifications for TiviBro are off in Android's settings.": "Уведомления TiviBro отключены в настройках Android.",
+  "On now on {x}": "Сейчас на {x}",
+  "Putting {x} on {y}…": "Включаю {x} на {y}…",
+  "Starts at {x} on {y}": "Начало в {x} на {y}",
+  "That TV isn't paired with this phone any more.": "Этот телевизор больше не связан с этим телефоном.",
+  "Turning to {x} on {y}…": "Переключаю на {x} на {y}…",
+  "Update TiviBro on {x} to play games from the widget.": "Обновите TiviBro на {x}, чтобы включать матчи из виджета.",
+  "{x} didn't answer.  Is the phone on the same network?": "{x} не ответил.  Телефон в той же сети?"
 });

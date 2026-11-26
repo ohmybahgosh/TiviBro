@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_sports_name">TiviBro Sport</string>
+    <string name="widget_sports_description">Mecze twoich drużyn i wyniki na żywo.  Dotknij meczu, aby obejrzeć go na telewizorze.</string>
+</resources>

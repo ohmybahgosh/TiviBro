@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Reminders as notifications on the phone.**  A minute before a reminder starts, the Android app shows a notification with **Watch on TV**, which turns the TV on when it can and plays the programme there, trying the next channel showing it if one doesn't start.  It works wherever the phone is, and keeps in step with the TV in the background, even with TiviBro closed.  Reminders > **Also on this phone** turns it off.
+- **A Sports widget for your phone's home screen.**  **TiviBro Sports** shows your teams' games, live ones first with their score, then what's next and today's results.  It stretches from a strip to the whole page, keeps itself current from ESPN even with the TV off, and plays a game on the TV when you tap it.
+
 ## 0.6.0 (alpha 224, 2026-11-26)
 
 Pre-release: expect rough edges, and keep a backup before installing.

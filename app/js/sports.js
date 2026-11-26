@@ -67,6 +67,7 @@ var Sports = (function () {
       logo: tm.logo || '', color: tm.color || '', alt: tm.alternateColor || '', home: t.homeAway === 'home', score: num(t.score),
       rec: rec && rec.summary || '', rank: t.curatedRank && t.curatedRank.current < 26 ? t.curatedRank.current : 0, win: !!t.winner };
     o.id = teamId(lg, o);
+    o.eid = String(tm.id || '');           // ESPN's own id (the phone's Sports widget reads ESPN with it)
     return o;
   }
   /* The My teams id ("nhl:det") for an ESPN team: by its full name ("Detroit Red Wings", "Michigan Wolverines"),

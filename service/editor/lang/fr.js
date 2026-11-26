@@ -2092,5 +2092,20 @@ I18n.add('fr', {
   "Made when TiviBro is back on the TV": "Appliqué quand TiviBro revient sur la TV",
   "That needs TiviBro on the TV's screen.  Open TiviBro on the TV, then press it again.": "Cela nécessite TiviBro à l'écran de la TV.  Ouvrez TiviBro sur la TV, puis appuyez à nouveau.",
   "TiviBro isn't on the TV's screen, so this is its last copy.  Switches and choices you change are made when TiviBro is back; buttons need TiviBro on screen.": "TiviBro n'est pas à l'écran de la TV, voici donc sa dernière copie.  Les interrupteurs et choix que vous modifiez sont appliqués quand TiviBro revient ; les boutons nécessitent TiviBro à l'écran.",
-  "Metadata provided by TheTVDB": "Métadonnées fournies par TheTVDB"
+  "Metadata provided by TheTVDB": "Métadonnées fournies par TheTVDB",
+  "My teams": "Mes équipes",
+  "A notification a minute before, with Watch on TV, wherever you are.": "Une notification une minute avant, avec Regarder sur la TV, où que vous soyez.",
+  "A reminder set on the TV, a minute before it starts": "Un rappel réglé sur la TV, une minute avant le début",
+  "Also on this phone": "Aussi sur ce téléphone",
+  "Follow teams in My teams on the TV, then open the app's Sports tab once.": "Suivez des équipes dans Mes équipes sur la TV, puis ouvrez une fois l'onglet Sport de l'app.",
+  "Getting the scores…": "Chargement des scores…",
+  "No games this week": "Aucun match cette semaine",
+  "Notifications for TiviBro are off in Android's settings.": "Les notifications de TiviBro sont désactivées dans les paramètres d'Android.",
+  "On now on {x}": "En ce moment sur {x}",
+  "Putting {x} on {y}…": "{x} arrive sur {y}…",
+  "Starts at {x} on {y}": "Commence à {x} sur {y}",
+  "That TV isn't paired with this phone any more.": "Cette TV n'est plus associée à ce téléphone.",
+  "Turning to {x} on {y}…": "Passage à {x} sur {y}…",
+  "Update TiviBro on {x} to play games from the widget.": "Mettez à jour TiviBro sur {x} pour lancer des matchs depuis le widget.",
+  "{x} didn't answer.  Is the phone on the same network?": "{x} n'a pas répondu.  Le téléphone est-il sur le même réseau ?"
 });

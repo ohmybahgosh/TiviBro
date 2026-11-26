@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_sports_name">TiviBro Esportes</string>
+    <string name="widget_sports_description">Os jogos dos seus times e os placares ao vivo.  Toque em um para assistir na TV.</string>
+</resources>

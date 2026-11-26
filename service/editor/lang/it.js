@@ -2086,5 +2086,20 @@ I18n.add('it', {
   "✦ Smart match": "✦ Abbinamento intelligente",
   "＋ New group": "＋ Nuovo gruppo",
   "＋ New group…": "＋ Nuovo gruppo…",
-  "Metadata provided by TheTVDB": "Metadati forniti da TheTVDB"
+  "Metadata provided by TheTVDB": "Metadati forniti da TheTVDB",
+  "My teams": "Le mie squadre",
+  "A notification a minute before, with Watch on TV, wherever you are.": "Una notifica un minuto prima, con Guarda sulla TV, ovunque tu sia.",
+  "A reminder set on the TV, a minute before it starts": "Un promemoria impostato sulla TV, un minuto prima dell'inizio",
+  "Also on this phone": "Anche su questo telefono",
+  "Follow teams in My teams on the TV, then open the app's Sports tab once.": "Segui le squadre in Le mie squadre sulla TV, poi apri una volta la scheda Sport dell'app.",
+  "Getting the scores…": "Carico i risultati…",
+  "No games this week": "Nessuna partita questa settimana",
+  "Notifications for TiviBro are off in Android's settings.": "Le notifiche di TiviBro sono disattivate nelle impostazioni di Android.",
+  "On now on {x}": "Ora su {x}",
+  "Putting {x} on {y}…": "Metto {x} su {y}…",
+  "Starts at {x} on {y}": "Inizia alle {x} su {y}",
+  "That TV isn't paired with this phone any more.": "Questa TV non è più associata a questo telefono.",
+  "Turning to {x} on {y}…": "Passo a {x} su {y}…",
+  "Update TiviBro on {x} to play games from the widget.": "Aggiorna TiviBro su {x} per avviare le partite dal widget.",
+  "{x} didn't answer.  Is the phone on the same network?": "{x} non ha risposto.  Il telefono è sulla stessa rete?"
 });

@@ -16,6 +16,10 @@
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
+    <!-- Reminders on the phone (notify/PhoneReminders.kt): Android 13 and later ask once; the alarms are set again
+         after the phone restarts. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- Paired TVs (with their keys) stay on this phone: no cloud backup, no device-to-device transfer. -->
     <application
@@ -75,6 +79,37 @@
         <receiver
             android:name=".update.UpdateReceiver"
             android:exported="false" />
+
+        <!-- Reminders on the phone: the alarm that shows one, and its Watch on TV (notify/ReminderReceiver.kt). -->
+        <receiver
+            android:name=".notify.ReminderReceiver"
+            android:exported="false" />
+        <!-- After a restart or an update of the app, Android has forgotten the alarms: set again. -->
+        <receiver
+            android:name=".notify.ReminderBoot"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- The Sports widget (widget/SportsWidget.kt) and the service that gives it its rows. -->
+        <receiver
+            android:name=".widget.SportsWidget"
+            android:label="@string/widget_sports_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_sports_info" />
+        </receiver>
+        <service
+            android:name=".widget.SportsWidgetService"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
 
         <service
             android:name=".tile.TvTileService"

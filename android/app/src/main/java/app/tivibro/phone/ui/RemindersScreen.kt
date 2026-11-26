@@ -1,6 +1,7 @@
 /* The reminders TiviBro on the TV will give, soonest first (ask "reminders"): when, the channel with its
    logo, the programme, and the watchlist word or team that set it.  Cancel one, or all of them.  Set new
-   ones from the Guide (tap a channel, then the bell next to a programme) or On now. */
+   ones from the Guide (tap a channel, then the bell next to a programme) or On now.  The switch under the note turns
+   the phone's own notifications for them on or off (notify/PhoneReminders.kt). */
 package app.tivibro.phone.ui
 
 import app.tivibro.phone.tr
@@ -53,6 +54,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.tivibro.phone.proto.Reminder
+import app.tivibro.phone.notify.PhoneReminders
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.Switch
+import androidx.compose.ui.platform.LocalContext
 import app.tivibro.phone.proto.TbException
 import kotlinx.coroutines.launch
 import java.text.DateFormat
@@ -133,6 +141,7 @@ fun RemindersScreen(model: AppModel, id: String, name: String, snack: SnackbarHo
                 item {
                     Text(tr("TiviBro on the TV tells you when these start, also while it is closed."), color = Muted, style = MaterialTheme.typography.bodySmall)
                 }
+                item { PhoneSwitch() }
                 items(l, key = { it.k + "@" + it.start }) { r -> ReminderRow(r, enabled = !busy) { run("cancel", r) } }
             }
         }
@@ -168,6 +177,30 @@ private fun ReminderRow(r: Reminder, enabled: Boolean, onCancel: () -> Unit) {
                 if (r.from.isNotBlank()) Text(r.from, color = Accent, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             IconButton(onClick = onCancel, enabled = enabled) { Icon(Icons.Rounded.Close, tr("Cancel this reminder"), tint = Muted) }
+        }
+    }
+}
+
+/* Also on this phone: the reminders come up as a notification here a minute before they start, with Watch on TV.
+   Android 13 and later ask for the permission when it is turned on and not allowed yet; when Android's settings
+   block it, the line says so. */
+@Composable
+private fun PhoneSwitch() {
+    val ctx = LocalContext.current
+    var on by remember { mutableStateOf(PhoneReminders.on(ctx)) }
+    var allowed by remember { mutableStateOf(PhoneReminders.allowed(ctx)) }
+    val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { allowed = PhoneReminders.allowed(ctx) }
+    Surface(color = Panel, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth()) {
+        Row(Modifier.padding(14.dp, 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(tr("Also on this phone"), fontWeight = FontWeight.SemiBold)
+                Text(if (on && !allowed) tr("Notifications for TiviBro are off in Android's settings.") else tr("A notification a minute before, with Watch on TV, wherever you are."),
+                    color = if (on && !allowed) Bad else Muted, style = MaterialTheme.typography.bodySmall)
+            }
+            Switch(checked = on, onCheckedChange = { v ->
+                on = v; PhoneReminders.setOn(ctx, v)
+                if (v && !allowed && Build.VERSION.SDK_INT >= 33) ask.launch(Manifest.permission.POST_NOTIFICATIONS)
+            })
         }
     }
 }

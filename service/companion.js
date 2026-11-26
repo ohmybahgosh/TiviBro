@@ -362,7 +362,14 @@ function create(opts) {
     var j = parse(buf) || {}, cmd = null;
     if (path === '/v1/key') { if (KEYS.indexOf(j.key) < 0) return reply(400, { error: 'unknown key', code: 'bad' }); cmd = { type: 'key', key: j.key }; }
     else if (path === '/v1/action') { if (ACTIONS.indexOf(j.action) < 0) return reply(400, { error: 'unknown action', code: 'bad' }); cmd = { type: 'action', action: j.action }; }
-    else if (path === '/v1/play') { if (typeof j.k !== 'string' || !j.k || j.k.length > 300) return reply(400, { error: 'bad channel', code: 'bad' }); cmd = { type: 'play', k: j.k }; }
+    else if (path === '/v1/play') {
+      // A channel (k), or the programme starting at s on it (a reminder: the other channels showing it follow), or a
+      // followed team's game (team, "nhl:det": the phone's Sports widget), with its channels tried in turn.
+      var team = typeof j.team === 'string' && /^[a-z0-9]{2,8}:[a-z0-9-]{1,40}$/.test(j.team) ? j.team : '';
+      if (!team && (typeof j.k !== 'string' || !j.k || j.k.length > 300)) return reply(400, { error: 'bad channel', code: 'bad' });
+      cmd = team ? { type: 'play', team: team } : { type: 'play', k: j.k };
+      if (!team && +j.s > 0) cmd.s = +j.s;
+    }
     else if (path === '/v1/text') { if (typeof j.text !== 'string') return reply(400, { error: 'bad text', code: 'bad' }); cmd = { type: 'text', text: cleanText(j.text, 100) }; }
     var how = queue(cmd, p.name);
     reply(200, { ok: true, id: cmd.id, state: how });
@@ -381,6 +388,9 @@ function create(opts) {
     var args = j.args && typeof j.args === 'object' ? j.args : {};
     // Settings while TiviBro is away: from the copy it left here (above).
     if (j.what === 'settings' && !appOpen() && snap && snapAsk(j, reply)) return;
+    // The list of reminders while TiviBro is away: from the copy TiviBro gave the helper to schedule the TV's
+    // own alerts (remind.js), so the phone app can keep its notifications in step without opening TiviBro.
+    if (j.what === 'reminders' && (!args.op || args.op === 'list') && !appOpen() && opts.reminders) return reply(200, { ok: true, data: { msg: '', items: opts.reminders(), away: 1 } });
     if (j.noOpen && !appOpen()) return reply(200, { ok: true, closed: true });
     var cmd = { type: 'ask', what: j.what, args: args };
     if (typeof j.lang === 'string' && /^[A-Za-z]{2}(-[A-Za-z]{2})?$/.test(j.lang)) cmd.lang = j.lang;   // the phone's language: TiviBro answers in it

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The few texts Android itself shows outside the app (the widget picker); everything in the app goes through I18n. -->
+<resources>
+    <string name="widget_sports_name">TiviBro Sports</string>
+    <string name="widget_sports_description">Your teams\' games and live scores.  Tap one to watch it on the TV.</string>
+</resources>

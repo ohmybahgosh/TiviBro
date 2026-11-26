@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_sports_name">TiviBro Deportes</string>
+    <string name="widget_sports_description">Los partidos de tus equipos y los resultados en directo.  Toca uno para verlo en la TV.</string>
+</resources>

@@ -308,6 +308,10 @@ class TvClient(private val tv: Tv, private val timeoutMs: Int = 8000) {
     fun key(k: String) { call("POST", "/v1/key", JSONObject().put("key", k)) }
     fun action(a: String) { call("POST", "/v1/action", JSONObject().put("action", a)) }
     fun play(k: String) { call("POST", "/v1/play", JSONObject().put("k", k)) }
+    /** The programme starting at [start] on channel [k] (a reminder): the TV falls back on the other channels showing it. */
+    fun playShow(k: String, start: Long) { call("POST", "/v1/play", JSONObject().put("k", k).put("s", start)) }
+    /** A followed team's game ("nhl:det", the Sports widget), its channels tried in turn.  An older TiviBro answers 400. */
+    fun playTeam(team: String) { call("POST", "/v1/play", JSONObject().put("team", team)) }
     fun text(t: String) { call("POST", "/v1/text", JSONObject().put("text", t)) }
     /** Turns the TV off (standby), as its remote's power button does.  An older TiviBro answers 404. */
     fun powerOff() { call("POST", "/v1/power", JSONObject()) }

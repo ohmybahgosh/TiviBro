@@ -2086,5 +2086,20 @@ I18n.add('tr', {
   "✦ Smart match": "✦ Akıllı eşleştirme",
   "＋ New group": "＋ Yeni grup",
   "＋ New group…": "＋ Yeni grup…",
-  "Metadata provided by TheTVDB": "Meta veriler TheTVDB tarafından sağlanır"
+  "Metadata provided by TheTVDB": "Meta veriler TheTVDB tarafından sağlanır",
+  "My teams": "Takımlarım",
+  "A notification a minute before, with Watch on TV, wherever you are.": "Bir dakika önce, TV'de izle düğmesiyle bir bildirim, nerede olursanız olun.",
+  "A reminder set on the TV, a minute before it starts": "TV'de kurulan bir hatırlatıcı, başlamadan bir dakika önce",
+  "Also on this phone": "Bu telefonda da",
+  "Follow teams in My teams on the TV, then open the app's Sports tab once.": "TV'de Takımlarım'dan takım takip edin, sonra uygulamanın Spor sekmesini bir kez açın.",
+  "Getting the scores…": "Skorlar alınıyor…",
+  "No games this week": "Bu hafta maç yok",
+  "Notifications for TiviBro are off in Android's settings.": "TiviBro bildirimleri Android ayarlarında kapalı.",
+  "On now on {x}": "Şimdi {x} kanalında",
+  "Putting {x} on {y}…": "{x}, {y} üzerinde açılıyor…",
+  "Starts at {x} on {y}": "{x}'de {y} kanalında başlıyor",
+  "That TV isn't paired with this phone any more.": "Bu TV artık bu telefonla eşleşmiş değil.",
+  "Turning to {x} on {y}…": "{y} üzerinde {x} kanalına geçiliyor…",
+  "Update TiviBro on {x} to play games from the widget.": "Widget'tan maç açmak için {x} üzerindeki TiviBro'yu güncelleyin.",
+  "{x} didn't answer.  Is the phone on the same network?": "{x} yanıt vermedi.  Telefon aynı ağda mı?"
 });

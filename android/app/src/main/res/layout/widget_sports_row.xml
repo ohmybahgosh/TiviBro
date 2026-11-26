@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One game in the Sports widget (widget/SportsWidgetService.kt): the league, each side's logo, name and score, how it stands. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/swr_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="10dp"
+    android:background="@drawable/widget_row_bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+        <TextView
+            android:id="@+id/swr_league"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="#FF8A93A8"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+        <TextView
+            android:id="@+id/swr_state"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:maxLines="1" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingTop="6dp">
+        <ImageView android:id="@+id/swr_away_logo" android:layout_width="26dp" android:layout_height="26dp" android:importantForAccessibility="no" />
+        <TextView android:id="@+id/swr_away" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:paddingStart="8dp"
+            android:textColor="#FFFFFFFF" android:textSize="15sp" android:maxLines="1" android:ellipsize="end" />
+        <TextView android:id="@+id/swr_away_score" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:textColor="#FFFFFFFF" android:textSize="18sp" android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingTop="4dp">
+        <ImageView android:id="@+id/swr_home_logo" android:layout_width="26dp" android:layout_height="26dp" android:importantForAccessibility="no" />
+        <TextView android:id="@+id/swr_home" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:paddingStart="8dp"
+            android:textColor="#FFFFFFFF" android:textSize="15sp" android:maxLines="1" android:ellipsize="end" />
+        <TextView android:id="@+id/swr_home_score" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:textColor="#FFFFFFFF" android:textSize="18sp" android:textStyle="bold" />
+    </LinearLayout>
+</LinearLayout>

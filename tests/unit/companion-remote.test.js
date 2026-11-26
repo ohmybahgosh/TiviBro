@@ -14,6 +14,7 @@ let open = false;
 const c = Companion.create({
   dir, version: 'test', log: () => {}, launch: (p, cb) => { launched.push(p); cb(null); }, sysinfo: (cb) => cb({ model: 'X', webos: '1', name: 'Den' }),
   app: () => ({ open }), editor: () => null,
+  reminders: () => [{ k: 'abc|123', ch: 'Big Ten 10', s: 2e12, e: 2e12 + 3600e3, t: 'Michigan vs Ohio State', live: 0 }],
   powerOff: (cb) => { offs++; cb(null); },
   volume: (d, cb) => { if (d === 'up') vol.level++; else if (d === 'down') vol.level--; else vol.muted = !vol.muted; cb(null, Object.assign({}, vol)); },
 });
@@ -99,6 +100,20 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   ok('nothing else', e.code === 'bad');
   const po = await C.call(cred, 'POST', '/v1/power', {});
   ok('turn off: the TV is asked once', po.ok === true && offs === 1);
+
+  // Play a reminder's programme (s: its channels follow it), or a followed team's game (the Sports widget).
+  let sq = (await ctl('/companion/next?since=0')).j.seq;
+  await C.call(cred, 'POST', '/v1/play', { k: 'abc|123', s: 1700000000000 });
+  await C.call(cred, 'POST', '/v1/play', { team: 'nhl:det' });
+  n = (await ctl('/companion/next?since=' + sq)).j;
+  ok('play with a start time and play a team go through', n.cmds.length === 2 && n.cmds[0].k === 'abc|123' && n.cmds[0].s === 1700000000000 && n.cmds[1].team === 'nhl:det' && !n.cmds[1].k, JSON.stringify(n.cmds));
+  e = await C.call(cred, 'POST', '/v1/play', { team: 'NHL DET; drop' }).catch((x) => x);
+  ok('a team that isn\'t an id is refused', e.code === 'bad');
+  // The reminders while TiviBro is closed: the helper's own copy, so the phone's notifications keep up.
+  open = false;
+  const rl = await C.ask(cred, 'reminders', { op: 'list' });
+  ok('reminders with TiviBro closed come from the helper', rl.ok && rl.data.away === 1 && rl.data.items.length === 1 && rl.data.items[0].t === 'Michigan vs Ohio State', JSON.stringify(rl));
+  open = true;
 
   // Unsigned: nothing.
   const raw = await C.call(Object.assign({}, cred, { key: Buffer.alloc(32).toString('base64') }), 'POST', '/v1/key', { key: 'ok' }, { raw: true });

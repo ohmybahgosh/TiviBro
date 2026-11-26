@@ -173,11 +173,13 @@ data class VodInfo(
 
 /* Sports (sports.js on the TV, phone.js 'sports'): the rows of the TV's Sports screen, and one game's page.
    A team whose scores are hidden on the TV comes without its score ([SportGame.hidden]). */
+/** A team in a game.  [eid]: ESPN's own id for it (from TiviBro 224; the Sports widget reads ESPN with it). */
 data class SportTeam(val id: String, val name: String, val full: String, val abbr: String, val logo: String, val color: String, val rec: String,
-                     val rank: Int, val score: Int?, val mine: Boolean) {
+                     val rank: Int, val score: Int?, val mine: Boolean, val eid: String = "") {
     companion object {
         fun from(j: JSONObject) = SportTeam(j.optString("id"), j.optString("name"), j.optString("full"), j.optString("abbr"), j.optString("logo"),
-            j.optString("color"), j.optString("rec"), j.optInt("rank"), if (j.isNull("score") || !j.has("score")) null else j.optInt("score"), j.optInt("mine") == 1)
+            j.optString("color"), j.optString("rec"), j.optInt("rank"), if (j.isNull("score") || !j.has("score")) null else j.optInt("score"), j.optInt("mine") == 1,
+            j.optString("eid"))
     }
 }
 data class SportChan(val key: String, val name: String, val logo: String, val what: String)
@@ -201,7 +203,7 @@ data class SportSummary(val lines: List<SportLine>, val leaders: List<SportLeade
 }
 data class SportGame(val id: String, val league: String, val start: Long, val state: String, val detail: String, val hidden: Boolean, val name: String,
                      val teams: List<SportTeam>, val nets: List<String>, val venue: String, val note: String, val chans: List<SportChan>, val reminder: Boolean,
-                     val sum: SportSummary? = null) {
+                     val sum: SportSummary? = null, val lg: String = "") {
     val live get() = state == "in"
     val mine get() = teams.any { it.mine }
     /** "Lions at Packers", as the guide says it. */
@@ -211,7 +213,7 @@ data class SportGame(val id: String, val league: String, val start: Long, val st
             j.optString("name"), j.optJSONArray("teams").list { SportTeam.from(it) },
             j.optJSONArray("nets")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty(), j.optString("venue"), j.optString("note"),
             j.optJSONArray("chans").list { c -> SportChan(c.optString("k"), c.optString("n"), c.optString("logo"), c.optString("what")) }, j.optInt("r") == 1,
-            SportSummary.from(j.optJSONObject("sum")))
+            SportSummary.from(j.optJSONObject("sum")), j.optString("lg"))
     }
 }
 data class SportRow(val id: String, val title: String, val sub: String, val games: List<SportGame>)

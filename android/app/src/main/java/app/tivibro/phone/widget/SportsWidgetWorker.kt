@@ -1,0 +1,104 @@
+/* Fills the Sports widget: the followed teams' games from ESPN (Scores), their logos kept on the phone, then every
+   Sports widget drawn again.  About every 15 minutes while a widget is on the home screen, every 2 minutes while one
+   of the games is live.  When the phone doesn't know the TV's teams yet, the TV is asked (only if TiviBro is open
+   on it: it is never opened for this). */
+package app.tivibro.phone.widget
+
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import androidx.work.Constraints
+import androidx.work.CoroutineWorker
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.WorkerParameters
+import app.tivibro.phone.data.TvStore
+import app.tivibro.phone.proto.SportsList
+import app.tivibro.phone.proto.TvClient
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.File
+import java.net.URL
+import java.security.MessageDigest
+import java.util.concurrent.TimeUnit
+
+class SportsWidgetWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, params) {
+    override suspend fun doWork(): Result {
+        val app = applicationContext
+        if (ids(app).isEmpty()) return Result.success()
+        if (MyTeams.all(app).isEmpty()) learnFromTv(app)
+        val teams = MyTeams.all(app)
+        val games = if (teams.isEmpty()) emptyList() else Scores.fetch(teams).take(12)
+        games.flatMap { listOf(it.away.logo, it.home.logo) }.distinct().forEach { logo(app, it) }
+        Cache.save(app, games)
+        SportsWidget.drawAll(app)
+        // Live: again in 2 minutes (WorkManager's periodic work can't run more often than every 15).
+        if (games.any { it.live }) soon(app, 2) else if (games.any { it.state == "pre" && it.start - System.currentTimeMillis() in 0..15 * 60_000L }) soon(app, 5)
+        return Result.success()
+    }
+
+    // The TV's followed teams, from its Sports, when TiviBro is open on it (never opened for this).
+    private fun learnFromTv(app: Context) {
+        val tv = TvStore(app).tileChoice() ?: return
+        runCatching {
+            val r = TvClient(tv, 20_000).ask("sports", JSONObject().put("op", "list"), noOpen = true)
+            r.optJSONObject("data")?.let { MyTeams.learn(app, SportsList.from(it)) }
+        }
+    }
+
+    companion object {
+        private const val EVERY = "tivibro-sports-widget"
+        private const val SOON = "tivibro-sports-widget-soon"
+        private val net = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
+
+        fun ids(ctx: Context): IntArray = AppWidgetManager.getInstance(ctx).getAppWidgetIds(ComponentName(ctx, SportsWidget::class.java))
+
+        /** A widget was added: refresh at once and every 15 minutes from now on. */
+        fun start(ctx: Context) {
+            WorkManager.getInstance(ctx).enqueueUniquePeriodicWork(EVERY, ExistingPeriodicWorkPolicy.KEEP,
+                PeriodicWorkRequestBuilder<SportsWidgetWorker>(15, TimeUnit.MINUTES).setConstraints(net).build())
+            now(ctx)
+        }
+        /** The last widget went: nothing more to refresh. */
+        fun stop(ctx: Context) { WorkManager.getInstance(ctx).cancelUniqueWork(EVERY); WorkManager.getInstance(ctx).cancelUniqueWork(SOON) }
+        /** Refresh now (the refresh button, new teams). */
+        fun now(ctx: Context) = soon(ctx, 0)
+        private fun soon(ctx: Context, minutes: Long) {
+            if (ids(ctx).isEmpty()) return
+            WorkManager.getInstance(ctx).enqueueUniqueWork(SOON, ExistingWorkPolicy.REPLACE,
+                OneTimeWorkRequestBuilder<SportsWidgetWorker>().setInitialDelay(minutes, TimeUnit.MINUTES).setConstraints(net).build())
+        }
+
+        // Team logos, kept small on the phone (RemoteViews carry bitmaps, and a list of them must stay light).
+        private fun file(ctx: Context, url: String): File {
+            val name = MessageDigest.getInstance("SHA-1").digest(url.toByteArray()).joinToString("") { "%02x".format(it) }
+            return File(File(ctx.filesDir, "widget-logos").apply { mkdirs() }, "$name.png")
+        }
+        private fun logo(ctx: Context, url: String) {
+            if (!url.startsWith("https://")) return
+            val f = file(ctx, url)
+            if (f.exists()) return
+            runCatching {
+                val b = URL(url).openStream().use { BitmapFactory.decodeStream(it) } ?: return
+                val s = Bitmap.createScaledBitmap(b, 72, 72, true)
+                f.outputStream().use { s.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            }
+        }
+        /** A logo kept by [logo], or null. */
+        fun logoBitmap(ctx: Context, url: String): Bitmap? = file(ctx, url).takeIf { it.exists() }?.let { BitmapFactory.decodeFile(it.path) }
+    }
+}
+
+/** The games the widget last read, and when. */
+object Cache {
+    private fun prefs(ctx: Context) = ctx.applicationContext.getSharedPreferences("sports-widget", Context.MODE_PRIVATE)
+    fun save(ctx: Context, l: List<WGame>) { prefs(ctx).edit().putString("games", JSONArray().apply { l.forEach { put(it.json()) } }.toString()).putLong("at", System.currentTimeMillis()).apply() }
+    fun games(ctx: Context): List<WGame> = runCatching { val a = JSONArray(prefs(ctx).getString("games", "[]")); (0 until a.length()).map { WGame.from(a.getJSONObject(it)) } }.getOrDefault(emptyList())
+    fun at(ctx: Context): Long = prefs(ctx).getLong("at", 0)
+}

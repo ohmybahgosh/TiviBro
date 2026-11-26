@@ -135,6 +135,8 @@ var companion = require('./companion').create({
     });
   },
   app: function () { return { open: subs > 0, visible: reminders.visible }; },
+  // The reminders to come, for the phone app while TiviBro is closed (its own list when open).
+  reminders: function () { return reminders.upcoming(); },
   power: function () { return powerNow; },
   // The TV's own volume, for the phone's remote (works whether TiviBro is open or not).
   volume: function (dir, cb) {

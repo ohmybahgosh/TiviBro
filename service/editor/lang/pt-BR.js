@@ -2092,5 +2092,20 @@ I18n.add('pt-BR', {
   "Made when TiviBro is back on the TV": "Aplicado quando o TiviBro voltar à TV",
   "That needs TiviBro on the TV's screen.  Open TiviBro on the TV, then press it again.": "Isso precisa do TiviBro na tela da TV.  Abra o TiviBro na TV e toque de novo.",
   "TiviBro isn't on the TV's screen, so this is its last copy.  Switches and choices you change are made when TiviBro is back; buttons need TiviBro on screen.": "O TiviBro não está na tela da TV, então esta é a última cópia dele.  Os botões liga/desliga e escolhas que você mudar são aplicados quando o TiviBro voltar; os botões de ação precisam do TiviBro na tela.",
-  "Metadata provided by TheTVDB": "Metadados fornecidos pelo TheTVDB"
+  "Metadata provided by TheTVDB": "Metadados fornecidos pelo TheTVDB",
+  "My teams": "Meus times",
+  "A notification a minute before, with Watch on TV, wherever you are.": "Uma notificação um minuto antes, com Assistir na TV, onde você estiver.",
+  "A reminder set on the TV, a minute before it starts": "Um lembrete definido na TV, um minuto antes de começar",
+  "Also on this phone": "Também neste celular",
+  "Follow teams in My teams on the TV, then open the app's Sports tab once.": "Siga times em Meus times na TV e abra uma vez a aba Esportes do app.",
+  "Getting the scores…": "Buscando os placares…",
+  "No games this week": "Nenhum jogo nesta semana",
+  "Notifications for TiviBro are off in Android's settings.": "As notificações do TiviBro estão desativadas nas configurações do Android.",
+  "On now on {x}": "Agora em {x}",
+  "Putting {x} on {y}…": "Colocando {x} em {y}…",
+  "Starts at {x} on {y}": "Começa às {x} em {y}",
+  "That TV isn't paired with this phone any more.": "Essa TV não está mais pareada com este celular.",
+  "Turning to {x} on {y}…": "Mudando para {x} em {y}…",
+  "Update TiviBro on {x} to play games from the widget.": "Atualize o TiviBro em {x} para tocar jogos pelo widget.",
+  "{x} didn't answer.  Is the phone on the same network?": "{x} não respondeu.  O celular está na mesma rede?"
 });
