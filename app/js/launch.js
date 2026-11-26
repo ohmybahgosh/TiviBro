@@ -92,10 +92,12 @@ var Launch = (function () {
     return c && usable(c) ? c : null;
   }
   function what(o) { return o.name || o.title || o.q || o.number || o.epg || o.key || ''; }
-  function play(c) {
+  // Plays c; more (other channels showing the same game) are tried in turn if c doesn't start (Views.playChain).
+  function play(c, more) {
     if (UI.modalOpen) UI.close();
     if (!Parental.blockedOk(c)) { U.toast(Library.name(c) + ' is locked.  Open it on the TV with the PIN.'); return; }
-    Views.startChannel(c, false, Views.goFull);
+    more = (more || []).filter(function (x) { return x.k !== c.k && Parental.blockedOk(x); });
+    if (more.length && Views.playChain) Views.playChain([c].concat(more), 'launch'); else Views.startChannel(c, false, Views.goFull);
   }
 
   /* ---------- a team's game ---------- */
@@ -114,11 +116,13 @@ var Launch = (function () {
     // A Favorite channel for that game, when it's on several.
     var same = list.filter(function (x) { return x.p.s === g.p.s; }), fav = same.filter(function (x) { return Library.isFav(x.c.k); })[0];
     if (fav) g = fav;
+    // The game's other channels, Favorites first, to fall back on.
+    var more = same.filter(function (x) { return x !== g; }).sort(function (a, b) { return (Library.isFav(b.c.k) ? 1 : 0) - (Library.isFav(a.c.k) ? 1 : 0); }).map(function (x) { return x.c; });
     if (g.p.s > now + 5 * 60000) {
-      UI.menu(g.p.t, [{ label: 'Watch ' + Library.name(g.c) + ' now', sub: 'The game starts at ' + U.hhmm(g.p.s), action: function () { play(g.c); } }, { label: 'Not now' }]);
+      UI.menu(g.p.t, [{ label: 'Watch ' + Library.name(g.c) + ' now', sub: 'The game starts at ' + U.hhmm(g.p.s), action: function () { play(g.c, more); } }, { label: 'Not now' }]);
       return;
     }
-    play(g.c);
+    play(g.c, more);
   }
 
   /* ---------- carrying one out ---------- */

@@ -2030,6 +2030,8 @@ var Settings = (function () {
       L2('Trakt', 'Watched history and lists'),
       info('TiviBro uses Trakt but is not endorsed or certified by Trakt.', ''),
       L2('OpenSubtitles.com', 'Subtitles'),
+      L2('FlixPatrol', 'Top 10s of the streaming services'),
+      info('Top 10 data from FlixPatrol (flixpatrol.com), used with their permission.', ''),
       L2('TheIntroDB', 'Skip times'),
       L2('IntroDB', 'Skip times, ODbL'),
       info('Contains information from IntroDB (introdb.app), made available under the Open Database License (ODbL).', ''),
@@ -2403,6 +2405,15 @@ var Settings = (function () {
     paint();                                 // the way back named after that screen
   }
   function openGroup(i) { grp = U.clamp(i, 0, parts.length - 1); sel = firstIn(grp); navSel = grp; }
+  /* The part of the open page holding the row named label, drawn with that row focused (a link to one setting,
+     and tests reading a row the TV only draws in its part).  False when the page has no such row. */
+  function showRow(label) {
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      if (it && it.label && !it.head && (it.label === label || String(T(it.label)) === label)) { openGroup(groupOf(i)); if (focusable(i)) sel = i; zone = 'body'; build(); return true; }
+    }
+    return false;
+  }
   function put(el, s) { s = s == null ? '' : String(s); if (el.textContent !== s) el.textContent = s; }
   /* What kind of row it is, for its look (and the phone's and the web editor's): a setting with choices, an On / Off
      switch, a page, a button, a fact (status), a note or tip, or a heading. */
@@ -2840,7 +2851,8 @@ var Settings = (function () {
        own rows through I18n.t, so here the same.  A name (I18n.raw) stays as it is.  The English label is kept
        for actionTone below. */
     var en = String(it.phoneLabel != null ? it.phoneLabel : it.label || '');
-    var r = { i: n, label: String(T(it.phoneLabel != null ? it.phoneLabel : it.label || '')), sub: it.sub ? String(T(it.sub)) : '' };
+    // A row marked raw (a language's own name: "English" stays "English" in Spanish) keeps its name, as on the TV.
+    var r = { i: n, label: it.raw && it.phoneLabel == null ? en : String(T(it.phoneLabel != null ? it.phoneLabel : it.label || '')), sub: it.sub ? String(T(it.sub)) : '' };
     if (it.head) r.kind = 'head';
     else if (it.info) { r.kind = 'info'; r.value = v; }
     else if (it.toggle) { r.kind = 'toggle'; r.on = !!it.get(); }
@@ -3008,6 +3020,6 @@ var Settings = (function () {
   function regain() { UI.setHandler(keys); build(); }
   // The home too when it's showing (the language can change while it is: the TV's own, or a dictionary still loading).
   function redraw() { if (document.getElementById('viewSettings').classList.contains('hidden')) return; if (onHome) homeBuild(); else build(); }
-  return { capturing: function () { return !!cap; }, dns: { ids: DNS_IDS, names: DNS_NAMES, ask: askDns }, open: open, openFrom: openFrom, redraw: redraw, regain: regain, assignGuide: assignGuide, section: section, openPlaylist: openPlaylist, openTeams: openTeams, live: live, reset: function () { stack = []; sel = 0; }, phone: forPhone,
+  return { capturing: function () { return !!cap; }, dns: { ids: DNS_IDS, names: DNS_NAMES, ask: askDns }, open: open, openFrom: openFrom, redraw: redraw, regain: regain, assignGuide: assignGuide, section: section, showRow: showRow, openPlaylist: openPlaylist, openTeams: openTeams, live: live, reset: function () { stack = []; sel = 0; }, phone: forPhone,
     LOOK: { ACCENTS: ACCENTS, ACCENT_NAMES: ACCENT_NAMES, THEMES: THEMES, THEME_NAMES: THEME_NAMES, THEME_INK: THEME_INK } };
 })();

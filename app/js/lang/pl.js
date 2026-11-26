@@ -2542,5 +2542,12 @@ I18n.add('pl', {
   "No Top 10s for your region yet.  Try again in a moment.": "Brak jeszcze Top 10 dla twojego regionu.  Spróbuj ponownie za chwilę.",
   "Top 10 on {x}": "Top 10 w {x}",
   "what's most watched on a streaming service in your region": "najczęściej oglądane w serwisie streamingowym w twoim regionie",
-  "{n} of the 10 in your provider's list": ["{n} z 10 u twojego dostawcy", "{n} z 10 u twojego dostawcy", "{n} z 10 u twojego dostawcy"]
+  "{n} of the 10 in your provider's list": ["{n} z 10 u twojego dostawcy", "{n} z 10 u twojego dostawcy", "{n} z 10 u twojego dostawcy"],
+  "{x} isn't starting.  Trying {y} ({n} of {m}).": "{x} nie startuje.  Próbuję {y} ({n} z {m}).",
+  "Same game on another channel…": "Ten sam mecz na innym kanale…",
+  "Same game on another channel": "Ten sam mecz na innym kanale",
+  "{n} more": ["jeszcze {n}", "jeszcze {n}", "jeszcze {n}"],
+  "from {x}": "od {x}",
+  "Top 10s of the streaming services": "Top 10 serwisów streamingowych",
+  "Top 10 data from FlixPatrol (flixpatrol.com), used with their permission.": "Dane Top 10 z FlixPatrol (flixpatrol.com), używane za ich zgodą."
 });

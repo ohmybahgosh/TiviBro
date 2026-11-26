@@ -2542,5 +2542,12 @@ I18n.add('tr', {
   "No Top 10s for your region yet.  Try again in a moment.": "Bölgeniz için henüz Top 10 yok.  Biraz sonra yeniden deneyin.",
   "Top 10 on {x}": "{x} Top 10",
   "what's most watched on a streaming service in your region": "bölgenizdeki bir yayın hizmetinde en çok izlenenler",
-  "{n} of the 10 in your provider's list": ["Sağlayıcınızda 10 içinden {n}", "Sağlayıcınızda 10 içinden {n}"]
+  "{n} of the 10 in your provider's list": ["Sağlayıcınızda 10 içinden {n}", "Sağlayıcınızda 10 içinden {n}"],
+  "{x} isn't starting.  Trying {y} ({n} of {m}).": "{x} başlamıyor.  {y} deneniyor ({n}/{m}).",
+  "Same game on another channel…": "Aynı maç başka bir kanalda…",
+  "Same game on another channel": "Aynı maç başka bir kanalda",
+  "{n} more": ["{n} tane daha", "{n} tane daha"],
+  "from {x}": "{x} itibarıyla",
+  "Top 10s of the streaming services": "Yayın hizmetlerinin İlk 10 listeleri",
+  "Top 10 data from FlixPatrol (flixpatrol.com), used with their permission.": "İlk 10 verileri FlixPatrol'den (flixpatrol.com), izinleriyle kullanılıyor."
 });

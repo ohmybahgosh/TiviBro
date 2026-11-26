@@ -251,6 +251,8 @@ body.guide1 .gp .gs{display:none}
 /* A page's list (settings.js navList): back, the page's name, then its parts. */
 /* With a page's parts only in the list (no long list of sections since the Settings home), they can be bigger. */
 .set-nav div:not(.nav-back):not(.nav-title){font-size:31px;line-height:38px;padding:10px 24px}
+/* A part's name wraps to a second line instead of being cut ("How your guide is built, in this order", and longer in other languages). */
+.set-nav div:not(.nav-back):not(.nav-title):not(.nav-find){white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
 /* The settings themselves a little bigger than the rest of the app (26 px), for the same reason. */
 #viewSettings .opt .ol{font-size:29px}
 #viewSettings .opt .ol small{font-size:23px}
@@ -467,7 +469,7 @@ body.pointer .set-nav>div:hover{color:var(--text)}
 /* ---------- side menu ---------- */
 .sidenav{position:absolute;left:0;top:0;bottom:0;width:104px;z-index:4;display:flex;flex-direction:column;padding:36px 0 28px;
   background:linear-gradient(90deg,#080b16 0%,#080b16 70%,rgba(8,11,22,0) 100%);overflow:hidden}
-body.nav-open .sidenav{width:360px;background:#080b16;z-index:35}
+body.nav-open .sidenav{width:420px;background:#080b16;z-index:35}
 /* The groups column under the open menu: hidden, so a long group name doesn't peek out beside it. */
 body.nav-open #viewLive .col.groups{visibility:hidden}
 body.nav-hidden .sidenav,body.full .sidenav{visibility:hidden}
@@ -478,7 +480,7 @@ body.nav-hidden .sidenav,body.full .sidenav{visibility:hidden}
 .setup.loadscreen{padding:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
 .setup.loadscreen p.lead{margin:0 auto;max-width:1300px}
 .sidenav .tabs{display:flex;flex-direction:column;gap:6px}
-.sidenav .lbl{white-space:nowrap;opacity:0;overflow:hidden;text-overflow:ellipsis;max-width:250px}
+.sidenav .lbl{white-space:nowrap;opacity:0;overflow:hidden;text-overflow:ellipsis;max-width:310px}   /* wide enough for "Signaler un problème" */
 body.nav-open .sidenav .lbl{opacity:1}
 .tab{display:flex;align-items:center;gap:22px;height:68px;margin:0 16px;padding:0 20px;border-radius:14px;color:var(--muted);font-size:28px;white-space:nowrap}
 .tab .ico{width:32px;height:32px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -669,7 +671,7 @@ body:not(.nav-hidden) #viewGuide .guide-groups{left:0;width:470px;padding-left:4
 .guide-groups .row .name i{font-style:normal;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .guide-groups .row .name i.mq{display:inline-block;overflow:visible;text-overflow:initial}
 #viewGuide.groups-open .guide-group{visibility:hidden}
-body.nav-open .hints{padding-left:400px}
+body.nav-open .hints{padding-left:460px}
 
 /* ---------- settings added from the TiviMate review ---------- */
 /* clock: top right on every screen except fullscreen */

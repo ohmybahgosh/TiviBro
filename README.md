@@ -784,6 +784,10 @@ The [Release workflow](.github/workflows/release.yml) then runs the tests, build
 - **My media** contacts only the sources you add.  Their logins stay on the TV and out of backups and problem reports.  For Dropbox, the phone app signs in with Dropbox and hands the TV only the sign-in it needs to read your files; removing the source signs it out.  When movie details are fetched (by you, on their own for new movies once you've saved a token, or for the movies in your guide), only a title and year (or its id) and your language go to TMDB with your own token, or to TheTVDB through TiviBro's own service (which holds its key), as set under **Where details come from**.
 - The logo library, when you turn it on, downloads lists of logo addresses from tivibro.app, one per country in your playlist, then each logo from its project.  Only the country is in the request: no channel names, logins or anything else from your playlist.
 
+## Data from other services
+
+TiviBro uses, with thanks: [TMDB](https://www.themoviedb.org) (this product uses the TMDB API but is not endorsed or certified by TMDB), [TheTVDB](https://thetvdb.com), [Trakt](https://trakt.tv), [OpenSubtitles.com](https://www.opensubtitles.com), [TheIntroDB](https://theintrodb.org) and [IntroDB](https://introdb.app) (ODbL), and Top 10 data from [FlixPatrol](https://flixpatrol.com), used with their permission.
+
 ## Special thanks
 
 Everyone who has helped build TiviBro with code, ideas or bug reports.  This list updates itself when a pull request is merged or an issue is opened.

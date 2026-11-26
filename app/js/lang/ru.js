@@ -5,7 +5,7 @@ I18n.add('ru', {
   // The side menu and the screens
   "Channels": "Каналы", "Guide": "Телегид", "Movies on now": "Фильмы в эфире", "Movies": "Фильмы", "Shows": "Сериалы",
   "My media": "Мои медиа", "Search": "Поиск", "Edit on phone": "С телефона", "Settings": "Настройки",
-  "Report a problem": "Сообщить о проблеме", "Groups": "Группы", "Categories": "Категории", "Your library": "Ваша библиотека",
+  "Report a problem": "Отчёт об ошибке", "Groups": "Группы", "Categories": "Категории", "Your library": "Ваша библиотека",
   "MY MEDIA": "МОИ МЕДИА", "Buffering": "Загрузка", "Buffer": "Буфер",
   "OK on a channel plays it here.": "OK на канале включает его здесь.", "OK again for fullscreen.": "Ещё раз OK: на весь экран.",
   // TiviBro's own groups
@@ -184,7 +184,7 @@ I18n.add('ru', {
   "{x} (English: not in TiviBro yet)": "{x} (английский: этого языка в TiviBro пока нет)", "Language: {x}": "Язык: {x}",
   "Language: automatic, the TV's language": "Язык: автоматически, как на телевизоре", "English": "Английский", "Spanish": "Испанский", "Russian": "Русский",
   "TiviBro is in the TV's own language unless you choose one here.  Spanish and Russian are new: anything not translated yet shows in English.": "TiviBro использует язык телевизора, если здесь не выбран другой.  Испанский и русский добавлены недавно: то, что ещё не переведено, показывается на английском.",
-  "Something reads wrong, or you'd like TiviBro in your language?  Settings > System > Report a problem, or a discussion on GitHub.": "Что-то переведено неверно или хотите TiviBro на своём языке?  Настройки > Система > Сообщить о проблеме, или обсуждение на GitHub.",
+  "Something reads wrong, or you'd like TiviBro in your language?  Settings > System > Report a problem, or a discussion on GitHub.": "Что-то переведено неверно или хотите TiviBro на своём языке?  Настройки > Система > Отчёт об ошибке, или обсуждение на GitHub.",
   "TiviBro is in {x}, your TV's language.  Settings > Language changes it.": "TiviBro работает на языке телевизора: {x}.  Сменить язык можно в разделе «Настройки > Язык»."
 });
 
@@ -1264,8 +1264,8 @@ I18n.add('ru', {
   "Memory-safe playback": "Экономия памяти при воспроизведении",
   "Holds at most about 24 MB of video ahead (the full buffer profile on most channels, less on a heavy 4K one) so TiviBro doesn't close on TVs with 1 or 2 GB.  Automatic turns it on for TVs with 1 GB, and for a few days after TiviBro closed while playing.": "Держит впереди не больше примерно 24 МБ видео (полный профиль буфера на большинстве каналов, меньше на тяжёлом 4K), чтобы TiviBro не закрывался на телевизорах с 1 или 2 ГБ.  «Автоматически» включает его на телевизорах с 1 ГБ и на несколько дней после того, как TiviBro закрылся во время воспроизведения.",
   "Memory-safe playback is on": "Экономный режим памяти включён",
-  "Report a problem in the menu": "«Сообщить о проблеме» в меню",
-  "Puts Report a problem at the bottom of the menu bar, one press from anywhere.": "Добавляет «Сообщить о проблеме» внизу меню, в одно нажатие откуда угодно.",
+  "Report a problem in the menu": "«Отчёт об ошибке» в меню",
+  "Puts Report a problem at the bottom of the menu bar, one press from anywhere.": "Добавляет «Отчёт об ошибке» внизу меню, в одно нажатие откуда угодно.",
   "Accounts and keys": "Аккаунты и ключи",
   "TMDB for movie and show details and posters, OpenSubtitles for subtitles.": "TMDB для описаний и постеров фильмов и сериалов, OpenSubtitles для субтитров.",
   "Names": "Названия",
@@ -2666,5 +2666,12 @@ I18n.add('ru', {
   "No Top 10s for your region yet.  Try again in a moment.": "Для вашего региона Топ-10 пока нет.  Попробуйте чуть позже.",
   "Top 10 on {x}": "Топ-10 на {x}",
   "what's most watched on a streaming service in your region": "самое популярное на стриминговом сервисе в вашем регионе",
-  "{n} of the 10 in your provider's list": ["{n} из 10 у вашего провайдера", "{n} из 10 у вашего провайдера", "{n} из 10 у вашего провайдера"]
+  "{n} of the 10 in your provider's list": ["{n} из 10 у вашего провайдера", "{n} из 10 у вашего провайдера", "{n} из 10 у вашего провайдера"],
+  "{x} isn't starting.  Trying {y} ({n} of {m}).": "{x} не запускается.  Пробую {y} ({n} из {m}).",
+  "Same game on another channel…": "Тот же матч на другом канале…",
+  "Same game on another channel": "Тот же матч на другом канале",
+  "{n} more": ["ещё {n}", "ещё {n}", "ещё {n}"],
+  "from {x}": "с {x}",
+  "Top 10s of the streaming services": "Топ-10 стриминговых сервисов",
+  "Top 10 data from FlixPatrol (flixpatrol.com), used with their permission.": "Данные топ-10 от FlixPatrol (flixpatrol.com), используются с их разрешения."
 });

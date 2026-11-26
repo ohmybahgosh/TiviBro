@@ -276,7 +276,8 @@ var Events = (function () {
       { s: Math.min(ev.start - 3 * 86400e3, Date.now() - 12 * 3600e3), e: ev.start, t: 'Starts ' + when(ev.start) + ': ' + ev.title, d: info, up: 1 },
       { s: ev.start, e: ev.end, t: ev.title, d: info, ev: 1 },
       // Ended: stays in the guide while the provider keeps the old name, so it never looks like a live event.
-      { s: ev.end, e: Math.max(ev.end + 6 * 3600e3, Date.now() + 7 * 86400e3), t: 'Ended ' + when(ev.end) + ': ' + ev.title, d: info, ended: 1 }
+      // Before the end it's the next thing in the guide, so it says when it will be over, not that it was.
+      { s: ev.end, e: Math.max(ev.end + 6 * 3600e3, Date.now() + 7 * 86400e3), t: (ev.end <= Date.now() ? 'Ended ' : 'Over at ') + when(ev.end) + ': ' + ev.title, d: info, ended: 1 }
     ];
   }
 

@@ -2542,5 +2542,12 @@ I18n.add('nl', {
   "No Top 10s for your region yet.  Try again in a moment.": "Nog geen Top 10 voor je regio.  Probeer het zo opnieuw.",
   "Top 10 on {x}": "Top 10 op {x}",
   "what's most watched on a streaming service in your region": "wat het meest bekeken wordt op een streamingdienst in je regio",
-  "{n} of the 10 in your provider's list": ["{n} van de 10 bij je provider", "{n} van de 10 bij je provider"]
+  "{n} of the 10 in your provider's list": ["{n} van de 10 bij je provider", "{n} van de 10 bij je provider"],
+  "{x} isn't starting.  Trying {y} ({n} of {m}).": "{x} start niet.  {y} proberen ({n} van {m}).",
+  "Same game on another channel…": "Dezelfde wedstrijd op een andere zender…",
+  "Same game on another channel": "Dezelfde wedstrijd op een andere zender",
+  "{n} more": ["nog {n}", "nog {n}"],
+  "from {x}": "vanaf {x}",
+  "Top 10s of the streaming services": "Top 10 van de streamingdiensten",
+  "Top 10 data from FlixPatrol (flixpatrol.com), used with their permission.": "Top 10-gegevens van FlixPatrol (flixpatrol.com), gebruikt met hun toestemming."
 });

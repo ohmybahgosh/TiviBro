@@ -385,12 +385,14 @@ var Views = (function () {
   }
 
   // Watch time, recents, reminders and the sleep timer share one slow timer.
+  var slowAt = { k: '', next: 0 }, slowOpen = null;
   /* A channel taking longer than usual to start, fullscreen (discussion #36): after 12 seconds without a
      picture, say what TiviBro has seen and ask: keep trying, start over, its other versions, or stop.  Once per
-     start, then again a while after "Keep trying".  Off in Settings > Playback > Ask when a channel is slow. */
-  var slowAt = { k: '', next: 0 }, slowOpen = null;
+     start, then again a while after "Keep trying".  Off in Settings > Playback > Ask when a channel is slow.
+     Not while a same-game chain (playChain) still has channels to try. */
   function slowAsk() {
     if (mode !== 'live' || !playing || UI.modalOpen || Store.settings.slowAsk === false) return;
+    if (chain && !chain.ok && chain.i + 1 < chain.list.length) return;   // the next channel with the game comes first
     var s = Player.startStatus, now = Date.now();
     if (!s || s.ms < 12000) return;
     var key = playing.k + '|' + (now - s.ms);           // this start of this channel
@@ -495,11 +497,12 @@ var Views = (function () {
     if (UI.modalOpen) UI.close();
     if (p && p.e <= now && c.arch) return playCatchup(c, p, 0);
     if (p && p.s < now - 120000 && c.arch) {
-      startChannel(c, false, goFull);
+      playChain(sameShowing(c, p), 'reminder');
       UI.menu('Started at ' + U.hhmm(p.s) + ':  ' + p.t, [{ label: 'Keep watching live' }, { label: 'Watch from the start', sub: 'catch-up', action: function () { playCatchup(c, p, 0); } }]);
       return;
     }
-    startChannel(c, false, goFull);
+    // On several channels (a game on event or league channels): the next one if this one doesn't start.
+    playChain(sameShowing(c, p), 'reminder');
   }
 
   function reload(keepGroup) {
@@ -582,7 +585,7 @@ var Views = (function () {
     now.appendChild(U.el('div', '', nn && nn.now ? nn.now.t : L.name(c)));
     if (nn && nn.now) {
       var pg = Epg.pubSource(c);
-      now.appendChild(U.el('small', '', (nn.now.up ? T('Starts {x}', { x: Events.when(nn.now.e) }) : nn.now.ended ? T('Ended {x}', { x: Events.when(nn.now.s) }) : T('{x} to {y}', { x: U.hhmm(nn.now.s), y: U.hhmm(nn.now.e) })) + '   ' + L.name(c) + (c.arch ? '   ' + T('catch-up {n} days', { n: c.arch }) : '') + (pg ? '   ' + T('public guide, {x}', { x: pg.name }) : '')));
+      now.appendChild(U.el('small', '', (nn.now.up ? T('Starts {x}', { x: Events.when(nn.now.e) }) : nn.now.ended ? T(nn.now.s <= Date.now() ? 'Ended {x}' : 'Ends {x}', { x: Events.when(nn.now.s) }) : T('{x} to {y}', { x: U.hhmm(nn.now.s), y: U.hhmm(nn.now.e) })) + '   ' + L.name(c) + (c.arch ? '   ' + T('catch-up {n} days', { n: c.arch }) : '') + (pg ? '   ' + T('public guide, {x}', { x: pg.name }) : '')));
       var nd = Epg.desc(c, nn.now); if (nd) now.appendChild(U.el('p', '', nd));
     } else {
       // No guide: what the provider wrote in the channel name (often the game or show) is the next best thing.
@@ -605,6 +608,7 @@ var Views = (function () {
   function startChannel(c, preview, then, buffer) {
     Parental.gate('channels', c, function () {
       if (!foSwitching) fo = null;            // picking a channel yourself ends a backup chain
+      if (!chainSwitching && !foSwitching && chain) { clearTimeout(chain.t); chain = null; }   // and the same-game chain
       if (playing && playing.k !== c.k) lastPlayed = playing;
       if (tsh && !tsh.keep) tsEnd();
       // From a movie with subtitles downloaded for it (issue #117: they kept showing over live TV): gone.
@@ -1779,6 +1783,57 @@ var Views = (function () {
     }, done ? 0 : 1400);
   }
 
+  /* ---------- a game or programme on several channels ----------
+     A launch (a team's game from a launcher, Launch.team), a reminder or a game picked in Sports plays the first
+     channel showing it; when that one hasn't started within CHAIN_WAIT, or fails, the next one showing the same
+     thing is tried, with a toast, until one plays.  The list stays for the Options menu's "Same game on another
+     channel" while it plays.  Picking a channel yourself ends it. */
+  var chain = null, chainSwitching = false, CHAIN_WAIT = 12000;
+  function playChain(list, why) {
+    list = (list || []).filter(Boolean);
+    if (!list.length) return;
+    chain = { list: list, i: 0, why: why || '', ok: false, t: 0 };
+    chainStart();
+  }
+  function chainStart() {
+    var c = chain && chain.list[chain.i]; if (!c) return;
+    clearTimeout(chain.t);
+    chainSwitching = true;
+    try { startChannel(c, false, goFull); } finally { chainSwitching = false; }
+    var mine = chain;
+    if (chain.list.length > 1) chain.t = setTimeout(function () { if (chain === mine && !mine.ok) chainNext('slow'); }, CHAIN_WAIT);
+  }
+  function chainNext(why) {
+    if (!chain || chain.ok) return;
+    var from = chain.list[chain.i];
+    if (chain.i + 1 >= chain.list.length) { clearTimeout(chain.t); Log.warn('views', 'None of the ' + chain.list.length + ' channels showing it started'); chain = null; return; }
+    chain.i++;
+    var to = chain.list[chain.i];
+    Log.info('views', L.name(from) + (why === 'slow' ? ' didn\'t start' : ' failed') + '; trying ' + to.n + ' (' + (chain.i + 1) + ' of ' + chain.list.length + ')');
+    U.toast(T('{x} isn\'t starting.  Trying {y} ({n} of {m}).', { x: L.name(from), y: L.name(to), n: chain.i + 1, m: chain.list.length }), 6000);
+    chainStart();
+  }
+  // The other channels showing what plays now (from a game or reminder start), for the Options menu.
+  function chainOthers() { return chain && playing ? chain.list.filter(function (x) { return x.k !== playing.k; }) : []; }
+  /* Channels showing the same programme as c at p (its title, starting within 5 minutes), from the guide:
+     a game the provider carries on several event or league channels.  c first, Favorites next. */
+  function sameShowing(c, p) {
+    var out = [c];
+    if (!p || !p.t || typeof Epg === 'undefined' || !Epg.during || !Epg.keyOf) return out;
+    var keys = {}, hid = Store.edits.hiddenChannels || {};
+    Epg.during(p.s - 60000, p.s + 60000, function (g, x) { if (x.t === p.t && Math.abs(x.s - p.s) <= 5 * 60000) keys[g] = 1; });
+    var more = L.data.channels.filter(function (x) { return x.k !== c.k && !hid[x.k] && keys[Epg.keyOf(x)] && (!L.isBlocked || !L.isBlocked(x)); });
+    more.sort(function (a, b) { return (L.isFav(b.k) ? 1 : 0) - (L.isFav(a.k) ? 1 : 0); });
+    return out.concat(more.slice(0, 11));
+  }
+
+  // The other channels showing what plays (chainOthers), to switch to by hand.
+  function sameMenu() {
+    UI.menu(T('Same game on another channel'), chainOthers().map(function (x) {
+      return { label: L.name(x), action: function () { var keep = chain; chainSwitching = true; try { startChannel(x, false, goFull); } finally { chainSwitching = false; } if (keep) { keep.ok = true; keep.i = keep.list.indexOf(x); clearTimeout(keep.t); } } };
+    }));
+  }
+
   /* ---------- backup versions ----------
      A live channel that has run out of retries switches to another version of the same channel
      (Library.versions: other qualities, groups and hidden copies), each tried once.  Settings >
@@ -1872,6 +1927,12 @@ var Views = (function () {
     verr.classList.toggle('hidden', s !== 'error');
     if (s === 'error') verr.textContent = msg;
     if (s === 'ended' && mode === 'vod') endVod();
+    // A same-game chain (playChain): anything playing (a backup version included) ends the trying; an error on
+    // the chain's channel moves on to the next one.
+    if (chain && !chain.ok && mode === 'live') {
+      if (s === 'playing') { chain.ok = true; clearTimeout(chain.t); }
+      else if (s === 'error' && playing && chain.list[chain.i] && playing.k === chain.list[chain.i].k) { chainNext('error'); return; }
+    }
     if (s === 'error' && mode === 'live') downSoon();
     // Playing again: a later failure is a new incident (recent failures are still skipped for 10 min).
     if (s === 'playing' && fo && playing) { foFailed[playing.k] = 0; fo.tried = {}; fo.exhausted = false; }
@@ -2022,6 +2083,7 @@ var Views = (function () {
       } },
       L.canGroup(c) && { tab: 'Organize', label: 'Copy to group…', action: function () { copyMenu([c.k], L.name(c)); } },
       !full && tab === 'live' && { tab: 'Organize', label: 'Select multiple…', sub: 'copy, favorite or hide several', action: function () { startPick(c.k); } },
+      full && chainOthers().length && { tab: 'Channel', label: T('Same game on another channel…'), sub: T('{n} more', { n: chainOthers().length }), action: function () { sameMenu(); } },
       L.versions(c).length ? { tab: 'Channel', label: 'Other versions…', sub: versionsSummary(c), action: function () { versionsMenu(c); } } : { tab: 'Channel', label: 'Link another version…', sub: 'a copy of this channel TiviBro didn\'t find', action: function () { linkVersionMenu(c); } },
       Player.canSwitchFormat(c) && { tab: 'Channel', label: 'Stream format…', sub: FORMAT_NAMES[Player.streamFormat(c)], action: function () { formatMenu(c); } },
       typeof Multiview !== 'undefined' && { tab: 'Channel', label: 'Watch in Multiview', sub: playing && playing.k !== c.k ? 'with ' + L.name(playing) : 'with other channels', action: function () { var with_ = playing && playing.k !== c.k ? playing : null; if (with_) Multiview.start(with_, [c]); else Multiview.start(c, lastPlayed ? [lastPlayed] : []); } },
@@ -2737,7 +2799,7 @@ var Views = (function () {
     pipUpdate: pipUpdate, pipStop: pipStop, pipFull: pipFull, pipRestart: pipRestart, get pipOn() { return pipOn(); },
     init: init, reload: reload, switchTab: switchTab, setZone: setZone, resume: resume, refreshLists: refreshLists,
     closeNav: closeNav, chanMenu: chanMenu, startChannel: startChannel, goFull: goFull, playCatchup: playCatchup, refreshVodMeta:function(){if(mode==='vod')osd(true);}, playVod: playVod,
-    manageVisibility: manageVisibility, canManage: canManage, PALETTES: PALETTES, PALETTE_NAMES: PALETTE_NAMES, palette: palette, kindColours: kindColours, emptyFor: emptyFor, TAB_LABELS: TAB_LABELS, QP_BUTTONS: QP_BUTTONS, qpOrder: qpOrder, movieTrailer: movieTrailer, openReminder: openReminder, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, bankedBack: bankedBack, logoOf: logoOf, ownLogo: ownLogo, logosChanged: logosChanged, get logoRev() { return logoRev; }, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
+    manageVisibility: manageVisibility, canManage: canManage, PALETTES: PALETTES, PALETTE_NAMES: PALETTE_NAMES, palette: palette, kindColours: kindColours, emptyFor: emptyFor, TAB_LABELS: TAB_LABELS, QP_BUTTONS: QP_BUTTONS, qpOrder: qpOrder, movieTrailer: movieTrailer, openReminder: openReminder, playChain: playChain, sameShowing: sameShowing, chainOthers: chainOthers, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, bankedBack: bankedBack, logoOf: logoOf, ownLogo: ownLogo, logosChanged: logosChanged, get logoRev() { return logoRev; }, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
     filterChanged: filterChanged,
     get group() { return curGroup; }, set group(g) { curGroup = g; },
     get full() { return full; }, get tab() { return tab; }, get zone() { return zone; }, get playing() { return playing; }, get vod() { return vod; }, runAction: runAction,
@@ -3145,7 +3207,7 @@ var Guide = (function () {
       if (gid === L.TEAMS) edge += p.up ? ' tm-soon' : now ? ' tm-live' : '';
       // A narrow one (a short filler) whose title won't fit on a line: the title gets both lines, without the times.
       cell(r, n++, 'gp' + (now ? ' now' : past ? ' past' : '') + (focus && p.s <= focusT && p.e > focusT ? ' focus' : '') + (mv ? ' mv' : '') + (kind ? ' k-' + kind : '') + edge + (w < 240 && p.t.length * 12 > w - 40 ? ' nar' : '') + recCls(c, p), a, w,
-        (hasReminder(c, p) ? '◷ ' : '') + p.t, past && cuMark, p.up ? T('until {x}', { x: Events.when(p.e) }) : U.hhmm(p.s) + ' – ' + U.hhmm(p.e), now ? U.clamp(Math.round(w * (nowT - from) / Math.max(1, Math.min(p.e, t1) - from)), 0, w) : -1, p.s);
+        (hasReminder(c, p) ? '◷ ' : '') + p.t, past && cuMark, p.up ? T('until {x}', { x: Events.when(p.e) }) : p.ended ? T('from {x}', { x: Events.when(p.s) }) : U.hhmm(p.s) + ' – ' + U.hhmm(p.e), now ? U.clamp(Math.round(w * (nowT - from) / Math.max(1, Math.min(p.e, t1) - from)), 0, w) : -1, p.s);
     });
     // Nothing to show: still loading (a soft shimmer), or no information (quiet, as TiviMate has it).
     if (!n) cell(r, n++, 'gp none' + (!locked && !Library.noGuide(c) ? (l ? ' nodata' : ' loading') : '') + (focus ? ' focus' : ''), 0, PXW, locked ? T('Locked') : Library.noGuide(c) ? Library.name(c) : l ? T('No information') : T('Loading…'), false, null, -1, '');
@@ -3269,7 +3331,7 @@ var Guide = (function () {
     if (h.p && (h.p.up || h.p.ended)) {
       // Event channels (events.js): the wait before an event, or the time after it
       meta.appendChild(U.el('span', 'gd-badge', h.p.up ? 'UPCOMING' : 'ENDED'));
-      meta.appendChild(document.createTextNode(h.p.up ? 'Starts ' + Events.when(h.p.e) : 'Ended ' + Events.when(h.p.s)));
+      meta.appendChild(document.createTextNode(h.p.up ? 'Starts ' + Events.when(h.p.e) : (h.p.s <= now ? 'Ended ' : 'Ends ') + Events.when(h.p.s)));
       if (h.p.up && h.p.e > now) part('in ' + (h.p.e - now > 48 * 3600e3 ? Math.round((h.p.e - now) / 86400e3) + ' days' : mins(h.p.e - now)));
     } else if (h.p) {
       var live = h.p.s <= now && h.p.e > now, past = h.p.e <= now;

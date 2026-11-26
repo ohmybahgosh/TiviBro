@@ -64,6 +64,9 @@ ok('guide: before, during, after', pr.length === 3 && /^Starts .*: Main Card: Ri
 ok('guide: the details and the full name are the description', /UFC/.test(pr[1].d) && /Rivera v Okafor \| Thu Oct 29/.test(pr[1].d));
 ok('length: soccer about two hours, prelims two, others three', Events.parse('EPL 01: Chelsea FC vs. Manchester United | Saturday, 31 October 2026 12:30', NOW).end - Events.parse('EPL 01: Chelsea FC vs. Manchester United | Saturday, 31 October 2026 12:30', NOW).start === 2.25 * 3600e3 &&
   ev.end - ev.start === 3 * 3600e3);
+// An event still to end: what follows it says when it will be over, not that it was (a guide showing "Ended 9:00am" at 8:46).
+const later = Events.programmes({ title: 'Fox & Friends', details: [], raw: 'x', start: Date.now() - 3600e3, end: Date.now() + 14 * 60000 });
+ok('before its end, the time after says when it will be over', /^Over at .*: Fox & Friends$/.test(later[2].t), later[2].t);
 // Ended events: the provider never renamed the channel.
 ok('an event long over has ended', Events.endedName('US (Peacock 001) | Women`s Downhill (2026-02-08 05:30:00)', NOW));
 ok('one tonight has not', !Events.endedName('NBA: Kings vs Pelicans @ Oct 29 7:30 PM :Nbc Sports  04', NOW));

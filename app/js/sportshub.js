@@ -183,13 +183,21 @@ var SportsHub = (function () {
   /* Watching: fullscreen, and Back from it comes back here, to the game's page when it was watched from there
      (views.js exitFull calls resume). */
   var backTo = null;
-  function play(c, g) { backTo = g ? g.id : null; Views.startChannel(c, false, function () { Views.goFull(); }); }
+  /* Plays c for game g (Back returns to its card); the channels of g, or of game `of`, follow it, so one that
+     doesn't start moves on to the next (Views.playChain). */
+  function play(c, g, of) {
+    backTo = g ? g.id : null;
+    of = of || g;
+    var cs = of ? Sports.channels(of).map(function (x) { return x.c; }) : [];
+    var rest = cs.filter(function (x) { return x.k !== c.k; });
+    if (Views.playChain && rest.length) Views.playChain([c].concat(rest), 'game'); else Views.startChannel(c, false, function () { Views.goFull(); });
+  }
   function watch(g) {
     touched = true;                                      // Back from the player: the same card
     var cs = Sports.channels(g);
     if (!cs.length) { U.toast(g.nets.length ? T('{x} isn\'t on your channels: it\'s on {y}', { x: Sports.title(g), y: g.nets.slice(0, 3).join(', ') }) : T('{x} isn\'t on your channels', { x: Sports.title(g) }), 6000); return; }
     if (g.state === 'pre' && g.s > Date.now() + 300000) return askRemind(g, cs);
-    play(cs[0].c);
+    play(cs[0].c, null, g);
   }
   /* Hold OK on a card: watch it or be reminded.  A reminder only for a game that hasn't started, and every
      channel of yours that has it (up to four). */
@@ -202,7 +210,7 @@ var SportsHub = (function () {
   function askRemind(g, cs) {
     var c = cs[0].c, set = has(g, c), items = [];
     if (g.state === 'pre' && g.s > Date.now()) items.push({ label: set ? T('Cancel the reminder') : T('Remind me at {x}', { x: U.hhmm(g.s) }), sub: T('on {x}', { x: Library.name(c) }), icon: set ? 'belloff' : 'bell', action: function () { remind(g, c); } });
-    cs.slice(0, 4).forEach(function (x) { items.push({ label: T('Watch {x} now', { x: Library.name(x.c) }), icon: 'play', action: function () { play(x.c); } }); });
+    cs.slice(0, 4).forEach(function (x) { items.push({ label: T('Watch {x} now', { x: Library.name(x.c) }), icon: 'play', action: function () { play(x.c, null, g); } }); });
     var rec = recordItem(g, cs); if (rec) items.push({ label: T(rec.label), sub: rec.sub, icon: rec.icon, action: rec.action });
     items.push({ label: T('Cancel'), icon: 'close', current: true });
     UI.menu(RAW(Sports.title(g)) + ',  ' + (g.state === 'pre' ? U.day(g.s) + ' ' + U.hhmm(g.s) : status(g)), items);

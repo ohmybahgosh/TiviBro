@@ -4,7 +4,7 @@ I18n.add('es', {
   // The side menu and the screens
   "Channels": "Canales", "Guide": "Guía", "Movies on now": "Películas ahora", "Movies": "Películas", "Shows": "Series",
   "My media": "Mis medios", "Search": "Buscar", "Edit on phone": "Desde el teléfono", "Settings": "Configuración",
-  "Report a problem": "Informar de un problema", "Groups": "Grupos", "Categories": "Categorías", "Your library": "Tu biblioteca",
+  "Report a problem": "Reportar problema", "Groups": "Grupos", "Categories": "Categorías", "Your library": "Tu biblioteca",
   "MY MEDIA": "MIS MEDIOS", "Buffering": "Cargando", "Buffer": "Búfer",
   "OK on a channel plays it here.": "OK en un canal lo reproduce aquí.", "OK again for fullscreen.": "OK otra vez para pantalla completa.",
   // TiviBro's own groups
@@ -182,7 +182,7 @@ I18n.add('es', {
   "{x} (English: not in TiviBro yet)": "{x} (inglés: aún no está en TiviBro)", "Language: {x}": "Idioma: {x}",
   "Language: automatic, the TV's language": "Idioma: automático, el de la TV", "English": "Inglés", "Spanish": "Español", "Russian": "Ruso",
   "TiviBro is in the TV's own language unless you choose one here.  Spanish and Russian are new: anything not translated yet shows in English.": "TiviBro usa el idioma de la TV salvo que elijas otro aquí.  El español y el ruso son nuevos: lo que aún no está traducido aparece en inglés.",
-  "Something reads wrong, or you'd like TiviBro in your language?  Settings > System > Report a problem, or a discussion on GitHub.": "¿Algo se lee mal, o quieres TiviBro en tu idioma?  Configuración > Sistema > Informar de un problema, o una discusión en GitHub.",
+  "Something reads wrong, or you'd like TiviBro in your language?  Settings > System > Report a problem, or a discussion on GitHub.": "¿Algo se lee mal, o quieres TiviBro en tu idioma?  Configuración > Sistema > Reportar problema, o una discusión en GitHub.",
   "TiviBro is in {x}, your TV's language.  Settings > Language changes it.": "TiviBro está en {x}, el idioma de tu TV.  Configuración > Idioma lo cambia."
 });
 
@@ -1261,8 +1261,8 @@ I18n.add('es', {
   "Memory-safe playback": "Reproducción con poca memoria",
   "Holds at most about 24 MB of video ahead (the full buffer profile on most channels, less on a heavy 4K one) so TiviBro doesn't close on TVs with 1 or 2 GB.  Automatic turns it on for TVs with 1 GB, and for a few days after TiviBro closed while playing.": "Guarda como mucho unos 24 MB de vídeo por delante (el perfil de búfer completo en la mayoría de canales, menos en uno 4K pesado) para que TiviBro no se cierre en televisores de 1 o 2 GB.  Automático lo activa en televisores de 1 GB y durante unos días después de que TiviBro se cerrara mientras reproducía.",
   "Memory-safe playback is on": "La reproducción con ahorro de memoria está activada",
-  "Report a problem in the menu": "Informar de un problema en el menú",
-  "Puts Report a problem at the bottom of the menu bar, one press from anywhere.": "Pone Informar de un problema al final del menú, a una pulsación desde cualquier lugar.",
+  "Report a problem in the menu": "Reportar problema en el menú",
+  "Puts Report a problem at the bottom of the menu bar, one press from anywhere.": "Pone Reportar problema al final del menú, a una pulsación desde cualquier lugar.",
   "Accounts and keys": "Cuentas y claves",
   "TMDB for movie and show details and posters, OpenSubtitles for subtitles.": "TMDB para detalles y carteles de películas y series, OpenSubtitles para subtítulos.",
   "Names": "Nombres",
@@ -2663,5 +2663,12 @@ I18n.add('es', {
   "No Top 10s for your region yet.  Try again in a moment.": "Aún no hay Top 10 para tu región.  Vuelve a intentarlo en un momento.",
   "Top 10 on {x}": "Top 10 en {x}",
   "what's most watched on a streaming service in your region": "lo más visto en un servicio de streaming en tu región",
-  "{n} of the 10 in your provider's list": ["{n} de los 10 en tu proveedor", "{n} de los 10 en tu proveedor"]
+  "{n} of the 10 in your provider's list": ["{n} de los 10 en tu proveedor", "{n} de los 10 en tu proveedor"],
+  "{x} isn't starting.  Trying {y} ({n} of {m}).": "{x} no arranca.  Probando {y} ({n} de {m}).",
+  "Same game on another channel…": "El mismo partido en otro canal…",
+  "Same game on another channel": "El mismo partido en otro canal",
+  "{n} more": ["{n} más", "{n} más"],
+  "from {x}": "desde las {x}",
+  "Top 10s of the streaming services": "Top 10 de los servicios de streaming",
+  "Top 10 data from FlixPatrol (flixpatrol.com), used with their permission.": "Datos de Top 10 de FlixPatrol (flixpatrol.com), usados con su permiso."
 });
