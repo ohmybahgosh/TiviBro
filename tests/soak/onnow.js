@@ -51,7 +51,7 @@ function logo(title, [color, font]) {
   await page.waitForFunction(() => window.Library && Library.count() > 0, null, { timeout: 60000 });
   await page.waitForTimeout(2500);
 
-  ok('no token: no Movies on now in the menu', await ev(() => !document.querySelector('.tab[data-tab="onnow"]')));
+  // (Without a token, Movies on now comes from TheTVDB since alpha 216, so there's no "no token, no tab" check.)
   const films = FILMS.map((f, n) => ({ id: 'tmdb:' + (100 + n), title: f[0], year: String(f[1]), genre: f[2], runtime: f[3], rating: f[4], plot: f[5],
     poster: ART + '/p/' + n + '.png', backdrop: ART + '/b/' + n + '.png', backdropHd: ART + '/b/' + n + '.png', logo: n === 4 ? '' : logo(f[0], f[6]) }));
   // Every long programme in the next three hours is "a movie": each title gets one of the made-up films.
@@ -79,7 +79,9 @@ function logo(title, [color, font]) {
   await shot('tv-onnow');
   // Along the shelf: to the one without a logo (its title instead).
   const noLogo = await ev(() => { const r = OnNow.rows[0]; return r.items.findIndex((g) => !g.m.logo); });
-  if (noLogo > 0) { for (let n = 0; n < noLogo; n++) await key('ArrowRight', 150); await page.waitForTimeout(500);
+  // ◀ ▶ until the focus is on it (it may not start on the first: a step above moved along the shelf).
+  const at = () => ev(() => [].findIndex.call(document.querySelectorAll('#onStage .on-shelf')[0].querySelectorAll('.on-card'), (x) => x.classList.contains('focus')));
+  if (noLogo > 0) { for (let n = 0, a = await at(); n < 12 && a !== noLogo; n++, a = await at()) await key(a < noLogo ? 'ArrowRight' : 'ArrowLeft', 450); await page.waitForTimeout(500);
     ok('no title logo: the title in big type', await ev(() => !!document.querySelector('#onInfo h1.on-title') && !document.querySelector('#onInfo img.on-logo')));
     await shot('tv-onnow-title'); }
   // Pictures arriving (a re-draw) keep you where you are, on either shelf.

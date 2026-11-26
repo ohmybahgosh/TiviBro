@@ -1,5 +1,5 @@
 /* Discussion #36's screen polish in the real app: lists show whole rows (none cut by the button hints),
-   Advanced view off puts the rarely changed ones behind an Advanced row (the TV and the phone alike), and a channel slow
+   rarely changed settings sit under an Advanced heading at the bottom of their page (the TV and the phone alike), and a channel slow
    to start asks what to do.
      npm run serve &
      node tests/soak/gui-polish.js */
@@ -32,18 +32,11 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     await ev(() => { const i = document.querySelector('.search-input'); i.value = 'news'; i.dispatchEvent(new Event('input')); }); await page.waitForTimeout(1200);
     ok('Search: no row cut by the bottom of its list', (await cut()) === 0);
 
-    // Advanced view off: the rarely changed settings wait behind one Advanced row.
-    await ev(() => { Views.switchTab('settings'); Settings.open(); }); await page.waitForTimeout(400);
-    await ev(() => { delete Store.settings.setLevel; Store.settings.advView = true; });
-    const all = await ev(() => Settings.phone.page('playback', []).rows.map((r) => r.label));
-    await ev(() => { Store.settings.advView = false; });
-    const basic = await ev(() => Settings.phone.page('playback', []).rows.map((r) => r.label));
-    const pl = await ev(() => { const r = Settings.phone.page('playlists', []).rows; const i = r.findIndex((x) => x.page || x.kind === 'page'); return i >= 0 ? Settings.phone.page('playlists', [i]).rows.map((x) => x.label) : []; });
-    ok('Advanced view off leaves out the player engine, the buffer details and the like', all.indexOf('Player engine') >= 0 && basic.indexOf('Player engine') < 0 && basic.indexOf('Read-ahead') < 0 && basic.indexOf('Buffer profile') >= 0, basic.join(', '));
-    ok('and puts them behind one Advanced row', basic.indexOf('Advanced') >= 0, basic.slice(-2).join(' | '));
-    ok('a playlist keeps its connection behind Advanced', pl.indexOf('Connection') >= 0 || pl.indexOf('Advanced') >= 0, pl.join(', '));
-    ok('Appearance has the switch', (await ev(() => Settings.phone.page('look', []).rows.map((r) => r.label))).indexOf('Advanced view') >= 0);
-    await ev(() => { Store.settings.advView = true; UI.close && UI.close(); });
+    // Advanced settings (no Advanced view switch any more): the rarely changed ones sit at the bottom of their page
+    // under an Advanced heading, the same on the TV, the phone and the editor.
+    const rows = await ev(() => Settings.phone.page('playback', []).rows.map((r) => r.label));
+    const adv = rows.lastIndexOf('Advanced');
+    ok('Playback\'s rarely changed settings sit under an Advanced heading at the bottom', adv > 0 && rows.indexOf('Player engine') > adv && rows.indexOf('Buffer profile') >= 0 && rows.indexOf('Buffer profile') < adv, rows.join(', '));
 
     // A channel slow to start, fullscreen: after 20 s it asks.
     await ev((u) => { const c = Library.data.channels[2]; c.url = u; Views.startChannel(c, false, Views.goFull); }, 'http://127.0.0.1:' + hang.address().port + '/live/x/y/1.ts');
@@ -52,7 +45,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     const first = await ev(() => document.getElementById('spinnerText').textContent);
     await page.waitForFunction(() => /having trouble starting/.test(document.getElementById('spinnerText').textContent), null, { timeout: 40000 }).catch(() => {});
     const tune = await ev(() => document.getElementById('spinnerText').textContent);
-    ok('a channel with trouble says so, and what it tries now', /^Tuning/.test(first) && /^This channel is having trouble starting: .+\.\nTrying (?:again \(\d+ of \d+\)|the .+)…$/.test(tune), JSON.stringify({ first, tune }));
+    ok('a channel with trouble says so, and what it tries now', /^Tuning/.test(first) && /^This channel is having trouble starting: .+\.\nTrying (?:again(?: on .+)? \(\d+ of \d+\)|the .+)…$/.test(tune), JSON.stringify({ first, tune }));
     await page.waitForFunction(() => { const m = document.getElementById('modal'); return m && !m.classList.contains('hidden') && /Still starting/.test(m.innerText); }, null, { timeout: 45000 }).catch(() => {});
     const q = await ev(() => document.getElementById('modal').innerText);
     ok('after 20 seconds without a picture it asks, saying what it has seen', /Still starting/.test(q) && /Nothing has come from the provider yet|The provider answers with an error \(HTTP 5\d\d\)/.test(q) && /Keep trying/.test(q) && /Start over/.test(q) && /Stop/.test(q), q.slice(0, 300));

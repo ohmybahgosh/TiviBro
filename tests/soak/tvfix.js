@@ -51,15 +51,17 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await key('ArrowUp', 40, 40);
   const clockTop = await ev(() => { const c = document.getElementById('clock').getBoundingClientRect(), r = document.querySelector('.set-scroll .opt.focus').getBoundingClientRect(); return r.top >= c.bottom; });
   ok('the top row clears the clock', clockTop);
-  await ev(() => { Store.settings.advView = true; }); await click('^System$');
-  await click('^What this TV can play');
+  await ev(() => { Store.settings.advView = true; Settings.section('about'); Settings.showRow('What this TV can play'); }); await page.waitForTimeout(400);
+  await key('Enter', 1, 800);                                    // showRow focused it: OK opens it
   ok('a page of facts draws no row as selected', await ev(() => !document.querySelector('.set-scroll .opt.focus')));
-  const y0 = await ev(() => document.querySelector('.set-scroll')._y || 0);
+  // A page of facts comes in parts like any page: ▼ goes on to the next part (or scrolls a long one), ▲ comes back.
+  const at = () => ev(() => (document.querySelector('.set-scroll')._y || 0) + '|' + document.querySelector('.set-scroll').innerText.slice(0, 80));
+  const y0 = await at();
   await key('ArrowDown', 2);
-  const y1 = await ev(() => document.querySelector('.set-scroll')._y || 0);
-  ok('▼ scrolls a page of facts', y1 < y0, y0 + ' -> ' + y1);
-  await key('ArrowUp', 4);
-  ok('▲ scrolls it back to the top', await ev(() => (document.querySelector('.set-scroll')._y || 0) === 0));
+  const y1 = await at();
+  ok('▼ moves on through a page of facts', y1 !== y0, y0 + ' -> ' + y1);
+  await key('ArrowUp', 8);
+  ok('▲ comes back to its top', (await at()) === y0, await at());
 
   // 3. The set-up tour, run again, opens on the setup in effect, not on first-run defaults.
   const want = await ev(() => {

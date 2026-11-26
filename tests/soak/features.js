@@ -28,16 +28,20 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const H = R.helpers(page);
   const key = async (k, w) => { await page.keyboard.press(k); await page.waitForTimeout(w == null ? 350 : w); };
   // Settings section by name, a step at a time (the shared helper hurries and can overshoot).
+  // A Settings section by name, opened as its card on the Settings home opens it, then into its rows.
   const section = async name => {
-    await ev(() => { if (UI.modalOpen) UI.close(); Views.switchTab('settings'); Settings.reset(); Settings.open(); }); await page.waitForTimeout(700);
-    for (let i = 0; i < 14; i++) {
-      const cur = await ev(() => (document.querySelector('#setNav .on') || {}).innerText || '');
-      if (cur === name) break;
-      const names = await ev(() => [].map.call(document.querySelectorAll('#setNav > div'), d => d.innerText.trim()));
-      await key(names.indexOf(cur) > names.indexOf(name) ? 'ArrowUp' : 'ArrowDown', 300);
-    }
+    await ev(() => { if (UI.modalOpen) UI.close(); Views.switchTab('settings'); Settings.reset(); Settings.open(); }); await page.waitForTimeout(500);
+    await ev(n => { const x = Settings.phone.sections().filter(y => y.title === n)[0]; if (x) Settings.section(x.id); }, name); await page.waitForTimeout(500);
     await key('ArrowRight', 700);
   };
+
+  /* Every row of a Settings page as text (the TV shows one part of a page at a time): the section's own rows, or
+     those of the page behind its row named label. */
+  const pageText = (sec, label) => ev(([sec, label]) => {
+    let rows = Settings.phone.page(sec, []).rows;
+    if (label) { const r = rows.find((x) => x.label === label && x.kind === 'page'); rows = r ? Settings.phone.page(sec, [r.i]).rows : []; }
+    return rows.map((x) => [x.label, x.sub, x.value, x.options && x.options[x.cur]].filter(Boolean).join('\n')).join('\n');
+  }, [sec, label]);
 
   /* ---------- search: future programmes, filters ---------- */
   // A title that is on later today on some channel.
@@ -80,7 +84,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('whole words only', await ev(() => { Watch.add('Zzq'); const n = Watch.upcoming('Zzq').length; Watch.remove('Zzq'); return n === 0; }));
   // Settings > Reminders and watchlist > Watchlist
   await section('Reminders and watchlist'); await H.row('Watchlist'); await H.quiet('Enter', 900);
-  const wpage = await page.innerText('#setBody');
+  const wpage = await pageText('reminders', 'Watchlist');
   ok('the Watchlist settings page lists the word and what is coming up', new RegExp(word, 'i').test(wpage) && /Coming up/.test(wpage) && /Look ahead/.test(wpage), wpage.replace(/\s+/g, ' ').slice(0, 260));
   await shot('tv-set-watchlist');
   await ev(w => Watch.remove(Watch.list()[0].q), word);
@@ -132,13 +136,13 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('holding Down for 3 seconds goes a long way', +moved - s0 > 60, moved);
 
   /* ---------- audio and subtitles ---------- */
-  await section('Playback'); await H.row('Audio and subtitles'); await H.quiet('Enter', 600); await H.row('Audio language'); await H.quiet('Enter', 600);
+  await section('Audio and subtitles'); await H.row('Audio language'); await H.quiet('Enter', 600);
   await H.pick('Spanish', '', 500);
   ok('audio language is saved', await ev(() => Store.settings.audioLang === 'es'));
   await H.row('Subtitles automatically'); await H.quiet('Enter', 600);
   await H.pick('English only', '', 500);
   ok('subtitles in one language', await ev(() => Store.settings.autoSubs === true && Store.settings.subsLang === 'en'));
-  const pb = await page.innerText('#setBody');
+  const pb = await pageText('audio');
   ok('the Audio and subtitles page shows both', /Audio language[\s\S]*Spanish/.test(pb) && /Subtitles automatically[\s\S]*English/.test(pb), pb.replace(/\s+/g, ' ').slice(0, 200));
   await shot('tv-set-audio');
 

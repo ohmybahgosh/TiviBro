@@ -91,29 +91,32 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
   await ev((id) => { MediaStore.removeSource(id); }, placeholder); await page.waitForTimeout(300);
   ok('and leaves the menu when the last source goes', await ev(() => !document.querySelector('.tab[data-tab="media"]')));
   await ev(() => { Store.settings.advView = true; Views.switchTab('settings'); }); await ev(() => Settings.section('media')); await page.waitForTimeout(300);
-  ok('My media is a settings section', /Add a library/.test(await text('#setBody')) && /Display and shelves/.test(await text('#setBody')));
-  await key('Enter');
+  const mst = await R.settingsText(page, 'media');   // every row (the TV shows one part of a page at a time)
+  ok('My media is a settings section', /Add a library/.test(mst) && /Display and shelves/.test(mst), mst.slice(0, 300));
+  await key('ArrowRight'); await key('Enter');     // into the page's rows, OK on the first: Add a library
   ok('Add media in Settings offers generic protocols', /DLNA \/ UPnP/.test(await text('#modal')) && /WebDAV/.test(await text('#modal')));
   await key('Escape');
-  ok('My media links to the TMDB token under API keys', /TMDB API token/.test(await text('#setBody')));
-  await ev(() => Settings.section('keys')); await page.waitForTimeout(300);
-  await page.locator('#setBody .opt').filter({ hasText: /^Add TMDB API token/ }).click();
+  ok('My media links to the TMDB token under API keys', /TMDB API token/.test(mst), mst.slice(-400));
+  // A row on the TV: its section, then ▼ to it (the TV shows a page a part at a time; ▼ goes on into the next part).
+  const H = R.helpers(page);
+  const openRow = async (sec, label) => { await ev((x) => Settings.section(x), sec); await page.waitForTimeout(300); await key('ArrowRight'); await H.row(label); await key('Enter'); };
+  await openRow('keys', 'Add TMDB API token');
   ok('TMDB token entry is masked', await page.locator('#modal input').getAttribute('type') === 'password');
   await page.locator('#modal input').fill('mock-user-token-123456789012345'); await key('Enter');
   await page.waitForFunction(() => MediaStore.preferences().tmdbConfigured);
-  await page.waitForFunction(() => /TMDB API token saved/.test(document.querySelector('#setBody').innerText));
-  ok('settings clearly show a saved token and replacement help', /Token saved on this TV/.test(await text('#setBody')) && await ev(() => Settings.phone.page('keys', []).rows.some((r) => /Select to replace it/.test(r.sub || ''))));
+  await page.waitForFunction(() => Settings.phone.page('keys', []).rows.some((r) => r.label === 'TMDB API token saved'));
+  ok('settings clearly show a saved token and replacement help', /Token saved on this TV/.test(await R.settingsText(page, 'keys')) && await ev(() => Settings.phone.page('keys', []).rows.some((r) => /Select to replace it/.test(r.sub || ''))));
   ok('token is private in settings responses', await ev(() => JSON.stringify(MediaStore.preferences()).indexOf('mock-user-token') < 0));
   await ev(() => Views.switchTab('media')); await page.waitForTimeout(300);
 
   // Audio preferences apply to My media through the common movie player.
-  await ev(() => { Views.switchTab('settings'); Settings.section('audio'); });
-  await page.locator('#setBody .opt').filter({ hasText: /^Audio language/ }).click();
+  await ev(() => Views.switchTab('settings'));
+  await openRow('audio', 'Audio language');
   await pick('Dutch');
   ok('preferred audio language can be saved as Dutch', await ev(() => Store.settings.audioLang === 'nl'));
-  await page.locator('#setBody .opt').filter({ hasText: /^Fallback audio language/ }).click();
+  await openRow('audio', 'Fallback audio language');
   await pick('English');
-  ok('English fallback is shown and saved in playback settings', await ev(() => Store.settings.audioFallback === 'en') && /Fallback audio language/.test(await text('#setBody')));
+  ok('English fallback is shown and saved in playback settings', await ev(() => Store.settings.audioFallback === 'en') && /Fallback audio language/.test(await R.settingsText(page, 'audio')));
   await ev(() => Views.switchTab('media'));
 
   // A wrong login: said plainly, nothing saved.
@@ -249,11 +252,15 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
   await page.waitForFunction(() => MediaStore.movies(null).length === 3);
   ok('Green discovers new movies without leaving My media', await ev(() => Views.tab === 'media'));
   await page.waitForTimeout(400);
+  // On a movie, Green rescans and Yellow marks it watched (4282c70d); on the tabs above, Yellow fetches details.
+  ok('Green and Yellow appear in remote hints', /Rescan/.test(await text('#hints')) && /Watched/.test(await text('#hints')), await text('#hints'));
+  // The new movie's details come on their own after the rescan; then Yellow has nothing new or outdated to fetch.
+  await page.waitForFunction(() => MediaStore.movies(null).every(m => m.metadata), null, { timeout: 15000 }).catch(() => {});
+  await page.waitForTimeout(800);
+  for (let n = 0; n < 4; n++) { await ev(() => UI.press('up')); await page.waitForTimeout(150); }
   const beforeYellow = metadataRequests.length;
-  await ev(() => UI.press('yellow'));
-  await page.waitForFunction(() => MediaStore.movies(null).every(m => m.metadata));
-  ok('Yellow fetches only new or outdated details', metadataRequests.length === beforeYellow + 1);
-  ok('Green and Yellow appear in remote hints', /Rescan/.test(await text('#hints')) && /Fetch details/.test(await text('#hints')));
+  await ev(() => UI.press('yellow')); await page.waitForTimeout(800);
+  ok('Yellow fetches only new or outdated details: none left', metadataRequests.length === beforeYellow && await ev(() => MediaStore.movies(null).every(m => m.metadata)), metadataRequests.length - beforeYellow);
   await shot('media-details');
   await ev(() => {
     const id = MediaStore.addSource({ type: 'dlna', name: 'Large mock library', control: 'http://127.0.0.1/mock' });

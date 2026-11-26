@@ -30,15 +30,28 @@ const ctl = (u, body) => fetch(RELAY + u, { method: body ? 'POST' : 'GET', heade
   await page.waitForTimeout(1200);
   const ev = (f, a) => page.evaluate(f, a);
   const shot = async (n) => { if (SHOTS) await page.screenshot({ path: path.join(SHOTS, n + '.png') }); };
-  const text = () => ev(() => document.body.innerText);
-  const row = (re) => ev((src) => { const r = [].slice.call(document.querySelectorAll('.set-scroll .opt')).find((d) => new RegExp(src).test(d.innerText)); if (r) { r.click(); return true; } return false; }, re.source);
+  /* The Phone app and web editor page: all its rows as text (the TV shows one part of a page at a time), and OK
+     on a row by its name on the TV: ▶ into the page, ▼ to the row (on into later parts), OK. */
+  const text = () => R.settingsText(page, 'connect');
+  const H = R.helpers(page);
+  const row = async (re) => {
+    const label = await ev((src) => { const r = Settings.phone.page('connect', []).rows.find((d) => new RegExp(src).test(d.label)); return r ? r.label : ''; }, re.source);
+    if (!label) return false;
+    await ev(() => { if (UI.modalOpen) UI.close(); Settings.section('connect'); }); await page.waitForTimeout(300);
+    await page.keyboard.press('ArrowRight'); await page.waitForTimeout(250);
+    await H.row(label); await page.keyboard.press('Enter'); return true;
+  };
   const modal = () => ev(() => { const m = document.getElementById('modal'); return m && !m.classList.contains('hidden') ? m.innerText : ''; });
 
   ok('TiviBro tells the helper its version', (await ctl('/companion/status')).ownName === '' && (await (await fetch(RELAY + '/companion/status')).json()).on === false);
+  // A release build: the demo pins the version (scripts/demo/record.js), so it's redefined, not assigned.
+  const ver = (v) => ev((x) => Object.defineProperty(window, 'TIVIBRO_VERSION', { value: x, writable: true, configurable: true }), v);
+  await ver('0.6.0');
   await ev(() => { if (UI.modalOpen) UI.close(); Views.switchTab('settings'); Settings.open(); }); await page.waitForTimeout(600);
   const navRel = await ev(() => Settings.phone.sections().map((r) => r.title));
   ok('a release build has no phone app part yet: the page is the web editor', navRel.indexOf('Web editor') >= 0 && !navRel.some((x) => /Phone app/.test(x)) && !(await ev(() => Settings.section('phone'))), navRel.join(', '));
-  await ev(() => { TIVIBRO_VERSION = '0.6.0-alpha.99'; Settings.open(); Settings.section('phone'); }); await page.waitForTimeout(800);
+  await ver('0.6.0-alpha.99');
+  await ev(() => { Settings.open(); Settings.section('phone'); }); await page.waitForTimeout(800);
   const navTest = await ev(() => Settings.phone.sections().map((r) => r.title));
   ok('test builds have it as its own section, with the web editor', navTest.indexOf('Phone app and web editor') >= 0, navTest.join(', '));
   // The connection switch, as the phone and the web editor see it (on the TV it is a switch).

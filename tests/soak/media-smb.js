@@ -21,7 +21,7 @@ process.env.FAKE_SMB_ROOT = ROOT;
 process.env.TIVIBRO_USB_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'smb-soak-usb-'));   // no USB drive: recordings and pause go to the share
 const proxy = require('../../service/proxy.js');
 const APP = process.env.APP || 'http://127.0.0.1:8078/index.html';
-const MOCK = process.env.MOCK || 'http://127.0.0.1:8088';
+const MOCK = process.env.MOCK || 'http://127.0.0.1:8077';   // the plain mock the header starts
 const PORT = 47899;
 let fails = 0;
 const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undefined && !c ? '  ' + String(x).slice(0, 300) : '')); if (!c) fails++; };

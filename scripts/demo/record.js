@@ -94,23 +94,29 @@ function helpers(page) {
     }
     await press('Enter', name, wait == null ? 1500 : wait);
   };
+  /* A Settings section by its name, as a viewer gets there from Settings' home (the list on the left now holds
+     the page's parts, not the sections, so it's opened the way the home's cards open it).  enter: into its rows. */
   const section = async (name, enter, silent) => {
     if ((await ev(() => Views.tab)) !== 'settings') await open('Settings', 1000);
-    for (let i = 0; i < 8 && !(await ev(() => document.getElementById('setNav').classList.contains('active'))); i++) await quiet('Escape', 300);
-    for (let i = 0; i < 26; i++) {
-      const cur = await focusText('#setNav .on');
-      if (cur === name) break;
-      const names = await ev(() => [].map.call(document.querySelectorAll('#setNav > div'), d => d.innerText.trim()));
-      await quiet(names.indexOf(cur) > names.indexOf(name) ? 'ArrowUp' : 'ArrowDown', silent ? 150 : 350);
-    }
+    const id = await ev(n => { const s = Settings.phone.sections().filter(x => x.title === n)[0]; return s ? s.id : ''; }, name);
+    if (!id) throw new Error('no settings section: ' + name);
+    await ev(i => Settings.section(i), id); await page.waitForTimeout(silent ? 300 : 700);
     if (enter) { if (silent) await quiet('ArrowRight', 500); else await press('ArrowRight', name, 900); }
   };
   const row = async label => {
     for (const dir of ['ArrowUp', 'ArrowDown']) for (let i = 0; i < 160; i++) { if ((await focusText('#setBody .opt.focus .ol')).indexOf(label) === 0) return; await quiet(dir, 50); }
     throw new Error('no settings row: ' + label);
   };
+  /* A row of the open menu by its name.  Menus with tabs (Options: Sound and picture, Channel, Organize, Guide)
+     are looked through tab by tab, ▶ to the next one. */
   const pick = async (label, caption, wait) => {
-    for (let i = 0; i < 20; i++) { if ((await focusText('#modal .focus')).indexOf(label) === 0) break; await quiet('ArrowDown', 200); }
+    const here = async () => (await focusText('#modal .focus')).indexOf(label) === 0;
+    const tabs = await ev(() => document.querySelectorAll('#modal .mtabs > div').length) || 1;
+    let found = false;
+    for (let t = 0; t < tabs && !found; t++) {
+      if (t) await quiet('ArrowRight', 300);
+      for (let i = 0; i < 24 && !(found = await here()); i++) await quiet('ArrowDown', 120);
+    }
     await press('Enter', caption || label, wait);
   };
   const qp = async (label, wait) => {
@@ -524,7 +530,20 @@ async function dual(browser, name, opts, fn) {
   console.log(`${name}: ${errs.length ? 'errors: ' + errs.join(' | ') : 'ok'}`);
 }
 
-module.exports = { init, helpers, primeTime, SETTINGS, EDITS, APP, EDITOR, SHOTS, RAW, DEMO_VERSION };
+/* Every row of a Settings page as text, for checks (the TV shows one part of a page at a time, so its screen
+   holds only some of the rows): a section's own rows (sec: 'vod', 'keys' ...), or the page behind its row named
+   label.  Built by the same code the TV, the phone and the web editor use (Settings.phone.page). */
+function settingsText(page, sec, label) {
+  return page.evaluate(([sec, label]) => {
+    let rows = Settings.phone.page(sec, []).rows;
+    // '*': the section and every page in it, one level down, as one text.
+    if (label === '*') rows = rows.concat(...rows.filter((x) => x.kind === 'page').map((r) => Settings.phone.page(sec, [r.i]).rows));
+    else if (label) { const r = rows.find((x) => x.label === label && x.kind === 'page'); rows = r ? Settings.phone.page(sec, [r.i]).rows : []; }
+    return rows.map((x) => [x.label, x.sub, x.value, x.options && x.options[x.cur]].filter(Boolean).join('\n')).join('\n');
+  }, [sec, label || '']);
+}
+
+module.exports = { init, helpers, settingsText, primeTime, SETTINGS, EDITS, APP, EDITOR, SHOTS, RAW, DEMO_VERSION };
 
 // Unsent work left on the TV by an earlier run: start clean.
 async function throwAway(ed) {

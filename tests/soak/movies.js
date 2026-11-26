@@ -28,7 +28,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const un = await ev(() => { const H = 3600e3, b = 1e12, l = [{ s: b, e: b + 3 * H, t: 'National Treasure: Book of Secrets' }, { s: b + 25 * 60000, e: b + 2.9 * H, t: 'X-Men: The Last Stand' }, { s: b + 2.9 * H, e: b + 4 * H, t: 'Next' }];
     Epg.untangle(l); return l.map((p) => p.t + ' ' + (p.e - p.s) / 60000); });
   ok('overlapping programmes: the earlier ends where the later starts', un.join(' | ') === 'National Treasure: Book of Secrets 25 | X-Men: The Last Stand 149 | Next 66', un.join(' | '));
-  ok('no token: no group', await ev(() => !Library.groups().some((g) => g.id === Library.MOVIES)));
+  // (Without a token, Movies on now comes from TheTVDB since alpha 216, so there's no "no token, no group" check.)
   // Every long programme on now or soon, as the scan would find them; TMDB (made up) knows two of them.
   const seen = await ev((mock) => {
     const asked = [];
@@ -64,9 +64,11 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await shot('tv-movies-on-now');
 
   // Settings: the switches under Movies and shows, with the way to the token; the token rows under API keys.
-  const st = await ev(() => { Views.switchTab('settings'); Settings.section('vod'); return document.getElementById('setBody').innerText; });
+  await ev(() => { Views.switchTab('settings'); Settings.section('vod'); });
+  const st = await R.settingsText(page, 'vod');
   ok('Settings > Movies and shows: Details in the guide and the way to the token', /Details in the guide/.test(st) && /Movie details in the guide/.test(st) && /TMDB API token/.test(st), st.slice(0, 400));
-  const kt = await ev(() => { Settings.section('keys'); return document.getElementById('setBody').innerText; });
+  await ev(() => Settings.section('keys'));
+  const kt = await R.settingsText(page, 'keys');
   ok('Settings > API keys: the token rows', /TMDB API token saved/.test(kt) && /Test TMDB token/.test(kt), kt.slice(0, 400));
   const gs = await ev(() => Settings.phone.page('channels', []).rows.find((r) => r.label === 'Groups in the list'));
   const gl = gs && await ev((i) => Settings.phone.page('channels', [i]).rows.map((r) => r.label).join('|'), gs.i);

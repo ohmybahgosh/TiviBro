@@ -96,6 +96,11 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await shot('tv-tour-events');
   await next();
 
+  ok('teams step', await step() === 'teams', await step());
+  ok('teams: the My teams group and the corner scores', /A My teams group in the guide/.test(await text()) && /Scores in a corner while you watch/.test(await text()));
+  await shot('tv-tour-teams');
+  await next();
+
   ok('clutter step', await step() === 'clutter', await step());
   ok('clutter: dividers, empty groups, keyword, new groups', /Hide empty groups/.test(await text()) && /Groups the provider adds later/.test(await text()));
   await shot('tv-tour-clutter');

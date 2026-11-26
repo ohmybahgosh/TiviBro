@@ -95,7 +95,8 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('Black and white: black, white focus, dark text on it', mono.ink === '#000000' && mono.acc === '#ffffff' && /^#0|^#1|rgb\(0|#000/.test(mono.on), JSON.stringify(mono));
   const back = await ev(() => { Store.settings.palette = ''; Store.settings.theme = 'ocean'; Views.applyLook(); const cs = getComputedStyle(document.body); return { ink: cs.getPropertyValue('--ink').trim(), pal: document.body.classList.contains('pal') }; });
   ok('your own mix: the background setting again', back.ink === '#08202d' && !back.pal, JSON.stringify(back));
-  const rows = await ev(() => { Store.settings.palette = 'tokyo'; Views.switchTab('settings'); Settings.section('look'); return document.querySelector('#setBody').innerText; });
+  await ev(() => { Store.settings.palette = 'tokyo'; });
+  const rows = await R.settingsText(page, 'look', '*');           // the TV shows one part at a time
   ok('Settings > Look: Theme, and no Background row while a theme is on', /Theme/.test(rows) && /Tokyo Night/.test(rows) && !/\bBackground\n/.test(rows.replace('Background and accent', '')), rows.slice(0, 300));
   await ev(() => { Store.settings.palette = ''; Store.settings.theme = 'dark'; Views.applyLook(); });
 

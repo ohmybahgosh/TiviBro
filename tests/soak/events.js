@@ -52,7 +52,8 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const H = R.helpers(page);
   await H.section('Channels and groups', true, true);
   await H.row('Event channels'); await H.quiet('Enter', 900);
-  const st = await page.innerText('#setBody');
+  // Every row of the page (the TV shows one part of it at a time), as the TV, the phone and the editor build it.
+  const st = await page.evaluate(() => { const r = Settings.phone.page('channels', []).rows.find((x) => x.label === 'Event channels'); return r ? Settings.phone.page('channels', [r.i]).rows.map((x) => x.label + ' ' + (x.sub || '') + ' ' + (x.value || '')).join('\n') : ''; });
   ok('the Event channels page lists the events and the time zone choice', /Read events from channel names/.test(st) && /Times with no time zone are in/.test(st) && /event channels in this playlist/.test(st), st.replace(/\s+/g, ' ').slice(0, 200));
   await shot('tv-set-events');
   // Switching it off brings the full names back and the group goes.

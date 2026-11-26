@@ -68,15 +68,15 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     ok('its guide comes from the portal', /Show 1 on 101/.test(g), g);
 
     // From the phone or the web editor (the same action): a Stalker portal, and a wrong MAC said plainly.
-    const wr = await ev((a) => WebEdit.run('addPlaylist', { type: 'stalker', name: 'Portal two', portal: a.portal, mac: '001A79000001' }).then((r) => r.msg, (e) => 'ERR ' + e.message), { portal });
+    const wr = await ev((a) => WebEdit.run('addPlaylist', { type: 'stalker', name: 'Portal two', portal: a.portal, mac: '001A79000001' }).then((r) => String(r.msg), (e) => 'ERR ' + e.message), { portal });
     ok('the web editor and phone add a Stalker portal too (a MAC without colons is read)', /Added "Portal two" with 3 channels/.test(wr), wr);
-    const bad = await ev((a) => WebEdit.run('addPlaylist', { type: 'stalker', name: 'Wrong', portal: a.portal, mac: '00:1A:79:99:99:99' }).then((r) => r.msg, (e) => 'ERR ' + e.message), { portal });
+    const bad = await ev((a) => WebEdit.run('addPlaylist', { type: 'stalker', name: 'Wrong', portal: a.portal, mac: '00:1A:79:99:99:99' }).then((r) => String(r.msg), (e) => 'ERR ' + e.message), { portal });
     ok('a MAC the portal doesn\'t know: says to check it with the provider', /^ERR .*turned this MAC address down.*Check the MAC address/.test(bad), bad);
     // Issue #118: a big portal's movies take minutes the first time; the Movies screen and the corner chip say how far it has come.
     const m2 = Mock.create({ mac: '00:1A:79:00:00:01', titles: 420, pageMs: 700 });
     await new Promise((f) => m2.server.listen(0, '127.0.0.1', f));
     const portal2 = 'http://127.0.0.1:' + m2.server.address().port + '/stalker_portal/c/';
-    const big = await ev((a) => WebEdit.run('addPlaylist', { type: 'stalker', name: 'Big portal', portal: a, mac: '00:1A:79:00:00:01' }).then((r) => r.msg, (e) => 'ERR ' + e.message), portal2);
+    const big = await ev((a) => WebEdit.run('addPlaylist', { type: 'stalker', name: 'Big portal', portal: a, mac: '00:1A:79:00:00:01' }).then((r) => String(r.msg), (e) => 'ERR ' + e.message), portal2);
     const bigId = await ev(() => (Store.settings.playlists.find((x) => x.name === 'Big portal') || {}).id);
     await ev((id) => App.switchPlaylist(id), bigId);
     await page.waitForFunction(() => Library.data.channels.some((c) => c.n === 'Portal News') && Views.tabs && true, null, { timeout: 30000 }).catch(() => {});

@@ -28,8 +28,8 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const H = R.helpers(page);
 
   ok('no My teams group before following a team', await ev(() => !Library.groups().some(g => g.id === Library.TEAMS)));
-  // Settings > Channels and groups > My teams
-  await H.section('Channels and groups', true, true); await H.row('My teams'); await H.quiet('Enter', 900);
+  // Settings > Sports (Channels and groups > My teams leads there): the leagues found, under Your teams.
+  await H.section('Sports', true, true);
   let st = await page.innerText('#setBody');
   ok('the My teams page lists the leagues found', /NHL/.test(st) && /NFL/.test(st) && !/\bMLB\b/.test(st.split('Leagues')[1] || '') && /college football \(the FBS schools\) and men's college basketball/.test(st) && /College Football\s*Games only/.test(st) && /4 teams have their own channel/.test(st), st.replace(/\s+/g, ' ').slice(0, 300));
   await shot('tv-teams-page');
@@ -39,9 +39,9 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await H.row('Winnipeg Jets'); await H.quiet('Enter', 700);
   ok('OK follows the team', await ev(() => Teams.follows('nhl:wpg')));
   await shot('tv-teams-nhl');
-  await H.quiet('Escape', 700);
+  await H.quiet('Escape', 500); await H.quiet('Escape', 700);     // Back: to the list on the left, then to Sports
   st = await page.innerText('#setBody');
-  ok('back on My teams: 1 followed, and the Following list', /1 followed/.test(st) && /Following/.test(st) && /Winnipeg Jets/.test(st), st.replace(/\s+/g, ' ').slice(0, 300));
+  ok('back on Sports: NHL says 1 followed, and the team is listed to unfollow', /1 followed/.test(st) && /Winnipeg Jets/.test(st), st.replace(/\s+/g, ' ').slice(0, 300));
 
   const order = await ev(() => Library.channels(Library.TEAMS).map(c => c.n));
   ok('My teams: the game on now first', /WPG VS CAR/.test(order[0]), order.join(' / '));

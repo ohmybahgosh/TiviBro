@@ -57,9 +57,14 @@ function scan() {
   // Overlap: two text elements, neither inside the other, whose text boxes cross.
   // The part of the text you can see: its box, cut to every box around it that hides what spills out.
   const seenRect = (el) => {
-    const rg = document.createRange(); rg.selectNodeContents(el);
-    const q = rg.getBoundingClientRect(), r = { left: q.left, top: q.top, right: q.right, bottom: q.bottom };
-    for (let e = el.parentElement; e && e !== document.body; e = e.parentElement) {
+    // Its own text only: a child element with text (a row's clamped note) is measured as itself, cut to its own box.
+    const r = { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity };
+    [].forEach.call(el.childNodes, (n) => {
+      if (n.nodeType !== 3 || !n.textContent.trim()) return;
+      const rg = document.createRange(); rg.selectNodeContents(n); const q = rg.getBoundingClientRect();
+      r.left = Math.min(r.left, q.left); r.top = Math.min(r.top, q.top); r.right = Math.max(r.right, q.right); r.bottom = Math.max(r.bottom, q.bottom);
+    });
+    for (let e = el; e && e !== document.body; e = e.parentElement) {          // el itself too: a clamped line hides the rest
       const st = getComputedStyle(e);
       if (st.overflow === 'visible' && st.overflowX === 'visible' && st.overflowY === 'visible') continue;
       const c = e.getBoundingClientRect();

@@ -106,7 +106,8 @@ const OVER = () => {
       const o2 = await order();
       ok(dev + ': Move to position puts it there', o2[2] === second, o2.slice(0, 4).join(', '));
       const grip = await ed.evaluate(() => getComputedStyle(document.querySelector('#glist .g .grip')).display);
-      ok(dev + ': no drag handle where dragging can\'t work', grip === 'none', grip);
+      // Groups and channels can be dragged with a finger since 392a70f2: the handle shows, bigger, on a phone.
+      ok(dev + ': a drag handle to move it with a finger', grip !== 'none', grip);
       await ed.evaluate(() => { undo(); undo(); }); await ed.waitForTimeout(300);
       ok(dev + ': undo puts the order back', JSON.stringify(await order()) === JSON.stringify(o0));
       await ed.tap('#navToggle'); await ed.waitForTimeout(300);

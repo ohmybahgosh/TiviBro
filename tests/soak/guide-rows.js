@@ -39,7 +39,8 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('moving still works after a change', await page.evaluate(() => !!document.querySelector('.grow.sel')) && (await look()).sel !== m.sel);
   await page.evaluate(() => { Store.settings.guideRows = 'm'; Views.applyLook(); Guide.resize(); }); await page.waitForTimeout(500);
   ok('back to Normal', (await look()).h === 100);
-  ok('Settings has Guide row size', await page.evaluate(() => { Views.switchTab('settings'); Settings.section('guide'); return /Guide row size/.test(document.body.innerText); }));
+  // The rows as the TV, the phone and the editor have them (the TV shows one part of a page at a time).
+  ok('Settings has Guide row size', await page.evaluate(() => Settings.phone.page('guide', []).rows.some((r) => r.label === 'Guide row size')));
   ok('no page errors', !errs.length, errs.join(' | '));
   await b.close();
   console.log(fails ? fails + ' FAILED' : 'all guide row size checks passed');

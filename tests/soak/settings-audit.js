@@ -1,4 +1,4 @@
-/* Settings, all of it: the 18 sections in their order, on the TV and on the phone (ask "settings"),
+/* Settings, all of it: the 19 sections (on the TV's Settings home, and in order on the phone with "settings"),
    every page and the pages inside them, no row that still names an old page, the phone's own and
    TV-only rows marked, and a button's question going to the phone instead of the TV's screen.
      node tests/mock/mock_provider.js &  (on :8077)
@@ -17,7 +17,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
 const ctl = (u, body) => fetch(RELAY + u, { method: body ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined }).then((r) => r.json());
 
 const WANT = [['language', 'Language'], ['playlists', 'Playlists and accounts'], ['connect', 'Phone app and web editor'], ['guide', 'Guide'], ['channels', 'Channels and groups'],
-  ['names', 'Channel and group names'], ['playback', 'Playback'], ['audio', 'Audio and subtitles'], ['recording', 'Recording and live pause'], ['remote', 'Remote and buttons'],
+  ['sports', 'Sports'], ['names', 'Channel and group names'], ['playback', 'Playback'], ['audio', 'Audio and subtitles'], ['recording', 'Recording and live pause'], ['remote', 'Remote and buttons'],
   ['vod', 'Movies and shows'], ['media', 'My media'], ['reminders', 'Reminders and watchlist'], ['parental', 'Parental controls'], ['look', 'Appearance'], ['keys', 'API keys'],
   ['backups', 'Backups and restore points'], ['about', 'System']];
 // Page names that are gone: nothing may still send people there.
@@ -44,11 +44,12 @@ const OLD = [/Groups, sorting, hidden/, /Guide, start screen, reminders/, /Playl
   await ev(() => { TIVIBRO_VERSION = '0.6.0-alpha.99'; if (UI.modalOpen) UI.close(); Views.switchTab('settings'); Settings.open(); });
   await page.waitForTimeout(600);
 
-  // 1. The sections, in order, on the TV and the phone.
-  const nav = await ev(() => [].map.call(document.querySelectorAll('#setNav > div:not(.nav-find)'), (d) => d.innerText.trim()));
-  ok('the TV shows the 18 sections in order', nav.join('|') === WANT.map((w) => w[1]).join('|'), nav.join(' | '));
+  // 1. The sections: every one on the TV's Settings home (tiles for the everyday ones, chips for the rest), and
+  // in order, with their ids, on the phone.
+  const home = await ev(() => [].map.call(document.querySelectorAll('.set-home .sh-tile b, .set-home .sh-chip span'), (d) => d.innerText.trim()));
+  ok('the TV\'s Settings home has all ' + WANT.length + ' sections', home.slice().sort().join('|') === WANT.map((w) => w[1]).sort().join('|'), home.join(' | '));
   const secs = await sa({ op: 'sections' });
-  ok('the phone gets the same 18, with their ids', JSON.stringify(secs.sections.map((x) => [x.id, x.title])) === JSON.stringify(WANT), JSON.stringify(secs.sections));
+  ok('the phone gets the same ' + WANT.length + ', in order, with their ids', JSON.stringify(secs.sections.map((x) => [x.id, x.title])) === JSON.stringify(WANT), JSON.stringify(secs.sections));
   ok('old section ids still lead somewhere', await ev(() => ['groups', 'updates', 'diag', 'phone', 'editor', 'keys', 'audio', 'remote', 'names', 'backups', 'trakt', 'connect'].every((id) => Settings.section(id))));
 
   // 2. Every page and the pages inside them, on the phone (the same code builds them for the TV).

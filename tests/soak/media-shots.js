@@ -71,7 +71,7 @@ const FILMS = [
   await shot('tv-my-media-all');
 
   await ev(() => { Views.switchTab('settings'); Settings.section('media'); }); await page.waitForTimeout(900);
-  const st = await page.innerText('#setBody');
+  const st = await R.settingsText(page, 'media');
   ok('Settings > My media lists the libraries', /Libraries/.test(st) && /Add a library/.test(st) && /Living room NAS/.test(st), st.slice(0, 300));
   await shot('tv-set-my-media');
 

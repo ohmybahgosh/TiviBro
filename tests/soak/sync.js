@@ -66,10 +66,11 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
 
     // Settings: the hidden lists are pages, the page itself stays short.
     await T(() => { const ks = Library.data.channels.filter((c) => !/US|WEST|ABC|CBS|NBC|PBS/.test(c.n)).slice(0, 40).map((c) => c.k); ks.forEach((k) => Library.hideChannel(k, true)); });
-    await T(() => { Views.switchTab('settings'); Settings.open(); Settings.section('channels'); });
-    await tv.waitForTimeout(500);
-    const page = await T(() => [].map.call(document.querySelectorAll('.opt .ol'), (e) => (e.innerText || '').trim()).filter(Boolean));
-    ok('Channels and groups: hidden channels and groups are pages, not 40 rows', page.some((t) => /^Hidden channels/.test(t)) && page.length < 45, page.length + ' rows: ' + page.slice(-12).join(' | '));
+    // The section's rows and its pages' rows (the TV shows one part at a time): the hidden channels are a page of
+    // their own, and no other page holds 40 rows.
+    const pages = await T(() => { const top = Settings.phone.page('channels', []).rows; return [top].concat(top.filter((r) => r.kind === 'page' && !/^Hidden/.test(r.label)).map((r) => Settings.phone.page('channels', [r.i]).rows)).map((rows) => rows.map((r) => (r.kind === 'page' ? 'P:' : '') + r.label)); });
+    const page = [].concat(...pages).map((t) => t.replace(/^P:/, ''));
+    ok('Channels and groups: hidden channels and groups are pages, not 40 rows', [].concat(...pages).some((t) => /^P:Hidden channels/.test(t)) && pages.every((p) => p.length < 40), pages.map((p) => p.length).join(',') + ' rows: ' + page.slice(-12).join(' | '));
     ok('Channels and groups: Tidy up has the tour\'s clean-up steps', ['Keep the countries you watch', 'East or West feeds', 'Your local channels', 'Clear the clutter'].every((x) => page.some((t) => t.indexOf(x) === 0)), page.join(' | '));
 
     // Tidy up > East or West, from the phone: that step and the summary; Apply hides West feeds only.

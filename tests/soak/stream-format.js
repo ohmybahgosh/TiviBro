@@ -46,8 +46,8 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     ok('MPEG-TS for the channel while the playlist is on HLS', asked[0] === c.id + '.ts', asked.join(' '));
     const sub = await ev((k) => { const c = Library.find(k); Views.chanMenu(c, c.g); const it = [].slice.call(document.querySelectorAll('#modalBody .mi')).map((x) => x.innerText); UI.close(); return it.join(' | '); }, c.k);
     ok('the channel menu says which', /Stream format…\s*MPEG-TS/.test(sub), sub);
-    await ev(() => { Store.settings.advView = true; Views.switchTab('settings'); Settings.open(); Settings.section('playback'); }); await page.waitForTimeout(500);
-    const st = await ev(() => document.querySelector('.set-scroll').innerText);
+    await ev(() => { Store.settings.advView = true; }); await page.waitForTimeout(300);
+    const st = await R.settingsText(page, 'playback', '*');        // the TV shows one part at a time
     ok('Settings > Playback lists the channels with their own format', new RegExp('Channels with their own format[\\s\\S]*' + c.n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ': MPEG-TS').test(st), st.slice(st.indexOf('Stream format'), st.indexOf('Stream format') + 300));
     // Automatic again: the playlist's setting.
     await ev((k) => { Views.switchTab('live'); Views.startChannel(Library.find(k), true); }, c.k); await page.waitForTimeout(2500);
