@@ -2111,5 +2111,8 @@ I18n.add('nl', {
   "Turn on or off": "Aan- of uitzetten",
   "Turning on {x}…": "{x} wordt aangezet…",
   "Volume down": "Zachter",
-  "Volume up": "Harder"
+  "Volume up": "Harder",
+  "Today {x}": "Vandaag {x}",
+  "{x} vs {y}": "{x} tegen {y}",
+  "Updated {x}": "Bijgewerkt {x}"
 });

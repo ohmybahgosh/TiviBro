@@ -2117,5 +2117,8 @@ I18n.add('pt-BR', {
   "Turn on or off": "Ligar ou desligar",
   "Turning on {x}…": "Ligando {x}…",
   "Volume down": "Diminuir volume",
-  "Volume up": "Aumentar volume"
+  "Volume up": "Aumentar volume",
+  "Today {x}": "Hoje {x}",
+  "{x} vs {y}": "{x} x {y}",
+  "Updated {x}": "Atualizado {x}"
 });

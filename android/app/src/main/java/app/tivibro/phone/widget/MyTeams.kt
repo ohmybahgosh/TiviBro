@@ -35,7 +35,19 @@ object MyTeams {
     }
 
     /** What the TV's Sports said: its followed teams added or brought up to date, and teams it no longer follows dropped. */
-    fun learn(ctx: Context, l: SportsList) = save(ctx, merge(all(ctx), l))
+    fun learn(ctx: Context, l: SportsList) {
+        save(ctx, merge(all(ctx), l))
+        // The channel the TV found for each game (ESPN's id for it), for the Spotlight's Watch on TV.
+        val names = channels(ctx).toMutableMap()
+        l.rows.flatMap { it.games }.forEach { g -> g.chans.firstOrNull()?.name?.takeIf { it.isNotBlank() }?.let { names[g.id] = it } }
+        val keep = names.entries.toList().takeLast(150)
+        prefs(ctx).edit().putString("chans", JSONObject().apply { keep.forEach { put(it.key, it.value) } }.toString()).apply()
+    }
+
+    /** Game (ESPN's id) to the TV's channel for it, as the TV last said. */
+    fun channels(ctx: Context): Map<String, String> = runCatching {
+        val j = JSONObject(prefs(ctx).getString("chans", "{}")); j.keys().asSequence().associateWith { j.optString(it) }
+    }.getOrDefault(emptyMap())
 
     /** Pure, for tests: [old] updated from the teams in [l] (each game's teams, followed or not). */
     fun merge(old: List<FollowedTeam>, l: SportsList): List<FollowedTeam> {

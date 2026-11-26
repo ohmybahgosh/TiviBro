@@ -2117,5 +2117,8 @@ I18n.add('es', {
   "Turn on or off": "Encender o apagar",
   "Turning on {x}…": "Encendiendo {x}…",
   "Volume down": "Bajar volumen",
-  "Volume up": "Subir volumen"
+  "Volume up": "Subir volumen",
+  "Today {x}": "Hoy {x}",
+  "{x} vs {y}": "{x} vs {y}",
+  "Updated {x}": "Actualizado {x}"
 });

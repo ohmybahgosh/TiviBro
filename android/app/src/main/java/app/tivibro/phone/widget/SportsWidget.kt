@@ -66,7 +66,8 @@ class SportsWidget : AppWidgetProvider() {
         fun drawAll(ctx: Context) {
             val wm = AppWidgetManager.getInstance(ctx)
             val ids = wm.getAppWidgetIds(ComponentName(ctx, SportsWidget::class.java))
-            ids.forEach { draw(ctx, wm, it) }
+            // One widget that fails to draw (logged) mustn't keep the others, or the list, from updating.
+            ids.forEach { id -> runCatching { draw(ctx, wm, id) }.onFailure { android.util.Log.w("TiviBroWidget", "Sports widget $id: ${it.message}") } }
             @Suppress("DEPRECATION") wm.notifyAppWidgetViewDataChanged(ids, R.id.sw_list)
         }
 
@@ -75,7 +76,10 @@ class SportsWidget : AppWidgetProvider() {
             val v = RemoteViews(ctx.packageName, R.layout.widget_sports)
             v.setTextViewText(R.id.sw_title, tr("My teams"))
             val at = Cache.at(ctx)
-            v.setTextViewText(R.id.sw_when, if (at > 0) android.text.format.DateFormat.getTimeFormat(ctx).format(java.util.Date(at)) else "")
+            // When the scores were read, only once they are getting old (the phone offline, or Android holding the
+            // refresh back): a time that sits there looked like part of the scores.
+            val old = at > 0 && System.currentTimeMillis() - at > 20 * 60_000L
+            v.setTextViewText(R.id.sw_when, if (old) tr("Updated {x}", "x" to android.text.format.DateFormat.getTimeFormat(ctx).format(java.util.Date(at))) else "")
             v.setTextViewText(R.id.sw_empty, when {
                 MyTeams.all(ctx).isEmpty() -> tr("Follow teams in My teams on the TV, then open the app's Sports tab once.")
                 at == 0L -> tr("Getting the scores…")

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The LIVE / NEXT pill of a Spotlight game; its colour is set in code. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#FFE5484D" />
+    <corners android:radius="999dp" />
+</shape>

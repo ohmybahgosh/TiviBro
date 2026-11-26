@@ -2111,5 +2111,8 @@ I18n.add('tr', {
   "Turn on or off": "Aç veya kapat",
   "Turning on {x}…": "{x} açılıyor…",
   "Volume down": "Sesi azalt",
-  "Volume up": "Sesi artır"
+  "Volume up": "Sesi artır",
+  "Today {x}": "Bugün {x}",
+  "{x} vs {y}": "{x} - {y}",
+  "Updated {x}": "Güncellendi {x}"
 });

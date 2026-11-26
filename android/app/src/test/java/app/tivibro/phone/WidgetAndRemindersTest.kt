@@ -8,6 +8,7 @@ import app.tivibro.phone.proto.SportsList
 import app.tivibro.phone.widget.FollowedTeam
 import app.tivibro.phone.widget.MyTeams
 import app.tivibro.phone.widget.Scores
+import app.tivibro.phone.widget.TeamColors
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -102,5 +103,41 @@ class WidgetAndRemindersTest {
             val tags = Regex("<([A-Za-z.]+)[\\s>/]").findAll(f.readText()).map { it.groupValues[1] }.filterNot { it == "xml" }.toSet()
             assertEquals(f.name + " uses " + (tags - allowed), emptySet<String>(), tags - allowed)
         }
+    }
+
+    @Test fun teamColoursShowOnTheDarkWidget() {
+        assertEquals(0xE64100, TeamColors.team("0b1c3a", "e64100"))        // Bears: navy is too dark, their orange
+        assertEquals(0x0076B6, TeamColors.team("0076b6", "bbbbbb"))        // Lions: their own blue
+        assertTrue(TeamColors.lum(TeamColors.team("041e42", "000000")) > TeamColors.lum(0x041E42))   // dark navy, black second colour: lightened
+        assertTrue(TeamColors.lum(TeamColors.card(0xFFCB05)) < 0.2)        // a card stays dark under white text, even for Michigan maize
+    }
+
+    @Test fun footballSituationAndNetwork() {
+        val e = event("7", "in", "2nd 12:51", "3", "CHI", "8", "DET", true)
+        val c = e.getJSONArray("competitions").getJSONObject(0)
+        c.put("situation", JSONObject().put("possession", "3").put("downDistanceText", "4th & 13 at DET 22"))
+        c.put("broadcasts", org.json.JSONArray().put(JSONObject().put("names", org.json.JSONArray().put("CBS"))))
+        val lions = FollowedTeam("nfl:det", "8", "DET", "Lions", "", "")
+        val g = Scores.event(e, "nfl", listOf(lions))!!
+        assertEquals("CHI · 4th & 13 at DET 22", g.sit); assertEquals("CBS", g.net)
+    }
+
+    @Test fun liveGamesFromTheSmallFeeds() {
+        val lions = FollowedTeam("nfl:det", "8", "DET", "Lions", "", "")
+        val g = Scores.event(event("401873081", "in", "1st", "3", "CHI", "8", "DET", true), "nfl", listOf(lions))!!
+        val asked = mutableListOf<String>()
+        val up = Scores.refreshLive(g) { url ->
+            asked += url.substringAfter("competitions/401873081")
+            when {
+                url.endsWith("/status") -> JSONObject().put("type", JSONObject().put("state", "in").put("shortDetail", "12:51 - 2nd"))
+                url.endsWith("/competitors/8/score") -> JSONObject().put("displayValue", "10")
+                url.endsWith("/competitors/3/score") -> JSONObject().put("displayValue", "0")
+                url.endsWith("/situation") -> JSONObject().put("possession", JSONObject().put("\$ref", "http://x/teams/8?lang=en")).put("downDistanceText", "2nd & 6 at CHI 34")
+                else -> null
+            }
+        }!!
+        assertEquals(listOf("/status", "/competitors/3/score", "/competitors/8/score", "/situation"), asked)
+        assertEquals("10", up.home.score); assertEquals("0", up.away.score); assertEquals("12:51 - 2nd", up.detail)
+        assertEquals("DET · 2nd & 6 at CHI 34", up.sit)
     }
 }

@@ -2117,5 +2117,8 @@ I18n.add('ru', {
   "Turn on or off": "Включить или выключить",
   "Turning on {x}…": "Включаю {x}…",
   "Volume down": "Тише",
-  "Volume up": "Громче"
+  "Volume up": "Громче",
+  "Today {x}": "Сегодня {x}",
+  "{x} vs {y}": "{x} против {y}",
+  "Updated {x}": "Обновлено {x}"
 });
