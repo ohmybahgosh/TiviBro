@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Clearer Settings in the phone app.**  Playback, Guide, Audio and subtitles and Sports are big cards at the top that say what each is set to now.  Search results are grouped by section and show each setting's value.  Long pages have chips that jump to each part, and picking a value opens a list from the bottom of the screen with big rows.
+- **Bigger tabs in the phone app.**  Remote, Channels, Guide and the rest are now rounded buttons with icons, easier to tap than the thin tabs they replace.
 - **A new home screen in the phone app.**  One TV at a time, with a power button, what's on the TV now, a big Remote next to Guide, the other shortcuts, and the reminders coming up.  With several TVs, swipe between them or tap the TV's name for a list of them all.
 - **No stuck time at the top of the Sports widget.**  The time it last read the scores stayed in its corner and looked like a clock that had stopped.  It now shows only when the scores are over 20 minutes old, as "Updated 1:39 PM".
 - **The Sports widget puts live games in the spotlight.**  A live game now fills the top of the widget in both teams' colours, with big logos, the score, the clock, where the ball is, and **Watch on TV** with the channel.  With nothing live, the next game does.  Live scores come in every minute, using a tiny fraction of the data they used to.

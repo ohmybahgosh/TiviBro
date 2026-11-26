@@ -2128,5 +2128,7 @@ I18n.add('es', {
   "Off (standby)": "Apagada (en espera)",
   "Showing": "En pantalla",
   "Your TVs": "Tus TV",
-  "TV {x} of {y}": "TV {x} de {y}"
+  "TV {x} of {y}": "TV {x} de {y}",
+  "Changes are made on the TV at once": "Los cambios se aplican en la TV al instante",
+  "Tap one to save it.": "Toca una para guardarla."
 });

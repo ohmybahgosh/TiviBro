@@ -76,8 +76,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
-import androidx.compose.material3.ScrollableTabRow
-import androidx.compose.material3.Tab
 import androidx.compose.material.icons.rounded.StarOutline
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
@@ -85,8 +83,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import app.tivibro.phone.proto.TvInput
-import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -205,16 +201,8 @@ fun TvScreen(
                 "Movies".takeIf { state?.movies != false }, "Shows".takeIf { state?.series != false },
                 "My media".takeIf { state?.media == true || waiting && tab == "My media" }, "Settings")
             val cur = if (tab in tabs) tab else "Remote"
-            val sel = tabs.indexOf(cur).coerceAtLeast(0)
-            ScrollableTabRow(
-                selectedTabIndex = sel, containerColor = Ink, contentColor = TextHi, edgePadding = 8.dp,
-                // The tab positions can still be the old list's for a frame when the TV's tabs change: never index past them.
-                indicator = { pos -> if (sel < pos.size) TabRowDefaults.SecondaryIndicator(Modifier.tabIndicatorOffset(pos[sel]), color = Accent) },
-                divider = {},
-            ) {
-                // The tab names are their ids (shortcuts and links open them by name), shown in the app's language.
-                tabs.forEach { t -> Tab(selected = cur == t, onClick = { tab = t }, text = { Text(tr(t)) }, selectedContentColor = Accent, unselectedContentColor = TextHi) }
-            }
+            // The tabs as icon chips (TabChips.kt).  Their names are their ids (shortcuts and links open them by name).
+            TabChips(tabs, cur, onPick = { tab = it })
             // Back from another tab goes to the remote first, then to the TV list.
             BackHandler(enabled = cur != "Remote") { tab = "Remote" }
             LaunchedEffect(cur) { if (cur == "Channels" || cur == "Guide") onLoadLineup(false) }

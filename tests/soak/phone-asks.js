@@ -323,6 +323,13 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   ok('the phone gets the TV\'s settings pages', secs.sections.some((x) => x.id === 'look' && x.title === 'Appearance') && secs.sections.length === 19, secs.sections.length + ' ' + secs.sections.map((x) => x.id).join(' '));
   // A phone in Spanish gets them in Spanish, while the TV stays in its own language; a message from later (a
   // restore point list, after the TV looked it up) too.
+  // The everyday sections say what they're set to now, for the phone's big cards; the rest say nothing.
+  const sportsSec = secs.sections.find((x) => x.id === 'sports'), lookSec = secs.sections.find((x) => x.id === 'look');
+  ok('the phone\'s big cards get what each is set to now', !!(sportsSec && sportsSec.line) && !(lookSec && lookSec.line), JSON.stringify([sportsSec, lookSec]));
+  // A search hit for a switch says whether it's on, as the switch on the TV does.
+  const clockHits = await sa({ op: 'find', q: 'show clock' });
+  const clockHit = (clockHits.hits || []).find((h) => h.label === 'Show clock');
+  ok('a search hit shows a switch\'s value', !!clockHit && clockHit.value === ((await ev(() => Store.settings.showClock)) ? 'On' : 'Off'), JSON.stringify(clockHit));
   const esSecs = await ask('settings', { op: 'sections' }, { seal: true, lang: 'es' });
   ok('a phone in Spanish gets the pages in Spanish', esSecs.sections.some((x) => x.id === 'look' && x.title === 'Apariencia') && (await ev(() => I18n.t('Appearance'))) === 'Appearance', esSecs.sections.map((x) => x.title).join(', '));
   const esSnaps = await ask('snaps', { op: 'make', name: 'Phone check' }, { seal: true, lang: 'es' });

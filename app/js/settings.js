@@ -2927,6 +2927,17 @@ var Settings = (function () {
       setTimeout(check, 120);
     });
   }
+  /* A search hit's current value, for the phone's results: On or Off for a switch, the choice's name for a choice,
+     nothing for the rest (pages and buttons have no value worth showing there).  [list]: the hit's own page. */
+  function hitValue(list, label) {
+    var it = (list || []).filter(function (x) { return x && x.label === label; })[0];
+    if (!it) return '';
+    try {
+      if (it.toggle) return String(T(it.get() ? 'On' : 'Off'));
+      if (it.values && it.value) return String(T(it.value() || ''));
+    } catch (e) {}
+    return '';
+  }
   var forPhone = {
     _timeout: function () { endCapture(); },          // tests: as if a minute passed
     _convUnknown: function () { convSt = null; convAt = 0; },     // tests: as if Settings had just started
@@ -2937,7 +2948,15 @@ var Settings = (function () {
       if (typeof Convert === 'undefined' || convSt || typeof Net === 'undefined' || !Net.port) return Promise.resolve();
       return Promise.race([Convert.status(true).then(function (x) { convSt = x; convAt = Date.now(); }), new Promise(function (r) { setTimeout(r, 3000); })]);
     },
-    sections: function () { return SECTIONS.filter(function (x, i) { return shown(i); }).map(function (x) { return { id: x[0], title: String(T(title(x))) }; }); },
+    /* Each section with its title, and for the everyday ones (the home's tiles) the one line saying what it's set to
+       now (tileLine), which the phone puts under its big cards.  Blank for the rest. */
+    sections: function () {
+      return SECTIONS.filter(function (x, i) { return shown(i); }).map(function (x) {
+        var o = { id: x[0], title: String(T(title(x))) };
+        if (TILES.indexOf(x[0]) >= 0) { var l = tileLine(x[0]); if (l) o.line = String(l); }
+        return o;
+      });
+    },
     /* Search every setting, for the phone and the web editor's search box: each hit with its section and the rows
        to follow to its page (the same path page() takes), best matches first (name before note). */
     find: function (q) {
@@ -2961,7 +2980,7 @@ var Settings = (function () {
             path.push(n); list = shape(pg.fn, pg.title);
           });
         } catch (e) { return null; }
-        return { label: String(T(r.label)), sub: r.sub ? brief(String(T(r.sub))) : '', trail: r.trail.map(function (t) { return String(T(t)); }).join('  ›  '), sec: r.sec, path: path };
+        return { label: String(T(r.label)), sub: r.sub ? brief(String(T(r.sub))) : '', trail: r.trail.map(function (t) { return String(T(t)); }).join('  ›  '), sec: r.sec, path: path, value: hitValue(list, r.label) };
       }).filter(Boolean);
     },
     page: function (secId, path) { var p = rowsOf(secId, path); return { title: String(T(p.shown)), trail: p.trail.map(function (x) { return String(T(x)); }), rows: p.list.map(rowData).filter(function (r, n) { return !p.list[n].preview; }) }; },   // pictures (a preview, the TMDB credit) stay on the TV

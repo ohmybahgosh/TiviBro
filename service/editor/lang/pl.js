@@ -2122,5 +2122,7 @@ I18n.add('pl', {
   "Off (standby)": "Wyłączony (czuwanie)",
   "Showing": "Wyświetlany",
   "Your TVs": "Twoje telewizory",
-  "TV {x} of {y}": "Telewizor {x} z {y}"
+  "TV {x} of {y}": "Telewizor {x} z {y}",
+  "Changes are made on the TV at once": "Zmiany są od razu wprowadzane na telewizorze",
+  "Tap one to save it.": "Dotknij jednej, aby ją zapisać."
 });

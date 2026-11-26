@@ -80,7 +80,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -182,7 +183,7 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
     val uri = LocalUriHandler.current
     var pin by remember { mutableStateOf("") }
     var askPin by remember { mutableStateOf<String?>(null) }
-    var sections by remember { mutableStateOf<List<Pair<String, String>>?>(null) }
+    var sections by remember { mutableStateOf<List<Sec>?>(null) }
     var sec by remember { mutableStateOf(startSec?.takeIf { it.isNotBlank() }) }
     var path by remember { mutableStateOf(listOf<Int>()) }
     var page by remember { mutableStateOf<SetPage?>(null) }
@@ -227,7 +228,7 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
     LaunchedEffect(busy) { if (!busy) moving = false }
     fun loadSections() = send("sections") { r ->
         val a = r.optJSONArray("sections") ?: JSONArray()
-        sections = (0 until a.length()).map { a.getJSONObject(it).let { s -> s.optString("id") to s.optString("title") } }
+        sections = (0 until a.length()).map { a.getJSONObject(it).let { s -> Sec(s.optString("id"), s.optString("title"), s.optString("line")) } }
     }
     fun loadPage() = send("page") { r -> page = pageOf(r) }
     // A reply to a change or an answer: the page again, what the TV would have said, and maybe the next question.
@@ -270,7 +271,7 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
     Column(Modifier.fillMaxSize()) {
         if (sec != null) Row(Modifier.fillMaxWidth().padding(4.dp, 2.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { if (path.isNotEmpty()) path = path.dropLast(1) else { sec = null; page = null } }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, tr("Back")) }
-            Text(page?.title ?: sections?.firstOrNull { it.first == sec }?.second ?: "", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text(page?.title ?: sections?.firstOrNull { it.id == sec }?.title ?: "", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
             if (busy) CircularProgressIndicator(Modifier.size(18.dp).padding(end = 4.dp), strokeWidth = 2.dp, color = Accent)
             Spacer(Modifier.width(12.dp))
         }
@@ -289,34 +290,33 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
                     val h = hits
                     if (h != null) {
                         item { Text(if (h.isEmpty()) tr("No setting has that in its name or its note.") else trn(h.size, "{n} setting", "{n} settings"), color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(4.dp, 4.dp)) }
-                        if (h.isNotEmpty()) item {
-                            SetCard { h.forEachIndexed { n, x ->
+                        // The hits by section, in the order the best of each comes, each under its section's name.
+                        h.groupBy { it.sec }.forEach { (sid, mine) ->
+                            item(key = "fh-$sid") { SetHead(l.firstOrNull { it.id == sid }?.title ?: mine.first().trail.substringBefore("  ›  ")) }
+                            item(key = "fc-$sid") { SetCard { mine.forEachIndexed { n, x ->
                                 if (n > 0) HorizontalDivider(color = Line.copy(alpha = 0.5f), thickness = 0.5.dp)
-                                Row(Modifier.fillMaxWidth().clickable { found = x.label; query = ""; path = x.path; sec = x.sec }.padding(16.dp, 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Column(Modifier.weight(1f)) {
-                                        Text(x.label, fontWeight = FontWeight.Medium)
-                                        Text(x.trail + if (x.sub.isNotBlank()) "  ·  " + x.sub else "", color = Muted, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                                    }
-                                    Icon(Icons.Rounded.ChevronRight, null, tint = Muted)
-                                }
-                            } }
+                                HitRow(x, query.trim()) { found = x.label; query = ""; path = x.path; sec = x.sec }
+                            } } }
                         }
                     } else {
-                        // The sections in four groups, each a card, with an icon apiece (SectionGroups).
+                        // The four sections people open most, as big cards with what each is set to now.
+                        val big = BIG.mapNotNull { sid -> l.firstOrNull { it.id == sid } }
+                        if (big.isNotEmpty()) item(key = "big") { BigCards(big) { sid -> path = emptyList(); sec = sid } }
+                        // The rest in groups, each a card, with an icon apiece (SECTION_GROUPS).
                         SECTION_GROUPS.forEach { (title, ids) ->
-                            val mine = ids.mapNotNull { sid -> l.firstOrNull { it.first == sid } }
+                            val mine = ids.filter { it !in BIG }.mapNotNull { sid -> l.firstOrNull { it.id == sid } }
                             if (mine.isNotEmpty()) {
                                 item(key = "h-$title") { SetHead(title) }
-                                item(key = "c-$title") { SetCard { mine.forEachIndexed { n, (sid, t) ->
+                                item(key = "c-$title") { SetCard { mine.forEachIndexed { n, x ->
                                     if (n > 0) HorizontalDivider(color = Line.copy(alpha = 0.5f), thickness = 0.5.dp, modifier = Modifier.padding(start = 64.dp))
-                                    SectionRow(sid, t) { path = emptyList(); sec = sid }
+                                    SectionRow(x.id, x.title, x.line) { path = emptyList(); sec = x.id }
                                 } } }
                             }
                         }
                         // Sections a newer TV has that this app doesn't group yet: at the end, so none goes missing.
-                        val rest = l.filter { s0 -> SECTION_GROUPS.none { s0.first in it.second } }
+                        val rest = l.filter { s0 -> s0.id !in BIG && SECTION_GROUPS.none { s0.id in it.second } }
                         item(key = "c-more") { SetCard {
-                            rest.forEach { (sid, t) -> SectionRow(sid, t) { path = emptyList(); sec = sid }; HorizontalDivider(color = Line.copy(alpha = 0.5f), thickness = 0.5.dp, modifier = Modifier.padding(start = 64.dp)) }
+                            rest.forEach { x -> SectionRow(x.id, x.title, x.line) { path = emptyList(); sec = x.id }; HorizontalDivider(color = Line.copy(alpha = 0.5f), thickness = 0.5.dp, modifier = Modifier.padding(start = 64.dp)) }
                             SectionRow("log", tr("TiviBro log"), tr("What TiviBro on the TV did and what went wrong")) { showLog = true }
                         } }
                     }
@@ -332,6 +332,9 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
               val listState = rememberLazyListState()
               var listBox by remember { mutableStateOf(0f to 0f) }
               val edges = ListEdges(listState) { listBox }
+              // Chips across the top for a page with several parts: each jumps to its part (the list's item for its heading).
+              val jumps = jumpsOf(cards, if (copy) 1 else 0)
+              if (jumps.size >= 3) PartChips(jumps, listState)
               LazyColumn(state = listState, contentPadding = PaddingValues(16.dp, 4.dp, 16.dp, 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp),
                   modifier = Modifier.onGloballyPositioned { val y = it.positionInWindow().y; listBox = y to y + it.size.height }) {
                 // From the helper's copy: what works now and what waits for TiviBro.
@@ -348,7 +351,7 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
                         onChoose = { v -> change("choice", r, JSONObject().put("v", v)) },
                         onCycle = { d -> change("cycle", r, JSONObject().put("dir", d)) },
                         onOpen = { found = ""; path = path + r.i },
-                        onAction = { if (r.go.isNotBlank() && sections?.any { it.first == r.go } != false) { path = emptyList(); sec = r.go } else press(r) },
+                        onAction = { if (r.go.isNotBlank() && sections?.any { it.id == r.go } != false) { path = emptyList(); sec = r.go } else press(r) },
                         drag = drag)
                   item(key = "c$n") { SetCard {
                     if (rows.any { it.move }) MovableRows(rows, syncing = moving, edges = edges, onMove = { r, by -> moving = true; change("move", r, JSONObject().put("by", by)) }) { r, d -> one(r, d) }
@@ -358,6 +361,8 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
                     }
                   } }
                 }
+                // Under a page with switches or choices: they're made on the TV straight away, there's no Save.
+                if (!copy && cards.any { (_, rows) -> rows.any { it.kind == "toggle" || it.kind == "choice" } }) item(key = "live") { LiveNote() }
               }
             }
         }
@@ -374,24 +379,7 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
             "edit-playlist" -> EditPlaylistDialog(model, id, r.sid, r.ptype, r.value, done)
         }
     }
-    picking?.let { r ->
-        AlertDialog(
-            onDismissRequest = { picking = null }, containerColor = Panel,
-            title = { Text(r.label) },
-            text = {
-                Column(Modifier.verticalScroll(rememberScrollState())) {
-                    if (r.sub.isNotBlank()) Text(r.sub, color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 8.dp))
-                    r.options.forEachIndexed { n, o ->
-                        Row(Modifier.fillMaxWidth().clickable { picking = null; change("choice", r, JSONObject().put("v", n)) }.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(selected = n == r.cur, onClick = { picking = null; change("choice", r, JSONObject().put("v", n)) })
-                            Text(o)
-                        }
-                    }
-                }
-            },
-            confirmButton = { TextButton(onClick = { picking = null }) { Text(tr("Close")) } },
-        )
-    }
+    picking?.let { r -> ChoiceSheet(r, onDismiss = { picking = null }) { n -> picking = null; change("choice", r, JSONObject().put("v", n)) } }
     askPin?.let { why ->
         var t by remember { mutableStateOf("") }
         AlertDialog(
@@ -411,11 +399,13 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
     }
 }
 
-/** A search hit (settings.js find): its name, where it is, and the rows to follow to its page. */
-private data class SetHit(val label: String, val sub: String, val trail: String, val sec: String, val path: List<Int>) {
+/** A search hit (settings.js find): its name, where it is, the rows to follow to its page, and its value. */
+internal data class SetHit(val label: String, val sub: String, val trail: String, val sec: String, val path: List<Int>,
+    /** What it's set to now, for a switch or a choice (newer TVs; blank otherwise). */
+    val value: String = "") {
     companion object {
         fun from(j: JSONObject) = SetHit(j.optString("label"), j.optString("sub"), j.optString("trail"), j.optString("sec"),
-            j.optJSONArray("path")?.let { a -> (0 until a.length()).map { a.optInt(it) } }.orEmpty())
+            j.optJSONArray("path")?.let { a -> (0 until a.length()).map { a.optInt(it) } }.orEmpty(), j.optString("value"))
     }
 }
 
@@ -428,7 +418,7 @@ private val SECTION_GROUPS get() = listOf(
     tr("Look and control") to listOf("look", "remote", "language", "parental"),
     tr("System") to listOf("connect", "keys", "backups", "about"),
 )
-private fun sectionIcon(id: String): Pair<ImageVector, Color> = when (id) {
+internal fun sectionIcon(id: String): Pair<ImageVector, Color> = when (id) {
     "guide" -> Icons.Rounded.CalendarViewWeek to Accent
     "sports" -> Icons.Rounded.EmojiEvents to Warn
     "playback" -> Icons.Rounded.PlayArrow to Accent2
@@ -451,16 +441,18 @@ private fun sectionIcon(id: String): Pair<ImageVector, Color> = when (id) {
     else -> Icons.Rounded.Settings to Muted
 }
 
+/* The search box at the top of Settings: a big pill, easy to hit, that searches every setting on the TV. */
 @Composable
 private fun SearchBox(q: String, set: (String) -> Unit) {
-    OutlinedTextField(q, set, singleLine = true, placeholder = { Text(tr("Search all settings")) }, shape = RoundedCornerShape(14.dp),
-        leadingIcon = { Icon(Icons.Rounded.Search, null, tint = Muted) },
+    OutlinedTextField(q, set, singleLine = true, placeholder = { Text(tr("Search all settings")) }, shape = RoundedCornerShape(50),
+        leadingIcon = { Icon(Icons.Rounded.Search, null, tint = if (q.isEmpty()) Muted else Accent) },
         trailingIcon = { if (q.isNotEmpty()) IconButton(onClick = { set("") }) { Icon(Icons.Rounded.Close, tr("Clear")) } },
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search), modifier = Modifier.fillMaxWidth())
+        colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Panel, focusedContainerColor = Panel, unfocusedBorderColor = Line, focusedBorderColor = Accent),
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search), modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp))
 }
 /** A heading above a card: small capitals in the accent colour. */
 @Composable
-private fun SetHead(t: String) = Text(t.uppercase(), color = Color(0xFF7DA2FF), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(6.dp, 10.dp, 6.dp, 0.dp))
+internal fun SetHead(t: String) = Text(t.uppercase(), color = Color(0xFF7DA2FF), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(6.dp, 10.dp, 6.dp, 0.dp))
 /** A rounded card holding rows. */
 @Composable
 private fun SetCard(content: @Composable () -> Unit) =

@@ -107,7 +107,10 @@ async function answer(cmd) {
   if (cmd.what === 'fav') { const c = chans.find((x) => x.k === a.k); if (!c) return no('That channel isn\'t in this playlist.'); c.fav = a.on ? 1 : 0; return say({ on: !!c.fav }); }
   if (cmd.what === 'remind') return say({ on: a.on !== false });
   if (cmd.what === 'settings') {
-    if (a.op === 'sections') return say({ sections: [{ id: 'playback', title: 'Playback' }, { id: 'look', title: 'Appearance' }] });
+    // The four everyday sections (the phone's big cards, each with what it's set to now) and one more.
+    if (a.op === 'sections') return say({ sections: [{ id: 'guide', title: 'Guide', line: 'Loaded 12:55 PM' }, { id: 'sports', title: 'Sports', line: '3 teams' },
+      { id: 'playback', title: 'Playback' }, { id: 'audio', title: 'Audio and subtitles', line: 'Subtitles off' }, { id: 'look', title: 'Appearance' }] });
+    if (a.op === 'find') return say({ hits: /clo/i.test(a.q) ? [{ label: 'Show clock', sub: '', trail: 'Appearance  ›  Look', sec: 'look', path: [], value: look.rows[1].on ? 'On' : 'Off' }] : [] });
     look.rows[1].on = a.op === 'toggle' && a.i === 1 ? a.on : look.rows[1].on;
     if (a.op === 'choice' && a.i === 2) { look.rows[2].cur = a.v; look.rows[2].value = look.rows[2].options[a.v]; }
     return a.op === 'page' ? say(look) : say({ msg: '', page: look });

@@ -137,7 +137,18 @@ tap "Appearance"
 shot 12c-settings-appearance 5
 [ -n "$(find_text "Show clock")" ] || { echo "Settings on the phone did not show the TV's page"; exit 1; }
 echo "The TV's settings show on the phone"
+# A choice with several values opens a sheet; picking one saves it and closes the sheet.
+tap "TV font"
+shot 12d-settings-choice 3
+[ -n "$(find_text "Tap one to save it.")" ] || { echo "The choice did not open its sheet"; exit 1; }
+tap "Even width"; sleep 3
+[ -z "$(find_text "Tap one to save it.")" ] || { echo "The sheet stayed open after picking"; exit 1; }
 adb shell input keyevent KEYCODE_BACK; sleep 2
+# Searching every setting: the hits by section, with their value.
+tap "Search all settings"; adb shell input text clock
+shot 12e-settings-search 4
+[ -n "$(find_text "Appearance  ›  Look")" ] || { echo "Searching Settings found nothing"; exit 1; }
+adb shell input keyevent KEYCODE_BACK; sleep 1
 # A provider link shared to the app.
 adb shell am start -W -a android.intent.action.SEND -t text/plain --es android.intent.extra.TEXT "'Your login: http://line.example.com:8080/get.php?username=demo&password=demo&type=m3u_plus'" -n $PKG/.MainActivity
 shot 13-share 5

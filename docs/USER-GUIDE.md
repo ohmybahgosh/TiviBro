@@ -767,7 +767,7 @@ The sections, in the order the TV lists them.  Every option is explained, with i
 | [**Backups and restore points**](#settings-backups-and-restore-points) | Everything saved, to put back on this TV or another one |
 | [**System**](#settings-system) | Fix a problem, your version and updates, about and licences, report a problem, connection and speed tests, logs, what this TV can play, status, provider status |
 
-The phone app's **Settings** tab and the web editor's **Settings** page show the same sections, pages and rows, drawn the same way.
+The phone app's **Settings** tab and the web editor's **Settings** page show the same sections, pages and rows, drawn the same way.  In the phone app, Playback, Guide, Audio and subtitles and Sports are big cards at the top, each saying what it's set to now, with the other sections listed under them.  The search box at the top searches every setting: the results are grouped by section, show where each one lives and, for a switch or a choice, what it's set to.  A long page has chips across its top that jump to each part.  A choice with a few short values shows them all on its row; one with more opens a list from the bottom of the screen, and tapping a value saves it.  There's no Save button: every change is made on the TV straight away.
 
 The phone app's Settings works while TiviBro is behind another app (YouTube, say) too: it shows the last copy of Settings TiviBro left, with a note saying so.  Switches and choices you change there are made the moment TiviBro is back on screen, and the TV says how many.  Buttons that do something right away (a test, a scan, a restart) need TiviBro on the TV's screen.  A PIN on Settings is asked for as usual.
 
