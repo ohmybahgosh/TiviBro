@@ -89,4 +89,18 @@ class WidgetAndRemindersTest {
         assertEquals(now + 3_600_000 - 60_000, PhoneReminders.fireAt(a, now))           // a minute early
         assertEquals(now + 1000, PhoneReminders.fireAt(c.copy(start = now - 5_000), now))  // started already: at once
     }
+
+    /* Home screen widgets can only hold the views Android allows in RemoteViews: anything else (a plain View as a
+       spacer, as alpha 225's Remote widget had) shows "Can't load widget". */
+    @Test fun widgetLayoutsUseOnlyRemoteViewsClasses() {
+        val allowed = setOf("FrameLayout", "LinearLayout", "RelativeLayout", "GridLayout", "AnalogClock", "Button", "Chronometer", "ImageButton", "ImageView",
+            "ProgressBar", "TextView", "ViewFlipper", "ListView", "GridView", "StackView", "AdapterViewFlipper", "ViewStub", "TextClock", "merge")
+        val dir = java.io.File("src/main/res/layout")
+        val files = dir.listFiles { f -> f.name.startsWith("widget_") }.orEmpty()
+        assertTrue("widget layouts found", files.isNotEmpty())
+        files.forEach { f ->
+            val tags = Regex("<([A-Za-z.]+)[\\s>/]").findAll(f.readText()).map { it.groupValues[1] }.filterNot { it == "xml" }.toSet()
+            assertEquals(f.name + " uses " + (tags - allowed), emptySet<String>(), tags - allowed)
+        }
+    }
 }

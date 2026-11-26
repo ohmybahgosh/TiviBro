@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **The Remote widget loads.**  In alpha 225 it showed "Can't load widget" on the home screen.
+
 ## 0.6.0 (alpha 225, 2026-11-26)
 
 Pre-release: expect rough edges, and keep a backup before installing.
