@@ -2101,5 +2101,15 @@ I18n.add('tr', {
   "That TV isn't paired with this phone any more.": "Bu TV artık bu telefonla eşleşmiş değil.",
   "Turning to {x} on {y}…": "{y} üzerinde {x} kanalına geçiliyor…",
   "Update TiviBro on {x} to play games from the widget.": "Widget'tan maç açmak için {x} üzerindeki TiviBro'yu güncelleyin.",
-  "{x} didn't answer.  Is the phone on the same network?": "{x} yanıt vermedi.  Telefon aynı ağda mı?"
+  "{x} didn't answer.  Is the phone on the same network?": "{x} yanıt vermedi.  Telefon aynı ağda mı?",
+  "Blue": "Blue",
+  "Green": "Yeşil",
+  "Red": "Red",
+  "Yellow": "Yellow",
+  "Channel down": "Kanal aşağı",
+  "Channel up": "Kanal yukarı",
+  "Turn on or off": "Aç veya kapat",
+  "Turning on {x}…": "{x} açılıyor…",
+  "Volume down": "Sesi azalt",
+  "Volume up": "Sesi artır"
 });

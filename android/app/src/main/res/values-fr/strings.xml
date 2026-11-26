@@ -2,4 +2,6 @@
 <resources>
     <string name="widget_sports_name">TiviBro Sport</string>
     <string name="widget_sports_description">Les matchs de vos équipes et les scores en direct.  Touchez-en un pour le regarder sur la TV.</string>
+    <string name="widget_remote_name">TiviBro Télécommande</string>
+    <string name="widget_remote_description">La télécommande de TiviBro sur votre écran d\'accueil : flèches, OK, volume, chaînes et touches de couleur.</string>
 </resources>

@@ -2107,5 +2107,15 @@ I18n.add('ru', {
   "That TV isn't paired with this phone any more.": "Этот телевизор больше не связан с этим телефоном.",
   "Turning to {x} on {y}…": "Переключаю на {x} на {y}…",
   "Update TiviBro on {x} to play games from the widget.": "Обновите TiviBro на {x}, чтобы включать матчи из виджета.",
-  "{x} didn't answer.  Is the phone on the same network?": "{x} не ответил.  Телефон в той же сети?"
+  "{x} didn't answer.  Is the phone on the same network?": "{x} не ответил.  Телефон в той же сети?",
+  "Blue": "Синий",
+  "Green": "Зелёный",
+  "Red": "Красный",
+  "Yellow": "Жёлтая",
+  "Channel down": "Канал вниз",
+  "Channel up": "Канал вверх",
+  "Turn on or off": "Включить или выключить",
+  "Turning on {x}…": "Включаю {x}…",
+  "Volume down": "Тише",
+  "Volume up": "Громче"
 });

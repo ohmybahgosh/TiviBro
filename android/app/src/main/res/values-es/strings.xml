@@ -2,4 +2,6 @@
 <resources>
     <string name="widget_sports_name">TiviBro Deportes</string>
     <string name="widget_sports_description">Los partidos de tus equipos y los resultados en directo.  Toca uno para verlo en la TV.</string>
+    <string name="widget_remote_name">TiviBro Mando</string>
+    <string name="widget_remote_description">El mando de TiviBro en tu pantalla de inicio: flechas, OK, volumen, canales y los botones de colores.</string>
 </resources>

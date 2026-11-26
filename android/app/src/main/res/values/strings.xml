@@ -3,4 +3,6 @@
 <resources>
     <string name="widget_sports_name">TiviBro Sports</string>
     <string name="widget_sports_description">Your teams\' games and live scores.  Tap one to watch it on the TV.</string>
+    <string name="widget_remote_name">TiviBro Remote</string>
+    <string name="widget_remote_description">TiviBro\'s remote on your home screen: arrows, OK, volume, channels and the colour buttons.</string>
 </resources>

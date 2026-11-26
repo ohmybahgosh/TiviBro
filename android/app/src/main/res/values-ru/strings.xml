@@ -2,4 +2,6 @@
 <resources>
     <string name="widget_sports_name">TiviBro Спорт</string>
     <string name="widget_sports_description">Матчи ваших команд и счёт в прямом эфире.  Нажмите на матч, чтобы смотреть его на телевизоре.</string>
+    <string name="widget_remote_name">TiviBro Пульт</string>
+    <string name="widget_remote_description">Пульт TiviBro на главном экране: стрелки, OK, громкость, каналы и цветные кнопки.</string>
 </resources>

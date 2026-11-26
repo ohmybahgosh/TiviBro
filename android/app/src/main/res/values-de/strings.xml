@@ -2,4 +2,6 @@
 <resources>
     <string name="widget_sports_name">TiviBro Sport</string>
     <string name="widget_sports_description">Die Spiele deiner Teams und Live-Ergebnisse.  Tippe auf eines, um es auf dem TV zu schauen.</string>
+    <string name="widget_remote_name">TiviBro Fernbedienung</string>
+    <string name="widget_remote_description">Die TiviBro-Fernbedienung auf deinem Startbildschirm: Pfeile, OK, Lautstärke, Sender und die Farbtasten.</string>
 </resources>

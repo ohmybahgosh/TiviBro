@@ -2101,5 +2101,15 @@ I18n.add('pl', {
   "That TV isn't paired with this phone any more.": "Ten telewizor nie jest już sparowany z tym telefonem.",
   "Turning to {x} on {y}…": "Przełączam na {x} na {y}…",
   "Update TiviBro on {x} to play games from the widget.": "Zaktualizuj TiviBro na {x}, aby włączać mecze z widżetu.",
-  "{x} didn't answer.  Is the phone on the same network?": "{x} nie odpowiedział.  Czy telefon jest w tej samej sieci?"
+  "{x} didn't answer.  Is the phone on the same network?": "{x} nie odpowiedział.  Czy telefon jest w tej samej sieci?",
+  "Blue": "Blue",
+  "Green": "Green",
+  "Red": "Red",
+  "Yellow": "Yellow",
+  "Channel down": "Kanał w dół",
+  "Channel up": "Kanał w górę",
+  "Turn on or off": "Włącz lub wyłącz",
+  "Turning on {x}…": "Włączam {x}…",
+  "Volume down": "Ciszej",
+  "Volume up": "Głośniej"
 });

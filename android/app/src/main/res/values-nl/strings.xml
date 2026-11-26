@@ -2,4 +2,6 @@
 <resources>
     <string name="widget_sports_name">TiviBro Sport</string>
     <string name="widget_sports_description">De wedstrijden van je teams en live-uitslagen.  Tik op een wedstrijd om hem op de tv te kijken.</string>
+    <string name="widget_remote_name">TiviBro Afstandsbediening</string>
+    <string name="widget_remote_description">De afstandsbediening van TiviBro op je startscherm: pijlen, OK, volume, zenders en de kleurknoppen.</string>
 </resources>

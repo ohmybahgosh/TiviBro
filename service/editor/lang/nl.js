@@ -2101,5 +2101,15 @@ I18n.add('nl', {
   "That TV isn't paired with this phone any more.": "Die tv is niet meer gekoppeld aan deze telefoon.",
   "Turning to {x} on {y}…": "Naar {x} op {y}…",
   "Update TiviBro on {x} to play games from the widget.": "Werk TiviBro op {x} bij om wedstrijden vanuit de widget af te spelen.",
-  "{x} didn't answer.  Is the phone on the same network?": "{x} reageerde niet.  Zit de telefoon op hetzelfde netwerk?"
+  "{x} didn't answer.  Is the phone on the same network?": "{x} reageerde niet.  Zit de telefoon op hetzelfde netwerk?",
+  "Blue": "Blue",
+  "Green": "Green",
+  "Red": "Red",
+  "Yellow": "Yellow",
+  "Channel down": "Zender omlaag",
+  "Channel up": "Zender omhoog",
+  "Turn on or off": "Aan- of uitzetten",
+  "Turning on {x}…": "{x} wordt aangezet…",
+  "Volume down": "Zachter",
+  "Volume up": "Harder"
 });

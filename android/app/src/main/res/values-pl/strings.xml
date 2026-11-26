@@ -2,4 +2,6 @@
 <resources>
     <string name="widget_sports_name">TiviBro Sport</string>
     <string name="widget_sports_description">Mecze twoich drużyn i wyniki na żywo.  Dotknij meczu, aby obejrzeć go na telewizorze.</string>
+    <string name="widget_remote_name">TiviBro Pilot</string>
+    <string name="widget_remote_description">Pilot TiviBro na ekranie głównym: strzałki, OK, głośność, kanały i kolorowe przyciski.</string>
 </resources>

@@ -127,7 +127,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     val found: StateFlow<List<Found>?> = _found.asStateFlow()
     var tileTv: String?
         get() = store.tileTv
-        set(v) { store.tileTv = v }
+        set(v) { store.tileTv = v; runCatching { app.tivibro.phone.widget.RemoteWidget.drawAll(getApplication()) } }     // the Remote widget names it
 
     fun say(s: String) { _msg.tryEmit(s) }
 

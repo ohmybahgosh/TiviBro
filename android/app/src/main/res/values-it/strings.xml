@@ -2,4 +2,6 @@
 <resources>
     <string name="widget_sports_name">TiviBro Sport</string>
     <string name="widget_sports_description">Le partite delle tue squadre e i risultati in diretta.  Tocca una partita per guardarla sulla TV.</string>
+    <string name="widget_remote_name">TiviBro Telecomando</string>
+    <string name="widget_remote_description">Il telecomando di TiviBro sulla schermata Home: frecce, OK, volume, canali e tasti colorati.</string>
 </resources>

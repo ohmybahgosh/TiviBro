@@ -2,4 +2,6 @@
 <resources>
     <string name="widget_sports_name">TiviBro Esportes</string>
     <string name="widget_sports_description">Os jogos dos seus times e os placares ao vivo.  Toque em um para assistir na TV.</string>
+    <string name="widget_remote_name">TiviBro Controle</string>
+    <string name="widget_remote_description">O controle do TiviBro na tela inicial: setas, OK, volume, canais e os botões coloridos.</string>
 </resources>

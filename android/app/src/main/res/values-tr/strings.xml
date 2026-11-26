@@ -2,4 +2,6 @@
 <resources>
     <string name="widget_sports_name">TiviBro Spor</string>
     <string name="widget_sports_description">Takımlarınızın maçları ve canlı skorlar.  TV\'de izlemek için birine dokunun.</string>
+    <string name="widget_remote_name">TiviBro Kumanda</string>
+    <string name="widget_remote_description">Ana ekranınızda TiviBro kumandası: oklar, OK, ses, kanallar ve renkli tuşlar.</string>
 </resources>
