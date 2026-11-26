@@ -12,7 +12,7 @@ There are two ways to ask, with the same result:
 | Link | Opens |
 |---|---|
 | `tivibro://channel/206` | Channel 206.  A channel can also be found by guide id (`?epg=`) or by name (`?name=ESPN`), matched the way your channel list shows it. |
-| `tivibro://team/nhl:det` | The Red Wings' game on now, for a team you follow in My teams.  `?start=` (ms) picks one of several. |
+| `tivibro://team/nhl:det` | The Red Wings' game on now, for a team you follow in My teams.  `?start=` (ms) picks one of several.  When the game is on several channels and one doesn't start, the next is tried. |
 | `tivibro://view/guide` | The guide.  Also `live`, `movies`, `shows`, `media`, `onnow`, `recordings`, `search` and `settings`. |
 | `tivibro://search/lions` | Search, with "lions" typed in. |
 | `tivibro://settings/recording` | Settings, on Recording and live pause. |
