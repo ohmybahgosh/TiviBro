@@ -17,6 +17,8 @@ const setIssue = (n, v) => fetch(MOCK + '/mock-issue?n=' + n + '&v=' + encodeURI
     const ctx = await b.newContext(Object.assign({ viewport: { width: 1920, height: 1080 } }, state ? { storageState: state } : {}));
     const page = await ctx.newPage(); page.on('pageerror', e => errs.push(e.message));
     if (!state) await page.addInitScript(R.init({ time: Date.now() })[0]);
+    // Later starts run the same version as the first (R.init's): the files' own 0.6.0 reads as an update.
+    else await page.addInitScript((v) => { Object.defineProperty(window, 'TIVIBRO_VERSION', { get: () => v, set: () => {}, configurable: true }); }, R.DEMO_VERSION);
     await page.goto(APP);
     await page.waitForFunction(() => window.Library && Library.count() > 0, null, { timeout: 60000 });
     await page.evaluate(m => { Store.settings.relayConfig = m + '/relay.json'; }, MOCK);
@@ -43,9 +45,9 @@ const setIssue = (n, v) => fetch(MOCK + '/mock-issue?n=' + n + '&v=' + encodeURI
   await a.ev(() => Reports.check(true)); await a.page.waitForTimeout(1000);
   let m = await modal(a.ev);
   ok('the reply shows once, by itself', /Your problem report #42/.test(m) && /The developer replied, fix in 0\.9\.9-alpha\.1/.test(m) && /fixed in 0\.9\.9-alpha\.1: big playlists/.test(m), m);
-  ok('with Update, Still happening, OK and a code for the phone', /Update to 0\.9\.9-alpha\.1/.test(m) && await a.ev(() => [].slice.call(document.querySelectorAll('#modal .mbtns .btn')).map(x => x.textContent).join('|')) === 'Update to 0.9.9-alpha.1|Still happening|OK' && /Scan to read it all/.test(m) && await a.ev(() => !!document.querySelector('#modal .rep-qr svg')), m);
-  // Still happening, with the log.
-  await key(a.page, 'ArrowRight'); await key(a.page, 'Enter');
+  ok('with Update, Fixed now, Still happening, OK and a code for the phone', /Update to 0\.9\.9-alpha\.1/.test(m) && await a.ev(() => [].slice.call(document.querySelectorAll('#modal .mbtns .btn')).map(x => x.textContent).join('|')) === 'Update to 0.9.9-alpha.1|Fixed now|Still happening|OK' && /Scan to read it all/.test(m) && await a.ev(() => !!document.querySelector('#modal .rep-qr svg')), m);
+  // Still happening, with the log (third, after Update and Fixed now).
+  await key(a.page, 'ArrowRight', 2); await key(a.page, 'Enter');
   m = await modal(a.ev);
   ok('Still happening asks first, Cancel focused', /Tell the developer it still happens\?/.test(m) && /Send with the log/.test(m) && /Add a note first/.test(m) && await a.ev(() => /Cancel/.test(document.querySelector('#modal .mi.focus').textContent)), m);
   await key(a.page, 'ArrowUp', 2); await key(a.page, 'Enter');
@@ -74,8 +76,9 @@ const setIssue = (n, v) => fetch(MOCK + '/mock-issue?n=' + n + '&v=' + encodeURI
   ok('no Update when this TV already has the fix', !/Update to/.test(m) && /Still happening/.test(m), m);
   await c.ev(() => UI.close && UI.close());
   // 5. Settings > Diagnostics > Your problem reports.
-  const rows = await c.ev(() => { Views.switchTab('settings'); Settings.section('diag'); return [].slice.call(document.querySelectorAll('.opt .ol')).map(x => x.textContent); });
-  ok('Settings > Diagnostics has Your problem reports', rows.some(t => /^Your problem reports/.test(t)), rows.join(' | ').slice(0, 300));
+  // Under Settings > System now, a part of a long page: read the whole page as the phone does.
+  const rows = await c.ev(() => { const out = []; const walk = (path, d) => { let rows = []; try { rows = Settings.phone.page('about', path).rows || []; } catch (e) { return; } rows.forEach((r, i) => { out.push(r.label); if (r.kind === 'page' && d < 1) walk(path.concat([i]), d + 1); }); }; walk([], 0); return out; });
+  ok('Settings > System has Your problem reports', rows.some(t => /^Your problem reports/.test(t)), rows.join(' | ').slice(0, 300));
   // 6. A key that is not the TV's is refused, and the TV says so.
   await c.ev(() => { Reports.list[0].key = 'x'.repeat(32); });
   const bad = await c.ev(() => Diag.followup(42, Reports.list[0].key, 'x').then(() => 'sent', e => e.message));

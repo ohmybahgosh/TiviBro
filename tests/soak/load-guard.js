@@ -24,6 +24,8 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     await ctx.route(/get_live_streams|\/live\/(xtream|m3u)/, async (r) => { if (slow) await new Promise((res) => setTimeout(res, 20000)); r.continue().catch(() => {}); });
     const page = await ctx.newPage(); page.on('pageerror', e => errs.push(e.message));
     if (!state) await page.addInitScript(R.init({ time: Date.now() })[0]);   // (it fixes the clock: a restart would share the session id)
+    // Later starts run the same version as the first (R.init's): the files' own 0.6.0 reads as an update.
+    else await page.addInitScript((v) => { Object.defineProperty(window, 'TIVIBRO_VERSION', { get: () => v, set: () => {}, configurable: true }); }, R.DEMO_VERSION);
     await page.goto(APP);
     if (wait !== false) await page.waitForFunction(() => window.Library && Library.count() > 0, null, { timeout: 60000 });
     return { ctx, page, ev: (f, a) => page.evaluate(f, a) };
@@ -54,7 +56,9 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('and it says so, with the last good channels on screen', /closed twice while reloading/.test(m1) && /only when you ask/.test(m1) && await s.ev(() => Library.count()) === n0, m1);
   if (SHOTS) await s.page.screenshot({ path: path.join(SHOTS, 'guard-reloading.png') });
   await s.page.keyboard.press('ArrowDown'); await s.page.keyboard.press('Enter'); await s.page.waitForTimeout(800);
-  ok('Playlist settings opens that playlist\'s page', await s.ev(() => Views.tab === 'settings' && /Reload channel list/.test(document.body.innerText) && /Only when I ask/.test(document.body.innerText)));
+  /* The playlist in use's Settings page, every part of it (the TV shows a part at a time), as label and value. */
+  const plPage = (ev) => ev(() => { const i = Store.settings.playlists.findIndex((p) => p.id === Store.settings.active); return Settings.phone.page('playlists', [i]).rows.map((r) => r.label + ' ' + (r.value || '')).join('\n'); });
+  ok('Playlist settings opens that playlist\'s page', await s.ev(() => Views.tab === 'settings') && /Reload channel list Only when I ask/.test(await plPage(s.ev)), await plPage(s.ev));
   // A good start clears the count: closing once more starts from one again.
   await s.ev(() => { Store.playlist.plRefresh = 12; Store.upsertPlaylist(Store.playlist); });
   await s.ev(() => App.refresh(true)); await s.page.waitForTimeout(12000);
@@ -94,12 +98,12 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   slow = true;
   await s.ev(() => { App.refresh(true); App.openPlaylistSettings(Store.playlist.id); });
   await s.page.waitForTimeout(1200);
-  ok('Settings has Stop reloading while it reloads', /Stop reloading/.test(await s.ev(() => document.body.innerText)));
+  ok('Settings has Stop reloading while it reloads', /Stop reloading/.test(await plPage(s.ev)));
   await s.ev(() => App.stopReload()); await s.page.waitForTimeout(800);
   ok('which stops it and keeps the channels', await s.ev(() => !App.reloading && Library.count() > 0 && /Stopped reloading/.test(document.body.innerText)));
   slow = false;
   await s.page.waitForTimeout(1500);
-  ok('and Reload channels now is back', /Reload channels now/.test(await s.ev(() => document.body.innerText)));
+  ok('and Reload channels now is back', /Reload channels now/.test(await plPage(s.ev)));
 
   // 5. Most channels failing with provider errors.  (First out of the way: the offer to report the closes above.)
   for (let k = 0; k < 4; k++) { await s.page.waitForTimeout(2500); await s.ev(() => UI.modalOpen && UI.close()); }

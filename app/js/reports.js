@@ -7,6 +7,8 @@
    to read the whole thread on a phone.  Settings > System > Your problem reports lists them all.
    Nothing but the issue numbers leaves the TV when it asks. */
 var Reports = (function () {
+  // Translated text with values ({x}): Still happening named the fix's version with T and threw without it.
+  function T(x, v) { return typeof I18n !== 'undefined' ? I18n.t(x, v) : x; }
   var KEY = 'tivibro.reports', MAX = 20, EVERY = 6 * 3600e3, FIRST = 90e3, KEEP_CLOSED = 60 * 86400e3;
   var list = load(), queue = [], showing = false, timer = null;
 

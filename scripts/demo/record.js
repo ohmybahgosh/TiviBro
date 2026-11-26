@@ -524,7 +524,7 @@ async function dual(browser, name, opts, fn) {
   console.log(`${name}: ${errs.length ? 'errors: ' + errs.join(' | ') : 'ok'}`);
 }
 
-module.exports = { init, helpers, primeTime, SETTINGS, EDITS, APP, EDITOR, SHOTS, RAW };
+module.exports = { init, helpers, primeTime, SETTINGS, EDITS, APP, EDITOR, SHOTS, RAW, DEMO_VERSION };
 
 // Unsent work left on the TV by an earlier run: start clean.
 async function throwAway(ed) {

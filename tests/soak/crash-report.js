@@ -18,6 +18,9 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     const ctx = await b.newContext(Object.assign({ viewport: { width: 1920, height: 1080 } }, state ? { storageState: state } : {}));
     const page = await ctx.newPage(); page.on('pageerror', e => errs.push(e.message));
     if (init) await page.addInitScript(init);
+    /* Every start runs the same version as the first (R.init's, from the newest tag): a start that ran the files'
+       own 0.6.0 read the crash before as "TiviBro was updated" and let it go. */
+    else await page.addInitScript((v) => { Object.defineProperty(window, 'TIVIBRO_VERSION', { get: () => v, set: () => {}, configurable: true }); }, R.DEMO_VERSION);
     await page.goto(APP);
     await page.waitForFunction(() => window.Library && Library.count() > 0, null, { timeout: 60000 });
     return { ctx, page, ev: (f, a) => page.evaluate(f, a) };
