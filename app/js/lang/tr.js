@@ -2549,5 +2549,6 @@ I18n.add('tr', {
   "{n} more": ["{n} tane daha", "{n} tane daha"],
   "from {x}": "{x} itibarıyla",
   "Top 10s of the streaming services": "Yayın hizmetlerinin İlk 10 listeleri",
-  "Top 10 data from FlixPatrol (flixpatrol.com), used with their permission.": "İlk 10 verileri FlixPatrol'den (flixpatrol.com), izinleriyle kullanılıyor."
+  "Top 10 data from FlixPatrol (flixpatrol.com), used with their permission.": "İlk 10 verileri FlixPatrol'den (flixpatrol.com), izinleriyle kullanılıyor.",
+  "Streaming Top 10s you have": "Sende olan yayın Top 10 listeleri"
 });

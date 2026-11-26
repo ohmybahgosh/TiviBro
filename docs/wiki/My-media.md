@@ -2,7 +2,7 @@
 
 *On the TV*
 
-**My media** gives your own movies a full-width poster view.  It joins the menu once you add a source in **Settings > My media > Add media**.  It has **Continue watching**, **Favorites** and **All movies** shelves.  The movie you choose shows its title and description above the shelves.  There are no automatic trailers or previews.
+**My media** gives your own movies a full-width poster view.  It joins the menu once you add a source in **Settings > My media > Add media**.  It has **Continue watching**, **Favorites** and **All movies** shelves.  **Streaming Top 10s you have** on its home shows the movies and shows you have that are on this week's streaming Top 10s in your region (Netflix, Max, Prime Video and more, from FlixPatrol), best place first, with "#3 on Netflix" under each poster.  The movie you choose shows its title and description above the shelves.  There are no automatic trailers or previews.
 
 <p align="center">
   <a href="https://tivibro.app/view/#tv-my-media"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-my-media.png" width="49%" alt="My media: Continue watching and Favorites"></a>

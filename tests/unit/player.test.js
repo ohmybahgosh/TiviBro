@@ -360,6 +360,9 @@ t.video.currentTime = 900; t.run(500);
 for (let i = 0; i < 6; i++) { t.video.error = { code: i ? 4 : 2 }; t.video.l.error.forEach(f => f()); t.run(6000); }
 const lastState = t.states[t.states.length - 1];
 ok('#34: when reconnecting really fails, the message says the provider closed the connection and offers to try again', /^error: The provider closed the connection/.test(lastState) && /Press OK to try again/.test(lastState) && !/format/.test(lastState), lastState);
+// A movie's reconnecting notice names no player (no "MPEG-TS" or "HLS": a movie has no other version to switch to).
+const movieSpins = t.states.filter((x) => /Playback stalled|having trouble starting/.test(x));
+ok('a movie\'s reconnect notice says Reconnecting, with no player names', movieSpins.length > 0 && movieSpins.every((x) => /Reconnecting/.test(x) && !/MPEG-TS|HLS|TV player|built-in/.test(x)), movieSpins.join(' | '));
 t.P.retryNow(); t.video.duration = 7200; t.feed(0, 4000); t.run(1500);
 ok('#34: OK tries again from where it was', Math.abs(t.video.currentTime - 900) < 3, t.video.currentTime);
 

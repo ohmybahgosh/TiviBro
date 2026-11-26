@@ -1,6 +1,6 @@
 /* The Sports widget: the games of the teams the TV follows (My teams), live ones first with their score, then the
    next ones and today's results.  Any size from a strip to the whole page (Android's widget resizing).  Tapping a
-   game opens its inner card (more about it: GameDetail) with a back arrow to the list; Watch on TV plays it on the
+   game opens its inner card (more about it: GameDetail), with All my teams at its top to go back; Watch on TV plays it on the
    TV (turned on first when it can be), its channels tried in turn as the TV's launcher links do, or the channel
    picked in the inner card.  The title opens the app, the arrow refreshes.  Filled by SportsWidgetWorker; drawn from
    its cache. */
@@ -51,7 +51,6 @@ class SportsWidget : AppWidgetProvider() {
                     else -> play(app, i.getStringExtra("team").orEmpty(), i.getStringExtra("what").orEmpty(), i.getStringExtra("k").orEmpty())
                 }
             }
-            BACK -> { DetailOpen.close(ctx, i.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, 0)); drawAll(ctx) }
         }
     }
 
@@ -91,7 +90,6 @@ class SportsWidget : AppWidgetProvider() {
     companion object {
         const val REFRESH = "app.tivibro.phone.WIDGET_REFRESH"
         const val PLAY = "app.tivibro.phone.WIDGET_PLAY"
-        const val BACK = "app.tivibro.phone.WIDGET_BACK"
 
         /** Every Sports widget drawn again from the cache (after the worker read new scores). */
         fun drawAll(ctx: Context) {
@@ -102,16 +100,12 @@ class SportsWidget : AppWidgetProvider() {
             @Suppress("DEPRECATION") wm.notifyAppWidgetViewDataChanged(ids, R.id.sw_list)
         }
 
-        private fun draw(ctx: Context, wm: AppWidgetManager, id: Int) {
+        internal fun draw(ctx: Context, wm: AppWidgetManager, id: Int) {
             I18n.ensure(ctx)
             val v = RemoteViews(ctx.packageName, R.layout.widget_sports)
-            // A game's inner card open: its name in the title, with a back arrow to the list.
-            val open = DetailOpen.of(ctx, id)?.let { g -> Cache.games(ctx).firstOrNull { it.id == g } }
-            v.setTextViewText(R.id.sw_title, open?.let { tr("{x} at {y}", "x" to it.away.name, "y" to it.home.name) } ?: tr("My teams"))
-            v.setViewVisibility(R.id.sw_back, if (open != null) android.view.View.VISIBLE else android.view.View.GONE)
-            v.setViewVisibility(R.id.sw_logo, if (open != null) android.view.View.GONE else android.view.View.VISIBLE)
-            val back = PendingIntent.getBroadcast(ctx, 1000 + id, Intent(ctx, SportsWidget::class.java).setAction(BACK).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-            v.setOnClickPendingIntent(R.id.sw_back, back)
+            /* The title bar never changes with a game's card (the card is all in the list, starting with All my teams):
+               on a Pixel the launcher sometimes skipped this bar's update while the list changed, and it got stuck. */
+            v.setTextViewText(R.id.sw_title, tr("My teams"))
             val at = Cache.at(ctx)
             // When the scores were read, only once they are getting old (the phone offline, or Android holding the
             // refresh back): a time that sits there looked like part of the scores.
@@ -130,7 +124,7 @@ class SportsWidget : AppWidgetProvider() {
             // One per widget (its id in it), so a game opens in the widget it was tapped in.
             v.setPendingIntentTemplate(R.id.sw_list, PendingIntent.getBroadcast(ctx, 2000 + id, Intent(ctx, SportsWidget::class.java).setAction(PLAY).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE))
-            v.setOnClickPendingIntent(R.id.sw_title, if (open != null) back else PendingIntent.getActivity(ctx, 2, Intent(ctx, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE))
+            v.setOnClickPendingIntent(R.id.sw_title, PendingIntent.getActivity(ctx, 2, Intent(ctx, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE))
             v.setOnClickPendingIntent(R.id.sw_refresh, PendingIntent.getBroadcast(ctx, 3, Intent(ctx, SportsWidget::class.java).setAction(REFRESH), PendingIntent.FLAG_IMMUTABLE))
             wm.updateAppWidget(id, v)
         }

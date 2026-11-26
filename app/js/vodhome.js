@@ -73,7 +73,7 @@ var VodHome = (function () {
      relay (meta/top10.js, which keeps them for every TiviBro and asks FlixPatrol at most once a day).  A shelf
      "Top 10 on Netflix" ("top:Netflix") shows your provider's titles that are on it, in its order, with their
      place on the poster.  Kept here 6 hours; no token needed. */
-  var META = 'https://tivibro-meta.theboxmod.workers.dev', TOP_AGE = 6 * 3600e3, topBusy = false;
+  var META = 'https://tivibro-meta.theboxmod.workers.dev', TOP_AGE = 6 * 3600e3, topBusy = false, topWaiting = [];
   function topCharts() { var t = tmdb.lists['top10:' + region()]; return t && t.charts || []; }
   function fetchTop() {
     var rg = region(), have = tmdb.lists['top10:' + rg];
@@ -86,6 +86,7 @@ var VodHome = (function () {
       tmdb.lists['top10:' + rg] = { got: Date.now(), date: String(j.date || ''), charts: j.charts };
       try { localStorage.setItem(CACHE, JSON.stringify(tmdb)); } catch (e) {}
       if (open_) refresh();
+      topWaiting.splice(0).forEach(function (f) { try { f(); } catch (e) {} });
     }, function () { topBusy = false; });
   }
   /* One service's chart for this screen: its own movies or shows chart, else its one chart's titles of this
@@ -521,5 +522,13 @@ var VodHome = (function () {
   // Settings > Movies and shows > Arrange the Movies (Shows) home.
   function arrange(k, api) { A = api; if (kind !== k) { kind = k; at = 0; pos = {}; } arrangeMenu(); }
 
-  return { show: show, wallOf: wallOf, hide: hide, arrange: arrange, on: on, changed: changed, restore: restore, pin: pin, get open() { return open_; }, _test: { norm: norm, matched: matched, build: build, set lists(v) { tmdb.lists = v; } } };
+  /* The region's Top 10s for My media's shelf (media.js): { date, charts } as kept here (fetched when old), and
+     [then] called once newer ones come. */
+  function top10(then) {
+    if (then && topWaiting.indexOf(then) < 0) topWaiting.push(then);
+    fetchTop();
+    var t = tmdb.lists['top10:' + region()] || {};
+    return { date: t.date || '', charts: t.charts || [] };
+  }
+  return { top10: top10, show: show, wallOf: wallOf, hide: hide, arrange: arrange, on: on, changed: changed, restore: restore, pin: pin, get open() { return open_; }, _test: { norm: norm, matched: matched, build: build, set lists(v) { tmdb.lists = v; } } };
 })();

@@ -94,6 +94,12 @@
             </intent-filter>
         </receiver>
 
+        <!-- The Sports widget's team logos, read by the launcher by address (widget/LogoProvider.kt): read-only,
+             public ESPN logos only. -->
+        <provider
+            android:name=".widget.LogoProvider"
+            android:authorities="app.tivibro.phone.logos"
+            android:exported="true" />
         <!-- The Sports widget (widget/SportsWidget.kt) and the service that gives it its rows. -->
         <receiver
             android:name=".widget.SportsWidget"

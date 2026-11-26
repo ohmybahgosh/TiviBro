@@ -56,6 +56,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/logos/build-index.js _site/logos
+      - name: The README's Downloads badge (tivibro.app/badges/downloads.json)
+        continue-on-error: true       # the site still goes out; the badge keeps yesterday's count
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/site/downloads-badge.js _site/badges/downloads.json
       - name: Guides, comparisons and video pages (scripts/site/pages.js, videos.js)
         run: node scripts/site/build-pages.js _site
       - name: The site in every TiviBro language (scripts/site/i18n-site.js, site/i18n/*.json)

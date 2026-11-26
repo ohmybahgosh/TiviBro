@@ -2549,5 +2549,6 @@ I18n.add('nl', {
   "{n} more": ["nog {n}", "nog {n}"],
   "from {x}": "vanaf {x}",
   "Top 10s of the streaming services": "Top 10 van de streamingdiensten",
-  "Top 10 data from FlixPatrol (flixpatrol.com), used with their permission.": "Top 10-gegevens van FlixPatrol (flixpatrol.com), gebruikt met hun toestemming."
+  "Top 10 data from FlixPatrol (flixpatrol.com), used with their permission.": "Top 10-gegevens van FlixPatrol (flixpatrol.com), gebruikt met hun toestemming.",
+  "Streaming Top 10s you have": "Streaming-top 10 die je hebt"
 });

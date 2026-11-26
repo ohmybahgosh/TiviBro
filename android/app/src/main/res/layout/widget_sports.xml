@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The Sports widget (widget/SportsWidget.kt): a title row (My teams, when it was read, refresh), then the games. -->
+<!-- The Sports widget (widget/SportsWidget.kt): a title row (My teams, when it was read, refresh), then the games (or a game's card). -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@android:id/background"
     android:layout_width="match_parent"
@@ -15,15 +15,6 @@
         android:orientation="horizontal"
         android:paddingStart="4dp"
         android:paddingBottom="8dp">
-        <!-- Back to the list, shown while a game's inner card is open (in place of the logo). -->
-        <ImageView
-            android:id="@+id/sw_back"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:padding="6dp"
-            android:src="@drawable/ic_arrow_back"
-            android:visibility="gone"
-            android:contentDescription="Back" />
         <ImageView
             android:id="@+id/sw_logo"
             android:layout_width="20dp"

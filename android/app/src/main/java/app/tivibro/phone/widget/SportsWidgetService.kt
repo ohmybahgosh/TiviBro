@@ -53,7 +53,8 @@ object TeamColors {
 
 /** One row of the widget's list: a game (in the list, or the head of an inner card), or a part of the inner card. */
 private sealed class Item(val key: String) {
-    class Game(val g: WGame, val head: Boolean) : Item((if (head) "head" else "g") + g.id)
+    /** [head]: the game at the top of its own card (no Watch on TV: its channels follow). */
+    class Game(val g: WGame, val head: Boolean = false) : Item((if (head) "head" else "g") + g.id)
     class Head(val text: String) : Item("h$text")
     class Stat(val label: CharSequence, val value: CharSequence, k: String) : Item("s$k")
     class News(val n: DNews) : Item("n" + n.url)
@@ -76,7 +77,7 @@ private class Rows(private val ctx: Context, private val widget: Int) : RemoteVi
         if (open != null) { spot = setOf(open.id); items = inner(open, GameDetail.cached(ctx, open.id)); return }
         // Every live game is a Spotlight; with none live, the first (next) one.
         spot = games.filter { it.live }.map { it.id }.toSet().ifEmpty { games.firstOrNull { it.state == "pre" }?.let { setOf(it.id) } ?: emptySet() }
-        items = games.map { Item.Game(it, head = false) }
+        items = games.map { Item.Game(it) }
     }
     override fun onDestroy() {}
     override fun getCount() = items.size
@@ -103,9 +104,9 @@ private class Rows(private val ctx: Context, private val widget: Int) : RemoteVi
         }
     }
 
-    // A game in the list (a Spotlight or one line), or the head of its own inner card (no Watch: the channels follow).
+    // A game in the list (a Spotlight or one line), or the game at the top of its own card.
     private fun game(g: WGame, head: Boolean): RemoteViews {
-        val v = if (head) spotlight(g, R.layout.widget_sports_game) else if (g.id in spot) spotlight(g) else line(g)
+        val v = if (head || g.id in spot) spotlight(g) else line(g)
         val fill = Intent().putExtra("team", g.team).putExtra("what", what(g))
         if (head) { v.setViewVisibility(R.id.sp_watch, android.view.View.GONE); return v }
         // Anywhere on a game opens its inner card; Watch on TV plays it.
@@ -131,6 +132,8 @@ private class Rows(private val ctx: Context, private val widget: Int) : RemoteVi
     /* A game's inner card: its Spotlight, Watch on TV with each channel the TV has it on (before it ends), then what
        ESPN's summary says, or that it's on its way. */
     private fun inner(g: WGame, d: WDetail?): List<Item> {
+        /* All in the list, nothing in the widget's own title bar: on a Pixel the launcher sometimes skipped an update of
+           the title bar while the list changed, so a title that followed the card got stuck. */
         val out = mutableListOf<Item>(Item.Back, Item.Game(g, head = true))
         if (g.state != "post") {
             val cs = MyTeams.chanLists(ctx)[g.id].orEmpty().ifEmpty { if (g.net.isNotBlank()) listOf(WChan("", g.net)) else emptyList() }
@@ -185,54 +188,13 @@ private class Rows(private val ctx: Context, private val widget: Int) : RemoteVi
     private fun channel(g: WGame) = chans[g.id].orEmpty().ifBlank { g.net }
 
     // The big one.
-    // [layout]: the list's Spotlight, or the inner card's head (the same look in a layout of its own).
-    private fun spotlight(g: WGame, layout: Int = R.layout.widget_sports_spot): RemoteViews {
-        val v = RemoteViews(ctx.packageName, layout)
-        val awayC = TeamColors.team(g.away.color, g.away.alt); val homeC = TeamColors.team(g.home.color, g.home.alt)
-        val mineC = if (g.home.mine) homeC else awayC
-        if (Build.VERSION.SDK_INT >= 31) {
-            v.setColorStateList(R.id.sp_root, "setBackgroundTintList", ColorStateList.valueOf(0xFF000000.toInt() or TeamColors.card(mineC)))
-            v.setColorStateList(R.id.sp_stripe_away, "setBackgroundTintList", ColorStateList.valueOf(0xFF000000.toInt() or awayC))
-            v.setColorStateList(R.id.sp_stripe_home, "setBackgroundTintList", ColorStateList.valueOf(0xFF000000.toInt() or homeC))
-        } else {
-            v.setInt(R.id.sp_stripe_away, "setBackgroundColor", 0xFF000000.toInt() or awayC)
-            v.setInt(R.id.sp_stripe_home, "setBackgroundColor", 0xFF000000.toInt() or homeC)
-        }
-        v.setTextViewText(R.id.sp_league, g.lg.uppercase())
-        // Live, Final (a finished game's card), or Next.
-        val post = g.state == "post"
-        v.setTextViewText(R.id.sp_pill, (if (g.live) tr("Live") else if (post) tr("Final") else tr("Next")).uppercase())
-        if (Build.VERSION.SDK_INT >= 31) v.setColorStateList(R.id.sp_pill, "setBackgroundTintList", ColorStateList.valueOf(if (g.live) 0xFFE5484D.toInt() else if (post) 0xFF3A4566.toInt() else 0xFF5B8CFF.toInt()))
-        logo(v, R.id.sp_away_logo, g.away); logo(v, R.id.sp_home_logo, g.home)
-        v.setTextViewText(R.id.sp_away_name, name(g.away)); v.setTextViewText(R.id.sp_home_name, name(g.home))
-        val started = g.state != "pre"
-        if (started) {
-            val a = g.away.score?.toIntOrNull(); val h = g.home.score?.toIntOrNull()
-            v.setTextViewText(R.id.sp_away_score, g.away.score.orEmpty()); v.setTextViewText(R.id.sp_home_score, g.home.score.orEmpty())
-            // The side behind is dimmed.
-            v.setTextColor(R.id.sp_away_score, if (a != null && h != null && a < h) 0xFF8A93A8.toInt() else Color.WHITE)
-            v.setTextColor(R.id.sp_home_score, if (a != null && h != null && h < a) 0xFF8A93A8.toInt() else Color.WHITE)
-            v.setTextViewText(R.id.sp_mid, "–")
-            v.setTextViewTextSize(R.id.sp_mid, android.util.TypedValue.COMPLEX_UNIT_SP, 30f)
-        } else {
-            v.setTextViewText(R.id.sp_away_score, ""); v.setTextViewText(R.id.sp_home_score, "")
-            v.setTextViewText(R.id.sp_mid, when_(g, short = true))
-            v.setTextViewTextSize(R.id.sp_mid, android.util.TypedValue.COMPLEX_UNIT_SP, 26f)
-            v.setTextColor(R.id.sp_mid, Color.WHITE)
-        }
-        v.setTextViewText(R.id.sp_state, if (g.live || post) g.detail.ifBlank { tr("Final") } else when_(g, short = false))
-        v.setTextColor(R.id.sp_state, if (g.live) 0xFFFF8F8F.toInt() else 0xFFC9D1E3.toInt())
-        v.setTextViewText(R.id.sp_sit, g.sit)
-        v.setViewVisibility(R.id.sp_sit, if (g.sit.isBlank()) android.view.View.GONE else android.view.View.VISIBLE)
-        val ch = channel(g)
-        v.setTextViewText(R.id.sp_watch, "▶  " + tr("Watch on TV") + if (ch.isNotBlank()) " · $ch" else "")
-        return v
-    }
+    private fun spotlight(g: WGame): RemoteViews =
+        RemoteViews(ctx.packageName, R.layout.widget_sports_spot).also { SpotDraw.fill(ctx, it, SpotDraw.LIST, g, channel(g)) }
 
     // One line.
     private fun line(g: WGame): RemoteViews {
         val v = RemoteViews(ctx.packageName, R.layout.widget_sports_row)
-        logo(v, R.id.swr_logo, g.mine)
+        SpotDraw.logo(ctx, v, R.id.swr_logo, g.mine)
         val ms = g.mine.score; val os = g.other.score
         val title: CharSequence = if (g.state == "post" && ms != null && os != null) {
             val s = SpannableString("${g.mine.name} $ms  ·  ${g.other.name} $os")
@@ -253,21 +215,79 @@ private class Rows(private val ctx: Context, private val widget: Int) : RemoteVi
         return v
     }
 
-    private fun name(t: WTeam): CharSequence = SpannableString(t.name.ifBlank { t.abbr }).also { if (t.mine) it.setSpan(StyleSpan(Typeface.BOLD), 0, it.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) }
-
-    /* A team's logo, as an Icon rather than setImageViewBitmap: a list row Android recycles kept the bitmaps of the
-       game it showed before (every game's card had the first Spotlight's logos), while an Icon goes with its row. */
-    private fun logo(v: RemoteViews, id: Int, t: WTeam) {
-        val b = SportsWidgetWorker.logoBitmap(ctx, t.logo)
-        v.setImageViewIcon(id, if (b != null) android.graphics.drawable.Icon.createWithBitmap(b) else android.graphics.drawable.Icon.createWithResource(ctx, R.drawable.ic_tile))
-    }
-
     // When a game starts: "3:30 PM" today, "Fri 3:00 PM" this week; [short]: the time alone today.
     private fun when_(g: WGame, short: Boolean): String {
         val d = java.util.Date(g.start)
         val time = android.text.format.DateFormat.getTimeFormat(ctx).format(d)
         val today = android.text.format.DateUtils.isToday(g.start)
         if (today) return if (short) time else tr("Today {x}", "x" to time)
+        return java.text.SimpleDateFormat("EEE", java.util.Locale.getDefault()).format(d) + " " + time
+    }
+}
+
+/* A Spotlight drawn into a RemoteViews (widget_sports_spot.xml, sp_ ids): a live or next game in the list, or the
+   game at the top of its own card.  Both teams' colours, logos, names,
+   the score or start time, Live / Final / Next, the clock, where the ball is, and Watch on TV with [chan]. */
+object SpotDraw {
+    class Ids(val root: Int, val stripeAway: Int, val stripeHome: Int, val league: Int, val pill: Int, val awayLogo: Int, val homeLogo: Int,
+              val awayName: Int, val homeName: Int, val awayScore: Int, val homeScore: Int, val mid: Int, val state: Int, val sit: Int, val watch: Int)
+    val LIST = Ids(R.id.sp_root, R.id.sp_stripe_away, R.id.sp_stripe_home, R.id.sp_league, R.id.sp_pill, R.id.sp_away_logo, R.id.sp_home_logo,
+        R.id.sp_away_name, R.id.sp_home_name, R.id.sp_away_score, R.id.sp_home_score, R.id.sp_mid, R.id.sp_state, R.id.sp_sit, R.id.sp_watch)
+
+    fun fill(ctx: Context, v: RemoteViews, i: Ids, g: WGame, chan: String) {
+        val awayC = TeamColors.team(g.away.color, g.away.alt); val homeC = TeamColors.team(g.home.color, g.home.alt)
+        val mineC = if (g.home.mine) homeC else awayC
+        if (Build.VERSION.SDK_INT >= 31) {
+            v.setColorStateList(i.root, "setBackgroundTintList", ColorStateList.valueOf(0xFF000000.toInt() or TeamColors.card(mineC)))
+            v.setColorStateList(i.stripeAway, "setBackgroundTintList", ColorStateList.valueOf(0xFF000000.toInt() or awayC))
+            v.setColorStateList(i.stripeHome, "setBackgroundTintList", ColorStateList.valueOf(0xFF000000.toInt() or homeC))
+        } else {
+            v.setInt(i.stripeAway, "setBackgroundColor", 0xFF000000.toInt() or awayC)
+            v.setInt(i.stripeHome, "setBackgroundColor", 0xFF000000.toInt() or homeC)
+        }
+        v.setTextViewText(i.league, g.lg.uppercase())
+        // Live, Final (a finished game), or Next.
+        val post = g.state == "post"
+        v.setTextViewText(i.pill, (if (g.live) tr("Live") else if (post) tr("Final") else tr("Next")).uppercase())
+        if (Build.VERSION.SDK_INT >= 31) v.setColorStateList(i.pill, "setBackgroundTintList", ColorStateList.valueOf(if (g.live) 0xFFE5484D.toInt() else if (post) 0xFF3A4566.toInt() else 0xFF5B8CFF.toInt()))
+        logo(ctx, v, i.awayLogo, g.away); logo(ctx, v, i.homeLogo, g.home)
+        v.setTextViewText(i.awayName, name(g.away)); v.setTextViewText(i.homeName, name(g.home))
+        if (g.state != "pre") {
+            val a = g.away.score?.toIntOrNull(); val h = g.home.score?.toIntOrNull()
+            v.setTextViewText(i.awayScore, g.away.score.orEmpty()); v.setTextViewText(i.homeScore, g.home.score.orEmpty())
+            // The side behind is dimmed.
+            v.setTextColor(i.awayScore, if (a != null && h != null && a < h) 0xFF8A93A8.toInt() else Color.WHITE)
+            v.setTextColor(i.homeScore, if (a != null && h != null && h < a) 0xFF8A93A8.toInt() else Color.WHITE)
+            v.setTextViewText(i.mid, "–")
+            v.setTextViewTextSize(i.mid, android.util.TypedValue.COMPLEX_UNIT_SP, 30f)
+            v.setTextColor(i.mid, 0xFF8A93A8.toInt())
+        } else {
+            v.setTextViewText(i.awayScore, ""); v.setTextViewText(i.homeScore, "")
+            v.setTextViewText(i.mid, starts(ctx, g, short = true))
+            v.setTextViewTextSize(i.mid, android.util.TypedValue.COMPLEX_UNIT_SP, 26f)
+            v.setTextColor(i.mid, Color.WHITE)
+        }
+        // Under the score: the clock, Final, or the day (not the same time twice).
+        v.setTextViewText(i.state, if (g.live || post) g.detail.ifBlank { tr("Final") } else if (android.text.format.DateUtils.isToday(g.start)) tr("Today") else java.text.SimpleDateFormat("EEEE", java.util.Locale.getDefault()).format(java.util.Date(g.start)))
+        v.setTextColor(i.state, if (g.live) 0xFFFF8F8F.toInt() else 0xFFC9D1E3.toInt())
+        v.setTextViewText(i.sit, g.sit)
+        v.setViewVisibility(i.sit, if (g.sit.isBlank()) android.view.View.GONE else android.view.View.VISIBLE)
+        v.setTextViewText(i.watch, "▶  " + tr("Watch on TV") + if (chan.isNotBlank()) " · $chan" else "")
+    }
+
+    private fun name(t: WTeam): CharSequence = SpannableString(t.name.ifBlank { t.abbr }).also { if (t.mine) it.setSpan(StyleSpan(Typeface.BOLD), 0, it.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) }
+
+    /** A team's logo kept on the phone (SportsWidgetWorker), by its address (LogoProvider), or TiviBro's mark. */
+    fun logo(ctx: Context, v: RemoteViews, id: Int, t: WTeam) {
+        val f = if (t.logo.startsWith("https://")) SportsWidgetWorker.file(ctx, t.logo) else null
+        if (f != null && f.exists()) v.setImageViewUri(id, LogoProvider.uri(f)) else v.setImageViewResource(id, R.drawable.ic_tile)
+    }
+
+    /** When a game starts: "3:30 PM" today ([short]) or "Today 3:30 PM", "Fri 3:00 PM" this week. */
+    fun starts(ctx: Context, g: WGame, short: Boolean): String {
+        val d = java.util.Date(g.start)
+        val time = android.text.format.DateFormat.getTimeFormat(ctx).format(d)
+        if (android.text.format.DateUtils.isToday(g.start)) return if (short) time else tr("Today {x}", "x" to time)
         return java.text.SimpleDateFormat("EEE", java.util.Locale.getDefault()).format(d) + " " + time
     }
 }

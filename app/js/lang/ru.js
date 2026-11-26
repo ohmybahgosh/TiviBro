@@ -2673,5 +2673,6 @@ I18n.add('ru', {
   "{n} more": ["ещё {n}", "ещё {n}", "ещё {n}"],
   "from {x}": "с {x}",
   "Top 10s of the streaming services": "Топ-10 стриминговых сервисов",
-  "Top 10 data from FlixPatrol (flixpatrol.com), used with their permission.": "Данные топ-10 от FlixPatrol (flixpatrol.com), используются с их разрешения."
+  "Top 10 data from FlixPatrol (flixpatrol.com), used with their permission.": "Данные топ-10 от FlixPatrol (flixpatrol.com), используются с их разрешения.",
+  "Streaming Top 10s you have": "Топ-10 стримингов, которые у вас есть"
 });

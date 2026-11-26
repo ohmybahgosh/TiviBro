@@ -2552,5 +2552,6 @@ I18n.add('de', {
   "{n} more": ["{n} weiterer", "{n} weitere"],
   "from {x}": "ab {x}",
   "Top 10s of the streaming services": "Top 10 der Streamingdienste",
-  "Top 10 data from FlixPatrol (flixpatrol.com), used with their permission.": "Top-10-Daten von FlixPatrol (flixpatrol.com), mit deren Erlaubnis verwendet."
+  "Top 10 data from FlixPatrol (flixpatrol.com), used with their permission.": "Top-10-Daten von FlixPatrol (flixpatrol.com), mit deren Erlaubnis verwendet.",
+  "Streaming Top 10s you have": "Streaming-Top-10, die du hast"
 });

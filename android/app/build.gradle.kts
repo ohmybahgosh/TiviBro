@@ -66,7 +66,8 @@ android {
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true; buildConfig = true }
     packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
-    testOptions { unitTests.isReturnDefaultValues = true }
+    // isIncludeAndroidResources: Robolectric's tests (WidgetRenderTest) need the app's layouts and drawables.
+    testOptions { unitTests.isReturnDefaultValues = true; unitTests.isIncludeAndroidResources = true }
     // The web editor, for editing a backup on the phone without the TV (OfflineEditorScreen.kt): the
     // same files the TV's helper serves (service/editor), copied in at build time.
     sourceSets["main"].assets.srcDir("build/generated/editorAssets")
@@ -108,9 +109,15 @@ dependencies {
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")
+    // The widgets drawn as a launcher would draw them (WidgetRenderTest): RemoteViews applied to real views.
+    testImplementation("org.robolectric:robolectric:4.15.1")
+    testImplementation("androidx.test:core:1.6.1")
+    testImplementation("androidx.work:work-testing:2.9.1")
 }
 
 tasks.withType<Test> {
+    // Where Robolectric fetches Android itself (Maven Central unless ROBOLECTRIC_REPO names a mirror).
+    System.getenv("ROBOLECTRIC_REPO")?.let { systemProperty("robolectric.dependency.repo.url", it) }
     testLogging {
         events("passed", "skipped", "failed")
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL

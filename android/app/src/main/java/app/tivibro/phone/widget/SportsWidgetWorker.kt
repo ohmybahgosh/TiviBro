@@ -95,10 +95,12 @@ class SportsWidgetWorker(ctx: Context, params: WorkerParameters) : CoroutineWork
                     .setInputData(androidx.work.workDataOf("full" to full)).build())
         }
 
+        /** Where the logos are kept (LogoProvider serves them to the launcher). */
+        const val LOGO_DIR = "widget-logos-160"
         // Team logos, kept small on the phone (RemoteViews carry bitmaps, and a list of them must stay light).
-        private fun file(ctx: Context, url: String): File {
+        internal fun file(ctx: Context, url: String): File {
             val name = MessageDigest.getInstance("SHA-1").digest(url.toByteArray()).joinToString("") { "%02x".format(it) }
-            return File(File(ctx.filesDir, "widget-logos-160").apply { mkdirs() }, "$name.png")
+            return File(File(ctx.filesDir, LOGO_DIR).apply { mkdirs() }, "$name.png")
         }
         private fun logo(ctx: Context, url: String) {
             if (!url.startsWith("https://")) return

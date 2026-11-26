@@ -912,8 +912,13 @@ var Player = (function () {
     cur.spinKind = kind;
     var doing = fresh && (kind !== cur.usual || cur.spunOnce) ? T('Trying the {x}', { x: name }) : T('Trying again on the {x} ({n} of {m})', { x: name, n: Math.max(1, cur.retries || 1), m: cur.p.retries });
     cur.spunOnce = true;
-    // A movie or episode is not a channel: say so (it read "The channel dropped" on Dune).
-    if (isFile() || cur.conv) return (cur.everPlayed ? T('Playback stalled: {x}.', { x: problem }) : T('This video is having trouble starting: {x}.', { x: problem })) + '\n' + doing + '…';
+    /* A movie or episode is not a channel: say so (it read "The channel dropped" on Dune), and no player names: a
+       stream of your own (My media, a provider's movie) has no HLS or MPEG-TS version to switch to, so "Trying the
+       built-in player (MPEG-TS)" read like a live channel's notice.  Just that it's reconnecting, and which try. */
+    if (isFile() || cur.conv) {
+      var again = T('Reconnecting') + (cur.retries ? ' (' + Math.max(1, cur.retries) + ' / ' + cur.p.retries + ')' : '');
+      return (cur.everPlayed ? T('Playback stalled: {x}.', { x: problem }) : T('This video is having trouble starting: {x}.', { x: problem })) + '\n' + again + '…';
+    }
     return (cur.everPlayed ? T('The channel dropped: {x}.', { x: problem }) : T('This channel is having trouble starting: {x}.', { x: problem })) + '\n' + doing + '…';
   }
   function T(s, o) { var t = typeof I18n !== 'undefined' ? I18n.t(s) : s; return t.replace(/\{(\w+)\}/g, function (a, k) { return o && o[k] != null ? o[k] : a; }); }
