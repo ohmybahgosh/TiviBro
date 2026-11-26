@@ -2519,5 +2519,9 @@ I18n.add('pl', {
   "Ends {x}": "Koniec {x}",
   "Stops at {x}": "Zatrzyma o {x}",
   "when the sound and the lips don't match": "gdy dźwięk nie pasuje do ruchu ust",
-  "as sent": "jak nadawane"
+  "as sent": "jak nadawane",
+  "Clear recent searches": "Wyczyść ostatnie wyszukiwania",
+  "Recent searches cleared": "Ostatnie wyszukiwania wyczyszczone",
+  "Remove from recent searches": "Usuń z ostatnich wyszukiwań",
+  "Remove or clear": "Usuń lub wyczyść"
 });

@@ -1798,5 +1798,9 @@ I18n.add('fr', {
   "Season {n}": "Saison {n}",
   "Aired {x}": "Diffusé le {x}",
   "Ends {x}": "Fin à {x}",
-  "Stops at {x}": "S'arrête à {x}"
+  "Stops at {x}": "S'arrête à {x}",
+  "Clear recent searches": "Effacer les recherches récentes",
+  "Recent searches cleared": "Recherches récentes effacées",
+  "Remove from recent searches": "Retirer des recherches récentes",
+  "Remove or clear": "Retirer ou effacer"
 });

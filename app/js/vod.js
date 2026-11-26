@@ -753,6 +753,9 @@ var Vod = (function () {
     if (mine) return [{ id: UP, name: '‹ ' + I18n.t('Every language'), up: true }].concat(mine.cats);
     return groups.map(function (x) { return { id: FOLDER + x.name, name: x.name, folder: x.name, count: x.cats.length, cats: x.cats }; });
   }
+  /* The categories by language for the folders, the hidden ones (hid: { id: 1 }) left out first, so a language
+     hidden whole (Hide this language) has no folder left, and a folder counts only what it shows (issue #173). */
+  function forFolders(cats, hid) { return byLang(cats.filter(function (c) { return !hid[c.id]; }), true); }
   function catList() {
     var d = data[kind], counts = {};
     if (!d) return [];
@@ -781,7 +784,7 @@ var Vod = (function () {
     if (Store.settings.vodCatSort === 'name') cats = d.cats.slice().sort(function (a, b) { return d.multi && (a.pl || '') !== (b.pl || '') ? 0 : String(labels[a.id] || a.name).localeCompare(String(labels[b.id] || b.name), undefined, { sensitivity: 'base', numeric: true }); });
     var elsewhere = [];
     // A big portal by language, when its category names say (no playlist headings then: one portal).
-    if (!d.multi && foldersOn()) cats = byLang(cats, true);
+    if (!d.multi && foldersOn()) cats = forFolders(cats, hid);
     else if (!d.multi && Store.settings.vodCatSort !== 'name' && d.browse) cats = byLang(cats);
     colTitle('');
     if (!d.multi && foldersOn()) cats = inFolders(cats);
@@ -1558,5 +1561,5 @@ var Vod = (function () {
     catsVL.setItems(cl, Math.max(0, at)); onCat(catsVL.sel, catsVL.current());
   }
   function recats() { if (!catsVL || !data[kind]) return; var c = catsVL.current(), cl = catList(); catsVL.setItems(cl, Math.max(0, cl.findIndex(function (x) { return c && x.id === c.id; }))); }
-  return { arrange: arrange, movieTmdb: movieTmdb, recats: recats, reloadNow: reloadNow, homeApi: function () { return homeApi; }, _test: { catLang: catLang, byLang: byLang, inFolders: inFolders, nameSays: nameSays, curCat: function () { var c = catsVL && catsVL.current(); return c ? String(c.id) : ''; }, homeApi: function () { return homeApi; }, catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, lean: lean, findRemote: findRemote, titleCount: titleCount, countsFor: countsFor, get searchState() { return searchState(); }, offered: offered, reset: function (fresh) { if (fresh) freshAt = Date.now(); gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; seriesAsk++; spClose(); } };
+  return { arrange: arrange, movieTmdb: movieTmdb, recats: recats, reloadNow: reloadNow, homeApi: function () { return homeApi; }, _test: { catLang: catLang, byLang: byLang, inFolders: inFolders, forFolders: forFolders, nameSays: nameSays, curCat: function () { var c = catsVL && catsVL.current(); return c ? String(c.id) : ''; }, homeApi: function () { return homeApi; }, catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, lean: lean, findRemote: findRemote, titleCount: titleCount, countsFor: countsFor, get searchState() { return searchState(); }, offered: offered, reset: function (fresh) { if (fresh) freshAt = Date.now(); gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; seriesAsk++; spClose(); } };
 })();

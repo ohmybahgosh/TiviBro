@@ -2519,5 +2519,9 @@ I18n.add('nl', {
   "Ends {x}": "Eindigt {x}",
   "Stops at {x}": "Stopt om {x}",
   "when the sound and the lips don't match": "als geluid en lippen niet gelijklopen",
-  "as sent": "zoals verzonden"
+  "as sent": "zoals verzonden",
+  "Clear recent searches": "Recente zoekopdrachten wissen",
+  "Recent searches cleared": "Recente zoekopdrachten gewist",
+  "Remove from recent searches": "Uit recente zoekopdrachten verwijderen",
+  "Remove or clear": "Verwijderen of wissen"
 });

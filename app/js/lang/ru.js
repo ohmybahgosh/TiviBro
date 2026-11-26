@@ -2644,5 +2644,9 @@ I18n.add('ru', {
   "Season {n}": "Сезон {n}",
   "Aired {x}": "Вышел {x}",
   "Ends {x}": "Конец в {x}",
-  "Stops at {x}": "Остановится в {x}"
+  "Stops at {x}": "Остановится в {x}",
+  "Clear recent searches": "Очистить недавние запросы",
+  "Recent searches cleared": "Недавние запросы очищены",
+  "Remove from recent searches": "Убрать из недавних запросов",
+  "Remove or clear": "Убрать или очистить"
 });

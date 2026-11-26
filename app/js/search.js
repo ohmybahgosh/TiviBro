@@ -297,6 +297,14 @@ var Search = (function () {
     return (a > 0 ? '…' : '') + d.slice(a, b).trim() + (b < d.length ? '…' : '');
   }
 
+  /* Red (or Hold OK) on a past search (discussion #36): take that one off the list, or clear the whole list. */
+  function histMenu(q) {
+    function save(h) { Store.settings.searchHistory = h; Store.saveSettings(); history(); hints(); }
+    UI.menu(typeof I18n !== 'undefined' ? I18n.raw(q) : q, [
+      { label: 'Remove from recent searches', action: function () { save((Store.settings.searchHistory || []).filter(function (x) { return x !== q; })); } },
+      { label: 'Clear recent searches', action: function () { save([]); U.toast('Recent searches cleared'); } }
+    ]);
+  }
   function remember(q) {
     if (!q) return;
     var h = (Store.settings.searchHistory || []).filter(function (x) { return x !== q; });
@@ -351,6 +359,7 @@ var Search = (function () {
     else if (it) ok = 'OK  watch';
     var h = [['', ok], ['yellow', 'Add to watchlist']];
     if (it && it.c) h.push(['', 'Hold OK  channel options']);
+    else if (it && it.hist) h.push(['red', 'Remove or clear']);
     UI.hints(h);
   }
   function cycle(d) {
@@ -383,7 +392,7 @@ var Search = (function () {
     else if (a === 'chup') { vl.page(-1); hints(); }
     else if (a === 'chdown') { vl.page(1); hints(); }
     else if (a === 'ok') { var it = vl.current(); if (it) activate(it); }
-    else if (a === 'red' || a === 'hold') { var x = vl.current(); if (x && x.c) Views.chanMenu(x.c, Views.group); }
+    else if (a === 'red' || a === 'hold') { var x = vl.current(); if (x && x.c) Views.chanMenu(x.c, Views.group); else if (x && x.hist) histMenu(x.hist); }
     else if (a === 'back') { zone = 'chips'; paint(); }
     return true;
   }

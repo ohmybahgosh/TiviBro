@@ -2641,5 +2641,9 @@ I18n.add('es', {
   "Season {n}": "Temporada {n}",
   "Aired {x}": "Emitido {x}",
   "Ends {x}": "Termina {x}",
-  "Stops at {x}": "Se detiene a las {x}"
+  "Stops at {x}": "Se detiene a las {x}",
+  "Clear recent searches": "Borrar búsquedas recientes",
+  "Recent searches cleared": "Búsquedas recientes borradas",
+  "Remove from recent searches": "Quitar de búsquedas recientes",
+  "Remove or clear": "Quitar o borrar"
 });

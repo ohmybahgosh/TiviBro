@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **A language you hide leaves the folders.**  With Categories by language on, Hide this language hid the categories but left the language's empty folder in the list (issue #173).  The folder now goes, and each folder counts only the categories it shows.
+- **Remove or clear recent searches.**  Red (or Hold OK) on a past search in Search offers Remove from recent searches and Clear recent searches.
+
 ## 0.6.0 (alpha 223, 2026-11-25)
 
 Pre-release: expect rough edges, and keep a backup before installing.

@@ -15,7 +15,7 @@ const ctx = { console, I18n: { t: (s) => s }, Store: { settings: { vodLangFolder
 const title = { textContent: 'Categories' };
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js/vod.js'), 'utf8') + '\n;this.Vod = Vod;', ctx);
-const { byLang, inFolders } = ctx.Vod._test;
+const { byLang, inFolders, forFolders } = ctx.Vod._test;
 
 const cats = [{ id: 1, name: 'HINDI MOVIES' }, { id: 2, name: 'HINDI | ACTION' }, { id: 3, name: 'TAMIL MOVIES' }, { id: 4, name: 'TAMIL | DRAMA' },
   { id: 5, name: '|EN| Action' }, { id: 6, name: '|EN| Comedy' }, { id: 7, name: 'KIDS' }];
@@ -47,4 +47,7 @@ const later = [{ id: 1, name: 'BOLLYWOOD HINDI' }, { id: 2, name: 'NETFLIX HINDI
 assert.strictEqual(inFolders(byLang(later, true)).map((f) => f.name + ':' + f.count).join(), 'Hindi:2,Tamil:2,Other categories:1', 'a language anywhere in the name');
 assert.strictEqual(JSON.stringify(byLang(later)), JSON.stringify(later), 'headings alone still need it first');
 assert.ok(!inFolders(byLang([{ id: 1, name: 'ENGLISHMAN STORIES' }, { id: 2, name: 'THE ENGLISHMAN' }, { id: 3, name: 'HINDI 1' }, { id: 4, name: 'HINDI 2' }], true)).some((f) => f.name === 'English'), 'whole words only');
+// Hide this language (issue #173): with its categories hidden the folder goes too, and a folder counts what it shows.
+const hidden = inFolders(forFolders(cats, { 3: 1, 4: 1 }));
+assert.strictEqual(hidden.map((f) => f.name + ':' + f.count).join(), 'Hindi:2,English:2,Other categories:1', 'a language hidden whole has no folder left: ' + hidden.map((f) => f.name).join());
 console.log('PASS Movies and Shows by language folder: a row per language (named anywhere in a category), a folder opens on its categories, plain lists stay plain');

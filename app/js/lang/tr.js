@@ -2519,5 +2519,9 @@ I18n.add('tr', {
   "Ends {x}": "Bitiş {x}",
   "Stops at {x}": "{x} itibarıyla durur",
   "when the sound and the lips don't match": "ses dudaklarla uyuşmadığında",
-  "as sent": "gönderildiği gibi"
+  "as sent": "gönderildiği gibi",
+  "Clear recent searches": "Son aramaları temizle",
+  "Recent searches cleared": "Son aramalar temizlendi",
+  "Remove from recent searches": "Son aramalardan kaldır",
+  "Remove or clear": "Kaldır veya temizle"
 });
