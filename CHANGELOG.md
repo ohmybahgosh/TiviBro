@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **A language you hide leaves the folders.**  With Categories by language on, Hide this language hid the categories but left the language's empty folder in the list (issue #173).  The folder now goes, and each folder counts only the categories it shows.
+- **Top 10s from the streaming services.**  The Movies and Shows homes get a **Top 10 on Netflix** shelf: your provider's titles that were in Netflix's Top 10 in your region yesterday, in its order, with their place on the poster.  Red > **Add a Top 10…** adds Prime Video, Disney+, Max, Apple TV, Hulu, Paramount+, Peacock or JioHotstar.  The charts come from FlixPatrol; no token needed.
 - **Streaming services and genres as Movies and Shows shelves.**  Red on the home: **Add a streaming service…** lists the services in your TV's region, and one becomes a shelf of your provider's titles TMDB says it has ("On Netflix").  **Arrange shelves > Add a genre…** does the same for a genre.  Needs a TMDB token.
 - **The category under each poster, if you like.**  Settings > Movies and shows > **Category under each poster**: on shelves that mix categories, such as Recently added, each poster says which category it's in.  Off at first.
 - **Remove or clear recent searches.**  Red (or Hold OK) on a past search in Search offers Remove from recent searches and Clear recent searches.

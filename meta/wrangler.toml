@@ -12,7 +12,6 @@ invocation_logs = false
 # Streaming Top 10s (top10.js): FlixPatrol's API key is a secret, never in this file:
 #   npx wrangler secret put FLIXPATROL_KEY
 # and each country's charts are kept in this KV namespace (npx wrangler kv namespace create TOP10).
-# Until both are set up, /v1/top10 answers with no charts (and the TVs show no Top 10 shelves).
-# [[kv_namespaces]]
-# binding = "TOP10"
-# id = "<the namespace id>"
+[[kv_namespaces]]
+binding = "TOP10"
+id = "fbfc367fc247449c90d6d130a581c278"
