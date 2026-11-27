@@ -36,6 +36,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import app.tivibro.phone.proto.NowState
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -73,7 +75,8 @@ fun NowOnTv(u: TvUi) {
     }
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color(0xFF0F1A33)).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(48.dp, 36.dp).clip(RoundedCornerShape(8.dp)).background(Color.White), contentAlignment = Alignment.Center) {
+            if (c.vodTitle.isNotBlank() && hasPoster(c)) NowPoster(c, Modifier.size(36.dp, 54.dp).clip(RoundedCornerShape(6.dp)))
+            else Box(Modifier.size(48.dp, 36.dp).clip(RoundedCornerShape(8.dp)).background(Color.White), contentAlignment = Alignment.Center) {
                 if (c.logo.isNotBlank() && c.vodTitle.isBlank()) AsyncImage(c.logo, null, Modifier.padding(3.dp))
                 else Text(if (c.vodTitle.isNotBlank()) "▶" else c.number, color = Ink, fontWeight = FontWeight.Black, style = MaterialTheme.typography.labelMedium)
             }
@@ -178,4 +181,15 @@ fun TvSwitchSheet(tvs: List<TvUi>, at: Int, onPick: (Int) -> Unit, onWake: (Stri
             }
         }
     }
+}
+
+/** Whether the movie or episode on the TV has a picture the phone can draw: a poster on the web, or a Plex
+ *  title's once its server's picture details are known. */
+fun hasPoster(c: NowState) = c.vodImg.isNotBlank() || (c.vodPlexPath.isNotBlank() && PlexPicsCache.pics.containsKey(c.vodPlexServer))
+
+/** The poster of the movie or episode on the TV (Now on the TV here, and the TV screen's now bar). */
+@Composable
+fun NowPoster(c: NowState, modifier: Modifier) {
+    if (c.vodPlexPath.isNotBlank() && PlexPicsCache.pics.containsKey(c.vodPlexServer)) PlexPic(PlexPicsCache.pics, c.vodPlexServer, c.vodPlexPath, 120, 180, modifier)
+    else AsyncImage(c.vodImg, null, contentScale = ContentScale.Crop, modifier = modifier)
 }

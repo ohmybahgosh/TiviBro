@@ -228,6 +228,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
             // What TiviBro has, for the shortcuts (one quick look, only while it is open).
             val caps = if (open) runCatching { TvClient(t, 4000).state(0, false) }.getOrNull()?.takeIf { it.open } else null
             setUi(tv.id) { it.copy(power = Power.ON, standby = false, tivibroOpen = open, caps = caps ?: it.caps) }
+            plexPicsFor(tv.id, caps)
             if (open && backups.due(tv.id) && backingUp.add(tv.id)) viewModelScope.launch { try { runCatching { autoBackup(t) } } finally { backingUp.remove(tv.id) } }
             true
         } catch (e: TbException) {
@@ -583,6 +584,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
             try {
                 val st = TvClient(tv, 26_000).state(maxOf(rev, 0), rev >= 0)
                 _now.value = st; rev = st.rev
+                plexPicsFor(id, st)
                 // The TV sent a new channel list (something hidden, shown again or renamed there, or in the
                 // web editor): the one here follows, if it has one to replace.
                 val l = _lineup.value
@@ -741,6 +743,17 @@ class AppModel(app: Application) : AndroidViewModel(app) {
 
     /** The Plex tab's questions (the TV's plexphone.js), sealed: server tokens for the posters come back. */
     suspend fun plex(id: String, args: JSONObject): JSONObject = ask(id, "plex", args, seal = true, timeoutMs = 45_000, tries = 2)
+
+    private val picsAsked = mutableSetOf<String>()
+    /** Now on the TV shows a Plex title: the server's picture details are asked for once, if the Plex tab hasn't. */
+    fun plexPicsFor(id: String, st: NowState?) {
+        val s = st?.vodPlexServer.orEmpty()
+        if (s.isBlank() || PlexPicsCache.pics.containsKey(s) || !picsAsked.add("$id:$s")) return
+        viewModelScope.launch {
+            runCatching { plex(id, JSONObject().put("op", "libs")) }.onSuccess { PlexPicsCache.pics = PlexPicsCache.pics + picsOf(it) }
+                .onFailure { picsAsked.remove("$id:$s") }
+        }
+    }
 
     /** A Plex movie or episode played on the TV (from where it stopped, unless [fromStart]). */
     fun plexPlay(id: String, server: String, key: String, fromStart: Boolean) = viewModelScope.launch {

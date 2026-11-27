@@ -89,12 +89,15 @@ data class PlexRow(val title: String, val wide: Boolean, val kind: String, val g
 }
 /** Where a server's pictures come from: its address and its own token (sent as a header). */
 data class PlexPics(val base: String, val token: String)
+/** The servers' picture details the phone has been told, kept for the whole app: Now on the TV draws a Plex
+ *  title's poster with them too.  Filled by the Plex tab and by AppModel.plexPicsFor. */
+object PlexPicsCache { var pics by mutableStateOf<Map<String, PlexPics>>(emptyMap()) }
 private data class PlexLib(val server: String, val key: String, val title: String)
 private data class PlexViewName(val id: String, val title: String)
 /** What a screen of the tab shows: the top of a pick (Home, Top 10, a library's view), or one opened from it. */
 private data class PlexScreen(val kind: String, val lib: PlexLib? = null, val view: String = "", val parent: PlexItem? = null, val person: PlexPerson? = null, val server: String = "")
 
-private fun picsOf(j: JSONObject): Map<String, PlexPics> {
+internal fun picsOf(j: JSONObject): Map<String, PlexPics> {
     val p = j.optJSONObject("pics") ?: return emptyMap()
     return p.keys().asSequence().associateWith { k -> p.getJSONObject(k).let { PlexPics(it.optString("base"), it.optString("token")) } }
 }
@@ -118,9 +121,10 @@ fun PlexTab(model: AppModel, id: String) {
         try {
             val r = model.plex(id, JSONObject().put("op", "libs"))
             pics = picsOf(r)
+            PlexPicsCache.pics = PlexPicsCache.pics + pics
             hasTop = r.optBoolean("top")
             views = (0 until (r.optJSONArray("views")?.length() ?: 0)).map { i -> r.getJSONArray("views").getJSONObject(i).let { PlexViewName(it.optString("id"), it.optString("title")) } }
-                .ifEmpty { listOf(PlexViewName("recommended", tr("Recommended")), PlexViewName("library", tr("Library"))) }
+                .ifEmpty { listOf(PlexViewName("library", tr("Library"))) }  // an older TV knows only the library
             libs = (0 until (r.optJSONArray("libs")?.length() ?: 0)).map { i -> r.getJSONArray("libs").getJSONObject(i).let { PlexLib(it.optString("server"), it.optString("key"), it.optString("title")) } }
         } catch (e: Exception) { error = err(e) }
     }
@@ -152,7 +156,7 @@ fun PlexTab(model: AppModel, id: String) {
                 item { GroupChip(tr("Home"), top.kind == "home") { stack.clear(); stack.add(PlexScreen("home")) } }
                 if (hasTop) item { GroupChip(tr("Top 10"), top.kind == "top") { stack.clear(); stack.add(PlexScreen("top")) } }
                 items(libs!!, key = { it.server + ":" + it.key }) { l ->
-                    GroupChip(l.title, top.lib == l) { stack.clear(); stack.add(PlexScreen("lib", lib = l, view = viewOf[l.server + ":" + l.key] ?: "recommended")) }
+                    GroupChip(l.title, top.lib == l) { stack.clear(); stack.add(PlexScreen("lib", lib = l, view = viewOf[l.server + ":" + l.key] ?: views.firstOrNull()?.id ?: "library")) }
                 }
             }
             // A library's views, as the TV's second row of words.

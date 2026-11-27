@@ -244,6 +244,7 @@ private fun NowPlaying(st: NowState?, now: Long, onKey: (String) -> Unit, onOpen
                     Button(onClick = onOpen) { Text(tr("Open TiviBro")) }
                 }
                 st.vodTitle.isNotBlank() -> {
+                    if (hasPoster(st)) { NowPoster(st, Modifier.size(40.dp, 60.dp).clip(RoundedCornerShape(6.dp))); Spacer(Modifier.width(10.dp)) }
                     Column(Modifier.weight(1f)) {
                         Text(st.vodTitle, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         if (st.vodDur > 0) {

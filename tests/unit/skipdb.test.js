@@ -119,6 +119,29 @@ const reset = () => { K.reset(); asked = []; answers = {}; };
   S.setHidden({}); ended.length = 0; ctx.Views.vodMeta = {};
   play(1600, [], { intro: null, credits: 1500, creditsEnd: -1 });
   ok('auto never ends a movie before its last quarter: the button instead', !ended.length && S.mode('credits') === 'auto');
+  // The intro button fades after a few seconds and comes back with the player's controls; OK while faded isn't a skip.
+  {
+    const cls = new Set(['hidden']), osdCls = new Set(['hidden']);
+    box.classList = { add: (c) => cls.add(c), remove: (c) => cls.delete(c), contains: (c) => cls.has(c) };
+    const osd = { classList: { contains: (c) => osdCls.has(c) } };
+    ctx.document.getElementById = (id) => (id === 'osd' ? osd : video);
+    ctx.Store.settings = { skipIntroMode: 'button' }; ctx.Views.vodMeta = { seriesKey: 's1' }; S.setHidden({}); S.setFade(30);
+    play(20, [], { intro: [10, 70], credits: -1 });
+    ok('the intro button shows', !cls.has('hidden') && S.fade().shown === 'intro:10');
+    await new Promise((r) => setTimeout(r, 60)); play(21, [], { intro: [10, 70], credits: -1 });
+    ok('...and fades after its time, still the intro\'s', cls.has('hidden') && S.fade().faded && !ctx.Skipper.key('ok') && video.currentTime === 21);
+    osdCls.delete('hidden'); play(22, [], { intro: [10, 70], credits: -1 });
+    ok('...back with the player\'s controls, and OK then skips', !cls.has('hidden') && ctx.Skipper.key('ok') && video.currentTime === 70);
+    // Frozen's first chapter is a story chapter; a Plex movie has no Skip intro at all.
+    ok('"Opening Credits/Accident" is not an intro; "01. Opening Credits" is', !S.introAt([{ s: 0, e: 360, t: 'Opening Credits/Accident' }], 30) && !!S.introAt([{ s: 0, e: 95, t: '01. Opening Credits' }], 30));
+    osdCls.add('hidden'); S.setHidden({}); ctx.Views.vodMeta = { plex: true, plexNext: '' };
+    play(20, [{ s: 0, e: 95, t: 'Opening Credits' }], { intro: [10, 70], credits: -1 });
+    ok('a Plex movie: no Skip intro', S.fade().shown === '');
+    ctx.Views.vodMeta = { plex: true, plexNext: 'episode' }; S.setHidden({});
+    play(20, [], { intro: [10, 70], credits: -1 });
+    ok('a Plex episode keeps its intro', S.fade().shown === 'intro:10');
+    S.setFade(6000); ctx.document.getElementById = () => video;
+  }
   ctx.Store.settings = {};
 
   // What the title is asked by.

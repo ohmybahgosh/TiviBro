@@ -658,6 +658,11 @@ var Phone = (function () {
     var c = Views.playing, v = Views.vod, video = document.querySelector('video'), out = { tab: Views.tab, full: !!Views.full, mode: Views.mode || '' };
     if (Views.mode === 'vod' && v && v.meta) {
       out.vod = { title: String(v.meta.title || ''), pos: video ? Math.round(Player.position) : 0, dur: Math.round(Player.duration || 0) };
+      /* Its picture for the phone's Now on the TV: a poster on the web (TMDB, the provider's), or a Plex title's poster on
+         its server (the phone asks the server with that server's token, as its Plex tab does).  Never one on this TV. */
+      var it = v.meta.item || {}, img = String((it.metadata && it.metadata.poster) || it.cover || it.poster || v.meta.poster || '');
+      if (/^https?:\/\//i.test(img) && !/^https?:\/\/(127\.|localhost|\[::1\])/i.test(img)) out.vod.img = img.slice(0, 600);
+      if (v.meta.plexPic && v.meta.plexPic.p) out.vod.plex = { s: String(v.meta.plexPic.s || ''), p: String(v.meta.plexPic.p).slice(0, 300) };
       out.paused = !!Player.paused;
     } else if (c) {
       var nn = Epg.peek(c), now = nn && nn.now, next = nn && nn.next;

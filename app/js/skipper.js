@@ -6,7 +6,11 @@
         Settings > Playback > Skip times from online databases on.
 
    - An intro (a chapter named Intro, Opening (credits), or the databases' intro) or a recap (Recap, Previously on):
-     "Skip intro" or "Skip recap" in the bottom right corner while it plays.  OK skips to its end, Back hides it.
+     "Skip intro" or "Skip recap" in the bottom right corner.  OK skips to its end, Back hides it.  As on Plex, the
+     button fades after 6 seconds and comes back with the player's controls (OK or Info then shows it, a second OK
+     skips).  A chapter counts only when its whole name says so ("Opening Credits", not "Opening Credits/Accident",
+     a film's first story chapter).  A Plex movie has no Skip intro (Plex marks intros on episodes only), so a
+     chapter can't add one there.
    - The credits: a chapter named Credits, End credits or End titles in the last fifth of the file, or where the
      databases put them (in the second half).  "Skip credits": with a next episode, or a next movie of a collection
      you play, Up next comes with its countdown (upnext.js, the same as when the file ends); with a scene after the
@@ -22,9 +26,12 @@ var Skipper = (function () {
   function tel(tag, cls, text) { return U.el(tag, cls, text == null || typeof I18n === 'undefined' ? text : I18n.t(text)); }
   // Marks a label for the translation check (scripts/i18n-check.js); tel() and U.toast translate it when it shows.
   function T(s) { return s; }
-  var INTRO = /^\s*(intro|introduction|opening( credits| titles| theme)?|recap|previously( on)?|cold open)\b/i;
+  // The whole name of an intro or a recap chapter: "Intro", "01. Opening Credits", "Previously on (S2)".
+  var INTRO = /^\s*(?:\d+[.):\s-]+)?(intro|introduction|opening( credits| titles| theme)?|recap|previously( on)?|cold open)\s*(?:\([^)]*\))?\s*$/i;
   var CREDITS = /\b(end(ing)? credits|credits|end titles|closing( credits)?|outro)\b/i;
   var chaps = [], box = null, shown = '', hidden = {}, bound = false;
+  // The intro button fades after FADE ms (faded: still the one showing, but out of sight until the controls come up).
+  var FADE = 6000, faded = false, fadeAt = 0;
   /* The databases' times for what plays: { intro: [s, e], recap: [s, e], credits: s, creditsEnd: e } in seconds (an
      end of -1: the end of the file; credits -1: none), or null.  dbFor: the movie they were asked for (a newer start
      drops older answers); dbAsk: what to ask, once the file's length is known (tick). */
@@ -52,7 +59,16 @@ var Skipper = (function () {
     box = tel('div', 'skipper hidden'); document.body.appendChild(box);
     return box;
   }
-  function hide() { if (box) box.classList.add('hidden'); shown = ''; }
+  function hide() { if (box) box.classList.add('hidden'); shown = ''; faded = false; }
+  function controlsUp() { var o = document.getElementById('osd'); return !!(o && o.classList && !o.classList.contains('hidden')); }
+  /* The intro button's fade: out after FADE, back while the player's controls are up (and FADE after they go). */
+  function fadeTick() {
+    if (!shown || !box || shown.indexOf('intro:') !== 0) return;
+    if (controlsUp()) { if (faded) { faded = false; box.classList.remove('hidden'); } fadeAt = Date.now() + FADE; return; }
+    if (!faded && Date.now() > fadeAt) { faded = true; box.classList.add('hidden'); }
+  }
+  // A Plex movie: no Skip intro, as in Plex (its markers have none, and a chapter name isn't taken for one).
+  function plexMovie() { var m = typeof Views !== 'undefined' && Views.vodMeta; return !!(m && m.plex && m.plexNext !== 'episode'); }
 
   // What's next after this file: 'episode' (My media or a provider's episode), 'collection', or ''.
   function nextKind() {
@@ -98,10 +114,11 @@ var Skipper = (function () {
     if (!v || typeof Views === 'undefined' || Views.mode !== 'vod' || !document.body.classList.contains('full') || v.paused || !isFinite(v.duration)) { if (shown) hide(); return; }
     var t = v.currentTime, d = v.duration, im = mode('intro'), cm = mode('credits');
     if (dbAsk) ask(d);
-    var intro = im === 'off' ? null : introAt(t) || dbIntroAt(t, d);
+    var intro = im === 'off' || plexMovie() ? null : introAt(t) || dbIntroAt(t, d);
     if (intro) {
       var recap = /recap|previously/i.test(intro.t);
-      return offer('intro:' + intro.s, im, recap ? T('Skip recap') : T('Skip intro'), '', recap ? T('Recap skipped') : T('Intro skipped'), function () { v.currentTime = intro.e; Log.info('player', 'Skipped the ' + (recap ? 'recap' : 'intro') + ' to ' + Math.round(intro.e) + ' s'); });
+      offer('intro:' + intro.s, im, recap ? T('Skip recap') : T('Skip intro'), '', recap ? T('Recap skipped') : T('Intro skipped'), function () { v.currentTime = intro.e; Log.info('player', 'Skipped the ' + (recap ? 'recap' : 'intro') + ' to ' + Math.round(intro.e) + ' s'); });
+      return fadeTick();
     }
     var c = cm === 'off' ? null : credits(d);
     if (c && t >= c.s && t < c.e - 1) {
@@ -180,7 +197,7 @@ var Skipper = (function () {
     if (hidden[id]) return;
     var b = el(); b._act = act; b._id = id;
     if (shown === id) return;
-    shown = id; b.innerHTML = '';
+    shown = id; b.innerHTML = ''; faded = false; fadeAt = Date.now() + FADE;
     if (kicker) b.appendChild(tel('small', '', kicker));
     b.appendChild(tel('b', '', label));
     b.appendChild(tel('span', 'skipper-key', 'OK'));
@@ -188,11 +205,11 @@ var Skipper = (function () {
   }
   /* The player's keys first (views.js fullKeys): OK does the button's thing, Back hides it.  True: used. */
   function key(a) {
-    if (!shown || !box || box.classList.contains('hidden')) return false;
+    if (!shown || !box || faded || box.classList.contains('hidden')) return false;   // faded: OK brings the controls (and it) back first
     if (a === 'ok') { var f = box._act; hidden[box._id] = 1; hide(); if (f) f(); return true; }
     if (a === 'back') { hidden[box._id] = 1; hide(); return true; }
     return false;
   }
   return { chapters: chapters, start: start, key: key, hide: hide, get visible() { return !!shown; },
-    _test: { introAt: function (c, t) { chaps = c; return introAt(t); }, dbIntroAt: function (c, x, t, d) { chaps = c; db = x; return dbIntroAt(t, d); }, creditsStart: function (c, x, d) { chaps = c; db = x; return creditsStart(d); }, credits: function (c, x, d) { chaps = c; db = x; return credits(d); }, mode: mode, tick: tick, setHidden: function (h) { hidden = h; }, idsOf: idsOf, INTRO: INTRO, CREDITS: CREDITS } };
+    _test: { fade: function () { return { faded: faded, shown: shown }; }, setFade: function (ms) { FADE = ms; }, introAt: function (c, t) { chaps = c; return introAt(t); }, dbIntroAt: function (c, x, t, d) { chaps = c; db = x; return dbIntroAt(t, d); }, creditsStart: function (c, x, d) { chaps = c; db = x; return creditsStart(d); }, credits: function (c, x, d) { chaps = c; db = x; return credits(d); }, mode: mode, tick: tick, setHidden: function (h) { hidden = h; }, idsOf: idsOf, INTRO: INTRO, CREDITS: CREDITS } };
 })();
