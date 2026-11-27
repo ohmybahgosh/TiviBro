@@ -337,11 +337,13 @@ var PlexPage = (function () {
       var meta = { id: 'plex:' + m.server + ':' + m.ratingKey, plex: true, serverConvert: converting, plexNext: m.type === 'episode' ? 'episode' : '', title: m.type === 'episode' ? m.grandparentTitle + '  S' + m.parentIndex + ' · E' + m.index : m.title, sub: m.type === 'episode' ? m.title : [m.year, m.contentRating].filter(Boolean).join('  ·  '), marks: marks(m), chapters: converting ? [] : chapters(m) };
       if (!converting && /(^|,)sd(,|$)/.test(part.indexes || '')) meta.pics = function (t) { return base + '/library/parts/' + part.id + '/indexes/sd/' + Math.round(t * 1000); };
       playing = { item: m, meta: meta, converting: converting, last: 0, scrobbled: false };
+      lastPlay = describe(m, v, converting, cap);
+      if (typeof Log !== 'undefined') { Log.info('plex', 'Playing: ' + lastPlay); Log.state('plex', 'playing a Plex ' + (m.type || 'title') + (converting ? ', converted by the server' : ', as the file is')); }
       /* The converter's playlist covers the whole title (it converts from wherever the player asks), so both ways
          start the player where you stopped and its times are the title's own (progress to Plex, Skip intro). */
       // Back from watching: to the title's page when it was open (its buttons take the keys again), else the Plex tab.
       var page = $('plexPage'), fromPage = !!(page && !page.classList.contains('hidden'));
-      Views.playVod(meta, url, ms / 1000, function () { report('stopped'); stopTimer(); if (fromPage && item) { var el = $('plexPage'); if (el) el.classList.remove('hidden'); paint(); UI.setHandler(keys); } else if (PlexView.resume) PlexView.resume(); });
+      Views.playVod(meta, url, ms / 1000, function () { report('stopped'); stopTimer(); if (typeof Log !== 'undefined') Log.state('plex', 'browsing Plex'); if (fromPage && item) { var el = $('plexPage'); if (el) el.classList.remove('hidden'); paint(); UI.setHandler(keys); } else if (PlexView.resume) PlexView.resume(); });
       startTimer();
       // The title logo over the timeline (an episode shows its show's), once it's known.
       var own = m.type === 'episode' ? '' : PlexView.logoOf(m);
@@ -415,6 +417,17 @@ var PlexPage = (function () {
   /* ---------- Options while watching: the player's Options (Red) open on a Plex tab, as in Plex's player ---------- */
   var forceCap = null;   // a quality picked while watching: kept for this title until another is started by hand
   function qLabel(q) { return Plex.qualityName(q); }
+  /* For a report: how the last Plex title played, without its name: what kind of title, the file (container,
+     codecs, size, bitrate, Dolby Vision or HDR), and whether the TV played it as it is or the server converted it
+     (and why: the TV can't play it, the quality cap, or Settings), with the server's own figures once read. */
+  var lastPlay = '';
+  function describe(m, v, converting, cap) {
+    var vs = ((v.Part && v.Part[0] && v.Part[0].Stream) || []).filter(function (x) { return x.streamType === 1; })[0] || {};
+    var why = !converting ? '' : !Plex.prefs().direct ? 'Settings: always convert' : !direct(v) ? 'the TV can\'t play ' + (v.videoCodec || '?') + ' in ' + (v.container || '?') : needsBoth(v) ? 'picture and sound both need converting' : 'quality cap ' + cap + ' kbps';
+    return [m.type || 'title', v.container, v.videoCodec, v.videoResolution, v.bitrate ? Math.round(v.bitrate / 100) / 10 + ' Mbps' : '', vs.DOVIPresent ? 'Dolby Vision' + (vs.DOVIProfile ? ' ' + vs.DOVIProfile : '') : /smpte2084|arib-std-b67/i.test(vs.colorTrc || '') ? 'HDR' : '', v.audioCodec, v.audioChannels ? v.audioChannels + ' ch' : ''].filter(Boolean).join(' ') +
+      '; ' + (converting ? 'converted by the server (' + why + ')' : 'played as the file is') + (Plex.server(m.server) ? ', server ' + (Plex.server(m.server).relay ? 'through relay' : Plex.server(m.server).local ? 'on the home network' : 'over the internet') : '');
+  }
+  function diag() { return lastPlay || 'nothing yet'; }
   /* The subtitle picked in Plex when it's a track inside the file: on in the player once the TV has found the file's
      tracks (a few seconds in), so what Plex shows is what plays. */
   function inFileSubtitle(part, p) {
@@ -482,6 +495,7 @@ var PlexPage = (function () {
     Plex.call(p.item.server, '/transcode/sessions').then(function (j) {
       var t = (mc(j).TranscodeSession || []).filter(function (x) { return String(x.key || '').indexOf(session) >= 0; })[0];
       if (t) {
+        lastPlay = lastPlay.replace(/; server said: .*$/, '') + '; server said: video ' + t.videoDecision + ', audio ' + t.audioDecision + ', speed ' + t.speed + (t.throttled ? ' (throttled)' : '') + (t.transcodeHwEncoding || t.transcodeHwDecoding ? ', graphics chip' : ', processor');
         if (typeof Log !== 'undefined') Log.info('plex', 'Converting: ' + JSON.stringify({ video: t.videoDecision, audio: t.audioDecision, from: t.sourceVideoCodec, to: t.videoCodec, size: t.width + 'x' + t.height, speed: t.speed, throttled: t.throttled, hw: t.transcodeHwRequested, hwDecode: t.transcodeHwDecoding, hwEncode: t.transcodeHwEncoding }));
         var how = function (d) { return d === 'copy' ? T('as it is') : d === 'transcode' ? T('converted') : RAW(d || ''); };
         rows.splice(1, 0,
@@ -542,5 +556,5 @@ var PlexPage = (function () {
     });
   }
 
-  return { open: open, ended: ended, close: close, reshow: reshow, playKey: playKey, playerItems: playerItems, _test: { quality: quality, marks: marks, badges: badges, direct: direct, converts: converts, chapters: chapters, item: function () { return item; }, keys: keys, buttons: function () { return btns; }, shelf: function () { return shelf; } } };
+  return { diag: diag, open: open, ended: ended, close: close, reshow: reshow, playKey: playKey, playerItems: playerItems, _test: { quality: quality, marks: marks, badges: badges, direct: direct, converts: converts, chapters: chapters, item: function () { return item; }, keys: keys, buttons: function () { return btns; }, shelf: function () { return shelf; } } };
 })();

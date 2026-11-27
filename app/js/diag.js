@@ -77,7 +77,7 @@ var Diag = (function () {
   var RELAY_CONFIG = 'https://tivibro.app/relay.json';
   function sendNow(title, what) {
     var d = Log.unclean && Log.unclean.doing || {};
-    var area = d.guide ? 'The guide' : d.player ? 'Watching fullscreen (quick menu, info panel, zapping)' : d.editor ? 'Web editor on a phone or tablet' : 'Something else';
+    var area = d.plex ? 'Plex' : d.guide ? 'The guide' : d.player ? 'Watching fullscreen (quick menu, info panel, zapping)' : d.editor ? 'Web editor on a phone or tablet' : 'Something else';
     var scrub = scrubber(); what = scrub(what);
     var cfgUrl = (Store.settings && Store.settings.relayConfig) || RELAY_CONFIG;          // tests point it at the mock
     return report().then(function (r) {
@@ -126,6 +126,8 @@ var Diag = (function () {
       [p.user, p.pass].forEach(function (x) { x = String(x || '').trim(); if (x.length >= 3) hosts.push([x, '***']); });
       (p.epgSources || []).forEach(function (x) { var h = hostOf(x.url); if (h) hosts.push([h, '<guide>']); });
     });
+    // Plex: its servers' names and addresses, and the tokens (plex.js secrets).
+    try { if (window.Plex && Plex.secrets) hosts = hosts.concat(Plex.secrets()); } catch (e) {}
     // My media logins too (a share's or WebDAV password, a Dropbox token), though nothing logs them.
     try { (window.MediaStore ? MediaStore.sources() : []).forEach(function (m) { [m.pass, m.refresh].forEach(function (x) { x = String(x || '').trim(); if (x.length >= 3) hosts.push([x, '***']); }); }); } catch (e) {}
     hosts.sort(function (a, b) { return b[0].length - a[0].length; });
@@ -177,6 +179,9 @@ var Diag = (function () {
       ['Player', s.engine || 'auto'], ['Buffer', (s.buffer || 'auto') + (s.buffer === 'auto' && window.PlayMemo ? ' (' + PlayMemo.summary().slice(0, 2).map(function (k) { return k.why + ', ' + Math.round(k.hours * 10) / 10 + ' h, ' + Math.round(k.dry) + ' dry'; }).join('; ') + ')' : '')], ['Start screen', s.startTab || 'guide'],
       ['Audio converter', s.convertAudio === 'off' ? 'off' : 'automatic'],
       ['Provider', (function () { var l = typeof ProvStatus !== 'undefined' ? ProvStatus.now() : []; return l.length ? l.map(function (d) { return d.title + ' (' + d.codes.join(', ') + ', ' + d.n + ' failed requests since ' + U.hhmm(d.since) + (d.netOk ? '; other sites answer' : '') + ')'; }).join('; ') : 'answers normally'; })()],
+      // Plex: the account and servers by how they're reached (no names), and how the last Plex title played.
+      ['Plex', window.Plex && Plex.diag ? Plex.diag() : 'not in this version'],
+      ['Plex last played', window.PlexPage && PlexPage.diag ? PlexPage.diag() : 'nothing'],
       ['Detailed logging', Log.verbose ? 'on' : 'off'],
       ['Last session', Log.unclean ? 'closed unexpectedly, ' + scrub(Log.unclean.text) + (Log.unclean.recent > 1 ? ' (' + Log.unclean.recent + ' times in the last hour)' : '') : 'ended normally'],
       ['Memory now', (function () { var mb = Log.heapMB ? Log.heapMB() : 0; return mb ? mb + ' MB used' : 'unknown (this TV doesn\'t say)'; })()],
@@ -199,7 +204,9 @@ var Diag = (function () {
       var text = '# TiviBro problem report, ' + new Date().toISOString() + '\n\n' + facts.map(function (f) { return f[0] + ': ' + f[1]; }).join('\n') +
         '\n\n## App log (this and earlier sessions)\n' + app.join('\n') + '\n\n## Network helper log (last requests)\n' + helper.join('\n') + '\n';
       Log.info('diag', 'Problem report made for the web editor (' + app.length + ' log lines)');
-      return { repo: Update.REPO, version: TIVIBRO_VERSION, tv: tv, facts: facts, trouble: trouble, text: text };
+      // Where it happened, when the TV can tell: Plex (its tab open or a Plex title playing) picks Plex in the form.
+      var doing = Log.doing ? Log.doing() : {};
+      return { repo: Update.REPO, version: TIVIBRO_VERSION, tv: tv, facts: facts, trouble: trouble, text: text, area: doing.plex ? 'Plex' : '' };
     });
   }
 

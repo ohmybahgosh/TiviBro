@@ -991,7 +991,7 @@ var Store = { settings: { lang: (function () {
         <div class="card" style="margin-top:16px"><h3>What went wrong?</h3>
           <div class="form rpform">
             <!-- The values stay English: they are the GitHub form's own choices. -->
-            <label class="f">Where is the problem?<select id="rpArea"><option value="The guide">The guide</option><option value="Channels list or groups">Channels list or groups</option><option value="Watching fullscreen (quick menu, info panel, zapping)">Watching fullscreen (quick menu, info panel, zapping)</option><option value="Catch-up">Catch-up</option><option value="Movies and shows">Movies and shows</option><option value="Search">Search</option><option value="Set-up tour">Set-up tour</option><option value="Settings">Settings</option><option value="Channel logos">Channel logos</option><option value="Reminders or parental controls">Reminders or parental controls</option><option value="Web editor on a computer">Web editor on a computer</option><option value="Web editor on a phone or tablet">Web editor on a phone or tablet</option><option value="Backup and restore">Backup and restore</option><option value="Updates">Updates</option><option value="Something else">Something else</option></select></label>
+            <label class="f">Where is the problem?<select id="rpArea"><option value="The guide">The guide</option><option value="Channels list or groups">Channels list or groups</option><option value="Watching fullscreen (quick menu, info panel, zapping)">Watching fullscreen (quick menu, info panel, zapping)</option><option value="Catch-up">Catch-up</option><option value="Movies and shows">Movies and shows</option><option value="Plex" data-raw>Plex</option><option value="Search">Search</option><option value="Set-up tour">Set-up tour</option><option value="Settings">Settings</option><option value="Channel logos">Channel logos</option><option value="Reminders or parental controls">Reminders or parental controls</option><option value="Web editor on a computer">Web editor on a computer</option><option value="Web editor on a phone or tablet">Web editor on a phone or tablet</option><option value="Backup and restore">Backup and restore</option><option value="Updates">Updates</option><option value="Something else">Something else</option></select></label>
             <label class="f">How often?<select id="rpOften"><option value="Every time">Every time</option><option value="Sometimes">Sometimes</option><option value="Once">Once</option></select></label>
             <label class="f full">A short title<input id="rpTitle" type="text" placeholder="The guide freezes when I open Sports"></label>
             <label class="f full">What happened?<textarea id="rpWhat" placeholder="What you saw, and any message on screen."></textarea></label>
@@ -1783,13 +1783,15 @@ function loadReport(force) {
   rpLoading = true; $('rpReload').disabled = true;
   var tick = cmdMsg('rpMsg', tr('Asking the TV for its details and log…'));
   command('report', {}, 45000, tick).then(function (r) {
-    RP = r.data; msg('rpMsg', '', ''); rpSent = null; $('rpSend').textContent = tr('Send report'); msg('rpSendMsg', '', '');
+    RP = r.data; msg('rpMsg', '', '');
+    if (RP.area && !$('rpArea').dataset.picked) $('rpArea').value = RP.area;   // the TV says where (Plex), until you pick rpSent = null; $('rpSend').textContent = tr('Send report'); msg('rpSendMsg', '', '');
     $('rpFacts').innerHTML = RP.facts.map(function (f) { return '<b>' + esc(f[0]) + '</b><span>' + esc(f[1]) + '</span>'; }).join('') +
       '<b>' + tr('Recent errors') + '</b><span>' + (RP.trouble.length ? tr('{n} in the log', { n: RP.trouble.length }) : tr('none')) + '</span>';
     $('rpPre').textContent = RP.text; $('rpAll').classList.remove('hidden');
     ['rpSave', 'rpCopy', 'rpGo', 'rpSend'].forEach(function (id) { $(id).disabled = false; });
   }, function (e) { msg('rpMsg', 'err', e.message); }).then(function () { rpLoading = false; $('rpReload').disabled = false; });
 }
+$('rpArea').addEventListener('change', function () { this.dataset.picked = '1'; });
 function rpFile() { return 'tivibro-report-' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.txt'; }
 function rpUrl() {
   var base = 'https://github.com/' + (RP.repo || 'ohmybahgosh/TiviBro') + '/issues/new?template=1-bug.yml';

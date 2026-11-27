@@ -486,6 +486,7 @@ var PlexView = (function () {
   // Opened from the menu: where you were last (the tab), from the top.
   function open() {
     build(); open_ = true; makeTabs();
+    if (typeof Log !== 'undefined') Log.state('plex', 'browsing Plex');   // a report sent from here says Plex
     if (prefs.tab) tabsList.forEach(function (x, i) { if ((x.id === 'lib' ? x.lib.server + ':' + x.lib.key : x.id) === prefs.tab) tabAt = i; });
     subAt = firstSub();
     zone = 'rows'; stack = []; rowAt = 0; colAt = {};
@@ -493,9 +494,9 @@ var PlexView = (function () {
   }
   // Back from a title or from watching: the same place, the rows read again (watched marks, Continue watching).
   function resume() { if (!open_) return open(); UI.setHandler(keys); draw(); load(); }
-  function leave() { open_ = false; loadSeq++; }
+  // Off the Plex tab: a report sent now isn't about Plex, unless a Plex title is still playing.
+  function leave() { open_ = false; loadSeq++; if (typeof Log !== 'undefined' && !(Views.vod && Views.vod.meta && Views.vod.meta.plex)) Log.state('plex', ''); }
 
-  // A show opened from somewhere else (a title's Go to show): its seasons in place on the Plex tab.
   // A collection (or a show's seasons) from elsewhere: from a title's page it goes on top, so Back returns there.
   function openShow(m) { if (!m.page) stack = []; push(m); zone = 'rows'; UI.setHandler(keys); draw(); load(); }
 

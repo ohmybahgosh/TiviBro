@@ -117,6 +117,8 @@ var Plex = (function () {
       if (e.kind !== 'unreachable') throw e;
       return reach(id, true).then(go);
     }).then(function (r) { return r.data || {}; }, function (e) {
+      // In the log (and so a report) by what failed, never the server's name or address: the path without its query.
+      note('warn', 'Plex call failed: ' + (method || 'get').toUpperCase() + ' ' + String(path).split('?')[0] + ' (' + (e.kind || e.message || 'error') + ')');
       if (e.kind === 'unreachable') { var s = server(id); e.message = T('{x} didn\'t answer.  Is it on and online?', { x: s ? s.name : 'Plex' }); }
       throw e;
     });
@@ -213,7 +215,30 @@ var Plex = (function () {
   }
   function qualityOf(b) { return QUALITY.filter(function (x) { return x.b === b; })[0] || null; }
 
+  /* ---------- For Report a problem (diag.js) ---------- */
+  /* What a report says about Plex: signed in or not, Plex Pass, each server picked by how it's reached (never its
+     name or address), the libraries, the settings that change playing. */
+  function diag() {
+    if (!signedIn()) return 'not signed in';
+    var p = prefs();
+    return 'signed in' + (user().pass ? ', Plex Pass' : '') + (user().home ? ', Plex Home' : '') + '; ' + servers().length + ' server(s), ' + chosen().length + ' picked: ' +
+      chosen().map(function (s, i) { return 'server ' + (i + 1) + ' (' + (s.owned ? 'own' : 'shared') + ', ' + (!s.uri ? 'not reached yet' : s.relay ? 'relay' : s.local ? 'home network' : 'internet') + ', ' + libs(s.id).length + ' libraries)'; }).join('; ') +
+      '; quality home ' + qualityName(p.homeQuality) + ', away ' + qualityName(p.awayQuality) + ', files as they are ' + (p.direct ? 'on' : 'off');
+  }
+  /* What a report takes out: each server's name and addresses, and every token (the account's and the servers'). */
+  function secrets() {
+    var out = [];
+    servers().forEach(function (s) {
+      if (s.name && String(s.name).length >= 3) out.push([String(s.name), '<plex server>']);
+      [s.uri].concat((s.connections || []).map(function (c) { return c.uri; })).forEach(function (u) { var h = /^[a-z]+:\/\/([^\/:]+)/i.exec(String(u || '')); if (h) out.push([h[1], '<plex server>']); });
+      if (s.token) out.push([s.token, '***']);
+    });
+    [state.token, state.accountToken].forEach(function (t) { if (t) out.push([t, '***']); });
+    return out;
+  }
+
   return {
+    diag: diag, secrets: secrets,
     QUALITY: QUALITY, qualityName: qualityName, qualityOf: qualityOf,
     signedIn: signedIn, added: added, user: user, describe: describe, onChange: onChange,
     connect: connect, cancel: cancel, pendingCode: pendingCode, signOut: signOut,

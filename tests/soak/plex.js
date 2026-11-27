@@ -256,6 +256,28 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     ok('phone: a key that isn\'t a Plex title is refused', /isn't a Plex title/.test(ph.bad), ph.bad);
     await page.waitForTimeout(2500);
     ok('phone: Play on TV opens Plex and plays where you stopped', ph.played.title === 'Northbound' && /library\/parts\/7/.test(await ev(() => (Views.vod && Views.vod.url) || '')) && (await ev(() => Views.tab)) === 'plex');
+    // Settings > Plex on the phone app and the web editor (Settings.phone, as they ask): every row, and changes reach the TV.
+    await ev(() => Views.stopAll());
+    const spg = await ev(() => {
+      const pg = Settings.phone.page('plex', []), rows = pg.rows.map((r) => r.label);
+      const q = pg.rows.find((r) => r.label === 'Quality away from home'), d = pg.rows.find((r) => r.label === 'Play files as they are'), w = pg.rows.find((r) => r.label === 'Watchlist row');
+      const was = { q: Plex.prefs().awayQuality, d: Plex.prefs().direct, w: Plex.prefs().watchRow };
+      if (q) Settings.phone.change('plex', [], q.i, 'choice', { v: 3 });
+      if (d) Settings.phone.change('plex', [], d.i, 'toggle', { on: false });
+      if (w) Settings.phone.change('plex', [], w.i, 'toggle', { on: !was.w });
+      const now = { q: Plex.prefs().awayQuality, d: Plex.prefs().direct, w: Plex.prefs().watchRow };
+      Plex.setPref('awayQuality', was.q); Plex.setPref('direct', was.d); Plex.setPref('watchRow', was.w);
+      const sv = pg.rows.find((r) => r.label === 'Servers'), svRows = sv ? Settings.phone.page('plex', [sv.i]).rows.map((r) => r.label) : [];
+      return { rows, opts: q ? q.options.length : 0, now, svRows };
+    });
+    const want = ['Signed in as', 'Servers', 'Edit home rows', 'Watchlist row', 'Streaming Top 10s you have', 'Top 10 rows', 'Quality at home', 'Quality away from home', 'Play files as they are', 'Still watching?', 'Sign out of Plex'];
+    ok('Settings > Plex on the phone and in the web editor: every row the TV has', want.every((x) => spg.rows.indexOf(x) >= 0), spg.rows);
+    ok('...Plex\'s quality list there too', spg.opts >= 9, spg.opts);
+    ok('...and changes from the phone reach the TV (quality, playing files as they are, the Watchlist row)', spg.now.q === 20000 && spg.now.d === false && typeof spg.now.w === 'boolean', spg.now);
+    ok('...with the servers page, a switch for each server', spg.svRows.indexOf('Look for servers again') >= 0 && spg.svRows.length >= 2, spg.svRows);
+    // Report a problem: a Plex part in the report (no server names or addresses), and Plex as where it happened.
+    const rep = await ev(() => Diag.report().then((r) => r.text));
+    ok('a report has a Plex part: servers by how they\'re reached, what played and how', /Plex: signed in/.test(rep) && /Plex last played: /.test(rep) && rep.indexOf('Mock Server') < 0 && rep.indexOf('127.0.0.1:' + m.port) < 0, rep.split('\n').filter((l) => /Plex/.test(l)).join(' | '));
     ok('no page errors', !errs.length, errs);
   } finally { await b.close(); relay.server.close(); m.close(); }
   console.log('screenshots in ' + SHOTS);

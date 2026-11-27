@@ -231,6 +231,7 @@ var Log = (function () {
       return { seq: seq, lines: out.map(line), gap: n < seq && (!out.length || out[0].n > n + 1) };
     },
     get seq() { return seq; },
+    doing: function () { return Object.assign({}, doing); },   // what TiviBro is busy with now (state()), for a report's area
     clear: function () { buf = []; saved = []; try { localStorage.removeItem('tivibro.log'); } catch (e) {} },
     get verbose() { return verbose; },
     set verbose(v) { verbose = !!v; localStorage.setItem('tivibro.logVerbose', v ? '1' : '0'); },

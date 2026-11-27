@@ -670,6 +670,12 @@ Watch your Plex server in TiviBro.  **Plex** joins the menu once you sign in and
 
 **Watching.**  A file the TV can play is played as it is, at full quality.  Anything else (an old MPEG-2 recording, a file bigger than your quality setting) is converted by the server.  Where you are goes to Plex every 10 seconds, so you can stop here and carry on in Plex's own app.  90% counts as watched, as in Plex.  **Skip intro** and **Skip credits** use Plex's own markers, seeking shows Plex's preview pictures with its chapters on the bar, and the subtitle file you picked in Plex comes along.  When an episode ends, **Up next** counts down to the next one; after three in a row it asks **Still watching?** instead.
 
+**While watching**, **Red** (Options) opens on a **Plex** tab: **Quality** (Original, and the qualities below the file's own, each with a few words on how it looks and what internet it needs), **Audio**, **Subtitles** (with **Search for subtitles**, which asks your server to find them online), **Playback info** (whether the server converts the picture or the sound, on its graphics chip or processor, and whether it keeps up), the next and previous episode, and **Mark watched**.  Back in any of them returns to Options.
+
+**A title's page** shows what Plex shows under it: **Cast and crew** (OK on a person lists their titles in that library), **Seasons** or **Episodes**, **Extras**, the collections it's in and **More like this**.  **Hold OK** on a title in a row for its options.
+
+**Something wrong with Plex?**  Use **Report a problem** from the Plex tab (or while a Plex title plays): the report is filed under Plex and says how Plex is set up and how the last title played (direct or converted, and why), without your server's name, address or sign-in.
+
 **Away from home**, Plex plays video only with Plex Pass (yours or the server owner's) or a Remote Watch Pass; at home it's free.  A server reached only through Plex's relay is limited to 2 Mbps.  TiviBro says so before it plays.
 
 **In the phone app**, a **Plex** tab shows Home, each library, a show's seasons and episodes, and search.  Tap a title for **Resume on TV** or **Play on TV**: the TV opens Plex and plays it.  While the TV shows the sign-in code, the phone app's **Settings > Plex** opens Plex's page with the code filled in.
