@@ -1005,6 +1005,10 @@ var Epg = (function () {
       (loadXml.didStart = loadXml.didStart || {})[p.id] = true;
       if (c && c.sig === sig) { ingest(c, p); xmlReady = true; emit(null); }
       if (!stale && !force) { runSet(gk, null); return; }     // a forced reload cut short: the cache is fine
+      if (!force && helperGone()) {                                    // a big list on a 1 GB TV: not in the app's own memory
+        if (!xmlReady) { xmlReady = true; emit(null); }
+        waitHelper(); runSet(gk, null); return;
+      }
       if (waitIdle(force, c, sig, hMode)) {
         if (!xmlReady) { xmlReady = true; emit(null); }                 // nothing to show yet: the guide isn't stuck loading
         holdBack('guide'); runSet(gk, null); return;
@@ -1140,6 +1144,27 @@ var Epg = (function () {
   function waitIdle(force, c, sig, h) {
     if (force || !holdOff()) return false;
     return !!(c && c.sig === sig) || !h;
+  }
+  /* The network helper isn't running (stuck or not started) on a TV short of memory with a big list: a guide nobody
+     asked for isn't read in the app instead.  The whole file would be parsed in the app's own memory, and a 1 GB TV
+     with 57,600 channels closed TiviBro a minute after starting, every time the helper was stuck (issue #197).  The
+     guide it has stays; it is read once the helper is back (Net.onRestart), or when asked (Settings, a reload). */
+  var BIG_DIRECT = 20000, helperWait = false;
+  function helperGone() {
+    if (Net.port || (Store.settings && Store.settings.guideInApp)) return false;
+    var safe = (typeof Player !== 'undefined' && !!Player.memSafe) || (navigator.deviceMemory > 0 && navigator.deviceMemory <= 1);
+    return safe && (Library.count ? Library.count() : 0) > BIG_DIRECT;
+  }
+  function waitHelper() {
+    if (helperWait) return;
+    helperWait = true;
+    Log.info('epg', 'The network helper isn\'t running: the guide is read once it is back (a big list on a TV short of memory)');
+    Net.onRestart(function () {
+      if (!helperWait) return;
+      helperWait = false; hOk = null;
+      Log.info('epg', 'The network helper is back: reading the guide now');
+      init(Library);
+    });
   }
   /* The guide read in the app (Network set to Direct): its saved copy, or else the one the helper stored while
      the network was on Automatic (reading that back is light), so switching to Direct doesn't leave the guide

@@ -47,6 +47,22 @@ const G = { sig: 's1', at: 1 };
     const d = world({ Net: { port: 0 } });
     assert.equal(await d.appCopy('epg:p1', 's1', ''), null); assert.equal(d.asked.length, 0);
   });
+  // Issue #197: a stuck helper on a 1 GB TV with 57,600 channels; the guide waits for the helper instead of the app.
+  const gone = pick('app/js/epg.js', ['helperGone']) + ';var BIG_DIRECT = 20000;';
+  function tv(o) {
+    const c = Object.assign({ Player: { memSafe: 'this TV has 1 GB of memory or less' }, Net: { port: 0 }, Store: { settings: {} }, navigator: {}, Library: { count: () => 57609 } }, o || {});
+    vm.createContext(c); vm.runInContext(gone, c); return c;
+  }
+  await check('no helper, a big list, short of memory: the guide is not read in the app', () => {
+    assert.equal(tv().helperGone(), true);
+    assert.equal(tv({ Player: { memSafe: '' }, navigator: { deviceMemory: 1 } }).helperGone(), true);
+  });
+  await check('the helper running, a small list, plenty of memory, or Guide in the app chosen: as before', () => {
+    assert.equal(tv({ Net: { port: 47811 } }).helperGone(), false);
+    assert.equal(tv({ Library: { count: () => 9000 } }).helperGone(), false);
+    assert.equal(tv({ Player: { memSafe: '' }, navigator: { deviceMemory: 2 } }).helperGone(), false);
+    assert.equal(tv({ Store: { settings: { guideInApp: true } } }).helperGone(), false);
+  });
   await check('the problem report masks server names in network errors', () => {
     const c = { Log: { redact: s => s }, Store: { settings: { playlists: [{ server: 'http://saved.example.net:8080', user: 'abc', pass: 'xyz' }] } } };
     vm.createContext(c); vm.runInContext(pick('app/js/diag.js', ['scrubber']), c);
