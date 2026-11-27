@@ -140,7 +140,7 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     await ev(() => PlexPage._test.keys('ok'));
     await page.waitForFunction(() => /metadata%2F13/.test((Views.vod && Views.vod.url) || ''), null, { timeout: 8000 }).catch(() => {});
     const conv = await ev(() => (Views.vod && Views.vod.url) || '');
-    ok('a file the TV can\'t play: the server converts it', /\/plex\/[0-9a-f]{48}\/video\/:\/transcode\/universal\/start\.m3u8\?path=%2Flibrary%2Fmetadata%2F13/.test(conv) && /protocol=hls/.test(m.state.transcode || ''), conv);
+    ok('a file the TV can\'t play: the server converts it', /\/plex\/[0-9a-f]{48}\/video\/:\/transcode\/universal\/start\.m3u8\?path=%2Flibrary%2Fmetadata%2F13/.test(conv) && /protocol=hls/.test(m.state.transcode || '') && /protocol=hls&container=mpegts&videoCodec=h264/.test(m.state.profileExtra || ''), conv);
     // An episode ends: Up next counts down to the next one; after the episodes in a row set, Still watching? asks.
     await ev(() => { Views.stopAll(); Plex.setPref('stillAfter', 1); PlexPage.open({ ratingKey: '41', title: 'Episode 1', type: 'episode', server: Plex.chosen()[0].id }, function () {}); });
     await page.waitForFunction(() => (PlexPage._test.item() || {}).Media && PlexPage._test.buttons().length, null, { timeout: 8000 });

@@ -575,7 +575,7 @@ var Settings = (function () {
     });
     out = out.concat(plexRows(), plexPlaying());
     out.push(head('Plex Pass'), info(Plex.user().pass ? T('You have Plex Pass: your servers play anywhere.') : T('Away from home, Plex plays video only when you or the server\'s owner have Plex Pass (or a Remote Watch Pass).  At home it\'s free.'), ''));
-    out.push(head('Account'), action('Sign out of Plex', 'Plex leaves the menu, the phone app and the web editor until you sign in again.', function () { UI.confirm('Sign out of Plex on this TV?', 'Sign out', function () { Plex.signOut(); plexSecCache = {}; plexPeople = null; build(); if (typeof Views !== 'undefined' && Views.buildTabs) Views.buildTabs(); }); }));
+    out.push(head('Sign out'), action('Sign out of Plex', 'Plex leaves the menu, the phone app and the web editor until you sign in again.', function () { UI.confirm('Sign out of Plex on this TV?', 'Sign out', function () { Plex.signOut(); plexSecCache = {}; plexPeople = null; build(); if (typeof Views !== 'undefined' && Views.buildTabs) Views.buildTabs(); }); }));
     return out;
   }
 
@@ -2774,7 +2774,7 @@ var Settings = (function () {
   var TILES = ['guide', 'sports', 'playback', 'audio', 'recording', 'reminders', 'vod', 'media'];
   var TILE_ICON = { guide: 'guide', sports: 'sports', playback: 'play', audio: 'audio', recording: 'rec', reminders: 'bell', vod: 'movies', media: 'media',
     // Everything else: small cards with an icon too, so they don't read as tags (discussion #36).
-    language: 'globe', playlists: 'list', connect: 'phone', channels: 'grid', names: 'text', remote: 'remote', parental: 'lock', look: 'palette', keys: 'key', backups: 'box', about: 'gear' };
+    language: 'globe', playlists: 'list', connect: 'phone', channels: 'grid', names: 'text', remote: 'remote', parental: 'lock', look: 'palette', keys: 'key', backups: 'box', about: 'gear', plex: 'server' };
   /* Each tile's line icon (inline SVG on a 24 grid, drawn in the tile colour), the same shapes as the side menu's
      where there's one.  They were CSS boxes before, and four of them came out as plain squares. */
   var TILE_SVG = {
@@ -2796,7 +2796,8 @@ var Settings = (function () {
     rec: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor"/>',
     bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
     movies: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
-    media: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M10 11l5 3-5 3z"/>'
+    media: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M10 11l5 3-5 3z"/>',
+    server: '<rect x="3" y="4" width="18" height="7" rx="1.5"/><rect x="3" y="13" width="18" height="7" rx="1.5"/><path d="M7 7.5h.01M7 16.5h.01M11 6v3l3-1.5zM11 15v3l3-1.5z"/>'
   };
   function tileIcon(id) { var i = U.el('i', 'sh-ico ico-' + TILE_ICON[id]); i.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + (TILE_SVG[TILE_ICON[id]] || '') + '</svg>'; return i; }
   // One line under a tile: what it's set to now.  Anything that fails says nothing rather than something wrong.

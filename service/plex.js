@@ -208,7 +208,7 @@ function server(q, cb) {
   var method = String(q.op).toUpperCase(), path = String(q.path || '');
   if (!allowedBase(q.base) || !allowedPath(method, path) || !validToken(q.token)) return cb(failure('bad'));
   var h = headers(q);
-  if (/^\/video\/:\/transcode\//.test(path)) h['X-Plex-Client-Profile-Name'] = 'Generic';   // as in doorGet
+  if (/^\/video\/:\/transcode\//.test(path)) convertHeaders(h);   // as in doorGet
   call(method, String(q.base).replace(/\/$/, '') + path, h, null, function (e, r) {
     if (e) return cb(failure('unreachable'));
     if (r.status >= 400) return cb(fromStatus(r));
@@ -250,13 +250,18 @@ function door(q, cb) {
 }
 /* GET /plex/<key>/<path>: passed on to the server with the token in a header, the answer streamed back as it comes
    (Range for seeking).  Only the picture and video paths in DOOR_PATHS. */
+/* What the TV takes from the server's converter.  Plex has no profile for webOS and answers 400 without one; its
+   Generic profile alone has no HLS target either, so a file that must be converted (AV1, say) got "No conversion
+   profile found for protocol hls".  So: Generic, plus H.264 in MPEG-TS over HLS with AAC, AC-3 or E-AC-3 sound. */
+var CONVERT_TO = 'add-transcode-target(type=videoProfile&context=streaming&protocol=hls&container=mpegts&videoCodec=h264&audioCodec=aac,ac3,eac3&subtitleCodec=)' +
+  '+add-limitation(scope=videoCodec&scopeName=h264&type=upperBound&name=video.level&value=51)';
+function convertHeaders(h) { h['X-Plex-Client-Profile-Name'] = 'Generic'; h['X-Plex-Client-Profile-Extra'] = CONVERT_TO; return h; }
 function doorGet(req, res, ALLOW) {
   var m = /^\/plex\/([0-9a-f]{48})(\/.*)$/.exec(req.url), d = m && doors[m[1]];
   if (!d || d.until < Date.now() || !DOOR_PATHS.test(m[2]) || /(^|\/)\.\.?(\/|\?|$)|%2e%2e/i.test(m[2])) { res.writeHead(404, ALLOW); return res.end(); }
   var u = URL.parse(d.base + m[2]), lib = u.protocol === 'http:' ? http : https;
   var h = headers({ cid: d.cid, token: d.token }); delete h.Accept;
-  // The converter has no profile of its own for webOS and answers 400 without one: Plex's Generic profile.
-  if (/^\/video\/:\/transcode\//.test(m[2])) h['X-Plex-Client-Profile-Name'] = 'Generic';
+  if (/^\/video\/:\/transcode\//.test(m[2])) convertHeaders(h);
   if (req.headers.range) h.Range = req.headers.range;
   var out = lib.request({ hostname: u.hostname, port: u.port, path: u.path, method: req.method === 'HEAD' ? 'HEAD' : 'GET', headers: h }, function (up) {
     var head = {}; ['content-type', 'content-length', 'content-range', 'accept-ranges', 'cache-control', 'last-modified', 'etag'].forEach(function (k) { if (up.headers[k] != null) head[k] = up.headers[k]; });

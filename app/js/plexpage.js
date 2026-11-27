@@ -53,7 +53,7 @@ var PlexPage = (function () {
     var scores = (m.rating ? '<span class="plex-score">' + esc(T('Critics {x}', { x: Math.round(m.rating * 10) + '%' })) + '</span>' : '') + (m.audienceRating ? '<span class="plex-score">' + esc(T('Audience {x}', { x: Math.round(m.audienceRating * 10) + '%' })) + '</span>' : '');
     var people = ((m.Director || []).slice(0, 1).map(function (d) { return T('Directed by {x}', { x: d.tag }); }).concat((m.Role || []).slice(0, 3).map(function (r) { return r.tag; }))).join('  ·  ');
     btns = buttons();
-    el.innerHTML = '<div class="media-bd"><img class="media-hero-art" id="plexPageArt" alt=""></div><div class="media-fade"></div>' +
+    el.innerHTML = '<div class="media-bd"><img class="media-hero-art" id="plexPageArt" alt=""><div class="media-fade"></div></div>' +
       '<div class="plex-page-top"><div class="media-kicker">' + esc(ep ? m.grandparentTitle : (m.librarySectionTitle || 'Plex')) + '</div>' +
       '<div class="media-title">' + esc(ep ? m.title : m.title) + '</div><div class="media-facts">' + esc(facts) + '</div>' +
       '<div class="plex-badges">' + badges(v).map(function (b) { return '<span class="plex-badge">' + esc(b) + '</span>'; }).join('') + scores + '</div>' +
@@ -137,8 +137,13 @@ var PlexPage = (function () {
      bigger than the quality cap (Plex's "play smaller videos at original quality": a file under the cap plays as is). */
   function converts(v) {
     var cap = quality();
-    return !Plex.prefs().direct || !direct(v) || !!(cap && v.bitrate && v.bitrate > cap);
+    return !Plex.prefs().direct || !direct(v) || needsBoth(v) || !!(cap && v.bitrate && v.bitrate > cap);
   }
+  /* Sound the TV can't play goes through TiviBro's own sound converter, which sends the movie on as MPEG-TS: fine
+     for H.264 and HEVC, but AV1, VP9 and MPEG-4 video can't go in MPEG-TS, so the picture stayed black with the
+     sound playing (an AV1 movie with Opus sound).  Those go to the server's converter instead. */
+  var TV_SOUND = /^(aac|ac3|eac3|mp3|mp2)$/i, TS_VIDEO = /^(h264|hevc|h265)$/i;
+  function needsBoth(v) { return !!v.audioCodec && !TV_SOUND.test(v.audioCodec) && !TS_VIDEO.test(v.videoCodec || ''); }
   /* Starts the title at ms: the file through the door, or the server's converter.  Plex's preview pictures, its
      chapters and a subtitle file kept beside the video go to the player too (a file played as it is). */
   function play(ms, fromUpNext) {
@@ -148,11 +153,13 @@ var PlexPage = (function () {
     Plex.door(m.server).then(function (key) {
       var base = 'http://127.0.0.1:' + Net.port + '/plex/' + key, url, converting = converts(v), cap = quality();
       if (!converting) url = base + part.key;
-      else url = base + '/video/:/transcode/universal/start.m3u8?path=' + encodeURIComponent('/library/metadata/' + m.ratingKey) + '&mediaIndex=' + Math.max(0, (m.Media || []).indexOf(v)) + '&partIndex=0&protocol=hls&fastSeek=1&directPlay=0&directStream=1&directStreamAudio=1&videoQuality=100' + (cap ? '&maxVideoBitrate=' + cap : '') + '&subtitles=burn&copyts=1&offset=' + Math.floor(ms / 1000) + '&session=' + newSession();
+      else url = base + '/video/:/transcode/universal/start.m3u8?path=' + encodeURIComponent('/library/metadata/' + m.ratingKey) + '&mediaIndex=' + Math.max(0, (m.Media || []).indexOf(v)) + '&partIndex=0&protocol=hls&fastSeek=1&directPlay=0&directStream=1&directStreamAudio=1&videoQuality=100' + (cap ? '&maxVideoBitrate=' + cap : '') + '&subtitles=burn&copyts=1&offset=0&session=' + newSession();
       var meta = { id: 'plex:' + m.server + ':' + m.ratingKey, plex: true, plexNext: m.type === 'episode' ? 'episode' : '', title: m.type === 'episode' ? m.grandparentTitle + '  S' + m.parentIndex + ' · E' + m.index : m.title, sub: m.type === 'episode' ? m.title : [m.year, m.contentRating].filter(Boolean).join('  ·  '), marks: marks(m), chapters: converting ? [] : chapters(m) };
       if (!converting && /(^|,)sd(,|$)/.test(part.indexes || '')) meta.pics = function (t) { return base + '/library/parts/' + part.id + '/indexes/sd/' + Math.round(t * 1000); };
       playing = { item: m, meta: meta, converting: converting, last: 0, scrobbled: false };
-      Views.playVod(meta, url, converting ? 0 : ms / 1000, function () { report('stopped'); stopTimer(); if (PlexView.resume) PlexView.resume(); });
+      /* The converter's playlist covers the whole title (it converts from wherever the player asks), so both ways
+         start the player where you stopped and its times are the title's own (progress to Plex, Skip intro). */
+      Views.playVod(meta, url, ms / 1000, function () { report('stopped'); stopTimer(); if (PlexView.resume) PlexView.resume(); });
       startTimer();
       if (!converting) sideSubtitle(base, part, playing);
       if (converting) U.toast(T('{x} is converting this one for the TV', { x: (Plex.server(m.server) || {}).name || 'Plex' }), 5000);

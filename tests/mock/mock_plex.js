@@ -66,7 +66,7 @@ function route(state, req, port) {
   if (p === '/:/timeline') { state.timeline = q; return [200, null]; }
   // As a real server: no converter profile for webOS, so 400 unless the request names one.
   if (p === '/video/:/transcode/universal/start.m3u8' && !req.headers['x-plex-client-profile-name']) return [400, 'Bad Request', 'text/html'];
-  if (p === '/video/:/transcode/universal/start.m3u8') { state.transcode = q; return [200, '#EXTM3U\n', 'application/vnd.apple.mpegurl']; }
+  if (p === '/video/:/transcode/universal/start.m3u8') { state.transcode = q; state.profileExtra = req.headers['x-plex-client-profile-extra'] || ''; return [200, '#EXTM3U\n', 'application/vnd.apple.mpegurl']; }
   if (p === '/:/scrobble' && req.method === 'GET') { state.scrobbled = q; return [200, null]; }
   return [404, { error: 'not here' }];
 }

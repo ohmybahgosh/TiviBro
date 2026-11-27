@@ -20,7 +20,7 @@ var PlexView = (function () {
     if (built) return;
     built = true;
     var v = $('viewPlex');
-    v.innerHTML = '<div class="media-bd"><img class="media-hero-art" id="plexArt" alt=""></div><div class="media-fade"></div>' +
+    v.innerHTML = '<div class="media-bd"><img class="media-hero-art" id="plexArt" alt=""><div class="media-fade"></div></div>' +
       '<div class="media-tabs" id="plexTabs"></div><div class="media-tabs plex-subs" id="plexSubs"></div>' +
       '<div class="media-hero" id="plexHero"></div>' +
       '<div class="media-shelves" id="plexRows"><div class="media-shelf-stage" id="plexStage"></div></div><div class="plex-empty hidden" id="plexEmpty"></div>';
@@ -141,7 +141,7 @@ var PlexView = (function () {
     var seq = ++loadSeq, t = tabNow(), top = stack[stack.length - 1], sub = SUBS[subAt][0];
     var p = top ? childRows(top) : t.id === 'home' ? homeRows() : t.id === 'search' ? searchRows(lastSearch) :
       sub === 'recommended' ? recommendedRows(t.lib) : sub === 'library' ? libraryRows(t.lib) : sub === 'collections' ? collectionRows(t.lib) : sub === 'categories' ? categoryRows(t.lib) : playlistRows();
-    empty(T('Loading…'));
+    if (!rows.length) empty(T('Loading…'));   // reading again over rows already drawn: no "Loading" on top of them
     p.then(function (r) { if (seq !== loadSeq) return; rows = r; rowAt = Math.min(rowAt, Math.max(0, rows.length - 1)); colAt = {}; empty(rows.length ? '' : t.id === 'search' ? T('Press OK to search Plex') : T('Nothing here yet')); draw(); },
       function (e) { if (seq !== loadSeq) return; rows = []; empty(e && e.message || T('Plex did not answer.')); draw(); });
   }
