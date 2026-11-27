@@ -493,12 +493,18 @@ var PlexView = (function () {
     build(); open_ = true; makeTabs();
     if (typeof Log !== 'undefined') Log.state('plex', 'browsing Plex');   // a report sent from here says Plex
     if (prefs.tab) tabsList.forEach(function (x, i) { if ((x.id === 'lib' ? x.lib.server + ':' + x.lib.key : x.id) === prefs.tab) tabAt = i; });
+    if (tabNow().id === 'search' && !lastSearch) tabAt = 0;      // an empty Search opens on Home
     subAt = firstSub();
     zone = 'rows'; stack = []; rowAt = 0; colAt = {};
     UI.setHandler(keys); draw(); load();
   }
   // Back from a title or from watching: the same place, the rows read again (watched marks, Continue watching).
-  function resume() { if (!open_) return open(); UI.setHandler(keys); draw(); load(); }
+  function resume() {
+    if (!open_) return open();
+    // Search with nothing searched (a title played from the phone's search) is a blank page: Home instead.
+    if (tabNow().id === 'search' && !lastSearch && !stack.length) { tabAt = 0; zone = 'rows'; UI.setHandler(keys); switched(); return; }
+    UI.setHandler(keys); draw(); load();
+  }
   // Off the Plex tab: a report sent now isn't about Plex, unless a Plex title is still playing.
   function leave() { open_ = false; loadSeq++; if (typeof Log !== 'undefined' && !(Views.vod && Views.vod.meta && Views.vod.meta.plex)) Log.state('plex', ''); }
 

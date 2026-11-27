@@ -229,6 +229,12 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     const up2 = await ev(() => document.body.innerText);
     ok('after the episodes in a row set: Still watching? waits for OK', /Still watching\?/i.test(up2) && /Keep watching/.test(up2), up2.slice(-400));
     await ev(() => { UI.press('back'); Plex.setPref('stillAfter', 3); }); await page.waitForTimeout(800);
+    // The last episode, or a movie, ends: its page comes back (the show's for an episode), as in Plex, not the tab.
+    await ev(() => { Views.stopAll(); PlexPage.playKey(Plex.chosen()[0].id, '43', true); }); await page.waitForTimeout(2500);
+    await ev(() => PlexPage.ended(false)); await page.waitForTimeout(2500);
+    const after = await ev(() => ({ shown: !document.getElementById('plexPage').classList.contains('hidden'), key: String((PlexPage._test.item() || {}).ratingKey), vod: !!Views.vod }));
+    ok('a title ends without a next one: its show\'s page, not the Plex tab', after.shown && after.key === '40' && !after.vod, JSON.stringify(after));
+    await ev(() => { UI.press('back'); }); await page.waitForTimeout(800);
     // A show's page: Play its next episode, Seasons and Cast and crew rows.
     await ev(() => { Views.stopAll(); PlexPage.open({ ratingKey: '40', type: 'show', title: 'The Harbor Lights', server: Plex.chosen()[0].id }, function () {}); });
     await page.waitForFunction(() => PlexPage._test.shelf() && (PlexPage._test.item() || {}).type === 'show', null, { timeout: 8000 }).catch(() => {});

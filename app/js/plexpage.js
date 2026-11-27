@@ -525,12 +525,12 @@ var PlexPage = (function () {
     var p = playing; report('stopped'); stopTimer();
     if (!p) return;
     var m = p.item;
-    if (m.type !== 'episode' || !m.grandparentRatingKey) { Views.stopAll(); if (PlexView.resume) PlexView.resume(); return; }
+    if (m.type !== 'episode' || !m.grandparentRatingKey) return afterEnd(m);
     Plex.call(m.server, '/library/metadata/' + m.grandparentRatingKey + '/allLeaves').then(function (j) {
       var all = mc(j).Metadata || [], i = -1;
       all.forEach(function (x, n) { if (String(x.ratingKey) === String(m.ratingKey)) i = n; });
       var nx = i >= 0 ? all[i + 1] : null;
-      if (!nx) { Views.stopAll(); if (PlexView.resume) PlexView.resume(); return; }
+      if (!nx) return afterEnd(m);
       nx.server = m.server;
       // Still watching?  After the episodes in a row set in Settings > Plex, Up next asks instead of counting down.
       var after = +Plex.prefs().stillAfter || 0, ask = !!after && chain >= after;
@@ -539,9 +539,16 @@ var PlexPage = (function () {
       if (typeof UpNext !== 'undefined') UpNext.hold();
       Views.stopAll();
       PlexView.picture(nx.server, nx.thumb, 1280, 720).then(function (img) {
-        UpNext.show({ auto: !ask, kicker: ask ? T('Still watching?') : undefined, playLabel: ask ? T('Keep watching') : undefined, image: img, show: nx.grandparentTitle, season: nx.parentIndex, episode: nx.index, line: T('Season {x}, episode {y}', { x: nx.parentIndex, y: nx.index }), title: nx.title, runtime: mins(nx.duration) ? T('{n} min', { n: mins(nx.duration) }) : '', desc: String(nx.summary || '').slice(0, 400), play: go, cancel: function () { if (PlexView.resume) PlexView.resume(); } });
+        UpNext.show({ auto: !ask, kicker: ask ? T('Still watching?') : undefined, playLabel: ask ? T('Keep watching') : undefined, image: img, show: nx.grandparentTitle, season: nx.parentIndex, episode: nx.index, line: T('Season {x}, episode {y}', { x: nx.parentIndex, y: nx.index }), title: nx.title, runtime: mins(nx.duration) ? T('{n} min', { n: mins(nx.duration) }) : '', desc: String(nx.summary || '').slice(0, 400), play: go, cancel: function () { afterEnd(m); } });
       });
-    }, function () { Views.stopAll(); if (PlexView.resume) PlexView.resume(); });
+    }, function () { afterEnd(m); });
+  }
+  /* After the last of it, as Plex does: the title's page (a show's for its episode), read again so it shows as
+     watched; Back from there goes where the page would have gone (the Plex tab, as it was). */
+  function afterEnd(m) {
+    Views.stopAll();
+    var to = m.type === 'episode' && m.grandparentRatingKey ? { ratingKey: m.grandparentRatingKey, type: 'show', title: m.grandparentTitle, server: m.server } : m;
+    open(to, back || function () { if (PlexView.resume) PlexView.resume(); });
   }
 
   /* From the phone app (plexphone.js): the Plex tab on the TV, then the title played (where you stopped, unless

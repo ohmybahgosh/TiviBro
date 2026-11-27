@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **After a Plex title ends, its page comes back.**  A movie or a show's last episode ended on the Plex tab you came from, which could be an empty Search.  Now its page shows again (the show's, for an episode), as in Plex, and an empty Search opens on Home.
 - **Plex from a server away from home starts smoothly.**  A movie played as it is from a Plex server outside your home could run dry a few seconds in, when the server can barely send it as fast as it plays.  It now starts once 8 seconds are ready, as titles the server converts do.
 - **Open what's playing from the phone.**  Now on the TV shows a bigger poster, and tapping a Plex title opens its page in the phone's Plex tab.
 
