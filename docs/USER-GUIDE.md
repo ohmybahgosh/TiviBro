@@ -658,6 +658,22 @@ Movies use the usual seek bar and subtitle menu.  Embedded SRT, ASS/SSA and WebV
 
 Playback contacts servers you add and their playback servers.  Fetching details also contacts api.themoviedb.org with titles/years or saved movie IDs and the preferred language, never your source logins or playback links.  Previously saved Cinemeta posters may still load from images.metahub.space until those movies are refreshed.  Cloud playback links are resolved each time you play and are never saved.  After a long pause with an expired link, return to the shelves and resume.  The library uses the helper's persistent storage, so app restarts and updates keep it even when browser storage is full.  Source logins are outside playlist backups and problem reports; add the sources again after restoring on another TV.  Up to eight sources can be saved.
 
+### Plex
+
+Watch your Plex server in TiviBro.  **Plex** joins the menu once you sign in and pick a library in **Settings > Plex**: until then it doesn't show anywhere, on the TV, in the phone app or in the web editor.  Nothing is scanned: the posters, details, collections, playlists, watched marks and where you stopped all come from your server, and go back to it.
+
+**Signing in.**  **Settings > Plex > Sign in to Plex** shows a code.  On your phone or computer, open **plex.tv/link** (or scan the QR code, which fills the code in) and sign in.  No password is typed on the TV.  Your own servers are picked for a start; **Servers** adds the ones friends share with you, and **Libraries on** each server picks which movie and TV libraries show.  On a Plex Home, **Who's watching** switches to another person with their PIN, with their own watched marks and limits.
+
+**The Plex tab** has **Home**, then your libraries, then **Search**.  Home starts with **Continue watching** from every server, then your **Watchlist** and the rows of your Plex home in Plex's own order.  **Streaming Top 10s you have** shows the titles your Plex has that are on yesterday's streaming Top 10s in your country (FlixPatrol), with "#3 on Netflix" under each poster.  Each library has Plex's own tabs: **Recommended**, **Library**, **Collections**, **Categories** and **Playlists**.  On **Library**, **Red** sorts it (date added, title, release date, ratings, last watched, plays, length, random) and filters it (unwatched only, a genre); TiviBro remembers both for each library.  On Home, **Red > Edit home rows** turns any of Plex's rows off.
+
+**A movie or an episode** opens its page: the backdrop, year, rating, length and when it would end, 4K, HDR, Dolby Vision and Atmos badges, the critics' and audience scores, the summary and the cast.  **Resume from** where you stopped (here or in any other Plex app), **Play from the start**, **Trailer**, **Mark watched**, and **More**: another version of the file, the audio and subtitle tracks (Plex keeps your choice), **Add to Watchlist**, **Remove from Continue watching** and **Go to show**.  **Yellow** marks it watched or not watched.
+
+**Watching.**  A file the TV can play is played as it is, at full quality.  Anything else (an old MPEG-2 recording, a file bigger than your quality setting) is converted by the server.  Where you are goes to Plex every 10 seconds, so you can stop here and carry on in Plex's own app.  90% counts as watched, as in Plex.  **Skip intro** and **Skip credits** use Plex's own markers, seeking shows Plex's preview pictures with its chapters on the bar, and the subtitle file you picked in Plex comes along.  When an episode ends, **Up next** counts down to the next one; after three in a row it asks **Still watching?** instead.
+
+**Away from home**, Plex plays video only with Plex Pass (yours or the server owner's) or a Remote Watch Pass; at home it's free.  A server reached only through Plex's relay is limited to 2 Mbps.  TiviBro says so before it plays.
+
+**In the phone app**, a **Plex** tab shows Home, each library, a show's seasons and episodes, and search.  Tap a title for **Resume on TV** or **Play on TV**: the TV opens Plex and plays it.  While the TV shows the sign-in code, the phone app's **Settings > Plex** opens Plex's page with the code filled in.
+
 ### Search
 
 **Search** in the menu finds channels and programmes in the guide (now, later today, the coming days and on catch-up) as you type, and also your Movies and Shows.  Below the box, **Everything**, **On now**, **Coming up**, **Replays**, **Channels** and **Movies & Shows** narrow the results (**◀ ▶** on that row).  Each programme shows once, even when several copies of the channel carry it, with **Today**, **Tomorrow** or the day and its time.  **OK** watches, replays, opens a show's episodes, or sets a reminder (**OK** again cancels it); **Hold OK** gives channel options.  **Yellow** adds what you typed to your [watchlist](#watchlist).  A channel you were watching keeps playing in the top corner; **Hold OK** on the filters goes back to it in fullscreen.
@@ -1310,6 +1326,28 @@ Your libraries, like Plex's: each one is a folder of movies or TV shows on a med
 | **Add your watchlist or recommendations** | | Your Trakt watchlist, and the movies and shows Trakt recommends for you. |
 
 Lists refresh every 6 hours.  TiviBro uses Trakt but is not endorsed or certified by Trakt.  Trakt's free accounts have limits on lists and items; TiviBro says so when Trakt answers that one is reached.
+
+### Settings: Plex
+
+Sign in to Plex, pick servers and libraries, and how Plex titles play.  See [Plex](#plex).
+
+| Settings > Plex | Default | What it does |
+|---|---|---|
+| **Sign in to Plex** | | Shows a code for **plex.tv/link** (and a QR code that fills it in).  Only this row shows until you sign in. |
+| **Who's watching** | | On a Plex Home: switch to another person, with their PIN. |
+| **Servers** | Your own | Yours and the ones shared with you; pick the ones to show. |
+| **Libraries on** *(each server)* | | Which movie and TV libraries show.  Plex joins the menu once one is picked. |
+| **Edit home rows** | As in Plex | Turn any of your Plex home's rows off; Plex's order stays.  Red on the Plex tab's Home too. |
+| **Watchlist row** | On | Your Plex Watchlist on Home, with the titles your servers have. |
+| **Streaming Top 10s you have** | On | Yesterday's streaming Top 10s in your country (FlixPatrol) with the titles your Plex has. |
+| **Top 10 rows** | None | A row of its own for a service's Top 10 (Netflix, Max, Prime Video and more), on Home and in each library's Recommended. |
+| **Quality at home** | Original | The most the server sends when it converts on your home network.  A file smaller than this plays as it is. |
+| **Quality away from home** | 8 Mbps (1080p) | The same, for a server somewhere else.  Lower plays smoother on slow internet. |
+| **Play files as they are** | On | The TV plays the file itself when it can.  Off: the server always converts (for a file that stutters). |
+| **Play the next one automatically**, **Up next countdown** | On, 10 seconds | Up next for Plex episodes, shared with My media. |
+| **Still watching?** | 3 episodes | After this many episodes in a row, Up next waits for OK. |
+| **Skip intro**, **Skip credits**, **Seek previews** | | The same rows as in Settings > Playback. |
+| **Sign out of Plex** | | Plex leaves the menu, the phone app and the web editor until you sign in again. |
 
 ### Settings: Reminders and watchlist
 

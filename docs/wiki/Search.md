@@ -19,4 +19,4 @@ Movies and shows are searchable without opening **Movies** or **Shows** first: S
 
 ---
 
-← [My media](My-media)  ·  [Home](Home)  ·  [Favorites, hiding and your own groups](Favorites-hiding-and-your-own-groups) →
+← [Plex](Plex)  ·  [Home](Home)  ·  [Favorites, hiding and your own groups](Favorites-hiding-and-your-own-groups) →

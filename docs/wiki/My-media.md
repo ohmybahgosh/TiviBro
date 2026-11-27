@@ -107,4 +107,4 @@ Playback contacts servers you add and their playback servers.  Fetching details 
 
 ---
 
-← [No TMDB token? TheTVDB](No-TMDB-token-TheTVDB)  ·  [Home](Home)  ·  [Search](Search) →
+← [No TMDB token? TheTVDB](No-TMDB-token-TheTVDB)  ·  [Home](Home)  ·  [Plex](Plex) →

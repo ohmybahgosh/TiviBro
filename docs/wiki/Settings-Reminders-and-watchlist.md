@@ -20,4 +20,4 @@ The phone app's **Reminders** screen and the web editor's **Reminders and watchl
 
 ---
 
-← [Settings: My media](Settings-My-media)  ·  [Home](Home)  ·  [Settings: Parental controls](Settings-Parental-controls) →
+← [Settings: Plex](Settings-Plex)  ·  [Home](Home)  ·  [Settings: Parental controls](Settings-Parental-controls) →

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **Plex.**  Sign in with a code at plex.tv/link in Settings > Plex, and your Plex server gets its own tab: Home with Continue watching, your Watchlist and your Plex home rows, each library with Recommended, Library, Collections, Categories and Playlists, sorting, filters and search.  Nothing is scanned; posters, watched marks and where you stopped come from your server and go back to it.
+- **Plex titles play at full quality.**  A file the TV can play plays as it is; the server converts the rest, within the quality you set for home and away.  Resume, versions, audio and subtitle tracks, the trailer, Skip intro and Skip credits from Plex's markers, Plex's seek previews and chapters, Up next and Still watching? all come along.
+- **Streaming Top 10s for Plex.**  A row of the titles your Plex has that are on yesterday's streaming Top 10s, with "#3 on Netflix" under each, plus a row per service if you like.
+- **Plex in the phone app.**  A Plex tab to browse and search your libraries and resume on the TV.
+
 ## 0.6.0 (alpha 228, 2026-11-26)
 
 Pre-release: expect rough edges, and keep a backup before installing.

@@ -54,4 +54,4 @@ Lists refresh every 6 hours.  TiviBro uses Trakt but is not endorsed or certifie
 
 ---
 
-← [Settings: Movies and shows](Settings-Movies-and-shows)  ·  [Home](Home)  ·  [Settings: Reminders and watchlist](Settings-Reminders-and-watchlist) →
+← [Settings: Movies and shows](Settings-Movies-and-shows)  ·  [Home](Home)  ·  [Settings: Plex](Settings-Plex) →
