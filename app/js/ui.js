@@ -76,6 +76,7 @@ var UI = (function () {
   }
   function dispatch(a, e) {
     var h = modalH || handler;
+    if (!modalH) nestBack = null;   // a key outside any menu: whatever comes next isn't a nested menu
     if (!h || typeof a !== 'string' || !a) return;
     keyAt = pressedAt(e); inKey = true;
     var late = Math.round(pnow() - keyAt);
@@ -291,7 +292,13 @@ var UI = (function () {
      opts.notice: something the TV brings up by itself (a reminder, a close game, a channel slow to start): a small
      card in the bottom corner over the picture instead of the panel, answered the same way. */
   var mTabs = null;
+  /* A menu opened with opts.nest (the player's Options): a menu one of its rows opens (Audio, Subtitles, Quality...)
+     goes back to it with Back, on the same tab and row, instead of closing everything.  Kept for a few seconds after
+     OK, so a list read from a server first (Plex's subtitle search) still finds its way back. */
+  var nestBack = null;
   function menu(title, items, onBack, opts) {
+    if (!onBack && nestBack && Date.now() - nestBack.at < 8000) onBack = nestBack.fn;
+    nestBack = null;
     var all = items.filter(Boolean), tabs = [], tab = 0;
     all.forEach(function (x) { if (x.tab && tabs.indexOf(x.tab) < 0) tabs.push(x.tab); });
     if (tabs.length < 2) tabs = [];
@@ -307,6 +314,7 @@ var UI = (function () {
       mItems.forEach(function (x, i) { if (!x.head) rows.push(i); });
       if (!rows.length) { mItems.push({ label: 'Nothing to choose from' }); rows.push(mItems.length - 1); }
       mSel = mItems.findIndex(function (x) { return x.current && !x.head; });
+      if (opts && opts.at != null && mItems[opts.at] && !mItems[opts.at].head && opts.atTab === tab) mSel = opts.at;   // back from a nested menu
       if (mSel < 0) mSel = rows[0];
       drawTabs();
       drawMenu();
@@ -333,7 +341,12 @@ var UI = (function () {
       if (a === 'up') { if (at > 0) { mSel = rows[at - 1]; drawMenu(); } else if (rows.length > 2 && !repeating) { mSel = rows[rows.length - 1]; drawMenu(); } }
       else if (a === 'down') { if (at < rows.length - 1) { mSel = rows[at + 1]; drawMenu(); } else if (rows.length > 2 && !repeating) { mSel = rows[0]; drawMenu(); } }
       else if ((a === 'left' || a === 'right') && tabs.length) { var n = tab + (a === 'left' ? -1 : 1); if (n >= 0 && n < tabs.length) { tab = n; show(); } }
-      else if (a === 'ok') { var it = mItems[mSel]; close(); if (it && it.action) it.action(); }
+      else if (a === 'ok') {
+        var it = mItems[mSel], at0 = mSel, tab0 = tab;
+        close();
+        if (opts && opts.nest) nestBack = { at: Date.now(), fn: function () { menu(title, items, onBack, Object.assign({}, opts, { tab: tabs[tab0], at: at0, atTab: tab0 })); } };
+        if (it && it.action) it.action();
+      }
       else if (a === 'back') { close(); if (onBack) onBack(); }
       return true;
     };
@@ -576,6 +589,7 @@ var UI = (function () {
     // When the button being handled was pressed (performance.now()'s clock), and fn(t) once the screen shows the change.
     keyAt: function () { return inKey ? keyAt : pnow(); }, now: pnow, afterPaint: afterPaint,
     get modalOpen() { return !!modalH; },
+    get menuAt() { return modalH ? mSel : -1; },   // the open menu's focused row (tests)
     get menuLabels() { return modalH ? mItems.map(function (x) { return x.label == null ? x.label : String(x.label); }) : []; },   // every row of the open menu, also those scrolled out of view (tests)
     get pointer() { return pointer; },
     get lastInput() { return lastInput; },

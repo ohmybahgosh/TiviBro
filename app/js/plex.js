@@ -190,7 +190,31 @@ var Plex = (function () {
     return user().name + (user().pass ? ' · Plex Pass' : '') + ' · ' + (n === 1 ? chosen()[0].name : n + ' servers');
   }
 
+  /* The qualities the server can convert to, as Plex's own apps offer them: the most it sends each second (kbps; 0:
+     Original, the file as it is) and the picture size that goes with it, with a few words for people who don't
+     know what Mbps means.  Used while watching (Options > Plex > Quality) and in Settings > Plex. */
+  var QUALITY = [
+    { b: 0, res: '', sub: 'As the file is: the best picture.  Needs internet fast enough for the file when the server is away.' },
+    { b: 40000, res: '4K', w: 3840, h: 2160, sub: 'Close to a 4K file.  For fast internet.' },
+    { b: 30000, res: '4K', w: 3840, h: 2160, sub: '4K, a little softer.  For fast internet.' },
+    { b: 20000, res: '1080p', w: 1920, h: 1080, sub: 'Full HD, as sharp as it gets.' },
+    { b: 12000, res: '1080p', w: 1920, h: 1080, sub: 'Full HD, very good.  Fine on most home internet.' },
+    { b: 8000, res: '1080p', w: 1920, h: 1080, sub: 'Full HD, good.  Plays smoothly on most internet.' },
+    { b: 4000, res: '720p', w: 1280, h: 720, sub: 'HD.  For slower internet, or when the picture keeps stopping to load.' },
+    { b: 2000, res: '720p', w: 1280, h: 720, sub: 'HD, softer.  For slow internet.' },
+    { b: 1500, res: '480p', w: 720, h: 480, sub: 'A small picture.  For very slow internet.' },
+    { b: 720, res: '480p', w: 720, h: 480, sub: 'The smallest.  When nothing else plays smoothly.' }
+  ];
+  // "20 Mbps  ·  1080p", or "Original".
+  function qualityName(b) {
+    var q = QUALITY.filter(function (x) { return x.b === b; })[0];
+    if (!b) return T('Original');
+    return T('{x} Mbps', { x: b / 1000 }) + (q ? '  ·  ' + q.res : '');
+  }
+  function qualityOf(b) { return QUALITY.filter(function (x) { return x.b === b; })[0] || null; }
+
   return {
+    QUALITY: QUALITY, qualityName: qualityName, qualityOf: qualityOf,
     signedIn: signedIn, added: added, user: user, describe: describe, onChange: onChange,
     connect: connect, cancel: cancel, pendingCode: pendingCode, signOut: signOut,
     servers: servers, chosen: chosen, server: server, loadServers: loadServers, choose: choose, reach: reach, call: call, door: door,

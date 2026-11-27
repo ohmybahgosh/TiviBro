@@ -179,6 +179,24 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     ok('seek previews come from the server\'s own pictures, through the door', /\/plex\/[0-9a-f]{48}\/library\/parts\/7\/indexes\/sd\/125000$/.test(pic), pic);
     ok('the picture is there', (await ev((u) => fetch(u).then((r) => r.status), pic)) === 200 && /indexes\/sd\/125000/.test(m.state.preview || ''));
     ok('the subtitle picked in Plex (a file beside it) is read through the door', !!m.state.subFile);
+    // Options while watching: the Plex tab first; Back in Subtitles comes back to Options; Plex's subtitle search.
+    const pick = async (label) => { const at = (await ev(() => UI.menuLabels)).indexOf(label); if (at < 0) return false; await ev((n) => { while (UI.menuAt !== n && UI.menuAt >= 0) UI.press(UI.menuAt < n ? 'down' : 'up'); UI.press('ok'); }, at); await page.waitForTimeout(600); return true; };
+    await ev(() => UI.press('red')); await page.waitForTimeout(600);
+    const opt = await ev(() => UI.menuLabels);
+    ok('Options while watching open on Plex\'s: Quality, Audio, Subtitles, Playback info', ['Quality', 'Audio', 'Subtitles', 'Playback info'].every((x) => opt.indexOf(x) >= 0), opt);
+    await pick('Quality');
+    const ql = await ev(() => UI.menuLabels);
+    ok('Quality: Plex\'s list, 4K down to 0.7 Mbps', ql.length >= 9 && /4K/.test(ql[1]) && /480p/.test(ql[ql.length - 1]), ql);
+    await ev(() => UI.press('back')); await page.waitForTimeout(400);
+    ok('Back in Quality: Options again, not closed', (await ev(() => UI.menuLabels)).indexOf('Playback info') >= 0);
+    await pick('Subtitles');
+    const sl = await ev(() => UI.menuLabels);
+    ok('Subtitles: the title\'s, Off, and Search for subtitles', sl.indexOf('Search for subtitles') >= 0 && sl.indexOf('Off') === 0, sl);
+    await pick('Search for subtitles'); await ev(() => UI.press('ok')); await page.waitForTimeout(1200);
+    const found = await ev(() => UI.menuLabels);
+    ok('Search for subtitles: what Plex found', found.indexOf('Northbound.2019.1080p.es') >= 0 && /language=en&/.test(m.state.subSearch || ''), [found, m.state.subSearch]);
+    await ev(() => UI.press('ok')); await page.waitForTimeout(3500);
+    ok('the one picked: fetched by the server and turned on', /key=%2Fopensubtitles%2F123/.test(m.state.subFetched || '') && /subtitleStreamID=9/.test(m.state.partPut || ''), [m.state.subFetched, m.state.partPut]);
     // Settings > Plex > Quality away from home: a file bigger than the cap is converted down to it.
     await ev(() => { Views.stopAll(); Plex.setPref('homeQuality', 8000); PlexPage.open({ ratingKey: '18', title: 'Northbound', type: 'movie', server: Plex.chosen()[0].id }, function () {}); });
     await page.waitForFunction(() => (PlexPage._test.item() || {}).Media && PlexPage._test.buttons().length, null, { timeout: 8000 });

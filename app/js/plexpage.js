@@ -209,14 +209,63 @@ var PlexPage = (function () {
     UI.menu(RAW(m.title), rows);
   }
   // An audio or subtitle track picked: kept by Plex for this title (and by TiviBro's player while it plays).
-  function pickStream(part, type, after) {
-    var list = (part.Stream || []).filter(function (s) { return s.streamType === type; });
+  function pickStream(part, type, after, title) {
+    var m = title || item, list = (part.Stream || []).filter(function (s) { return s.streamType === type; });
     var rows = (type === 3 ? [{ label: T('Off'), current: !list.some(function (s) { return s.selected; }), action: function () { choose(0); } }] : []).concat(list.map(function (s) { return { label: RAW(s.displayTitle || s.extendedDisplayTitle || s.language || '?'), sub: RAW(s.title || ''), current: !!s.selected, action: function () { choose(s.id); } }; }));
+    // Subtitles: Plex's own search (OpenSubtitles and the others the server has), as Plex's apps have it.
+    if (type === 3) rows.push({ label: T('Search for subtitles'), sub: T('Plex looks them up online for this title'), action: function () { searchSubs(m, part, after, function () { pickStream(part, type, after, title); }); } });
     function choose(id) {
       var q = type === 2 ? 'audioStreamID=' + id : 'subtitleStreamID=' + id;
-      Plex.call(item.server, '/library/parts/' + part.id + '?allParts=1&' + q, 'put').then(function () { list.forEach(function (s) { s.selected = s.id === id; }); if (after) after(id); else { var t = document.querySelector('#plexPage .plex-page-track'); if (t) t.innerHTML = track(); } }, function (e) { U.toast(e.message, 6000); });
+      Plex.call(m.server, '/library/parts/' + part.id + '?allParts=1&' + q, 'put').then(function () { list.forEach(function (s) { s.selected = s.id === id; }); if (after) after(id); else { var t = document.querySelector('#plexPage .plex-page-track'); if (t) t.innerHTML = track(); } }, function (e) { U.toast(e.message, 6000); });
     }
     UI.menu(type === 2 ? T('Audio') : T('Subtitles'), rows);
+  }
+  /* Subtitle search through the server: a language (the TV's first, then English and the others TiviBro speaks),
+     what Plex found for it, and the one picked is fetched by the server, turned on and (while watching) the title
+     starts again from where it was with it.  back(): the Subtitles list again. */
+  function searchSubs(m, part, after, back) {
+    var mine = (typeof I18n !== 'undefined' && I18n.lang ? I18n.lang() : 'en').split('-')[0], seen = {}, langs = [];
+    var all = typeof I18n !== 'undefined' && I18n.langs ? I18n.langs() : [{ code: 'en', name: 'English' }];
+    [mine, 'en'].concat(all.map(function (l) { return l.code.split('-')[0]; })).forEach(function (c) {
+      if (seen[c]) return; seen[c] = 1;
+      var l = all.filter(function (x) { return x.code.split('-')[0] === c; })[0];
+      langs.push({ code: c, name: l ? l.name : c });
+    });
+    function pickLang() { UI.menu(T('Search for subtitles'), langs.map(function (l) { return { label: RAW(l.name), action: function () { look(l); } }; }), back); }
+    function look(l) {
+      U.toast(T('Looking for subtitles…'), 4000);
+      Plex.call(m.server, '/library/metadata/' + m.ratingKey + '/subtitles?language=' + l.code + '&hearingImpaired=0&forced=0').then(function (j) {
+        var found = (mc(j).Stream || []).slice(0, 40);
+        if (!found.length) { U.toast(T('Plex found no subtitles in {x}', { x: RAW(l.name) }), 6000); return pickLang(); }
+        UI.menu(T('Subtitles in {x}', { x: RAW(l.name) }), found.map(function (x) {
+          var bits = [x.providerTitle, x.score ? T('match {x}%', { x: Math.round(+x.score) }) : '', x.perfectMatch ? T('made for this file') : '', x.hearingImpaired ? 'SDH' : ''].filter(Boolean).join('  ·  ');
+          return { label: RAW(x.title || x.displayTitle || l.name), sub: RAW(bits), action: function () { fetchSub(x, l); } };
+        }), pickLang);
+      }, function (e) { U.toast(e.message, 6000); });
+    }
+    // The server fetches it; it shows up among the title's subtitles a moment later, and is turned on.
+    function fetchSub(x, l) {
+      var had = {}; (part.Stream || []).forEach(function (s) { had[s.id] = 1; });
+      var q = '?key=' + encodeURIComponent(x.key || '') + '&codec=' + encodeURIComponent(x.codec || 'srt') + '&language=' + encodeURIComponent(x.languageCode || l.code) +
+        '&hearingImpaired=' + (x.hearingImpaired ? 1 : 0) + '&forced=' + (x.forced ? 1 : 0) + '&providerTitle=' + encodeURIComponent(x.providerTitle || '');
+      U.toast(T('Getting the subtitles…'), 4000);
+      Plex.call(m.server, '/library/metadata/' + m.ratingKey + '/subtitles' + q, 'put').then(function () {
+        var tries = 0;
+        (function wait() {
+          Plex.call(m.server, '/library/metadata/' + m.ratingKey).then(function (j) {
+            var md = (mc(j).Metadata || [])[0] || {}, p2 = ((md.Media || [])[0] || {}).Part || [], fresh = null;
+            p2.forEach(function (pp) { if (pp.id === part.id) { (pp.Stream || []).forEach(function (s) { if (s.streamType === 3 && !had[s.id]) fresh = fresh || s; }); if (fresh) part.Stream = pp.Stream; } });
+            if (!fresh) { if (++tries < 10) return setTimeout(wait, 2000); return U.toast(T('Plex is still getting the subtitles.  Try Subtitles again in a moment.'), 7000); }
+            Plex.call(m.server, '/library/parts/' + part.id + '?allParts=1&subtitleStreamID=' + fresh.id, 'put').then(function () {
+              part.Stream.forEach(function (s) { if (s.streamType === 3) s.selected = s.id === fresh.id; });
+              U.toast(T('Subtitles on'), 3000);
+              if (after) after(fresh.id); else { var t = document.querySelector('#plexPage .plex-page-track'); if (t) t.innerHTML = track(); }
+            }, function (e) { U.toast(e.message, 6000); });
+          }, function () { if (++tries < 10) setTimeout(wait, 2000); });
+        })();
+      }, function (e) { U.toast(e.message, 6000); });
+    }
+    pickLang();
   }
 
   /* Keys: ◀ ▶ along the buttons, ▼ into the rows (the page scrolls up), OK plays or opens, Back goes to the page
@@ -283,7 +332,7 @@ var PlexPage = (function () {
     Plex.door(m.server).then(function (key) {
       var base = 'http://127.0.0.1:' + Net.port + '/plex/' + key, url, converting = converts(v), cap = quality();
       if (!converting) url = base + part.key;
-      else url = base + '/video/:/transcode/universal/start.m3u8?path=' + encodeURIComponent('/library/metadata/' + m.ratingKey) + '&mediaIndex=' + Math.max(0, (m.Media || []).indexOf(v)) + '&partIndex=0&protocol=hls&fastSeek=1&directPlay=0&directStream=1&directStreamAudio=1&videoQuality=100' + (cap ? '&maxVideoBitrate=' + cap : '') + '&subtitles=burn&copyts=1&offset=0&session=' + newSession();
+      else url = base + '/video/:/transcode/universal/start.m3u8?path=' + encodeURIComponent('/library/metadata/' + m.ratingKey) + '&mediaIndex=' + Math.max(0, (m.Media || []).indexOf(v)) + '&partIndex=0&protocol=hls&fastSeek=1&directPlay=0&directStream=1&directStreamAudio=1&videoQuality=100' + (cap ? '&maxVideoBitrate=' + cap + resFor(cap) : '') + '&subtitles=burn&copyts=1&offset=0&session=' + newSession();
       var meta = { id: 'plex:' + m.server + ':' + m.ratingKey, plex: true, plexNext: m.type === 'episode' ? 'episode' : '', title: m.type === 'episode' ? m.grandparentTitle + '  S' + m.parentIndex + ' · E' + m.index : m.title, sub: m.type === 'episode' ? m.title : [m.year, m.contentRating].filter(Boolean).join('  ·  '), marks: marks(m), chapters: converting ? [] : chapters(m) };
       if (!converting && /(^|,)sd(,|$)/.test(part.indexes || '')) meta.pics = function (t) { return base + '/library/parts/' + part.id + '/indexes/sd/' + Math.round(t * 1000); };
       playing = { item: m, meta: meta, converting: converting, last: 0, scrobbled: false };
@@ -321,6 +370,8 @@ var PlexPage = (function () {
     return s.relay ? Math.min(cap || RELAY, RELAY) : cap;
   }
   var RELAY = 2000;
+  // The picture size that goes with a quality (Plex's apps send both): "&videoResolution=1920x1080".
+  function resFor(cap) { var q = Plex.qualityOf(cap) || Plex.QUALITY.filter(function (x) { return x.b && x.b <= cap; })[0]; return q && q.w ? '&videoResolution=' + q.w + 'x' + q.h : ''; }
   /* Before playing: away from home without Plex Pass, a word on why it may not play (the server owner's Plex Pass
      counts too, which the TV can't see); through the relay, why it's soft.  Once per server a day. */
   var told = {};
@@ -354,20 +405,25 @@ var PlexPage = (function () {
 
   /* ---------- Options while watching: the player's Options (Red) open on a Plex tab, as in Plex's player ---------- */
   var forceCap = null;   // a quality picked while watching: kept for this title until another is started by hand
-  var Q = [0, 20000, 12000, 8000, 4000, 2000];
-  function qLabel(q) { return q ? T('{x} Mbps', { x: q / 1000 }) : T('Original'); }
+  function qLabel(q) { return Plex.qualityName(q); }
   // The title again from where it is now, with a new quality, audio or subtitle (Plex keeps the track choices).
   function restart() { var at = Math.round((Player.position || 0) * 1000); U.toast(T('One moment…'), 2000); play(at, true); }
+  /* The rows of the Plex tab in the player's Options: Quality (Plex's list, with plain words), Audio and Subtitles
+     (with Plex's subtitle search), Playback info, the next and previous episode, Mark watched.  [] when no Plex
+     title is playing. */
   function playerItems() {
     var p = playing; if (!p) return [];
     var m = p.item, v = version(m), part = v.Part && v.Part[0], out = [], cap = quality(), srv = (Plex.server(m.server) || {}).name || 'Plex';
     var sel = function (type) { var x = (part && part.Stream || []).filter(function (s) { return s.streamType === type && s.selected; })[0]; return x ? RAW(x.displayTitle || x.language || '') : (type === 3 ? T('Off') : ''); };
     out.push({ label: T('Quality'), sub: p.converting ? (cap ? qLabel(cap) : T('Converted by {x}', { x: RAW(srv) })) : T('Original  ·  plays as it is'), action: function () {
-      UI.menu(T('Quality'), Q.map(function (q) { return { label: qLabel(q), sub: q ? '' : T('as the file is, when the TV can play it'), current: (forceCap != null ? forceCap : -1) === q, action: function () { forceCap = q; restart(); } }; }));
+      // Each with a few plain words (what it looks like, what internet it needs), as Plex lists them.
+      var now = forceCap != null ? forceCap : cap;
+      UI.menu(T('Quality'), Plex.QUALITY.map(function (q) { return { label: qLabel(q.b), sub: T(q.sub), current: now === q.b, action: function () { forceCap = q.b; restart(); } }; }), null,
+        { sub: T('Mbps is how much picture comes each second: higher looks sharper, lower plays smoother on slow internet.') });
     } });
     if (part) {
-      out.push({ label: T('Audio'), sub: sel(2), action: function () { pickStream(part, 2, restart); } });
-      out.push({ label: T('Subtitles'), sub: sel(3), action: function () { pickStream(part, 3, restart); } });
+      out.push({ label: T('Audio'), sub: sel(2), action: function () { pickStream(part, 2, restart, m); } });
+      out.push({ label: T('Subtitles'), sub: sel(3), action: function () { pickStream(part, 3, restart, m); } });
     }
     out.push({ label: T('Playback info'), sub: p.converting ? T('Converted by {x}', { x: RAW(srv) }) : T('Direct play'), action: function () { info(p, v, srv); } });
     if (m.type === 'episode') {

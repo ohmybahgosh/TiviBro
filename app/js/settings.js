@@ -535,8 +535,9 @@ var Settings = (function () {
   }
   /* Settings > Plex > Playing: the most the server sends when it converts (at home, away), playing files as they
      are, and the rows Plex titles share with everything else TiviBro plays (Up next, Skip intro, Seek previews). */
-  var PLEX_Q = [0, 20000, 12000, 8000, 4000, 2000], PLEX_QL = ['Original', '20 Mbps (1080p)', '12 Mbps (1080p)', '8 Mbps (1080p)', '4 Mbps (720p)', '2 Mbps (720p)'];
   function plexPlaying() {
+    // The same list as Options > Plex > Quality while watching (plex.js QUALITY).
+    var PLEX_Q = Plex.QUALITY.map(function (q) { return q.b; }), PLEX_QL = PLEX_Q.map(function (b) { return Plex.qualityName(b); });
     var pr = function (k) { return function () { return Plex.prefs()[k]; }; }, set = function (k) { return function (v) { Plex.setPref(k, v); paint(); }; };
     return [head('Playing'),
       choice('Quality at home', 'When the server converts a movie or an episode for the TV on your home network.  Original: as good as the file.  A file smaller than this plays as it is.', PLEX_Q, PLEX_QL, pr('homeQuality'), set('homeQuality')),

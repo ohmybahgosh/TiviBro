@@ -1066,6 +1066,8 @@ var Views = (function () {
     if ((fullFrom === 'onnow' || fullFrom === 'media' || fullFrom === 'sports') && (away || tab !== fullFrom)) fullFrom = home() === 'live' ? 'live' : 'guide';
     closePanel();
     peekUntil = 0; clearTimeout(peekT);
+    // The buffer meter called up with its key goes with the full screen (no stats come after a movie stops to hide it).
+    if (Store.settings.meter !== 'always' || mode === 'vod') meter.classList.add('hidden');
     full = false; overlay = false;
     Keymap.setContext(tab === 'live' ? 'list' : 'other');
     $('overlay').classList.add('hidden');
@@ -1317,7 +1319,12 @@ var Views = (function () {
       // Skip intro or Up next showing (skipper.js): OK does it, Back hides it.
       if (typeof SeekPrev !== 'undefined' && SeekPrev.chapterKey(a)) return true;     // the chapter strip, while open
       if (typeof Skipper !== 'undefined' && vs.pending == null && Skipper.key(a)) return true;
-      if (a === 'back') { if (vs.pending != null) { vodSeekCancel(); return true; } if (!hidden) { $('osd').classList.add('hidden'); return true; } exitFull(); }
+      if (a === 'back') {
+        if (vs.pending != null) { vodSeekCancel(); return true; }
+        if (!hidden) { $('osd').classList.add('hidden'); return true; }
+        if (Date.now() < peekUntil) { peekMeter(); return true; }   // the buffer meter up (its key): Back puts it away first
+        exitFull();
+      }
       else if (a === 'left') vodSeek(-Store.settings.skip, true);
       else if (a === 'stop') exitFull();       // discussion #36: Stop on the remote stops the movie (where it got to is kept)
       // A recording still recording: yellow goes to the channel, live.
@@ -2617,7 +2624,7 @@ var Views = (function () {
     // A Plex title: Plex's own options first, on their own tab (quality, audio, subtitles, playback info, episodes).
     var plexRows = mode === 'vod' && vod && vod.meta.plex && typeof PlexPage !== 'undefined' ? PlexPage.playerItems() : [];
     plexRows.forEach(function (it) { it.tab = 'Plex'; });
-    UI.menu(mode === 'vod' && vod ? RAW(vod.meta.title) : playing ? RAW(L.name(playing)) : 'Player', plexRows.concat(qpSlots(items)), null, { tab: plexRows.length ? 'Plex' : 'Sound and picture' });
+    UI.menu(mode === 'vod' && vod ? RAW(vod.meta.title) : playing ? RAW(L.name(playing)) : 'Player', plexRows.concat(qpSlots(items)), null, { tab: plexRows.length ? 'Plex' : 'Sound and picture', nest: true });   // nest: Back in Audio, Subtitles... comes back here
   }
   /* Options (Red) in the order of the quick menu buttons too (discussion #36: Stream info moved to the front there
      stayed near the end here).  They all sit in its Sound and picture tab, so a viewer's order applies there whole.  The rows that are also quick buttons trade places among themselves; the channel's

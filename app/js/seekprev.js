@@ -231,7 +231,7 @@ var SeekPrev = (function () {
 
   /* Chapters with their pictures (Red > Chapters in the player, or CH+ CH− there): a strip of the movie's chapters,
      each with a picture of its first moments (when previews are on), its name and when it starts.  ◀ ▶ move along,
-     OK jumps there, Back closes.  The picture is a little after the chapter's start (its very first frame is often
+     OK jumps there, Back or ▲ closes (▲ is back to the timeline, where ▼ opened it).  The picture is a little after the chapter's start (its very first frame is often
      black). */
   var sheet = null;
   function picTime(c) { return bucket(c.s + Math.min(20, Math.max(2, (c.e - c.s) * 0.1))); }
@@ -268,7 +268,7 @@ var SeekPrev = (function () {
     if (a === 'left' && sheet.at > 0) { sheet.at--; drawChapters(); }
     else if (a === 'right' && sheet.at < n - 1) { sheet.at++; drawChapters(); }
     else if (a === 'ok') jumpChapter();
-    else if (a === 'back' || a === 'red') closeChapters();
+    else if (a === 'back' || a === 'red' || a === 'up') closeChapters();   // ▲ back up to the timeline, as ▼ came down
     return true;
   }
   // CH+ / CH−: the next or the previous chapter's start (back to this one's start if more than 5 s in).  -1: none.
