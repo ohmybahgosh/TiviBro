@@ -27,7 +27,8 @@ var Plex = (function () {
     return Media.request('plex', q, ms || 25000).then(function (r) {
       if (r && r.error) {
         var e = new Error(message(r.error)); e.kind = r.error;
-        if (r.error === 'login' && q.token && q.token === state.token) { note('warn', 'Plex refused the sign-in: signed out'); signOut(true); }
+        // A refused sign-in signs out, except on the Watchlist (Plex's catalogue refuses some Plex Home people).
+        if (r.error === 'login' && !q.soft && q.token && q.token === state.token) { note('warn', 'Plex refused the sign-in: signed out'); signOut(true); }
         throw e;
       }
       return r || {};
@@ -154,12 +155,22 @@ var Plex = (function () {
     });
   }
 
+  /* ---------- Watchlist (plex.tv's, the same in every Plex app) ---------- */
+  function watchlist() { return req({ op: 'watchlist', token: state.token, act: 'list', soft: true }).then(function (r) { return r.items || []; }); }
+  /* A title on or off the Watchlist, by its plex:// guid (its catalogue key is the guid's last part). */
+  function watch(guid, on) {
+    var key = /^plex:\/\/(movie|show|season|episode)\/([0-9a-f]{24})$/.exec(String(guid || ''));
+    if (!key) return Promise.reject(new Error('Plex doesn\'t know this one well enough for the Watchlist.'));
+    return req({ op: 'watchlist', token: state.token, act: on ? 'add' : 'remove', key: key[2], soft: true });
+  }
+
   /* ---------- Settings > Plex: this TV's own choices (kept with the sign-in, kept on sign-out) ---------- */
   /* homeQuality and awayQuality: the most the server sends when it converts, in kbps (0: Original, as the file is).
      direct: play a file as it is when the TV can (off: always the server's converter, for files that stutter). */
   /* topMixed: the "Streaming Top 10s you have" row; topServices: a "Top 10 on X" row each (plextop.js).
-     hiddenRows: home rows turned off in Edit home rows, by title (Plex's own order otherwise). */
-  var PREFS = { homeQuality: 0, awayQuality: 8000, direct: true, topMixed: true, topServices: [], hiddenRows: {} };
+     hiddenRows: home rows turned off in Edit home rows, by title (Plex's own order otherwise).
+     watchRow: the Watchlist row on Home (plextop.js). */
+  var PREFS = { homeQuality: 0, awayQuality: 8000, direct: true, topMixed: true, topServices: [], hiddenRows: {}, watchRow: true };
   // A copy each time (lists and maps too), so a change is kept only through setPref.
   function prefs() { var p = state.prefs || {}, out = {}; for (var k in PREFS) out[k] = JSON.parse(JSON.stringify(p[k] == null ? PREFS[k] : p[k])); return out; }
   function setPref(k, v) { state.prefs = state.prefs || {}; state.prefs[k] = v; save(); }
@@ -176,7 +187,7 @@ var Plex = (function () {
     connect: connect, cancel: cancel, pendingCode: pendingCode, signOut: signOut,
     servers: servers, chosen: chosen, server: server, loadServers: loadServers, choose: choose, reach: reach, call: call, door: door,
     sections: sections, libs: libs, setLib: setLib, shownLibraries: shownLibraries, rememberLibraries: rememberLibraries,
-    homeUsers: homeUsers, switchUser: switchUser, prefs: prefs, setPref: setPref,
+    homeUsers: homeUsers, switchUser: switchUser, prefs: prefs, setPref: setPref, watchlist: watchlist, watch: watch,
     _test: { state: function () { return state; }, reset: function (s) { state = s || {}; } }
   };
 })();

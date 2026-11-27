@@ -2768,5 +2768,11 @@ I18n.add('ru', {
   "The rows of your Plex home, in Plex's order: turn any off.  Red on the Plex tab's Home too.": "Ряды главной вашего Plex, в порядке Plex: выключите любые.  Также кнопкой Красная на главной вкладки Plex.",
   "Top 10 rows": "Ряды топ-10",
   "Yesterday's Top 10s of the streaming services in your country (FlixPatrol) with the movies and shows your Plex has, best place first, \"#3 on Netflix\" under each.": "Вчерашние топ-10 стриминговых сервисов в вашей стране (FlixPatrol) с фильмами и сериалами из вашего Plex, лучшее место первым, «#3 на Netflix» под каждым.",
-  "Rows off: {x}": "Выключено рядов: {x}"
+  "Rows off: {x}": "Выключено рядов: {x}",
+  "Add to Watchlist": "В список «Буду смотреть»",
+  "Added to your Watchlist": "Добавлено в «Буду смотреть»",
+  "Remove from Watchlist": "Убрать из «Буду смотреть»",
+  "Removed from your Watchlist": "Убрано из «Буду смотреть»",
+  "Watchlist row": "Ряд «Буду смотреть»",
+  "Your Plex Watchlist on Home, with the titles your servers have.  More > Add to Watchlist on a movie's page.": "Ваш список Plex «Буду смотреть» на главной, с тем, что есть на ваших серверах.  Ещё > В список «Буду смотреть» на странице фильма."
 });

@@ -2647,5 +2647,11 @@ I18n.add('pl', {
   "The rows of your Plex home, in Plex's order: turn any off.  Red on the Plex tab's Home too.": "Rzędy strony głównej Twojego Pleksa, w kolejności Pleksa: wyłącz dowolne.  Także Czerwonym na stronie głównej karty Plex.",
   "Top 10 rows": "Rzędy Top 10",
   "Yesterday's Top 10s of the streaming services in your country (FlixPatrol) with the movies and shows your Plex has, best place first, \"#3 on Netflix\" under each.": "Wczorajsze Top 10 serwisów streamingowych w Twoim kraju (FlixPatrol) z filmami i serialami z Twojego Pleksa, najlepsze miejsce pierwsze, „#3 w Netflix” pod każdym.",
-  "Rows off: {x}": "Wyłączone rzędy: {x}"
+  "Rows off: {x}": "Wyłączone rzędy: {x}",
+  "Add to Watchlist": "Dodaj do listy do obejrzenia",
+  "Added to your Watchlist": "Dodano do Twojej listy do obejrzenia",
+  "Remove from Watchlist": "Usuń z listy do obejrzenia",
+  "Removed from your Watchlist": "Usunięto z Twojej listy do obejrzenia",
+  "Watchlist row": "Rząd Do obejrzenia",
+  "Your Plex Watchlist on Home, with the titles your servers have.  More > Add to Watchlist on a movie's page.": "Twoja lista do obejrzenia z Pleksa na stronie głównej, z tytułami z Twoich serwerów.  Więcej > Dodaj do listy do obejrzenia na stronie filmu."
 });

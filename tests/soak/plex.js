@@ -46,7 +46,7 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     await page.waitForFunction(() => document.querySelectorAll('#viewPlex .media-tile').length > 3, null, { timeout: 15000 });
     await page.waitForTimeout(800);
     const home = await tiles();
-    ok('Home: Continue watching first, then the server\'s rows in its order', home.map((x) => x.t).join('|') === 'Continue watching|Recently Added in Movies|Friday Night Picks', home);
+    ok('Home: Continue watching first, your Watchlist, then the server\'s rows in its order', home.map((x) => x.t).join('|') === 'Continue watching|Watchlist|Recently Added in Movies|Friday Night Picks', home);
     ok('Home: music left out', !home.some((x) => /Music/.test(x.t)));
     ok('Home: only the movie library\'s titles in Continue watching', home[0].n === 1, home[0]);
     const posters = await ev(() => [].filter.call(document.querySelectorAll('#viewPlex img.media-cover'), (i) => /\/plex\/[0-9a-f]{48}\/photo\//.test(i.src)).length);
@@ -94,6 +94,7 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     await ev(() => { Plex.setPref('topServices', ['Netflix']); PlexView.resume(); }); await page.waitForTimeout(1500);
     ok('a Top 10 on Netflix row when picked', (await ev(() => PlexView._test.rows().map((r) => r.title))).indexOf('Top 10 on Netflix') >= 0);
     await shot('5b-top10');
+    ok('the Watchlist row: the titles on your Plex Watchlist that your servers have', JSON.stringify(await ev(() => (PlexView._test.rows().filter((r) => r.title === 'Watchlist')[0] || { items: [] }).items.map((x) => x.title))) === '["Northbound"]');
     // Edit home rows: one turned off, then all back.
     const homeT = await ev(() => PlexView.homeTitles());
     await ev((t) => { Plex.setPref('hiddenRows', { [t]: 1 }); PlexView.resume(); }, homeT[homeT.length - 1]); await page.waitForTimeout(1500);
@@ -109,6 +110,12 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     ok('the page: Dolby Vision, 4K, Atmos and the scores', /Dolby Vision/.test(pg) && /4K/.test(pg) && /Atmos/.test(pg) && /Critics 92%/.test(pg), pg);
     await shot('6-movie');
     ok('the page is the title picked', (await ev(() => PlexPage._test.item().title)) === 'Northbound');
+    // More > Remove from Watchlist (it's on it), through Plex's catalogue with its key.
+    await ev(() => { PlexPage._test.keys('red'); }); await page.waitForTimeout(400);
+    const moreRows = await ev(() => UI.menuLabels);
+    ok('More: Remove from Watchlist for a title on it', moreRows.indexOf('Remove from Watchlist') >= 0, moreRows);
+    await ev((n) => { for (let i = 0; i < n; i++) UI.press('down'); UI.press('ok'); }, moreRows.indexOf('Remove from Watchlist')); await page.waitForTimeout(800);
+    ok('…sent to Plex with the title\'s catalogue key', /removeFromWatchlist\?ratingKey=5d776b59ad5437001f79c6f8/.test(m.state.watchlisted || ''), m.state.watchlisted);
     await key('ok'); await page.waitForTimeout(2500);
     const src = await ev(() => (Views.vod && Views.vod.url) || '');
     ok('Resume plays the file through the door', /\/plex\/[0-9a-f]{48}\/library\/parts\/7\/1700000000\/file\.mkv$/.test(src), src);
@@ -130,7 +137,8 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     // An old MPEG-2 file the TV can't play as is: the server converts it (HLS), from where you start.
     await ev(() => { Views.stopAll(); PlexPage.open({ ratingKey: '13', title: 'Low Tide', type: 'movie', server: Plex.chosen()[0].id }, function () {}); });
     await page.waitForFunction(() => (PlexPage._test.item() || {}).title === 'Low Tide' && PlexPage._test.buttons().length, null, { timeout: 8000 });
-    await ev(() => PlexPage._test.keys('ok')); await page.waitForTimeout(2500);
+    await ev(() => PlexPage._test.keys('ok'));
+    await page.waitForFunction(() => /metadata%2F13/.test((Views.vod && Views.vod.url) || ''), null, { timeout: 8000 }).catch(() => {});
     const conv = await ev(() => (Views.vod && Views.vod.url) || '');
     ok('a file the TV can\'t play: the server converts it', /\/plex\/[0-9a-f]{48}\/video\/:\/transcode\/universal\/start\.m3u8\?path=%2Flibrary%2Fmetadata%2F13/.test(conv) && /protocol=hls/.test(m.state.transcode || ''), conv);
     ok('no page errors', !errs.length, errs);

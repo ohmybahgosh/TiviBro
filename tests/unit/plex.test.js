@@ -90,6 +90,14 @@ const ask = (q) => new Promise((ok) => Plex.handle(Object.assign({ cid: 'tv-0123
     front.close();
     console.log('PASS pictures and video through a door, the token kept in the helper');
 
+    const wl = await ask({ op: 'watchlist', token: 'mock-account-token-123', act: 'list' });
+    assert.deepEqual(wl.items.map((x) => x.title), ['Northbound', 'Not on the server']); assert(/^plex:\/\/movie\//.test(wl.items[0].guid));
+    assert.deepEqual(await ask({ op: 'watchlist', token: 'mock-account-token-123', act: 'add', key: '5d776b59ad5437001f79c6f8' }), {});
+    assert(/addToWatchlist\?ratingKey=5d776b59ad5437001f79c6f8/.test(m.state.watchlisted));
+    assert.equal((await ask({ op: 'watchlist', token: 'mock-account-token-123', act: 'add', key: '../x' })).error, 'bad', 'only a catalogue key');
+    assert.equal((await ask({ op: 'watchlist', token: 'mock-account-token-123', act: 'clear' })).error, 'bad');
+    console.log('PASS the Watchlist: read, and a title added by its catalogue key only');
+
     const logged = JSON.stringify(m.state.seen.map((s) => s.path));
     assert(!/mock-account-token|mock-server-token/.test(logged), 'tokens go in headers, never in addresses');
     console.log('PASS tokens never in an address');

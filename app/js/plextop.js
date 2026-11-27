@@ -115,5 +115,43 @@ var PlexTop = (function () {
     return out;
   }
 
-  return { rows: rows, services: services, look: look, _test: { same: same, wanted: wanted, norm: norm, reset: function () { found = {}; busy = false; save(); } } };
+  /* ---------- The Watchlist row ---------- */
+  /* Your Plex Watchlist with the titles your servers have (each found by its plex:// guid in the libraries picked),
+     newest first as Plex keeps it.  Read again after 10 minutes, or right away after a change (changedWatch). */
+  var watch = { at: 0, items: [], busy: false, waiting: [] }, WATCH_AGE = 600e3;
+  function watchRow(then) {
+    if (!Plex.prefs().watchRow || !Plex.added()) return [];
+    if (Date.now() - watch.at > WATCH_AGE) readWatch(then);
+    return watch.items.length ? [{ title: T('Watchlist'), items: watch.items }] : [];
+  }
+  function changedWatch() { watch.at = 0; }
+  // Is this server title on the Watchlist (as last read)?
+  function onWatch(m) { return watch.items.some(function (x) { return x.guid && x.guid === m.guid; }); }
+  function readWatch(then) {
+    if (then) watch.waiting.push(then);
+    if (watch.busy) return;
+    watch.busy = true;
+    Plex.watchlist().then(function (list) {
+      return Promise.all(list.slice(0, 40).map(findOnServers)).then(function (found2) {
+        watch.items = found2.filter(Boolean); watch.at = Date.now(); watch.busy = false;
+        watch.waiting.splice(0).forEach(function (f) { try { f(); } catch (e) {} });
+      });
+    }).catch(function () { watch.busy = false; watch.at = Date.now(); watch.waiting = []; });
+  }
+  /* A Watchlist title's own copy on a server picked, in a library picked of its kind, or null. */
+  function findOnServers(w) {
+    var libs = Plex.shownLibraries().filter(function (l) { return l.type === w.type && Plex.libs(l.server).indexOf(l.key) >= 0; });
+    function on(i) {
+      if (i >= libs.length || !w.guid) return Promise.resolve(null);
+      var l = libs[i];
+      return Plex.call(l.server, '/library/sections/' + l.key + '/all?guid=' + encodeURIComponent(w.guid)).then(function (j) {
+        var m = ((j && j.MediaContainer && j.MediaContainer.Metadata) || [])[0];
+        if (!m) return on(i + 1);
+        m.server = l.server; return m;
+      }, function () { return on(i + 1); });
+    }
+    return on(0);
+  }
+
+  return { rows: rows, watchRow: watchRow, onWatch: onWatch, changedWatch: changedWatch, services: services, look: look, _test: { same: same, wanted: wanted, norm: norm, reset: function () { found = {}; busy = false; save(); } } };
 })();

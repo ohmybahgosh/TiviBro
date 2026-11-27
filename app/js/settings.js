@@ -548,6 +548,7 @@ var Settings = (function () {
     var p = Plex.prefs();
     return [head('Home rows'),
       action('Edit home rows', 'The rows of your Plex home, in Plex\'s order: turn any off.  Red on the Plex tab\'s Home too.', function () { PlexView.editRows(function () { build(); }); }, function () { var n = Object.keys(p.hiddenRows || {}).length; return n ? T('Rows off: {x}', { x: n }) : T('As in Plex'); }),
+      toggle('Watchlist row', 'Your Plex Watchlist on Home, with the titles your servers have.  More > Add to Watchlist on a movie\'s page.', function () { return Plex.prefs().watchRow; }, function (v) { Plex.setPref('watchRow', v); paint(); }),
       toggle('Streaming Top 10s you have', 'Yesterday\'s Top 10s of the streaming services in your country (FlixPatrol) with the movies and shows your Plex has, best place first, "#3 on Netflix" under each.', function () { return Plex.prefs().topMixed; }, function (v) { Plex.setPref('topMixed', v); paint(); }),
       page('Top 10 rows', 'A row of its own for a service\'s Top 10, with the titles your Plex has.  On Home and in each library\'s Recommended.', 'Top 10 rows', plexTopPick, function () { return String(Plex.prefs().topServices.length); })];
   }

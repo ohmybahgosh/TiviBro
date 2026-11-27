@@ -93,6 +93,13 @@ var PlexPage = (function () {
       UI.menu(T('Version'), m.Media.map(function (x, i) { return { label: RAW(describeVersion(x)), sub: RAW(badges(x).join('  ·  ')), action: function () { versionOf[m.ratingKey] = i; draw(); } }; }));
     } });
     if (part) rows.push({ label: T('Audio'), action: function () { pickStream(part, 2); } }, { label: T('Subtitles'), action: function () { pickStream(part, 3); } });
+    // The Watchlist (Plex's, the same in every Plex app): for what you haven't watched yet, as Plex offers it.
+    if (m.type === 'movie' && m.guid && typeof PlexTop !== 'undefined') {
+      var on = PlexTop.onWatch(m);
+      rows.push({ label: on ? T('Remove from Watchlist') : T('Add to Watchlist'), action: function () {
+        Plex.watch(m.guid, !on).then(function () { PlexTop.changedWatch(); U.toast(on ? T('Removed from your Watchlist') : T('Added to your Watchlist')); }, function (e) { U.toast(e.message, 6000); });
+      } });
+    }
     if (m.viewOffset) rows.push({ label: T('Remove from Continue watching'), action: function () {
       Plex.call(m.server, '/actions/removeFromContinueWatching?ratingKey=' + m.ratingKey, 'put').then(function () { m.viewOffset = 0; U.toast(T('Removed from Continue watching')); draw(); }, function (e) { U.toast(e.message, 6000); });
     } });

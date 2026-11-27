@@ -58,7 +58,8 @@ var PlexView = (function () {
       var out = [], seen = {};
       var c = [].concat.apply([], r[0]).filter(function (m) { return shownLib(m.server, m.librarySectionID); }).sort(function (a, b) { return (b.lastViewedAt || 0) - (a.lastViewedAt || 0); });
       if (c.length) out.push({ title: T('Continue watching'), items: c, wide: true });
-      if (typeof PlexTop !== 'undefined') out = out.concat(PlexTop.rows(null, function () { if (open_ && tabNow().id === 'home' && !stack.length) load(); }));
+      var again = function () { if (open_ && tabNow().id === 'home' && !stack.length) load(); };
+      if (typeof PlexTop !== 'undefined') out = out.concat(PlexTop.watchRow(again), PlexTop.rows(null, again));
       [].concat.apply([], r[1]).forEach(function (h) {
         if (/continue|ondeck/i.test(h.id || '')) return;
         var items = h.items.filter(function (m) { return m.librarySectionID == null || shownLib(m.server, m.librarySectionID); });

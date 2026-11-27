@@ -21,9 +21,14 @@ function route(state, req, port) {
     { name: 'A phone', provides: 'client,player', clientIdentifier: 'phone1', connections: [] }]];
   if (p === '/api/v2/home/users') return [200, { users: [{ uuid: 'u1', title: 'hometheater', admin: true }, { uuid: 'kid1', title: 'Kids', protected: true, restricted: true }] }];
   if (p === '/api/v2/home/users/kid1/switch') return /pin=1234/.test(q) ? [201, { authToken: 'mock-kid-token' }] : [403, { error: 'pin' }];
+  // Plex's catalogue (the same mock stands in for it): the Watchlist, and adding to it.
+  if (/^\/(library\/sections\/watchlist\/all|actions\/(addTo|removeFrom)Watchlist)$/.test(p) && tok !== TOKEN && tok !== 'mock-kid-token') return [401, { error: 'unauthorized' }];
+  if (p === '/library/sections/watchlist/all') return [200, { MediaContainer: { Metadata: [{ ratingKey: '5d776b59ad5437001f79c6f8', guid: 'plex://movie/5d776b59ad5437001f79c6f8', type: 'movie', title: 'Northbound' }, { ratingKey: '5d776b59ad5437001f79c6f9', guid: 'plex://movie/5d776b59ad5437001f79c6f9', type: 'movie', title: 'Not on the server' }] } }];
+  if (/^\/actions\/(add|remove)FromWatchlist$|^\/actions\/addToWatchlist$/.test(p) && req.method === 'PUT') { state.watchlisted = p + '?' + q; return [200, null]; }
   if (tok !== SERVER_TOKEN) return [401, { error: 'unauthorized' }];
   if (p === '/identity') return [200, { MediaContainer: { machineIdentifier: MACHINE, version: '1.42.2' } }];
   if (p === '/library/sections') return [200, { MediaContainer: { Directory: [{ key: '1', type: 'movie', title: 'Movies' }] } }];
+  if (p === '/library/sections/1/all' && /guid=/.test(q)) { var g = decodeURIComponent((/guid=([^&]*)/.exec(q) || [])[1] || ''); return [200, { MediaContainer: { Metadata: g === 'plex://movie/5d776b59ad5437001f79c6f8' ? [movie(18, 'Northbound', { guid: g })] : [] } }]; }
   if (p === '/library/sections/1/all') { state.lastAll = q; var list = /unwatched=1/.test(q) ? MOVIES.slice(3) : MOVIES; return [200, { MediaContainer: { totalSize: list.length, Metadata: list.map(function (m, i) { return movie(10 + i, m); }) } }]; }
   if (p === '/photo/:/transcode') return state.realPng ? [200, PNG, 'image/png'] : [200, 'PNG:' + q, 'image/png'];
   if (p === '/hubs/continueWatching') return [200, { MediaContainer: { Hub: [{ title: 'Continue Watching', hubIdentifier: 'home.continue', Metadata: [movie(18, 'Northbound', { viewOffset: 2400000, lastViewedAt: 1700000500 }), episode(31, 4)] }] } }];
@@ -48,7 +53,7 @@ function route(state, req, port) {
   if (p === '/library/streams/3') { state.subFile = true; return [200, '1\n00:00:01,000 --> 00:00:04,000\nHello from Plex\n', 'text/plain']; }
   if (p === '/library/parts/7/1700000000/file.mkv') { state.range = req.headers.range; return [206, 'MKVBYTES', 'video/x-matroska']; }
   var md = /^\/library\/metadata\/(\d+)$/.exec(p);
-  if (md) { var k = +md[1], old = k === 13; return [200, { MediaContainer: { Metadata: [movie(k, MOVIES[k - 10] || 'X', { viewOffset: k === 18 ? 2400000 : 0, librarySectionTitle: 'Movies', rating: 9.2, audienceRating: 8.8,
+  if (md) { var k = +md[1], old = k === 13; return [200, { MediaContainer: { Metadata: [movie(k, MOVIES[k - 10] || 'X', { guid: k === 18 ? 'plex://movie/5d776b59ad5437001f79c6f8' : undefined, viewOffset: k === 18 ? 2400000 : 0, librarySectionTitle: 'Movies', rating: 9.2, audienceRating: 8.8,
     Director: [{ tag: 'Ana Ruiz' }], Role: [{ tag: 'Mara Quinn' }, { tag: 'Theo Lake' }],
     Marker: [{ type: 'intro', startTimeOffset: 5000, endTimeOffset: 65000 }, { type: 'credits', startTimeOffset: 6900000, endTimeOffset: 7200000, final: true }],
     Chapter: [{ tag: 'Opening', startTimeOffset: 0, endTimeOffset: 600000 }, { tag: 'The ferry', startTimeOffset: 600000, endTimeOffset: 7200000 }],

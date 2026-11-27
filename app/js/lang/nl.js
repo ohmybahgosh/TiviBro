@@ -2647,5 +2647,11 @@ I18n.add('nl', {
   "The rows of your Plex home, in Plex's order: turn any off.  Red on the Plex tab's Home too.": "De rijen van je Plex-home, in de volgorde van Plex: zet er uit wat je wilt.  Ook met Rood op Home van het tabblad Plex.",
   "Top 10 rows": "Top 10-rijen",
   "Yesterday's Top 10s of the streaming services in your country (FlixPatrol) with the movies and shows your Plex has, best place first, \"#3 on Netflix\" under each.": "De top 10 van gisteren van de streamingdiensten in je land (FlixPatrol) met de films en series die je Plex heeft, beste plaats eerst, „#3 op Netflix” onder elke.",
-  "Rows off: {x}": "Rijen uit: {x}"
+  "Rows off: {x}": "Rijen uit: {x}",
+  "Add to Watchlist": "Toevoegen aan kijklijst",
+  "Added to your Watchlist": "Toegevoegd aan je kijklijst",
+  "Remove from Watchlist": "Verwijderen uit kijklijst",
+  "Removed from your Watchlist": "Verwijderd uit je kijklijst",
+  "Watchlist row": "Rij kijklijst",
+  "Your Plex Watchlist on Home, with the titles your servers have.  More > Add to Watchlist on a movie's page.": "Je Plex-kijklijst op Home, met de titels die je servers hebben.  Meer > Toevoegen aan kijklijst op de pagina van een film."
 });

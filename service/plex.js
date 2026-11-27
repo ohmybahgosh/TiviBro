@@ -8,6 +8,8 @@
      POST /media/plex { op: 'home', cid, token }                 -> { users }  Plex Home people
      POST /media/plex { op: 'switch', cid, token, uuid, pin }    -> { token, user }  sign in as another Plex Home person
      POST /media/plex { op: 'get'|'put'|'post'|'delete', cid, base, path, token } -> { status, data }  a server call
+     POST /media/plex { op: 'watchlist', cid, token, act: 'list' }       -> { items }  your Plex Watchlist (plex.tv's, not a server's)
+     POST /media/plex { op: 'watchlist', cid, token, act: 'add'|'remove', key } -> {}  a title on or off it
      POST /media/plex { op: 'door', cid, base, token }          -> { key }  a door for pictures and video (below)
      GET  /plex/<key>/<path>                                     pictures (/photo/:/transcode) and video (a part's
                                                                 file, the converter's playlist and pieces) from that
@@ -24,6 +26,7 @@ var URL = require('url');
 var CA = require('./media-ca');
 
 var PLEX_TV = 'https://clients.plex.tv';
+var DISCOVER = 'https://discover.provider.plex.tv';   // Plex's own catalogue: the Watchlist lives there
 var LOOPBACK = false;   // tests only: lets the mock server on 127.0.0.1 stand in for a home server
 var VERSION = '0.6.0';
 try { VERSION = require('../package.json').version; } catch (e) {}
@@ -262,7 +265,23 @@ function doorGet(req, res, ALLOW) {
 }
 function isDoor(url) { return String(url || '').indexOf('/plex/') === 0; }
 
-var OPS = { door: door, pin: pin, poll: poll, user: user, servers: servers, pick: pick, home: home, 'switch': switchUser, get: server, put: server, post: server, 'delete': server };
+/* The Watchlist, on Plex's catalogue (discover.provider.plex.tv) with the account's sign-in: the list (each title
+   with its plex:// guid, which a server finds its own copy by), or one title (its 24-hex catalogue key) on or off. */
+function watchlist(q, cb) {
+  var add = q.act === 'add', path;
+  if (q.act === 'list') path = '/library/sections/watchlist/all?includeGuids=1&X-Plex-Container-Start=0&X-Plex-Container-Size=60';
+  else if ((add || q.act === 'remove') && /^[0-9a-f]{24}$/.test(String(q.key || ''))) path = '/actions/' + (add ? 'addToWatchlist' : 'removeFromWatchlist') + '?ratingKey=' + q.key;
+  else return cb(failure('bad'));
+  call(q.act === 'list' ? 'GET' : 'PUT', DISCOVER + path, headers(q), null, function (e, r) {
+    if (e) return cb(failure('unreachable'));
+    if (r.status >= 400) return cb(fromStatus(r));
+    if (q.act !== 'list') return cb({});
+    var list = ((r.json || {}).MediaContainer || {}).Metadata || [];
+    cb({ items: list.map(function (m) { return { key: m.ratingKey, guid: m.guid, type: m.type, title: m.title, year: m.year, thumb: m.thumb, art: m.art }; }) });
+  });
+}
+
+var OPS = { watchlist: watchlist, door: door, pin: pin, poll: poll, user: user, servers: servers, pick: pick, home: home, 'switch': switchUser, get: server, put: server, post: server, 'delete': server };
 
 /* The /media/plex route: checks the TV id and the token shape, then runs the op. */
 function handle(q, cb) {
@@ -272,4 +291,4 @@ function handle(q, cb) {
   OPS[q.op](q, cb);
 }
 
-module.exports = { handle: handle, isDoor: isDoor, doorGet: doorGet, _test: { allowedBase: allowedBase, allowedPath: allowedPath, order: order, setPlexTv: function (u) { PLEX_TV = u; }, loopback: function (on) { LOOPBACK = !!on; } } };
+module.exports = { handle: handle, isDoor: isDoor, doorGet: doorGet, _test: { allowedBase: allowedBase, allowedPath: allowedPath, order: order, setPlexTv: function (u) { PLEX_TV = u; DISCOVER = u; }, loopback: function (on) { LOOPBACK = !!on; } } };

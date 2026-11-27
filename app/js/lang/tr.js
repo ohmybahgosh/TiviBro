@@ -2647,5 +2647,11 @@ I18n.add('tr', {
   "The rows of your Plex home, in Plex's order: turn any off.  Red on the Plex tab's Home too.": "Plex ana sayfanızın sıraları, Plex'in sırasıyla: istediklerinizi kapatın.  Plex sekmesinin Ana sayfasında Kırmızı ile de.",
   "Top 10 rows": "Top 10 sıraları",
   "Yesterday's Top 10s of the streaming services in your country (FlixPatrol) with the movies and shows your Plex has, best place first, \"#3 on Netflix\" under each.": "Ülkenizdeki yayın servislerinin dünkü Top 10'ları (FlixPatrol), Plex'inizdeki film ve dizilerle, en iyi sıra önce, her birinin altında \"Netflix'te 3.\".",
-  "Rows off: {x}": "Kapalı sıralar: {x}"
+  "Rows off: {x}": "Kapalı sıralar: {x}",
+  "Add to Watchlist": "İzleme listesine ekle",
+  "Added to your Watchlist": "İzleme listenize eklendi",
+  "Remove from Watchlist": "İzleme listesinden çıkar",
+  "Removed from your Watchlist": "İzleme listenizden çıkarıldı",
+  "Watchlist row": "İzleme listesi sırası",
+  "Your Plex Watchlist on Home, with the titles your servers have.  More > Add to Watchlist on a movie's page.": "Plex izleme listeniz Ana sayfada, sunucularınızda olan yapımlarla.  Bir filmin sayfasında Diğer > İzleme listesine ekle."
 });
