@@ -238,6 +238,8 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     // Play all: the list's titles one after another with Up next, then the last one's page.
     await ev(() => { Views.stopAll(); const sv = Plex.chosen()[0].id; return Plex.call(sv, '/library/metadata/40/allLeaves').then((j) => { const l = j.MediaContainer.Metadata; PlexPage.playAll(sv, [l[0], l[2]], false); }); }); await page.waitForTimeout(2500);
     const q1 = await ev(() => String((PlexPage._test.item() || {}).ratingKey));
+    const dryAsk = await ev(() => { PlexPage._test.stalled(); PlexPage._test.stalled(); PlexPage._test.stalled(); const t = document.body.innerText; UI.press('back'); return t; });
+    ok('a Plex title that keeps running dry: a lower quality offered', /keeps stopping to load/.test(dryAsk) && /Play at/.test(dryAsk), dryAsk.slice(-300));
     await ev(() => PlexPage.ended(false)); await page.waitForTimeout(1500);
     const qUp = await ev(() => document.body.innerText);
     await ev(() => UI.press('ok')); await page.waitForTimeout(2500);
@@ -250,6 +252,11 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     await ev(() => { Views.stopAll(); PlexPage.open({ ratingKey: '40', type: 'show', title: 'The Harbor Lights', server: Plex.chosen()[0].id }, function () {}); });
     await page.waitForFunction(() => PlexPage._test.shelf() && (PlexPage._test.item() || {}).type === 'show', null, { timeout: 8000 }).catch(() => {});
     const sp = await ev(() => ({ btns: PlexPage._test.buttons().map((b) => b.label), rows: PlexPage._test.shelf().rows.map((r) => r.title) }));
+    // Live updates: the stamp moves when something is watched elsewhere.
+    const st1 = await ev(() => PlexView._test.stamp());
+    m.state.viewedAt = 200;
+    const st2 = await ev(() => PlexView._test.stamp());
+    ok('live updates: the server\'s stamp changes when something is watched elsewhere', /10@100/.test(st1) && /10@200/.test(st2) && st1 !== st2, st1 + ' / ' + st2);
     const th = await ev(() => PlexPage._test.theme());
     ok('a show\'s page plays its theme through the helper', /\/plex\/[0-9a-f]{48}\/library\/metadata\/40\/theme\/1$/.test(th), th);
     const off = await ev(() => { Plex.setPref('spoilers', true); const r = [Plex.spoiler({ type: 'episode' }), Plex.spoiler({ type: 'episode', viewCount: 1 }), Plex.epPic({ type: 'episode', thumb: '/t', grandparentArt: '/a' })]; Plex.setPref('spoilers', false); return r; });

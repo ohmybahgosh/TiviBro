@@ -2739,5 +2739,9 @@ I18n.add('hi', {
   "Play all": "सब चलाएँ",
   "A show's theme plays quietly on its page, and its seasons' and episodes', while you look around.": "किसी शो का थीम संगीत उसके पेज पर, और उसके सीज़न और एपिसोड के पेज पर, धीमे से बजता है जब आप देखते हैं।",
   "Episodes you haven't watched show the show's picture instead of their own, and no story, on the TV and the phone.": "जो एपिसोड आपने नहीं देखे, वे अपनी तस्वीर की जगह शो की तस्वीर दिखाते हैं, और कहानी नहीं, टीवी और फ़ोन पर।",
-  "Theme music": "थीम संगीत"
+  "Theme music": "थीम संगीत",
+  "A smaller picture that the server and your internet can keep up with.": "एक छोटी तस्वीर, जिसके साथ सर्वर और आपका इंटरनेट चल सकें।",
+  "Keep this quality": "यही क्वालिटी रखें",
+  "Play at {x}": "{x} पर चलाएँ",
+  "This keeps stopping to load": "यह बार-बार लोड होने के लिए रुक रहा है"
 });

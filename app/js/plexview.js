@@ -179,7 +179,7 @@ var PlexView = (function () {
   }
 
   /* ---------- Loading what the current tab shows ---------- */
-  function load() {
+  function load(quiet) {
     if (Object.keys(picCache).length > 1500) picCache = {};
     if (Object.keys(details).length > 600) { details = {}; logos = {}; }   // links to old pictures, let go now and then
     var seq = ++loadSeq, t = tabNow(), top = stack[stack.length - 1], sub = (subList()[subAt] || [])[0];
@@ -188,7 +188,9 @@ var PlexView = (function () {
       t.id === 'top' ? Promise.resolve([].concat.apply([], PlexTop.services().map(function (svc) { return PlexTop.chartRows(svc, function () { if (open_ && tabNow().id === 'top' && !stack.length) load(); }); }))) :
       sub === 'recommended' ? recommendedRows(t.lib) : sub === 'library' ? libraryRows(t.lib) : sub === 'collections' ? collectionRows(t.lib) : sub === 'categories' ? categoryRows(t.lib) : playlistRows();
     if (!rows.length) empty(T('Loading…'));   // reading again over rows already drawn: no "Loading" on top of them
-    p.then(function (r) { if (seq !== loadSeq) return; rows = r; rowAt = Math.min(rowAt, Math.max(0, rows.length - 1)); colAt = {}; empty(rows.length ? '' : t.id === 'search' ? T('Press OK to search Plex') : T('Nothing here yet')); draw(); },
+    var kept = quiet ? colAt : {};          // a quiet read (live updates) keeps where you are in each row
+    p.then(function (r) { if (seq !== loadSeq) return; rows = r; rowAt = Math.min(rowAt, Math.max(0, rows.length - 1)); colAt = {};
+      Object.keys(kept).forEach(function (k) { if (rows[k]) colAt[k] = Math.min(kept[k], Math.max(0, rows[k].items.length - 1)); }); empty(rows.length ? '' : t.id === 'search' ? T('Press OK to search Plex') : T('Nothing here yet')); draw(); },
       function (e) { if (seq !== loadSeq) return; rows = []; empty(e && e.message || T('Plex did not answer.')); draw(); });
   }
   function empty(text) { var el = $('plexEmpty'); el.textContent = text; el.classList.toggle('hidden', !text); }
@@ -484,6 +486,31 @@ var PlexView = (function () {
     var go = function (shuffle) { return function () { childRows(m).then(function (rs) { PlexPage.playAll(m.server, [].concat.apply([], rs.map(function (r) { return r.items; })), shuffle); }, function (e) { U.toast(e.message, 6000); }); }; };
     return [{ label: T('Play all'), action: go(false) }, { label: T('Shuffle'), action: go(true) }];
   }
+  /* ---------- Live updates ---------- */
+  /* While the Plex tab shows (not a title's page, nothing playing), once a minute: each server's libraries' change
+     times and the newest thing watched anywhere (Plex's history, readable by the server's owner).  When either moved,
+     the rows are read again quietly, where you are kept: a new title or a mark from another app shows up by itself. */
+  var liveTimer = 0, liveStamp = '';
+  function live() {
+    if (liveTimer) return;
+    liveStamp = '';
+    liveTimer = setInterval(function () {
+      var pg = $('plexPage');
+      if (!open_ || Views.tab !== 'plex' || (pg && !pg.classList.contains('hidden')) || Views.mode === 'vod' || document.hidden) return;
+      stampNow().then(function (s) {
+        var was = liveStamp; liveStamp = s;
+        if (was && s !== was && open_ && tabNow().id !== 'search') { Log.info('plex', 'Something changed on the server: rows read again'); load(true); }
+      });
+    }, 60000);
+  }
+  // What changes when the libraries or watched marks change, on every server picked, as one string.
+  function stampNow() {
+    return Promise.all(Plex.chosen().map(function (s) {
+      var libs = Plex.call(s.id, '/library/sections').then(function (j) { return ((j.MediaContainer || {}).Directory || []).map(function (d) { return d.key + ':' + (d.updatedAt || 0) + ':' + (d.contentChangedAt || 0); }).join(','); }, function () { return ''; });
+      var seen = Plex.call(s.id, '/status/sessions/history/all?sort=viewedAt:desc&X-Plex-Container-Start=0&X-Plex-Container-Size=1').then(function (j) { var h = ((j.MediaContainer || {}).Metadata || [])[0]; return h ? h.ratingKey + '@' + h.viewedAt : ''; }, function () { return ''; });
+      return Promise.all([libs, seen]).then(function (x) { return s.id + '=' + x.join('|'); });
+    })).then(function (l) { return l.join(';'); });
+  }
   function markAll(m, on) {
     Plex.call(m.server, (on ? '/:/scrobble' : '/:/unscrobble') + '?identifier=com.plexapp.plugins.library&key=' + m.ratingKey).then(function () { U.toast(on ? T('Marked as watched') : T('Marked as not watched')); load(); }, function (e) { U.toast(e.message, 6000); });
   }
@@ -504,20 +531,21 @@ var PlexView = (function () {
     if (tabNow().id === 'search' && !lastSearch) tabAt = 0;      // an empty Search opens on Home
     subAt = firstSub();
     zone = 'rows'; stack = []; rowAt = 0; colAt = {};
-    UI.setHandler(keys); draw(); load();
+    UI.setHandler(keys); draw(); load(); live();
   }
   // Back from a title or from watching: the same place, the rows read again (watched marks, Continue watching).
   function resume() {
     if (!open_) return open();
+    live();
     // Search with nothing searched (a title played from the phone's search) is a blank page: Home instead.
     if (tabNow().id === 'search' && !lastSearch && !stack.length) { tabAt = 0; zone = 'rows'; UI.setHandler(keys); switched(); return; }
     UI.setHandler(keys); draw(); load();
   }
   // Off the Plex tab: a report sent now isn't about Plex, unless a Plex title is still playing.
-  function leave() { open_ = false; loadSeq++; if (typeof PlexPage !== 'undefined' && PlexPage.quiet) PlexPage.quiet(); if (typeof Log !== 'undefined' && !(Views.vod && Views.vod.meta && Views.vod.meta.plex)) Log.state('plex', ''); }
+  function leave() { open_ = false; loadSeq++; clearInterval(liveTimer); liveTimer = 0; if (typeof PlexPage !== 'undefined' && PlexPage.quiet) PlexPage.quiet(); if (typeof Log !== 'undefined' && !(Views.vod && Views.vod.meta && Views.vod.meta.plex)) Log.state('plex', ''); }
 
   // A collection (or a show's seasons) from elsewhere: from a title's page it goes on top, so Back returns there.
   function openShow(m) { if (!m.page) stack = []; push(m); zone = 'rows'; UI.setHandler(keys); draw(); load(); }
 
-  return { ring: ring, logoOf: logoOf, open: open, resume: resume, leave: leave, picture: pic, file: raw, details: more, openShow: openShow, openPerson: openPerson, itemOptions: itemOptions, editRows: editRows, read: { home: homeRows, children: childRows, search: searchRows, recommended: recommendedRows, collections: collectionRows, categories: categoryRows, genre: genreItems, playlists: playlistRows, libPrefs: libPrefs, SUBS: SUBS }, homeTitles: function () { return lastHome; }, _test: { zone: function () { return zone + ':' + rowAt + ':' + (colAt[rowAt] || 0) + '/' + (rows[rowAt] ? rows[rowAt].items.length : -1); }, more: more, tab: function (i) { tabAt = i; switched(); }, home: function () { tabAt = 0; switched(); }, tabs: function () { return tabsList; }, rows: function () { return rows; }, keys: keys, focused: focused } };
+  return { ring: ring, logoOf: logoOf, open: open, resume: resume, leave: leave, picture: pic, file: raw, details: more, openShow: openShow, openPerson: openPerson, itemOptions: itemOptions, editRows: editRows, read: { home: homeRows, children: childRows, search: searchRows, recommended: recommendedRows, collections: collectionRows, categories: categoryRows, genre: genreItems, playlists: playlistRows, libPrefs: libPrefs, SUBS: SUBS }, homeTitles: function () { return lastHome; }, _test: { stamp: stampNow, zone: function () { return zone + ':' + rowAt + ':' + (colAt[rowAt] || 0) + '/' + (rows[rowAt] ? rows[rowAt].items.length : -1); }, more: more, tab: function (i) { tabAt = i; switched(); }, home: function () { tabAt = 0; switched(); }, tabs: function () { return tabsList; }, rows: function () { return rows; }, keys: keys, focused: focused } };
 })();

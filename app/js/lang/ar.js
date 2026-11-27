@@ -2739,5 +2739,9 @@ I18n.add('ar', {
   "Play all": "تشغيل الكل",
   "A show's theme plays quietly on its page, and its seasons' and episodes', while you look around.": "تُعزف موسيقى شارة المسلسل بهدوء في صفحته وفي صفحات مواسمه وحلقاته أثناء تصفحك.",
   "Episodes you haven't watched show the show's picture instead of their own, and no story, on the TV and the phone.": "الحلقات التي لم تشاهدها تعرض صورة المسلسل بدلاً من صورتها، ومن دون قصة، على التلفاز والهاتف.",
-  "Theme music": "موسيقى الشارة"
+  "Theme music": "موسيقى الشارة",
+  "A smaller picture that the server and your internet can keep up with.": "صورة أصغر يستطيع الخادم واتصالك بالإنترنت مواكبتها.",
+  "Keep this quality": "الإبقاء على هذه الجودة",
+  "Play at {x}": "التشغيل بجودة {x}",
+  "This keeps stopping to load": "يتوقف التشغيل مرارًا للتحميل"
 });

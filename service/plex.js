@@ -47,7 +47,8 @@ var SERVER_PATHS = [
   [/^\/:\/(timeline|scrobble|unscrobble|rate)$/, 'GET|PUT|POST'],
   [/^\/actions\/removeFromContinueWatching$/, 'PUT'],
   [/^\/video\/:\/transcode\/universal\/(decision|ping|stop)$/, 'GET'],
-  [/^\/transcode\/sessions$/, 'GET'],   // how the server is converting what plays (Playback info)
+  [/^\/transcode\/sessions$/, 'GET'],
+  [/^\/status\/sessions\/history\/all$/, 'GET'],   // the newest thing watched anywhere (the Plex tab's live updates)   // how the server is converting what plays (Playback info)
   [/^\/photo\/:\/transcode$/, 'GET']
 ];
 

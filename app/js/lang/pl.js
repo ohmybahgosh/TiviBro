@@ -2753,5 +2753,9 @@ I18n.add('pl', {
   "Play all": "Odtwórz wszystko",
   "A show's theme plays quietly on its page, and its seasons' and episodes', while you look around.": "Muzyka z czołówki serialu gra cicho na jego stronie i na stronach sezonów i odcinków, gdy się rozglądasz.",
   "Episodes you haven't watched show the show's picture instead of their own, and no story, on the TV and the phone.": "Odcinki, których nie obejrzałeś, pokazują obraz serialu zamiast własnego i bez opisu fabuły, na telewizorze i w telefonie.",
-  "Theme music": "Muzyka z czołówki"
+  "Theme music": "Muzyka z czołówki",
+  "A smaller picture that the server and your internet can keep up with.": "Mniejszy obraz, za którym serwer i twój internet nadążą.",
+  "Keep this quality": "Zachowaj tę jakość",
+  "Play at {x}": "Odtwórz w {x}",
+  "This keeps stopping to load": "Ciągle zatrzymuje się, by się wczytać"
 });

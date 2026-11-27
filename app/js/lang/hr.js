@@ -2739,5 +2739,9 @@ I18n.add('hr', {
   "Play all": "Reproduciraj sve",
   "A show's theme plays quietly on its page, and its seasons' and episodes', while you look around.": "Glazbena tema serije tiho svira na njezinoj stranici i na stranicama sezona i epizoda dok razgledavate.",
   "Episodes you haven't watched show the show's picture instead of their own, and no story, on the TV and the phone.": "Epizode koje niste gledali prikazuju sliku serije umjesto svoje i bez radnje, na TV-u i na mobitelu.",
-  "Theme music": "Glazbena tema"
+  "Theme music": "Glazbena tema",
+  "A smaller picture that the server and your internet can keep up with.": "Manja slika koju poslužitelj i vaš internet mogu pratiti.",
+  "Keep this quality": "Zadrži ovu kvalitetu",
+  "Play at {x}": "Reproduciraj u {x}",
+  "This keeps stopping to load": "Stalno se zaustavlja radi učitavanja"
 });

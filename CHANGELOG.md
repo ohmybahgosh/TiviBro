@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Plex keeps up by itself.**  While the Plex tab shows, new titles and watched marks from other apps appear within a minute, without moving you.  A Plex title that keeps stopping to load offers a lower quality.
 - **Plex theme music and Hide spoilers.**  A show's theme plays quietly on its pages (Settings > Plex > Theme music, on).  Hide spoilers (off) shows the show's picture and no story for episodes you haven't watched, on the TV and the phone.
 - **Shuffle and Play all for Plex.**  A show's or a season's page has Shuffle, and a collection or a playlist has Play all and Shuffle (hold OK on it, or Red inside it).  The titles play one after another with Up next.
 - **After a Plex title ends, its page comes back.**  A movie or a show's last episode ended on the Plex tab you came from, which could be an empty Search.  Now its page shows again (the show's, for an episode), as in Plex, and an empty Search opens on Home.

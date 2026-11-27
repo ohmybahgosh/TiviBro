@@ -2022,5 +2022,9 @@ I18n.add('fr', {
   "Play all": "Tout lire",
   "A show's theme plays quietly on its page, and its seasons' and episodes', while you look around.": "Le générique d'une série joue doucement sur sa page, et sur celles de ses saisons et épisodes, pendant que vous regardez.",
   "Episodes you haven't watched show the show's picture instead of their own, and no story, on the TV and the phone.": "Les épisodes pas encore vus montrent l'image de la série au lieu de la leur, et pas de résumé, sur la TV et le téléphone.",
-  "Theme music": "Générique"
+  "Theme music": "Générique",
+  "A smaller picture that the server and your internet can keep up with.": "Une image plus petite que le serveur et votre internet peuvent suivre.",
+  "Keep this quality": "Garder cette qualité",
+  "Play at {x}": "Lire en {x}",
+  "This keeps stopping to load": "La lecture s'arrête sans cesse pour charger"
 });

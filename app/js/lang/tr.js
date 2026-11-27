@@ -2753,5 +2753,9 @@ I18n.add('tr', {
   "Play all": "Tümünü oynat",
   "A show's theme plays quietly on its page, and its seasons' and episodes', while you look around.": "Bir dizinin tema müziği, siz göz gezdirirken sayfasında ve sezon ve bölüm sayfalarında kısık sesle çalar.",
   "Episodes you haven't watched show the show's picture instead of their own, and no story, on the TV and the phone.": "İzlemediğiniz bölümler kendi resimleri yerine dizinin resmini gösterir ve konusu gösterilmez, TV'de ve telefonda.",
-  "Theme music": "Tema müziği"
+  "Theme music": "Tema müziği",
+  "A smaller picture that the server and your internet can keep up with.": "Sunucunun ve internetinizin yetişebileceği daha küçük bir görüntü.",
+  "Keep this quality": "Bu kaliteyi koru",
+  "Play at {x}": "{x} ile oynat",
+  "This keeps stopping to load": "Yüklemek için sürekli duruyor"
 });

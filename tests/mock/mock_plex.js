@@ -27,7 +27,8 @@ function route(state, req, port) {
   if (/^\/actions\/(add|remove)FromWatchlist$|^\/actions\/addToWatchlist$/.test(p) && req.method === 'PUT') { state.watchlisted = p + '?' + q; return [200, null]; }
   if (tok !== SERVER_TOKEN) return [401, { error: 'unauthorized' }];
   if (p === '/identity') return [200, { MediaContainer: { machineIdentifier: MACHINE, version: '1.42.2' } }];
-  if (p === '/library/sections') return [200, { MediaContainer: { Directory: [{ key: '1', type: 'movie', title: 'Movies' }] } }];
+  if (p === '/library/sections') return [200, { MediaContainer: { Directory: [{ key: '1', type: 'movie', title: 'Movies', updatedAt: state.libChanged || 1 }] } }];
+  if (p === '/status/sessions/history/all') return [200, { MediaContainer: { Metadata: [{ ratingKey: '10', viewedAt: state.viewedAt || 100 }] } }];
   if (p === '/library/sections/1/all' && /actor=902/.test(q)) { state.actor = true; return [200, { MediaContainer: { Metadata: [movie(18, 'Northbound'), movie(12, 'Paper Kingdoms')] } }]; }
   if (p === '/library/sections/1/all' && /guid=/.test(q)) { var g = decodeURIComponent((/guid=([^&]*)/.exec(q) || [])[1] || ''); return [200, { MediaContainer: { Metadata: g === 'plex://movie/5d776b59ad5437001f79c6f8' ? [movie(18, 'Northbound', { guid: g })] : [] } }]; }
   if (p === '/library/sections/1/all') { state.lastAll = q; var list = /unwatched=1/.test(q) ? MOVIES.slice(3) : MOVIES; return [200, { MediaContainer: { totalSize: list.length, Metadata: list.map(function (m, i) { return movie(10 + i, m); }) } }]; }

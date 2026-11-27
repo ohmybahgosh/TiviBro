@@ -2868,5 +2868,9 @@ I18n.add('ru', {
   "Play all": "Воспроизвести всё",
   "A show's theme plays quietly on its page, and its seasons' and episodes', while you look around.": "Музыкальная тема сериала тихо играет на его странице и на страницах сезонов и эпизодов, пока вы смотрите.",
   "Episodes you haven't watched show the show's picture instead of their own, and no story, on the TV and the phone.": "Непросмотренные эпизоды показывают картинку сериала вместо своей и без описания, на телевизоре и в телефоне.",
-  "Theme music": "Музыкальная тема"
+  "Theme music": "Музыкальная тема",
+  "A smaller picture that the server and your internet can keep up with.": "Изображение поменьше, с которым справятся сервер и ваш интернет.",
+  "Keep this quality": "Оставить это качество",
+  "Play at {x}": "Воспроизвести в {x}",
+  "This keeps stopping to load": "Видео постоянно останавливается для загрузки"
 });

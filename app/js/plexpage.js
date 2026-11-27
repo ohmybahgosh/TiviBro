@@ -350,7 +350,7 @@ var PlexPage = (function () {
   /* Starts the title at ms: the file through the door, or the server's converter.  Plex's preview pictures, its
      chapters and a subtitle file kept beside the video go to the player too (a file played as it is). */
   function play(ms, fromUpNext) {
-    stopTheme();
+    stopTheme(); watchStalls();
     if (!fromUpNext) { chain = 0; forceCap = null; queue = null; }
     var m = item, v = version(), part = v.Part && v.Part[0];
     if (!part) return U.toast(T('Plex has no file for this one.'), 6000);
@@ -443,6 +443,39 @@ var PlexPage = (function () {
 
   /* ---------- Options while watching: the player's Options (Red) open on a Plex tab, as in Plex's player ---------- */
   var forceCap = null;   // a quality picked while watching: kept for this title until another is started by hand
+
+  /* ---------- Keeps stopping to load: a lower quality offered ---------- */
+  /* Plex's "suggest a better quality": a Plex title that runs dry 3 times within 3 minutes of playing (not its
+     start) is offered the next quality down from what it plays at (the file's own rate when it plays as it is).
+     Asked once per title; OK restarts it there, as Options > Plex > Quality would. */
+  var dry = [], asked = false, hooked = false;
+  function watchStalls() {
+    dry = []; asked = false;
+    if (hooked || typeof Player === 'undefined' || !Player.on) return;
+    hooked = true;
+    var was = '';
+    Player.on('state', function (s) {
+      if (playing && s === 'buffering' && was === 'playing') stalled();
+      was = s;
+    });
+  }
+  function stalled() {
+    var now = Date.now();
+    dry = dry.filter(function (t) { return now - t < 180000; }).concat(now);
+    if (dry.length < 3 || asked || !playing) return;
+    var lower = lowerQuality(); if (!lower) return;
+    asked = true;
+    UI.menu(T('This keeps stopping to load'), [
+      { label: T('Play at {x}', { x: qLabel(lower) }), sub: T('A smaller picture that the server and your internet can keep up with.'), action: function () { forceCap = lower; restart(); } },
+      { label: T('Keep this quality'), current: true }]);
+  }
+  // The next quality down from what plays now: the cap when the server converts, else the file's own rate.
+  function lowerQuality() {
+    var p = playing, now = p.converting ? quality() : +(version(p.item).bitrate || 0);
+    if (!now) now = 999999;
+    var q = Plex.QUALITY.filter(function (x) { return x.b && x.b < now * 0.8; })[0];
+    return q ? q.b : 0;
+  }
   function qLabel(q) { return Plex.qualityName(q); }
   /* For a report: how the last Plex title played, without its name: what kind of title, the file (container,
      codecs, size, bitrate, Dolby Vision or HDR), and whether the TV played it as it is or the server converted it
@@ -681,5 +714,5 @@ var PlexPage = (function () {
     return Plex.call(server, (on ? '/:/scrobble' : '/:/unscrobble') + '?identifier=com.plexapp.plugins.library&key=' + encodeURIComponent(String(key))).then(function () { return { on: !!on }; });
   }
 
-  return { quiet: stopTheme, diag: diag, open: open, ended: ended, playAll: playAll, shuffleOf: shuffleOf, close: close, reshow: reshow, playKey: playKey, playerItems: playerItems, pageData: pageData, playExtra: playExtra, playNextKey: playNextKey, markKey: markKey, _test: { theme: function () { return themeSrc; }, quality: quality, marks: marks, badges: badges, direct: direct, converts: converts, chapters: chapters, item: function () { return item; }, keys: keys, buttons: function () { return btns; }, shelf: function () { return shelf; } } };
+  return { quiet: stopTheme, diag: diag, open: open, ended: ended, playAll: playAll, shuffleOf: shuffleOf, close: close, reshow: reshow, playKey: playKey, playerItems: playerItems, pageData: pageData, playExtra: playExtra, playNextKey: playNextKey, markKey: markKey, _test: { theme: function () { return themeSrc; }, stalled: stalled, lowerQuality: lowerQuality, quality: quality, marks: marks, badges: badges, direct: direct, converts: converts, chapters: chapters, item: function () { return item; }, keys: keys, buttons: function () { return btns; }, shelf: function () { return shelf; } } };
 })();

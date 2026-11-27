@@ -2865,5 +2865,9 @@ I18n.add('es', {
   "Play all": "Reproducir todo",
   "A show's theme plays quietly on its page, and its seasons' and episodes', while you look around.": "El tema de una serie suena bajito en su página, y en las de sus temporadas y episodios, mientras miras.",
   "Episodes you haven't watched show the show's picture instead of their own, and no story, on the TV and the phone.": "Los episodios que no has visto muestran la imagen de la serie en lugar de la suya, y sin argumento, en la tele y en el móvil.",
-  "Theme music": "Música del tema"
+  "Theme music": "Música del tema",
+  "A smaller picture that the server and your internet can keep up with.": "Una imagen más pequeña con la que el servidor y tu internet pueden seguir el ritmo.",
+  "Keep this quality": "Mantener esta calidad",
+  "Play at {x}": "Reproducir a {x}",
+  "This keeps stopping to load": "Se detiene una y otra vez para cargar"
 });

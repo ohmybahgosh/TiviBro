@@ -2753,5 +2753,9 @@ I18n.add('nl', {
   "Play all": "Alles afspelen",
   "A show's theme plays quietly on its page, and its seasons' and episodes', while you look around.": "De titelmuziek van een serie speelt zacht op de pagina, en op die van de seizoenen en afleveringen, terwijl je rondkijkt.",
   "Episodes you haven't watched show the show's picture instead of their own, and no story, on the TV and the phone.": "Afleveringen die je nog niet hebt gezien tonen de afbeelding van de serie in plaats van hun eigen, en geen verhaal, op de tv en de telefoon.",
-  "Theme music": "Titelmuziek"
+  "Theme music": "Titelmuziek",
+  "A smaller picture that the server and your internet can keep up with.": "Een kleiner beeld dat de server en je internet kunnen bijhouden.",
+  "Keep this quality": "Deze kwaliteit houden",
+  "Play at {x}": "Afspelen op {x}",
+  "This keeps stopping to load": "Dit stopt steeds om te laden"
 });
