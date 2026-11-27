@@ -2743,5 +2743,9 @@ I18n.add('hi', {
   "A smaller picture that the server and your internet can keep up with.": "एक छोटी तस्वीर, जिसके साथ सर्वर और आपका इंटरनेट चल सकें।",
   "Keep this quality": "यही क्वालिटी रखें",
   "Play at {x}": "{x} पर चलाएँ",
-  "This keeps stopping to load": "यह बार-बार लोड होने के लिए रुक रहा है"
+  "This keeps stopping to load": "यह बार-बार लोड होने के लिए रुक रहा है",
+  "A moment after a movie's page opens, its trailer plays behind it, if the server has one.  Not on TVs with 1 GB of memory.": "किसी फ़िल्म का पेज खुलने के थोड़ी देर बाद, अगर सर्वर पर उसका ट्रेलर है, तो वह पीछे चलता है।  1 GB मेमोरी वाले टीवी पर नहीं।",
+  "Trailer on a movie's page": "फ़िल्म के पेज पर ट्रेलर",
+  "With sound": "आवाज़ के साथ",
+  "Without sound": "बिना आवाज़ के"
 });

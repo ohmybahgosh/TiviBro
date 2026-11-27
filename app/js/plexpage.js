@@ -34,7 +34,7 @@ var PlexPage = (function () {
       '?includeMarkers=1&includeChapters=1&includeExtras=1&includeRelated=1&includeGuids=1';
     Plex.call(m.server, '/library/metadata/' + m.ratingKey + q).then(function (j) {
       var full = (mc(j).Metadata || [])[0]; if (!full || item !== m) return;
-      full.server = m.server; item = full; draw(); UI.setHandler(keys); theme(full);
+      full.server = m.server; item = full; draw(); UI.setHandler(keys); theme(full); backTrailer(full);
       rowsFor(full).then(function (rows) {
         if (item !== full) return;
         var el = $('plexPageRows'); if (!el || !rows.length) return;
@@ -306,10 +306,10 @@ var PlexPage = (function () {
   }
   function close() { hide(); btnAt = 0; zone = 'btns'; }
   // Out of sight while a person's titles or a collection show over the Plex tab; reshow() brings it back as it was.
-  function hide() { stopTheme(); var el = $('plexPage'); if (el) el.classList.add('hidden'); }
+  function hide() { stopTheme(); stopTrailer(); var el = $('plexPage'); if (el) el.classList.add('hidden'); }
   function reshow() {
     var el = $('plexPage'); if (!el || !item) return false;
-    el.classList.remove('hidden'); paint(); UI.setHandler(keys); theme(item); return true;
+    el.classList.remove('hidden'); paint(); UI.setHandler(keys); theme(item); backTrailer(item); return true;
   }
 
   /* ---------- Theme music (Settings > Plex > Theme music) ---------- */
@@ -326,6 +326,45 @@ var PlexPage = (function () {
       themeAudio = new Audio(src); themeAudio.volume = 0.35; themeSrc = src;
       var r = themeAudio.play(); if (r && r.catch) r.catch(function () {});
     }, function () {});
+  }
+  var trailerVid = null, trailerWait = 0, trailerLast = '';   // trailerLast: the last one started (for tests)
+  /* ---------- The trailer behind a movie's page (Settings > Plex > Trailer on a movie's page) ---------- */
+  /* As PlxNative does: after a moment on a movie's page, its trailer (from the server's extras, a file the TV plays as
+     it is) fades in where the backdrop is, without sound or with it (then the theme stops), and fades out at its end.
+     Not on a TV short of memory, nor while anything else plays.  Gone when the page goes or anything starts. */
+  function backTrailer(m) {
+    stopTrailer();
+    var how = Plex.prefs().pageTrailer;
+    if (how !== 'quiet' && how !== 'sound') return;
+    if (m.type !== 'movie' || Views.mode === 'vod' || Views.playing || (typeof Player !== 'undefined' && Player.memSafe)) return;
+    // The trailer the movie names as its main extra (Plex's primaryExtraKey), else its first trailer.
+    var trailers = ((m.Extras && m.Extras.Metadata) || []).filter(function (x) { return x.subtype === 'trailer' || x.extraType === 1; });
+    var main = /\/([0-9]+)$/.exec(m.primaryExtraKey || ''), t = (main && trailers.filter(function (x) { return String(x.ratingKey) === main[1]; })[0]) || trailers[0] || (main && { ratingKey: main[1] });
+    if (!t) return;
+    trailerWait = setTimeout(function () {
+      Promise.all([Plex.call(m.server, '/library/metadata/' + t.ratingKey), Plex.door(m.server)]).then(function (r) {
+        var x = (mc(r[0]).Metadata || [])[0] || {}, v = (x.Media || [])[0] || {}, part = v.Part && v.Part[0], el = $('plexPage');
+        if (item !== m || !part || !direct(v) || !el || el.classList.contains('hidden') || Views.mode === 'vod') return;
+        var vid = document.createElement('video');
+        vid.className = 'plex-trailer'; vid.muted = how !== 'sound'; vid.volume = 0.6; vid.setAttribute('playsinline', '');
+        vid.src = 'http://127.0.0.1:' + Net.port + '/plex/' + r[1] + part.key;
+        vid.addEventListener('playing', function () { vid.classList.add('on'); if (how === 'sound') stopTheme(); });
+        vid.addEventListener('ended', function () { stopTrailer(true); });
+        vid.addEventListener('error', function () { stopTrailer(); });
+        el.insertBefore(vid, el.querySelector('.plex-shade'));
+        trailerVid = vid; trailerLast = vid.src;
+        var p = vid.play(); if (p && p.catch) p.catch(function () { stopTrailer(); });
+      }, function () {});
+    }, 2000);
+  }
+  // The trailer gone (faded out first when it reached its end), its file let go.
+  function stopTrailer(fade) {
+    clearTimeout(trailerWait); trailerWait = 0;
+    var v = trailerVid; trailerVid = null;
+    if (!v) return;
+    var drop = function () { try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) {} if (v.parentNode) v.parentNode.removeChild(v); };
+    v.classList.remove('on');
+    if (fade) setTimeout(drop, 900); else drop();
   }
   function stopTheme() {
     if (themeAudio) { try { themeAudio.pause(); themeAudio.removeAttribute('src'); themeAudio.load(); } catch (e) {} }
@@ -350,7 +389,7 @@ var PlexPage = (function () {
   /* Starts the title at ms: the file through the door, or the server's converter.  Plex's preview pictures, its
      chapters and a subtitle file kept beside the video go to the player too (a file played as it is). */
   function play(ms, fromUpNext) {
-    stopTheme(); watchStalls();
+    stopTheme(); stopTrailer(); watchStalls();
     if (!fromUpNext) { chain = 0; forceCap = null; queue = null; }
     var m = item, v = version(), part = v.Part && v.Part[0];
     if (!part) return U.toast(T('Plex has no file for this one.'), 6000);
@@ -714,5 +753,5 @@ var PlexPage = (function () {
     return Plex.call(server, (on ? '/:/scrobble' : '/:/unscrobble') + '?identifier=com.plexapp.plugins.library&key=' + encodeURIComponent(String(key))).then(function () { return { on: !!on }; });
   }
 
-  return { quiet: stopTheme, diag: diag, open: open, ended: ended, playAll: playAll, shuffleOf: shuffleOf, close: close, reshow: reshow, playKey: playKey, playerItems: playerItems, pageData: pageData, playExtra: playExtra, playNextKey: playNextKey, markKey: markKey, _test: { theme: function () { return themeSrc; }, stalled: stalled, lowerQuality: lowerQuality, quality: quality, marks: marks, badges: badges, direct: direct, converts: converts, chapters: chapters, item: function () { return item; }, keys: keys, buttons: function () { return btns; }, shelf: function () { return shelf; } } };
+  return { quiet: function () { stopTheme(); stopTrailer(); }, diag: diag, open: open, ended: ended, playAll: playAll, shuffleOf: shuffleOf, close: close, reshow: reshow, playKey: playKey, playerItems: playerItems, pageData: pageData, playExtra: playExtra, playNextKey: playNextKey, markKey: markKey, _test: { theme: function () { return themeSrc; }, trailer: function () { return trailerLast; }, stalled: stalled, lowerQuality: lowerQuality, quality: quality, marks: marks, badges: badges, direct: direct, converts: converts, chapters: chapters, item: function () { return item; }, keys: keys, buttons: function () { return btns; }, shelf: function () { return shelf; } } };
 })();

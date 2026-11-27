@@ -2743,5 +2743,9 @@ I18n.add('hr', {
   "A smaller picture that the server and your internet can keep up with.": "Manja slika koju poslužitelj i vaš internet mogu pratiti.",
   "Keep this quality": "Zadrži ovu kvalitetu",
   "Play at {x}": "Reproduciraj u {x}",
-  "This keeps stopping to load": "Stalno se zaustavlja radi učitavanja"
+  "This keeps stopping to load": "Stalno se zaustavlja radi učitavanja",
+  "A moment after a movie's page opens, its trailer plays behind it, if the server has one.  Not on TVs with 1 GB of memory.": "Trenutak nakon što se otvori stranica filma, iza nje se reproducira njegov trailer, ako ga poslužitelj ima.  Ne na TV-ima s 1 GB memorije.",
+  "Trailer on a movie's page": "Trailer na stranici filma",
+  "With sound": "Sa zvukom",
+  "Without sound": "Bez zvuka"
 });

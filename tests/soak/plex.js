@@ -137,6 +137,15 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     await page.waitForFunction(() => { var p = document.getElementById('plexPage'); return p && !p.classList.contains('hidden') && /Resume from/.test(p.innerText); }, null, { timeout: 8000 });
     const pg = await ev(() => document.getElementById('plexPage').innerText);
     ok('the page: Resume from where you stopped, Play from the start, Trailer', /Resume from 40:00/.test(pg) && /Play from the start/.test(pg) && /Trailer/.test(pg), pg);
+    // Trailer on a movie's page (quiet): its trailer file plays behind the page after a moment, through the helper.
+    // (a TV with plenty of memory: the test page's size can count as a 1 GB TV; the mock's file isn't a real video,
+    // so the trailer is checked by what was started)
+    await ev(() => { window.__ms = Store.settings.memSafe; Store.settings.memSafe = 'off'; Plex.setPref('pageTrailer', 'quiet'); PlexPage.reshow(); }); await page.waitForTimeout(3200);
+    const tr = await ev(() => { const v = document.querySelector('#plexPage video.plex-trailer'); return { src: PlexPage._test.trailer(), muted: !v || v.muted }; });
+    await ev(() => { Store.settings.memSafe = window.__ms; });
+    ok('Trailer on a movie\'s page: the trailer plays behind it, without sound', /\/plex\/[0-9a-f]{48}\/library\/parts\//.test(tr.src) && tr.muted, JSON.stringify(tr));
+    await ev(() => { Plex.setPref('pageTrailer', 'off'); PlexPage.quiet(); });
+    ok('…and it goes with the page', await ev(() => !document.querySelector('#plexPage video.plex-trailer')));
     ok('the page: Dolby Vision, 4K, Atmos and the scores', /Dolby Vision/.test(pg) && /4K/.test(pg) && /Atmos/.test(pg) && /Critics 92%/.test(pg), pg);
     await shot('6-movie');
     ok('the page is the title picked', (await ev(() => PlexPage._test.item().title)) === 'Northbound');

@@ -2757,5 +2757,9 @@ I18n.add('pl', {
   "A smaller picture that the server and your internet can keep up with.": "Mniejszy obraz, za którym serwer i twój internet nadążą.",
   "Keep this quality": "Zachowaj tę jakość",
   "Play at {x}": "Odtwórz w {x}",
-  "This keeps stopping to load": "Ciągle zatrzymuje się, by się wczytać"
+  "This keeps stopping to load": "Ciągle zatrzymuje się, by się wczytać",
+  "A moment after a movie's page opens, its trailer plays behind it, if the server has one.  Not on TVs with 1 GB of memory.": "Chwilę po otwarciu strony filmu w tle odtwarza się jego zwiastun, jeśli serwer go ma.  Nie na telewizorach z 1 GB pamięci.",
+  "Trailer on a movie's page": "Zwiastun na stronie filmu",
+  "With sound": "Z dźwiękiem",
+  "Without sound": "Bez dźwięku"
 });

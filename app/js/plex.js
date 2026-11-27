@@ -181,8 +181,9 @@ var Plex = (function () {
      watchRow: the Watchlist row on Home (plextop.js).
      stillAfter: Up next asks "Still watching?" instead of counting down after this many episodes in a row (0: never).
      theme: a show's theme music plays on its page (and its seasons' and episodes').
-     spoilers: unwatched episodes show the show's picture instead of their own, and no summary (see spoiler()). */
-  var PREFS = { homeQuality: 0, awayQuality: 0, direct: true, topMixed: true, topServices: [], hiddenRows: {}, watchRow: true, stillAfter: 3, theme: true, spoilers: false };
+     spoilers: unwatched episodes show the show's picture instead of their own, and no summary (see spoiler()).
+     pageTrailer: a movie's trailer plays behind its page: 'off', 'quiet' (no sound) or 'sound'. */
+  var PREFS = { homeQuality: 0, awayQuality: 0, direct: true, topMixed: true, topServices: [], hiddenRows: {}, watchRow: true, stillAfter: 3, theme: true, spoilers: false, pageTrailer: 'off' };
   // With Hide spoilers on: an episode not watched yet (nor started), whose own picture and summary stay hidden.
   function spoiler(m) { var p = state.prefs || {}; return !!p.spoilers && !!m && m.type === 'episode' && !(m.viewCount > 0) && !m.viewOffset; }
   // With Hide spoilers on, an unwatched episode's picture: the show's backdrop instead of its own ('' otherwise).

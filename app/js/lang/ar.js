@@ -2743,5 +2743,9 @@ I18n.add('ar', {
   "A smaller picture that the server and your internet can keep up with.": "صورة أصغر يستطيع الخادم واتصالك بالإنترنت مواكبتها.",
   "Keep this quality": "الإبقاء على هذه الجودة",
   "Play at {x}": "التشغيل بجودة {x}",
-  "This keeps stopping to load": "يتوقف التشغيل مرارًا للتحميل"
+  "This keeps stopping to load": "يتوقف التشغيل مرارًا للتحميل",
+  "A moment after a movie's page opens, its trailer plays behind it, if the server has one.  Not on TVs with 1 GB of memory.": "بعد لحظة من فتح صفحة الفيلم، يُعرض إعلانه خلفها إن كان على الخادم.  ليس على أجهزة التلفاز ذات ذاكرة 1 غيغابايت.",
+  "Trailer on a movie's page": "الإعلان في صفحة الفيلم",
+  "With sound": "مع الصوت",
+  "Without sound": "بدون صوت"
 });

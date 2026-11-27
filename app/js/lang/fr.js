@@ -2026,5 +2026,9 @@ I18n.add('fr', {
   "A smaller picture that the server and your internet can keep up with.": "Une image plus petite que le serveur et votre internet peuvent suivre.",
   "Keep this quality": "Garder cette qualité",
   "Play at {x}": "Lire en {x}",
-  "This keeps stopping to load": "La lecture s'arrête sans cesse pour charger"
+  "This keeps stopping to load": "La lecture s'arrête sans cesse pour charger",
+  "A moment after a movie's page opens, its trailer plays behind it, if the server has one.  Not on TVs with 1 GB of memory.": "Peu après l'ouverture de la page d'un film, sa bande-annonce joue derrière, si le serveur en a une.  Pas sur les TV avec 1 Go de mémoire.",
+  "Trailer on a movie's page": "Bande-annonce sur la page d'un film",
+  "With sound": "Avec le son",
+  "Without sound": "Sans le son"
 });

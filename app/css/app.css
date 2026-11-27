@@ -1040,6 +1040,9 @@ body.full .activity,body.mgr-open .activity{display:none}
    to its 1500x844 place: decoding the full-size one cost the TV most of a key press. */
 .plex-art{position:absolute;top:0;right:-12px;bottom:-12px;left:0;opacity:0;transition:opacity .45s ease;will-change:opacity}
 .plex-art.on{opacity:1}
+/* A movie's trailer behind its page (plexpage.js backTrailer): where the backdrop is, faded in once it plays. */
+.plex-trailer{position:absolute;top:0;right:-12px;width:1500px;height:844px;object-fit:cover;background:#000;opacity:0;transition:opacity .8s ease;-webkit-mask-image:linear-gradient(to right,transparent 0,rgba(0,0,0,.6) 22%,#000 45%)}
+.plex-trailer.on{opacity:1}
 .plex-art.on.stale{opacity:.3;transition:opacity .25s ease}
 .plex-art .plex-bg{opacity:1;transition:none}
 .plex-art .media-hero-art{opacity:1;transition:none}

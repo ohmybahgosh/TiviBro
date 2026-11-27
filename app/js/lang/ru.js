@@ -2872,5 +2872,9 @@ I18n.add('ru', {
   "A smaller picture that the server and your internet can keep up with.": "Изображение поменьше, с которым справятся сервер и ваш интернет.",
   "Keep this quality": "Оставить это качество",
   "Play at {x}": "Воспроизвести в {x}",
-  "This keeps stopping to load": "Видео постоянно останавливается для загрузки"
+  "This keeps stopping to load": "Видео постоянно останавливается для загрузки",
+  "A moment after a movie's page opens, its trailer plays behind it, if the server has one.  Not on TVs with 1 GB of memory.": "Через мгновение после открытия страницы фильма за ней играет его трейлер, если он есть на сервере.  Не на телевизорах с 1 ГБ памяти.",
+  "Trailer on a movie's page": "Трейлер на странице фильма",
+  "With sound": "Со звуком",
+  "Without sound": "Без звука"
 });

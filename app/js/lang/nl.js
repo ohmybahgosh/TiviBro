@@ -2757,5 +2757,9 @@ I18n.add('nl', {
   "A smaller picture that the server and your internet can keep up with.": "Een kleiner beeld dat de server en je internet kunnen bijhouden.",
   "Keep this quality": "Deze kwaliteit houden",
   "Play at {x}": "Afspelen op {x}",
-  "This keeps stopping to load": "Dit stopt steeds om te laden"
+  "This keeps stopping to load": "Dit stopt steeds om te laden",
+  "A moment after a movie's page opens, its trailer plays behind it, if the server has one.  Not on TVs with 1 GB of memory.": "Even nadat de pagina van een film opent, speelt de trailer erachter, als de server er een heeft.  Niet op tv's met 1 GB geheugen.",
+  "Trailer on a movie's page": "Trailer op de pagina van een film",
+  "With sound": "Met geluid",
+  "Without sound": "Zonder geluid"
 });

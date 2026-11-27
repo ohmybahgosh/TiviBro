@@ -2757,5 +2757,9 @@ I18n.add('tr', {
   "A smaller picture that the server and your internet can keep up with.": "Sunucunun ve internetinizin yetişebileceği daha küçük bir görüntü.",
   "Keep this quality": "Bu kaliteyi koru",
   "Play at {x}": "{x} ile oynat",
-  "This keeps stopping to load": "Yüklemek için sürekli duruyor"
+  "This keeps stopping to load": "Yüklemek için sürekli duruyor",
+  "A moment after a movie's page opens, its trailer plays behind it, if the server has one.  Not on TVs with 1 GB of memory.": "Bir filmin sayfası açıldıktan kısa süre sonra, sunucuda varsa fragmanı arkada oynar.  1 GB belleği olan TV'lerde olmaz.",
+  "Trailer on a movie's page": "Film sayfasında fragman",
+  "With sound": "Sesli",
+  "Without sound": "Sessiz"
 });

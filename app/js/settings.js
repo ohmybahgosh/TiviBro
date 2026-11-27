@@ -546,6 +546,7 @@ var Settings = (function () {
       autoNextRow(), upNextRow(),
       choice('Still watching?', 'After this many episodes in a row, Up next waits for OK instead of counting down, so a show doesn\'t play on all night.', [0, 2, 3, 5, 8], ['Never', '2 episodes', '3 episodes', '5 episodes', '8 episodes'], pr('stillAfter'), set('stillAfter')),
       toggle('Theme music', 'A show\'s theme plays quietly on its page, and its seasons\' and episodes\', while you look around.', pr('theme'), set('theme')),
+      choice('Trailer on a movie\'s page', 'A moment after a movie\'s page opens, its trailer plays behind it, if the server has one.  Not on TVs with 1 GB of memory.', ['off', 'quiet', 'sound'], ['Off', 'Without sound', 'With sound'], pr('pageTrailer'), set('pageTrailer')),
       toggle('Hide spoilers', 'Episodes you haven\'t watched show the show\'s picture instead of their own, and no story, on the TV and the phone.', pr('spoilers'), set('spoilers'))].concat(also('playback', ['Skip intro', 'Skip credits', 'Seek previews'])).filter(Boolean);
   }
   /* Settings > Plex > Home rows: Plex's own rows on or off, and the streaming Top 10 rows (plextop.js). */
