@@ -2653,5 +2653,9 @@ I18n.add('tr', {
   "Remove from Watchlist": "İzleme listesinden çıkar",
   "Removed from your Watchlist": "İzleme listenizden çıkarıldı",
   "Watchlist row": "İzleme listesi sırası",
-  "Your Plex Watchlist on Home, with the titles your servers have.  More > Add to Watchlist on a movie's page.": "Plex izleme listeniz Ana sayfada, sunucularınızda olan yapımlarla.  Bir filmin sayfasında Diğer > İzleme listesine ekle."
+  "Your Plex Watchlist on Home, with the titles your servers have.  More > Add to Watchlist on a movie's page.": "Plex izleme listeniz Ana sayfada, sunucularınızda olan yapımlarla.  Bir filmin sayfasında Diğer > İzleme listesine ekle.",
+  "Away from home, Plex plays only with Plex Pass (yours or the server owner's) or a Remote Watch Pass.": "Ev dışında Plex yalnızca Plex Pass (sizin ya da sunucu sahibinin) veya Remote Watch Pass ile oynatır.",
+  "Then sign in to Plex.  In the phone app, select this to open it with the code filled in.": "Sonra Plex'e giriş yapın.  Telefon uygulamasında bunu seçince sayfa kod girilmiş olarak açılır.",
+  "{x} is reached through Plex's relay, so video is 2 Mbps at most.  Turning on Remote Access on the server helps.": "{x}, Plex'in aktarıcısı üzerinden ulaşılıyor, bu yüzden video en fazla 2 Mbps.  Sunucuda Uzaktan Erişimi açmak işe yarar.",
+  "{x} didn't answer.  Is it on and online?": "{x} yanıt vermedi.  Açık ve çevrimiçi mi?"
 });

@@ -46,6 +46,12 @@ const P = c.Plex;
   assert.equal(asked[asked.length - 1].token, 'srv-token-1', 'a server call uses the server\'s own token');
   console.log('PASS a server is reached once, and looked for again only after a failed call');
 
+  // A server that stays silent: the message names it (it's off or offline, not the TV).
+  const oldGet = answers.get; answers.get = { error: 'unreachable' };
+  await P.call('srv1', '/library/sections').then(() => assert.fail('should fail'), (e) => assert.equal(e.message, 'Home server didn\'t answer.  Is it on and online?'));
+  answers.get = oldGet;
+  console.log('PASS a server that doesn\'t answer is named in the message');
+
   assert.equal(await P.switchUser('kid1', '1234'), 'Kids');
   assert.equal(asked.filter((q) => q.op === 'switch')[0].pin, '1234');
   assert.equal(P._test.state().accountToken, 'acct-token-1', 'the account sign-in is kept to switch back');

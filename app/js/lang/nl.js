@@ -2653,5 +2653,9 @@ I18n.add('nl', {
   "Remove from Watchlist": "Verwijderen uit kijklijst",
   "Removed from your Watchlist": "Verwijderd uit je kijklijst",
   "Watchlist row": "Rij kijklijst",
-  "Your Plex Watchlist on Home, with the titles your servers have.  More > Add to Watchlist on a movie's page.": "Je Plex-kijklijst op Home, met de titels die je servers hebben.  Meer > Toevoegen aan kijklijst op de pagina van een film."
+  "Your Plex Watchlist on Home, with the titles your servers have.  More > Add to Watchlist on a movie's page.": "Je Plex-kijklijst op Home, met de titels die je servers hebben.  Meer > Toevoegen aan kijklijst op de pagina van een film.",
+  "Away from home, Plex plays only with Plex Pass (yours or the server owner's) or a Remote Watch Pass.": "Buitenshuis speelt Plex alleen af met Plex Pass (die van jou of van de eigenaar van de server) of een Remote Watch Pass.",
+  "Then sign in to Plex.  In the phone app, select this to open it with the code filled in.": "Log daarna in bij Plex.  In de telefoonapp opent dit de pagina met de code al ingevuld.",
+  "{x} is reached through Plex's relay, so video is 2 Mbps at most.  Turning on Remote Access on the server helps.": "{x} is alleen via de relay van Plex bereikbaar, dus video is hoogstens 2 Mbps.  Externe toegang op de server aanzetten helpt.",
+  "{x} didn't answer.  Is it on and online?": "{x} gaf geen antwoord.  Staat hij aan en is hij online?"
 });

@@ -2774,5 +2774,9 @@ I18n.add('ru', {
   "Remove from Watchlist": "Убрать из «Буду смотреть»",
   "Removed from your Watchlist": "Убрано из «Буду смотреть»",
   "Watchlist row": "Ряд «Буду смотреть»",
-  "Your Plex Watchlist on Home, with the titles your servers have.  More > Add to Watchlist on a movie's page.": "Ваш список Plex «Буду смотреть» на главной, с тем, что есть на ваших серверах.  Ещё > В список «Буду смотреть» на странице фильма."
+  "Your Plex Watchlist on Home, with the titles your servers have.  More > Add to Watchlist on a movie's page.": "Ваш список Plex «Буду смотреть» на главной, с тем, что есть на ваших серверах.  Ещё > В список «Буду смотреть» на странице фильма.",
+  "Away from home, Plex plays only with Plex Pass (yours or the server owner's) or a Remote Watch Pass.": "Вне дома Plex воспроизводит только с Plex Pass (вашим или владельца сервера) или Remote Watch Pass.",
+  "Then sign in to Plex.  In the phone app, select this to open it with the code filled in.": "Затем войдите в Plex.  В приложении на телефоне выберите это, чтобы открыть страницу с уже введённым кодом.",
+  "{x} is reached through Plex's relay, so video is 2 Mbps at most.  Turning on Remote Access on the server helps.": "{x} доступен только через ретранслятор Plex, поэтому видео не больше 2 Мбит/с.  Поможет включить удалённый доступ на сервере.",
+  "{x} didn't answer.  Is it on and online?": "{x} не ответил.  Он включён и в сети?"
 });

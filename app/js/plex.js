@@ -10,6 +10,7 @@ var Plex = (function () {
 
   function read() { try { return JSON.parse(localStorage.getItem(KEY) || 'null') || {}; } catch (e) { return {}; } }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); return true; } catch (e) { return false; } }
+  function T(s, v) { return typeof I18n !== 'undefined' ? I18n.t(s, v) : String(s).replace(/\{(\w+)\}/g, function (a, k) { return v && v[k] != null ? v[k] : a; }); }
   function note(lv, m) { if (typeof Log !== 'undefined' && Log[lv]) Log[lv]('plex', m); }
   function changed() { listeners.forEach(function (f) { try { f(); } catch (e) {} }); if (typeof Settings !== 'undefined' && Settings.live) Settings.live(); }
   function onChange(f) { listeners.push(f); }
@@ -108,13 +109,17 @@ var Plex = (function () {
     }, function (e) { picking[id] = null; throw e; });
     return picking[id];
   }
-  /* A call to a server (GET unless said).  One failure tries the server's connections again, once. */
+  /* A call to a server (GET unless said).  One failure tries the server's connections again, once; still nothing,
+     and the message names the server (it's off, asleep or offline, not the TV). */
   function call(id, path, method) {
     function go(s) { return req({ op: method || 'get', base: s.uri, path: path, token: s.token }); }
     return reach(id).then(go).catch(function (e) {
       if (e.kind !== 'unreachable') throw e;
       return reach(id, true).then(go);
-    }).then(function (r) { return r.data || {}; });
+    }).then(function (r) { return r.data || {}; }, function (e) {
+      if (e.kind === 'unreachable') { var s = server(id); e.message = T('{x} didn\'t answer.  Is it on and online?', { x: s ? s.name : 'Plex' }); }
+      throw e;
+    });
   }
   /* A door for pictures and video (service/plex.js): a random key in the link stands for the server and its token,
      since the TV's img and video tags can't send it.  One a server, asked for once. */

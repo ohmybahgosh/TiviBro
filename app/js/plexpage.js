@@ -154,6 +154,7 @@ var PlexPage = (function () {
       startTimer();
       if (!converting) sideSubtitle(base, part, playing);
       if (converting) U.toast(T('{x} is converting this one for the TV', { x: (Plex.server(m.server) || {}).name || 'Plex' }), 5000);
+      notices(m);
     }, function (e) { U.toast(e.message, 6000); });
   }
   // Plex's chapters as the player takes them (seconds, with their names).
@@ -173,7 +174,21 @@ var PlexPage = (function () {
   }
   function playOther(x) { var keep = item; item = x; Plex.call(x.server, '/library/metadata/' + x.ratingKey).then(function (j) { item = (mc(j).Metadata || [])[0] || x; item.server = x.server; play(0); item = keep; }, function (e) { item = keep; U.toast(e.message, 6000); }); }
   // The quality cap for the converter (kbps, 0: Original): Settings > Plex, at home and away.
-  function quality() { var s = Plex.server(item.server) || {}, p = Plex.prefs(); return +(s.local ? p.homeQuality : p.awayQuality) || 0; }
+  function quality() {
+    var s = Plex.server(item.server) || {}, p = Plex.prefs(), cap = +(s.local ? p.homeQuality : p.awayQuality) || 0;
+    // Through Plex's relay (the server can't be reached directly), Plex lets through 2 Mbps at most.
+    return s.relay ? Math.min(cap || RELAY, RELAY) : cap;
+  }
+  var RELAY = 2000;
+  /* Before playing: away from home without Plex Pass, a word on why it may not play (the server owner's Plex Pass
+     counts too, which the TV can't see); through the relay, why it's soft.  Once per server a day. */
+  var told = {};
+  function notices(m) {
+    var s = Plex.server(m.server) || {}, day = new Date().toDateString(), k = m.server + day;
+    if (told[k]) return; told[k] = 1;
+    if (s.relay) U.toast(T('{x} is reached through Plex\'s relay, so video is 2 Mbps at most.  Turning on Remote Access on the server helps.', { x: s.name || 'Plex' }), 8000);
+    else if (!s.local && !Plex.user().pass) U.toast(T('Away from home, Plex plays only with Plex Pass (yours or the server owner\'s) or a Remote Watch Pass.'), 8000);
+  }
   // Plex's intro and credits markers, as Skip intro and Skip credits take them (seconds).
   function marks(m) {
     var out = { intro: null, recap: null, credits: -1, creditsEnd: -1 };
@@ -218,5 +233,5 @@ var PlexPage = (function () {
     }, function () { Views.stopAll(); if (PlexView.resume) PlexView.resume(); });
   }
 
-  return { open: open, ended: ended, close: close, _test: { marks: marks, badges: badges, direct: direct, converts: converts, chapters: chapters, item: function () { return item; }, keys: keys, buttons: function () { return btns; } } };
+  return { open: open, ended: ended, close: close, _test: { quality: quality, marks: marks, badges: badges, direct: direct, converts: converts, chapters: chapters, item: function () { return item; }, keys: keys, buttons: function () { return btns; } } };
 })();

@@ -2656,5 +2656,9 @@ I18n.add('de', {
   "Remove from Watchlist": "Von der Merkliste entfernen",
   "Removed from your Watchlist": "Von deiner Merkliste entfernt",
   "Watchlist row": "Reihe Merkliste",
-  "Your Plex Watchlist on Home, with the titles your servers have.  More > Add to Watchlist on a movie's page.": "Deine Plex-Merkliste auf der Startseite, mit den Titeln deiner Server.  Mehr > Zur Merkliste auf der Seite eines Films."
+  "Your Plex Watchlist on Home, with the titles your servers have.  More > Add to Watchlist on a movie's page.": "Deine Plex-Merkliste auf der Startseite, mit den Titeln deiner Server.  Mehr > Zur Merkliste auf der Seite eines Films.",
+  "Away from home, Plex plays only with Plex Pass (yours or the server owner's) or a Remote Watch Pass.": "Unterwegs spielt Plex nur mit Plex Pass (deinem oder dem des Serverbesitzers) oder einem Remote Watch Pass.",
+  "Then sign in to Plex.  In the phone app, select this to open it with the code filled in.": "Melde dich dann bei Plex an.  In der Handy-App öffnet ein Tippen hier die Seite mit dem Code schon eingetragen.",
+  "{x} is reached through Plex's relay, so video is 2 Mbps at most.  Turning on Remote Access on the server helps.": "{x} ist nur über das Relay von Plex erreichbar, deshalb höchstens 2 Mbit/s Video.  Fernzugriff auf dem Server einzuschalten hilft.",
+  "{x} didn't answer.  Is it on and online?": "{x} hat nicht geantwortet.  Ist er an und online?"
 });

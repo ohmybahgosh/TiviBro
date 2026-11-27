@@ -480,8 +480,9 @@ var Settings = (function () {
       if (qi) { qb.appendChild(qi); var qt = U.el('div', 'trakt-qr-t'); qt.appendChild(U.el('b', '', T('Scan with your phone\'s camera'))); qt.appendChild(U.el('span', '', T('Plex opens with the code filled in.  Sign in to finish.'))); qb.appendChild(qt); out.push({ preview: true, el: qb }); }
     }
     var cd = info('2.  Enter this code', code.code); cd.cls = 'trakt-code';
-    out.push(action('1.  On a phone or computer, open', 'Then sign in to Plex.', function () { U.toast(T('Open plex.tv/link and enter {x}', { x: code.code }), 8000); }, function () { return 'plex.tv/link'; }),
-      cd, info('Waiting for Plex…', 'This page updates by itself'), action('Stop signing in', '', function () { Plex.cancel(); build(); }));
+    var go = action('1.  On a phone or computer, open', 'Then sign in to Plex.  In the phone app, select this to open it with the code filled in.', function () { U.toast(T('Open plex.tv/link and enter {x}', { x: code.code }), 8000); }, function () { return 'plex.tv/link'; });
+    go.phone = 'open-url'; go.epage = 'https://plex.tv/link/?pin=' + encodeURIComponent(code.code);   // the phone app and the web editor open Plex's page
+    out.push(go, cd, info('Waiting for Plex…', 'This page updates by itself'), action('Stop signing in', '', function () { Plex.cancel(); build(); }));
     return out;
   }
   // A server's line: who owns it and how it's reached.
