@@ -1,18 +1,18 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 228, 2026-11-26)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 228
 
 - **Safer pairing links and widgets in the phone app.**  A pairing link opened from outside the app now asks first, and is refused if it points outside your home network.  Other apps on the phone can no longer press the Remote widget's buttons or the Sports widget's.
 - **The helper refuses tricky names.**  The TiviBro helper now turns away requests whose names could reach inside its own code, rather than looking them up.
 - **Streaming Top 10s in My media.**  A new shelf on My media's home shows the titles you have that are on this week's streaming Top 10s in your region, best place first, with "#3 on Netflix" under each poster.
-- **The Sports widget's game cards, fixed for good.**  Opening a game other than the top one showed another game's logos, and the widget's title could stay on a game after going back.  Logos now load by address, so each game shows its own, and the whole card lives in the list, starting with **All my teams**, while the title stays My teams.
+- **The Sports widget's game cards, fixed for good.**  Opening a game other than the top one showed another game's logos, and the widget's title could stay on a game after going back.  On Android 12 and newer the widget now hands the home screen its whole list each time, logos included, so each game shows its own, and the whole card lives in the list, starting with **All my teams**, while the title stays My teams.
 - **No player names when a movie reconnects.**  A My media movie that stalls says it's reconnecting, not which MPEG-TS or HLS player it's trying like a live channel.
 
-## 0.6.0 (alpha 227, 2026-11-26)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 227
+### In alpha 227
 
 - **Dolby Vision stays on with dialogue boost.**  Turning on dialogue boost or night mode for a Dolby Vision movie switched its picture to plain HDR.  It now stays in Dolby Vision.
 - **Scores and times on the phone app's home.**  Now on the TV shows the programme's start and end times, and the score when it's a game of one of your teams (with the Sports widget added).
