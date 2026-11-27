@@ -1022,10 +1022,14 @@ body.full .activity,body.mgr-open .activity{display:none}
 .media-busy{position:absolute;right:56px;top:66px;z-index:3;font-size:20px;color:var(--text);padding:6px 16px 6px 36px;border-radius:999px;background:rgba(0,0,0,.55);white-space:nowrap}
 .media-busy::before{content:'';position:absolute;left:14px;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:50%;background:var(--ok);animation:tb-pulse 1.4s ease-in-out infinite}
 @keyframes tb-pulse{0%,100%{opacity:1}50%{opacity:.25}}
-/* The Plex tab (plexview.js): My media's look, Plex's own tabs under the library tabs. */
-#viewPlex .plex-subs{top:88px}
-#viewPlex .plex-subs .media-tab{font-size:21px;padding:6px 20px}
-#viewPlex .media-hero{top:150px;height:320px}
+/* The Plex tab (plexview.js): My media's look, with Plex's navigation on one line as Plex's TV app has it: the tabs as
+   words (the open one bold, underlined in the accent), then a thin line and the library's views, smaller.  With the
+   focus up there, the focused word is a white pill. */
+#viewPlex .plex-nav{position:absolute;left:152px;top:26px;z-index:3;display:flex;align-items:center;gap:34px}
+#viewPlex .plex-nav .media-tabs{position:static;gap:38px;align-items:center}
+#viewPlex .plex-nav .plex-subs{gap:30px}
+#viewPlex .plex-nav .plex-subs::before{content:'';width:2px;height:28px;background:rgba(255,255,255,.24);margin-right:4px}
+#viewPlex .media-hero{top:118px;height:340px}
 /* Plex's backdrops without hard edges: the picture blurred over the whole screen, the sharp one top right fading
    out to the left and the bottom, and a shade where the words and rows are. */
 #viewPlex,.plex-page{background:var(--ink)}
@@ -1049,10 +1053,12 @@ body.focus-ring .plex-ring{box-shadow:0 0 0 4px #fff}
 #viewPlex .media-hero-art{-webkit-mask-image:linear-gradient(to right,transparent 0,rgba(0,0,0,.6) 22%,#000 45%)}
 .plex-shade{position:absolute;top:0;right:-12px;bottom:-12px;left:0;background:linear-gradient(180deg,rgba(11,14,26,.8) 0,rgba(11,14,26,0) 22%),linear-gradient(90deg,var(--ink) 0,rgba(11,14,26,.72) 30%,rgba(11,14,26,0) 62%),linear-gradient(0deg,var(--ink) 0,rgba(11,14,26,.86) 40%,rgba(11,14,26,0) 70%),rgba(11,14,26,.35)}
 #viewPlex .media-title.unseen,#viewPlex .media-kicker.unseen{visibility:hidden}
-/* Pills over a bright backdrop: a darker pill, and the top of the screen shaded. */
-#viewPlex .media-tab{background:rgba(11,14,26,.62);border-color:rgba(255,255,255,.16);color:#d5dbec;text-shadow:0 1px 6px rgba(0,0,0,.6)}
-#viewPlex .media-tab.on{background:rgba(64,74,104,.9);color:#fff;border-color:rgba(255,255,255,.3)}
-#viewPlex .media-tabs.focus .media-tab.on{background:#fff;color:#0b0e14;border-color:#fff;text-shadow:none}
+/* Words over a bright backdrop: a shadow under them, and the top of the screen shaded (plex-shade). */
+#viewPlex .media-tab{background:none;border:0;border-radius:10px;padding:6px 2px;font-size:26px;font-weight:500;color:#b3bcd6;text-shadow:0 1px 8px rgba(0,0,0,.75);box-shadow:none;transition:color 140ms ease,background 140ms ease}
+#viewPlex .plex-subs .media-tab{font-size:22px}
+#viewPlex .media-tab.on{color:#fff;font-weight:700;box-shadow:inset 0 -4px 0 var(--accent);border-radius:0}
+#viewPlex .plex-subs .media-tab.on{font-weight:600;box-shadow:inset 0 -3px 0 var(--accent)}
+#viewPlex .media-tabs.focus .media-tab.on{background:#f2f4fa;color:#0b0e14;box-shadow:none;border-radius:10px;padding:6px 16px;margin:0 -14px;text-shadow:none}
 #viewPlex .media-logo{max-width:560px;max-height:120px;margin-bottom:12px;filter:drop-shadow(0 4px 18px rgba(0,0,0,.7))}
 #viewPlex .media-logo.small{max-width:420px;max-height:90px;margin-bottom:10px}
 /* Rows above the focused one fade out: their names and lines peeked over the next row. */

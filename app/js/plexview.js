@@ -23,7 +23,8 @@ var PlexView = (function () {
     // Behind everything the backdrop blurred across the whole screen, the sharp one on the right fading into it,
     // and a shade on the left and bottom for the words: no picture with hard edges.
     v.innerHTML = '<div class="plex-shade"></div>' +
-      '<div class="media-tabs" id="plexTabs"></div><div class="media-tabs plex-subs" id="plexSubs"></div>' +
+      // One line, as Plex's own TV app: the tabs as words, and a library's views after a thin line (plex-nav).
+      '<div class="plex-nav"><div class="media-tabs" id="plexTabs"></div><div class="media-tabs plex-subs" id="plexSubs"></div></div>' +
       '<div class="media-hero" id="plexHero"></div>' +
       '<div class="media-shelves" id="plexRows"><div class="media-shelf-stage" id="plexStage"></div></div><div class="plex-empty hidden" id="plexEmpty"></div>';
     art = PlexArt.make(v);

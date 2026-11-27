@@ -44,6 +44,7 @@
 .nogap .media-tabs > * + *{margin-left:10px}
 .nogap .media-libart-icon > *{margin-right:8px;margin-bottom:8px}
 .nogap .media-libart-icon{margin-bottom:-8px}
+.nogap #viewPlex .plex-nav > * + *{margin-left:34px}
 .nogap .plex-badges > *{margin-right:10px;margin-bottom:10px}
 .nogap .plex-badges{margin-bottom:-10px}
 .nogap .plex-btns > * + *{margin-left:16px}
