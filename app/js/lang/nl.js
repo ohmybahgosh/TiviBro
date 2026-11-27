@@ -2657,5 +2657,13 @@ I18n.add('nl', {
   "Away from home, Plex plays only with Plex Pass (yours or the server owner's) or a Remote Watch Pass.": "Buitenshuis speelt Plex alleen af met Plex Pass (die van jou of van de eigenaar van de server) of een Remote Watch Pass.",
   "Then sign in to Plex.  In the phone app, select this to open it with the code filled in.": "Log daarna in bij Plex.  In de telefoonapp opent dit de pagina met de code al ingevuld.",
   "{x} is reached through Plex's relay, so video is 2 Mbps at most.  Turning on Remote Access on the server helps.": "{x} is alleen via de relay van Plex bereikbaar, dus video is hoogstens 2 Mbps.  Externe toegang op de server aanzetten helpt.",
-  "{x} didn't answer.  Is it on and online?": "{x} gaf geen antwoord.  Staat hij aan en is hij online?"
+  "{x} didn't answer.  Is it on and online?": "{x} gaf geen antwoord.  Staat hij aan en is hij online?",
+  "2 episodes": "2 afleveringen",
+  "3 episodes": "3 afleveringen",
+  "5 episodes": "5 afleveringen",
+  "8 episodes": "8 afleveringen",
+  "After this many episodes in a row, Up next waits for OK instead of counting down, so a show doesn't play on all night.": "Na zoveel afleveringen achter elkaar wacht Hierna op OK in plaats van af te tellen, zodat een serie niet de hele nacht doorspeelt.",
+  "Keep watching": "Verder kijken",
+  "Never": "Nooit",
+  "Still watching?": "Kijk je nog?"
 });

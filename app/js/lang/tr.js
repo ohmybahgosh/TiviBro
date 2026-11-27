@@ -2657,5 +2657,13 @@ I18n.add('tr', {
   "Away from home, Plex plays only with Plex Pass (yours or the server owner's) or a Remote Watch Pass.": "Ev dışında Plex yalnızca Plex Pass (sizin ya da sunucu sahibinin) veya Remote Watch Pass ile oynatır.",
   "Then sign in to Plex.  In the phone app, select this to open it with the code filled in.": "Sonra Plex'e giriş yapın.  Telefon uygulamasında bunu seçince sayfa kod girilmiş olarak açılır.",
   "{x} is reached through Plex's relay, so video is 2 Mbps at most.  Turning on Remote Access on the server helps.": "{x}, Plex'in aktarıcısı üzerinden ulaşılıyor, bu yüzden video en fazla 2 Mbps.  Sunucuda Uzaktan Erişimi açmak işe yarar.",
-  "{x} didn't answer.  Is it on and online?": "{x} yanıt vermedi.  Açık ve çevrimiçi mi?"
+  "{x} didn't answer.  Is it on and online?": "{x} yanıt vermedi.  Açık ve çevrimiçi mi?",
+  "2 episodes": "2 bölüm",
+  "3 episodes": "3 bölüm",
+  "5 episodes": "5 bölüm",
+  "8 episodes": "8 bölüm",
+  "After this many episodes in a row, Up next waits for OK instead of counting down, so a show doesn't play on all night.": "Art arda bu kadar bölümden sonra Sıradaki geri sayım yerine OK bekler, böylece bir dizi bütün gece oynamaz.",
+  "Keep watching": "İzlemeye devam et",
+  "Never": "Asla",
+  "Still watching?": "Hâlâ izliyor musunuz?"
 });

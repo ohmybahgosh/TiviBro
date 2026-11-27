@@ -2775,5 +2775,13 @@ I18n.add('es', {
   "Away from home, Plex plays only with Plex Pass (yours or the server owner's) or a Remote Watch Pass.": "Fuera de casa, Plex solo reproduce con Plex Pass (el tuyo o el del dueño del servidor) o un Remote Watch Pass.",
   "Then sign in to Plex.  In the phone app, select this to open it with the code filled in.": "Luego inicia sesión en Plex.  En la app del móvil, toca aquí para abrirla con el código ya puesto.",
   "{x} is reached through Plex's relay, so video is 2 Mbps at most.  Turning on Remote Access on the server helps.": "{x} se alcanza por el relé de Plex, así que el vídeo va a 2 Mbps como mucho.  Activar el Acceso remoto en el servidor ayuda.",
-  "{x} didn't answer.  Is it on and online?": "{x} no respondió.  ¿Está encendido y conectado?"
+  "{x} didn't answer.  Is it on and online?": "{x} no respondió.  ¿Está encendido y conectado?",
+  "2 episodes": "2 episodios",
+  "3 episodes": "3 episodios",
+  "5 episodes": "5 episodios",
+  "8 episodes": "8 episodios",
+  "After this many episodes in a row, Up next waits for OK instead of counting down, so a show doesn't play on all night.": "Tras estos episodios seguidos, A continuación espera a OK en vez de contar, para que una serie no siga toda la noche.",
+  "Keep watching": "Seguir viendo",
+  "Never": "Nunca",
+  "Still watching?": "¿Sigues viendo?"
 });

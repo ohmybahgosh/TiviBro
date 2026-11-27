@@ -12,6 +12,7 @@ var PlexPage = (function () {
   var RAW = function (s) { return typeof I18n !== 'undefined' && I18n.raw ? I18n.raw(s) : s; };
   var $ = function (id) { return document.getElementById(id); };
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+  var chain = 0;   // episodes started one after another by Up next, for Still watching?
   var item = null, back = null, btns = [], btnAt = 0, playing = null, timer = 0, session = '', versionOf = {};
   var DIRECT_VIDEO = /^(h264|hevc|h265|vp9|av1|mpeg4)$/i, DIRECT_BOX = /^(mkv|mp4|mov|m4v|mpegts|ts|webm|avi)$/i;
 
@@ -140,7 +141,8 @@ var PlexPage = (function () {
   }
   /* Starts the title at ms: the file through the door, or the server's converter.  Plex's preview pictures, its
      chapters and a subtitle file kept beside the video go to the player too (a file played as it is). */
-  function play(ms) {
+  function play(ms, fromUpNext) {
+    if (!fromUpNext) chain = 0;
     var m = item, v = version(), part = v.Part && v.Part[0];
     if (!part) return U.toast(T('Plex has no file for this one.'), 6000);
     Plex.door(m.server).then(function (key) {
@@ -223,12 +225,14 @@ var PlexPage = (function () {
       var nx = i >= 0 ? all[i + 1] : null;
       if (!nx) { Views.stopAll(); if (PlexView.resume) PlexView.resume(); return; }
       nx.server = m.server;
-      var go = function () { item = nx; Plex.call(nx.server, '/library/metadata/' + nx.ratingKey + '?includeMarkers=1').then(function (k) { item = (mc(k).Metadata || [])[0] || nx; item.server = nx.server; play(item.viewOffset > 60000 ? item.viewOffset : 0); }); };
+      // Still watching?  After the episodes in a row set in Settings > Plex, Up next asks instead of counting down.
+      var after = +Plex.prefs().stillAfter || 0, ask = !!after && chain >= after;
+      var go = function () { chain = ask ? 0 : chain + 1; item = nx; Plex.call(nx.server, '/library/metadata/' + nx.ratingKey + '?includeMarkers=1').then(function (k) { item = (mc(k).Metadata || [])[0] || nx; item.server = nx.server; play(item.viewOffset > 60000 ? item.viewOffset : 0, true); }); };
       if (force) return go();
       if (typeof UpNext !== 'undefined') UpNext.hold();
       Views.stopAll();
       PlexView.picture(nx.server, nx.thumb, 1280, 720).then(function (img) {
-        UpNext.show({ image: img, show: nx.grandparentTitle, season: nx.parentIndex, episode: nx.index, line: T('Season {x}, episode {y}', { x: nx.parentIndex, y: nx.index }), title: nx.title, runtime: mins(nx.duration) ? T('{n} min', { n: mins(nx.duration) }) : '', desc: String(nx.summary || '').slice(0, 400), play: go, cancel: function () { if (PlexView.resume) PlexView.resume(); } });
+        UpNext.show({ auto: !ask, kicker: ask ? T('Still watching?') : undefined, playLabel: ask ? T('Keep watching') : undefined, image: img, show: nx.grandparentTitle, season: nx.parentIndex, episode: nx.index, line: T('Season {x}, episode {y}', { x: nx.parentIndex, y: nx.index }), title: nx.title, runtime: mins(nx.duration) ? T('{n} min', { n: mins(nx.duration) }) : '', desc: String(nx.summary || '').slice(0, 400), play: go, cancel: function () { if (PlexView.resume) PlexView.resume(); } });
       });
     }, function () { Views.stopAll(); if (PlexView.resume) PlexView.resume(); });
   }

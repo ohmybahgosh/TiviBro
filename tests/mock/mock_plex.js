@@ -52,6 +52,10 @@ function route(state, req, port) {
   if (/^\/library\/parts\/7\/indexes\/sd\/\d+$/.test(p)) { state.preview = p; return [200, PNG, 'image/png']; }
   if (p === '/library/streams/3') { state.subFile = true; return [200, '1\n00:00:01,000 --> 00:00:04,000\nHello from Plex\n', 'text/plain']; }
   if (p === '/library/parts/7/1700000000/file.mkv') { state.range = req.headers.range; return [206, 'MKVBYTES', 'video/x-matroska']; }
+  // A show (40) with three episodes (41 to 43), each playing the same file: for Up next and Still watching?
+  if (p === '/library/metadata/40/allLeaves') return [200, { MediaContainer: { Metadata: [41, 42, 43].map(function (k, i) { return Object.assign(episode(k, i + 1), { grandparentRatingKey: '40', viewOffset: 0 }); }) } }];
+  var me = /^\/library\/metadata\/(4[1-3])$/.exec(p);
+  if (me) return [200, { MediaContainer: { Metadata: [Object.assign(episode(+me[1], +me[1] - 40), { grandparentRatingKey: '40', viewOffset: 0, Media: [{ videoResolution: '1080', videoCodec: 'h264', container: 'mkv', bitrate: 8000, Part: [{ id: 7, key: '/library/parts/7/1700000000/file.mkv', Stream: [] }] }] })] } }];
   var md = /^\/library\/metadata\/(\d+)$/.exec(p);
   if (md) { var k = +md[1], old = k === 13; return [200, { MediaContainer: { Metadata: [movie(k, MOVIES[k - 10] || 'X', { guid: k === 18 ? 'plex://movie/5d776b59ad5437001f79c6f8' : undefined, viewOffset: k === 18 ? 2400000 : 0, librarySectionTitle: 'Movies', rating: 9.2, audienceRating: 8.8,
     Director: [{ tag: 'Ana Ruiz' }], Role: [{ tag: 'Mara Quinn' }, { tag: 'Theo Lake' }],
