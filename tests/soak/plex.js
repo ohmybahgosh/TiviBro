@@ -24,7 +24,7 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
   const relay = proxy.create({}); await new Promise((f) => relay.server.listen(47897, '127.0.0.1', f));
   const b = await chromium.launch();
   const page = await (await b.newContext({ viewport: { width: 1920, height: 1080 } })).newPage();
-  const errs = []; page.on('pageerror', (e) => errs.push(e.message));
+  const errs = global.__errs = []; page.on('pageerror', (e) => errs.push(e.message));
   const pl = Object.assign({}, R.SETTINGS.playlists[0], { server: 'http://127.0.0.1:8088' });
   await page.addInitScript(R.init({ time: Date.now(), settings: { playlists: [pl] } })[0]);
   const base = 'http://127.0.0.1:' + m.port;
@@ -105,7 +105,18 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     ok('◀ ▶ along a row: the posters stay, nothing is drawn again', keep);
     await page.waitForFunction(() => document.querySelector('#plexHero img.media-logo'), null, { timeout: 8000 }).catch(() => {});
     ok('the hero shows the title\'s logo (Plex\'s clearLogo)', (await ev(() => !!document.querySelector('#plexHero img.media-logo'))) && m.state.logo);
-    ok('a blurred backdrop behind it all', /blur=36/.test(await ev(() => document.getElementById('plexBg').style.backgroundImage)));
+    await page.waitForFunction(() => document.querySelector('#viewPlex > .plex-art.on'), null, { timeout: 8000 }).catch(() => {});
+    ok('a blurred backdrop behind it all (the layer showing)', /blur=36/.test(await ev(() => (document.querySelector('#viewPlex > .plex-art.on .plex-bg') || { style: {} }).style.backgroundImage)));
+    const glide = await ev(() => {
+      let down = 0;
+      while (PlexView._test.rows()[down] && PlexView._test.rows()[down].items.length < 2) down++;
+      for (let i = 0; i < down; i++) PlexView._test.keys('down');
+      const r = document.querySelector('#plexStage .media-shelf.active .plex-ring'), a = r.style.transform;
+      PlexView._test.keys('right'); const b = r.style.transform; PlexView._test.keys('left');
+      for (let i = 0; i < down; i++) PlexView._test.keys('up');
+      return [a, b, PlexView._test.zone()];
+    });
+    ok('the focus ring glides to the next poster (one ring per row, moved, not redrawn)', /translate3d/.test(glide[0]) && glide[0] !== glide[1], glide);
     await ev(() => UI.press('hold')); await page.waitForTimeout(1200);
     const hold = await ev(() => UI.menuLabels);
     ok('hold OK on a title: its options', hold.indexOf('Details') >= 0 && hold.some((l) => /^Resume from|^Play$/.test(l)) && hold.indexOf('Remove from Watchlist') >= 0, hold);
@@ -227,4 +238,4 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
   } finally { await b.close(); relay.server.close(); m.close(); }
   console.log('screenshots in ' + SHOTS);
   process.exit(fails ? 1 : 0);
-})().catch((e) => { console.error(e); process.exit(1); });
+})().catch((e) => { console.error(e); console.error('page errors: ' + JSON.stringify(global.__errs || [])); process.exit(1); });

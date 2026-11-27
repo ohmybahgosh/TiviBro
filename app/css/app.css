@@ -479,7 +479,7 @@ body.pointer .set-nav>div:hover{color:var(--text)}
 /* ---------- side menu ---------- */
 .sidenav{position:absolute;left:0;top:0;bottom:0;width:104px;z-index:4;display:flex;flex-direction:column;padding:36px 0 28px;
   background:linear-gradient(90deg,#080b16 0%,#080b16 70%,rgba(8,11,22,0) 100%);overflow:hidden}
-body.nav-open .sidenav{width:420px;background:#080b16;z-index:35}
+body.nav-open .sidenav{width:432px;left:-12px;padding-left:12px;background:#080b16;z-index:35}   /* 12px past the screen's left edge, so no backdrop shows beside it */
 /* The groups column under the open menu: hidden, so a long group name doesn't peek out beside it. */
 body.nav-open #viewLive .col.groups{visibility:hidden}
 body.nav-hidden .sidenav,body.full .sidenav{visibility:hidden}
@@ -1029,7 +1029,22 @@ body.full .activity,body.mgr-open .activity{display:none}
    out to the left and the bottom, and a shade where the words and rows are. */
 #viewPlex,.plex-page{background:var(--ink)}
 .plex-bg{position:absolute;top:0;right:0;bottom:0;left:0;background-size:cover;background-position:center;opacity:0;transition:opacity .5s ease;transform:scale(1.08)}
-#viewPlex .media-bd,.plex-page .media-bd{width:1500px;height:844px;background:transparent;-webkit-mask-image:linear-gradient(to bottom,#000 0,#000 50%,transparent 100%)}
+/* Two backdrop layers (plexart.js) that cross-fade.  The sharp picture is 1000x563 scaled 1.5 by the graphics chip
+   to its 1500x844 place: decoding the full-size one cost the TV most of a key press. */
+.plex-art{position:absolute;top:0;right:0;bottom:0;left:0;opacity:0;transition:opacity .45s ease;will-change:opacity}
+.plex-art.on{opacity:1}
+.plex-art.on.stale{opacity:.3;transition:opacity .25s ease}
+.plex-art .plex-bg{opacity:1;transition:none}
+.plex-art .media-hero-art{opacity:1;transition:none}
+#viewPlex .media-bd,.plex-page .media-bd{width:1000px;height:563px;-webkit-transform:scale(1.5);transform:scale(1.5);-webkit-transform-origin:100% 0;transform-origin:100% 0;background:transparent;-webkit-mask-image:linear-gradient(to bottom,#000 0,#000 50%,transparent 100%)}
+/* The focus ring glides from poster to poster, and the row slides, both on the graphics chip. */
+.plex-ring{position:absolute;top:1px;left:-7px;box-sizing:border-box;border:5px solid var(--accent);border-radius:20px;pointer-events:none;opacity:0;transition:transform 170ms cubic-bezier(.2,.8,.2,1),opacity 120ms ease;will-change:transform}
+.plex-ring.round{border-radius:50%}
+.media-shelf.active .plex-ring{opacity:1}
+body.focus-ring .plex-ring{box-shadow:0 0 0 4px #fff}
+/* Layers that stay (no layer made and dropped at each key press): the ring and the rows' tracks. */
+#viewPlex .media-track,.plex-page .media-track{transition:transform 220ms cubic-bezier(.2,.8,.2,1);will-change:transform}
+#viewPlex .media-tile.sel .media-art,.plex-page .media-tile.sel .media-art,body.focus-ring #viewPlex .media-tile.sel .media-art,body.focus-ring .plex-page .media-tile.sel .media-art{box-shadow:none;transform:none}
 #viewPlex .media-hero-art{-webkit-mask-image:linear-gradient(to right,transparent 0,rgba(0,0,0,.6) 22%,#000 45%)}
 .plex-shade{position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(180deg,rgba(11,14,26,.8) 0,rgba(11,14,26,0) 22%),linear-gradient(90deg,var(--ink) 0,rgba(11,14,26,.72) 30%,rgba(11,14,26,0) 62%),linear-gradient(0deg,var(--ink) 0,rgba(11,14,26,.86) 40%,rgba(11,14,26,0) 70%),rgba(11,14,26,.35)}
 #viewPlex .media-title.unseen,#viewPlex .media-kicker.unseen{visibility:hidden}
@@ -1042,8 +1057,10 @@ body.full .activity,body.mgr-open .activity{display:none}
 /* Rows above the focused one fade out: their names and lines peeked over the next row. */
 #viewPlex .media-shelf{transition:opacity .2s ease}
 #viewPlex .media-shelf.gone{opacity:0}
+#viewPlex .media-shelf.far{display:none}
 .plex-rank{position:absolute;left:10px;bottom:2px;font-size:96px;line-height:1;font-weight:900;color:#fff;-webkit-text-stroke:3px rgba(0,0,0,.65);text-shadow:0 4px 18px rgba(0,0,0,.8)}
 .plex-page{position:absolute;top:0;right:0;bottom:0;left:0;z-index:5}
+.plex-page-body{position:absolute;top:0;right:0;bottom:0;left:0}
 .plex-page-top{position:absolute;left:152px;top:90px;width:900px;text-shadow:0 2px 12px rgba(0,0,0,.85)}
 .plex-badges{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 6px}
 .plex-badge{font-size:18px;font-weight:700;padding:4px 12px;border-radius:8px;border:2px solid rgba(255,255,255,.35)}
@@ -1057,7 +1074,7 @@ body.full .activity,body.mgr-open .activity{display:none}
 /* A page scrolls as one: the top and the buttons go up and its rows come into view (Cast and crew, Seasons…). */
 .plex-page-scroll{position:absolute;top:0;left:0;right:0;height:100%;transition:transform .28s ease;will-change:transform}
 .plex-page-rows{position:absolute;left:138px;right:0;top:830px}
-.plex-page .media-bd{transition:opacity .3s ease}.plex-page.rows .media-bd{opacity:.18}.plex-page.rows .plex-bg{opacity:.5!important}
+.plex-page .media-bd{transition:opacity .3s ease}.plex-page.rows .media-bd{opacity:.18}.plex-page.rows .plex-art .plex-bg{opacity:.5}
 .plex-tile-person .media-art{border-radius:50%;overflow:hidden}
 .plex-tile-person .media-tile-title,.plex-tile-person .media-tile-year{text-align:center}
 .plex-page-track{position:absolute;left:152px;top:740px;font-size:21px;color:var(--muted);white-space:pre}

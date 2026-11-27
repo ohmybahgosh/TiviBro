@@ -13,7 +13,7 @@ var PlexPage = (function () {
   var $ = function (id) { return document.getElementById(id); };
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
   var chain = 0;   // episodes started one after another by Up next, for Still watching?
-  var item = null, back = null, btns = [], btnAt = 0, playing = null, timer = 0, session = '', versionOf = {};
+  var item = null, pageArt = null, back = null, btns = [], btnAt = 0, playing = null, timer = 0, session = '', versionOf = {};
   var DIRECT_VIDEO = /^(h264|hevc|h265|vp9|av1|mpeg4)$/i, DIRECT_BOX = /^(mkv|mp4|mov|m4v|mpegts|ts|webm|avi)$/i;
 
   function mc(j) { return (j && j.MediaContainer) || {}; }
@@ -64,23 +64,22 @@ var PlexPage = (function () {
   // Draws the page over the Plex tab: the backdrop (fixed), and a part that scrolls: the top, the buttons, the rows.
   function draw() {
     var el = $('plexPage');
-    if (!el) { el = U.el('div', 'plex-page'); el.id = 'plexPage'; $('viewPlex').appendChild(el); }
+    // Built once: the backdrop's two layers stay, so going from page to page cross-fades between their pictures.
+    if (!el) { el = U.el('div', 'plex-page'); el.id = 'plexPage'; el.innerHTML = '<div class="plex-shade"></div><div class="plex-page-body" id="plexPageBody"></div>'; $('viewPlex').appendChild(el); pageArt = PlexArt.make(el); }
     el.classList.remove('hidden');
     var m = item, ep = m.type === 'episode', v = version(), plays = /^(movie|episode)$/.test(m.type);
     var scores = (m.rating ? '<span class="plex-score">' + esc(T('Critics {x}', { x: Math.round(m.rating * 10) + '%' })) + '</span>' : '') + (m.audienceRating ? '<span class="plex-score">' + esc(T('Audience {x}', { x: Math.round(m.audienceRating * 10) + '%' })) + '</span>' : '');
     var people = ((m.Director || []).slice(0, 1).map(function (d) { return T('Directed by {x}', { x: d.tag }); }).concat((m.Genre || []).slice(0, 3).map(function (g) { return g.tag; }))).join('  ·  ');
     btns = buttons();
     var kicker = ep ? m.grandparentTitle : m.type === 'season' ? m.parentTitle : (m.librarySectionTitle || 'Plex');
-    el.innerHTML = '<div class="plex-bg" id="plexPageBg"></div><div class="media-bd"><img class="media-hero-art" id="plexPageArt" alt=""></div><div class="plex-shade"></div>' +
+    $('plexPageBody').innerHTML =
       '<div class="plex-page-scroll" id="plexPageScroll"><div class="plex-page-top"><div class="media-kicker" id="plexPageKicker">' + esc(kicker) + '</div>' +
       '<div class="media-title" id="plexPageName">' + esc(m.title) + '</div><div class="media-facts">' + esc(facts(m)) + '</div>' +
       '<div class="plex-badges">' + (plays ? badges(v).map(function (b) { return '<span class="plex-badge">' + esc(b) + '</span>'; }).join('') : '') + scores + '</div>' +
       '<div class="media-summary plex-summary">' + esc(m.summary || (m.type === 'season' ? '' : '')) + '</div><div class="plex-people">' + esc(people) + '</div></div>' +
       '<div class="plex-btns" id="plexPageBtns">' + btns.map(function (b, i) { return '<div class="plex-btn' + (i === btnAt ? ' sel' : '') + (b.main ? ' main' : '') + '">' + esc(b.label) + '</div>'; }).join('') + '</div>' +
       '<div class="plex-page-track">' + (plays ? track() : '') + '</div><div class="plex-page-rows" id="plexPageRows"></div></div>';
-    var path = m.art || m.grandparentArt || m.parentArt || m.thumb;
-    PlexView.picture(m.server, path, 1500, 844).then(function (u) { var a = $('plexPageArt'); if (u && a && item === m) { a.onload = function () { a.style.opacity = 1; }; a.src = u; } });
-    PlexView.picture(m.server, path, 480, 270, '&blur=36').then(function (u) { var b = $('plexPageBg'); if (u && b && item === m) { b.style.backgroundImage = 'url("' + u + '")'; b.style.opacity = 1; } });
+    pageArt.show(m.server, m.art || m.grandparentArt || m.parentArt || m.thumb);
     logo(m);
   }
   // "1 season" or "6 seasons" (English has no plural forms in the dictionaries).
@@ -129,7 +128,9 @@ var PlexPage = (function () {
     var small = m.type === 'episode' || m.type === 'season', t = $(small ? 'plexPageKicker' : 'plexPageName');
     if (t) t.classList.add('unseen');   // the name waits unseen until it's known whether a logo takes its place
     var showName = function () { if (t) t.classList.remove('unseen'); };
-    PlexView.details(m).then(function (d) { return d.logo && item === m ? PlexView.file(m.server, d.logo) : ''; }).then(function (u) {
+    // A movie's or show's own list of pictures has its logo (no wait for the details); an episode's is its show's.
+    var own = small ? '' : PlexView.logoOf(m);
+    (own ? Promise.resolve({ logo: own }) : PlexView.details(m)).then(function (d) { return d.logo && item === m ? PlexView.file(m.server, d.logo) : ''; }).then(function (u) {
       if (!u || !t || item !== m) return showName();
       var lg = U.el('img', 'media-logo' + (small ? ' small' : '')); lg.alt = small ? m.grandparentTitle || m.parentTitle || '' : m.title || '';
       lg.onload = function () { if (t.parentNode) t.parentNode.replaceChild(lg, t); };

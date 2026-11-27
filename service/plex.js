@@ -256,15 +256,66 @@ function door(q, cb) {
 var CONVERT_TO = 'add-transcode-target(type=videoProfile&context=streaming&protocol=hls&container=mpegts&videoCodec=h264&audioCodec=aac,ac3,eac3&subtitleCodec=)' +
   '+add-limitation(scope=videoCodec&scopeName=h264&type=upperBound&name=video.level&value=51)';
 function convertHeaders(h) { h['X-Plex-Client-Profile-Name'] = 'Generic'; h['X-Plex-Client-Profile-Extra'] = CONVERT_TO; return h; }
+/* ---------- Pictures kept on the TV ----------
+   Posters, backdrops and title logos come from the server (often over the internet, converted to size there), and
+   the doors' keys change each time the helper starts, so the browser's own cache never matched again.  Here each
+   picture is kept by its server and address (the token isn't in it; Plex puts the picture's date in its address,
+   so a new poster is a new address), in the helper's storage, and given at once the next time.  About 150 MB at
+   most: the oldest go first. */
+var fs = require('fs'), pathMod = require('path');
+var PIC_PATHS = /^\/(photo\/:\/transcode\?|library\/metadata\/[0-9]+\/(thumb|art|clearLogo)\/[0-9]+$)/, PIC_MAX = 2000000, PICS_BYTES = 150e6;
+var picDir = null, picWrites = 0;
+function pics() {
+  if (picDir !== null) return picDir;
+  picDir = '';
+  try { var S = require('./storage'); if (!S.memory()) picDir = S.sub('plexpics'); } catch (e) {}
+  return picDir;
+}
+function picFile(base, p) { return pathMod.join(pics(), crypto.createHash('sha1').update(base + p).digest('hex')); }
+// A kept picture: sent with its type (kept beside it in the name: .jpg, .png, .webp).
+function sendKept(file, res, ALLOW) {
+  var types = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' }, ext = null;
+  Object.keys(types).forEach(function (x) { if (!ext && fs.existsSync(file + '.' + x)) ext = x; });
+  if (!ext) return false;
+  var now = new Date(); try { fs.utimesSync(file + '.' + ext, now, now); } catch (e) {}   // recently used: kept longer
+  res.writeHead(200, Object.assign({ 'Content-Type': types[ext], 'Cache-Control': 'max-age=86400' }, ALLOW));
+  fs.createReadStream(file + '.' + ext).on('error', function () { res.end(); }).pipe(res);
+  return true;
+}
+// A picture on its way to the TV, written beside it as it comes (whole, or not at all).
+function keep(file, up) {
+  var t = String(up.headers['content-type'] || ''), ext = /jpe?g/.test(t) ? 'jpg' : /png/.test(t) ? 'png' : /webp/.test(t) ? 'webp' : '';
+  if (!ext || up.statusCode !== 200 || +up.headers['content-length'] > PIC_MAX) return;
+  var tmp = file + '.part', out, size = 0, bad = false;
+  try { out = fs.createWriteStream(tmp); } catch (e) { return; }
+  out.on('error', function () { bad = true; });
+  up.on('data', function (c) { size += c.length; if (size > PIC_MAX) bad = true; if (!bad) out.write(c); });
+  up.on('end', function () { out.end(function () { if (bad) { try { fs.unlinkSync(tmp); } catch (e) {} return; } try { fs.renameSync(tmp, file + '.' + ext); } catch (e) {} if (++picWrites % 200 === 0) prunePics(); }); });
+  up.on('error', function () { bad = true; out.end(); });
+}
+// Past 150 MB, the pictures used longest ago go until it's under 120.
+function prunePics() {
+  var dir = pics(); if (!dir) return;
+  var list = [];
+  try { fs.readdirSync(dir).forEach(function (n) { try { var st = fs.statSync(pathMod.join(dir, n)); list.push({ n: n, t: st.mtime.getTime(), b: st.size }); } catch (e) {} }); } catch (e) { return; }
+  var total = list.reduce(function (a, x) { return a + x.b; }, 0);
+  if (total <= PICS_BYTES) return;
+  list.sort(function (a, b) { return a.t - b.t; });
+  while (list.length && total > PICS_BYTES * 0.8) { var x = list.shift(); total -= x.b; try { fs.unlinkSync(pathMod.join(dir, x.n)); } catch (e) {} }
+}
+
 function doorGet(req, res, ALLOW) {
   var m = /^\/plex\/([0-9a-f]{48})(\/.*)$/.exec(req.url), d = m && doors[m[1]];
   if (!d || d.until < Date.now() || !DOOR_PATHS.test(m[2]) || /(^|\/)\.\.?(\/|\?|$)|%2e%2e/i.test(m[2])) { res.writeHead(404, ALLOW); return res.end(); }
+  var pic = req.method !== 'HEAD' && !req.headers.range && PIC_PATHS.test(m[2]) && pics() ? picFile(d.base, m[2]) : '';
+  if (pic && sendKept(pic, res, ALLOW)) return;
   var u = URL.parse(d.base + m[2]), lib = u.protocol === 'http:' ? http : https;
   var h = headers({ cid: d.cid, token: d.token }); delete h.Accept;
   if (/^\/video\/:\/transcode\//.test(m[2])) convertHeaders(h);
   if (req.headers.range) h.Range = req.headers.range;
   var out = lib.request({ hostname: u.hostname, port: u.port, path: u.path, method: req.method === 'HEAD' ? 'HEAD' : 'GET', headers: h }, function (up) {
     var head = {}; ['content-type', 'content-length', 'content-range', 'accept-ranges', 'cache-control', 'last-modified', 'etag'].forEach(function (k) { if (up.headers[k] != null) head[k] = up.headers[k]; });
+    if (pic && up.statusCode === 200) { head['cache-control'] = 'max-age=86400'; keep(pic, up); }
     res.writeHead(up.statusCode, Object.assign(head, ALLOW));
     up.pipe(res);
   });

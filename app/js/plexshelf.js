@@ -35,7 +35,8 @@ var PlexShelf = (function () {
     rows.forEach(function (r) { tops.push(y); y += height(r.kind); });
     el.innerHTML = rows.map(function (r, ri) {
       return '<div class="media-shelf" style="top:' + tops[ri] + 'px;height:' + height(r.kind) + 'px"><div class="media-shelf-title"><h2>' + esc(r.title) + '</h2></div>' +
-        '<div class="media-track">' + r.items.map(function (m, i) { return tile(m, r.kind, i); }).join('') + '</div></div>';
+        '<div class="media-track">' + r.items.map(function (m, i) { return tile(m, r.kind, i); }).join('') +
+        PlexView.ring((SIZE[r.kind] || SIZE.poster)[0], (SIZE[r.kind] || SIZE.poster)[1]) + '</div></div>';
     }).join('');
     // The ring on the focused tile, the row slid so it stays in view, pictures for the rows around.
     function paint(on) {
@@ -47,6 +48,8 @@ var PlexShelf = (function () {
         shelves[ri].classList.toggle('gone', on && ri < at);
         track.style.transform = 'translateX(' + (-Math.max(0, c - 3) * step) + 'px)';
         if (on && ri === at && track.children[c]) track.children[c].classList.add('sel');
+        track.lastChild.style.transform = 'translate3d(' + (14 + c * step) + 'px,0,0)';
+        if (r.kind === 'person') track.lastChild.classList.add('round');
         if (ri >= at - 1 && ri <= at + 1) pictures(ri, track, c, r.kind);
       }
     }

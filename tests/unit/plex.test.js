@@ -2,6 +2,8 @@
 // the link-code sign-in, the account and its servers, picking a connection that answers, Plex Home with a PIN,
 // server calls on allowed paths only, and the headers every call carries.
 const assert = require('assert');
+const fs = require('fs'), os = require('os'), pathM = require('path');
+process.env.TIVIBRO_KV_DIR = fs.mkdtempSync(pathM.join(os.tmpdir(), 'tb-plex-'));   // where pictures are kept
 const Plex = require('../../service/plex');
 const Mock = require('../mock/mock_plex');
 const T = Plex._test;
@@ -83,6 +85,13 @@ const ask = (q) => new Promise((ok) => Plex.handle(Object.assign({ cid: 'tv-0123
     const get = (path, h) => new Promise((ok) => http.get({ host: '127.0.0.1', port: front.address().port, path, headers: h || {} }, (r) => { let b = ''; r.on('data', (c) => (b += c)); r.on('end', () => ok({ status: r.statusCode, body: b, type: r.headers['content-type'] })); }));
     const pic = await get('/plex/' + d1.key + '/photo/:/transcode?width=300&height=450&url=%2Flibrary%2Fmetadata%2F10%2Fthumb%2F1');
     assert.equal(pic.status, 200); assert.equal(pic.type, 'image/png'); assert(/width=300/.test(pic.body));
+    // Kept on the TV: the same picture again comes from the helper's storage, the server isn't asked.
+    await new Promise((ok) => setTimeout(ok, 200));
+    const asked = () => m.state.seen.filter((x) => /^\/photo\//.test(x.path) && /width=300/.test(x.path)).length, before = asked();
+    const again = await get('/plex/' + d1.key + '/photo/:/transcode?width=300&height=450&url=%2Flibrary%2Fmetadata%2F10%2Fthumb%2F1');
+    assert.equal(again.status, 200); assert.equal(again.type, 'image/png'); assert.equal(again.body, pic.body, 'the same picture');
+    assert.equal(asked(), before, 'the server was not asked again');
+    assert(fs.readdirSync(pathM.join(process.env.TIVIBRO_KV_DIR, 'plexpics')).some((n) => /\.png$/.test(n)), 'kept in plexpics');
     const vid = await get('/plex/' + d1.key + '/library/parts/7/1700000000/file.mkv', { Range: 'bytes=100-' });
     assert.equal(vid.status, 206); assert.equal(vid.body, 'MKVBYTES'); assert.equal(m.state.range, 'bytes=100-', 'seeking passes on');
     assert.equal((await get('/plex/' + d1.key + '/:/prefs')).status, 404, 'only pictures and video');

@@ -43,14 +43,14 @@ var PlexTop = (function () {
     return norm(m.title) === norm(w.t);
   }
   // Only what a poster and a page need, kept small in localStorage.
-  function slim(m, server) { return { ratingKey: m.ratingKey, type: m.type, title: m.title, year: m.year, thumb: m.thumb, art: m.art, librarySectionID: m.librarySectionID, server: server }; }
+  function slim(m, server) { return { ratingKey: m.ratingKey, type: m.type, title: m.title, year: m.year, thumb: m.thumb, art: m.art, librarySectionID: m.librarySectionID, server: server, Image: (m.Image || []).filter(function (x) { return x.type === 'clearLogo'; }) }; }
   /* One chart title looked up on each server (in order) until one has it. */
   function lookUp(w) {
     var servers = Plex.chosen();
     function on(i) {
       if (i >= servers.length) return Promise.resolve(0);
       var s = servers[i];
-      return Plex.call(s.id, '/hubs/search?query=' + encodeURIComponent(w.t) + '&limit=6&includeGuids=1').then(function (j) {
+      return Plex.call(s.id, '/hubs/search?query=' + encodeURIComponent(w.t) + '&limit=6&includeGuids=1&includeImages=1').then(function (j) {
         var hit = null;
         ((j && j.MediaContainer && j.MediaContainer.Hub) || []).forEach(function (h) { (h.Metadata || []).forEach(function (m) { if (!hit && /^(movie|show)$/.test(m.type) && Plex.libs(s.id).indexOf(String(m.librarySectionID)) >= 0 && same(m, w)) hit = m; }); });
         return hit ? slim(hit, s.id) : on(i + 1);
