@@ -1,5 +1,5 @@
 # dependencies and local tools
-node_modules/
+node_modules
 tools/
 _unpack/
 
