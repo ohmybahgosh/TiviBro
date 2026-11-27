@@ -2848,5 +2848,19 @@ I18n.add('ru', {
   "by the processor": "процессором",
   "{x} is converting this {y} movie to a lower quality, so it plays without HDR.  Quality > Original keeps it.": "{x} перекодирует этот фильм {y} в более низкое качество, поэтому он идёт без HDR.  Качество > Оригинал сохраняет его.",
   "{x}× real time": "{x}× от реального времени",
-  "{x}× real time: too slow, the picture will stop to load": "{x}× от реального времени: слишком медленно, картинка будет останавливаться для загрузки"
+  "{x}× real time: too slow, the picture will stop to load": "{x}× от реального времени: слишком медленно, картинка будет останавливаться для загрузки",
+  "From the restore point \"{x}\" of {y}": "Из точки восстановления «{x}» от {y}",
+  "Playlists, logins, channel edits and settings, as they were on {x}": "Плейлисты, логины, правки каналов и настройки в том виде, как были {x}",
+  "Put back your channel edits too?": "Вернуть и ваши правки каналов?",
+  "Put everything back": "Восстановить всё",
+  "Put them back": "Вернуть их",
+  "Putting everything back.  TiviBro restarts…": "Восстанавливаем всё.  TiviBro перезапускается…",
+  "Putting your playlist back.  TiviBro restarts…": "Восстанавливаем ваш плейлист.  TiviBro перезапускается…",
+  "Set up a new playlist": "Настроить новый плейлист",
+  "Settings > Backups and restore points has them": "Они есть в разделе Настройки > Резервные копии",
+  "Start fresh": "Начать заново",
+  "The copy is deleted and the set-up screen opens": "Копия будет удалена, и откроется экран настройки",
+  "Xtream Codes, kept on {x}.  Its channel edits come back from its restore points.": "Xtream Codes, сохранён {x}.  Правки каналов вернутся из его точек восстановления.",
+  "Your playlist from before is still on this TV": "Ваш прежний плейлист всё ещё на этом телевизоре",
+  "Your settings on this TV were cleared": "Настройки на этом телевизоре были сброшены"
 });

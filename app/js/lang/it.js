@@ -2733,5 +2733,19 @@ I18n.add('it', {
   "by the processor": "dal processore",
   "{x} is converting this {y} movie to a lower quality, so it plays without HDR.  Quality > Original keeps it.": "{x} sta convertendo questo film {y} a una qualità più bassa, quindi si vede senza HDR.  Qualità > Originale lo mantiene.",
   "{x}× real time": "{x}× tempo reale",
-  "{x}× real time: too slow, the picture will stop to load": "{x}× tempo reale: troppo lento, l'immagine si fermerà a caricare"
+  "{x}× real time: too slow, the picture will stop to load": "{x}× tempo reale: troppo lento, l'immagine si fermerà a caricare",
+  "From the restore point \"{x}\" of {y}": "Dal punto di ripristino \"{x}\" del {y}",
+  "Playlists, logins, channel edits and settings, as they were on {x}": "Playlist, accessi, modifiche ai canali e impostazioni, come erano il {x}",
+  "Put back your channel edits too?": "Ripristinare anche le modifiche ai canali?",
+  "Put everything back": "Ripristina tutto",
+  "Put them back": "Ripristinali",
+  "Putting everything back.  TiviBro restarts…": "Ripristino di tutto in corso.  TiviBro si riavvia…",
+  "Putting your playlist back.  TiviBro restarts…": "Ripristino della playlist in corso.  TiviBro si riavvia…",
+  "Set up a new playlist": "Configura una nuova playlist",
+  "Settings > Backups and restore points has them": "Li trovi in Impostazioni > Backup e punti di ripristino",
+  "Start fresh": "Ricomincia da zero",
+  "The copy is deleted and the set-up screen opens": "La copia viene eliminata e si apre la schermata di configurazione",
+  "Xtream Codes, kept on {x}.  Its channel edits come back from its restore points.": "Xtream Codes, salvata il {x}.  Le sue modifiche ai canali tornano dai suoi punti di ripristino.",
+  "Your playlist from before is still on this TV": "La tua playlist di prima è ancora su questa TV",
+  "Your settings on this TV were cleared": "Le impostazioni su questa TV sono state cancellate"
 });

@@ -2719,5 +2719,19 @@ I18n.add('hi', {
   "◀ ▶  season": "◀ ▶  सीज़न",
   "◀ ▶  seasons": "◀ ▶  सीज़न",
   "◀ ▶  the collection": "◀ ▶  कलेक्शन",
-  "◀ ▶ changes it.": "◀ ▶ से इसे बदलें।"
+  "◀ ▶ changes it.": "◀ ▶ से इसे बदलें।",
+  "From the restore point \"{x}\" of {y}": "{y} के रिस्टोर पॉइंट \"{x}\" से",
+  "Playlists, logins, channel edits and settings, as they were on {x}": "प्लेलिस्ट, लॉगिन, चैनल में किए बदलाव और सेटिंग, जैसे वे {x} को थे",
+  "Put back your channel edits too?": "चैनल में किए बदलाव भी वापस लाएं?",
+  "Put everything back": "सब कुछ वापस लाएं",
+  "Put them back": "इन्हें वापस लाएं",
+  "Putting everything back.  TiviBro restarts…": "सब कुछ वापस लाया जा रहा है।  TiviBro फिर से शुरू होगा…",
+  "Putting your playlist back.  TiviBro restarts…": "आपकी प्लेलिस्ट वापस लाई जा रही है।  TiviBro फिर से शुरू होगा…",
+  "Set up a new playlist": "नई प्लेलिस्ट सेट करें",
+  "Settings > Backups and restore points has them": "वे सेटिंग > बैकअप और रिस्टोर पॉइंट में हैं",
+  "Start fresh": "नए सिरे से शुरू करें",
+  "The copy is deleted and the set-up screen opens": "कॉपी हटा दी जाएगी और सेट-अप स्क्रीन खुलेगी",
+  "Xtream Codes, kept on {x}.  Its channel edits come back from its restore points.": "Xtream Codes, {x} को रखी गई।  इसके चैनल में किए बदलाव इसके रिस्टोर पॉइंट से वापस आते हैं।",
+  "Your playlist from before is still on this TV": "आपकी पहले वाली प्लेलिस्ट अभी भी इस TV पर है",
+  "Your settings on this TV were cleared": "इस TV की आपकी सेटिंग मिट गईं"
 });

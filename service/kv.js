@@ -9,6 +9,8 @@
      POST /kv/put?k=<key>     body: the JSON to keep (written to a new file, then swapped in)
      POST /kv/put?k=<key>&from=<id>   body: a few fields; the channel list comes from live.js (keep)
      POST /kv/del?k=<key>
+     GET  /kv/list?p=<prefix>  the keys starting with it: [{ k, size, at }] (putting back a cleared TV, recover.js)
+     GET  /kv/peek?k=<key>     the small fields at the front of a kept list (peek below), without reading all of it
    Keys: letters, digits, ":", "_" and "-", up to 80.  Plain ES5 and callbacks for Node 0.12 (webOS 4). */
 'use strict';
 var fs = require('fs'), path = require('path');
@@ -34,8 +36,49 @@ function send(res, ALLOW, code, obj) {
   res.end(JSON.stringify(obj));
 }
 
+/* The small fields at the front of a kept list, from the first part of its file: the top-level members up
+   to the first list or object (a channel list's groups and channels come after its login and when it was
+   loaded).  Only strings, numbers and booleans; an Xtream Codes list's server, user and pass are there. */
+function peek(text) {
+  var out = {}, i = text.indexOf('{') + 1;
+  if (i <= 0) return out;
+  while (i < text.length) {
+    var m = /^\s*,?\s*"((?:[^"\\]|\\.)*)"\s*:\s*/.exec(text.slice(i, i + 300));
+    if (!m) break;
+    i += m[0].length;
+    var v = /^("(?:[^"\\]|\\.)*"|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null)/.exec(text.slice(i, i + 8192));
+    if (!v) break;                                   // a list or an object: the channels start here
+    try { var x = JSON.parse(v[0]), name = JSON.parse('"' + m[1] + '"'); if (x !== null) out[name] = x; } catch (e) { break; }
+    i += v[0].length;
+  }
+  return out;
+}
+
+// The keys kept with this start (files <key>.json, ":" written as "~"), with their size and when written.
+function list(prefix, cb) {
+  var dir; try { dir = sub('kv'); } catch (e) { return cb([]); }
+  var start = prefix.replace(/:/g, '~');
+  fs.readdir(dir, function (e, names) {
+    var hits = (names || []).filter(function (n) { return /^[A-Za-z0-9~_-]+\.json$/.test(n) && n.indexOf(start) === 0 && n.indexOf('live~') !== 0; });
+    var out = [], left = hits.length;
+    if (!left) return cb(out);
+    hits.forEach(function (n) {
+      fs.stat(path.join(dir, n), function (er, st) {
+        if (!er && st.isFile()) out.push({ k: n.slice(0, -5).replace(/~/g, ':'), size: st.size, at: st.mtime.getTime() });
+        if (--left === 0) cb(out);
+      });
+    });
+  });
+}
+
 function handle(req, res, ALLOW, log) {
   var u = req.url.split('?'), route = u[0], m = /(?:^|&)k=([^&]*)/.exec(u[1] || ''), k = m ? decodeURIComponent(m[1]) : '';
+  if (req.method === 'GET' && route === '/kv/list') {
+    var pm = /(?:^|&)p=([A-Za-z0-9:_-]{1,40})(?:&|$)/.exec(u[1] || '');
+    if (!pm) return send(res, ALLOW, 400, { error: 'bad prefix' });
+    if (!onDisk()) return send(res, ALLOW, 200, { items: [] });
+    return list(pm[1], function (items) { send(res, ALLOW, 200, { items: items }); });
+  }
   if (!/^[A-Za-z0-9:_-]{1,80}$/.test(k)) return send(res, ALLOW, 400, { error: 'bad key' });
   var f;
   try { if (!onDisk()) return send(res, ALLOW, 507, { error: 'no storage for this on the TV' }); f = fileOf(k); } catch (e) { return send(res, ALLOW, 507, { error: e.message }); }
@@ -46,6 +89,18 @@ function handle(req, res, ALLOW, log) {
       for (var x in ALLOW) h[x] = ALLOW[x];
       res.writeHead(200, h);
       fs.createReadStream(f).on('error', function () { res.end(); }).pipe(res);
+    });
+    return;
+  }
+  if (req.method === 'GET' && route === '/kv/peek') {
+    fs.open(f, 'r', function (e, fd) {
+      if (e) return send(res, ALLOW, 404, { error: 'none' });
+      var buf = new Buffer(262144);                             // eslint-disable-line no-buffer-constructor
+      fs.read(fd, buf, 0, buf.length, 0, function (er, n) {
+        fs.close(fd, function () {});
+        if (er) return send(res, ALLOW, 500, { error: er.message });
+        send(res, ALLOW, 200, peek(buf.toString('utf8', 0, n)));
+      });
     });
     return;
   }
@@ -107,4 +162,4 @@ function handle(req, res, ALLOW, log) {
   send(res, ALLOW, 404, { error: 'unknown kv route' });
 }
 
-module.exports = { handle: handle, root: root, sub: sub, liveDir: liveDir, fileOf: fileOf };
+module.exports = { peek: peek, handle: handle, root: root, sub: sub, liveDir: liveDir, fileOf: fileOf };

@@ -2719,5 +2719,19 @@ I18n.add('uk', {
   "◀ ▶  season": "◀ ▶  сезон",
   "◀ ▶  seasons": "◀ ▶  сезони",
   "◀ ▶  the collection": "◀ ▶  колекція",
-  "◀ ▶ changes it.": "◀ ▶ змінюють це."
+  "◀ ▶ changes it.": "◀ ▶ змінюють це.",
+  "From the restore point \"{x}\" of {y}": "З точки відновлення \"{x}\" від {y}",
+  "Playlists, logins, channel edits and settings, as they were on {x}": "Плейлисти, дані для входу, зміни каналів і налаштування, як було {x}",
+  "Put back your channel edits too?": "Відновити також зміни каналів?",
+  "Put everything back": "Відновити все",
+  "Put them back": "Відновити їх",
+  "Putting everything back.  TiviBro restarts…": "Відновлюємо все.  TiviBro перезапускається…",
+  "Putting your playlist back.  TiviBro restarts…": "Відновлюємо ваш плейлист.  TiviBro перезапускається…",
+  "Set up a new playlist": "Налаштувати новий плейлист",
+  "Settings > Backups and restore points has them": "Вони є в розділі Налаштування > Резервні копії та точки відновлення",
+  "Start fresh": "Почати з нуля",
+  "The copy is deleted and the set-up screen opens": "Копію буде видалено, і відкриється екран налаштування",
+  "Xtream Codes, kept on {x}.  Its channel edits come back from its restore points.": "Xtream Codes, збережено {x}.  Зміни його каналів повертаються з його точок відновлення.",
+  "Your playlist from before is still on this TV": "Ваш попередній плейлист досі на цьому ТВ",
+  "Your settings on this TV were cleared": "Ваші налаштування на цьому ТВ було очищено"
 });

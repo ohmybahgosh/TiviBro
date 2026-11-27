@@ -2719,5 +2719,19 @@ I18n.add('hr', {
   "◀ ▶  season": "◀ ▶  sezona",
   "◀ ▶  seasons": "◀ ▶  sezone",
   "◀ ▶  the collection": "◀ ▶  zbirka",
-  "◀ ▶ changes it.": "◀ ▶ to mijenja."
+  "◀ ▶ changes it.": "◀ ▶ to mijenja.",
+  "From the restore point \"{x}\" of {y}": "Iz točke vraćanja \"{x}\" od {y}",
+  "Playlists, logins, channel edits and settings, as they were on {x}": "Playliste, prijave, izmjene kanala i postavke, kako su bile {x}",
+  "Put back your channel edits too?": "Vratiti i vaše izmjene kanala?",
+  "Put everything back": "Vrati sve",
+  "Put them back": "Vrati ih",
+  "Putting everything back.  TiviBro restarts…": "Vraćam sve.  TiviBro se ponovno pokreće…",
+  "Putting your playlist back.  TiviBro restarts…": "Vraćam vašu playlistu.  TiviBro se ponovno pokreće…",
+  "Set up a new playlist": "Postavi novu playlistu",
+  "Settings > Backups and restore points has them": "Nalaze se u Postavke > Sigurnosne kopije i točke vraćanja",
+  "Start fresh": "Počni iznova",
+  "The copy is deleted and the set-up screen opens": "Kopija se briše i otvara se zaslon za postavljanje",
+  "Xtream Codes, kept on {x}.  Its channel edits come back from its restore points.": "Xtream Codes, spremljeno {x}.  Njezine izmjene kanala vraćaju se iz njezinih točaka vraćanja.",
+  "Your playlist from before is still on this TV": "Vaša prijašnja playlista još je na ovom TV-u",
+  "Your settings on this TV were cleared": "Vaše postavke na ovom TV-u su očišćene"
 });

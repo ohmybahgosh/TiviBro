@@ -952,7 +952,9 @@ var App = (function () {
         try { localStorage.setItem('tivibro.crashSeen', key); } catch (e) {}
         setTimeout(function () { offerReport(gone, crash); }, 2000);    // soon: in a loop the next close may not wait
       }
-      if (!Store.settings.playlists.length) return setup();
+      // No playlist: the TV may have cleared TiviBro's storage, with a copy on the helper's (recover.js).
+      if (!Store.settings.playlists.length) return Recover.check(setup).then(function (asked) { if (!asked) setup(); }, function () { setup(); });
+      Recover.start();
       if (guard) return guarded(guard);
       open(Store.playlist);
     });
@@ -963,7 +965,7 @@ var App = (function () {
      than English, where to change it. */
   var STATIC = '.col.groups > .col-title, #guideGroups > .col-title, #guidePreview > span, .media-heading, #spinnerText, .meter-label';
   function langStart() {
-    try { document.documentElement.lang = I18n.lang(); } catch (e) {}
+    I18n.mark(I18n.lang());                 // <html lang>, and right to left for Arabic
     var redo = function () { [].forEach.call(document.querySelectorAll(STATIC), function (el) { I18n.page(el); }); };
     redo();
     I18n.onChange(function (l) {

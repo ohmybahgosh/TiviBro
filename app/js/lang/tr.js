@@ -2733,5 +2733,19 @@ I18n.add('tr', {
   "by the processor": "işlemciyle",
   "{x} is converting this {y} movie to a lower quality, so it plays without HDR.  Quality > Original keeps it.": "{x} bu {y} filmi daha düşük kaliteye dönüştürüyor, bu yüzden HDR olmadan oynuyor.  Kalite > Orijinal bunu korur.",
   "{x}× real time": "gerçek zamanın {x}× katı",
-  "{x}× real time: too slow, the picture will stop to load": "gerçek zamanın {x}× katı: çok yavaş, görüntü yüklenmek için duracak"
+  "{x}× real time: too slow, the picture will stop to load": "gerçek zamanın {x}× katı: çok yavaş, görüntü yüklenmek için duracak",
+  "From the restore point \"{x}\" of {y}": "{y} tarihli \"{x}\" geri yükleme noktasından",
+  "Playlists, logins, channel edits and settings, as they were on {x}": "Oynatma listeleri, girişler, kanal düzenlemeleri ve ayarlar, {x} tarihindeki haliyle",
+  "Put back your channel edits too?": "Kanal düzenlemeleriniz de geri yüklensin mi?",
+  "Put everything back": "Her şeyi geri yükle",
+  "Put them back": "Geri yükle",
+  "Putting everything back.  TiviBro restarts…": "Her şey geri yükleniyor.  TiviBro yeniden başlıyor…",
+  "Putting your playlist back.  TiviBro restarts…": "Oynatma listeniz geri yükleniyor.  TiviBro yeniden başlıyor…",
+  "Set up a new playlist": "Yeni oynatma listesi kur",
+  "Settings > Backups and restore points has them": "Ayarlar > Yedekler ve geri yükleme noktaları bölümünde bulabilirsiniz",
+  "Start fresh": "Sıfırdan başla",
+  "The copy is deleted and the set-up screen opens": "Kopya silinir ve kurulum ekranı açılır",
+  "Xtream Codes, kept on {x}.  Its channel edits come back from its restore points.": "Xtream Codes, {x} tarihinde saklandı.  Kanal düzenlemeleri geri yükleme noktalarından geri gelir.",
+  "Your playlist from before is still on this TV": "Önceki oynatma listeniz hâlâ bu TV'de",
+  "Your settings on this TV were cleared": "Bu TV'deki ayarlarınız temizlendi"
 });

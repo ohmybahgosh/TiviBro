@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Settings the TV cleared can come back.**  Some installs over an existing TiviBro make the TV throw away its saved data, so TiviBro opened on the set-up screen with the playlist and every change gone (issue #196).  TiviBro now keeps a copy of its settings, playlists and channel edits on the TV's storage, where an install doesn't reach, and offers to put everything back when that happens.  For a TV that lost them before this update: an Xtream Codes playlist TiviBro still has on the TV is offered back with its login, then its channel edits from its restore points.
 - **Four more languages: Arabic, Hindi, Croatian and Ukrainian.**  On the TV, the phone app, the web editor and tivibro.app.  Arabic text reads right to left; the TV's layout stays as it is.
 
 ## 0.6.0 (alpha 229, 2026-11-27)

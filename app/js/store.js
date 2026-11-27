@@ -302,7 +302,7 @@ var Store = (function () {
   // Saves can fail when the TV's storage is full: say so once instead of losing changes silently.
   var fullWarned = false;
   function lsSet(k, v) {
-    try { localStorage.setItem(k, v); return true; }
+    try { localStorage.setItem(k, v); if (window.Recover) Recover.changed(); return true; }
     catch (e) {
       if (window.Log) Log.error('store', 'Could not save ' + k + ' (' + v.length + ' bytes): ' + (e && e.name || e));
       if (!fullWarned && window.U && U.toast) { fullWarned = true; U.toast('The TV\'s storage for TiviBro is full, so recent changes could not be saved.  Try clearing old reminders or watch history.', 8000); }
@@ -378,6 +378,7 @@ var Store = (function () {
     bigSet('snaps:' + id, null);
     bigGet('drafts:' + id).then(function (l) { (Array.isArray(l) ? l : []).forEach(function (x) { bigSet('draft:' + id + ':' + x.id, null); }); bigSet('drafts:' + id, null); });
     if (settings.active === id) { settings.active = settings.playlists[0] ? settings.playlists[0].id : ''; loadEdits(); }
+    if (!settings.playlists.length && window.Recover) Recover.forget();     // the last one, on purpose: no copy to offer back
     saveSettings();
   }
 

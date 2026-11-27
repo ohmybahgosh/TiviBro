@@ -2719,5 +2719,19 @@ I18n.add('ar', {
   "◀ ▶  season": "◀ ▶  الموسم",
   "◀ ▶  seasons": "◀ ▶  المواسم",
   "◀ ▶  the collection": "◀ ▶  السلسلة",
-  "◀ ▶ changes it.": "◀ ▶ يغيّره."
+  "◀ ▶ changes it.": "◀ ▶ يغيّره.",
+  "From the restore point \"{x}\" of {y}": "من نقطة الاستعادة \"{x}\" بتاريخ {y}",
+  "Playlists, logins, channel edits and settings, as they were on {x}": "قوائم التشغيل وبيانات الدخول وتعديلات القنوات والإعدادات، كما كانت في {x}",
+  "Put back your channel edits too?": "هل تريد استعادة تعديلات القنوات أيضًا؟",
+  "Put everything back": "استعادة كل شيء",
+  "Put them back": "استعادتها",
+  "Putting everything back.  TiviBro restarts…": "جارٍ استعادة كل شيء.  سيُعاد تشغيل TiviBro…",
+  "Putting your playlist back.  TiviBro restarts…": "جارٍ استعادة قائمة التشغيل.  سيُعاد تشغيل TiviBro…",
+  "Set up a new playlist": "إعداد قائمة تشغيل جديدة",
+  "Settings > Backups and restore points has them": "تجدها في الإعدادات > النسخ الاحتياطية ونقاط الاستعادة",
+  "Start fresh": "البدء من جديد",
+  "The copy is deleted and the set-up screen opens": "تُحذف النسخة وتُفتح شاشة الإعداد",
+  "Xtream Codes, kept on {x}.  Its channel edits come back from its restore points.": "Xtream Codes، محفوظة في {x}.  تعديلات قنواتها تعود من نقاط الاستعادة الخاصة بها.",
+  "Your playlist from before is still on this TV": "قائمة التشغيل السابقة لا تزال على هذا التلفزيون",
+  "Your settings on this TV were cleared": "تم مسح إعداداتك على هذا التلفزيون"
 });
