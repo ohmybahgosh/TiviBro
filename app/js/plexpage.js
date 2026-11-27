@@ -349,8 +349,10 @@ var PlexPage = (function () {
         if (item !== m || !part || !direct(v) || !el || el.classList.contains('hidden') || Views.mode === 'vod') return;
         var vid = document.createElement('video');
         vid.className = 'plex-trailer'; vid.muted = how !== 'sound'; vid.volume = 0.6; vid.setAttribute('playsinline', '');
-        vid.src = 'http://127.0.0.1:' + Net.port + '/plex/' + r[1] + part.key;
-        vid.addEventListener('playing', function () { vid.classList.add('on'); hint(true); if (how === 'sound') stopTheme(); });
+        // Plex's own trailers come at 750 kbps unless asked: 5000 is the best they have (8000 falls back to the smallest).
+        vid.src = 'http://127.0.0.1:' + Net.port + '/plex/' + r[1] + String(part.key).replace(/([?&]bitrate=)\d+/, '$15000');
+        vid.addEventListener('loadedmetadata', function () { fit(vid, false); });
+        vid.addEventListener('playing', function () { fit(vid, full); vid.classList.add('on'); hint(true); if (how === 'sound') stopTheme(); });
         vid.addEventListener('timeupdate', function () { if (full) bar(false); });
         vid.addEventListener('ended', function () { stopTrailer(true); });
         vid.addEventListener('error', function () { stopTrailer(); });
@@ -379,6 +381,7 @@ var PlexPage = (function () {
     var el = $('plexPage'), v = trailerVid; if (!el) return;
     full = !!(on && v);
     el.classList.toggle('trailer-full', full);
+    if (v) fit(v, full);
     if (v) { v.muted = full ? false : Plex.prefs().pageTrailer !== 'sound'; if (full) stopTheme(); }
     if (full) bar(true); else { var b = $('plexTrailerBar'); if (b) b.classList.remove('show'); }
     if (!full) paint();
@@ -391,12 +394,19 @@ var PlexPage = (function () {
     else if (a === 'right' || a === 'ff') v.currentTime = Math.min((v.duration || 0) - 0.5, v.currentTime + 10);
     bar(true); return true;
   }
+  /* The trailer's size by hand (the TV's player ignores object-fit): behind the page it covers the whole screen
+     (cut at the sides or the top and bottom), full screen it fits whole (bars where the shapes differ). */
+  function fit(v, whole) {
+    var r = v.videoWidth && v.videoHeight ? v.videoWidth / v.videoHeight : 16 / 9, W = 1920, H = 1080;
+    var wide = r > W / H, w = (wide === !whole) ? Math.round(H * r) : W, h = (wide === !whole) ? H : Math.round(W / r);
+    v.style.width = w + 'px'; v.style.height = h + 'px'; v.style.left = Math.round((W - w) / 2) + 'px'; v.style.top = Math.round((H - h) / 2) + 'px';
+  }
   // The full-screen trailer's bar, drawn again; [wake] shows it for 4 seconds (any key does).
   function bar(wake) {
     var el = $('plexPage'), v = trailerVid; if (!el || !v) return;
     var b = $('plexTrailerBar');
     if (!b) { b = U.el('div', 'plex-trailer-bar'); b.id = 'plexTrailerBar'; el.appendChild(b); }
-    var d = v.duration || 0, t = v.currentTime || 0;
+    var d = isFinite(v.duration) ? v.duration : 0, t = v.currentTime || 0;
     b.innerHTML = '<div class="media-kicker">' + esc(T('Trailer')) + (v.paused ? '  ·  ' + esc(T('Paused')) : '') + '</div><div class="ptb-title">' + esc(item ? item.title : '') + '</div>' +
       '<div class="ptb-line"><span>' + clock(t * 1000) + '</span><div class="media-progress"><i style="width:' + (d ? Math.min(100, t / d * 100) : 0) + '%"></i></div><span>' + (d ? clock(d * 1000) : '') + '</span></div>';
     if (wake) { b.classList.add('show'); clearTimeout(barTimer); barTimer = setTimeout(function () { if (trailerVid && !trailerVid.paused) b.classList.remove('show'); }, 4000); }

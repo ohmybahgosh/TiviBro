@@ -1040,17 +1040,18 @@ body.full .activity,body.mgr-open .activity{display:none}
    to its 1500x844 place: decoding the full-size one cost the TV most of a key press. */
 .plex-art{position:absolute;top:0;right:-12px;bottom:-12px;left:0;opacity:0;transition:opacity .45s ease;will-change:opacity}
 .plex-art.on{opacity:1}
-/* A movie's trailer behind its page (plexpage.js backTrailer): where the backdrop is, faded in once it plays. */
-.plex-trailer{position:absolute;top:0;right:-12px;width:1500px;height:844px;object-fit:cover;background:#000;opacity:0;transition:opacity .8s ease;-webkit-mask-image:linear-gradient(to right,transparent 0,rgba(0,0,0,.6) 22%,#000 45%)}
+/* A movie's trailer behind its page (plexpage.js backTrailer): the whole screen, under the page's shade, faded in
+   once it plays. */
+.plex-trailer{position:absolute;top:0;left:0;width:1920px;height:1080px;object-fit:cover;background:#000;opacity:0;transition:opacity .8s ease}
 .plex-trailer.on{opacity:1}
 /* Watching the trailer full screen (▲): the page fades away and the trailer fills the screen, with a small bar. */
 .plex-page.trailer-full .plex-page-body,.plex-page.trailer-full .plex-shade,.plex-page.trailer-full .plex-art,.plex-page.trailer-full .plex-trailer-hint{opacity:0;transition:opacity .5s ease}
-.plex-page.trailer-full .plex-trailer{top:0;right:0;width:1920px;height:1080px;object-fit:contain;-webkit-mask-image:none;z-index:3}
+.plex-page.trailer-full{background:#000}.plex-page.trailer-full .plex-trailer{z-index:3}
 .plex-trailer-bar{position:absolute;left:96px;right:96px;bottom:64px;z-index:4;opacity:0;transition:opacity .4s ease;text-shadow:0 2px 8px rgba(0,0,0,.8)}
 .plex-trailer-bar.show{opacity:1}
 .plex-trailer-bar .ptb-title{font-size:44px;font-weight:700;margin:6px 0 18px}
 .plex-trailer-bar .ptb-line{display:flex;align-items:center;gap:18px;font-size:24px}
-.plex-trailer-bar .media-progress{position:relative;flex:1;height:6px;left:auto;right:auto;bottom:auto}
+.plex-trailer-bar .media-progress{position:relative;-webkit-box-flex:0;flex:none;width:1480px;height:6px;left:auto;right:auto;bottom:auto}
 .plex-trailer-hint{position:absolute;top:44px;right:72px;z-index:4;padding:8px 18px;border-radius:999px;background:rgba(11,14,26,.6);font-size:22px;opacity:0;transition:opacity .5s ease}
 .plex-trailer-hint.show{opacity:1}
 .plex-art.on.stale{opacity:.3;transition:opacity .25s ease}

@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **A movie's trailer behind its page.**  Settings > Plex > Trailer on a movie's page: two seconds after a movie's page opens, its trailer from your Plex server plays where the backdrop is, without sound or with it.  Press ▲ to watch it full screen with sound (OK pauses, ◀ ▶ skip 10 seconds, Back returns to the page).  Off unless you turn it on; not on TVs with 1 GB of memory.
+- **A movie's trailer behind its page.**  Settings > Plex > Trailer on a movie's page: two seconds after a movie's page opens, its trailer from your Plex server plays behind the whole page, without sound or with it.  Press ▲ to watch it full screen with sound (OK pauses, ◀ ▶ skip 10 seconds, Back returns to the page).  Off unless you turn it on; not on TVs with 1 GB of memory.
 - **Plex keeps up by itself.**  While the Plex tab shows, new titles and watched marks from other apps appear within a minute, without moving you.  A Plex title that keeps stopping to load offers a lower quality.
 - **Plex theme music and Hide spoilers.**  A show's theme plays quietly on its pages (Settings > Plex > Theme music, on).  Hide spoilers (off) shows the show's picture and no story for episodes you haven't watched, on the TV and the phone.
 - **Shuffle and Play all for Plex.**  A show's or a season's page has Shuffle, and a collection or a playlist has Play all and Shuffle (hold OK on it, or Red inside it).  The titles play one after another with Up next.

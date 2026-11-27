@@ -237,7 +237,7 @@ function switchUser(q, cb) {
 /* ---------- Doors: pictures and video by a random key, the token kept here ---------- */
 var crypto = require('crypto');
 var doors = {}, DOOR_TTL = 24 * 3600000, DOOR_MAX = 16;
-var DOOR_PATHS = /^\/(photo\/:\/transcode\?|library\/parts\/[0-9]+\/[0-9]+\/[^/?]+|library\/parts\/[0-9]+\/indexes\/sd\/[0-9]+|library\/streams\/[0-9]+|video\/:\/transcode\/universal\/(start\.m3u8|session\/[A-Za-z0-9-]+\/[A-Za-z0-9_/.-]+)|library\/metadata\/[0-9]+\/(thumb|art|clearLogo|theme)\/[0-9]+)/;
+var DOOR_PATHS = /^\/(photo\/:\/transcode\?|library\/parts\/[0-9]+\/[0-9]+\/[^/?]+|library\/parts\/[0-9]+\/indexes\/sd\/[0-9]+|library\/streams\/[0-9]+|video\/:\/transcode\/universal\/(start\.m3u8|session\/[A-Za-z0-9-]+\/[A-Za-z0-9_/.-]+)|library\/metadata\/[0-9]+\/(thumb|art|clearLogo|theme)\/[0-9]+|services\/iva\/assets\/[0-9]+\/video\.mp4\?)/;   // the last: Plex's own trailers, as the server hands them out
 // A door to one server (same server and token: the same door), oldest let go past 16.
 function door(q, cb) {
   if (!allowedBase(q.base) || !validToken(q.token)) return cb(failure('bad'));
@@ -306,6 +306,8 @@ function prunePics() {
   while (list.length && total > PICS_BYTES * 0.8) { var x = list.shift(); total -= x.b; try { fs.unlinkSync(pathMod.join(dir, x.n)); } catch (e) {} }
 }
 
+/* GET /plex/<door>/<path>: a picture, a video file, a converted stream or a trailer from the user's server, with
+   the server's token added here (never in the address the TV sees).  Pictures are kept on the TV (pics()). */
 function doorGet(req, res, ALLOW) {
   var m = /^\/plex\/([0-9a-f]{48})(\/.*)$/.exec(req.url), d = m && doors[m[1]];
   if (!d || d.until < Date.now() || !DOOR_PATHS.test(m[2]) || /(^|\/)\.\.?(\/|\?|$)|%2e%2e/i.test(m[2])) { res.writeHead(404, ALLOW); return res.end(); }
@@ -318,6 +320,10 @@ function doorGet(req, res, ALLOW) {
   var out = lib.request({ hostname: u.hostname, port: u.port, path: u.path, method: req.method === 'HEAD' ? 'HEAD' : 'GET', headers: h }, function (up) {
     var head = {}; ['content-type', 'content-length', 'content-range', 'accept-ranges', 'cache-control', 'last-modified', 'etag'].forEach(function (k) { if (up.headers[k] != null) head[k] = up.headers[k]; });
     if (pic && up.statusCode === 200) { head['cache-control'] = 'max-age=86400'; keep(pic, up); }
+    // Plex's own trailers answer with a redirect to Plex's video store: passed on (an https address without the
+    // server's token in it), so the TV fetches the trailer from there.
+    var loc = up.headers.location;
+    if (/^\/services\/iva\//.test(m[2]) && up.statusCode >= 300 && up.statusCode < 400 && /^https:\/\//.test(String(loc || '')) && String(loc).indexOf(d.token) < 0) head.location = loc;
     res.writeHead(up.statusCode, Object.assign(head, ALLOW));
     up.pipe(res);
   });
