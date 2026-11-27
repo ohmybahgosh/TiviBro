@@ -68,6 +68,7 @@ import androidx.compose.material.icons.rounded.Subtitles
 import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material.icons.rounded.UnfoldMore
 import androidx.compose.material.icons.rounded.VideoLibrary
+import androidx.compose.material.icons.rounded.Subscriptions
 import androidx.compose.material.icons.rounded.ViewList
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
@@ -414,7 +415,7 @@ internal data class SetHit(val label: String, val sub: String, val trail: String
 // A getter, not a list made once: the names come out in the app's language each time (tr).
 private val SECTION_GROUPS get() = listOf(
     tr("Watching") to listOf("guide", "sports", "playback", "audio", "recording", "reminders"),
-    tr("Channels and library") to listOf("playlists", "channels", "names", "vod", "media"),
+    tr("Channels and library") to listOf("playlists", "channels", "names", "vod", "media", "plex"),
     tr("Look and control") to listOf("look", "remote", "language", "parental"),
     tr("System") to listOf("connect", "keys", "backups", "about"),
 )
@@ -430,6 +431,7 @@ internal fun sectionIcon(id: String): Pair<ImageVector, Color> = when (id) {
     "names" -> Icons.Rounded.Edit to Good
     "vod" -> Icons.Rounded.Movie to Accent
     "media" -> Icons.Rounded.VideoLibrary to Accent
+    "plex" -> Icons.Rounded.Subscriptions to Color(0xFFE5A00D)
     "look" -> Icons.Rounded.Palette to Accent2
     "remote" -> Icons.Rounded.SettingsRemote to Accent2
     "language" -> Icons.Rounded.Translate to Accent2

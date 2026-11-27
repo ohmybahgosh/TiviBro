@@ -752,6 +752,13 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         catch (e: Exception) { say(tr("The TV didn't answer.  Is it on, and on the same network?")) }
     }
 
+    /** Another Plex action on the TV (a show's next episode, a trailer): asked, then [done] said, or the TV's no. */
+    fun plexDo(id: String, args: JSONObject, done: String) = viewModelScope.launch {
+        try { ask(id, "plex", args, seal = true, tries = 1); say(done) }
+        catch (e: TbException) { say(e.message ?: tr("The TV said no")) }
+        catch (e: Exception) { say(tr("The TV didn't answer.  Is it on, and on the same network?")) }
+    }
+
     fun vodPlay(id: String, kind: String, itemId: String, ep: String?, fromStart: Boolean) = viewModelScope.launch {
         val tv = tv(id) ?: return@launch
         try {

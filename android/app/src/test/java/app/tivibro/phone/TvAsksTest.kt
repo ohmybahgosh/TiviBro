@@ -79,13 +79,17 @@ class TvAsksTest {
         assertEquals("Sports", Shortcut.tab(Shortcut.SPORTS, null))
         assertTrue(Shortcut.RECORDINGS in Shortcut.forTv(NowState(rev = 1, open = true, rec = true)))
         assertFalse(Shortcut.RECORDINGS in Shortcut.forTv(NowState(rev = 1, open = true, rec = false)))
-        val all = NowState(rev = 1, open = true, movies = true, series = true, media = true, onnow = true, rec = true, sports = true)
+        val all = NowState(rev = 1, open = true, movies = true, series = true, media = true, onnow = true, rec = true, sports = true, plex = true)
         assertEquals(Shortcut.entries.toList(), Shortcut.forTv(all))
         val none = NowState(rev = 1, open = true, movies = false, series = false, media = false, onnow = false)
         assertFalse(Shortcut.VOD in Shortcut.forTv(none))
         assertEquals("Shows", Shortcut.tab(Shortcut.VOD, NowState(rev = 1, open = true, movies = false, series = true)))
         assertEquals("Movies", Shortcut.tab(Shortcut.VOD, null))
         assertNull(Shortcut.tab(Shortcut.BACKUPS, all))
+        // Plex: on the home screen once the TV has a Plex server, next to My media; it opens the Plex tab.
+        assertFalse(Shortcut.PLEX in unknown)
+        assertEquals(Shortcut.PLEX, Shortcut.forTv(all)[Shortcut.forTv(all).indexOf(Shortcut.MEDIA) + 1])
+        assertEquals("Plex", Shortcut.tab(Shortcut.PLEX, all))
     }
 
     @Test fun recordingsFromTheTv() {

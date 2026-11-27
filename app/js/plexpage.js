@@ -556,5 +556,63 @@ var PlexPage = (function () {
     });
   }
 
-  return { diag: diag, open: open, ended: ended, close: close, reshow: reshow, playKey: playKey, playerItems: playerItems, _test: { quality: quality, marks: marks, badges: badges, direct: direct, converts: converts, chapters: chapters, item: function () { return item; }, keys: keys, buttons: function () { return btns; }, shelf: function () { return shelf; } } };
+  /* For the phone app (plexphone.js): a title's page as data, what the TV's page shows: the full details and its
+     rows (rowsFor), the facts and badges as the page writes them, whether it has a trailer, and for a show or a
+     season the label of its Play button (the episode it would play). */
+  function pageData(server, key) {
+    var k = /^[0-9]{1,12}$/.test(String(key || '')) ? String(key) : '';
+    if (!k) return Promise.reject(new Error('That isn\'t a Plex title.'));
+    return Plex.call(server, '/library/metadata/' + k + '?includeExtras=1&includeRelated=1&includeOnDeck=1&includeGuids=1&includeImages=1').then(function (j) {
+      var m = (mc(j).Metadata || [])[0];
+      if (!m) throw new Error('Plex has no title by that key.');
+      m.server = server;
+      var plays = /^(movie|episode)$/.test(m.type), v = (m.Media || [])[0] || {}, nx = m.OnDeck && m.OnDeck.Metadata && m.OnDeck.Metadata[0];
+      var trailer = ((m.Extras && m.Extras.Metadata) || []).filter(function (x) { return x.subtype === 'trailer' || x.extraType === 1; })[0];
+      var info = {
+        kicker: m.type === 'episode' ? m.grandparentTitle : m.type === 'season' ? m.parentTitle : (m.librarySectionTitle || 'Plex'),
+        facts: facts(m), badges: plays ? badges(v) : [], tagline: m.tagline || '',
+        scores: [m.rating ? T('Critics {x}', { x: Math.round(m.rating * 10) + '%' }) : '', m.audienceRating ? T('Audience {x}', { x: Math.round(m.audienceRating * 10) + '%' }) : ''].filter(Boolean),
+        people: ((m.Director || []).slice(0, 1).map(function (d) { return T('Directed by {x}', { x: d.tag }); }).concat((m.Genre || []).slice(0, 3).map(function (g) { return g.tag; }))).join('  ·  '),
+        trailer: trailer ? String(trailer.ratingKey || '') : '',
+        next: /^(show|season)$/.test(m.type) ? (nx ? (nx.viewOffset > 60000 ? T('Resume S{x} · E{y}', { x: nx.parentIndex, y: nx.index }) : T('Play S{x} · E{y}', { x: nx.parentIndex, y: nx.index })) : T('Play')) : '',
+        allSeen: !!(m.leafCount && m.viewedLeafCount >= m.leafCount), logo: ''
+      };
+      var small = m.type === 'episode' || m.type === 'season', own = small ? '' : PlexView.logoOf(m);
+      return (own ? Promise.resolve({ logo: own }) : PlexView.details(m)).then(function (d) { info.logo = d.logo || ''; }, function () {})
+        .then(function () { return youtube(m); }).then(function (y) { info.youtube = y || ''; }).then(function () { return rowsFor(m); })
+        .then(function (rows) { return { m: m, info: info, rows: rows }; });
+    });
+  }
+  /* A movie's or a show's YouTube trailer, from its TMDB or TheTVDB id in Plex's guids, as My media finds one
+     (MediaMoviePage.trailerFor: TheTVDB without a token, TMDB with one).  '' when there's none, or after 8 s. */
+  function youtube(m) {
+    if (!/^(movie|show)$/.test(m.type) || typeof MediaMoviePage === 'undefined' || !MediaMoviePage.trailerFor) return Promise.resolve('');
+    var ids = (m.Guid || []).map(function (g) { return String(g.id || ''); }), show = m.type === 'show', id = '';
+    ids.forEach(function (g) {
+      var t = /^tmdb:\/\/([0-9]+)$/.exec(g), v = /^tvdb:\/\/([0-9]+)$/.exec(g);
+      if (t && !/^tmdb/.test(id)) id = 'tmdb:' + (show ? 'tv:' : '') + t[1];
+      else if (v && !id) id = show ? 'tvdb:' + v[1] : 'tvdb:movie:' + v[1];
+    });
+    if (!id) return Promise.resolve('');
+    return new Promise(function (resolve) { MediaMoviePage.trailerFor(id, resolve); setTimeout(function () { resolve(''); }, 8000); });
+  }
+  // From the phone app: a trailer or another extra played on the TV (as Trailer on the page does).
+  function playExtra(server, key) {
+    if (Views.tab !== 'plex') Views.switchTab('plex');
+    back = function () { if (PlexView.resume) PlexView.resume(); };
+    playOther({ server: server, ratingKey: String(key) });
+    return Promise.resolve({ ok: true });
+  }
+  // From the phone app: a show's or a season's next episode played on the TV (its Play button).
+  function playNextKey(server, key) {
+    if (Views.tab !== 'plex') Views.switchTab('plex');
+    playNext({ server: server, ratingKey: String(key) });
+    return Promise.resolve({ ok: true });
+  }
+  // From the phone app: Mark watched or not watched (Plex's own, the same in every Plex app).
+  function markKey(server, key, on) {
+    return Plex.call(server, (on ? '/:/scrobble' : '/:/unscrobble') + '?identifier=com.plexapp.plugins.library&key=' + encodeURIComponent(String(key))).then(function () { return { on: !!on }; });
+  }
+
+  return { diag: diag, open: open, ended: ended, close: close, reshow: reshow, playKey: playKey, playerItems: playerItems, pageData: pageData, playExtra: playExtra, playNextKey: playNextKey, markKey: markKey, _test: { quality: quality, marks: marks, badges: badges, direct: direct, converts: converts, chapters: chapters, item: function () { return item; }, keys: keys, buttons: function () { return btns; }, shelf: function () { return shelf; } } };
 })();

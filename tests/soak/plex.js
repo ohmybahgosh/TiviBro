@@ -256,6 +256,27 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     ok('phone: a key that isn\'t a Plex title is refused', /isn't a Plex title/.test(ph.bad), ph.bad);
     await page.waitForTimeout(2500);
     ok('phone: Play on TV opens Plex and plays where you stopped', ph.played.title === 'Northbound' && /library\/parts\/7/.test(await ev(() => (Views.vod && Views.vod.url) || '')) && (await ev(() => Views.tab)) === 'plex');
+    // The phone's Plex laid out as the TV's: a library's views, a category read when shown, a title's page, a person's titles.
+    await ev(() => Views.stopAll());
+    const ph2 = await ev(async () => {
+      const libs = await PlexPhone.answer({ op: 'libs' }), l = libs.libs[0], a = { server: l.server, key: l.key };
+      const rec = await PlexPhone.answer(Object.assign({ op: 'view', view: 'recommended' }, a));
+      const cols = await PlexPhone.answer(Object.assign({ op: 'view', view: 'collections' }, a));
+      const cats = await PlexPhone.answer(Object.assign({ op: 'view', view: 'categories' }, a));
+      const drama = await PlexPhone.answer(Object.assign({ op: 'genre', genre: 'Drama' }, a));
+      const page = await PlexPhone.answer({ op: 'details', server: l.server, key: '18' });
+      const cast = page.rows.filter((r) => r.kind === 'person')[0], p = cast && cast.people.filter((x) => x.id === '902')[0];
+      const films = p ? await PlexPhone.answer({ op: 'children', type: 'filter', server: l.server, sec: p.sec || '1', field: p.field, id: p.id, title: p.tag }) : { items: [] };
+      const marked = await PlexPhone.answer({ op: 'watched', server: l.server, key: '18', on: true });
+      let bad = ''; try { await PlexPhone.answer(Object.assign({ op: 'view', view: 'everything' }, a)); } catch (e) { bad = e.message; }
+      return { views: libs.views.map((v) => v.id), rec: rec.rows.map((r) => r.title), cols: cols.items.map((x) => x.title), cats: cats.rows.map((r) => r.genre), drama: drama.items.length,
+        title: page.item.title, info: page.info, rows: page.rows.map((r) => r.title + ':' + r.kind), person: p, films: films.items.map((x) => x.title), marked, bad };
+    });
+    ok('phone: a library\'s views as on the TV (Recommended, Library, Collections, Categories, Playlists)', JSON.stringify(ph2.views) === '["recommended","library","collections","categories","playlists"]', ph2.views);
+    ok('phone: Recommended rows, Collections, Categories read a genre when shown', ph2.rec.indexOf('Recently Released') >= 0 && ph2.cols.indexOf('The Copper Trilogy') >= 0 && ph2.cats.join() === 'Drama,Comedy' && ph2.drama > 0, ph2);
+    ok('phone: a title\'s page with its facts, trailer and rows (Cast and crew are people)', ph2.title === 'Northbound' && ph2.info.facts && ph2.info.trailer === '80' && ph2.rows.indexOf('Cast and crew:person') >= 0 && ph2.person && ph2.person.role === 'Captain Vey', ph2);
+    ok('phone: a person\'s titles; Mark watched reaches Plex', ph2.films.indexOf('Northbound') >= 0 && ph2.marked.on === true, ph2);
+    ok('phone: a view a library doesn\'t have is refused', /isn't a view/.test(ph2.bad), ph2.bad);
     // Settings > Plex on the phone app and the web editor (Settings.phone, as they ask): every row, and changes reach the TV.
     await ev(() => Views.stopAll());
     const spg = await ev(() => {

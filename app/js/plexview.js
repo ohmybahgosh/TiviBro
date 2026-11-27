@@ -192,6 +192,11 @@ var PlexView = (function () {
       function (e) { if (seq !== loadSeq) return; rows = []; empty(e && e.message || T('Plex did not answer.')); draw(); });
   }
   function empty(text) { var el = $('plexEmpty'); el.textContent = text; el.classList.toggle('hidden', !text); }
+  // A category's titles (the phone app reads a category's row this way when it comes into view).
+  function genreItems(l, genre) {
+    return rowsCall(l.server, '/library/sections/' + l.key + '/all?type=' + (l.type === 'show' ? 2 : 1) + '&genre=' + encodeURIComponent(genre) + '&sort=rating:desc&X-Plex-Container-Start=0&X-Plex-Container-Size=30')
+      .then(function (j) { return itemsOf(j, l.server); });
+  }
   // A category's row: its titles read when it's first reached.
   function fillLazy(r) {
     if (!r.lazy || r.loading) return;
@@ -500,5 +505,5 @@ var PlexView = (function () {
   // A collection (or a show's seasons) from elsewhere: from a title's page it goes on top, so Back returns there.
   function openShow(m) { if (!m.page) stack = []; push(m); zone = 'rows'; UI.setHandler(keys); draw(); load(); }
 
-  return { ring: ring, logoOf: logoOf, open: open, resume: resume, leave: leave, picture: pic, file: raw, details: more, openShow: openShow, openPerson: openPerson, itemOptions: itemOptions, editRows: editRows, read: { home: homeRows, children: childRows, search: searchRows }, homeTitles: function () { return lastHome; }, _test: { zone: function () { return zone + ':' + rowAt + ':' + (colAt[rowAt] || 0) + '/' + (rows[rowAt] ? rows[rowAt].items.length : -1); }, more: more, tab: function (i) { tabAt = i; switched(); }, home: function () { tabAt = 0; switched(); }, tabs: function () { return tabsList; }, rows: function () { return rows; }, keys: keys, focused: focused } };
+  return { ring: ring, logoOf: logoOf, open: open, resume: resume, leave: leave, picture: pic, file: raw, details: more, openShow: openShow, openPerson: openPerson, itemOptions: itemOptions, editRows: editRows, read: { home: homeRows, children: childRows, search: searchRows, recommended: recommendedRows, collections: collectionRows, categories: categoryRows, genre: genreItems, playlists: playlistRows, libPrefs: libPrefs, SUBS: SUBS }, homeTitles: function () { return lastHome; }, _test: { zone: function () { return zone + ':' + rowAt + ':' + (colAt[rowAt] || 0) + '/' + (rows[rowAt] ? rows[rowAt].items.length : -1); }, more: more, tab: function (i) { tabAt = i; switched(); }, home: function () { tabAt = 0; switched(); }, tabs: function () { return tabsList; }, rows: function () { return rows; }, keys: keys, focused: focused } };
 })();

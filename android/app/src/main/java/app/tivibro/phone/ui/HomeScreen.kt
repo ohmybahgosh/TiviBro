@@ -53,6 +53,7 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.SportsFootball
 import androidx.compose.material.icons.rounded.Theaters
 import androidx.compose.material.icons.rounded.VideoLibrary
+import androidx.compose.material.icons.rounded.Subscriptions
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Info
@@ -330,6 +331,7 @@ private fun iconOf(s: Shortcut): ImageVector = when (s) {
     Shortcut.ON_NOW -> Icons.Rounded.Theaters
     Shortcut.VOD -> Icons.Rounded.Movie
     Shortcut.MEDIA -> Icons.Rounded.VideoLibrary
+    Shortcut.PLEX -> Icons.Rounded.Subscriptions
     Shortcut.REMINDERS -> Icons.Rounded.Notifications
     Shortcut.RECORDINGS -> Icons.Rounded.FiberManualRecord
     Shortcut.EDITOR -> Icons.Rounded.Edit
@@ -339,7 +341,7 @@ private fun iconOf(s: Shortcut): ImageVector = when (s) {
 
 /** Each shortcut's own colour (as in the design canvas's home), so they're quick to tell apart. */
 private fun tintOf(s: Shortcut): Color = when (s) {
-    Shortcut.SPORTS -> Color(0xFFFF7A45); Shortcut.ON_NOW -> Color(0xFFF5C842); Shortcut.MEDIA -> Good; Shortcut.REMINDERS -> Warn
+    Shortcut.SPORTS -> Color(0xFFFF7A45); Shortcut.ON_NOW -> Color(0xFFF5C842); Shortcut.MEDIA -> Good; Shortcut.PLEX -> Color(0xFFE5A00D); Shortcut.REMINDERS -> Warn
     Shortcut.RECORDINGS -> Bad; Shortcut.EDITOR -> Color(0xFFA78BFA); Shortcut.VOD -> Accent2; Shortcut.SETTINGS -> Color(0xFFC9D1E3)
     else -> Accent
 }
