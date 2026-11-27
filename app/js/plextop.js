@@ -154,5 +154,23 @@ var PlexTop = (function () {
     return on(0);
   }
 
-  return { rows: rows, watchRow: watchRow, onWatch: onWatch, changedWatch: changedWatch, services: services, look: look, _test: { same: same, wanted: wanted, norm: norm, reset: function () { found = {}; busy = false; save(); } } };
+  /* The Top 10 tab: one service's chart as two rows, its movies and its shows, with the titles your Plex has, in
+     the chart's order, "#3" under each.  then() when the titles not looked for yet are known. */
+  function chartRows(svc, then) {
+    var ch = (charts().charts || []).filter(function (x) { return x.service === svc; })[0], out = [];
+    look(then);
+    if (!ch || !found.hits) return out;
+    [['movie', 'movies'], ['show', 'shows']].forEach(function (k) {
+      var list = (ch[k[1]] && ch[k[1]].length ? ch[k[1]] : (ch.all || []).filter(function (x) { return (x.k === 'tv' ? 'show' : x.k) === k[0]; })), items = [], ranks = {};
+      list.forEach(function (x) {
+        var m = found.hits[(k[0]) + ':' + (x.tmdb || norm(x.t))] || found.hits['?:' + (x.tmdb || norm(x.t))];
+        if (!m || ranks[m.server + ':' + m.ratingKey]) return;
+        ranks[m.server + ':' + m.ratingKey] = x.r; items.push(m);
+      });
+      if (items.length) out.push({ title: k[0] === 'movie' ? T('Top 10 movies on {x}', { x: svc }) : T('Top 10 shows on {x}', { x: svc }), note: 'FlixPatrol', items: items, line: function (m) { var r = ranks[m.server + ':' + m.ratingKey]; return r ? '#' + r : ''; } });
+    });
+    return out;
+  }
+
+  return { rows: rows, chartRows: chartRows, watchRow: watchRow, onWatch: onWatch, changedWatch: changedWatch, services: services, look: look, _test: { same: same, wanted: wanted, norm: norm, reset: function () { found = {}; busy = false; save(); } } };
 })();

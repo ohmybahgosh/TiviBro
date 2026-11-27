@@ -2786,5 +2786,9 @@ I18n.add('es', {
   "Still watching?": "¿Sigues viendo?",
   "Mark all not watched": "Marcar todo como no visto",
   "Mark all watched": "Marcar todo como visto",
-  "Play S{x} · E{y}": "Reproducir T{x} · E{y}"
+  "Play S{x} · E{y}": "Reproducir T{x} · E{y}",
+  "Go to season": "Ir a la temporada",
+  "Top 10": "Top 10",
+  "Top 10 movies on {x}": "Top 10 películas en {x}",
+  "Top 10 shows on {x}": "Top 10 series en {x}"
 });

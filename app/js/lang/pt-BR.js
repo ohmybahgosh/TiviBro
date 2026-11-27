@@ -3295,5 +3295,9 @@ I18n.add('pt-BR', {
   "Still watching?": "Ainda está assistindo?",
   "Mark all not watched": "Marcar tudo como não assistido",
   "Mark all watched": "Marcar tudo como assistido",
-  "Play S{x} · E{y}": "Reproduzir T{x} · E{y}"
+  "Play S{x} · E{y}": "Reproduzir T{x} · E{y}",
+  "Go to season": "Ir para a temporada",
+  "Top 10": "Top 10",
+  "Top 10 movies on {x}": "Top 10 filmes na {x}",
+  "Top 10 shows on {x}": "Top 10 séries na {x}"
 });

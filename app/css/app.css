@@ -1025,8 +1025,20 @@ body.full .activity,body.mgr-open .activity{display:none}
 #viewPlex .plex-subs{top:88px}
 #viewPlex .plex-subs .media-tab{font-size:21px;padding:6px 20px}
 #viewPlex .media-hero{top:150px;height:320px}
-.plex-page{position:absolute;top:0;right:0;bottom:0;left:0;z-index:5;background:var(--ink)}
-.plex-page .media-bd{height:760px}
+/* Plex's backdrops without hard edges: the picture blurred over the whole screen, the sharp one top right fading
+   out to the left and the bottom, and a shade where the words and rows are. */
+#viewPlex,.plex-page{background:var(--ink)}
+.plex-bg{position:absolute;top:0;right:0;bottom:0;left:0;background-size:cover;background-position:center;opacity:0;transition:opacity .5s ease;transform:scale(1.08)}
+#viewPlex .media-bd,.plex-page .media-bd{width:1500px;height:844px;background:transparent;-webkit-mask-image:linear-gradient(to bottom,#000 0,#000 50%,transparent 100%)}
+#viewPlex .media-hero-art{-webkit-mask-image:linear-gradient(to right,transparent 0,rgba(0,0,0,.6) 22%,#000 45%)}
+.plex-shade{position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(90deg,var(--ink) 0,rgba(11,14,26,.72) 30%,rgba(11,14,26,0) 62%),linear-gradient(0deg,var(--ink) 0,rgba(11,14,26,.86) 40%,rgba(11,14,26,0) 70%),rgba(11,14,26,.35)}
+#viewPlex .media-logo{max-width:560px;max-height:120px;margin-bottom:12px;filter:drop-shadow(0 4px 18px rgba(0,0,0,.7))}
+#viewPlex .media-logo.small{max-width:420px;max-height:90px;margin-bottom:10px}
+/* Rows above the focused one fade out: their names and lines peeked over the next row. */
+#viewPlex .media-shelf{transition:opacity .2s ease}
+#viewPlex .media-shelf.gone{opacity:0}
+.plex-rank{position:absolute;left:10px;bottom:2px;font-size:96px;line-height:1;font-weight:900;color:#fff;-webkit-text-stroke:3px rgba(0,0,0,.65);text-shadow:0 4px 18px rgba(0,0,0,.8)}
+.plex-page{position:absolute;top:0;right:0;bottom:0;left:0;z-index:5}
 .plex-page-top{position:absolute;left:152px;top:90px;width:900px;text-shadow:0 2px 12px rgba(0,0,0,.85)}
 .plex-badges{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 6px}
 .plex-badge{font-size:18px;font-weight:700;padding:4px 12px;border-radius:8px;border:2px solid rgba(255,255,255,.35)}

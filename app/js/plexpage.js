@@ -53,14 +53,27 @@ var PlexPage = (function () {
     var scores = (m.rating ? '<span class="plex-score">' + esc(T('Critics {x}', { x: Math.round(m.rating * 10) + '%' })) + '</span>' : '') + (m.audienceRating ? '<span class="plex-score">' + esc(T('Audience {x}', { x: Math.round(m.audienceRating * 10) + '%' })) + '</span>' : '');
     var people = ((m.Director || []).slice(0, 1).map(function (d) { return T('Directed by {x}', { x: d.tag }); }).concat((m.Role || []).slice(0, 3).map(function (r) { return r.tag; }))).join('  ·  ');
     btns = buttons();
-    el.innerHTML = '<div class="media-bd"><img class="media-hero-art" id="plexPageArt" alt=""><div class="media-fade"></div></div>' +
-      '<div class="plex-page-top"><div class="media-kicker">' + esc(ep ? m.grandparentTitle : (m.librarySectionTitle || 'Plex')) + '</div>' +
-      '<div class="media-title">' + esc(ep ? m.title : m.title) + '</div><div class="media-facts">' + esc(facts) + '</div>' +
+    el.innerHTML = '<div class="plex-bg" id="plexPageBg"></div><div class="media-bd"><img class="media-hero-art" id="plexPageArt" alt=""></div><div class="plex-shade"></div>' +
+      '<div class="plex-page-top"><div class="media-kicker" id="plexPageKicker">' + esc(ep ? m.grandparentTitle : (m.librarySectionTitle || 'Plex')) + '</div>' +
+      '<div class="media-title" id="plexPageName">' + esc(m.title) + '</div><div class="media-facts">' + esc(facts) + '</div>' +
       '<div class="plex-badges">' + badges(v).map(function (b) { return '<span class="plex-badge">' + esc(b) + '</span>'; }).join('') + scores + '</div>' +
       '<div class="media-summary plex-summary">' + esc(m.summary || '') + '</div><div class="plex-people">' + esc(people) + '</div></div>' +
       '<div class="plex-btns">' + btns.map(function (b, i) { return '<div class="plex-btn' + (i === btnAt ? ' sel' : '') + (b.main ? ' main' : '') + '">' + esc(b.label) + '</div>'; }).join('') + '</div>' +
       '<div class="plex-page-track">' + track() + '</div>';
-    PlexView.picture(m.server, m.art || m.grandparentArt || m.thumb, 1340, 760).then(function (u) { var a = $('plexPageArt'); if (u && a && item === m) { a.onload = function () { a.style.opacity = 1; }; a.src = u; } });
+    var path = m.art || m.grandparentArt || m.thumb;
+    PlexView.picture(m.server, path, 1500, 844).then(function (u) { var a = $('plexPageArt'); if (u && a && item === m) { a.onload = function () { a.style.opacity = 1; }; a.src = u; } });
+    PlexView.picture(m.server, path, 480, 270, '&blur=36').then(function (u) { var b = $('plexPageBg'); if (u && b && item === m) { b.style.backgroundImage = 'url("' + u + '")'; b.style.opacity = 1; } });
+    logo(m);
+  }
+  /* The title logo (Plex's clearLogo) in place of the name: a movie's own, an episode's show's in place of the
+     show's name above the episode's. */
+  function logo(m) {
+    PlexView.details(m).then(function (d) { return d.logo && item === m ? PlexView.file(m.server, d.logo) : ''; }).then(function (u) {
+      var t = $(m.type === 'episode' ? 'plexPageKicker' : 'plexPageName'); if (!u || !t || item !== m) return;
+      var lg = U.el('img', 'media-logo' + (m.type === 'episode' ? ' small' : '')); lg.alt = m.type === 'episode' ? m.grandparentTitle || '' : m.title || '';
+      lg.onload = function () { if (t.parentNode) t.parentNode.replaceChild(lg, t); };
+      lg.src = u;
+    });
   }
   // The track under the buttons: what's playing in it (the version, its sound and subtitles).
   function track() {

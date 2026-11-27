@@ -1943,5 +1943,9 @@ I18n.add('fr', {
   "Still watching?": "Vous regardez toujours ?",
   "Mark all not watched": "Tout marquer comme non vu",
   "Mark all watched": "Tout marquer comme vu",
-  "Play S{x} · E{y}": "Lire S{x} · E{y}"
+  "Play S{x} · E{y}": "Lire S{x} · E{y}",
+  "Go to season": "Aller à la saison",
+  "Top 10": "Top 10",
+  "Top 10 movies on {x}": "Top 10 des films sur {x}",
+  "Top 10 shows on {x}": "Top 10 des séries sur {x}"
 });

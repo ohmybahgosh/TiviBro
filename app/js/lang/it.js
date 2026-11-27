@@ -2668,5 +2668,9 @@ I18n.add('it', {
   "Still watching?": "Stai ancora guardando?",
   "Mark all not watched": "Segna tutto come non visto",
   "Mark all watched": "Segna tutto come visto",
-  "Play S{x} · E{y}": "Riproduci S{x} · E{y}"
+  "Play S{x} · E{y}": "Riproduci S{x} · E{y}",
+  "Go to season": "Vai alla stagione",
+  "Top 10": "Top 10",
+  "Top 10 movies on {x}": "Top 10 film su {x}",
+  "Top 10 shows on {x}": "Top 10 serie su {x}"
 });

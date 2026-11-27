@@ -2668,5 +2668,9 @@ I18n.add('tr', {
   "Still watching?": "Hâlâ izliyor musunuz?",
   "Mark all not watched": "Tümünü izlenmedi olarak işaretle",
   "Mark all watched": "Tümünü izlendi olarak işaretle",
-  "Play S{x} · E{y}": "S{x} · B{y} oynat"
+  "Play S{x} · E{y}": "S{x} · B{y} oynat",
+  "Go to season": "Sezona git",
+  "Top 10": "Top 10",
+  "Top 10 movies on {x}": "{x} Top 10 filmleri",
+  "Top 10 shows on {x}": "{x} Top 10 dizileri"
 });

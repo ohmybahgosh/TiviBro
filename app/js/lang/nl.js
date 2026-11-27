@@ -2668,5 +2668,9 @@ I18n.add('nl', {
   "Still watching?": "Kijk je nog?",
   "Mark all not watched": "Alles als niet bekeken markeren",
   "Mark all watched": "Alles als bekeken markeren",
-  "Play S{x} · E{y}": "S{x} · A{y} afspelen"
+  "Play S{x} · E{y}": "S{x} · A{y} afspelen",
+  "Go to season": "Naar seizoen",
+  "Top 10": "Top 10",
+  "Top 10 movies on {x}": "Top 10 films op {x}",
+  "Top 10 shows on {x}": "Top 10 series op {x}"
 });

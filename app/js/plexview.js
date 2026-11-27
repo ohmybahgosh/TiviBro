@@ -9,7 +9,7 @@ var PlexView = (function () {
   var T = function (s, v) { return typeof I18n !== 'undefined' ? I18n.t(s, v) : String(s).replace(/\{(\w+)\}/g, function (a, k) { return v && v[k] != null ? v[k] : a; }); };
   var $ = function (id) { return document.getElementById(id); };
   var SUBS = [['recommended', 'Recommended'], ['library', 'Library'], ['collections', 'Collections'], ['categories', 'Categories'], ['playlists', 'Playlists']];
-  var TILE = 244, GAP = 28, ROW_H = 480, PAGE = 60, COLS = 6;
+  var TILE = 244, GAP = 28, ROW_H = 540, PAGE = 60, COLS = 6;
   var built = false, open_ = false, tabsList = [], tabAt = 0, subAt = 0, zone = 'rows', rows = [], rowAt = 0, colAt = {}, stack = [], loadSeq = 0, prefs = readPrefs();
 
   function readPrefs() { try { return JSON.parse(localStorage.getItem('tivibro.plexView') || '{}') || {}; } catch (e) { return {}; } }
@@ -20,7 +20,9 @@ var PlexView = (function () {
     if (built) return;
     built = true;
     var v = $('viewPlex');
-    v.innerHTML = '<div class="media-bd"><img class="media-hero-art" id="plexArt" alt=""><div class="media-fade"></div></div>' +
+    // Behind everything the backdrop blurred across the whole screen, the sharp one on the right fading into it,
+    // and a shade on the left and bottom for the words: no picture with hard edges.
+    v.innerHTML = '<div class="plex-bg" id="plexBg"></div><div class="media-bd"><img class="media-hero-art" id="plexArt" alt=""></div><div class="plex-shade"></div>' +
       '<div class="media-tabs" id="plexTabs"></div><div class="media-tabs plex-subs" id="plexSubs"></div>' +
       '<div class="media-hero" id="plexHero"></div>' +
       '<div class="media-shelves" id="plexRows"><div class="media-shelf-stage" id="plexStage"></div></div><div class="plex-empty hidden" id="plexEmpty"></div>';
@@ -30,18 +32,55 @@ var PlexView = (function () {
   // Home, the libraries picked in Settings > Plex, Search.
   function makeTabs() {
     tabsList = [{ id: 'home', label: T('Home') }].concat(Plex.shownLibraries().filter(function (l) { return Plex.libs(l.server).indexOf(l.key) >= 0 && Plex.chosen().some(function (s) { return s.id === l.server; }); })
-      .map(function (l) { return { id: 'lib', lib: l, label: l.title }; }), [{ id: 'search', label: T('Search') }]);
+      .map(function (l) { return { id: 'lib', lib: l, label: l.title }; }),
+      // Top 10: each streaming service's chart (FlixPatrol) with the titles your Plex has, a pill each.
+      typeof PlexTop !== 'undefined' && PlexTop.services().length ? [{ id: 'top', label: T('Top 10') }] : [],
+      [{ id: 'search', label: T('Search') }]);
     if (tabAt >= tabsList.length) tabAt = 0;
+  }
+  /* The second row of pills: a library's Plex tabs, or on Top 10 the streaming services with a chart today. */
+  function subList() {
+    var t = tabNow();
+    if (t.id === 'lib') return SUBS;
+    if (t.id === 'top' && typeof PlexTop !== 'undefined') return PlexTop.services().map(function (x) { return [x, x]; });
+    return [];
+  }
+  // Where a tab's pills start: the one picked last time there.
+  function firstSub() {
+    var t = tabNow(), ids = subList().map(function (x) { return x[0]; });
+    if (t.lib) return Math.max(0, ids.indexOf(libPrefs(t.lib).sub || 'recommended'));
+    if (t.id === 'top') return Math.max(0, ids.indexOf(prefs.topSvc));
+    return 0;
   }
   function tabNow() { return tabsList[tabAt] || tabsList[0]; }
 
   /* ---------- Pictures: through the door to each server ---------- */
   // A poster (or a wide picture) sized for the screen by the server, so the TV never holds a full-size picture.
-  function pic(server, path, w, h) {
+  // more: Plex's own extras for the resizer, as "&blur=40" (a blurred backdrop).
+  function pic(server, path, w, h, more) {
     if (!path || !Net.port) return Promise.resolve('');
     return Plex.door(server).then(function (k) {
-      return 'http://127.0.0.1:' + Net.port + '/plex/' + k + '/photo/:/transcode?width=' + w + '&height=' + h + '&minSize=1&upscale=1&url=' + encodeURIComponent(path);
+      return 'http://127.0.0.1:' + Net.port + '/plex/' + k + '/photo/:/transcode?width=' + w + '&height=' + h + '&minSize=1&upscale=1' + (more || '') + '&url=' + encodeURIComponent(path);
     }, function () { return ''; });
+  }
+  // A file the server keeps for a title (its title logo, a PNG with a clear background), through the door as it is.
+  function raw(server, path) {
+    if (!path || !Net.port) return Promise.resolve('');
+    return Plex.door(server).then(function (k) { return 'http://127.0.0.1:' + Net.port + '/plex/' + k + path; }, function () { return ''; });
+  }
+  /* A title's details the rows don't carry (the Top 10's, a hub's short entries): summary, rating, length, and its
+     title logo (Plex's clearLogo; an episode's is its show's).  Read once a title, when it's first focused. */
+  var details = {};
+  function logoOf(m) { var l = (m && m.Image || []).filter(function (x) { return x.type === 'clearLogo'; })[0]; return l ? l.url : ''; }
+  function more(m) {
+    var k = m.server + ':' + m.ratingKey;
+    if (details[k]) return details[k];
+    var showKey = m.type === 'episode' ? m.grandparentRatingKey : m.type === 'season' ? m.parentRatingKey : null;
+    details[k] = Promise.all([
+      Plex.call(m.server, '/library/metadata/' + m.ratingKey).then(function (j) { return (mc(j).Metadata || [])[0] || {}; }, function () { return {}; }),
+      showKey ? Plex.call(m.server, '/library/metadata/' + showKey).then(function (j) { return (mc(j).Metadata || [])[0] || {}; }, function () { return {}; }) : Promise.resolve(null)
+    ]).then(function (r) { var d = r[0]; d.logo = logoOf(r[1] || d) || logoOf(d); return d; });
+    return details[k];
   }
 
   /* ---------- Reading rows from the servers ---------- */
@@ -138,8 +177,11 @@ var PlexView = (function () {
 
   /* ---------- Loading what the current tab shows ---------- */
   function load() {
-    var seq = ++loadSeq, t = tabNow(), top = stack[stack.length - 1], sub = SUBS[subAt][0];
+    if (Object.keys(picCache).length > 1500) picCache = {};
+    if (Object.keys(details).length > 600) details = {};   // links to old pictures, let go now and then
+    var seq = ++loadSeq, t = tabNow(), top = stack[stack.length - 1], sub = (subList()[subAt] || [])[0];
     var p = top ? childRows(top) : t.id === 'home' ? homeRows() : t.id === 'search' ? searchRows(lastSearch) :
+      t.id === 'top' ? Promise.resolve(PlexTop.chartRows(sub, function () { if (open_ && tabNow().id === 'top' && !stack.length) load(); })) :
       sub === 'recommended' ? recommendedRows(t.lib) : sub === 'library' ? libraryRows(t.lib) : sub === 'collections' ? collectionRows(t.lib) : sub === 'categories' ? categoryRows(t.lib) : playlistRows();
     if (!rows.length) empty(T('Loading…'));   // reading again over rows already drawn: no "Loading" on top of them
     p.then(function (r) { if (seq !== loadSeq) return; rows = r; rowAt = Math.min(rowAt, Math.max(0, rows.length - 1)); colAt = {}; empty(rows.length ? '' : t.id === 'search' ? T('Press OK to search Plex') : T('Nothing here yet')); draw(); },
@@ -155,16 +197,18 @@ var PlexView = (function () {
   }
 
   /* ---------- Drawing ---------- */
-  function draw() {
+  /* draw(): everything, after rows are read.  moved(): after a key press, only what changed (the focus, the
+     row's slide, the hero), so moving along a row doesn't rebuild 40 rows of posters and fetch them again. */
+  function draw() { drawTabs(); drawRows(); hero(); }
+  function moved() { drawTabs(); paintFocus(); heroSoon(); }
+  function drawTabs() {
     var tabsEl = $('plexTabs'), subsEl = $('plexSubs'), t = tabNow();
     tabsEl.innerHTML = tabsList.map(function (x, i) { return '<div class="media-tab' + (i === tabAt ? ' on' : '') + '">' + esc(x.label) + '</div>'; }).join('');
     tabsEl.classList.toggle('focus', zone === 'tabs');
-    var showSubs = t.id === 'lib' && !stack.length;
+    var list = subList(), showSubs = list.length && !stack.length;
     subsEl.classList.toggle('hidden', !showSubs);
-    subsEl.innerHTML = showSubs ? SUBS.map(function (x, i) { return '<div class="media-tab' + (i === subAt ? ' on' : '') + '">' + esc(T(x[1])) + '</div>'; }).join('') : '';
+    subsEl.innerHTML = showSubs ? list.map(function (x, i) { return '<div class="media-tab' + (i === subAt ? ' on' : '') + '">' + esc(t.id === 'lib' ? T(x[1]) : x[1]) + '</div>'; }).join('') : '';
     subsEl.classList.toggle('focus', zone === 'subs');
-    drawRows();
-    hero();
   }
   function tileHtml(m, i, r, sel) {
     var wide = r.wide, w = wide ? 400 : TILE, h = wide ? 225 : 366;
@@ -175,36 +219,81 @@ var PlexView = (function () {
     return '<div class="media-tile' + (sel ? ' sel' : '') + '" style="left:' + (14 + i * ((wide ? 400 : TILE) + GAP)) + 'px;width:' + w + 'px">' +
       '<div class="media-art" style="width:' + w + 'px;height:' + h + 'px"><img class="media-cover wait" data-pk="' + esc(m.server) + '" data-pp="' + esc(wide ? (m.art || m.thumb || '') : (m.grandparentThumb && m.type === 'episode' ? m.grandparentThumb : m.thumb || '')) + '" data-w="' + w + '" data-h="' + h + '" alt="">' +
       (left > 0 ? '<span class="media-mark">' + left + '</span>' : watched ? '<span class="media-mark done">✓</span>' : '') +
+      (/^#\d+/.test(rank) ? '<span class="plex-rank">' + esc(/^#(\d+)/.exec(rank)[1]) + '</span>' : '') +   // a chart's place, big on the poster
       (prog ? '<div class="media-progress"><i style="width:' + prog + '%"></i></div>' : '') + '</div>' +
       '<div class="media-tile-title">' + esc(name) + '</div><div class="media-tile-year">' + esc(sub) + '</div></div>';
   }
+  // The rows, built once per read: posters fill in as rows come near (paintFocus), each picture asked for once.
   function drawRows() {
     var stage = $('plexStage');
     stage.innerHTML = rows.map(function (r, ri) {
-      var c = colAt[ri] || 0, step = (r.wide ? 400 : TILE) + GAP, shift = Math.max(0, c - 2) * step;
-      return '<div class="media-shelf' + (ri === rowAt && zone === 'rows' ? ' active' : '') + '" style="top:' + (ri * ROW_H) + 'px">' +
-        '<div class="media-shelf-title"><h2>' + esc(r.title || '') + '</h2>' + (r.note ? '<span class="media-shelf-count">' + esc(r.note) + '</span>' : '') + '</div><div class="media-track" style="transform:translateX(' + (-shift) + 'px)">' +
-        r.items.map(function (m, i) { return tileHtml(m, i, r, ri === rowAt && zone === 'rows' && i === c); }).join('') + '</div></div>';
+      return '<div class="media-shelf" style="top:' + (ri * ROW_H) + 'px">' +
+        '<div class="media-shelf-title"><h2>' + esc(r.title || '') + '</h2>' + (r.note ? '<span class="media-shelf-count">' + esc(r.note) + '</span>' : '') + '</div><div class="media-track">' +
+        r.items.map(function (m, i) { return tileHtml(m, i, r, false); }).join('') + '</div></div>';
     }).join('');
+    paintFocus();
+  }
+  /* The focus moved: the old tile loses its ring and the new one gets it, the row slides, rows above the focused
+     one fade out (their names and lines peeked over the next row), and pictures load for what's near. */
+  function paintFocus() {
+    var stage = $('plexStage'), shelves = stage.children;
     stage.style.transform = 'translateY(' + (-Math.max(0, rowAt) * ROW_H) + 'px)';
-    // Pictures for what's on screen and just below.
-    [].forEach.call(stage.querySelectorAll('img[data-pp]'), function (img) {
-      var pp = img.getAttribute('data-pp'); if (!pp) return;
-      pic(img.getAttribute('data-pk'), pp, +img.getAttribute('data-w'), +img.getAttribute('data-h')).then(function (u) { if (u) { img.onload = function () { img.classList.remove('wait'); }; img.src = u; } });
-    });
+    var old = stage.querySelector('.media-tile.sel'); if (old) old.classList.remove('sel');
+    for (var ri = 0; ri < shelves.length; ri++) {
+      var sh = shelves[ri], r = rows[ri], c = colAt[ri] || 0, step = (r && r.wide ? 400 : TILE) + GAP;
+      sh.classList.toggle('active', ri === rowAt && zone === 'rows');
+      sh.classList.toggle('gone', ri < rowAt);
+      if (ri < rowAt - 1 || ri > rowAt + 2) continue;
+      var track = sh.lastChild; track.style.transform = 'translateX(' + (-Math.max(0, c - 2) * step) + 'px)';
+      if (ri === rowAt && zone === 'rows' && track.children[c]) track.children[c].classList.add('sel');
+      pictures(track, c);
+    }
     if (rows[rowAt]) fillLazy(rows[rowAt]);
     if (rows[rowAt + 1]) fillLazy(rows[rowAt + 1]);
   }
+  // A row's pictures from just left of what shows to a screen ahead, each fetched once (picCache keeps the link).
+  var picCache = {};
+  function pictures(track, c) {
+    var tiles = track.children;
+    for (var i = Math.max(0, c - 3); i < Math.min(tiles.length, c + 9); i++) {
+      var img = tiles[i].querySelector('img[data-pp]');
+      if (!img || img._asked) continue;
+      img._asked = true;
+      (function (img) {
+        var k = img.getAttribute('data-pk') + '|' + img.getAttribute('data-pp') + '|' + img.getAttribute('data-w');
+        var got = picCache[k] || (picCache[k] = pic(img.getAttribute('data-pk'), img.getAttribute('data-pp'), +img.getAttribute('data-w'), +img.getAttribute('data-h')));
+        got.then(function (u) { if (u) { img.onload = function () { img.classList.remove('wait'); }; img.src = u; } });
+      })(img);
+    }
+  }
   function focused() { var r = rows[rowAt]; return r && r.items[colAt[rowAt] || 0]; }
   // The focused title at the top: its name, year, rating, length and summary, its backdrop behind.
+  // The hero follows the focus a moment later, so holding ◀ ▶ doesn't fetch a backdrop for every poster passed.
+  var heroTimer = 0;
+  function heroSoon() { clearTimeout(heroTimer); heroTimer = setTimeout(hero, 160); }
+  /* The focused title at the top: its logo (or name), year, rating, length and summary, its backdrop on the right
+     and blurred behind.  What the row didn't carry is read once (more()) and filled in. */
   function hero() {
-    var m = zone === 'rows' ? focused() : null, el = $('plexHero'), art = $('plexArt');
-    if (!m) { el.innerHTML = ''; art.style.opacity = 0; return; }
-    var facts = [m.year, m.contentRating, m.duration ? Math.round(m.duration / 60000) + ' ' + T('min') : '', m.leafCount ? T('{n} episodes', { n: m.leafCount }) : ''].filter(Boolean).join('  ·  ');
-    el.innerHTML = '<div class="media-kicker">' + esc(m.type === 'episode' ? 'S' + m.parentIndex + ' · E' + m.index : (rows[rowAt].title || '')) + '</div>' +
-      '<div class="media-title">' + esc(m.type === 'episode' ? m.grandparentTitle : m.title) + '</div><div class="media-facts">' + esc(facts) + '</div>' +
-      '<div class="media-summary">' + esc(m.summary || '') + '</div>';
-    pic(m.server, m.art || m.grandparentArt || m.thumb, 1340, 600).then(function (u) { if (u && focused() === m) { art.style.opacity = 0; art.onload = function () { art.style.opacity = 1; }; art.src = u; } });
+    var m = zone === 'rows' ? focused() : null, el = $('plexHero'), art = $('plexArt'), bg = $('plexBg');
+    if (!m) { el.innerHTML = ''; art.style.opacity = 0; bg.style.opacity = 0; return; }
+    heroText(m, m);
+    more(m).then(function (d) { if (focused() === m) heroText(m, d); });
+    var path = m.art || m.grandparentArt || m.thumb;
+    pic(m.server, path, 1500, 844).then(function (u) { if (u && focused() === m) { art.style.opacity = 0; art.onload = function () { art.style.opacity = 1; }; art.src = u; } });
+    pic(m.server, path, 480, 270, '&blur=36').then(function (u) { if (u && focused() === m) { bg.style.backgroundImage = 'url("' + u + '")'; bg.style.opacity = 1; } });
+  }
+  function heroText(m, d) {
+    var el = $('plexHero'), ep = m.type === 'episode', name = ep ? m.grandparentTitle : m.title;
+    var facts = [d.year || m.year, d.contentRating || m.contentRating, (d.duration || m.duration) ? Math.round((d.duration || m.duration) / 60000) + ' ' + T('min') : '', (d.leafCount || m.leafCount) ? T('{n} episodes', { n: d.leafCount || m.leafCount }) : ''].filter(Boolean).join('  ·  ');
+    el.innerHTML = '<div class="media-kicker">' + esc(ep ? 'S' + m.parentIndex + ' · E' + m.index + '  ' + (m.title || '') : (rows[rowAt].title || '')) + '</div>' +
+      '<div class="media-title" id="plexHeroName">' + esc(name) + '</div><div class="media-facts">' + esc(facts) + '</div>' +
+      '<div class="media-summary">' + esc(d.summary || m.summary || '') + '</div>';
+    if (d.logo) raw(m.server, d.logo).then(function (u) {
+      var t = $('plexHeroName'); if (!u || !t || focused() !== m) return;
+      var lg = U.el('img', 'media-logo'); lg.alt = name || '';
+      lg.onload = function () { t.parentNode && t.parentNode.replaceChild(lg, t); };
+      lg.src = u;
+    });
   }
 
   /* ---------- Keys ---------- */
@@ -213,30 +302,31 @@ var PlexView = (function () {
     if (zone === 'tabs') return tabKeys(a);
     if (zone === 'subs') return subKeys(a);
     var r = rows[rowAt], c = colAt[rowAt] || 0;
-    if (a === 'left') { if (c > 0) { colAt[rowAt] = c - 1; draw(); } else Views.tabBar(restore); return true; }
-    if (a === 'right') { if (r && c < r.items.length - 1) { colAt[rowAt] = c + 1; draw(); } return true; }
-    if (a === 'up') { if (rowAt > 0) { rowAt--; colAt[rowAt] = Math.min(colAt[rowAt] || 0, c); } else zone = tabNow().id === 'lib' && !stack.length ? 'subs' : 'tabs'; draw(); return true; }
-    if (a === 'down') { if (rowAt < rows.length - 1) { rowAt++; if (!r || r.title === '' || rows[rowAt].title === '') colAt[rowAt] = Math.min(c, rows[rowAt].items.length - 1); draw(); } return true; }
+    if (a === 'left') { if (c > 0) { colAt[rowAt] = c - 1; moved(); } else Views.tabBar(restore); return true; }
+    if (a === 'right') { if (r && c < r.items.length - 1) { colAt[rowAt] = c + 1; moved(); } return true; }
+    if (a === 'up') { if (rowAt > 0) { rowAt--; colAt[rowAt] = Math.min(colAt[rowAt] || 0, c); } else zone = subList().length && !stack.length ? 'subs' : 'tabs'; moved(); return true; }
+    if (a === 'down') { if (rowAt < rows.length - 1) { rowAt++; if (!r || r.title === '' || rows[rowAt].title === '') colAt[rowAt] = Math.min(c, rows[rowAt].items.length - 1); moved(); } return true; }
     if (a === 'ok') { var m = focused(); if (m) openItem(m); else if (tabNow().id === 'search') ask(); return true; }
-    if (a === 'red' || a === 'hold') { options(); return true; }
+    if (a === 'hold') { if (focused()) itemOptions(focused()); else options(); return true; }
+    if (a === 'red') { options(); return true; }
     return true;
   }
   function tabKeys(a) {
     if (a === 'left') { if (tabAt > 0) { tabAt--; switched(); } else Views.tabBar(restore); return true; }
     if (a === 'right') { if (tabAt < tabsList.length - 1) { tabAt++; switched(); } return true; }
-    if (a === 'down') { zone = tabNow().id === 'lib' ? 'subs' : 'rows'; draw(); return true; }
-    if (a === 'ok') { if (tabNow().id === 'search') ask(); else { zone = 'rows'; draw(); } return true; }
+    if (a === 'down') { zone = subList().length ? 'subs' : 'rows'; moved(); return true; }
+    if (a === 'ok') { if (tabNow().id === 'search') ask(); else { zone = 'rows'; moved(); } return true; }
     return true;
   }
   function subKeys(a) {
     if (a === 'left') { if (subAt > 0) { subAt--; subSwitched(); } return true; }
-    if (a === 'right') { if (subAt < SUBS.length - 1) { subAt++; subSwitched(); } return true; }
-    if (a === 'up') { zone = 'tabs'; draw(); return true; }
-    if (a === 'down' || a === 'ok') { zone = 'rows'; draw(); return true; }
+    if (a === 'right') { if (subAt < subList().length - 1) { subAt++; subSwitched(); } return true; }
+    if (a === 'up') { zone = 'tabs'; moved(); return true; }
+    if (a === 'down' || a === 'ok') { zone = 'rows'; moved(); return true; }
     return true;
   }
-  function switched() { stack = []; rowAt = 0; colAt = {}; rows = []; prefs.tab = tabNow().id === 'lib' ? tabNow().lib.server + ':' + tabNow().lib.key : tabNow().id; savePrefs(); draw(); load(); }
-  function subSwitched() { var l = tabNow().lib; if (l) { libPrefs(l).sub = SUBS[subAt][0]; savePrefs(); } rowAt = 0; colAt = {}; rows = []; draw(); load(); }
+  function switched() { stack = []; rowAt = 0; colAt = {}; rows = []; subAt = firstSub(); if (zone === 'subs' && !subList().length) zone = 'rows'; prefs.tab = tabNow().id === 'lib' ? tabNow().lib.server + ':' + tabNow().lib.key : tabNow().id; savePrefs(); draw(); load(); }
+  function subSwitched() { var l = tabNow().lib; if (l) { libPrefs(l).sub = SUBS[subAt][0]; savePrefs(); } else if (tabNow().id === 'top') { prefs.topSvc = (subList()[subAt] || [])[0]; savePrefs(); } rowAt = 0; colAt = {}; rows = []; draw(); load(); }
   function ask() { UI.prompt(T('Search Plex'), lastSearch, function (t) { lastSearch = String(t || '').trim(); zone = 'rows'; rowAt = 0; load(); }); }
 
   // OK on a title: a show, season, collection or playlist opens in place; a movie or episode opens its page.
@@ -258,6 +348,35 @@ var PlexView = (function () {
       { label: T('Genre'), sub: p.genre || T('Any'), action: function () { genres(t.lib, p); } },
       { label: T('Clear filters'), action: function () { delete p.unwatched; delete p.genre; savePrefs(); rowAt = 0; load(); } }
     ]);
+  }
+  function clock(ms) { var t = Math.floor(ms / 1000), h = Math.floor(t / 3600), mm = Math.floor(t % 3600 / 60), x = t % 60; return (h ? h + ':' + (mm < 10 ? '0' : '') : '') + mm + ':' + (x < 10 ? '0' : '') + x; }
+  /* Hold OK on a title: what Plex offers for it.  A movie or an episode: Resume, Play from the start, Details,
+     Mark watched, Remove from Continue watching, Add to Watchlist (a movie), Go to show and Go to season (an
+     episode).  A show or a season: Red's menu for it (Play the next episode, Mark all watched).  A collection or
+     a playlist: Open. */
+  function itemOptions(m) {
+    if (/^(movie|episode)$/.test(m.type) && !m._full) return more(m).then(function (d) { m.guid = m.guid || d.guid; m._full = true; itemOptions(m); }, function () { m._full = true; itemOptions(m); });
+    if (/^(show|season)$/.test(m.type)) return showOptions(m);
+    if (!/^(movie|episode)$/.test(m.type)) return UI.menu(I18n.raw(m.title), [{ label: T('Open'), action: function () { openItem(m); } }]);
+    var list = [], watched = m.viewCount > 0 && !m.viewOffset, play = function (fromStart) { return function () { PlexPage.playKey(m.server, String(m.ratingKey), fromStart).catch(function (e) { U.toast(e.message, 6000); }); }; };
+    if (m.viewOffset > 60000) list.push({ label: T('Resume from {x}', { x: clock(m.viewOffset) }), action: play(false) });
+    list.push({ label: m.viewOffset > 60000 ? T('Play from the start') : T('Play'), action: play(true) });
+    list.push({ label: T('Details'), action: function () { PlexPage.open(m, restore); } });
+    list.push({ label: watched ? T('Mark not watched') : T('Mark watched'), action: function () { markOne(m, !watched); } });
+    if (m.viewOffset) list.push({ label: T('Remove from Continue watching'), action: function () {
+      Plex.call(m.server, '/actions/removeFromContinueWatching?ratingKey=' + m.ratingKey, 'put').then(function () { U.toast(T('Removed from Continue watching')); load(); }, function (e) { U.toast(e.message, 6000); });
+    } });
+    if (m.type === 'movie' && m.guid && typeof PlexTop !== 'undefined') {
+      var on = PlexTop.onWatch(m);
+      list.push({ label: on ? T('Remove from Watchlist') : T('Add to Watchlist'), action: function () { Plex.watch(m.guid, !on).then(function () { PlexTop.changedWatch(); U.toast(on ? T('Removed from your Watchlist') : T('Added to your Watchlist')); }, function (e) { U.toast(e.message, 6000); }); } });
+    }
+    if (m.type === 'episode' && m.grandparentRatingKey) list.push({ label: T('Go to show'), action: function () { openShow({ ratingKey: m.grandparentRatingKey, type: 'show', title: m.grandparentTitle, server: m.server }); } });
+    if (m.type === 'episode' && m.parentRatingKey) list.push({ label: T('Go to season'), action: function () { stack = [{ ratingKey: m.grandparentRatingKey, type: 'show', title: m.grandparentTitle, server: m.server }, { ratingKey: m.parentRatingKey, type: 'season', title: m.parentTitle || T('Season {n}', { n: m.parentIndex }), server: m.server }]; rowAt = 0; colAt = {}; rows = []; zone = 'rows'; draw(); load(); } });
+    UI.menu(I18n.raw(m.type === 'episode' ? (m.grandparentTitle || '') + '  ·  ' + (m.title || '') : m.title), list);
+  }
+  // One movie or episode watched or not, on the server.
+  function markOne(m, on) {
+    Plex.call(m.server, (on ? '/:/scrobble' : '/:/unscrobble') + '?identifier=com.plexapp.plugins.library&key=' + m.ratingKey).then(function () { U.toast(on ? T('Marked as watched') : T('Marked as not watched')); load(); }, function (e) { U.toast(e.message, 6000); });
   }
   /* Red on a show or a season: play the next episode (the one you're in, else the first not watched), or mark it
      all watched or not watched, as Plex does. */
@@ -286,7 +405,7 @@ var PlexView = (function () {
   function open() {
     build(); open_ = true; makeTabs();
     if (prefs.tab) tabsList.forEach(function (x, i) { if ((x.id === 'lib' ? x.lib.server + ':' + x.lib.key : x.id) === prefs.tab) tabAt = i; });
-    var l = tabNow().lib; subAt = l ? Math.max(0, SUBS.map(function (s) { return s[0]; }).indexOf(libPrefs(l).sub || 'recommended')) : 0;
+    subAt = firstSub();
     zone = 'rows'; stack = []; rowAt = 0; colAt = {};
     UI.setHandler(keys); draw(); load();
   }
@@ -297,5 +416,5 @@ var PlexView = (function () {
   // A show opened from somewhere else (a title's Go to show): its seasons in place on the Plex tab.
   function openShow(m) { stack = [m]; rowAt = 0; colAt = {}; zone = 'rows'; UI.setHandler(keys); load(); }
 
-  return { open: open, resume: resume, leave: leave, picture: pic, openShow: openShow, editRows: editRows, read: { home: homeRows, children: childRows, search: searchRows }, homeTitles: function () { return lastHome; }, _test: { home: function () { tabAt = 0; switched(); }, tabs: function () { return tabsList; }, rows: function () { return rows; }, keys: keys, focused: focused } };
+  return { open: open, resume: resume, leave: leave, picture: pic, file: raw, details: more, openShow: openShow, editRows: editRows, read: { home: homeRows, children: childRows, search: searchRows }, homeTitles: function () { return lastHome; }, _test: { more: more, tab: function (i) { tabAt = i; switched(); }, home: function () { tabAt = 0; switched(); }, tabs: function () { return tabsList; }, rows: function () { return rows; }, keys: keys, focused: focused } };
 })();

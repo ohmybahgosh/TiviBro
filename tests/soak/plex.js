@@ -51,7 +51,7 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     ok('Home: only the movie library\'s titles in Continue watching', home[0].n === 1, home[0]);
     const posters = await ev(() => [].filter.call(document.querySelectorAll('#viewPlex img.media-cover'), (i) => /\/plex\/[0-9a-f]{48}\/photo\//.test(i.src)).length);
     ok('posters come through the helper\'s door, no token in them', posters > 3 && !(await ev(() => /mock-server-token/.test(document.getElementById('viewPlex').innerHTML))), posters);
-    ok('the focused title fills the top', /Northbound/.test(await ev(() => document.getElementById('plexHero').innerText)));
+    ok('the focused title fills the top', /Northbound/.test(await ev(() => document.getElementById('plexHero').innerText + ' ' + ((document.querySelector('#plexHero img.media-logo') || {}).alt || ''))));
     await shot('1-home');
     // The Movies library: Recommended first, then Library with sort and filter.
     await key('up'); await key('right');
@@ -84,7 +84,7 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     await shot('5-playlists');
     // Streaming Top 10s: matched by TMDB id (Northbound), not by a lookalike name (Copper Sky is not "Copper Skies").
     await ev(() => { VodHome.top10 = function () { return { date: '2026-11-26', charts: [{ service: 'Netflix', movies: [{ r: 1, t: 'Copper Skies' }, { r: 3, t: 'Northbound', tmdb: 999 }], shows: [] }] }; }; PlexTop._test.reset(); PlexView.open(); PlexView._test.home(); });
-    await page.waitForFunction(() => PlexView._test.rows().some((r) => /Streaming Top 10s you have/.test(r.title) && r.items.length), null, { timeout: 15000 }).catch(async (e) => { console.log('DEBUG', await ev(() => JSON.stringify({ rows: PlexView._test.rows().map((r) => r.title), found: localStorage.getItem('tivibro.plexTop'), added: Plex.added(), libs: Plex.libs(Plex.chosen()[0].id) }))); throw e; });
+    await page.waitForFunction(() => PlexView._test.rows().some((r) => /Streaming Top 10s you have/.test(r.title) && r.items.length), null, { timeout: 15000 });
     const top = await ev(() => { const r = PlexView._test.rows().filter((x) => /Streaming Top 10s/.test(x.title))[0]; return { names: r.items.map((m) => m.title), line: r.line(r.items[0]), html: document.getElementById('plexStage').innerText }; });
     ok('Streaming Top 10s you have: the Plex titles on the charts, matched by TMDB id', JSON.stringify(top.names) === '["Northbound"]', top);
     ok('"#3 on Netflix" under its poster', top.line === '#3 on Netflix' && /#3 on Netflix/.test(top.html), top);
@@ -100,9 +100,28 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     await ev((t) => { Plex.setPref('hiddenRows', { [t]: 1 }); PlexView.resume(); }, homeT[homeT.length - 1]); await page.waitForTimeout(1500);
     ok('Edit home rows: a row turned off is gone', (await ev(() => PlexView._test.rows().map((r) => r.title))).indexOf(homeT[homeT.length - 1]) < 0);
     await ev(() => { Plex.setPref('hiddenRows', {}); Plex.setPref('topServices', []); PlexView.resume(); }); await page.waitForTimeout(1500);
+    // Moving along a row keeps the row's posters as they are (no rebuild), and the hero shows the title's logo.
+    const keep = await ev(() => { window.__tile = document.querySelector('#plexStage .media-tile'); PlexView._test.keys('right'); return document.querySelector('#plexStage .media-tile') === window.__tile; });
+    ok('◀ ▶ along a row: the posters stay, nothing is drawn again', keep);
+    await page.waitForFunction(() => document.querySelector('#plexHero img.media-logo'), null, { timeout: 8000 }).catch(() => {});
+    ok('the hero shows the title\'s logo (Plex\'s clearLogo)', (await ev(() => !!document.querySelector('#plexHero img.media-logo'))) && m.state.logo);
+    ok('a blurred backdrop behind it all', /blur=36/.test(await ev(() => document.getElementById('plexBg').style.backgroundImage)));
+    await ev(() => UI.press('hold')); await page.waitForTimeout(1200);
+    const hold = await ev(() => UI.menuLabels);
+    ok('hold OK on a title: its options', hold.indexOf('Details') >= 0 && hold.some((l) => /^Resume from|^Play$/.test(l)) && hold.indexOf('Remove from Watchlist') >= 0, hold);
+    await ev(() => UI.press('back')); await page.waitForTimeout(300);
+    await shot('5c-hero');
+    // The Top 10 tab: a pill per service, its movies and its shows that your Plex has, in the chart's order.
+    const t10 = await ev(() => { const tabs = PlexView._test.tabs(); return tabs.map((t) => t.id).indexOf('top'); });
+    ok('a Top 10 tab once there are charts', t10 > 0);
+    await ev((i) => { PlexView._test.tab(i); }, t10); await page.waitForTimeout(1500);
+    const chart = await ev(() => ({ subs: document.getElementById('plexSubs').innerText, rows: PlexView._test.rows().map((r) => r.title + ':' + r.items.map((m) => r.line(m) + ' ' + m.title).join(',')) }));
+    ok('Top 10: a pill per service, the chart\'s movies you have with their place', /Netflix/.test(chart.subs) && chart.rows[0] === 'Top 10 movies on Netflix:#3 Northbound', JSON.stringify(chart));
+    await shot('5d-top10-tab');
+    await ev(() => PlexView._test.home()); await page.waitForTimeout(1200);
     // A movie's page and playing it.
     await ev(() => { PlexView._test.home(); }); await page.waitForTimeout(1500);
-    await page.waitForFunction(() => /Northbound/.test(document.getElementById('plexHero').innerText), null, { timeout: 8000 });
+    await page.waitForFunction(() => (PlexView._test.focused() || {}).title === 'Northbound', null, { timeout: 8000 });
     await key('ok');
     await page.waitForFunction(() => { var p = document.getElementById('plexPage'); return p && !p.classList.contains('hidden') && /Resume from/.test(p.innerText); }, null, { timeout: 8000 });
     const pg = await ev(() => document.getElementById('plexPage').innerText);
