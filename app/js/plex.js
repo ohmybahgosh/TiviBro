@@ -157,8 +157,11 @@ var Plex = (function () {
   /* ---------- Settings > Plex: this TV's own choices (kept with the sign-in, kept on sign-out) ---------- */
   /* homeQuality and awayQuality: the most the server sends when it converts, in kbps (0: Original, as the file is).
      direct: play a file as it is when the TV can (off: always the server's converter, for files that stutter). */
-  var PREFS = { homeQuality: 0, awayQuality: 8000, direct: true };
-  function prefs() { var p = state.prefs || {}, out = {}; for (var k in PREFS) out[k] = p[k] == null ? PREFS[k] : p[k]; return out; }
+  /* topMixed: the "Streaming Top 10s you have" row; topServices: a "Top 10 on X" row each (plextop.js).
+     hiddenRows: home rows turned off in Edit home rows, by title (Plex's own order otherwise). */
+  var PREFS = { homeQuality: 0, awayQuality: 8000, direct: true, topMixed: true, topServices: [], hiddenRows: {} };
+  // A copy each time (lists and maps too), so a change is kept only through setPref.
+  function prefs() { var p = state.prefs || {}, out = {}; for (var k in PREFS) out[k] = JSON.parse(JSON.stringify(p[k] == null ? PREFS[k] : p[k])); return out; }
   function setPref(k, v) { state.prefs = state.prefs || {}; state.prefs[k] = v; save(); }
 
   /* Settings and the phone: one line on where things stand. */

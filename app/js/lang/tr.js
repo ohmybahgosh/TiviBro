@@ -2636,5 +2636,16 @@ I18n.add('tr', {
   "Quality away from home": "Ev dışında kalite",
   "The TV plays the file itself when it can, at full quality, with the server doing nothing.  Off: the server always converts it (for a file that stutters).": "Televizyon dosyayı yapabildiğinde kendisi oynatır, tam kalitede, sunucuya iş düşmeden.  Kapalı: sunucu her zaman dönüştürür (takılan bir dosya için).",
   "The same, when the server is somewhere else (a friend's, or yours from away).  Lower plays smoother on slow internet.": "Aynısı, sunucu başka bir yerdeyken (bir arkadaşınınki ya da dışarıdayken sizinki).  Düşük olan yavaş internette daha akıcı oynar.",
-  "When the server converts a movie or an episode for the TV on your home network.  Original: as good as the file.  A file smaller than this plays as it is.": "Sunucu ev ağınızdaki televizyon için bir filmi ya da bölümü dönüştürdüğünde.  Orijinal: dosya kadar iyi.  Bundan küçük bir dosya olduğu gibi oynar."
+  "When the server converts a movie or an episode for the TV on your home network.  Original: as good as the file.  A file smaller than this plays as it is.": "Sunucu ev ağınızdaki televizyon için bir filmi ya da bölümü dönüştürdüğünde.  Orijinal: dosya kadar iyi.  Bundan küçük bir dosya olduğu gibi oynar.",
+  "A row of its own for a service's Top 10, with the titles your Plex has.  On Home and in each library's Recommended.": "Bir servisin Top 10'u için ayrı bir sıra, Plex'inizde olan yapımlarla.  Ana sayfada ve her kitaplığın Önerilenler bölümünde.",
+  "As in Plex": "Plex'teki gibi",
+  "Edit home rows": "Ana sayfa sıralarını düzenle",
+  "Home rows": "Ana sayfa sıraları",
+  "No Top 10s yet.  They come once a day; look again in a minute.": "Henüz Top 10 yok.  Günde bir kez gelirler; bir dakika sonra yeniden bakın.",
+  "Open the Plex tab's Home first.": "Önce Plex sekmesinin Ana sayfasını açın.",
+  "Show every row, as Plex does": "Tüm sıraları göster, Plex'teki gibi",
+  "The rows of your Plex home, in Plex's order: turn any off.  Red on the Plex tab's Home too.": "Plex ana sayfanızın sıraları, Plex'in sırasıyla: istediklerinizi kapatın.  Plex sekmesinin Ana sayfasında Kırmızı ile de.",
+  "Top 10 rows": "Top 10 sıraları",
+  "Yesterday's Top 10s of the streaming services in your country (FlixPatrol) with the movies and shows your Plex has, best place first, \"#3 on Netflix\" under each.": "Ülkenizdeki yayın servislerinin dünkü Top 10'ları (FlixPatrol), Plex'inizdeki film ve dizilerle, en iyi sıra önce, her birinin altında \"Netflix'te 3.\".",
+  "Rows off: {x}": "Kapalı sıralar: {x}"
 });

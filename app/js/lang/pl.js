@@ -2636,5 +2636,16 @@ I18n.add('pl', {
   "Quality away from home": "Jakość poza domem",
   "The TV plays the file itself when it can, at full quality, with the server doing nothing.  Off: the server always converts it (for a file that stutters).": "Telewizor sam odtwarza plik, gdy może, w pełnej jakości, bez pracy dla serwera.  Wył.: serwer zawsze go konwertuje (dla pliku, który się zacina).",
   "The same, when the server is somewhere else (a friend's, or yours from away).  Lower plays smoother on slow internet.": "To samo, gdy serwer jest gdzie indziej (u znajomego albo Twój, gdy jesteś poza domem).  Niższa działa płynniej przy wolnym internecie.",
-  "When the server converts a movie or an episode for the TV on your home network.  Original: as good as the file.  A file smaller than this plays as it is.": "Gdy serwer konwertuje film lub odcinek dla telewizora w Twojej sieci domowej.  Oryginał: tak dobra jak plik.  Mniejszy plik odtwarza się bez zmian."
+  "When the server converts a movie or an episode for the TV on your home network.  Original: as good as the file.  A file smaller than this plays as it is.": "Gdy serwer konwertuje film lub odcinek dla telewizora w Twojej sieci domowej.  Oryginał: tak dobra jak plik.  Mniejszy plik odtwarza się bez zmian.",
+  "A row of its own for a service's Top 10, with the titles your Plex has.  On Home and in each library's Recommended.": "Osobny rząd na Top 10 serwisu, z tytułami z Twojego Pleksa.  Na stronie głównej i w Polecanych każdej biblioteki.",
+  "As in Plex": "Jak w Pleksie",
+  "Edit home rows": "Edytuj rzędy strony głównej",
+  "Home rows": "Rzędy strony głównej",
+  "No Top 10s yet.  They come once a day; look again in a minute.": "Jeszcze nie ma Top 10.  Przychodzą raz dziennie; zajrzyj ponownie za minutę.",
+  "Open the Plex tab's Home first.": "Najpierw otwórz stronę główną na karcie Plex.",
+  "Show every row, as Plex does": "Pokaż wszystkie rzędy, jak Plex",
+  "The rows of your Plex home, in Plex's order: turn any off.  Red on the Plex tab's Home too.": "Rzędy strony głównej Twojego Pleksa, w kolejności Pleksa: wyłącz dowolne.  Także Czerwonym na stronie głównej karty Plex.",
+  "Top 10 rows": "Rzędy Top 10",
+  "Yesterday's Top 10s of the streaming services in your country (FlixPatrol) with the movies and shows your Plex has, best place first, \"#3 on Netflix\" under each.": "Wczorajsze Top 10 serwisów streamingowych w Twoim kraju (FlixPatrol) z filmami i serialami z Twojego Pleksa, najlepsze miejsce pierwsze, „#3 w Netflix” pod każdym.",
+  "Rows off: {x}": "Wyłączone rzędy: {x}"
 });

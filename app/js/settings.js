@@ -543,6 +543,24 @@ var Settings = (function () {
       toggle('Play files as they are', 'The TV plays the file itself when it can, at full quality, with the server doing nothing.  Off: the server always converts it (for a file that stutters).', pr('direct'), set('direct')),
       autoNextRow(), upNextRow()].concat(also('playback', ['Skip intro', 'Skip credits', 'Seek previews'])).filter(Boolean);
   }
+  /* Settings > Plex > Home rows: Plex's own rows on or off, and the streaming Top 10 rows (plextop.js). */
+  function plexRows() {
+    var p = Plex.prefs();
+    return [head('Home rows'),
+      action('Edit home rows', 'The rows of your Plex home, in Plex\'s order: turn any off.  Red on the Plex tab\'s Home too.', function () { PlexView.editRows(function () { build(); }); }, function () { var n = Object.keys(p.hiddenRows || {}).length; return n ? T('Rows off: {x}', { x: n }) : T('As in Plex'); }),
+      toggle('Streaming Top 10s you have', 'Yesterday\'s Top 10s of the streaming services in your country (FlixPatrol) with the movies and shows your Plex has, best place first, "#3 on Netflix" under each.', function () { return Plex.prefs().topMixed; }, function (v) { Plex.setPref('topMixed', v); paint(); }),
+      page('Top 10 rows', 'A row of its own for a service\'s Top 10, with the titles your Plex has.  On Home and in each library\'s Recommended.', 'Top 10 rows', plexTopPick, function () { return String(Plex.prefs().topServices.length); })];
+  }
+  // The services with a chart today, each a row on or off.
+  function plexTopPick() {
+    var svcs = typeof PlexTop !== 'undefined' ? PlexTop.services() : [];
+    if (!svcs.length) return [info('No Top 10s yet.  They come once a day; look again in a minute.', '')];
+    return svcs.map(function (svc) {
+      return toggle(T('Top 10 on {x}', { x: I18n.raw(svc) }), '', function () { return Plex.prefs().topServices.indexOf(svc) >= 0; }, function (v) {
+        var l = Plex.prefs().topServices.filter(function (x) { return x !== svc; }); if (v) l.push(svc); Plex.setPref('topServices', l); paint();
+      });
+    });
+  }
   function plexSection() {
     var out = [info('Your Plex movies and shows in TiviBro, with their posters, collections, playlists and watched marks.  Once a server and a library are added, Plex gets its own place in the menu, the phone app and the web editor.', '')];
     if (!Plex.signedIn()) return out.concat(head('Sign in'), plexSignIn());
@@ -552,7 +570,7 @@ var Settings = (function () {
     Plex.chosen().forEach(function (sv) {
       out.push(page(T('Libraries on {x}', { x: sv.name }), 'Which libraries show in TiviBro.  Music and photos stay in Plex\'s own apps.', I18n.raw(sv.name), function () { return plexLibraries(sv); }, function () { return String(Plex.libs(sv.id).length); }));
     });
-    out = out.concat(plexPlaying());
+    out = out.concat(plexRows(), plexPlaying());
     out.push(head('Plex Pass'), info(Plex.user().pass ? T('You have Plex Pass: your servers play anywhere.') : T('Away from home, Plex plays video only when you or the server\'s owner have Plex Pass (or a Remote Watch Pass).  At home it\'s free.'), ''));
     out.push(head('Account'), action('Sign out of Plex', 'Plex leaves the menu, the phone app and the web editor until you sign in again.', function () { UI.confirm('Sign out of Plex on this TV?', 'Sign out', function () { Plex.signOut(); plexSecCache = {}; plexPeople = null; build(); if (typeof Views !== 'undefined' && Views.buildTabs) Views.buildTabs(); }); }));
     return out;

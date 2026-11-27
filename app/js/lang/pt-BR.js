@@ -3263,5 +3263,16 @@ I18n.add('pt-BR', {
   "Quality away from home": "Qualidade fora de casa",
   "The TV plays the file itself when it can, at full quality, with the server doing nothing.  Off: the server always converts it (for a file that stutters).": "A TV reproduz o arquivo sozinha quando pode, com qualidade total, sem trabalho para o servidor.  Desligado: o servidor sempre converte (para um arquivo que trava).",
   "The same, when the server is somewhere else (a friend's, or yours from away).  Lower plays smoother on slow internet.": "O mesmo, quando o servidor está em outro lugar (de um amigo, ou o seu quando você está fora).  Mais baixa fica mais suave com internet lenta.",
-  "When the server converts a movie or an episode for the TV on your home network.  Original: as good as the file.  A file smaller than this plays as it is.": "Quando o servidor converte um filme ou episódio para a TV na sua rede de casa.  Original: tão boa quanto o arquivo.  Um arquivo menor é reproduzido como é."
+  "When the server converts a movie or an episode for the TV on your home network.  Original: as good as the file.  A file smaller than this plays as it is.": "Quando o servidor converte um filme ou episódio para a TV na sua rede de casa.  Original: tão boa quanto o arquivo.  Um arquivo menor é reproduzido como é.",
+  "A row of its own for a service's Top 10, with the titles your Plex has.  On Home and in each library's Recommended.": "Uma fileira própria para o Top 10 de um serviço, com os títulos que o seu Plex tem.  No Início e em Recomendados de cada biblioteca.",
+  "As in Plex": "Como no Plex",
+  "Edit home rows": "Editar fileiras do Início",
+  "Home rows": "Fileiras do Início",
+  "No Top 10s yet.  They come once a day; look again in a minute.": "Ainda não há Top 10.  Eles chegam uma vez por dia; veja de novo em um minuto.",
+  "Open the Plex tab's Home first.": "Abra primeiro o Início da aba Plex.",
+  "Show every row, as Plex does": "Mostrar todas as fileiras, como o Plex",
+  "The rows of your Plex home, in Plex's order: turn any off.  Red on the Plex tab's Home too.": "As fileiras do seu Início do Plex, na ordem do Plex: desligue as que quiser.  Também com Vermelho no Início da aba Plex.",
+  "Top 10 rows": "Fileiras de Top 10",
+  "Yesterday's Top 10s of the streaming services in your country (FlixPatrol) with the movies and shows your Plex has, best place first, \"#3 on Netflix\" under each.": "O Top 10 de ontem dos serviços de streaming do seu país (FlixPatrol) com os filmes e séries que o seu Plex tem, a melhor posição primeiro, “#3 na Netflix” embaixo de cada um.",
+  "Rows off: {x}": "Fileiras desligadas: {x}"
 });

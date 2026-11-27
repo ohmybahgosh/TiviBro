@@ -2757,5 +2757,16 @@ I18n.add('ru', {
   "Quality away from home": "Качество вне дома",
   "The TV plays the file itself when it can, at full quality, with the server doing nothing.  Off: the server always converts it (for a file that stutters).": "Телевизор сам воспроизводит файл, когда может, в полном качестве, без работы для сервера.  Выкл.: сервер всегда его преобразует (для файла, который подтормаживает).",
   "The same, when the server is somewhere else (a friend's, or yours from away).  Lower plays smoother on slow internet.": "То же самое, когда сервер в другом месте (у друга или ваш, когда вы не дома).  Ниже идёт плавнее при медленном интернете.",
-  "When the server converts a movie or an episode for the TV on your home network.  Original: as good as the file.  A file smaller than this plays as it is.": "Когда сервер преобразует фильм или серию для телевизора в вашей домашней сети.  Оригинал: как в файле.  Файл меньше этого воспроизводится как есть."
+  "When the server converts a movie or an episode for the TV on your home network.  Original: as good as the file.  A file smaller than this plays as it is.": "Когда сервер преобразует фильм или серию для телевизора в вашей домашней сети.  Оригинал: как в файле.  Файл меньше этого воспроизводится как есть.",
+  "A row of its own for a service's Top 10, with the titles your Plex has.  On Home and in each library's Recommended.": "Отдельный ряд для топ-10 сервиса, с тем, что есть в вашем Plex.  На главной и в «Рекомендуемом» каждой медиатеки.",
+  "As in Plex": "Как в Plex",
+  "Edit home rows": "Изменить ряды главной",
+  "Home rows": "Ряды главной",
+  "No Top 10s yet.  They come once a day; look again in a minute.": "Топ-10 пока нет.  Они приходят раз в день; загляните через минуту.",
+  "Open the Plex tab's Home first.": "Сначала откройте главную на вкладке Plex.",
+  "Show every row, as Plex does": "Показать все ряды, как в Plex",
+  "The rows of your Plex home, in Plex's order: turn any off.  Red on the Plex tab's Home too.": "Ряды главной вашего Plex, в порядке Plex: выключите любые.  Также кнопкой Красная на главной вкладки Plex.",
+  "Top 10 rows": "Ряды топ-10",
+  "Yesterday's Top 10s of the streaming services in your country (FlixPatrol) with the movies and shows your Plex has, best place first, \"#3 on Netflix\" under each.": "Вчерашние топ-10 стриминговых сервисов в вашей стране (FlixPatrol) с фильмами и сериалами из вашего Plex, лучшее место первым, «#3 на Netflix» под каждым.",
+  "Rows off: {x}": "Выключено рядов: {x}"
 });

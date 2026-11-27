@@ -37,7 +37,13 @@ function route(state, req, port) {
   if (p === '/library/collections/500/children') return [200, { MediaContainer: { Metadata: MOVIES.slice(0, 3).map(function (m, i) { return movie(10 + i, m); }) } }];
   if (p === '/library/sections/1/genre') return [200, { MediaContainer: { Directory: [{ title: 'Drama' }, { title: 'Comedy' }] } }];
   if (p === '/playlists') return [200, { MediaContainer: { Metadata: [{ ratingKey: '700', type: 'playlist', title: 'Movie Marathon', leafCount: 6 }] } }];
-  if (p === '/hubs/search') return [200, { MediaContainer: { Hub: [{ title: 'Movies', Metadata: [movie(10, 'Copper Sky')] }] } }];
+  if (p === '/hubs/search') {
+    // The movies whose name has the words searched for (Copper Sky for anything else), Northbound with its TMDB id.
+    var want = decodeURIComponent((/(?:^|&)query=([^&]*)/.exec(q) || [])[1] || '').toLowerCase(), hits = [];
+    MOVIES.forEach(function (t, i) { if (want && t.toLowerCase().indexOf(want) >= 0) hits.push(movie(10 + i, t, t === 'Northbound' ? { Guid: [{ id: 'imdb://tt0999' }, { id: 'tmdb://999' }] } : {})); });
+    state.searches = (state.searches || 0) + 1;
+    return [200, { MediaContainer: { Hub: [{ title: 'Movies', Metadata: hits.length ? hits : [movie(10, 'Copper Sky')] }] } }];
+  }
   if (/^\/library\/parts\/7\/indexes\/sd\/\d+$/.test(p)) { state.preview = p; return [200, PNG, 'image/png']; }
   if (p === '/library/streams/3') { state.subFile = true; return [200, '1\n00:00:01,000 --> 00:00:04,000\nHello from Plex\n', 'text/plain']; }
   if (p === '/library/parts/7/1700000000/file.mkv') { state.range = req.headers.range; return [206, 'MKVBYTES', 'video/x-matroska']; }

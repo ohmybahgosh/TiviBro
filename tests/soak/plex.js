@@ -82,9 +82,25 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     await key('right'); await page.waitForTimeout(1500);
     ok('Playlists', /Movie Marathon/.test(await ev(() => document.getElementById('plexStage').innerText)));
     await shot('5-playlists');
+    // Streaming Top 10s: matched by TMDB id (Northbound), not by a lookalike name (Copper Sky is not "Copper Skies").
+    await ev(() => { VodHome.top10 = function () { return { date: '2026-11-26', charts: [{ service: 'Netflix', movies: [{ r: 1, t: 'Copper Skies' }, { r: 3, t: 'Northbound', tmdb: 999 }], shows: [] }] }; }; PlexTop._test.reset(); PlexView.open(); PlexView._test.home(); });
+    await page.waitForFunction(() => PlexView._test.rows().some((r) => /Streaming Top 10s you have/.test(r.title) && r.items.length), null, { timeout: 15000 }).catch(async (e) => { console.log('DEBUG', await ev(() => JSON.stringify({ rows: PlexView._test.rows().map((r) => r.title), found: localStorage.getItem('tivibro.plexTop'), added: Plex.added(), libs: Plex.libs(Plex.chosen()[0].id) }))); throw e; });
+    const top = await ev(() => { const r = PlexView._test.rows().filter((x) => /Streaming Top 10s/.test(x.title))[0]; return { names: r.items.map((m) => m.title), line: r.line(r.items[0]), html: document.getElementById('plexStage').innerText }; });
+    ok('Streaming Top 10s you have: the Plex titles on the charts, matched by TMDB id', JSON.stringify(top.names) === '["Northbound"]', top);
+    ok('"#3 on Netflix" under its poster', top.line === '#3 on Netflix' && /#3 on Netflix/.test(top.html), top);
+    const searches = m.state.searches;
+    await ev(() => PlexView.resume()); await page.waitForTimeout(1500);
+    ok('the matches are kept: no new searches the second time', m.state.searches === searches, [searches, m.state.searches]);
+    await ev(() => { Plex.setPref('topServices', ['Netflix']); PlexView.resume(); }); await page.waitForTimeout(1500);
+    ok('a Top 10 on Netflix row when picked', (await ev(() => PlexView._test.rows().map((r) => r.title))).indexOf('Top 10 on Netflix') >= 0);
+    await shot('5b-top10');
+    // Edit home rows: one turned off, then all back.
+    const homeT = await ev(() => PlexView.homeTitles());
+    await ev((t) => { Plex.setPref('hiddenRows', { [t]: 1 }); PlexView.resume(); }, homeT[homeT.length - 1]); await page.waitForTimeout(1500);
+    ok('Edit home rows: a row turned off is gone', (await ev(() => PlexView._test.rows().map((r) => r.title))).indexOf(homeT[homeT.length - 1]) < 0);
+    await ev(() => { Plex.setPref('hiddenRows', {}); Plex.setPref('topServices', []); PlexView.resume(); }); await page.waitForTimeout(1500);
     // A movie's page and playing it.
-    await key('up', 2); await key('left'); await page.waitForTimeout(800);
-    await key('down');
+    await ev(() => { PlexView._test.home(); }); await page.waitForTimeout(1500);
     await page.waitForFunction(() => /Northbound/.test(document.getElementById('plexHero').innerText), null, { timeout: 8000 });
     await key('ok');
     await page.waitForFunction(() => { var p = document.getElementById('plexPage'); return p && !p.classList.contains('hidden') && /Resume from/.test(p.innerText); }, null, { timeout: 8000 });

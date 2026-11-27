@@ -2636,5 +2636,16 @@ I18n.add('nl', {
   "Quality away from home": "Kwaliteit buitenshuis",
   "The TV plays the file itself when it can, at full quality, with the server doing nothing.  Off: the server always converts it (for a file that stutters).": "De tv speelt het bestand zelf af als dat kan, op volle kwaliteit, zonder werk voor de server.  Uit: de server zet het altijd om (voor een bestand dat hapert).",
   "The same, when the server is somewhere else (a friend's, or yours from away).  Lower plays smoother on slow internet.": "Hetzelfde, als de server ergens anders staat (bij een vriend, of de jouwe als je weg bent).  Lager speelt soepeler op traag internet.",
-  "When the server converts a movie or an episode for the TV on your home network.  Original: as good as the file.  A file smaller than this plays as it is.": "Als de server een film of aflevering omzet voor de tv op je thuisnetwerk.  Origineel: zo goed als het bestand.  Een kleiner bestand speelt zoals het is."
+  "When the server converts a movie or an episode for the TV on your home network.  Original: as good as the file.  A file smaller than this plays as it is.": "Als de server een film of aflevering omzet voor de tv op je thuisnetwerk.  Origineel: zo goed als het bestand.  Een kleiner bestand speelt zoals het is.",
+  "A row of its own for a service's Top 10, with the titles your Plex has.  On Home and in each library's Recommended.": "Een eigen rij voor de top 10 van een dienst, met de titels die je Plex heeft.  Op Home en bij Aanbevolen van elke bibliotheek.",
+  "As in Plex": "Zoals in Plex",
+  "Edit home rows": "Rijen op Home bewerken",
+  "Home rows": "Rijen op Home",
+  "No Top 10s yet.  They come once a day; look again in a minute.": "Nog geen top 10.  Ze komen één keer per dag; kijk over een minuut nog eens.",
+  "Open the Plex tab's Home first.": "Open eerst Home op het tabblad Plex.",
+  "Show every row, as Plex does": "Alle rijen tonen, zoals Plex",
+  "The rows of your Plex home, in Plex's order: turn any off.  Red on the Plex tab's Home too.": "De rijen van je Plex-home, in de volgorde van Plex: zet er uit wat je wilt.  Ook met Rood op Home van het tabblad Plex.",
+  "Top 10 rows": "Top 10-rijen",
+  "Yesterday's Top 10s of the streaming services in your country (FlixPatrol) with the movies and shows your Plex has, best place first, \"#3 on Netflix\" under each.": "De top 10 van gisteren van de streamingdiensten in je land (FlixPatrol) met de films en series die je Plex heeft, beste plaats eerst, „#3 op Netflix” onder elke.",
+  "Rows off: {x}": "Rijen uit: {x}"
 });

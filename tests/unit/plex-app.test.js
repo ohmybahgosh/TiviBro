@@ -51,9 +51,26 @@ const P = c.Plex;
   assert.equal(P._test.state().accountToken, 'acct-token-1', 'the account sign-in is kept to switch back');
   console.log('PASS Plex Home: signing in as another person with their PIN');
 
+  // Settings > Plex: a change is kept only through setPref (the lists come as copies), and kept on sign-out.
+  P.prefs().topServices.push('Netflix');
+  assert.deepEqual(P.prefs().topServices, [], 'changing a copy changes nothing');
+  P.setPref('topServices', ['Netflix']); P.setPref('awayQuality', 4000);
+  assert.deepEqual(P.prefs().topServices, ['Netflix']); assert.equal(P.prefs().awayQuality, 4000); assert.equal(P.prefs().homeQuality, 0, 'Original at home');
+  console.log('PASS Settings > Plex choices kept, with Original at home and a cap away');
+
   answers.servers = { error: 'login' };
   await P.loadServers().then(() => assert.fail('should refuse'), (e) => assert.equal(e.kind, 'login'));
   assert.equal(P.signedIn(), false); assert.equal(P.added(), false);
   assert(/^tivibro-/.test(P._test.state().cid), 'the TV id stays');
+  assert.equal(P.prefs().awayQuality, 4000, 'your choices stay for the next sign-in');
   console.log('PASS a refused sign-in signs out, and Plex leaves the menu');
+
+  // Top 10 matching (plextop.js): by TMDB id when both have one, else the same kind and name.
+  vm.runInContext(fs.readFileSync('app/js/plextop.js', 'utf8') + '\nthis.PlexTop = PlexTop;', c);
+  const same = c.PlexTop._test.same;
+  assert(same({ type: 'movie', title: 'Dune', Guid: [{ id: 'tmdb://438631' }] }, { t: 'Dune', tmdb: 438631, kind: 'movie' }));
+  assert(!same({ type: 'movie', title: 'Dune', Guid: [{ id: 'tmdb://841' }] }, { t: 'Dune', tmdb: 438631, kind: 'movie' }), 'the 1984 Dune is not the chart\'s');
+  assert(!same({ type: 'show', title: 'Dune' }, { t: 'Dune', kind: 'movie' }), 'a show is not the movie');
+  assert(same({ type: 'show', title: 'Love & Death' }, { t: 'Love and Death', kind: '' }), 'names match loosely without ids');
+  console.log('PASS Top 10 titles matched by TMDB id, else by kind and name');
 })().catch((e) => { console.error(e); process.exit(1); });

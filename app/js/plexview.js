@@ -58,19 +58,25 @@ var PlexView = (function () {
       var out = [], seen = {};
       var c = [].concat.apply([], r[0]).filter(function (m) { return shownLib(m.server, m.librarySectionID); }).sort(function (a, b) { return (b.lastViewedAt || 0) - (a.lastViewedAt || 0); });
       if (c.length) out.push({ title: T('Continue watching'), items: c, wide: true });
+      if (typeof PlexTop !== 'undefined') out = out.concat(PlexTop.rows(null, function () { if (open_ && tabNow().id === 'home' && !stack.length) load(); }));
       [].concat.apply([], r[1]).forEach(function (h) {
         if (/continue|ondeck/i.test(h.id || '')) return;
         var items = h.items.filter(function (m) { return m.librarySectionID == null || shownLib(m.server, m.librarySectionID); });
         if (!items.length || seen[h.title]) return;
         seen[h.title] = 1; out.push({ title: h.title, items: items, wide: /episode/.test((items[0] || {}).type) });
       });
-      return out;
+      lastHome = out.map(function (x) { return x.title; });
+      var off = Plex.prefs().hiddenRows || {};
+      return out.filter(function (x) { return !off[x.title]; });
     });
   }
   // A library's Recommended tab: the server's own rows for it (as set in Plex's Manage Recommendations).
   function recommendedRows(l) {
     return Plex.call(l.server, '/hubs/sections/' + l.key + '?count=20&includeGuids=1').then(function (j) {
-      return (mc(j).Hub || []).map(function (h) { return { title: h.title, items: itemsOf({ MediaContainer: h }, l.server) }; }).filter(function (r) { return r.items.length; });
+      var own = (mc(j).Hub || []).map(function (h) { return { title: h.title, items: itemsOf({ MediaContainer: h }, l.server) }; }).filter(function (r) { return r.items.length; });
+      // The Top 10 rows too, kept to this library.
+      var tops = typeof PlexTop !== 'undefined' ? PlexTop.rows(function (m) { return m.server === l.server && String(m.librarySectionID) === String(l.key); }, function () { if (open_ && tabNow().lib === l && SUBS[subAt][0] === 'recommended' && !stack.length) load(); }) : [];
+      return tops.concat(own);
     });
   }
   // Sorts and filters as Plex names them; kept per library.
@@ -114,7 +120,15 @@ var PlexView = (function () {
       return out;
     });
   }
-  var lastSearch = '';
+  var lastSearch = '', lastHome = [];
+  /* Edit home rows (Red on Home, Settings > Plex): each row of Plex's home on or off; Plex's own order stays. */
+  function editRows(after) {
+    var off = Plex.prefs().hiddenRows || {};
+    var list = lastHome.map(function (t) { return { label: I18n.raw(t), sub: off[t] ? T('Off') : T('On'), action: function () { if (off[t]) delete off[t]; else off[t] = 1; Plex.setPref('hiddenRows', off); editRows(after); } }; });
+    if (!list.length) return U.toast(T('Open the Plex tab\'s Home first.'), 5000);
+    list.push({ label: T('Show every row, as Plex does'), action: function () { Plex.setPref('hiddenRows', {}); editRows(after); } });
+    UI.menu(T('Edit home rows'), list, after || function () { load(); });
+  }
   function searchRows(text) {
     if (!text) return Promise.resolve([]);
     return Promise.all(Plex.chosen().map(function (s) { return Plex.call(s.id, '/hubs/search?query=' + encodeURIComponent(text) + '&limit=20').then(function (j) { return (mc(j).Hub || []).map(function (h) { return { title: h.title, items: itemsOf({ MediaContainer: h }, s.id) }; }); }, function () { return []; }); }))
@@ -155,7 +169,8 @@ var PlexView = (function () {
     var wide = r.wide, w = wide ? 400 : TILE, h = wide ? 225 : 366;
     var watched = m.viewCount > 0 && !m.viewOffset, left = m.leafCount && m.viewedLeafCount != null ? m.leafCount - m.viewedLeafCount : 0;
     var prog = m.viewOffset && m.duration ? Math.min(100, Math.round(m.viewOffset / m.duration * 100)) : 0;
-    var name = m.type === 'episode' ? (m.grandparentTitle || m.title) : m.title, sub = m.type === 'episode' ? 'S' + (m.parentIndex || 0) + ' · E' + (m.index || 0) + '  ' + (m.title || '') : m.type === 'season' ? (m.leafCount ? T('{n} episodes', { n: m.leafCount }) : '') : (m.year || (m.childCount ? T('{n} titles', { n: m.childCount }) : ''));
+    var rank = r.line ? r.line(m) : '';
+    var name = m.type === 'episode' ? (m.grandparentTitle || m.title) : m.title, sub = rank ? rank : m.type === 'episode' ? 'S' + (m.parentIndex || 0) + ' · E' + (m.index || 0) + '  ' + (m.title || '') : m.type === 'season' ? (m.leafCount ? T('{n} episodes', { n: m.leafCount }) : '') : (m.year || (m.childCount ? T('{n} titles', { n: m.childCount }) : ''));
     return '<div class="media-tile' + (sel ? ' sel' : '') + '" style="left:' + (14 + i * ((wide ? 400 : TILE) + GAP)) + 'px;width:' + w + 'px">' +
       '<div class="media-art" style="width:' + w + 'px;height:' + h + 'px"><img class="media-cover wait" data-pk="' + esc(m.server) + '" data-pp="' + esc(wide ? (m.art || m.thumb || '') : (m.grandparentThumb && m.type === 'episode' ? m.grandparentThumb : m.thumb || '')) + '" data-w="' + w + '" data-h="' + h + '" alt="">' +
       (left > 0 ? '<span class="media-mark">' + left + '</span>' : watched ? '<span class="media-mark done">✓</span>' : '') +
@@ -167,7 +182,7 @@ var PlexView = (function () {
     stage.innerHTML = rows.map(function (r, ri) {
       var c = colAt[ri] || 0, step = (r.wide ? 400 : TILE) + GAP, shift = Math.max(0, c - 2) * step;
       return '<div class="media-shelf' + (ri === rowAt && zone === 'rows' ? ' active' : '') + '" style="top:' + (ri * ROW_H) + 'px">' +
-        '<div class="media-shelf-title"><h2>' + esc(r.title || '') + '</h2></div><div class="media-track" style="transform:translateX(' + (-shift) + 'px)">' +
+        '<div class="media-shelf-title"><h2>' + esc(r.title || '') + '</h2>' + (r.note ? '<span class="media-shelf-count">' + esc(r.note) + '</span>' : '') + '</div><div class="media-track" style="transform:translateX(' + (-shift) + 'px)">' +
         r.items.map(function (m, i) { return tileHtml(m, i, r, ri === rowAt && zone === 'rows' && i === c); }).join('') + '</div></div>';
     }).join('');
     stage.style.transform = 'translateY(' + (-Math.max(0, rowAt) * ROW_H) + 'px)';
@@ -231,7 +246,7 @@ var PlexView = (function () {
   // Red: on Library, how it's sorted and filtered (kept per library); elsewhere, the rows' refresh.
   function options() {
     var t = tabNow(), sub = SUBS[subAt][0];
-    if (t.id !== 'lib' || sub !== 'library' || stack.length) return UI.menu(T('Plex'), [{ label: T('Refresh'), action: function () { load(); } }]);
+    if (t.id !== 'lib' || sub !== 'library' || stack.length) return UI.menu(T('Plex'), [{ label: T('Refresh'), action: function () { load(); } }].concat(t.id === 'home' && !stack.length ? [{ label: T('Edit home rows'), action: function () { editRows(); } }] : []));
     var p = libPrefs(t.lib);
     UI.menu(t.lib.title, [
       { label: T('Sort'), sub: T((SORTS.filter(function (s) { return s[0] === (p.sort || 'addedAt:desc'); })[0] || SORTS[0])[1]), action: function () {
@@ -266,5 +281,5 @@ var PlexView = (function () {
   // A show opened from somewhere else (a title's Go to show): its seasons in place on the Plex tab.
   function openShow(m) { stack = [m]; rowAt = 0; colAt = {}; zone = 'rows'; UI.setHandler(keys); load(); }
 
-  return { open: open, resume: resume, leave: leave, picture: pic, openShow: openShow, _test: { tabs: function () { return tabsList; }, rows: function () { return rows; }, keys: keys, focused: focused } };
+  return { open: open, resume: resume, leave: leave, picture: pic, openShow: openShow, editRows: editRows, homeTitles: function () { return lastHome; }, _test: { home: function () { tabAt = 0; switched(); }, tabs: function () { return tabsList; }, rows: function () { return rows; }, keys: keys, focused: focused } };
 })();
