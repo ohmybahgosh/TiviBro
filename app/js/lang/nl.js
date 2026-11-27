@@ -2723,5 +2723,15 @@ I18n.add('nl', {
   "Subtitles on": "Ondertitels aan",
   "The smallest.  When nothing else plays smoothly.": "De kleinste.  Als niets anders vloeiend speelt.",
   "made for this file": "gemaakt voor dit bestand",
-  "match {x}%": "komt {x}% overeen"
+  "match {x}%": "komt {x}% overeen",
+  "Keeping up": "Houdt het bij",
+  "Sound": "Geluid",
+  "The TV is still reading the subtitles in this file.  Try again in a moment.": "De tv leest de ondertitels in dit bestand nog.  Probeer het zo nog eens.",
+  "ahead, resting": "voor, in rust",
+  "as it is": "zoals het is",
+  "by the graphics chip": "door de grafische chip",
+  "by the processor": "door de processor",
+  "{x} is converting this {y} movie to a lower quality, so it plays without HDR.  Quality > Original keeps it.": "{x} zet deze {y}-film om naar een lagere kwaliteit, dus hij speelt zonder HDR.  Kwaliteit > Origineel houdt het.",
+  "{x}× real time": "{x}× real time",
+  "{x}× real time: too slow, the picture will stop to load": "{x}× real time: te traag, het beeld zal stoppen om te laden"
 });

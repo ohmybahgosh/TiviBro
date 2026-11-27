@@ -589,6 +589,8 @@ var UI = (function () {
     // When the button being handled was pressed (performance.now()'s clock), and fn(t) once the screen shows the change.
     keyAt: function () { return inKey ? keyAt : pnow(); }, now: pnow, afterPaint: afterPaint,
     get modalOpen() { return !!modalH; },
+    // The way back to the player's Options for a menu about to open from it (taken by that menu), or null.
+    pendingBack: function () { return nestBack && Date.now() - nestBack.at < 8000 ? nestBack.fn : null; },
     get menuAt() { return modalH ? mSel : -1; },   // the open menu's focused row (tests)
     get menuLabels() { return modalH ? mItems.map(function (x) { return x.label == null ? x.label : String(x.label); }) : []; },   // every row of the open menu, also those scrolled out of view (tests)
     get pointer() { return pointer; },

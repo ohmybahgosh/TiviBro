@@ -1133,15 +1133,27 @@ var Views = (function () {
     if (line) box.appendChild(U.el('div', 'om-meta', line));
     box.appendChild(U.el('p', 'om-desc', gd || T('The guide has no summary for this programme.')));
   }
+  /* The title over the timeline: its title logo (Plex's clear logo) when it has one, else its name.  The picture is
+     put in once, not on every refresh of the bar. */
+  function osdTitle(m) {
+    var nm = $('osdName');
+    if (!m.logo) { nm._logo = ''; nm.textContent = m.title; return; }
+    if (nm._logo === m.logo) return;
+    nm._logo = m.logo; nm.textContent = '';
+    var im = U.el('img', 'osd-logo'); im.alt = m.title || '';
+    im.onerror = function () { nm.textContent = m.title; };
+    im.src = m.logo; nm.appendChild(im);
+  }
   function osd(show, ch) {
     if (!full) return;
+    if (mode !== 'vod') $('osdName')._logo = '';   // a channel's name goes there instead
     if (mode !== 'vod' && typeof SeekPrev !== 'undefined') SeekPrev.hide();
     var o = $('osd'), poster = $('osdPoster');
     o.classList.toggle('vod', mode === 'vod' || mode === 'catchup');
     if (poster) { var want = mode === 'vod' && vod && vod.meta.poster || ''; if ((poster.getAttribute('src') || '') !== want) { if (want) poster.src = want; else poster.removeAttribute('src'); } }
     if (mode === 'vod' && vod) {
       var m = vod.meta;
-      $('osdNum').textContent = ''; $('osdName').textContent = m.title; $('osdGroup').textContent = m.sub || '';
+      $('osdNum').textContent = ''; osdTitle(m); $('osdGroup').textContent = m.sub || '';
       var d = Player.duration, pos = vs.pending != null ? vs.pending : Player.position, jump = vs.pending != null ? vs.pending - Player.position : 0;
       $('osdNow').textContent = fmtDur(pos) + ' / ' + (d ? fmtDur(d) : '--:--') + (vs.pending != null ? '   (' + (jump < 0 ? '−' : '+') + fmtDur(Math.abs(jump)) + ')' : Player.paused ? '   ' + T('paused') : '') + (d ? '   ' + I18n.t('ends {x}', { x: U.hhmm(Date.now() + (d - pos) * 1000) }) : '');
       $('osdBar').style.width = d ? Math.round(100 * pos / d) + '%' : '0';
@@ -2501,6 +2513,15 @@ var Views = (function () {
       { label: 'Weight', sub: s.subBold ? 'Bold' : 'Regular', action: function () { UI.menu('Subtitle weight', SUB_WEIGHT.map(function (p) { var on = !!s.subBold === (p[0] === 'bold'); return { label: p[1], sub: on ? 'on' : '', current: on, action: function () { s.subBold = p[0] === 'bold'; applyLook(); Store.saveSettings(); Subs.refresh(); subStyleMenu(); } }; }), subStyleMenu); } }
     ], subtitleMenu);
   }
+  /* One subtitle track on (t), or none (null), as the viewer's choice for this playback (Plex's Subtitles uses it
+     too, for the tracks inside a file the TV plays as it is). */
+  function showText(t) {
+    var tr = subtitleTracks();
+    video._subsChoice = true; video._subsRev = (video._subsRev || 0) + 1; video._subsWant = t || null; video._subsWantKey = t ? (t.label || '') + '|' + (t.language || '') : '';
+    tr.forEach(function (x) { x.mode = x === t ? 'showing' : 'disabled'; });
+    if (t) Subs.refresh();
+    if (mode === 'vod' && vod && Subs.remember) Subs.remember(vod.meta, t || null);
+  }
   function subtitleMenu() {
     var tr = subtitleTracks().filter(function (t) { return mode === 'vod' || t.kind === 'subtitles'; });
     var settings = [], list = [];
@@ -2813,7 +2834,7 @@ var Views = (function () {
     endVod: endVod, get vodMeta() { return mode === 'vod' && vod ? vod.meta : null; },
     pipUpdate: pipUpdate, pipStop: pipStop, pipFull: pipFull, pipRestart: pipRestart, get pipOn() { return pipOn(); },
     init: init, reload: reload, switchTab: switchTab, setZone: setZone, resume: resume, refreshLists: refreshLists,
-    closeNav: closeNav, chanMenu: chanMenu, startChannel: startChannel, goFull: goFull, playCatchup: playCatchup, refreshVodMeta:function(){if(mode==='vod')osd(true);}, playVod: playVod,
+    closeNav: closeNav, chanMenu: chanMenu, startChannel: startChannel, goFull: goFull, playCatchup: playCatchup, refreshVodMeta:function(){if(mode==='vod')osd(true);}, playVod: playVod, subtitleTracks: subtitleTracks, showText: showText,
     manageVisibility: manageVisibility, canManage: canManage, PALETTES: PALETTES, PALETTE_NAMES: PALETTE_NAMES, palette: palette, kindColours: kindColours, emptyFor: emptyFor, TAB_LABELS: TAB_LABELS, QP_BUTTONS: QP_BUTTONS, qpOrder: qpOrder, movieTrailer: movieTrailer, openReminder: openReminder, playChain: playChain, sameShowing: sameShowing, chainOthers: chainOthers, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, bankedBack: bankedBack, logoOf: logoOf, ownLogo: ownLogo, logosChanged: logosChanged, get logoRev() { return logoRev; }, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
     filterChanged: filterChanged,
     get group() { return curGroup; }, set group(g) { curGroup = g; },

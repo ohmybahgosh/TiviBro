@@ -2723,5 +2723,15 @@ I18n.add('pl', {
   "Subtitles on": "Napisy włączone",
   "The smallest.  When nothing else plays smoothly.": "Najmniejsza.  Gdy nic innego nie gra płynnie.",
   "made for this file": "zrobione dla tego pliku",
-  "match {x}%": "zgodność {x}%"
+  "match {x}%": "zgodność {x}%",
+  "Keeping up": "Nadąża",
+  "Sound": "Dźwięk",
+  "The TV is still reading the subtitles in this file.  Try again in a moment.": "Telewizor wciąż czyta napisy w tym pliku.  Spróbuj za chwilę.",
+  "ahead, resting": "z zapasem, odpoczywa",
+  "as it is": "bez zmian",
+  "by the graphics chip": "przez układ graficzny",
+  "by the processor": "przez procesor",
+  "{x} is converting this {y} movie to a lower quality, so it plays without HDR.  Quality > Original keeps it.": "{x} przerabia ten film {y} na niższą jakość, więc gra bez HDR.  Jakość > Oryginał go zachowuje.",
+  "{x}× real time": "{x}× czasu rzeczywistego",
+  "{x}× real time: too slow, the picture will stop to load": "{x}× czasu rzeczywistego: za wolno, obraz będzie stawał, żeby się wczytać"
 });

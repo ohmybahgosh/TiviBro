@@ -2839,5 +2839,14 @@ I18n.add('ru', {
   "The smallest.  When nothing else plays smoothly.": "Самая маленькая.  Когда ничто другое не идёт плавно.",
   "made for this file": "сделаны для этого файла",
   "match {x}%": "совпадение {x}%",
-  "Mbps is how much picture comes each second: higher looks sharper, lower plays smoother on slow internet.": "Мбит/с показывает, сколько картинки приходит в секунду: больше выглядит чётче, меньше идёт плавнее на медленном интернете."
+  "Mbps is how much picture comes each second: higher looks sharper, lower plays smoother on slow internet.": "Мбит/с показывает, сколько картинки приходит в секунду: больше выглядит чётче, меньше идёт плавнее на медленном интернете.",
+  "Keeping up": "Успевает",
+  "The TV is still reading the subtitles in this file.  Try again in a moment.": "Телевизор ещё читает субтитры в этом файле.  Попробуйте через минуту.",
+  "ahead, resting": "с запасом, отдыхает",
+  "as it is": "как есть",
+  "by the graphics chip": "видеочипом",
+  "by the processor": "процессором",
+  "{x} is converting this {y} movie to a lower quality, so it plays without HDR.  Quality > Original keeps it.": "{x} перекодирует этот фильм {y} в более низкое качество, поэтому он идёт без HDR.  Качество > Оригинал сохраняет его.",
+  "{x}× real time": "{x}× от реального времени",
+  "{x}× real time: too slow, the picture will stop to load": "{x}× от реального времени: слишком медленно, картинка будет останавливаться для загрузки"
 });

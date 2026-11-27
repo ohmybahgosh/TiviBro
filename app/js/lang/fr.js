@@ -1993,5 +1993,14 @@ I18n.add('fr', {
   "Subtitles on": "Sous-titres activés",
   "The smallest.  When nothing else plays smoothly.": "La plus petite.  Quand rien d'autre n'est fluide.",
   "made for this file": "faits pour ce fichier",
-  "match {x}%": "correspond à {x}%"
+  "match {x}%": "correspond à {x}%",
+  "Keeping up": "Suit le rythme",
+  "The TV is still reading the subtitles in this file.  Try again in a moment.": "La TV lit encore les sous-titres de ce fichier.  Réessayez dans un instant.",
+  "ahead, resting": "en avance, au repos",
+  "as it is": "tel quel",
+  "by the graphics chip": "par la puce graphique",
+  "by the processor": "par le processeur",
+  "{x} is converting this {y} movie to a lower quality, so it plays without HDR.  Quality > Original keeps it.": "{x} convertit ce film {y} dans une qualité plus basse, il passe donc sans HDR.  Qualité > Original le garde.",
+  "{x}× real time": "{x}× temps réel",
+  "{x}× real time: too slow, the picture will stop to load": "{x}× temps réel : trop lent, l'image s'arrêtera pour charger"
 });

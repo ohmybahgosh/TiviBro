@@ -2723,5 +2723,15 @@ I18n.add('tr', {
   "Subtitles on": "Altyazılar açık",
   "The smallest.  When nothing else plays smoothly.": "En küçüğü.  Başka hiçbiri akıcı oynamadığında.",
   "made for this file": "bu dosya için yapılmış",
-  "match {x}%": "eşleşme %{x}"
+  "match {x}%": "eşleşme %{x}",
+  "Keeping up": "Yetişiyor",
+  "Sound": "Ses",
+  "The TV is still reading the subtitles in this file.  Try again in a moment.": "TV bu dosyadaki altyazıları hâlâ okuyor.  Biraz sonra yeniden deneyin.",
+  "ahead, resting": "önde, dinleniyor",
+  "as it is": "olduğu gibi",
+  "by the graphics chip": "grafik çipiyle",
+  "by the processor": "işlemciyle",
+  "{x} is converting this {y} movie to a lower quality, so it plays without HDR.  Quality > Original keeps it.": "{x} bu {y} filmi daha düşük kaliteye dönüştürüyor, bu yüzden HDR olmadan oynuyor.  Kalite > Orijinal bunu korur.",
+  "{x}× real time": "gerçek zamanın {x}× katı",
+  "{x}× real time: too slow, the picture will stop to load": "gerçek zamanın {x}× katı: çok yavaş, görüntü yüklenmek için duracak"
 });

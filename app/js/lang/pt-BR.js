@@ -3345,5 +3345,14 @@ I18n.add('pt-BR', {
   "Subtitles on": "Legendas ativadas",
   "The smallest.  When nothing else plays smoothly.": "A menor.  Quando nada mais roda liso.",
   "made for this file": "feitas para este arquivo",
-  "match {x}%": "combina {x}%"
+  "match {x}%": "combina {x}%",
+  "Keeping up": "Acompanha",
+  "The TV is still reading the subtitles in this file.  Try again in a moment.": "A TV ainda está lendo as legendas deste arquivo.  Tente de novo daqui a pouco.",
+  "ahead, resting": "adiantado, descansando",
+  "as it is": "como é",
+  "by the graphics chip": "pelo chip gráfico",
+  "by the processor": "pelo processador",
+  "{x} is converting this {y} movie to a lower quality, so it plays without HDR.  Quality > Original keeps it.": "{x} está convertendo este filme {y} para uma qualidade menor, então ele roda sem HDR.  Qualidade > Original mantém.",
+  "{x}× real time": "{x}× tempo real",
+  "{x}× real time: too slow, the picture will stop to load": "{x}× tempo real: lento demais, a imagem vai parar para carregar"
 });

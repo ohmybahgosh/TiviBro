@@ -195,6 +195,10 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     await pick('Search for subtitles'); await ev(() => UI.press('ok')); await page.waitForTimeout(1200);
     const found = await ev(() => UI.menuLabels);
     ok('Search for subtitles: what Plex found', found.indexOf('Northbound.2019.1080p.es') >= 0 && /language=en&/.test(m.state.subSearch || ''), [found, m.state.subSearch]);
+    await ev(() => UI.press('back')); await page.waitForTimeout(500);
+    const backLang = await ev(() => UI.menuLabels);
+    await ev(() => UI.press('ok')); await page.waitForTimeout(1200);
+    ok('Back from what Plex found: the languages again', backLang.indexOf('English') >= 0, backLang);
     await ev(() => UI.press('ok')); await page.waitForTimeout(3500);
     ok('the one picked: fetched by the server and turned on', /key=%2Fopensubtitles%2F123/.test(m.state.subFetched || '') && /subtitleStreamID=9/.test(m.state.partPut || ''), [m.state.subFetched, m.state.partPut]);
     // Settings > Plex > Quality away from home: a file bigger than the cap is converted down to it.

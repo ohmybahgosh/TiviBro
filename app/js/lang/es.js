@@ -2836,5 +2836,14 @@ I18n.add('es', {
   "Subtitles on": "Subtítulos activados",
   "The smallest.  When nothing else plays smoothly.": "La más pequeña.  Cuando nada más va fluido.",
   "made for this file": "hechos para este archivo",
-  "match {x}%": "coincide {x}%"
+  "match {x}%": "coincide {x}%",
+  "Keeping up": "Va al ritmo",
+  "The TV is still reading the subtitles in this file.  Try again in a moment.": "La TV aún está leyendo los subtítulos de este archivo.  Vuelve a probar en un momento.",
+  "ahead, resting": "adelantado, en pausa",
+  "as it is": "tal cual",
+  "by the graphics chip": "con el chip gráfico",
+  "by the processor": "con el procesador",
+  "{x} is converting this {y} movie to a lower quality, so it plays without HDR.  Quality > Original keeps it.": "{x} está convirtiendo esta película {y} a menor calidad, así que se ve sin HDR.  Calidad > Original lo mantiene.",
+  "{x}× real time": "{x}× tiempo real",
+  "{x}× real time: too slow, the picture will stop to load": "{x}× tiempo real: demasiado lento, la imagen se parará a cargar"
 });

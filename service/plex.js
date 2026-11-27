@@ -47,6 +47,7 @@ var SERVER_PATHS = [
   [/^\/:\/(timeline|scrobble|unscrobble|rate)$/, 'GET|PUT|POST'],
   [/^\/actions\/removeFromContinueWatching$/, 'PUT'],
   [/^\/video\/:\/transcode\/universal\/(decision|ping|stop)$/, 'GET'],
+  [/^\/transcode\/sessions$/, 'GET'],   // how the server is converting what plays (Playback info)
   [/^\/photo\/:\/transcode$/, 'GET']
 ];
 

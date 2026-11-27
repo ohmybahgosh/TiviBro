@@ -209,16 +209,17 @@ var PlexPage = (function () {
     UI.menu(RAW(m.title), rows);
   }
   // An audio or subtitle track picked: kept by Plex for this title (and by TiviBro's player while it plays).
-  function pickStream(part, type, after, title) {
+  function pickStream(part, type, after, title, up) {
+    up = up || (UI.pendingBack ? UI.pendingBack() : null);   // from the player's Options: Back goes back there
     var m = title || item, list = (part.Stream || []).filter(function (s) { return s.streamType === type; });
     var rows = (type === 3 ? [{ label: T('Off'), current: !list.some(function (s) { return s.selected; }), action: function () { choose(0); } }] : []).concat(list.map(function (s) { return { label: RAW(s.displayTitle || s.extendedDisplayTitle || s.language || '?'), sub: RAW(s.title || ''), current: !!s.selected, action: function () { choose(s.id); } }; }));
     // Subtitles: Plex's own search (OpenSubtitles and the others the server has), as Plex's apps have it.
-    if (type === 3) rows.push({ label: T('Search for subtitles'), sub: T('Plex looks them up online for this title'), action: function () { searchSubs(m, part, after, function () { pickStream(part, type, after, title); }); } });
+    if (type === 3) rows.push({ label: T('Search for subtitles'), sub: T('Plex looks them up online for this title'), action: function () { searchSubs(m, part, after, function () { pickStream(part, type, after, title, up); }); } });
     function choose(id) {
       var q = type === 2 ? 'audioStreamID=' + id : 'subtitleStreamID=' + id;
       Plex.call(m.server, '/library/parts/' + part.id + '?allParts=1&' + q, 'put').then(function () { list.forEach(function (s) { s.selected = s.id === id; }); if (after) after(id); else { var t = document.querySelector('#plexPage .plex-page-track'); if (t) t.innerHTML = track(); } }, function (e) { U.toast(e.message, 6000); });
     }
-    UI.menu(type === 2 ? T('Audio') : T('Subtitles'), rows);
+    UI.menu(type === 2 ? T('Audio') : T('Subtitles'), rows, up);
   }
   /* Subtitle search through the server: a language (the TV's first, then English and the others TiviBro speaks),
      what Plex found for it, and the one picked is fetched by the server, turned on and (while watching) the title
@@ -342,8 +343,16 @@ var PlexPage = (function () {
       var page = $('plexPage'), fromPage = !!(page && !page.classList.contains('hidden'));
       Views.playVod(meta, url, ms / 1000, function () { report('stopped'); stopTimer(); if (fromPage && item) { var el = $('plexPage'); if (el) el.classList.remove('hidden'); paint(); UI.setHandler(keys); } else if (PlexView.resume) PlexView.resume(); });
       startTimer();
-      if (!converting) sideSubtitle(base, part, playing);
-      if (converting) U.toast(T('{x} is converting this one for the TV', { x: (Plex.server(m.server) || {}).name || 'Plex' }), 5000);
+      // The title logo over the timeline (an episode shows its show's), once it's known.
+      var own = m.type === 'episode' ? '' : PlexView.logoOf(m);
+      (own ? Promise.resolve({ logo: own }) : PlexView.details(m)).then(function (d) { if (d.logo && playing && playing.meta === meta) { meta.logo = base + d.logo; if (Views.refreshVodMeta) Views.refreshVodMeta(); } }, function () {});
+      if (!converting) { sideSubtitle(base, part, playing); inFileSubtitle(part, playing); }
+      // Dolby Vision or HDR converted down: the server turns it into an ordinary picture (tone mapping, when it's on
+      // in the server's settings), which is heavy work; Original keeps it.
+      var vs1 = ((v.Part && v.Part[0] && v.Part[0].Stream) || []).filter(function (x) { return x.streamType === 1; })[0] || {};
+      var hdr = vs1.DOVIPresent || /smpte2084|arib-std-b67/i.test(vs1.colorTrc || '') || /HDR|Dolby Vision/i.test(vs1.displayTitle || '');
+      if (converting && hdr) U.toast(T('{x} is converting this {y} movie to a lower quality, so it plays without HDR.  Quality > Original keeps it.', { x: (Plex.server(m.server) || {}).name || 'Plex', y: vs1.DOVIPresent ? 'Dolby Vision' : 'HDR' }), 8000);
+      else if (converting) U.toast(T('{x} is converting this one for the TV', { x: (Plex.server(m.server) || {}).name || 'Plex' }), 5000);
       notices(m);
     }, function (e) { U.toast(e.message, 6000); });
   }
@@ -351,7 +360,7 @@ var PlexPage = (function () {
   function chapters(m) { return (m.Chapter || []).map(function (c) { return { s: c.startTimeOffset / 1000, e: c.endTimeOffset / 1000, t: c.tag || '' }; }).filter(function (c) { return c.e > c.s; }); }
   /* The subtitle picked in Plex, when it's a file beside the video (SRT, ASS, VTT): read through the door and given to
      the player.  Subtitles inside the file are the player's own job. */
-  function sideSubtitle(base, part, p) {
+  function sideSubtitle(base, part, p, wait) {
     var s = (part.Stream || []).filter(function (x) { return x.streamType === 3 && x.selected && x.key; })[0];
     if (!s || !/^(srt|ass|ssa|vtt|webvtt|smi|sub)$/i.test(s.codec || 'srt') || typeof Subs === 'undefined') return;
     setTimeout(function () {
@@ -360,7 +369,7 @@ var PlexPage = (function () {
         if (!text || playing !== p) return;
         try { Subs.addText((s.language || s.displayTitle || 'Plex') + '.' + (s.codec || 'srt'), text); } catch (e) { if (typeof Log !== 'undefined') Log.warn('plex', 'Plex\'s subtitle file: ' + e.message); }
       }, function () {});
-    }, 1500);
+    }, wait == null ? 1500 : wait);
   }
   function playOther(x) { var keep = item; item = x; Plex.call(x.server, '/library/metadata/' + x.ratingKey).then(function (j) { item = (mc(j).Metadata || [])[0] || x; item.server = x.server; play(0); item = keep; }, function (e) { item = keep; U.toast(e.message, 6000); }); }
   // The quality cap for the converter (kbps, 0: Original): Settings > Plex, at home and away.
@@ -406,6 +415,31 @@ var PlexPage = (function () {
   /* ---------- Options while watching: the player's Options (Red) open on a Plex tab, as in Plex's player ---------- */
   var forceCap = null;   // a quality picked while watching: kept for this title until another is started by hand
   function qLabel(q) { return Plex.qualityName(q); }
+  /* The subtitle picked in Plex when it's a track inside the file: on in the player once the TV has found the file's
+     tracks (a few seconds in), so what Plex shows is what plays. */
+  function inFileSubtitle(part, p) {
+    var s = (part.Stream || []).filter(function (x) { return x.streamType === 3 && x.selected && !x.key; })[0], tries = 0;
+    if (!s) return;
+    (function look() {
+      if (playing !== p) return;
+      if (Views.subtitleTracks().length) return subChanged(part, s.id);
+      if (++tries < 30) setTimeout(look, 500);
+    })();
+  }
+  /* A subtitle picked while watching.  Converted by the server: it's burnt into the picture, so the title starts
+     again from where it is.  Played as it is: no restart; a file beside it (or one Plex just fetched) is read and
+     shown, a track inside the file is turned on in the player (the TV found them in the file), or none for Off. */
+  function subChanged(part, id) {
+    if (!playing || playing.converting) return restart();
+    var s = (part.Stream || []).filter(function (x) { return x.id === id; })[0];
+    if (!s) return Views.showText(null);
+    if (s.key) return Plex.door(playing.item.server).then(function (k) { sideSubtitle('http://127.0.0.1:' + Net.port + '/plex/' + k, part, playing, 0); });
+    // Inside the file: the same place among the file's subtitles, else the same language.
+    var inFile = (part.Stream || []).filter(function (x) { return x.streamType === 3 && !x.key; }), at = inFile.indexOf(s);
+    var tracks = Views.subtitleTracks(), lang = String(s.languageCode || s.language || '').slice(0, 2).toLowerCase();
+    var t = tracks[at] && tracks.length === inFile.length ? tracks[at] : tracks.filter(function (x) { return lang && String(x.language || x.label || '').toLowerCase().indexOf(lang) === 0; })[0];
+    if (t) { Views.showText(t); U.toast(T('Subtitles on'), 2500); } else U.toast(T('The TV is still reading the subtitles in this file.  Try again in a moment.'), 6000);
+  }
   // The title again from where it is now, with a new quality, audio or subtitle (Plex keeps the track choices).
   function restart() { var at = Math.round((Player.position || 0) * 1000); U.toast(T('One moment…'), 2000); play(at, true); }
   /* The rows of the Plex tab in the player's Options: Quality (Plex's list, with plain words), Audio and Subtitles
@@ -423,7 +457,7 @@ var PlexPage = (function () {
     } });
     if (part) {
       out.push({ label: T('Audio'), sub: sel(2), action: function () { pickStream(part, 2, restart, m); } });
-      out.push({ label: T('Subtitles'), sub: sel(3), action: function () { pickStream(part, 3, restart, m); } });
+      out.push({ label: T('Subtitles'), sub: sel(3), action: function () { pickStream(part, 3, function (id) { subChanged(part, id); }, m); } });
     }
     out.push({ label: T('Playback info'), sub: p.converting ? T('Converted by {x}', { x: RAW(srv) }) : T('Direct play'), action: function () { info(p, v, srv); } });
     if (m.type === 'episode') {
@@ -435,12 +469,26 @@ var PlexPage = (function () {
   // What's playing and how, as Plex's Playback info shows it.
   function info(p, v, srv) {
     var s = Plex.server(p.item.server) || {}, a = streamsOf(v, 2).filter(function (x) { return x.selected; })[0] || streamsOf(v, 2)[0] || {}, vs = streamsOf(v, 1)[0] || {};
-    UI.menu(T('Playback info'), [
+    var rows = [
       { label: T('Playing'), sub: p.converting ? T('Converted by {x}', { x: RAW(srv) }) : T('Direct play: the file as it is') },
       { label: T('Video'), sub: RAW([String(v.videoResolution || '').toUpperCase(), (vs.codec || v.videoCodec || '').toUpperCase(), vs.DOVIPresent ? 'Dolby Vision' : '', v.bitrate ? (v.bitrate / 1000).toFixed(1) + ' Mbps' : ''].filter(Boolean).join('  ·  ')) },
       { label: T('Audio'), sub: RAW(a.displayTitle || [a.codec, a.channels].filter(Boolean).join(' ')) },
       { label: T('Server'), sub: RAW(srv) + '  ·  ' + (s.relay ? T('through Plex\'s relay') : s.local ? T('on your network') : T('over the internet')) }
-    ]);
+    ];
+    if (!p.converting) return UI.menu(T('Playback info'), rows);
+    // Converting: what the server does with the picture and the sound, and how fast it keeps up (Plex's dashboard).
+    Plex.call(p.item.server, '/transcode/sessions').then(function (j) {
+      var t = (mc(j).TranscodeSession || []).filter(function (x) { return String(x.key || '').indexOf(session) >= 0; })[0];
+      if (t) {
+        if (typeof Log !== 'undefined') Log.info('plex', 'Converting: ' + JSON.stringify({ video: t.videoDecision, audio: t.audioDecision, from: t.sourceVideoCodec, to: t.videoCodec, size: t.width + 'x' + t.height, speed: t.speed, throttled: t.throttled, hw: t.transcodeHwRequested, hwDecode: t.transcodeHwDecoding, hwEncode: t.transcodeHwEncoding }));
+        var how = function (d) { return d === 'copy' ? T('as it is') : d === 'transcode' ? T('converted') : RAW(d || ''); };
+        rows.splice(1, 0,
+          { label: T('Picture'), sub: RAW([how(t.videoDecision), t.sourceVideoCodec && t.videoCodec && t.videoDecision === 'transcode' ? String(t.sourceVideoCodec).toUpperCase() + ' → ' + String(t.videoCodec).toUpperCase() : '', t.width ? t.width + '×' + t.height : '', t.transcodeHwEncoding || t.transcodeHwDecoding ? T('by the graphics chip') : t.videoDecision === 'transcode' ? T('by the processor') : ''].filter(Boolean).join('  ·  ')) },
+          { label: T('Sound'), sub: RAW([how(t.audioDecision), t.audioCodec ? String(t.audioCodec).toUpperCase() : '', t.audioChannels ? t.audioChannels + ' ch' : ''].filter(Boolean).join('  ·  ')) },
+          { label: T('Keeping up'), sub: t.speed ? (t.throttled ? T('ahead, resting') : +t.speed >= 1 ? T('{x}× real time', { x: (+t.speed).toFixed(1) }) : T('{x}× real time: too slow, the picture will stop to load', { x: (+t.speed).toFixed(1) })) : '' });
+      }
+      UI.menu(T('Playback info'), rows);
+    }, function () { UI.menu(T('Playback info'), rows); });
   }
   // The episode after or before this one, from the show's list.
   function step(m, d) {

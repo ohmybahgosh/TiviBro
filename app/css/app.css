@@ -109,6 +109,7 @@ body.full .vid-error{left:50%;right:auto;bottom:auto;top:40%;transform:translate
 .osd-top{display:flex;align-items:baseline;gap:24px}
 .osd-num{font-size:40px;color:var(--accent-text);font-variant-numeric:tabular-nums}
 .osd-name{font-size:44px;font-weight:700}
+.osd-logo{display:block;max-width:560px;max-height:110px;margin-bottom:6px;filter:drop-shadow(0 4px 16px rgba(0,0,0,.7))}
 .osd-group{font-size:24px;color:var(--muted)}
 .osd-prog{margin-top:14px;position:relative}
 /* Seek previews (seekprev.js): the movie at the time being sought, over the bar */
@@ -1031,7 +1032,7 @@ body.full .activity,body.mgr-open .activity{display:none}
 .plex-bg{position:absolute;top:0;right:0;bottom:0;left:0;background-size:cover;background-position:center;opacity:0;transition:opacity .5s ease;transform:scale(1.08)}
 /* Two backdrop layers (plexart.js) that cross-fade.  The sharp picture is 1000x563 scaled 1.5 by the graphics chip
    to its 1500x844 place: decoding the full-size one cost the TV most of a key press. */
-.plex-art{position:absolute;top:0;right:0;bottom:0;left:0;opacity:0;transition:opacity .45s ease;will-change:opacity}
+.plex-art{position:absolute;top:0;right:-12px;bottom:-12px;left:0;opacity:0;transition:opacity .45s ease;will-change:opacity}
 .plex-art.on{opacity:1}
 .plex-art.on.stale{opacity:.3;transition:opacity .25s ease}
 .plex-art .plex-bg{opacity:1;transition:none}
@@ -1046,7 +1047,7 @@ body.focus-ring .plex-ring{box-shadow:0 0 0 4px #fff}
 #viewPlex .media-track,.plex-page .media-track{transition:transform 220ms cubic-bezier(.2,.8,.2,1);will-change:transform}
 #viewPlex .media-tile.sel .media-art,.plex-page .media-tile.sel .media-art,body.focus-ring #viewPlex .media-tile.sel .media-art,body.focus-ring .plex-page .media-tile.sel .media-art{box-shadow:none;transform:none}
 #viewPlex .media-hero-art{-webkit-mask-image:linear-gradient(to right,transparent 0,rgba(0,0,0,.6) 22%,#000 45%)}
-.plex-shade{position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(180deg,rgba(11,14,26,.8) 0,rgba(11,14,26,0) 22%),linear-gradient(90deg,var(--ink) 0,rgba(11,14,26,.72) 30%,rgba(11,14,26,0) 62%),linear-gradient(0deg,var(--ink) 0,rgba(11,14,26,.86) 40%,rgba(11,14,26,0) 70%),rgba(11,14,26,.35)}
+.plex-shade{position:absolute;top:0;right:-12px;bottom:-12px;left:0;background:linear-gradient(180deg,rgba(11,14,26,.8) 0,rgba(11,14,26,0) 22%),linear-gradient(90deg,var(--ink) 0,rgba(11,14,26,.72) 30%,rgba(11,14,26,0) 62%),linear-gradient(0deg,var(--ink) 0,rgba(11,14,26,.86) 40%,rgba(11,14,26,0) 70%),rgba(11,14,26,.35)}
 #viewPlex .media-title.unseen,#viewPlex .media-kicker.unseen{visibility:hidden}
 /* Pills over a bright backdrop: a darker pill, and the top of the screen shaded. */
 #viewPlex .media-tab{background:rgba(11,14,26,.62);border-color:rgba(255,255,255,.16);color:#d5dbec;text-shadow:0 1px 6px rgba(0,0,0,.6)}
@@ -1060,6 +1061,9 @@ body.focus-ring .plex-ring{box-shadow:0 0 0 4px #fff}
 #viewPlex .media-shelf.far{display:none}
 .plex-rank{position:absolute;left:10px;bottom:2px;font-size:96px;line-height:1;font-weight:900;color:#fff;-webkit-text-stroke:3px rgba(0,0,0,.65);text-shadow:0 4px 18px rgba(0,0,0,.8)}
 .plex-page{position:absolute;top:0;right:0;bottom:0;left:0;z-index:5}
+/* The page reaches past the screen's edges (a TV's picture position can move the app a few pixels), so nothing of the
+   Plex tab behind shows along the right or the bottom. */
+.plex-page::before{content:'';position:absolute;top:0;left:-12px;right:-12px;bottom:-12px;background:var(--ink)}
 .plex-page-body{position:absolute;top:0;right:0;bottom:0;left:0}
 .plex-page-top{position:absolute;left:152px;top:90px;width:900px;text-shadow:0 2px 12px rgba(0,0,0,.85)}
 .plex-badges{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 6px}
