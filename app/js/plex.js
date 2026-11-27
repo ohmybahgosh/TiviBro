@@ -171,12 +171,14 @@ var Plex = (function () {
 
   /* ---------- Settings > Plex: this TV's own choices (kept with the sign-in, kept on sign-out) ---------- */
   /* homeQuality and awayQuality: the most the server sends when it converts, in kbps (0: Original, as the file is).
+     Original away too: a server elsewhere on a fast line converted a 4K Dolby Vision movie down to 8 Mbps, losing
+     Dolby Vision and stuttering while the server worked.
      direct: play a file as it is when the TV can (off: always the server's converter, for files that stutter). */
   /* topMixed: the "Streaming Top 10s you have" row; topServices: a "Top 10 on X" row each (plextop.js).
      hiddenRows: home rows turned off in Edit home rows, by title (Plex's own order otherwise).
      watchRow: the Watchlist row on Home (plextop.js).
      stillAfter: Up next asks "Still watching?" instead of counting down after this many episodes in a row (0: never). */
-  var PREFS = { homeQuality: 0, awayQuality: 8000, direct: true, topMixed: true, topServices: [], hiddenRows: {}, watchRow: true, stillAfter: 3 };
+  var PREFS = { homeQuality: 0, awayQuality: 0, direct: true, topMixed: true, topServices: [], hiddenRows: {}, watchRow: true, stillAfter: 3 };
   // A copy each time (lists and maps too), so a change is kept only through setPref.
   function prefs() { var p = state.prefs || {}, out = {}; for (var k in PREFS) out[k] = JSON.parse(JSON.stringify(p[k] == null ? PREFS[k] : p[k])); return out; }
   function setPref(k, v) { state.prefs = state.prefs || {}; state.prefs[k] = v; save(); }

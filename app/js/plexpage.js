@@ -68,12 +68,16 @@ var PlexPage = (function () {
   /* The title logo (Plex's clearLogo) in place of the name: a movie's own, an episode's show's in place of the
      show's name above the episode's. */
   function logo(m) {
+    var t = $(m.type === 'episode' ? 'plexPageKicker' : 'plexPageName');
+    if (t) t.classList.add('unseen');   // the name waits unseen until it's known whether a logo takes its place
+    var show = function () { if (t) t.classList.remove('unseen'); };
     PlexView.details(m).then(function (d) { return d.logo && item === m ? PlexView.file(m.server, d.logo) : ''; }).then(function (u) {
-      var t = $(m.type === 'episode' ? 'plexPageKicker' : 'plexPageName'); if (!u || !t || item !== m) return;
+      if (!u || !t || item !== m) return show();
       var lg = U.el('img', 'media-logo' + (m.type === 'episode' ? ' small' : '')); lg.alt = m.type === 'episode' ? m.grandparentTitle || '' : m.title || '';
       lg.onload = function () { if (t.parentNode) t.parentNode.replaceChild(lg, t); };
+      lg.onerror = show;
       lg.src = u;
-    });
+    }, show);
   }
   // The track under the buttons: what's playing in it (the version, its sound and subtitles).
   function track() {
@@ -172,7 +176,9 @@ var PlexPage = (function () {
       playing = { item: m, meta: meta, converting: converting, last: 0, scrobbled: false };
       /* The converter's playlist covers the whole title (it converts from wherever the player asks), so both ways
          start the player where you stopped and its times are the title's own (progress to Plex, Skip intro). */
-      Views.playVod(meta, url, ms / 1000, function () { report('stopped'); stopTimer(); if (PlexView.resume) PlexView.resume(); });
+      // Back from watching: to the title's page when it was open (its buttons take the keys again), else the Plex tab.
+      var page = $('plexPage'), fromPage = !!(page && !page.classList.contains('hidden'));
+      Views.playVod(meta, url, ms / 1000, function () { report('stopped'); stopTimer(); if (fromPage && item) { draw(); UI.setHandler(keys); } else if (PlexView.resume) PlexView.resume(); });
       startTimer();
       if (!converting) sideSubtitle(base, part, playing);
       if (converting) U.toast(T('{x} is converting this one for the TV', { x: (Plex.server(m.server) || {}).name || 'Plex' }), 5000);

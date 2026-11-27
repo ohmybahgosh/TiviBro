@@ -178,7 +178,7 @@ var PlexView = (function () {
   /* ---------- Loading what the current tab shows ---------- */
   function load() {
     if (Object.keys(picCache).length > 1500) picCache = {};
-    if (Object.keys(details).length > 600) details = {};   // links to old pictures, let go now and then
+    if (Object.keys(details).length > 600) { details = {}; logos = {}; }   // links to old pictures, let go now and then
     var seq = ++loadSeq, t = tabNow(), top = stack[stack.length - 1], sub = (subList()[subAt] || [])[0];
     var p = top ? childRows(top) : t.id === 'home' ? homeRows() : t.id === 'search' ? searchRows(lastSearch) :
       t.id === 'top' ? Promise.resolve(PlexTop.chartRows(sub, function () { if (open_ && tabNow().id === 'top' && !stack.length) load(); })) :
@@ -282,16 +282,23 @@ var PlexView = (function () {
     pic(m.server, path, 1500, 844).then(function (u) { if (u && focused() === m) { art.style.opacity = 0; art.onload = function () { art.style.opacity = 1; }; art.src = u; } });
     pic(m.server, path, 480, 270, '&blur=36').then(function (u) { if (u && focused() === m) { bg.style.backgroundImage = 'url("' + u + '")'; bg.style.opacity = 1; } });
   }
+  /* The words, and the title logo in place of the name.  While the details are being read the name waits unseen
+     (it flashed up and then turned into the logo); a title with no logo shows its name once they're in. */
+  var logos = {};
   function heroText(m, d) {
-    var el = $('plexHero'), ep = m.type === 'episode', name = ep ? m.grandparentTitle : m.title;
+    var el = $('plexHero'), ep = m.type === 'episode', name = ep ? m.grandparentTitle : m.title, k = m.server + ':' + m.ratingKey, waiting = d === m && !(k in logos);
+    if (d !== m) logos[k] = d.logo || '';
     var facts = [d.year || m.year, d.contentRating || m.contentRating, (d.duration || m.duration) ? Math.round((d.duration || m.duration) / 60000) + ' ' + T('min') : '', (d.leafCount || m.leafCount) ? T('{n} episodes', { n: d.leafCount || m.leafCount }) : ''].filter(Boolean).join('  ·  ');
     el.innerHTML = '<div class="media-kicker">' + esc(ep ? 'S' + m.parentIndex + ' · E' + m.index + '  ' + (m.title || '') : (rows[rowAt].title || '')) + '</div>' +
-      '<div class="media-title" id="plexHeroName">' + esc(name) + '</div><div class="media-facts">' + esc(facts) + '</div>' +
+      '<div class="media-title' + (waiting || logos[k] ? ' unseen' : '') + '" id="plexHeroName">' + esc(name) + '</div><div class="media-facts">' + esc(facts) + '</div>' +
       '<div class="media-summary">' + esc(d.summary || m.summary || '') + '</div>';
-    if (d.logo) raw(m.server, d.logo).then(function (u) {
-      var t = $('plexHeroName'); if (!u || !t || focused() !== m) return;
+    var logo = logos[k];
+    if (logo) raw(m.server, logo).then(function (u) {
+      var t = $('plexHeroName'); if (!t || focused() !== m) return;
+      if (!u) { t.classList.remove('unseen'); return; }
       var lg = U.el('img', 'media-logo'); lg.alt = name || '';
-      lg.onload = function () { t.parentNode && t.parentNode.replaceChild(lg, t); };
+      lg.onload = function () { if (t.parentNode) t.parentNode.replaceChild(lg, t); };
+      lg.onerror = function () { t.classList.remove('unseen'); };
       lg.src = u;
     });
   }

@@ -1031,7 +1031,12 @@ body.full .activity,body.mgr-open .activity{display:none}
 .plex-bg{position:absolute;top:0;right:0;bottom:0;left:0;background-size:cover;background-position:center;opacity:0;transition:opacity .5s ease;transform:scale(1.08)}
 #viewPlex .media-bd,.plex-page .media-bd{width:1500px;height:844px;background:transparent;-webkit-mask-image:linear-gradient(to bottom,#000 0,#000 50%,transparent 100%)}
 #viewPlex .media-hero-art{-webkit-mask-image:linear-gradient(to right,transparent 0,rgba(0,0,0,.6) 22%,#000 45%)}
-.plex-shade{position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(90deg,var(--ink) 0,rgba(11,14,26,.72) 30%,rgba(11,14,26,0) 62%),linear-gradient(0deg,var(--ink) 0,rgba(11,14,26,.86) 40%,rgba(11,14,26,0) 70%),rgba(11,14,26,.35)}
+.plex-shade{position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(180deg,rgba(11,14,26,.8) 0,rgba(11,14,26,0) 22%),linear-gradient(90deg,var(--ink) 0,rgba(11,14,26,.72) 30%,rgba(11,14,26,0) 62%),linear-gradient(0deg,var(--ink) 0,rgba(11,14,26,.86) 40%,rgba(11,14,26,0) 70%),rgba(11,14,26,.35)}
+#viewPlex .media-title.unseen,#viewPlex .media-kicker.unseen{visibility:hidden}
+/* Pills over a bright backdrop: a darker pill, and the top of the screen shaded. */
+#viewPlex .media-tab{background:rgba(11,14,26,.62);border-color:rgba(255,255,255,.16);color:#d5dbec;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+#viewPlex .media-tab.on{background:rgba(64,74,104,.9);color:#fff;border-color:rgba(255,255,255,.3)}
+#viewPlex .media-tabs.focus .media-tab.on{background:#fff;color:#0b0e14;border-color:#fff;text-shadow:none}
 #viewPlex .media-logo{max-width:560px;max-height:120px;margin-bottom:12px;filter:drop-shadow(0 4px 18px rgba(0,0,0,.7))}
 #viewPlex .media-logo.small{max-width:420px;max-height:90px;margin-bottom:10px}
 /* Rows above the focused one fade out: their names and lines peeked over the next row. */

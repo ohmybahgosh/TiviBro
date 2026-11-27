@@ -15,7 +15,7 @@ Sign in to Plex, pick servers and libraries, and how Plex titles play.  See [Ple
 | **Streaming Top 10s you have** | On | Yesterday's streaming Top 10s in your country (FlixPatrol) with the titles your Plex has. |
 | **Top 10 rows** | None | A row of its own for a service's Top 10 (Netflix, Max, Prime Video and more), on Home and in each library's Recommended. |
 | **Quality at home** | Original | The most the server sends when it converts on your home network.  A file smaller than this plays as it is. |
-| **Quality away from home** | 8 Mbps (1080p) | The same, for a server somewhere else.  Lower plays smoother on slow internet. |
+| **Quality away from home** | Original | The same, for a server somewhere else.  Lower plays smoother on slow internet. |
 | **Play files as they are** | On | The TV plays the file itself when it can.  Off: the server always converts (for a file that stutters). |
 | **Play the next one automatically**, **Up next countdown** | On, 10 seconds | Up next for Plex episodes, shared with My media. |
 | **Still watching?** | 3 episodes | After this many episodes in a row, Up next waits for OK. |
