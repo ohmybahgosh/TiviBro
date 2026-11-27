@@ -73,7 +73,7 @@ var Plex = (function () {
   }
   /* Signing out forgets the sign-in, the servers and the libraries; Plex leaves the menu again. */
   function signOut(quiet) {
-    var keep = state.cid; state = { cid: keep }; picking = {}; doorKeys = {}; save();
+    var keep = state.cid, kept = state.prefs; state = { cid: keep, prefs: kept }; picking = {}; doorKeys = {}; save();
     if (!quiet) note('info', 'Signed out of Plex');
     changed();
   }
@@ -154,6 +154,13 @@ var Plex = (function () {
     });
   }
 
+  /* ---------- Settings > Plex: this TV's own choices (kept with the sign-in, kept on sign-out) ---------- */
+  /* homeQuality and awayQuality: the most the server sends when it converts, in kbps (0: Original, as the file is).
+     direct: play a file as it is when the TV can (off: always the server's converter, for files that stutter). */
+  var PREFS = { homeQuality: 0, awayQuality: 8000, direct: true };
+  function prefs() { var p = state.prefs || {}, out = {}; for (var k in PREFS) out[k] = p[k] == null ? PREFS[k] : p[k]; return out; }
+  function setPref(k, v) { state.prefs = state.prefs || {}; state.prefs[k] = v; save(); }
+
   /* Settings and the phone: one line on where things stand. */
   function describe() {
     if (!signedIn()) return pending ? 'Waiting for the code at plex.tv/link' : 'Not signed in';
@@ -166,7 +173,7 @@ var Plex = (function () {
     connect: connect, cancel: cancel, pendingCode: pendingCode, signOut: signOut,
     servers: servers, chosen: chosen, server: server, loadServers: loadServers, choose: choose, reach: reach, call: call, door: door,
     sections: sections, libs: libs, setLib: setLib, shownLibraries: shownLibraries, rememberLibraries: rememberLibraries,
-    homeUsers: homeUsers, switchUser: switchUser,
+    homeUsers: homeUsers, switchUser: switchUser, prefs: prefs, setPref: setPref,
     _test: { state: function () { return state; }, reset: function (s) { state = s || {}; } }
   };
 })();

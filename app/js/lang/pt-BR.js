@@ -3257,5 +3257,11 @@ I18n.add('pt-BR', {
   "Mark watched": "Marcar como assistido",
   "More": "Mais",
   "Opening {x}…": "Abrindo {x}…",
-  "Version": "Versão"
+  "Version": "Versão",
+  "Play files as they are": "Reproduzir os arquivos como são",
+  "Quality at home": "Qualidade em casa",
+  "Quality away from home": "Qualidade fora de casa",
+  "The TV plays the file itself when it can, at full quality, with the server doing nothing.  Off: the server always converts it (for a file that stutters).": "A TV reproduz o arquivo sozinha quando pode, com qualidade total, sem trabalho para o servidor.  Desligado: o servidor sempre converte (para um arquivo que trava).",
+  "The same, when the server is somewhere else (a friend's, or yours from away).  Lower plays smoother on slow internet.": "O mesmo, quando o servidor está em outro lugar (de um amigo, ou o seu quando você está fora).  Mais baixa fica mais suave com internet lenta.",
+  "When the server converts a movie or an episode for the TV on your home network.  Original: as good as the file.  A file smaller than this plays as it is.": "Quando o servidor converte um filme ou episódio para a TV na sua rede de casa.  Original: tão boa quanto o arquivo.  Um arquivo menor é reproduzido como é."
 });

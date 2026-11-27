@@ -532,6 +532,17 @@ var Settings = (function () {
       }, function () { return me ? '✓' : ''; });
     });
   }
+  /* Settings > Plex > Playing: the most the server sends when it converts (at home, away), playing files as they
+     are, and the rows Plex titles share with everything else TiviBro plays (Up next, Skip intro, Seek previews). */
+  var PLEX_Q = [0, 20000, 12000, 8000, 4000, 2000], PLEX_QL = ['Original', '20 Mbps (1080p)', '12 Mbps (1080p)', '8 Mbps (1080p)', '4 Mbps (720p)', '2 Mbps (720p)'];
+  function plexPlaying() {
+    var pr = function (k) { return function () { return Plex.prefs()[k]; }; }, set = function (k) { return function (v) { Plex.setPref(k, v); paint(); }; };
+    return [head('Playing'),
+      choice('Quality at home', 'When the server converts a movie or an episode for the TV on your home network.  Original: as good as the file.  A file smaller than this plays as it is.', PLEX_Q, PLEX_QL, pr('homeQuality'), set('homeQuality')),
+      choice('Quality away from home', 'The same, when the server is somewhere else (a friend\'s, or yours from away).  Lower plays smoother on slow internet.', PLEX_Q, PLEX_QL, pr('awayQuality'), set('awayQuality')),
+      toggle('Play files as they are', 'The TV plays the file itself when it can, at full quality, with the server doing nothing.  Off: the server always converts it (for a file that stutters).', pr('direct'), set('direct')),
+      autoNextRow(), upNextRow()].concat(also('playback', ['Skip intro', 'Skip credits', 'Seek previews'])).filter(Boolean);
+  }
   function plexSection() {
     var out = [info('Your Plex movies and shows in TiviBro, with their posters, collections, playlists and watched marks.  Once a server and a library are added, Plex gets its own place in the menu, the phone app and the web editor.', '')];
     if (!Plex.signedIn()) return out.concat(head('Sign in'), plexSignIn());
@@ -541,6 +552,7 @@ var Settings = (function () {
     Plex.chosen().forEach(function (sv) {
       out.push(page(T('Libraries on {x}', { x: sv.name }), 'Which libraries show in TiviBro.  Music and photos stay in Plex\'s own apps.', I18n.raw(sv.name), function () { return plexLibraries(sv); }, function () { return String(Plex.libs(sv.id).length); }));
     });
+    out = out.concat(plexPlaying());
     out.push(head('Plex Pass'), info(Plex.user().pass ? T('You have Plex Pass: your servers play anywhere.') : T('Away from home, Plex plays video only when you or the server\'s owner have Plex Pass (or a Remote Watch Pass).  At home it\'s free.'), ''));
     out.push(head('Account'), action('Sign out of Plex', 'Plex leaves the menu, the phone app and the web editor until you sign in again.', function () { UI.confirm('Sign out of Plex on this TV?', 'Sign out', function () { Plex.signOut(); plexSecCache = {}; plexPeople = null; build(); if (typeof Views !== 'undefined' && Views.buildTabs) Views.buildTabs(); }); }));
     return out;

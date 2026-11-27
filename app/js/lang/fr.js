@@ -1905,5 +1905,11 @@ I18n.add('fr', {
   "Mark watched": "Marquer comme vu",
   "More": "Plus",
   "Opening {x}…": "Ouverture de {x}…",
-  "Version": "Version"
+  "Version": "Version",
+  "Play files as they are": "Lire les fichiers tels quels",
+  "Quality at home": "Qualité à la maison",
+  "Quality away from home": "Qualité hors de chez vous",
+  "The TV plays the file itself when it can, at full quality, with the server doing nothing.  Off: the server always converts it (for a file that stutters).": "La TV lit le fichier elle-même quand elle le peut, en pleine qualité, sans travail pour le serveur.  Désactivé : le serveur le convertit toujours (pour un fichier qui saccade).",
+  "The same, when the server is somewhere else (a friend's, or yours from away).  Lower plays smoother on slow internet.": "Pareil, quand le serveur est ailleurs (chez un ami, ou le vôtre quand vous êtes absent).  Plus bas, c'est plus fluide sur une connexion lente.",
+  "When the server converts a movie or an episode for the TV on your home network.  Original: as good as the file.  A file smaller than this plays as it is.": "Quand le serveur convertit un film ou un épisode pour la TV sur votre réseau domestique.  Original : aussi bon que le fichier.  Un fichier plus petit est lu tel quel."
 });

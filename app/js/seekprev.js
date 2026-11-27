@@ -40,12 +40,13 @@ var SeekPrev = (function () {
   function video() { return document.getElementById('video'); }
   // Pictures for this movie?  The setting, the service, and (Automatic with Memory-safe on) no more than 1080p.
   function allowed() {
-    if (!movie || !ok || setting() === 'off') return false;
-    if (setting() === 'auto' && lean()) { var v = video(); if (v && v.videoHeight > 1088) return false; }
+    if (!movie || !(ok || movie.own) || setting() === 'off') return false;
+    // The server's own small pictures (Plex) cost the TV nothing to make, 4K or not.
+    if (setting() === 'auto' && lean() && !movie.own) { var v = video(); if (v && v.videoHeight > 1088) return false; }
     return true;
   }
   // &l=1: a TV short of memory, so the service keeps less of the movie for the pictures (service/blockcache.js).
-  function link(t, ahead) { return base() + '/preview/' + key + '/frame.jpg?u=' + encodeURIComponent(movie.u) + '&t=' + t + '&w=' + W + (movie.ua ? '&ua=' + encodeURIComponent(movie.ua) : '') + (ahead ? '&p=1' : '') + (lean() ? '&l=1' : ''); }
+  function link(t, ahead) { if (movie.own) return movie.own(t); return base() + '/preview/' + key + '/frame.jpg?u=' + encodeURIComponent(movie.u) + '&t=' + t + '&w=' + W + (movie.ua ? '&ua=' + encodeURIComponent(movie.ua) : '') + (ahead ? '&p=1' : '') + (lean() ? '&l=1' : ''); }
   function bucket(t) { return Math.max(0, Math.round(t / STEP) * STEP); }
 
   // A movie starts (views.js playVod): its link, and whether this TV's service can make pictures.
@@ -54,6 +55,15 @@ var SeekPrev = (function () {
     /* A provider's movie on a login that allows one connection: previews and chapters read the file a second time
        while it plays, and such a provider refuses that or cuts the movie off.  None for it. */
     if (meta && meta.provider && typeof Library !== 'undefined' && Library.maxConn && Library.maxConn(meta.p) === 1) { Log.info('player', 'No seek previews or chapter marks: this login allows one connection'); return; }
+    /* A Plex title (plexpage.js): the server's own preview pictures (meta.pics(t), a link through the helper's door)
+       and Plex's chapters, so nothing reads the file a second time. */
+    if (meta && meta.plex) {
+      if (!meta.pics && !(meta.chapters && meta.chapters.length)) return;
+      movie = { u: meta.id, own: meta.pics || null, chapters: meta.chapters || [] };
+      if (typeof Skipper !== 'undefined') Skipper.chapters(movie.chapters);
+      if (movie.own && setting() !== 'off') fillSoon(4000);
+      return;
+    }
     var u = source(url);
     if (!u || !base() || typeof Convert === 'undefined') return;
     movie = { u: u, ua: meta && meta.ua || '', chapters: [] };

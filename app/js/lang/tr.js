@@ -2630,5 +2630,11 @@ I18n.add('tr', {
   "Opening {x}…": "{x} açılıyor…",
   "Play": "Oynat",
   "Version": "Sürüm",
-  "{n} min": ["{n} dk", "{n} dk"]
+  "{n} min": ["{n} dk", "{n} dk"],
+  "Play files as they are": "Dosyaları olduğu gibi oynat",
+  "Quality at home": "Evde kalite",
+  "Quality away from home": "Ev dışında kalite",
+  "The TV plays the file itself when it can, at full quality, with the server doing nothing.  Off: the server always converts it (for a file that stutters).": "Televizyon dosyayı yapabildiğinde kendisi oynatır, tam kalitede, sunucuya iş düşmeden.  Kapalı: sunucu her zaman dönüştürür (takılan bir dosya için).",
+  "The same, when the server is somewhere else (a friend's, or yours from away).  Lower plays smoother on slow internet.": "Aynısı, sunucu başka bir yerdeyken (bir arkadaşınınki ya da dışarıdayken sizinki).  Düşük olan yavaş internette daha akıcı oynar.",
+  "When the server converts a movie or an episode for the TV on your home network.  Original: as good as the file.  A file smaller than this plays as it is.": "Sunucu ev ağınızdaki televizyon için bir filmi ya da bölümü dönüştürdüğünde.  Orijinal: dosya kadar iyi.  Bundan küçük bir dosya olduğu gibi oynar."
 });

@@ -2630,5 +2630,11 @@ I18n.add('nl', {
   "Opening {x}…": "{x} openen…",
   "Play": "Afspelen",
   "Version": "Versie",
-  "{n} min": ["{n} min", "{n} min"]
+  "{n} min": ["{n} min", "{n} min"],
+  "Play files as they are": "Bestanden afspelen zoals ze zijn",
+  "Quality at home": "Kwaliteit thuis",
+  "Quality away from home": "Kwaliteit buitenshuis",
+  "The TV plays the file itself when it can, at full quality, with the server doing nothing.  Off: the server always converts it (for a file that stutters).": "De tv speelt het bestand zelf af als dat kan, op volle kwaliteit, zonder werk voor de server.  Uit: de server zet het altijd om (voor een bestand dat hapert).",
+  "The same, when the server is somewhere else (a friend's, or yours from away).  Lower plays smoother on slow internet.": "Hetzelfde, als de server ergens anders staat (bij een vriend, of de jouwe als je weg bent).  Lager speelt soepeler op traag internet.",
+  "When the server converts a movie or an episode for the TV on your home network.  Original: as good as the file.  A file smaller than this plays as it is.": "Als de server een film of aflevering omzet voor de tv op je thuisnetwerk.  Origineel: zo goed als het bestand.  Een kleiner bestand speelt zoals het is."
 });

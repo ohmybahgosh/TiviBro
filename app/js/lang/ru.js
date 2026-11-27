@@ -2751,5 +2751,11 @@ I18n.add('ru', {
   "Mark watched": "Отметить просмотренным",
   "More": "Ещё",
   "Opening {x}…": "Открываем {x}…",
-  "Version": "Версия"
+  "Version": "Версия",
+  "Play files as they are": "Воспроизводить файлы как есть",
+  "Quality at home": "Качество дома",
+  "Quality away from home": "Качество вне дома",
+  "The TV plays the file itself when it can, at full quality, with the server doing nothing.  Off: the server always converts it (for a file that stutters).": "Телевизор сам воспроизводит файл, когда может, в полном качестве, без работы для сервера.  Выкл.: сервер всегда его преобразует (для файла, который подтормаживает).",
+  "The same, when the server is somewhere else (a friend's, or yours from away).  Lower plays smoother on slow internet.": "То же самое, когда сервер в другом месте (у друга или ваш, когда вы не дома).  Ниже идёт плавнее при медленном интернете.",
+  "When the server converts a movie or an episode for the TV on your home network.  Original: as good as the file.  A file smaller than this plays as it is.": "Когда сервер преобразует фильм или серию для телевизора в вашей домашней сети.  Оригинал: как в файле.  Файл меньше этого воспроизводится как есть."
 });

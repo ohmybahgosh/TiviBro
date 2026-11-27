@@ -2630,5 +2630,11 @@ I18n.add('it', {
   "Opening {x}…": "Apertura di {x}…",
   "Play": "Riproduci",
   "Version": "Versione",
-  "{n} min": ["{n} min", "{n} min"]
+  "{n} min": ["{n} min", "{n} min"],
+  "Play files as they are": "Riproduci i file così come sono",
+  "Quality at home": "Qualità a casa",
+  "Quality away from home": "Qualità fuori casa",
+  "The TV plays the file itself when it can, at full quality, with the server doing nothing.  Off: the server always converts it (for a file that stutters).": "La TV riproduce il file da sola quando può, a piena qualità, senza lavoro per il server.  No: il server lo converte sempre (per un file che scatta).",
+  "The same, when the server is somewhere else (a friend's, or yours from away).  Lower plays smoother on slow internet.": "Lo stesso, quando il server è altrove (di un amico, o il tuo quando sei fuori).  Più bassa va più fluida con internet lento.",
+  "When the server converts a movie or an episode for the TV on your home network.  Original: as good as the file.  A file smaller than this plays as it is.": "Quando il server converte un film o un episodio per la TV sulla tua rete di casa.  Originale: buona come il file.  Un file più piccolo si riproduce così com'è."
 });

@@ -2633,5 +2633,11 @@ I18n.add('de', {
   "Stereo": "Stereo",
   "Subtitles: {x}": "Untertitel: {x}",
   "Version: {x}": "Version: {x}",
-  "{x} is converting this one for the TV": "{x} wandelt diesen Titel für den Fernseher um"
+  "{x} is converting this one for the TV": "{x} wandelt diesen Titel für den Fernseher um",
+  "Play files as they are": "Dateien so abspielen, wie sie sind",
+  "Quality at home": "Qualität zu Hause",
+  "Quality away from home": "Qualität unterwegs",
+  "The TV plays the file itself when it can, at full quality, with the server doing nothing.  Off: the server always converts it (for a file that stutters).": "Der Fernseher spielt die Datei selbst ab, wenn er kann, in voller Qualität, ohne Arbeit für den Server.  Aus: Der Server wandelt sie immer um (für eine Datei, die ruckelt).",
+  "The same, when the server is somewhere else (a friend's, or yours from away).  Lower plays smoother on slow internet.": "Dasselbe, wenn der Server woanders steht (bei Freunden, oder deiner, wenn du unterwegs bist).  Niedriger läuft bei langsamem Internet flüssiger.",
+  "When the server converts a movie or an episode for the TV on your home network.  Original: as good as the file.  A file smaller than this plays as it is.": "Wenn der Server einen Film oder eine Folge für den Fernseher in deinem Heimnetz umwandelt.  Original: so gut wie die Datei.  Eine kleinere Datei läuft, wie sie ist."
 });

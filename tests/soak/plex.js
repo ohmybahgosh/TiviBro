@@ -99,6 +99,18 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     ok('Plex\'s intro and credits markers go to Skip intro', JSON.stringify(await ev(() => Views.vodMeta && Views.vodMeta.marks)) === JSON.stringify({ intro: [5, 65], recap: null, credits: 6900, creditsEnd: -1 }));
     await page.waitForTimeout(10500);
     ok('where you are goes to Plex', /ratingKey=18/.test(m.state.timeline || '') && /state=(playing|paused)/.test(m.state.timeline || ''), m.state.timeline);
+    ok('Plex\'s chapters go to the player', JSON.stringify(await ev(() => Views.vodMeta && Views.vodMeta.chapters)) === JSON.stringify([{ s: 0, e: 600, t: 'Opening' }, { s: 600, e: 7200, t: 'The ferry' }]));
+    const pic = await ev(() => Views.vodMeta && Views.vodMeta.pics ? Views.vodMeta.pics(125) : '');
+    ok('seek previews come from the server\'s own pictures, through the door', /\/plex\/[0-9a-f]{48}\/library\/parts\/7\/indexes\/sd\/125000$/.test(pic), pic);
+    ok('the picture is there', (await ev((u) => fetch(u).then((r) => r.status), pic)) === 200 && /indexes\/sd\/125000/.test(m.state.preview || ''));
+    ok('the subtitle picked in Plex (a file beside it) is read through the door', !!m.state.subFile);
+    // Settings > Plex > Quality away from home: a file bigger than the cap is converted down to it.
+    await ev(() => { Views.stopAll(); Plex.setPref('homeQuality', 8000); PlexPage.open({ ratingKey: '18', title: 'Northbound', type: 'movie', server: Plex.chosen()[0].id }, function () {}); });
+    await page.waitForFunction(() => (PlexPage._test.item() || {}).Media && PlexPage._test.buttons().length, null, { timeout: 8000 });
+    await ev(() => PlexPage._test.keys('ok')); await page.waitForTimeout(2500);
+    const capped = await ev(() => (Views.vod && Views.vod.url) || '');
+    ok('a 60 Mbps file with an 8 Mbps cap: the server converts it to 8 Mbps', /maxVideoBitrate=8000/.test(capped), capped);
+    await ev(() => Plex.setPref('homeQuality', 0));
     // An old MPEG-2 file the TV can't play as is: the server converts it (HLS), from where you start.
     await ev(() => { Views.stopAll(); PlexPage.open({ ratingKey: '13', title: 'Low Tide', type: 'movie', server: Plex.chosen()[0].id }, function () {}); });
     await page.waitForFunction(() => (PlexPage._test.item() || {}).title === 'Low Tide' && PlexPage._test.buttons().length, null, { timeout: 8000 });

@@ -58,6 +58,7 @@ var Skipper = (function () {
   function nextKind() {
     if (typeof Views === 'undefined' || Views.mode !== 'vod') return '';
     var meta = Views.vodMeta;
+    if (meta && meta.plex) return meta.plexNext || '';   // a Plex episode (plexpage.js finds the next one when it ends)
     if (meta && meta.local && typeof Media !== 'undefined' && Media.upNext) return Media.upNext();
     return meta && meta.seriesKey ? 'episode' : '';   // a provider's episode (vod.js plays the next one when it ends)
   }

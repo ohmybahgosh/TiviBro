@@ -125,24 +125,48 @@ var PlexPage = (function () {
   // The TV plays this version's video as it is (sound is TiviBro's converter's job when the TV can't).
   function direct(v) { return DIRECT_VIDEO.test(v.videoCodec || '') && DIRECT_BOX.test(v.container || ''); }
   function newSession() { session = 'tivibro-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); return session; }
-  /* Starts the title at ms: the file through the door, or the server's converter when the TV can't play its video. */
+  /* The server converts it when the TV can't play its video, when Settings > Plex says always, or when the file is
+     bigger than the quality cap (Plex's "play smaller videos at original quality": a file under the cap plays as is). */
+  function converts(v) {
+    var cap = quality();
+    return !Plex.prefs().direct || !direct(v) || !!(cap && v.bitrate && v.bitrate > cap);
+  }
+  /* Starts the title at ms: the file through the door, or the server's converter.  Plex's preview pictures, its
+     chapters and a subtitle file kept beside the video go to the player too (a file played as it is). */
   function play(ms) {
     var m = item, v = version(), part = v.Part && v.Part[0];
     if (!part) return U.toast(T('Plex has no file for this one.'), 6000);
     Plex.door(m.server).then(function (key) {
-      var base = 'http://127.0.0.1:' + Net.port + '/plex/' + key, url, converting = !direct(v);
+      var base = 'http://127.0.0.1:' + Net.port + '/plex/' + key, url, converting = converts(v), cap = quality();
       if (!converting) url = base + part.key;
-      else url = base + '/video/:/transcode/universal/start.m3u8?path=' + encodeURIComponent('/library/metadata/' + m.ratingKey) + '&mediaIndex=' + Math.max(0, (m.Media || []).indexOf(v)) + '&partIndex=0&protocol=hls&fastSeek=1&directPlay=0&directStream=1&directStreamAudio=1&videoQuality=100&maxVideoBitrate=' + quality() + '&subtitles=burn&copyts=1&offset=' + Math.floor(ms / 1000) + '&session=' + newSession();
-      var meta = { id: 'plex:' + m.server + ':' + m.ratingKey, plex: true, title: m.type === 'episode' ? m.grandparentTitle + '  S' + m.parentIndex + ' · E' + m.index : m.title, sub: m.type === 'episode' ? m.title : [m.year, m.contentRating].filter(Boolean).join('  ·  '), marks: marks(m) };
+      else url = base + '/video/:/transcode/universal/start.m3u8?path=' + encodeURIComponent('/library/metadata/' + m.ratingKey) + '&mediaIndex=' + Math.max(0, (m.Media || []).indexOf(v)) + '&partIndex=0&protocol=hls&fastSeek=1&directPlay=0&directStream=1&directStreamAudio=1&videoQuality=100' + (cap ? '&maxVideoBitrate=' + cap : '') + '&subtitles=burn&copyts=1&offset=' + Math.floor(ms / 1000) + '&session=' + newSession();
+      var meta = { id: 'plex:' + m.server + ':' + m.ratingKey, plex: true, plexNext: m.type === 'episode' ? 'episode' : '', title: m.type === 'episode' ? m.grandparentTitle + '  S' + m.parentIndex + ' · E' + m.index : m.title, sub: m.type === 'episode' ? m.title : [m.year, m.contentRating].filter(Boolean).join('  ·  '), marks: marks(m), chapters: converting ? [] : chapters(m) };
+      if (!converting && /(^|,)sd(,|$)/.test(part.indexes || '')) meta.pics = function (t) { return base + '/library/parts/' + part.id + '/indexes/sd/' + Math.round(t * 1000); };
       playing = { item: m, meta: meta, converting: converting, last: 0, scrobbled: false };
       Views.playVod(meta, url, converting ? 0 : ms / 1000, function () { report('stopped'); stopTimer(); if (PlexView.resume) PlexView.resume(); });
       startTimer();
+      if (!converting) sideSubtitle(base, part, playing);
       if (converting) U.toast(T('{x} is converting this one for the TV', { x: (Plex.server(m.server) || {}).name || 'Plex' }), 5000);
     }, function (e) { U.toast(e.message, 6000); });
   }
+  // Plex's chapters as the player takes them (seconds, with their names).
+  function chapters(m) { return (m.Chapter || []).map(function (c) { return { s: c.startTimeOffset / 1000, e: c.endTimeOffset / 1000, t: c.tag || '' }; }).filter(function (c) { return c.e > c.s; }); }
+  /* The subtitle picked in Plex, when it's a file beside the video (SRT, ASS, VTT): read through the door and given to
+     the player.  Subtitles inside the file are the player's own job. */
+  function sideSubtitle(base, part, p) {
+    var s = (part.Stream || []).filter(function (x) { return x.streamType === 3 && x.selected && x.key; })[0];
+    if (!s || !/^(srt|ass|ssa|vtt|webvtt|smi|sub)$/i.test(s.codec || 'srt') || typeof Subs === 'undefined') return;
+    setTimeout(function () {
+      if (playing !== p) return;
+      fetch(base + s.key, { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (text) {
+        if (!text || playing !== p) return;
+        try { Subs.addText((s.language || s.displayTitle || 'Plex') + '.' + (s.codec || 'srt'), text); } catch (e) { if (typeof Log !== 'undefined') Log.warn('plex', 'Plex\'s subtitle file: ' + e.message); }
+      }, function () {});
+    }, 1500);
+  }
   function playOther(x) { var keep = item; item = x; Plex.call(x.server, '/library/metadata/' + x.ratingKey).then(function (j) { item = (mc(j).Metadata || [])[0] || x; item.server = x.server; play(0); item = keep; }, function (e) { item = keep; U.toast(e.message, 6000); }); }
-  // The quality cap for the converter (kbps): Settings > Plex, Original at home, 8 Mbps away.
-  function quality() { var s = Plex.server(item.server) || {}; return s.local ? 40000 : 8000; }
+  // The quality cap for the converter (kbps, 0: Original): Settings > Plex, at home and away.
+  function quality() { var s = Plex.server(item.server) || {}, p = Plex.prefs(); return +(s.local ? p.homeQuality : p.awayQuality) || 0; }
   // Plex's intro and credits markers, as Skip intro and Skip credits take them (seconds).
   function marks(m) {
     var out = { intro: null, recap: null, credits: -1, creditsEnd: -1 };
@@ -187,5 +211,5 @@ var PlexPage = (function () {
     }, function () { Views.stopAll(); if (PlexView.resume) PlexView.resume(); });
   }
 
-  return { open: open, ended: ended, close: close, _test: { marks: marks, badges: badges, direct: direct, item: function () { return item; }, keys: keys, buttons: function () { return btns; } } };
+  return { open: open, ended: ended, close: close, _test: { marks: marks, badges: badges, direct: direct, converts: converts, chapters: chapters, item: function () { return item; }, keys: keys, buttons: function () { return btns; } } };
 })();

@@ -38,13 +38,16 @@ function route(state, req, port) {
   if (p === '/library/sections/1/genre') return [200, { MediaContainer: { Directory: [{ title: 'Drama' }, { title: 'Comedy' }] } }];
   if (p === '/playlists') return [200, { MediaContainer: { Metadata: [{ ratingKey: '700', type: 'playlist', title: 'Movie Marathon', leafCount: 6 }] } }];
   if (p === '/hubs/search') return [200, { MediaContainer: { Hub: [{ title: 'Movies', Metadata: [movie(10, 'Copper Sky')] }] } }];
+  if (/^\/library\/parts\/7\/indexes\/sd\/\d+$/.test(p)) { state.preview = p; return [200, PNG, 'image/png']; }
+  if (p === '/library/streams/3') { state.subFile = true; return [200, '1\n00:00:01,000 --> 00:00:04,000\nHello from Plex\n', 'text/plain']; }
   if (p === '/library/parts/7/1700000000/file.mkv') { state.range = req.headers.range; return [206, 'MKVBYTES', 'video/x-matroska']; }
   var md = /^\/library\/metadata\/(\d+)$/.exec(p);
   if (md) { var k = +md[1], old = k === 13; return [200, { MediaContainer: { Metadata: [movie(k, MOVIES[k - 10] || 'X', { viewOffset: k === 18 ? 2400000 : 0, librarySectionTitle: 'Movies', rating: 9.2, audienceRating: 8.8,
     Director: [{ tag: 'Ana Ruiz' }], Role: [{ tag: 'Mara Quinn' }, { tag: 'Theo Lake' }],
     Marker: [{ type: 'intro', startTimeOffset: 5000, endTimeOffset: 65000 }, { type: 'credits', startTimeOffset: 6900000, endTimeOffset: 7200000, final: true }],
+    Chapter: [{ tag: 'Opening', startTimeOffset: 0, endTimeOffset: 600000 }, { tag: 'The ferry', startTimeOffset: 600000, endTimeOffset: 7200000 }],
     Extras: { Metadata: [{ ratingKey: '80', type: 'clip', subtype: 'trailer', title: 'Trailer' }] },
-    Media: [{ videoResolution: '4k', videoCodec: old ? 'mpeg2video' : 'hevc', container: old ? 'mpeg' : 'mkv', audioChannels: 8, Part: [{ id: 7, key: '/library/parts/7/1700000000/file.mkv', size: 58e9, Stream: [{ id: 1, streamType: 1, DOVIPresent: true }, { id: 2, streamType: 2, displayTitle: 'English (TrueHD Atmos 7.1)', selected: true }, { id: 3, streamType: 3, displayTitle: 'English (SRT)' }] }] }] })] } }]; }
+    Media: [{ videoResolution: '4k', videoCodec: old ? 'mpeg2video' : 'hevc', container: old ? 'mpeg' : 'mkv', audioChannels: 8, bitrate: 60000, Part: [{ id: 7, key: '/library/parts/7/1700000000/file.mkv', size: 58e9, indexes: 'sd', Stream: [{ id: 1, streamType: 1, DOVIPresent: true }, { id: 2, streamType: 2, displayTitle: 'English (TrueHD Atmos 7.1)', selected: true }, { id: 3, streamType: 3, displayTitle: 'English (SRT)', codec: 'srt', key: '/library/streams/3', language: 'English', selected: true }] }] }] })] } }]; }
   if (p === '/:/timeline') { state.timeline = q; return [200, null]; }
   if (p === '/video/:/transcode/universal/start.m3u8') { state.transcode = q; return [200, '#EXTM3U\n', 'application/vnd.apple.mpegurl']; }
   if (p === '/:/scrobble' && req.method === 'GET') { state.scrobbled = q; return [200, null]; }
