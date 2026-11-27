@@ -2775,7 +2775,5 @@ I18n.add('hi', {
   "Shows it now.  Any button comes back here.": "इसे अभी दिखाता है।  कोई भी बटन दबाने पर यहीं वापस आएंगे।",
   "Starts after": "शुरू होगा",
   "When nobody has come back.": "जब कोई वापस न आया हो।",
-  "Your teams' scores and next games, slowly wandering, when they have one.": "आपकी टीमों के स्कोर और अगले गेम, धीरे-धीरे इधर-उधर घूमते हुए, जब उनका कोई गेम हो।",
-  "Starts Aerial now.  Any button comes back.": "Aerial अभी शुरू होता है।  कोई भी बटन दबाने पर वापस आ जाएंगे।",
-  "The TV didn't let TiviBro start Aerial.  Open Aerial to try it from there.": "TV ने TiviBro को Aerial शुरू नहीं करने दिया।  Aerial खोलें और वहीं से चलाकर देखें।"
+  "Your teams' scores and next games, slowly wandering, when they have one.": "आपकी टीमों के स्कोर और अगले गेम, धीरे-धीरे इधर-उधर घूमते हुए, जब उनका कोई गेम हो।"
 });

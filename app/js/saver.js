@@ -12,10 +12,7 @@
    bar.  The first key press only takes it away (Burnin.activity drops it).  While it shows, and while it waits to
    start, the TV's own screensaver is held off (Awake asks Saver.holds); after an hour, with "Let the TV take over"
    (the default), TiviBro stops holding it, so the TV's screensaver or screen-off takes over for the night.
-   'off' leaves the older behaviour: the screen just dims (Burnin).
-   'aerial': the homebrew Aerial screensaver (AERIAL, which replaces the TV's own) is used instead: TiviBro shows
-   nothing of its own and lets the TV start its screensaver, which is then Aerial (when the TV says, as before
-   this file; Awake still holds it off while something plays).  Offered only when Aerial is installed (aerial()). */
+   'off' leaves the older behaviour: the screen just dims (Burnin). */
 var Saver = (function () {
   'use strict';
   var T = function (s, v) { return typeof I18n !== 'undefined' ? I18n.t(s, v) : String(s).replace(/\{(\w+)\}/g, function (a, k) { return v && v[k] != null ? v[k] : a; }); };
@@ -23,33 +20,7 @@ var Saver = (function () {
   var last = Date.now(), el = null, on = false, since = 0, look = '', lookAt = 0, ticks = [], shiftAt = 0, handed = false, home = null, homeAt = 0;
 
   function S() { return (typeof Store !== 'undefined' && Store.settings) || {}; }
-  function enabled() { return S().saver !== 'off' && S().saver !== 'aerial'; }
-  // Burnin's dimming stays away while a screensaver (this one or Aerial) does its job.
-  function covers() { return S().saver !== 'off'; }
-
-  /* ---------- Aerial (homebrew, github.com/aabytt/custom-screensaver-aerial) ---------- */
-  var AERIAL = 'org.aabytt.webos.custom-screensaver-aerial', aerialHere = null;
-  function luna(uri, params, cb) {
-    if (typeof PalmServiceBridge === 'undefined') return cb({ returnValue: false });
-    var b = new PalmServiceBridge(); luna.keep = b;
-    b.onservicecallback = function (m) { var r; try { r = JSON.parse(m); } catch (e) { r = { returnValue: false }; } cb(r); };
-    b.call(uri, JSON.stringify(params || {}));
-  }
-  // Is Aerial installed?  Asked once (the Homebrew Channel's service, else webOS's), true or false when known.
-  function aerial() {
-    if (aerialHere === null) {
-      aerialHere = false;
-      var seen = function (r) { if (r && r.returnValue !== false && (r.appInfo || r.id)) aerialHere = true; };
-      luna('luna://org.webosbrew.hbchannel.service/getAppInfo', { id: AERIAL }, function (r) { seen(r); if (!aerialHere) luna('luna://com.webos.applicationManager/getAppInfo', { id: AERIAL }, seen); });
-    }
-    return aerialHere;
-  }
-  // Aerial now (Settings > Screensaver > Preview): the TV's screensaver started, which Aerial has replaced.
-  function aerialNow() {
-    luna('luna://com.webos.service.tvpower/power/turnOnScreenSaver', {}, function (r) {
-      if (r.returnValue === false && typeof U !== 'undefined') U.toast(T('The TV didn\'t let TiviBro start Aerial.  Open Aerial to try it from there.'), 6000);
-    });
-  }
+  function enabled() { return S().saver !== 'off'; }
   // The looks turned on in Settings (all unless one is turned off; never none: the clock then).
   function looksOn() { var o = S().saverLooks || {}, l = LOOKS.filter(function (k) { return o[k] !== false; }); return l.length ? l : ['clock']; }
   function after() { return (+S().saverAfter || 5) * 60000; }
@@ -177,7 +148,7 @@ var Saver = (function () {
   function activity() { last = Date.now(); return hide(); }
   // Whether the TV's own screensaver should wait: while this one is on (until it hands over) or still to come.
   function holds() { return enabled() && !document.hidden && !handed; }
-  function start() { setInterval(check, 15000); aerial(); }
-  function preview() { if (S().saver === 'aerial') return aerialNow(); last = 0; show(); }
-  return { start: start, activity: activity, holds: holds, enabled: enabled, covers: covers, aerial: aerial, preview: preview, get on() { return on; }, LOOKS: LOOKS, _due: due, _ready: ready };
+  function start() { setInterval(check, 15000); }
+  function preview() { last = 0; show(); }
+  return { start: start, activity: activity, holds: holds, enabled: enabled, preview: preview, get on() { return on; }, LOOKS: LOOKS, _due: due, _ready: ready };
 })();

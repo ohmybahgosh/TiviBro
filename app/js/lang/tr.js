@@ -2789,7 +2789,5 @@ I18n.add('tr', {
   "Shows it now.  Any button comes back here.": "Şimdi gösterir.  Herhangi bir tuşa basınca buraya dönersiniz.",
   "Starts after": "Başlama süresi",
   "When nobody has come back.": "Kimse geri dönmediğinde.",
-  "Your teams' scores and next games, slowly wandering, when they have one.": "Takımlarınızın skorları ve sonraki maçları, varsa, yavaşça dolaşarak gösterilir.",
-  "Starts Aerial now.  Any button comes back.": "Aerial'i hemen başlatır.  Herhangi bir tuş geri döndürür.",
-  "The TV didn't let TiviBro start Aerial.  Open Aerial to try it from there.": "TV, TiviBro'nun Aerial'i başlatmasına izin vermedi.  Denemek için Aerial'i açın."
+  "Your teams' scores and next games, slowly wandering, when they have one.": "Takımlarınızın skorları ve sonraki maçları, varsa, yavaşça dolaşarak gösterilir."
 });

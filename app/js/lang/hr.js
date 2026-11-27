@@ -2775,7 +2775,5 @@ I18n.add('hr', {
   "Shows it now.  Any button comes back here.": "Prikazuje ga sada.  Bilo koja tipka vraća ovamo.",
   "Starts after": "Počinje nakon",
   "When nobody has come back.": "Kad se nitko nije vratio.",
-  "Your teams' scores and next games, slowly wandering, when they have one.": "Rezultati i sljedeće utakmice vaših timova, koji polako lutaju zaslonom, kad ih imaju.",
-  "Starts Aerial now.  Any button comes back.": "Odmah pokreće Aerial.  Bilo koja tipka vraća natrag.",
-  "The TV didn't let TiviBro start Aerial.  Open Aerial to try it from there.": "TV nije dopustio da TiviBro pokrene Aerial.  Otvorite Aerial i pokušajte odande."
+  "Your teams' scores and next games, slowly wandering, when they have one.": "Rezultati i sljedeće utakmice vaših timova, koji polako lutaju zaslonom, kad ih imaju."
 });

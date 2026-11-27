@@ -20,9 +20,7 @@ ctx.Store.settings.saverLooks = { clock: false, aurora: true };
 ok('a look turned off is left out', S._ready().join() === 'aurora', S._ready().join());
 ctx.Store.settings.saverLooks = { clock: false, aurora: false, library: false, teams: false };
 ok('all turned off: the clock anyway', S._ready().join() === 'clock', S._ready().join());
-ctx.Store.settings.saver = 'aerial';
-ok('Aerial picked: none of TiviBro\'s own, the TV\'s screensaver (Aerial) not held off, no dimming', !S.enabled() && !S.holds() && S.covers());
 ctx.Store.settings.saver = 'off';
-ok('Screensaver off: it never holds the TV\'s back, and the old dimming is back', !S.holds() && !S.enabled() && !S.covers());
+ok('Screensaver off: it never holds the TV\'s back', !S.holds() && !S.enabled());
 if (fail) { console.log(fail + ' screensaver test(s) failed'); process.exit(1); }
 console.log('all screensaver tests passed');

@@ -2775,7 +2775,5 @@ I18n.add('uk', {
   "Shows it now.  Any button comes back here.": "Показує її зараз.  Будь-яка кнопка повертає сюди.",
   "Starts after": "Запускається через",
   "When nobody has come back.": "Коли ніхто не повернувся.",
-  "Your teams' scores and next games, slowly wandering, when they have one.": "Рахунок ваших команд і найближчі матчі повільно пересуваються екраном, якщо вони є.",
-  "Starts Aerial now.  Any button comes back.": "Запускає Aerial зараз.  Будь-яка кнопка повертає назад.",
-  "The TV didn't let TiviBro start Aerial.  Open Aerial to try it from there.": "Телевізор не дозволив TiviBro запустити Aerial.  Відкрийте Aerial і спробуйте запустити звідти."
+  "Your teams' scores and next games, slowly wandering, when they have one.": "Рахунок ваших команд і найближчі матчі повільно пересуваються екраном, якщо вони є."
 });
