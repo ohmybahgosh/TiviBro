@@ -2144,5 +2144,21 @@ I18n.add('hi', {
   "✕ The guide did not load": "✕ गाइड लोड नहीं हुआ",
   "✦ Smart match": "✦ स्मार्ट मैच",
   "＋ New group": "＋ नया ग्रुप",
-  "＋ New group…": "＋ नया ग्रुप…"
+  "＋ New group…": "＋ नया ग्रुप…",
+  "Library": "लाइब्रेरी",
+  "Mark not watched": "न देखा हुआ मार्क करें",
+  "Marked as not watched": "अनदेखा के रूप में चिह्नित किया",
+  "Marked as watched": "देखा हुआ के रूप में चिह्नित किया",
+  "Play from the start": "शुरू से चलाएं",
+  "Recommended": "सुझाए गए",
+  "Resume from {x}": "{x} से फिर शुरू करें",
+  "Top 10": "टॉप 10",
+  "No app on this phone opens YouTube links": "इस फ़ोन पर कोई भी ऐप YouTube लिंक नहीं खोलता",
+  "None of today's streaming Top 10s are in your Plex libraries.": "आज की स्ट्रीमिंग Top 10 में से कोई भी आपकी Plex लाइब्रेरी में नहीं है.",
+  "Playing on the TV": "TV पर चल रहा है",
+  "Playing the trailer on the TV": "TV पर ट्रेलर चल रहा है",
+  "Playing {x} on the TV": "TV पर {x} चल रहा है",
+  "Trailer on TV": "TV पर ट्रेलर",
+  "Trailer on YouTube": "YouTube पर ट्रेलर",
+  "on TV": "TV पर"
 });

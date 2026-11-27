@@ -2144,5 +2144,21 @@ I18n.add('hr', {
   "✕ The guide did not load": "✕ Vodič se nije učitao",
   "✦ Smart match": "✦ Pametno povezivanje",
   "＋ New group": "＋ Nova grupa",
-  "＋ New group…": "＋ Nova grupa…"
+  "＋ New group…": "＋ Nova grupa…",
+  "Library": "Knjižnica",
+  "Mark not watched": "Označi negledano",
+  "Marked as not watched": "Označeno kao negledano",
+  "Marked as watched": "Označeno kao gledano",
+  "Play from the start": "Reproduciraj od početka",
+  "Recommended": "Preporučeno",
+  "Resume from {x}": "Nastavi od {x}",
+  "Top 10": "Top 10",
+  "No app on this phone opens YouTube links": "Nijedna aplikacija na ovom telefonu ne otvara YouTube poveznice",
+  "None of today's streaming Top 10s are in your Plex libraries.": "Nijedna od današnjih Top 10 lista streaminga nije u vašim Plex knjižnicama.",
+  "Playing on the TV": "Reproducira se na TV-u",
+  "Playing the trailer on the TV": "Najava se reproducira na TV-u",
+  "Playing {x} on the TV": "{x} se reproducira na TV-u",
+  "Trailer on TV": "Najava na TV-u",
+  "Trailer on YouTube": "Najava na YouTubeu",
+  "on TV": "na TV-u"
 });

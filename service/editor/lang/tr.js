@@ -2144,5 +2144,21 @@ I18n.add('tr', {
   "Getting Plex from the TV…": "Plex televizyondan alınıyor…",
   "No match for \"{x}\" on Plex.": "Plex'te \"{x}\" ile eşleşen bir şey yok.",
   "Nothing here yet": "Burada henüz bir şey yok",
-  "Search Plex": "Plex'te ara"
+  "Search Plex": "Plex'te ara",
+  "Library": "Kitaplık",
+  "Mark not watched": "İzlenmedi olarak işaretle",
+  "Marked as not watched": "İzlenmedi olarak işaretlendi",
+  "Marked as watched": "İzlendi olarak işaretlendi",
+  "Play from the start": "Baştan oynat",
+  "Recommended": "Önerilen",
+  "Resume from {x}": "{x} noktasından devam et",
+  "Top 10": "Top 10",
+  "No app on this phone opens YouTube links": "Bu telefondaki hiçbir uygulama YouTube bağlantılarını açmıyor",
+  "None of today's streaming Top 10s are in your Plex libraries.": "Bugünkü yayın platformu İlk 10 listelerinin hiçbiri Plex kitaplıklarınızda yok.",
+  "Playing on the TV": "TV'de oynatılıyor",
+  "Playing the trailer on the TV": "Fragman TV'de oynatılıyor",
+  "Playing {x} on the TV": "{x} TV'de oynatılıyor",
+  "Trailer on TV": "TV'de fragman",
+  "Trailer on YouTube": "YouTube'da fragman",
+  "on TV": "TV'de"
 });

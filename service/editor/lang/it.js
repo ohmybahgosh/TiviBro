@@ -2144,5 +2144,21 @@ I18n.add('it', {
   "Getting Plex from the TV…": "Prendo Plex dalla TV…",
   "No match for \"{x}\" on Plex.": "Niente corrisponde a «{x}» su Plex.",
   "Nothing here yet": "Ancora niente qui",
-  "Search Plex": "Cerca in Plex"
+  "Search Plex": "Cerca in Plex",
+  "Library": "Libreria",
+  "Mark not watched": "Segna come non visto",
+  "Marked as not watched": "Segnato come non visto",
+  "Marked as watched": "Segnato come visto",
+  "Play from the start": "Riproduci dall'inizio",
+  "Recommended": "Consigliati",
+  "Resume from {x}": "Riprendi da {x}",
+  "Top 10": "Top 10",
+  "No app on this phone opens YouTube links": "Nessuna app su questo telefono apre i link di YouTube",
+  "None of today's streaming Top 10s are in your Plex libraries.": "Nessuna delle Top 10 di oggi dello streaming è presente nelle tue librerie Plex.",
+  "Playing on the TV": "In riproduzione sulla TV",
+  "Playing the trailer on the TV": "Trailer in riproduzione sulla TV",
+  "Playing {x} on the TV": "{x} in riproduzione sulla TV",
+  "Trailer on TV": "Trailer sulla TV",
+  "Trailer on YouTube": "Trailer su YouTube",
+  "on TV": "sulla TV"
 });

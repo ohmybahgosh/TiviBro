@@ -2144,5 +2144,21 @@ I18n.add('uk', {
   "✕ The guide did not load": "✕ Телепрограму не вдалося завантажити",
   "✦ Smart match": "✦ Розумне зіставлення",
   "＋ New group": "＋ Нова група",
-  "＋ New group…": "＋ Нова група…"
+  "＋ New group…": "＋ Нова група…",
+  "Library": "Бібліотека",
+  "Mark not watched": "Позначити як непереглянуте",
+  "Marked as not watched": "Позначено як непереглянуте",
+  "Marked as watched": "Позначено як переглянуте",
+  "Play from the start": "Відтворити з початку",
+  "Recommended": "Рекомендовано",
+  "Resume from {x}": "Продовжити з {x}",
+  "Top 10": "Топ-10",
+  "No app on this phone opens YouTube links": "На цьому телефоні немає застосунку, який відкриває посилання YouTube",
+  "None of today's streaming Top 10s are in your Plex libraries.": "У ваших бібліотеках Plex немає жодного з сьогоднішніх топ-10 стрімінгових сервісів.",
+  "Playing on the TV": "Відтворюється на ТВ",
+  "Playing the trailer on the TV": "Трейлер відтворюється на ТВ",
+  "Playing {x} on the TV": "{x} відтворюється на ТВ",
+  "Trailer on TV": "Трейлер на ТВ",
+  "Trailer on YouTube": "Трейлер на YouTube",
+  "on TV": "на ТВ"
 });

@@ -2144,5 +2144,21 @@ I18n.add('ar', {
   "Local stations for {n} cities": ["محطات محلية لـ {n} مدينة", "محطات محلية لـ {n} مدينة", "محطات محلية لـ {n} مدينتين", "محطات محلية لـ {n} مدن", "محطات محلية لـ {n} مدينة", "محطات محلية لـ {n} مدينة"],
   "Split back into {n} groups": ["فصل مجددًا إلى {n} مجموعة", "فصل مجددًا إلى {n} مجموعة", "فصل مجددًا إلى {n} مجموعتين", "فصل مجددًا إلى {n} مجموعات", "فصل مجددًا إلى {n} مجموعة", "فصل مجددًا إلى {n} مجموعة"],
   "Ticked groups show inside {x} on the TV, their channels after its own.  New channels the provider adds to them come along.  Split undoes it.": "تظهر المجموعات المحددة داخل {x} على التلفزيون، وتأتي قنواتها بعد القنوات الأصلية.  وتنضم إليها القنوات الجديدة التي يضيفها المزوّد.  والفصل يلغي ذلك.",
-  "Groups from {n} countries are shown": ["تظهر مجموعات من {n} دول", "تظهر مجموعات من دولة واحدة ({n})", "تظهر مجموعات من دولتين ({n})", "تظهر مجموعات من {n} دول", "تظهر مجموعات من {n} دولة", "تظهر مجموعات من {n} دولة"]
+  "Groups from {n} countries are shown": ["تظهر مجموعات من {n} دول", "تظهر مجموعات من دولة واحدة ({n})", "تظهر مجموعات من دولتين ({n})", "تظهر مجموعات من {n} دول", "تظهر مجموعات من {n} دولة", "تظهر مجموعات من {n} دولة"],
+  "Library": "المكتبة",
+  "Mark not watched": "تعليم كغير مشاهد",
+  "Marked as not watched": "تم التحديد كغير مشاهد",
+  "Marked as watched": "تم التحديد كمشاهد",
+  "Play from the start": "التشغيل من البداية",
+  "Recommended": "موصى به",
+  "Resume from {x}": "استئناف من {x}",
+  "Top 10": "أفضل 10",
+  "No app on this phone opens YouTube links": "لا يوجد تطبيق على هذا الهاتف يفتح روابط YouTube",
+  "None of today's streaming Top 10s are in your Plex libraries.": "لا يوجد أي من قوائم أفضل 10 اليوم في خدمات البث ضمن مكتبات Plex لديك.",
+  "Playing on the TV": "التشغيل جارٍ على التلفزيون",
+  "Playing the trailer on the TV": "تشغيل الإعلان التشويقي على التلفزيون",
+  "Playing {x} on the TV": "تشغيل {x} على التلفزيون",
+  "Trailer on TV": "الإعلان التشويقي على التلفزيون",
+  "Trailer on YouTube": "الإعلان التشويقي على YouTube",
+  "on TV": "على التلفزيون"
 });

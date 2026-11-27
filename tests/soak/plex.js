@@ -242,17 +242,18 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     const showMenu = await ev(() => UI.menuLabels);
     ok('Red on a show: Play the next episode, Mark all watched', showMenu.indexOf('Play S2 · E1') >= 0 && showMenu.indexOf('Mark all watched') >= 0, showMenu);
     await ev(() => UI.press('back')); await page.waitForTimeout(300);
-    // The phone app's Plex tab (plexphone.js): lists from the TV, posters from the server, playing on the TV.
+    // The phone app's Plex tab (plexphone.js): lists from the TV, posters from the server, playing on the TV.  A library comes
+    // sorted and filtered as the TV's (Unwatched only, turned on above, leaves 7 of the 10).
     const ph = await ev(async () => {
       const libs = await PlexPhone.answer({ op: 'libs' }), home = await PlexPhone.answer({ op: 'home' });
       const lib = await PlexPhone.answer({ op: 'lib', server: libs.libs[0].server, key: libs.libs[0].key, offset: 0 });
       const found = await PlexPhone.answer({ op: 'search', q: 'Northbound' });
       let bad = ''; try { await PlexPhone.answer({ op: 'lib', server: libs.libs[0].server, key: '../x' }); } catch (e) { bad = e.message; }
       const played = await PlexPhone.answer({ op: 'play', server: libs.libs[0].server, key: '18' });
-      return { libs: libs.libs.map((l) => l.title), pics: Object.keys(libs.pics).length, rows: home.rows.map((r) => r.title), first: lib.items[0], total: lib.total, found: found.items.map((x) => x.title), bad, played };
+      const pr = PlexView.read.libPrefs(libs.libs[0]); return { tvTotal: pr.unwatched ? 7 : 10, libs: libs.libs.map((l) => l.title), pics: Object.keys(libs.pics).length, rows: home.rows.map((r) => r.title), first: lib.items[0], total: lib.total, found: found.items.map((x) => x.title), bad, played };
     });
     ok('phone: the libraries picked, with where posters come from', JSON.stringify(ph.libs) === '["Movies"]' && ph.pics === 1, ph);
-    ok('phone: Home rows, a library a page at a time, search', ph.rows[0] === 'Continue watching' && ph.total === 10 && ph.first && ph.first.key && ph.found.indexOf('Northbound') >= 0, ph);
+    ok('phone: Home rows, a library a page at a time, search', ph.rows[0] === 'Continue watching' && ph.total === ph.tvTotal && ph.first && ph.first.key && ph.found.indexOf('Northbound') >= 0, ph);
     ok('phone: a key that isn\'t a Plex title is refused', /isn't a Plex title/.test(ph.bad), ph.bad);
     await page.waitForTimeout(2500);
     ok('phone: Play on TV opens Plex and plays where you stopped', ph.played.title === 'Northbound' && /library\/parts\/7/.test(await ev(() => (Views.vod && Views.vod.url) || '')) && (await ev(() => Views.tab)) === 'plex');

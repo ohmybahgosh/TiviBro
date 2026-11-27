@@ -2150,5 +2150,21 @@ I18n.add('ru', {
   "Getting Plex from the TV…": "Получаем Plex с телевизора…",
   "No match for \"{x}\" on Plex.": "Ничего не найдено по «{x}» в Plex.",
   "Nothing here yet": "Здесь пока ничего нет",
-  "Search Plex": "Поиск в Plex"
+  "Search Plex": "Поиск в Plex",
+  "Library": "Библиотека",
+  "Mark not watched": "Отметить как непросмотренное",
+  "Marked as not watched": "Отмечено как непросмотренное",
+  "Marked as watched": "Отмечено как просмотренное",
+  "Play from the start": "Смотреть с начала",
+  "Recommended": "Рекомендуемое",
+  "Resume from {x}": "Продолжить с {x}",
+  "Top 10": "Топ-10",
+  "No app on this phone opens YouTube links": "На этом телефоне нет приложения для ссылок YouTube",
+  "None of today's streaming Top 10s are in your Plex libraries.": "В ваших библиотеках Plex нет ничего из сегодняшних топ-10 стриминговых сервисов.",
+  "Playing on the TV": "Воспроизводится на телевизоре",
+  "Playing the trailer on the TV": "Трейлер воспроизводится на телевизоре",
+  "Playing {x} on the TV": "{x} воспроизводится на телевизоре",
+  "Trailer on TV": "Трейлер на телевизоре",
+  "Trailer on YouTube": "Трейлер на YouTube",
+  "on TV": "на телевизоре"
 });

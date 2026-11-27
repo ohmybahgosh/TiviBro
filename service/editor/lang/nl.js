@@ -2144,5 +2144,21 @@ I18n.add('nl', {
   "Getting Plex from the TV…": "Plex ophalen van de tv…",
   "No match for \"{x}\" on Plex.": "Niets komt overeen met „{x}” op Plex.",
   "Nothing here yet": "Hier staat nog niets",
-  "Search Plex": "Zoeken in Plex"
+  "Search Plex": "Zoeken in Plex",
+  "Library": "Bibliotheek",
+  "Mark not watched": "Markeren als niet bekeken",
+  "Marked as not watched": "Gemarkeerd als niet bekeken",
+  "Marked as watched": "Gemarkeerd als bekeken",
+  "Play from the start": "Vanaf het begin afspelen",
+  "Recommended": "Aanbevolen",
+  "Resume from {x}": "Hervatten vanaf {x}",
+  "Top 10": "Top 10",
+  "No app on this phone opens YouTube links": "Geen app op deze telefoon opent YouTube-links",
+  "None of today's streaming Top 10s are in your Plex libraries.": "Geen van de streaming-top 10's van vandaag staat in je Plex-bibliotheken.",
+  "Playing on the TV": "Wordt afgespeeld op de tv",
+  "Playing the trailer on the TV": "De trailer wordt afgespeeld op de tv",
+  "Playing {x} on the TV": "{x} wordt afgespeeld op de tv",
+  "Trailer on TV": "Trailer op tv",
+  "Trailer on YouTube": "Trailer op YouTube",
+  "on TV": "op tv"
 });
