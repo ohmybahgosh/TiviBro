@@ -35,6 +35,7 @@ In 🇺🇸 English, 🇩🇪 German, 🇪🇸 🇲🇽 Spanish, 🇫🇷 French
 | 🏈 **Sports** | [Sports](Sports) · [My teams](My-teams) · [Event channels](Event-channels-pay-per-view-and-sports-passes) |
 | 🎬 **Movies and shows** | [Movies and shows](Movies-and-shows) · [Movies on now](Movies-on-now) · [No TMDB token? TheTVDB](No-TMDB-token-TheTVDB) · [Search](Search) |
 | 📂 **Your own movies and shows** | [My media](My-media) · [Settings: My media](Settings-My-media) |
+| 🍿 **Plex** | [Plex](Plex) · [Settings: Plex](Settings-Plex) |
 | 🖼️ **Channels without logos?** | [Channel logos](Channel-logos) |
 | 🧹 **Too many groups?** | [Turning on the web editor](Turning-on-the-web-editor) · [Smart clean-up](Smart-clean-up) · [Channels and groups](Channels-and-groups) · [Channel and group names](Channel-and-group-names) |
 | 🗓️ **Missing guide data?** | [The programme guide](The-programme-guide) |

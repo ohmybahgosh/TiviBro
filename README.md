@@ -36,6 +36,7 @@
 | 🖼️ **Logos for every channel**<br>Missing logos filled in from open logo projects, or one matching style for the whole list. | 🔁 **Switches to a working copy**<br>Same channel in FHD, HD and SD: when one dies, TiviBro moves to the next by itself. |
 | 🔊 **Sound the TV can't play**<br>DTS and Dolby TrueHD converted to Dolby Digital while you watch.  Nothing to install. | 🌈 **HDR, Dolby Vision and Atmos**<br>Each stream sent to the player that shows it best. |
 | 🧭 **A set-up tour and clean names**<br>Countries, East or West, your city's locals and clutter sorted in a few presses; "USA \| FHD ⚽" becomes a plain name. | 🌍 **In 10 languages**<br>🇺🇸 English · 🇩🇪 German · 🇪🇸 🇲🇽 Spanish · 🇫🇷 French · 🇮🇹 Italian · 🇳🇱 Dutch · 🇵🇱 Polish · 🇧🇷 🇵🇹 Portuguese · 🇷🇺 Russian · 🇹🇷 Turkish, on the TV, the phone and the editor. |
+| 🍿 **Plex, built in**<br>Sign in with a code and your Plex server gets its own tab: home rows, libraries, title pages with cast and extras, Plex's quality list and subtitle search, resume and watched marks kept in step. | 📈 **Streaming Top 10s**<br>Yesterday's Top 10s on Netflix, Prime Video, Disney+ and more, with the titles your provider or your Plex has. |
 | 🔐 **Locked backups and restore points**<br>One encrypted file with everything, restored onto a new TV from the first screen. | 💸 **Free and open source**<br>Every feature free.  MIT licensed, no account, no ads, no tracking. |
 
 ## Free here, paid elsewhere
@@ -57,6 +58,10 @@ Everything in TiviBro is free, including the things other players and media serv
 | 🎬 **Movie and show details, Up next, Trakt** | ✅ Free, with no token needed | Usually a media server |
 
 <sub>As listed on TiviMate's and Plex's own sites, November 2026.  No account, no ads, nothing locked.</sub>
+
+<h3 align="center">🍿 New in alpha 229: Plex, built in</h3>
+<p align="center">Sign in with a code at plex.tv/link and your Plex server gets <b>its own tab</b>: Continue watching, your Watchlist and your Plex home rows, each library with Recommended, Collections and Categories, and <b>title pages</b> with the cast, seasons, extras and More like this.  Files the TV can play play as they are, Dolby Vision included; the rest the server converts.  While watching: <b>Plex's quality list, subtitle search</b>, Skip intro and Up next.  And a row of the titles your Plex has that are on <b>yesterday's streaming Top 10s</b>.  This is the first Plex release: please send anything that goes wrong with Report a problem.</p>
+<p align="center"><sub><a href="docs/USER-GUIDE.md#plex">How to set it up</a> (Settings > Plex) · <a href="https://github.com/ohmybahgosh/TiviBro/releases/tag/v0.6.0-alpha.229">Alpha 229 release notes</a></sub></p>
 
 <h3 align="center">🗣️ New in alpha 221: Dialogue boost and night mode, free</h3>
 <p align="center">Can't hear the actors over the music?  <b>Dialogue boost</b> lifts voices over music and effects, Low or High, and <b>night mode</b> brings loud scenes down and quiet talk up for watching with the volume low.  On live channels, movies and shows, through the TV's speakers or a soundbar.  Plex keeps this for Plex Pass.</p>
@@ -117,6 +122,7 @@ Everything in TiviBro is free, including the things other players and media serv
 
 ### ✨ New lately
 
+- **Plex, built in.**  Your Plex server in its own tab, laid out as Plex's TV app: home rows, libraries, title pages with cast, seasons, extras and collections, Plex's quality list and subtitle search while watching, resume and watched marks kept in step with Plex, and the phone app's Plex tab.  The first Plex release: please report what goes wrong.  [Set it up](docs/USER-GUIDE.md#plex)
 - **Dialogue boost and night mode, free.**  Voices clearer over music and effects (Off, Low or High), and night mode for loud scenes when the volume is low.  It works on the TV's speakers and a soundbar, on channels, movies and shows.  Plex keeps this for Plex Pass.
 - **Everything works without a TMDB token.**  Movies and shows get posters, details, trailers and skip times from TheTVDB through TiviBro's own service: in the guide, Movies on now, your provider's Movies and Shows, My media, Up next and recordings.  **Where details come from** picks TMDB or TheTVDB for movies and for shows on their own, like Plex's agents.
 - **Four more languages:** 🇮🇹 Italian, 🇳🇱 Dutch, 🇵🇱 Polish and 🇹🇷 Turkish, next to 🇩🇪 German, 🇪🇸 Spanish, 🇫🇷 French, 🇧🇷 Portuguese and 🇷🇺 Russian, on the TV, the phone app and the web editor.

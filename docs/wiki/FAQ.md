@@ -52,6 +52,10 @@ Yes, for free (Plex keeps it for Plex Pass): Skip intro, Skip recap and Skip cre
 **I can't hear the dialogue over the music.  Can TiviBro help?**
 Yes, for free (Plex keeps it for Plex Pass): **Dialogue boost** (Low or High) lifts voices over music and effects, and **night mode** brings loud scenes down and quiet talk up.  While something plays, OK > **Dialogue boost**, or Settings > Audio and subtitles > Dialogue.  See [Dialogue boost and night mode](Dialogue-boost-and-night-mode).
 
+**Does TiviBro work with Plex?**
+
+Yes, since alpha 229: **Settings > Plex > Sign in to Plex** shows a code for plex.tv/link, and once you pick a library your server gets its own **Plex** tab, laid out as Plex's TV app (home rows, libraries, title pages with cast and extras, Plex's quality list and subtitle search while watching).  Watched marks and where you stopped go back to Plex.  It's new, so please send anything that goes wrong with **Report a problem** from the Plex tab.
+
 **Do I need a TMDB token for posters and details?**
 No.  Without one, movies and shows get their details from TheTVDB through TiviBro's own service.  With your own free TMDB token you can choose TMDB instead, for movies and shows on their own.  See [No TMDB token? TheTVDB](No-TMDB-token-TheTVDB).
 
