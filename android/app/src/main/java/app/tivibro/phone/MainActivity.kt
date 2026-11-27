@@ -24,6 +24,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
@@ -141,7 +142,29 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
             while (true) { model.refresh(); delay(15_000) }
         }
     }
-    LaunchedEffect(pending) { pending?.let { model.pairWithLink(it); link.value = null } }
+    /* A pairing link from outside the app (the TV's QR code through the camera, or a web page's button): asked first,
+       with the TV's name and address, since any web page could open such a link.  Only TVs on the home network. */
+    var askPair by remember { mutableStateOf<app.tivibro.phone.proto.PairLink?>(null) }
+    LaunchedEffect(pending) {
+        pending?.let { t ->
+            link.value = null
+            val l = app.tivibro.phone.proto.PairLink.parse(t)
+            when {
+                l == null -> model.pairWithLink(t)                       // says it isn't a pairing code
+                !app.tivibro.phone.proto.PairLink.onHomeNetwork(l.host) -> model.say(tr("That pairing link points outside your home network, so it was ignored.  Pair from the TV's own code."))
+                else -> askPair = l
+            }
+        }
+    }
+    askPair?.let { l ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { askPair = null },
+            title = { Text(tr("Pair with this TV?")) },
+            text = { Text(tr("{x} at {y}.  Only pair with a TV that's showing its pairing code right now.", "x" to l.name.ifBlank { tr("A TV") }, "y" to l.host)) },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { askPair = null; model.pair(l.host, l.port, l.code, l.id) }) { Text(tr("Pair")) } },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = { askPair = null }) { Text(tr("Cancel")) } },
+        )
+    }
     LaunchedEffect(share) { share?.let { shareText = it; shared.value = null; nav.navigate("share") } }
     LaunchedEffect(pairing.done) {
         if (pairing.done != null) { nav.popBackStack("home", inclusive = false); model.resetPairing() }

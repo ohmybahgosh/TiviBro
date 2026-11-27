@@ -2136,5 +2136,9 @@ I18n.add('de', {
   "Score by period": "Punkte nach Abschnitt",
   "Scoring": "Punkte",
   "Win chance": "Siegchance",
-  "All my teams": "Alle meine Teams"
+  "All my teams": "Alle meine Teams",
+  "A TV": "Ein Fernseher",
+  "Pair with this TV?": "Mit diesem Fernseher koppeln?",
+  "That pairing link points outside your home network, so it was ignored.  Pair from the TV's own code.": "Dieser Kopplungslink zeigt aus deinem Heimnetz hinaus und wurde ignoriert.  Kopple mit dem Code auf dem Fernseher.",
+  "{x} at {y}.  Only pair with a TV that's showing its pairing code right now.": "{x} unter {y}.  Kopple nur mit einem Fernseher, der gerade seinen Kopplungscode zeigt."
 });

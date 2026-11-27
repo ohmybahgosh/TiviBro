@@ -31,13 +31,9 @@ class RemoteWidget : AppWidgetProvider() {
     // Resized: the layout for the new size.
     override fun onAppWidgetOptionsChanged(ctx: Context, wm: AppWidgetManager, id: Int, o: android.os.Bundle) = draw(ctx, wm, id)
 
-    override fun onReceive(ctx: Context, i: Intent) {
-        super.onReceive(ctx, i)
-        if (i.action == PRESS) press(ctx.applicationContext, i.getStringExtra("b").orEmpty())
-    }
-
     // One button: a key, the TV's volume, or power.  In TvReach's scope (a receiver is let go of within seconds), one at a time.
-    private fun press(app: Context, b: String) {
+    // From WidgetTaps (the buttons' own receiver, which other apps can't reach).
+    internal fun press(app: Context, b: String) {
         I18n.ensure(app)
         val tv = TvStore(app).tileChoice()
         if (tv == null) { Toast.makeText(app, tr("Pair a TV in the app"), Toast.LENGTH_LONG).show(); return }
@@ -106,7 +102,7 @@ class RemoteWidget : AppWidgetProvider() {
             val v = RemoteViews(ctx.packageName, layoutFor(o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH), o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT)))
             v.setTextViewText(R.id.rw_name, TvStore(ctx).tileChoice()?.name ?: tr("Pair a TV in the app"))
             BUTTONS.forEachIndexed { n, (view, b) ->
-                v.setOnClickPendingIntent(view, PendingIntent.getBroadcast(ctx, 100 + n, Intent(ctx, RemoteWidget::class.java).setAction(PRESS).putExtra("b", b),
+                v.setOnClickPendingIntent(view, PendingIntent.getBroadcast(ctx, 100 + n, Intent(ctx, WidgetTaps::class.java).setAction(PRESS).putExtra("b", b),
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
                 v.setContentDescription(view, label(b))
             }

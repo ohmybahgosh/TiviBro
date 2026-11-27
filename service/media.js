@@ -906,6 +906,17 @@ function smbRequest(kind, q, res, ALLOW, log) {
     answer(e, e ? null : { folders: entries.filter(function (x) { return x.dir && !isJunk(x.name); }).map(function (x) { return { name: x.name, path: x.path }; }) });
   });
 }
+/* A request naming an object's built-in property (__proto__, constructor, prototype) as a key or as an ID: refused.
+   Its IDs are looked up in plain objects (sources, shows, jobs); "constructor" found Object itself, and a source
+   "__proto__" would have been made on every object's prototype. */
+var PROTO_NAMES = { __proto__: null, constructor: 1, prototype: 1 };
+PROTO_NAMES['__proto__'] = 1;
+function protoNamed(q) {
+  return Object.keys(q).some(function (k) {
+    var v = q[k];
+    return Object.prototype.hasOwnProperty.call(PROTO_NAMES, k) || (typeof v === 'string' && Object.prototype.hasOwnProperty.call(PROTO_NAMES, v));
+  });
+}
 function handle(req, res, ALLOW, log) {
   var route = req.url.split('?')[0];
   var libraryRoute = /^\/media\/library\/(query|detail|edit|migrate|progress|continue|chapters|source|adopt|resolve|status|sidecar)$/.exec(route);
@@ -921,6 +932,7 @@ function handle(req, res, ALLOW, log) {
     if (over) return;
     var q; try { q = JSON.parse(body || '{}'); } catch (e) { return send(res, ALLOW, 400, { error: 'bad request' }); }
     if (!q || typeof q !== 'object' || Array.isArray(q)) return send(res, ALLOW, 400, { error: 'bad request' });
+    if (protoNamed(q)) return send(res, ALLOW, 400, { error: 'bad request' });
     if (libraryRoute) return libraryRequest(libraryRoute[1], q, req, res, ALLOW, log);
     if (dropbox) return dropboxRequest(dropbox[1], q, res, ALLOW, log);
     if (gdrive) return gdriveRequest(gdrive[1], q, res, ALLOW, log);

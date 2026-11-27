@@ -2142,5 +2142,9 @@ I18n.add('pt-BR', {
   "Scoring": "Pontuações",
   "Win chance": "Chance de vitória",
   "Leaders": "Líderes",
-  "All my teams": "Todos os meus times"
+  "All my teams": "Todos os meus times",
+  "A TV": "Uma TV",
+  "Pair with this TV?": "Parear com esta TV?",
+  "That pairing link points outside your home network, so it was ignored.  Pair from the TV's own code.": "Esse link de pareamento aponta para fora da sua rede doméstica, então foi ignorado.  Pareie usando o código da própria TV.",
+  "{x} at {y}.  Only pair with a TV that's showing its pairing code right now.": "{x} em {y}.  Só pareie com uma TV que esteja mostrando o código de pareamento agora."
 });

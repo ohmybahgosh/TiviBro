@@ -36,8 +36,9 @@ class SportsWidget : AppWidgetProvider() {
         SportsWidgetWorker.start(ctx)
     }
 
-    override fun onReceive(ctx: Context, i: Intent) {
-        super.onReceive(ctx, i)
+    /* A tap on the widget, from WidgetTaps (the buttons' own receiver, which other apps can't reach): refresh, open a
+       game's card, back, a highlight, or Watch on TV. */
+    internal fun tap(ctx: Context, i: Intent) {
         I18n.ensure(ctx)
         when (i.action) {
             REFRESH -> { Toast.makeText(ctx, tr("Getting the scores…"), Toast.LENGTH_SHORT).show(); SportsWidgetWorker.now(ctx) }
@@ -122,10 +123,10 @@ class SportsWidget : AppWidgetProvider() {
             @Suppress("DEPRECATION") v.setRemoteAdapter(R.id.sw_list, svc)
             v.setEmptyView(R.id.sw_list, R.id.sw_empty)
             // One per widget (its id in it), so a game opens in the widget it was tapped in.
-            v.setPendingIntentTemplate(R.id.sw_list, PendingIntent.getBroadcast(ctx, 2000 + id, Intent(ctx, SportsWidget::class.java).setAction(PLAY).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id),
+            v.setPendingIntentTemplate(R.id.sw_list, PendingIntent.getBroadcast(ctx, 2000 + id, Intent(ctx, WidgetTaps::class.java).setAction(PLAY).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE))
             v.setOnClickPendingIntent(R.id.sw_title, PendingIntent.getActivity(ctx, 2, Intent(ctx, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE))
-            v.setOnClickPendingIntent(R.id.sw_refresh, PendingIntent.getBroadcast(ctx, 3, Intent(ctx, SportsWidget::class.java).setAction(REFRESH), PendingIntent.FLAG_IMMUTABLE))
+            v.setOnClickPendingIntent(R.id.sw_refresh, PendingIntent.getBroadcast(ctx, 3, Intent(ctx, WidgetTaps::class.java).setAction(REFRESH), PendingIntent.FLAG_IMMUTABLE))
             wm.updateAppWidget(id, v)
         }
     }

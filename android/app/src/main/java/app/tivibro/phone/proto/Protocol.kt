@@ -101,6 +101,21 @@ data class PairLink(val host: String, val port: Int, val id: String, val code: S
             val (host, port) = splitHostPort(hp) ?: return null
             return PairLink(host, port, id, code, (q["n"] ?: "TV").take(40))
         }
+
+        /** A TV's address a pairing link may point at: one on the home network (a private or link-local address, a
+         *  name ending .local or with no dots, or 100.64/10 as Tailscale gives).  Never the internet: a web page could
+         *  otherwise make the phone pair with a server of its own.  Pure, for tests. */
+        fun onHomeNetwork(host: String): Boolean {
+            val h = host.trim().trim('[', ']').lowercase()
+            if (h.isEmpty()) return false
+            val v4 = Regex("^(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})$").matchEntire(h)
+            if (v4 != null) {
+                val (a, b) = v4.groupValues.drop(1).take(2).map { it.toInt() }
+                return a == 10 || (a == 172 && b in 16..31) || (a == 192 && b == 168) || (a == 169 && b == 254) || (a == 100 && b in 64..127)
+            }
+            if (h.contains(':')) return h.startsWith("fe80:") || h.startsWith("fc") || h.startsWith("fd")
+            return h.endsWith(".local") || !h.contains('.')
+        }
     }
 }
 

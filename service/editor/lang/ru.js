@@ -2142,5 +2142,9 @@ I18n.add('ru', {
   "Scoring": "Набранные очки",
   "Win chance": "Шанс на победу",
   "Leaders": "Лидеры",
-  "All my teams": "Все мои команды"
+  "All my teams": "Все мои команды",
+  "A TV": "Телевизор",
+  "Pair with this TV?": "Подключиться к этому телевизору?",
+  "That pairing link points outside your home network, so it was ignored.  Pair from the TV's own code.": "Эта ссылка для подключения ведёт за пределы вашей домашней сети, поэтому она проигнорирована.  Подключайтесь по коду на самом телевизоре.",
+  "{x} at {y}.  Only pair with a TV that's showing its pairing code right now.": "{x} по адресу {y}.  Подключайтесь только к телевизору, который сейчас показывает код подключения."
 });

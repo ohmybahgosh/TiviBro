@@ -94,6 +94,10 @@
             </intent-filter>
         </receiver>
 
+        <!-- The widgets' button taps (widget/WidgetTaps.kt): not exported, so only the widgets' own buttons reach it. -->
+        <receiver
+            android:name=".widget.WidgetTaps"
+            android:exported="false" />
         <!-- The Sports widget's team logos, read by the launcher by address (widget/LogoProvider.kt): read-only,
              public ESPN logos only. -->
         <provider

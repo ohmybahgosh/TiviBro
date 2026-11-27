@@ -1016,6 +1016,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     fun pairWithLink(text: String?) {
         val l = PairLink.parse(text)
         if (l == null) { say(tr("That isn't a TiviBro pairing code.  On the TV: Settings, Phone app and web editor, Pair the TiviBro app.")); return }
+        if (!PairLink.onHomeNetwork(l.host)) { say(tr("That pairing link points outside your home network, so it was ignored.  Pair from the TV's own code.")); return }
         pair(l.host, l.port, l.code, l.id)
     }
 

@@ -2136,5 +2136,9 @@ I18n.add('nl', {
   "Scoring": "Scores",
   "Win chance": "Winkans",
   "Leaders": "Koplopers",
-  "All my teams": "Al mijn teams"
+  "All my teams": "Al mijn teams",
+  "A TV": "Een tv",
+  "Pair with this TV?": "Koppelen met deze tv?",
+  "That pairing link points outside your home network, so it was ignored.  Pair from the TV's own code.": "Die koppellink wijst buiten je thuisnetwerk, dus hij is genegeerd.  Koppel met de code op de tv zelf.",
+  "{x} at {y}.  Only pair with a TV that's showing its pairing code right now.": "{x} op {y}.  Koppel alleen met een tv die nu zijn koppelcode toont."
 });

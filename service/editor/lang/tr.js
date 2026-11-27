@@ -2136,5 +2136,9 @@ I18n.add('tr', {
   "Scoring": "Sayılar",
   "Win chance": "Kazanma şansı",
   "Leaders": "Liderler",
-  "All my teams": "Tüm takımlarım"
+  "All my teams": "Tüm takımlarım",
+  "A TV": "Bir TV",
+  "Pair with this TV?": "Bu TV ile eşleştirilsin mi?",
+  "That pairing link points outside your home network, so it was ignored.  Pair from the TV's own code.": "Bu eşleştirme bağlantısı ev ağınızın dışını gösteriyor, bu yüzden yok sayıldı.  TV'nin kendi koduyla eşleştirin.",
+  "{x} at {y}.  Only pair with a TV that's showing its pairing code right now.": "{x}, {y} adresinde.  Yalnızca şu anda eşleştirme kodunu gösteren bir TV ile eşleştirin."
 });
