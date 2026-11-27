@@ -7,7 +7,7 @@
 - **Streaming Top 10s for Plex.**  A row of the titles your Plex has that are on yesterday's streaming Top 10s, with "#3 on Netflix" under each, plus a row per service if you like.
 - **Plex in the phone app.**  A Plex tab to browse and search your libraries and resume on the TV.
 - **Stalker channels that switch to HLS keep playing.**  A channel the portal sends as HLS could, after a dropout, be retried the wrong way for as long as it stayed on, until another channel was picked (#193).  It now goes straight back to HLS.  The helper also no longer restarts itself when a movie's details were asked for before its list.
-- **More DASH playlists play.**  ClearKey keys written in base64, and Kodi 21's newer licence lines (drm_legacy and drm), are now read (#187).
+- **More DASH playlists play.**  ClearKey keys written in base64, and Kodi 21's newer licence lines (drm_legacy and drm), are now read, and the playlist's licence is tried first when a stream also lists Widevine or PlayReady (#185, #187).
 
 ## 0.6.0 (alpha 228, 2026-11-26)
 

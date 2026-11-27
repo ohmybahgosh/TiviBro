@@ -33,7 +33,10 @@ function make(dir, enc) {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tb-dash-'));
   make(path.join(tmp, 'clear'), false); make(path.join(tmp, 'ck'), true);
   let seenUA = '';
+  let licAsked = 0;
   const srv = http.createServer((req, res) => {
+    // A ClearKey licence server (license_type=clearkey with a license_key address, issue #185): answers the keys as JSON.
+    if (/^\/cklic/.test(req.url) && req.method === 'POST') { licAsked++; req.resume(); res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }); return res.end(JSON.stringify({ keys: [{ kty: 'oct', kid: 'ASNFZ4mrze8BI0VniavN7w', k: '_ty6mHZUMhD-3LqYdlQyEA' }], type: 'temporary' })); }
     const f = path.join(tmp, decodeURIComponent(req.url.split('?')[0]).replace(/\.\./g, ''));
     if (/\.mpd$/.test(f)) seenUA = req.headers['user-agent'] || '';
     if (!fs.existsSync(f)) { res.writeHead(404); return res.end(); }
@@ -82,6 +85,12 @@ function make(dir, enc) {
     ok('a ClearKey channel: the browser is asked for ClearKey', c.ks.indexOf('org.w3.clearkey') >= 0 && c.mk, JSON.stringify(c));
     ok('and given the playlist\'s key (kid and key in base64url)', keyAsked && keyAsked.kid === 'ASNFZ4mrze8BI0VniavN7w' && keyAsked.k === '_ty6mHZUMhD-3LqYdlQyEA', JSON.stringify(c.lic));
 
+    // ClearKey from a licence server (issue #185): its address in license_key, asked through the helper.
+    await ev(() => { window.__lic = null; });
+    await ev((a) => Player.play({ k: 'dash2b', n: 'DASH ClearKey server', url: a.u, dash: 1, drm: { type: 'clearkey', key: a.lic } }), { u: BASE + '/ck/stream.mpd', lic: BASE + '/cklic?id=1132' });
+    await page.waitForFunction(() => window.__lic, null, { timeout: 30000 }).catch(() => {});
+    const cs = await ev(() => ({ lic: window.__lic, err: window.__perr }));
+    ok('ClearKey from a licence server: asked, and its keys reach the browser', licAsked > 0 && cs.lic && cs.lic.keys && cs.lic.keys[0].kid === 'ASNFZ4mrze8BI0VniavN7w', JSON.stringify(cs) + ' asked ' + licAsked);
     // Widevine: a licence server from license_key, its User-Agent through the helper, its Content-Type to the browser.
     // ClearKey ids and keys already in base64 (issue #187), as some playlists write them: the same keys as the hex ones.
     const b64 = await ev(() => Player._dashProtection({ type: 'clearkey', key: 'ASNFZ4mrze8BI0VniavN7w==:/ty6mHZUMhD+3LqYdlQyEA==' }, { pl: null }));

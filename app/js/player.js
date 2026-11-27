@@ -341,6 +341,9 @@ var Player = (function () {
       } else o.serverURL = url;
       if (Object.keys(hdr).length) o.httpRequestHeaders = hdr;
     }
+    /* First choice: a stream that also lists Widevine or PlayReady had the TV pick one of those, with no licence for
+       it ("No license server URL specified", issue #185, a ClearKey playlist on webOS 26). */
+    o.priority = 0;
     out[sys] = o;
     return out;
   }
