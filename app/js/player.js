@@ -1860,9 +1860,9 @@ var Player = (function () {
     if (!want) {
       st.userPaused = false; st.lastMove = Date.now();
       if (st.parked) {
-        // Paused live TV whose connection was let go: back to the live edge.
+        // Paused live TV whose connection was let go: back to the live edge.  A movie let go (park): where it was.
         cur.retries = 0;
-        notice('Back to live');
+        if (!isFile()) notice('Back to live');
         start(token);
         return;
       }
@@ -1882,6 +1882,17 @@ var Player = (function () {
     }
   }
   var LONG_PAUSE = 3 * 60000;
+  /* A paused video let go of, picture and connection, so the TV's video decoder is free (the Aerial screensaver,
+     which replaces the TV's own, plays only a clock while an app holds it: Awake parks before the TV starts it).
+     Play opens it again where it was (setPaused).  False when nothing is paused or it's already let go. */
+  function park() {
+    if (!cur || !st || !st.userPaused || st.parked || !video) return false;
+    if (isFile()) { cur.startAt = Math.max(0.1, position()); cur.pos = cur.startAt; }
+    st.parked = true;
+    Log.info('player', 'Paused ' + (isFile() ? 'video at ' + Math.round(cur.startAt) + 's' : 'channel') + ' let go, so the TV\'s screensaver has the video decoder');
+    teardown();
+    return true;
+  }
   function togglePause() { if (video && st) setPaused(!st.userPaused); }
   // A fresh go from the top: every pipeline gets another chance.
   /* A channel still starting, for the "taking longer than usual" question (views.js, discussion #36): how long,
@@ -1957,7 +1968,7 @@ var Player = (function () {
 
   return {
     _test: { reconnect: function (why) { reconnect(token, why || 'test'); }, get holding() { return holding; }, get kind() { return st && st.kind; } },
-    PRESETS: PRESETS, memorySafe: memorySafe, get converting() { return !!(cur && cur.conv); }, vodHls: function (u) { return vodHls(u); }, get userPaused() { return !!(st && st.userPaused); }, get memSafe() { return memSafe() ? (typeof Store !== 'undefined' && Store.settings && Store.settings.memSafe === 'on' ? 'turned on in Settings' : safeWhy || (navigator.deviceMemory ? 'this TV has 1 GB of memory or less' : 'an HD or Full HD TV, with about 1 GB of memory')) : ''; }, bind: bind, play: play, _dashProtection: dashProtection, heardAudio: heardAudio, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, retryNow: retryNow, resync: resync, get syncBlock() { return cur && st && st.kind === 'native' && syncing() ? cur.syncWhy || 'it plays on the TV\'s own player' : ''; }, get startStatus() { return startStatus(); }, on: on,
+    PRESETS: PRESETS, memorySafe: memorySafe, get converting() { return !!(cur && cur.conv); }, vodHls: function (u) { return vodHls(u); }, get userPaused() { return !!(st && st.userPaused); }, get memSafe() { return memSafe() ? (typeof Store !== 'undefined' && Store.settings && Store.settings.memSafe === 'on' ? 'turned on in Settings' : safeWhy || (navigator.deviceMemory ? 'this TV has 1 GB of memory or less' : 'an HD or Full HD TV, with about 1 GB of memory')) : ''; }, bind: bind, play: play, _dashProtection: dashProtection, heardAudio: heardAudio, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, park: park, retryNow: retryNow, resync: resync, get syncBlock() { return cur && st && st.kind === 'native' && syncing() ? cur.syncWhy || 'it plays on the TV\'s own player' : ''; }, get startStatus() { return startStatus(); }, on: on,
     seek: seek, seekTo: seekTo, liveWindow: liveWindow, get tshift() { return !!(cur && cur.tshift); }, liveSeek: liveSeek, applyDisplay: applyDisplay, suspend: suspend, resume: resume,
     audioTracks: function () { return eng && eng.audio ? eng.audio() : []; }, describeTrack: describeTrack,
     qualities: function () { return eng && eng.levels ? eng.levels() : []; },

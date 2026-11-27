@@ -24,6 +24,8 @@ var Saver = (function () {
 
   function S() { return (typeof Store !== 'undefined' && Store.settings) || {}; }
   function enabled() { return S().saver !== 'off' && S().saver !== 'aerial'; }
+  // Aerial picked: the TV's screensaver needs the video decoder (Awake parks a paused video before it starts).
+  function wantsDecoder() { return S().saver === 'aerial'; }
   // Burnin's dimming stays away while a screensaver (this one or Aerial) does its job.
   function covers() { return S().saver !== 'off'; }
 
@@ -179,5 +181,5 @@ var Saver = (function () {
   function holds() { return enabled() && !document.hidden && !handed; }
   function start() { setInterval(check, 15000); aerial(); }
   function preview() { if (S().saver === 'aerial') return aerialNow(); last = 0; show(); }
-  return { start: start, activity: activity, holds: holds, enabled: enabled, covers: covers, aerial: aerial, preview: preview, get on() { return on; }, LOOKS: LOOKS, _due: due, _ready: ready };
+  return { start: start, activity: activity, holds: holds, enabled: enabled, covers: covers, wantsDecoder: wantsDecoder, aerial: aerial, preview: preview, get on() { return on; }, LOOKS: LOOKS, _due: due, _ready: ready };
 })();
