@@ -2665,5 +2665,8 @@ I18n.add('nl', {
   "After this many episodes in a row, Up next waits for OK instead of counting down, so a show doesn't play on all night.": "Na zoveel afleveringen achter elkaar wacht Hierna op OK in plaats van af te tellen, zodat een serie niet de hele nacht doorspeelt.",
   "Keep watching": "Verder kijken",
   "Never": "Nooit",
-  "Still watching?": "Kijk je nog?"
+  "Still watching?": "Kijk je nog?",
+  "Mark all not watched": "Alles als niet bekeken markeren",
+  "Mark all watched": "Alles als bekeken markeren",
+  "Play S{x} · E{y}": "S{x} · A{y} afspelen"
 });

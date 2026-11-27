@@ -136,7 +136,7 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     await ev(() => Plex.setPref('homeQuality', 0));
     // An old MPEG-2 file the TV can't play as is: the server converts it (HLS), from where you start.
     await ev(() => { Views.stopAll(); PlexPage.open({ ratingKey: '13', title: 'Low Tide', type: 'movie', server: Plex.chosen()[0].id }, function () {}); });
-    await page.waitForFunction(() => (PlexPage._test.item() || {}).title === 'Low Tide' && PlexPage._test.buttons().length, null, { timeout: 8000 });
+    await page.waitForFunction(() => (PlexPage._test.item() || {}).title === 'Low Tide' && (PlexPage._test.item() || {}).Media && PlexPage._test.buttons().length, null, { timeout: 8000 });
     await ev(() => PlexPage._test.keys('ok'));
     await page.waitForFunction(() => /metadata%2F13/.test((Views.vod && Views.vod.url) || ''), null, { timeout: 8000 }).catch(() => {});
     const conv = await ev(() => (Views.vod && Views.vod.url) || '');
@@ -155,6 +155,12 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     const up2 = await ev(() => document.body.innerText);
     ok('after the episodes in a row set: Still watching? waits for OK', /Still watching\?/i.test(up2) && /Keep watching/.test(up2), up2.slice(-400));
     await ev(() => { UI.press('back'); Plex.setPref('stillAfter', 3); }); await page.waitForTimeout(800);
+    // Red on a show: play the next episode, mark it all watched.
+    await ev(() => { Views.stopAll(); UI.close && UI.close(); PlexView.openShow({ ratingKey: '40', type: 'show', title: 'The Harbor Lights', server: Plex.chosen()[0].id }); PlexView._test.keys('red'); });
+    await page.waitForTimeout(1200);
+    const showMenu = await ev(() => UI.menuLabels);
+    ok('Red on a show: Play the next episode, Mark all watched', showMenu.indexOf('Play S2 · E1') >= 0 && showMenu.indexOf('Mark all watched') >= 0, showMenu);
+    await ev(() => UI.press('back')); await page.waitForTimeout(300);
     // The phone app's Plex tab (plexphone.js): lists from the TV, posters from the server, playing on the TV.
     const ph = await ev(async () => {
       const libs = await PlexPhone.answer({ op: 'libs' }), home = await PlexPhone.answer({ op: 'home' });

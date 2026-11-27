@@ -2665,5 +2665,8 @@ I18n.add('it', {
   "After this many episodes in a row, Up next waits for OK instead of counting down, so a show doesn't play on all night.": "Dopo questi episodi di fila, Prossimo episodio aspetta OK invece del conto alla rovescia, così una serie non va avanti tutta la notte.",
   "Keep watching": "Continua a guardare",
   "Never": "Mai",
-  "Still watching?": "Stai ancora guardando?"
+  "Still watching?": "Stai ancora guardando?",
+  "Mark all not watched": "Segna tutto come non visto",
+  "Mark all watched": "Segna tutto come visto",
+  "Play S{x} · E{y}": "Riproduci S{x} · E{y}"
 });

@@ -2665,5 +2665,8 @@ I18n.add('pl', {
   "After this many episodes in a row, Up next waits for OK instead of counting down, so a show doesn't play on all night.": "Po tylu odcinkach z rzędu Następny odcinek czeka na OK zamiast odliczać, żeby serial nie leciał całą noc.",
   "Keep watching": "Oglądaj dalej",
   "Never": "Nigdy",
-  "Still watching?": "Nadal oglądasz?"
+  "Still watching?": "Nadal oglądasz?",
+  "Mark all not watched": "Oznacz wszystko jako nieobejrzane",
+  "Mark all watched": "Oznacz wszystko jako obejrzane",
+  "Play S{x} · E{y}": "Odtwórz S{x} · O{y}"
 });

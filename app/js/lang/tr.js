@@ -2665,5 +2665,8 @@ I18n.add('tr', {
   "After this many episodes in a row, Up next waits for OK instead of counting down, so a show doesn't play on all night.": "Art arda bu kadar bölümden sonra Sıradaki geri sayım yerine OK bekler, böylece bir dizi bütün gece oynamaz.",
   "Keep watching": "İzlemeye devam et",
   "Never": "Asla",
-  "Still watching?": "Hâlâ izliyor musunuz?"
+  "Still watching?": "Hâlâ izliyor musunuz?",
+  "Mark all not watched": "Tümünü izlenmedi olarak işaretle",
+  "Mark all watched": "Tümünü izlendi olarak işaretle",
+  "Play S{x} · E{y}": "S{x} · B{y} oynat"
 });

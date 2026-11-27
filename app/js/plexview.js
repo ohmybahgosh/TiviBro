@@ -246,7 +246,8 @@ var PlexView = (function () {
   }
   // Red: on Library, how it's sorted and filtered (kept per library); elsewhere, the rows' refresh.
   function options() {
-    var t = tabNow(), sub = SUBS[subAt][0];
+    var t = tabNow(), sub = SUBS[subAt][0], top = stack[stack.length - 1];
+    if (top && /^(show|season)$/.test(top.type)) return showOptions(top);
     if (t.id !== 'lib' || sub !== 'library' || stack.length) return UI.menu(T('Plex'), [{ label: T('Refresh'), action: function () { load(); } }].concat(t.id === 'home' && !stack.length ? [{ label: T('Edit home rows'), action: function () { editRows(); } }] : []));
     var p = libPrefs(t.lib);
     UI.menu(t.lib.title, [
@@ -257,6 +258,20 @@ var PlexView = (function () {
       { label: T('Genre'), sub: p.genre || T('Any'), action: function () { genres(t.lib, p); } },
       { label: T('Clear filters'), action: function () { delete p.unwatched; delete p.genre; savePrefs(); rowAt = 0; load(); } }
     ]);
+  }
+  /* Red on a show or a season: play the next episode (the one you're in, else the first not watched), or mark it
+     all watched or not watched, as Plex does. */
+  function showOptions(m) {
+    Plex.call(m.server, '/library/metadata/' + m.ratingKey + '/allLeaves').then(function (j) {
+      var eps = mc(j).Metadata || [], next = eps.filter(function (e) { return e.viewOffset; })[0] || eps.filter(function (e) { return !e.viewCount; })[0];
+      var rows = [];
+      if (next) rows.push({ label: T('Play S{x} · E{y}', { x: next.parentIndex, y: next.index }), sub: I18n.raw(next.title || ''), action: function () { PlexPage.playKey(m.server, String(next.ratingKey), false).catch(function (e) { U.toast(e.message, 6000); }); } });
+      rows.push({ label: T('Mark all watched'), action: function () { markAll(m, true); } }, { label: T('Mark all not watched'), action: function () { markAll(m, false); } }, { label: T('Refresh'), action: function () { load(); } });
+      UI.menu(I18n.raw(m.title), rows);
+    }, function (e) { U.toast(e.message, 6000); });
+  }
+  function markAll(m, on) {
+    Plex.call(m.server, (on ? '/:/scrobble' : '/:/unscrobble') + '?identifier=com.plexapp.plugins.library&key=' + m.ratingKey).then(function () { U.toast(on ? T('Marked as watched') : T('Marked as not watched')); load(); }, function (e) { U.toast(e.message, 6000); });
   }
   function genres(l, p) {
     Plex.call(l.server, '/library/sections/' + l.key + '/genre').then(function (j) {

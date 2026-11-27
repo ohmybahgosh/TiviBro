@@ -2786,5 +2786,8 @@ I18n.add('ru', {
   "After this many episodes in a row, Up next waits for OK instead of counting down, so a show doesn't play on all night.": "После стольких серий подряд «Далее» ждёт OK вместо отсчёта, чтобы сериал не шёл всю ночь.",
   "Keep watching": "Смотреть дальше",
   "Never": "Никогда",
-  "Still watching?": "Ещё смотрите?"
+  "Still watching?": "Ещё смотрите?",
+  "Mark all not watched": "Отметить всё как непросмотренное",
+  "Mark all watched": "Отметить всё как просмотренное",
+  "Play S{x} · E{y}": "Смотреть С{x} · Э{y}"
 });

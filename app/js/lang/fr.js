@@ -1940,5 +1940,8 @@ I18n.add('fr', {
   "After this many episodes in a row, Up next waits for OK instead of counting down, so a show doesn't play on all night.": "Après ce nombre d'épisodes d'affilée, À suivre attend OK au lieu du compte à rebours, pour qu'une série ne tourne pas toute la nuit.",
   "Keep watching": "Continuer",
   "Never": "Jamais",
-  "Still watching?": "Vous regardez toujours ?"
+  "Still watching?": "Vous regardez toujours ?",
+  "Mark all not watched": "Tout marquer comme non vu",
+  "Mark all watched": "Tout marquer comme vu",
+  "Play S{x} · E{y}": "Lire S{x} · E{y}"
 });
