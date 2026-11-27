@@ -13,7 +13,7 @@ var Settings = (function () {
      ALIAS: old ids, so links, older phone apps and tests still land somewhere sensible. */
   var SECTIONS = [['language', 'Language'], ['playlists', 'Playlists and accounts'], ['connect', 'Phone app and web editor'], ['guide', 'Guide'], ['channels', 'Channels and groups'],
     ['sports', 'Sports'], ['names', 'Channel and group names'], ['playback', 'Playback'], ['audio', 'Audio and subtitles'], ['recording', 'Recording and live pause'], ['remote', 'Remote and buttons'],
-    ['vod', 'Movies and shows'], ['media', 'My media'], ['reminders', 'Reminders and watchlist'], ['parental', 'Parental controls'], ['look', 'Appearance'], ['keys', 'API keys'],
+    ['vod', 'Movies and shows'], ['media', 'My media'], ['plex', 'Plex'], ['reminders', 'Reminders and watchlist'], ['parental', 'Parental controls'], ['look', 'Appearance'], ['keys', 'API keys'],
     ['backups', 'Backups and restore points'], ['about', 'System']];
   var PAGES = {};
   var ALIAS = { lang: 'language', groups: 'channels', updates: 'about', diag: 'about', system: 'about', phone: 'connect', editor: 'connect', watchlist: 'reminders', apikeys: 'keys', tokens: 'keys', subtitles: 'audio',
@@ -459,6 +459,91 @@ var Settings = (function () {
       toggle('Favorites also in lists', 'On: a favorite movie or show is in Favorites and also in Movies or TV shows.  Off: only in Favorites.', function () { return MediaStore.preferences().favoritesInLists; }, function (v) { Media.updatePreferences({ favoritesInLists: v }); paint(); }),
       choice('Metadata language', 'Shared with the web editor.  Refreshes saved movie and show matches in this language.  Missing translations fall back to English.', Object.keys(names), Object.keys(names).map(function (k) { return names[k]; }), function () { return MediaStore.preferences().language; }, function (v) { Media.updatePreferences({ language: v }); paint(); })
     ]).filter(Boolean);
+  }
+
+  /* ---------- Plex: sign in, servers, libraries, who's watching (plex.js) ----------
+     Before a server and a library are added, this section is the only place Plex shows. */
+  function plexErr(e) { if (e && e.message !== 'Stopped.') U.toast(e.message || 'Plex did not answer.', 7000); }
+  // The sign-in: a code for plex.tv/link (and a QR with it filled in), or the button that asks for one.
+  function plexSignIn() {
+    var code = Plex.pendingCode(), out = [];
+    if (!code) {
+      out.push(action('Sign in to Plex', 'Shows a code to enter at plex.tv/link on your phone or computer.  No password is typed on the TV.', function () {
+        U.toast('Asking Plex for a code…');
+        Plex.connect(function () { build(); }).then(function (u) { U.toast(T('Signed in to Plex as {x}', { x: u }), 5000); build(); }, function (e) { plexErr(e); build(); });
+      }));
+      return out;
+    }
+    if (typeof qrcode !== 'undefined') {
+      var qb = U.el('div', 'trakt-qr'), qi = U.el('div', 'trakt-qr-img');
+      try { var q = qrcode(0, 'M'); q.addData('https://plex.tv/link/?pin=' + encodeURIComponent(code.code)); q.make(); qi.innerHTML = q.createSvgTag({ cellSize: 6, margin: 2, scalable: true }); } catch (e) { qi = null; }
+      if (qi) { qb.appendChild(qi); var qt = U.el('div', 'trakt-qr-t'); qt.appendChild(U.el('b', '', T('Scan with your phone\'s camera'))); qt.appendChild(U.el('span', '', T('Plex opens with the code filled in.  Sign in to finish.'))); qb.appendChild(qt); out.push({ preview: true, el: qb }); }
+    }
+    var cd = info('2.  Enter this code', code.code); cd.cls = 'trakt-code';
+    out.push(action('1.  On a phone or computer, open', 'Then sign in to Plex.', function () { U.toast(T('Open plex.tv/link and enter {x}', { x: code.code }), 8000); }, function () { return 'plex.tv/link'; }),
+      cd, info('Waiting for Plex…', 'This page updates by itself'), action('Stop signing in', '', function () { Plex.cancel(); build(); }));
+    return out;
+  }
+  // A server's line: who owns it and how it's reached.
+  function plexServerSub(sv) {
+    var bits = [sv.owned ? T('Yours') : T('Shared with you'), sv.online ? (sv.uri ? (sv.relay ? T('Through Plex Relay (slow)') : sv.local ? T('On your network') : T('Over the internet')) : T('Online')) : T('Off or unreachable')];
+    if (!sv.owned && !Plex.user().pass) bits.push(T('Away from home it needs Plex Pass'));
+    return I18n.raw(bits.join('  ·  '));
+  }
+  // Servers: on or off each (a page, so the phone app shows them too).
+  function plexServers() {
+    var out = [];
+    if (!Plex.servers().length) out.push(info('No Plex servers on this account yet.', ''));
+    Plex.servers().forEach(function (sv) {
+      out.push(toggle(I18n.raw(sv.name), plexServerSub(sv), function () { return Plex.chosen().indexOf(sv) >= 0; }, function (v) { Plex.choose(sv.id, v); }));
+    });
+    out.push(action('Look for servers again', 'After adding a server, or when a friend shares one with you.', function () { U.toast('Asking Plex…'); Plex.loadServers().then(function () { build(); }, plexErr); }));
+    return out;
+  }
+  var plexSecCache = {};
+  // A server's movie and TV libraries, on or off each; read once when the page opens.
+  function plexLibraries(sv) {
+    var list = plexSecCache[sv.id];
+    if (!list) {
+      Plex.sections(sv.id).then(function (l) { plexSecCache[sv.id] = l; build(); }, function (e) { plexSecCache[sv.id] = []; plexErr(e); build(); });
+      return [info(T('Reading the libraries on {x}…', { x: sv.name }), '')];
+    }
+    if (!list.length) return [info('No movie or TV libraries on this server.', '')];
+    return list.map(function (l) {
+      return toggle(I18n.raw(l.title), l.type === 'movie' ? 'Movies' : 'TV shows', function () { return Plex.libs(sv.id).indexOf(l.key) >= 0; }, function (v) {
+        Plex.setLib(sv.id, l.key, v);
+        var keep = Plex.shownLibraries().filter(function (x) { return !(x.server === sv.id && x.key === l.key); });
+        if (v) keep.push(l);
+        Plex.rememberLibraries(keep);
+        if (typeof Views !== 'undefined' && Views.buildTabs) Views.buildTabs();
+      });
+    });
+  }
+  // Plex Home: everyone on the account, and signing in as one of them (with their PIN when they have one).
+  var plexPeople = null;
+  function plexHome() {
+    if (!plexPeople) { Plex.homeUsers().then(function (u) { plexPeople = u; build(); }, function (e) { plexPeople = []; plexErr(e); build(); }); return [info('Reading who\'s on this Plex Home…', '')]; }
+    return plexPeople.map(function (u) {
+      var me = u.name === Plex.user().name;
+      return action(I18n.raw(u.name), I18n.raw((me ? T('Watching now') : u.pin ? T('Has a PIN') : '') + (u.restricted ? (me || u.pin ? '  ·  ' : '') + T('Managed') : '')), function () {
+        if (me) return;
+        function go(pin) { U.toast(T('Switching to {x}…', { x: u.name })); Plex.switchUser(u.uuid, pin).then(function (n) { U.toast(T('Watching as {x}', { x: n }), 5000); plexPeople = null; build(); }, plexErr); }
+        if (u.pin) UI.prompt(T('{x}\'s PIN', { x: u.name }), '', function (p) { go(String(p || '').trim()); }, T('Four numbers.  The number keys on the remote work.'), true); else go();
+      }, function () { return me ? '✓' : ''; });
+    });
+  }
+  function plexSection() {
+    var out = [info('Your Plex movies and shows in TiviBro, with their posters, collections, playlists and watched marks.  Once a server and a library are added, Plex gets its own place in the menu, the phone app and the web editor.', '')];
+    if (!Plex.signedIn()) return out.concat(head('Sign in'), plexSignIn());
+    out.push(head('Account'), info('Signed in as', I18n.raw(Plex.describe())));
+    if (Plex.user().home) out.push(page('Who\'s watching', 'Switch to another person on your Plex Home.  Each keeps their own watched marks and limits.', 'Who\'s watching', plexHome, function () { return Plex.user().name; }));
+    out.push(head('Servers and libraries'), page('Servers', 'Yours, and the ones friends share with you.', 'Plex servers', plexServers, function () { return Plex.chosen().length + ' / ' + Plex.servers().length; }));
+    Plex.chosen().forEach(function (sv) {
+      out.push(page(T('Libraries on {x}', { x: sv.name }), 'Which libraries show in TiviBro.  Music and photos stay in Plex\'s own apps.', I18n.raw(sv.name), function () { return plexLibraries(sv); }, function () { return String(Plex.libs(sv.id).length); }));
+    });
+    out.push(head('Plex Pass'), info(Plex.user().pass ? T('You have Plex Pass: your servers play anywhere.') : T('Away from home, Plex plays video only when you or the server\'s owner have Plex Pass (or a Remote Watch Pass).  At home it\'s free.'), ''));
+    out.push(head('Account'), action('Sign out of Plex', 'Plex leaves the menu, the phone app and the web editor until you sign in again.', function () { UI.confirm('Sign out of Plex on this TV?', 'Sign out', function () { Plex.signOut(); plexSecCache = {}; plexPeople = null; build(); if (typeof Views !== 'undefined' && Views.buildTabs) Views.buildTabs(); }); }));
+    return out;
   }
 
   /* ---------- Trakt: watch history both ways, and its lists as My media shelves ---------- */
@@ -2252,7 +2337,7 @@ var Settings = (function () {
     return top.concat([page('Fix a problem', 'Channels freeze, no guide, no sound, TiviBro closed or is slow: what to try first.', 'Fix a problem', fixes)].concat(about(),
       [head('Backups'), link('Backups and restore points', 'Everything saved, to put back on this TV or another one.', 'backups')]));
   }
-  var BY_ID = { sports: teamsPage, language: language, playlists: playlists, guide: guide, channels: groups, names: names, reminders: reminders, playback: playback, audio: audioSubs, vod: vodSettings, media: media, keys: apiKeys, remote: remote, recording: recordingPage, look: look, parental: parental, backups: backups, connect: connect, about: about };
+  var BY_ID = { sports: teamsPage, language: language, playlists: playlists, guide: guide, channels: groups, names: names, reminders: reminders, playback: playback, audio: audioSubs, vod: vodSettings, media: media, plex: plexSection, keys: apiKeys, remote: remote, recording: recordingPage, look: look, parental: parental, backups: backups, connect: connect, about: about };
   var SEC_FNS = { playlists: playlistsSection, channels: channelsSection, playback: playbackSection, about: systemSection };
   var FNS = SECTIONS.map(function (x) { return SEC_FNS[x[0]] || BY_ID[x[0]]; });
   // An old section that is now a page: its section, and the row's place in it (or -1).
