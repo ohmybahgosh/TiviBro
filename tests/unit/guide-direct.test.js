@@ -56,7 +56,7 @@ const G = { sig: 's1', at: 1 };
     assert.equal(s('getaddrinfo ENOTFOUND saved.example.net'), 'getaddrinfo ENOTFOUND <provider>');
     assert.equal(s("Host: tv.example.org. is not in the cert's altnames: DNS:cdn.example.org"), "Host: <server>. is not in the cert's altnames: DNS:<server>");
     assert.equal(s('dns 198.51.100.23 answered nothing'), 'dns <address> answered nothing');
-    for (const keep of ['connect ECONNREFUSED 127.0.0.1:47811', 'ETIMEDOUT after 15001ms', 'Chromium 87.0.4280.88', 'Chrome/87.0.4280.88', 'TV 192.168.50.96']) assert.equal(s(keep), keep);
+    for (const keep of ['connect ECONNREFUSED 127.0.0.1:47811', 'ETIMEDOUT after 15001ms', 'Chromium 87.0.4280.88', 'Chrome/87.0.4280.88', 'TV 192.168.1.20']) assert.equal(s(keep), keep);
   });
   if (fails) process.exitCode = 1;
 })();

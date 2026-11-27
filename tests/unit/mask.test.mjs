@@ -18,7 +18,7 @@ same('helper: connect ECONNREFUSED 203.0.113.7:443  url=https://<provider>/get.p
 same("Hostname/IP does not match certificate's altnames: Host: tv.example.net. is not in the cert's altnames: DNS:*.cdn.example.org, DNS:cdn.example.org", "Hostname/IP does not match certificate's altnames: Host: <server>. is not in the cert's altnames: DNS:<server>, DNS:<server>", 'server names in a certificate error');
 const rep = (s) => m(s, { addresses: true });
 ok('a report: any public IPv4 address', rep('dns 198.51.100.23 answered nothing; tv at 203.0.113.9') === 'dns <address> answered nothing; tv at <address>', rep('dns 198.51.100.23 answered nothing; tv at 203.0.113.9'));
-for (const keep of ['Mozilla/5.0 Chrome/87.0.4280.88 Safari/537.36', 'TV 192.168.50.96 on 10.0.0.1', 'webOS 6.3.1.2-x', 'DNS 1.1.1.1 / 8.8.8.8 / 9.9.9.9, ControlD 76.76.2.11'])
+for (const keep of ['Mozilla/5.0 Chrome/87.0.4280.88 Safari/537.36', 'TV 192.168.1.20 on 10.0.0.1', 'webOS 6.3.1.2-x', 'DNS 1.1.1.1 / 8.8.8.8 / 9.9.9.9, ControlD 76.76.2.11'])
   ok('a report, left alone: ' + keep, rep(keep) === keep, rep(keep));
 same('Cloudflare (203.0.113.9) works here', 'Cloudflare (203.0.113.9) works here', "someone's own post keeps an address (discussion #60)");
 for (const keep of ['getaddrinfo ENOTFOUND <provider>', 'connect ECONNREFUSED 127.0.0.1:47811', 'ETIMEDOUT after 15001ms', 'getaddrinfo EAI_AGAIN api.github.com'])
