@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 231, 2026-11-27)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 231
 
 - **Skip intro no longer stays on movies.**  A movie whose first chapter was called something like "Opening Credits/Accident" offered Skip intro for its first minutes, and the button never went away.  Plex movies no longer offer it, a chapter counts as an intro only when that's all its name says, and the button now fades after 6 seconds (it comes back with the controls).
 - **The phone shows what's playing on the TV.**  Now on the TV, on the phone's home screen and on the TV's page, shows the movie or episode's poster, Plex titles included.
@@ -9,11 +13,7 @@
 - **A stuck network helper no longer closes TiviBro on 1 GB TVs with big lists.**  When the helper wasn't running, TiviBro read the whole provider guide in its own memory instead, and a TV with 57,000 channels closed it a minute after starting (issue #197).  The guide it has now stays on screen and is read again once the helper is back.
 - **No more closing a minute after every start on some webOS 6 TVs.**  When TiviBro closed soon after starting while a channel played, the next start loads the guide and the channel logos first and starts the last channel about 50 seconds in, so they never fill the TV's memory together (issues #194, #195).  A channel you pick meanwhile plays at once.
 
-## 0.6.0 (alpha 230, 2026-11-27)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 230
+### In alpha 230
 
 - **Settings the TV cleared can come back.**  Some installs over an existing TiviBro make the TV throw away its saved data, so TiviBro opened on the set-up screen with the playlist and every change gone (issue #196).  TiviBro now keeps a copy of its settings, playlists and channel edits on the TV's storage, where an install doesn't reach, and offers to put everything back when that happens.  For a TV that lost them before this update: an Xtream Codes playlist TiviBro still has on the TV is offered back with its login, then its channel edits from its restore points.
 - **Four more languages: Arabic, Hindi, Croatian and Ukrainian.**  On the TV, the phone app, the web editor and tivibro.app.  Arabic text reads right to left; the TV's layout stays as it is.
