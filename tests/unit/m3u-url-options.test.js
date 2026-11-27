@@ -39,6 +39,22 @@ async function netFor(port, playlist) {
   ok('a plain address has no headers field', !('hdr' in list[3]));
   ok('a "|" that is part of the address stays', list[4].url === 'http://tv.example/a|b/five.ts?x=1|2', list[4].url);
 
+  // Kodi 21's licence lines (issue #187): drm_legacy and the drm JSON, read as license_type and license_key are.
+  const drm = PlShape.parseM3U([
+    '#EXTM3U',
+    '#KODIPROP:inputstream.adaptive.drm_legacy=org.w3.clearkey|0123456789abcdef0123456789abcdef:fedcba9876543210fedcba9876543210',
+    '#EXTINF:-1 group-title="TV",Legacy', 'https://tv.example/a.mpd',
+    '#KODIPROP:inputstream.adaptive.drm={"org.w3.clearkey":{"license":{"keyids":{"ASNFZ4mrze8BI0VniavN7w":"_ty6mHZUMhD-3LqYdlQyEA"}}}}',
+    '#EXTINF:-1 group-title="TV",Json', 'https://tv.example/b.mpd',
+    '#KODIPROP:inputstream.adaptive.drm={"com.widevine.alpha":{"license":{"server_url":"https://lic.example/wv","req_headers":"X-A=1"}}}',
+    '#EXTINF:-1 group-title="TV",Widevine', 'https://tv.example/c.mpd',
+    '#EXTINF:-1 group-title="TV",Plain', 'https://tv.example/d.mpd'
+  ].join('\n')).channels;
+  ok('drm_legacy: ClearKey and its key', drm[0].drm && drm[0].drm.type === 'clearkey' && drm[0].drm.key === '0123456789abcdef0123456789abcdef:fedcba9876543210fedcba9876543210', JSON.stringify(drm[0].drm));
+  ok('drm JSON: ClearKey key ids in base64', drm[1].drm && drm[1].drm.type === 'clearkey' && drm[1].drm.key === 'ASNFZ4mrze8BI0VniavN7w:_ty6mHZUMhD-3LqYdlQyEA', JSON.stringify(drm[1].drm));
+  ok('drm JSON: a licence server with its headers', drm[2].drm && drm[2].drm.type === 'widevine' && drm[2].drm.key === 'https://lic.example/wv|X-A=1', JSON.stringify(drm[2].drm));
+  ok('no licence lines: no drm field', !('drm' in drm[3]), JSON.stringify(drm[3]));
+
   const up = http.createServer((req, res) => {
     if (req.method === 'POST') { let n = 0; req.on('data', (d) => n += d.length); req.on('end', () => { res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end('POST ' + req.url + ' ' + n + ' ' + (req.headers['user-agent'] || '') + (req.headers['x-custom-data'] ? ' X=' + req.headers['x-custom-data'] : '') + (req.headers.host && !/^127\.0\.0\.1:/.test(req.headers.host) ? ' HOST=' + req.headers.host : '')); }); return; }
     res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end(req.url + ' ' + (req.headers['user-agent'] || '') + (req.headers.referer ? ' R=' + req.headers.referer : '') + (req.headers.origin ? ' O=' + req.headers.origin : '') + (req.headers.cookie ? ' C=' + req.headers.cookie : '')); });

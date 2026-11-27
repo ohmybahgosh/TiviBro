@@ -78,6 +78,10 @@ const req = (method, u, body, headers) => new Promise((res, rej) => {
   ok('the shows', x.j.map((t) => t.series_id).join() === '505,520', JSON.stringify(x.j.map((t) => t.series_id)));
   x = await X('get_vod_info&vod_id=503');
   ok('a movie\'s details', x.status === 200 && x.j.info.plot === 'About title 3' && x.j.movie_data.stream_id === '503', JSON.stringify(x.j).slice(0, 200));
+  // Issue #193: a movie not in a list read since the helper started answered twice ("write after end" restarted the helper).
+  x = await X('get_vod_info&vod_id=777');
+  const after = await X('get_vod_categories');
+  ok('a movie not read yet: one answer, and the helper carries on', x.status === 200 && x.j.movie_data.stream_id === '777' && after.status === 200, x.status + ' ' + after.status);
   x = await X('get_series_info&series_id=505');
   const eps = x.j && x.j.episodes;
   ok('a show\'s seasons and episodes', x.status === 200 && x.j.seasons.length === 2 && eps['1'].length === 3 && eps['2'].length === 2 && eps['2'][1].episode_num === 2, JSON.stringify(x.j).slice(0, 300));

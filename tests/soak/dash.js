@@ -83,6 +83,10 @@ function make(dir, enc) {
     ok('and given the playlist\'s key (kid and key in base64url)', keyAsked && keyAsked.kid === 'ASNFZ4mrze8BI0VniavN7w' && keyAsked.k === '_ty6mHZUMhD-3LqYdlQyEA', JSON.stringify(c.lic));
 
     // Widevine: a licence server from license_key, its User-Agent through the helper, its Content-Type to the browser.
+    // ClearKey ids and keys already in base64 (issue #187), as some playlists write them: the same keys as the hex ones.
+    const b64 = await ev(() => Player._dashProtection({ type: 'clearkey', key: 'ASNFZ4mrze8BI0VniavN7w==:/ty6mHZUMhD+3LqYdlQyEA==' }, { pl: null }));
+    const hex = await ev(() => Player._dashProtection({ type: 'clearkey', key: '0123456789abcdef0123456789abcdef:fedcba9876543210fedcba9876543210' }, { pl: null }));
+    ok('ClearKey keys written in base64 are the same keys as in hex', JSON.stringify(b64) === JSON.stringify(hex), JSON.stringify(b64));
     const wv = await ev(() => Player._dashProtection({ type: 'widevine', key: 'https://lic.example/wv?id=2|User-Agent=LicUA&Content-Type=application%2Foctet-stream&X-Custom-Data=t%3D1|R{SSM}|R' }, { pl: null }));
     const s = wv && wv['com.widevine.alpha'];
     ok('Widevine: the licence server goes through the helper with its User-Agent and own headers, and its Content-Type is sent', s && /^http:\/\/127\.0\.0\.1:\d+\/ua\/[A-Za-z0-9_-]+\/hd\/[A-Za-z0-9_-]+\/x\/https\/lic\.example\/wv\?id=2$/.test(s.serverURL) && JSON.parse(Buffer.from(/\/hd\/([A-Za-z0-9_-]+)/.exec(s.serverURL)[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString()).H['X-Custom-Data'] === 't=1' && !s.httpRequestHeaders['X-Custom-Data'] && s.httpRequestHeaders && s.httpRequestHeaders['Content-Type'] === 'application/octet-stream' && !s.httpRequestHeaders['User-Agent'], JSON.stringify(wv));

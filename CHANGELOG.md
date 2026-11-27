@@ -6,6 +6,8 @@
 - **Plex titles play at full quality.**  A file the TV can play plays as it is; the server converts the rest, within the quality you set for home and away.  Resume, versions, audio and subtitle tracks, the trailer, Skip intro and Skip credits from Plex's markers, Plex's seek previews and chapters, Up next and Still watching? all come along.
 - **Streaming Top 10s for Plex.**  A row of the titles your Plex has that are on yesterday's streaming Top 10s, with "#3 on Netflix" under each, plus a row per service if you like.
 - **Plex in the phone app.**  A Plex tab to browse and search your libraries and resume on the TV.
+- **Stalker channels that switch to HLS keep playing.**  A channel the portal sends as HLS could, after a dropout, be retried the wrong way for as long as it stayed on, until another channel was picked (#193).  It now goes straight back to HLS.  The helper also no longer restarts itself when a movie's details were asked for before its list.
+- **More DASH playlists play.**  ClearKey keys written in base64, and Kodi 21's newer licence lines (drm_legacy and drm), are now read (#187).
 
 ## 0.6.0 (alpha 228, 2026-11-26)
 

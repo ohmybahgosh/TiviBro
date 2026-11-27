@@ -117,11 +117,33 @@ var PlShape = (function () {
      mimetype), its licence (inputstream.adaptive.license_type and license_key: Widevine, PlayReady or
      ClearKey, player.js dashEngine), and VLC's http-user-agent and http-referrer. */
   var DRM = { 'com.widevine.alpha': 'widevine', widevine: 'widevine', 'com.microsoft.playready': 'playready', playready: 'playready', 'org.w3.clearkey': 'clearkey', clearkey: 'clearkey' };
+  /* Kodi 21's newer licence lines, as some playlists write them now (issue #187):
+       inputstream.adaptive.drm_legacy=org.w3.clearkey|kid:key   (or a licence server: KEYSYSTEM|URL|headers)
+       inputstream.adaptive.drm={"org.w3.clearkey":{"license":{"keyids":{"kid":"key"}}}}
+                               {"com.widevine.alpha":{"license":{"server_url":"...","req_headers":"a=b&c=d"}}}
+     turned into the same { type, key } as license_type and license_key. */
+  function newDrm(pr) {
+    var legacy = pr['inputstream.adaptive.drm_legacy'];
+    if (legacy) {
+      var bits = String(legacy).split('|'), t = DRM[(bits[0] || '').trim().toLowerCase()];
+      return t && bits[1] ? { type: t, key: bits.slice(1).join('|').slice(0, 4000) } : null;
+    }
+    var j = null; try { j = JSON.parse(pr['inputstream.adaptive.drm']); } catch (e) { return null; }
+    for (var sys in j || {}) {
+      var t2 = DRM[sys.toLowerCase()], lic = (j[sys] && j[sys].license) || {};
+      if (!t2) continue;
+      if (lic.keyids && typeof lic.keyids === 'object') return { type: t2, key: Object.keys(lic.keyids).map(function (k) { return k + ':' + lic.keyids[k]; }).join(',').slice(0, 4000) };
+      if (lic.server_url) return { type: t2, key: (lic.server_url + (lic.req_headers ? '|' + lic.req_headers : '')).slice(0, 4000) };
+    }
+    return null;
+  }
   function withProps(ch, pr) {
     var mt = (pr['inputstream.adaptive.manifest_type'] || '').toLowerCase(), mime = (pr.mimetype || '').toLowerCase();
     if (mt === 'mpd' || /dash\+xml/.test(mime) || /\.mpd(\?|$)/i.test(ch.url)) ch.dash = 1;
     var lt = DRM[(pr['inputstream.adaptive.license_type'] || '').toLowerCase()], lk = pr['inputstream.adaptive.license_key'] || '';
     if (lt) ch.drm = { type: lt, key: lk.slice(0, 4000) };
+    else if (pr['inputstream.adaptive.drm_legacy'] || pr['inputstream.adaptive.drm']) ch.drm = newDrm(pr) || undefined;
+    if (!ch.drm) delete ch.drm;
     if (!ch.ua && pr['http-user-agent']) ch.ua = pr['http-user-agent'].slice(0, 300);
     var ref = pr['http-referrer'] || pr['http-referer'];
     if (ref && /^https?:\/\//i.test(ref) && !(ch.hdr && ch.hdr.Referer)) (ch.hdr || (ch.hdr = {})).Referer = ref.slice(0, 500);

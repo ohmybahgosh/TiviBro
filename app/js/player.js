@@ -302,6 +302,8 @@ var Player = (function () {
     });
     return dashLoading;
   }
+  // A ClearKey id or key as dash.js takes it (base64url): written as 32 hex digits, or already in base64 (issue #187).
+  function keyB64(v) { return /^[0-9a-f]{32}$/i.test(v) ? b64url(v) : String(v).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
   function b64url(hex) {
     var bin = ''; for (var i = 0; i + 1 < hex.length; i += 2) bin += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
     return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -315,7 +317,7 @@ var Player = (function () {
     if (drm.type === 'clearkey' && !/^https?:\/\//i.test(key)) {
       var keys = {};
       if (/^\s*\{/.test(key)) { try { (JSON.parse(key).keys || []).forEach(function (k) { if (k.kid && k.k) keys[k.kid] = k.k; }); } catch (e) {} }
-      else key.split(/[,\s]+/).forEach(function (pair) { var m = /^([0-9a-f]{32}):([0-9a-f]{32})$/i.exec(pair); if (m) keys[b64url(m[1])] = b64url(m[2]); });
+      else key.split(/[,\s]+/).forEach(function (pair) { var m = /^([0-9A-Za-z+/_=-]{16,48}):([0-9A-Za-z+/_=-]{16,48})$/.exec(pair); if (m) keys[keyB64(m[1])] = keyB64(m[2]); });
       if (!Object.keys(keys).length) return null;
       o.clearkeys = keys;
     } else {
@@ -667,6 +669,18 @@ var Player = (function () {
       // connection limit while the last channel hangs up clears in a second or two); after that
       // the next pipeline gets a go rather than a minute of retries on a dead link.
       cur.lastFailHttp = !!http;
+      /* 415 from the helper: the Stalker portal linked an HLS playlist for a channel asked for as MPEG-TS
+         (issue #88).  Straight to its HLS version, and that channel starts as HLS from then on.  Also after it has
+         played: a reconnect that switched a dropping channel to MPEG-TS got 415 for every try, an hour of
+         "The provider answered 415" until another channel was picked (issue #193).  MPEG-TS is marked bad for it,
+         so drops don't switch to it again. */
+      if (http === 415 && kind !== 'hls' && window.Hls && Hls.isSupported() && hlsVariant(cur.origUrl || cur.url)) {
+        preferHls[cur.origUrl || cur.url] = 1;
+        cur.bad = cur.bad || {}; cur.bad.ts = 1; cur.swapFrom = null; cur.noSwap = true;
+        if (!cur.live) vodHls(cur.origUrl || cur.url, true);
+        Log.info('player', cur.live ? 'The portal sends this channel as HLS; playing it that way' : 'The portal sends this movie as HLS; playing it that way, and its other movies too');
+        useEngine('hls'); return start(myToken);
+      }
       // A channel that has played here before and now gets an HTTP error is the provider having
       // trouble (outage, connection limit), not the pipeline: keep retrying the same way.
       if (http && cur.everPlayed) { cur.lastHttp = http; return reconnect(myToken, 'The provider answered ' + http + ', retrying'); }
@@ -674,14 +688,6 @@ var Player = (function () {
          or with another player for the same address, gets the same answer (issue #56: three MPEG-TS tries,
          the TV player and two HLS tries, about 15 s each, before "No player could open this channel").  Its
          HLS version is another address, so that is tried once; otherwise it's marked not playing at once. */
-      /* 415 from the helper: the Stalker portal linked an HLS playlist for a channel asked for as MPEG-TS
-         (issue #88).  Straight to its HLS version, and that channel starts as HLS from then on. */
-      if (http === 415 && kind !== 'hls' && !st.started && window.Hls && Hls.isSupported() && hlsVariant(cur.origUrl || cur.url) && !(cur.tried && cur.tried.hls)) {
-        preferHls[cur.origUrl || cur.url] = 1;
-        if (!cur.live) vodHls(cur.origUrl || cur.url, true);
-        Log.info('player', cur.live ? 'The portal sends this channel as HLS; playing it that way' : 'The portal sends this movie as HLS; playing it that way, and its other movies too');
-        useEngine('hls'); return start(myToken);
-      }
       /* A Stalker portal's movie or episode it has no link for (the helper answers 404 once the portal said so,
          issue #118): every retry asks the portal again, and eight of them got the TV rate-limited (HTTP 429) and
          then refused ("the portal refused this box").  Stop at once and say so. */

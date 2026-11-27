@@ -20,7 +20,10 @@ var http = require('http'), https = require('https'), URL_ = require('url'), cry
 var UA = 'Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG200 stbapp ver: 2 rev: 250 Safari/533.3';
 var BODY_MAX = 16 * 1024, TEXT_MAX = 200 * 1024 * 1024;
 
+/* One JSON answer.  A second one for the same request is dropped: it threw "write after end" and restarted the
+   helper (issue #193: a movie's details read before its list answered twice). */
 function send(res, ALLOW, code, obj) {
+  if (res.headersSent || res.finished) return;
   var h = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' };
   for (var k in ALLOW) h[k] = ALLOW[k];
   res.writeHead(code, h);
@@ -493,7 +496,7 @@ function xc(L, q, res, ALLOW, log) {
     var stub = { id: id, name: '', cover: '', plot: '', rating: '', year: '', director: '', cast: '', genre: '', cmd: '', cat: '*', mins: 0, series: show };
     if (show) return seriesCats(L, function () { stub.module = seriesOf(L).own ? 'series' : 'vod'; answer(stub); });
     // A movie the same: its link comes from its own command when it plays (vodPlay), not from this.
-    answer(stub);
+    return answer(stub);
   }
   send(res, ALLOW, 400, { error: 'not a Stalker action TiviBro knows' });
 }
