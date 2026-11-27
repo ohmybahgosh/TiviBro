@@ -282,5 +282,5 @@ var PlexView = (function () {
   // A show opened from somewhere else (a title's Go to show): its seasons in place on the Plex tab.
   function openShow(m) { stack = [m]; rowAt = 0; colAt = {}; zone = 'rows'; UI.setHandler(keys); load(); }
 
-  return { open: open, resume: resume, leave: leave, picture: pic, openShow: openShow, editRows: editRows, homeTitles: function () { return lastHome; }, _test: { home: function () { tabAt = 0; switched(); }, tabs: function () { return tabsList; }, rows: function () { return rows; }, keys: keys, focused: focused } };
+  return { open: open, resume: resume, leave: leave, picture: pic, openShow: openShow, editRows: editRows, read: { home: homeRows, children: childRows, search: searchRows }, homeTitles: function () { return lastHome; }, _test: { home: function () { tabAt = 0; switched(); }, tabs: function () { return tabsList; }, rows: function () { return rows; }, keys: keys, focused: focused } };
 })();

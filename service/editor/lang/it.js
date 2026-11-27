@@ -2140,5 +2140,9 @@ I18n.add('it', {
   "A TV": "Una TV",
   "Pair with this TV?": "Associare questa TV?",
   "That pairing link points outside your home network, so it was ignored.  Pair from the TV's own code.": "Quel link di associazione punta fuori dalla tua rete di casa, quindi è stato ignorato.  Associa con il codice della TV.",
-  "{x} at {y}.  Only pair with a TV that's showing its pairing code right now.": "{x} su {y}.  Associa solo una TV che sta mostrando ora il suo codice di associazione."
+  "{x} at {y}.  Only pair with a TV that's showing its pairing code right now.": "{x} su {y}.  Associa solo una TV che sta mostrando ora il suo codice di associazione.",
+  "Getting Plex from the TV…": "Prendo Plex dalla TV…",
+  "No match for \"{x}\" on Plex.": "Niente corrisponde a «{x}» su Plex.",
+  "Nothing here yet": "Ancora niente qui",
+  "Search Plex": "Cerca in Plex"
 });

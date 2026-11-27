@@ -78,7 +78,7 @@ var Phone = (function () {
   // Commands wait until TiviBro has its channels (a phone may have opened it a moment ago).  A few
   // questions work on a TV with no playlist yet: adding one, typing into the set-up screen, backups.
   function ready() { return typeof Library !== 'undefined' && Library.count() > 0 && Views.tab; }
-  var EARLY = { playlist: 1, input: 1, backup: 1, restore: 1, mymedia: 1, reminders: 1, snaps: 1 };
+  var EARLY = { playlist: 1, input: 1, backup: 1, restore: 1, mymedia: 1, reminders: 1, snaps: 1, plex: 1 };
   function run(c, tries) {
     // Anything from the phone (typing into a box, the touchpad, a question) is someone using TiviBro: the TV's
     // screensaver waits, as for a button press (discussion #36: it came up over the set-up screen while typing).
@@ -399,6 +399,8 @@ var Phone = (function () {
        source's rescan, content, details and remove, plus the TMDB token.  Sealed: WebDAV logins, the
        Dropbox refresh token and the TMDB token cross here, and none of them ever goes back.  A scan can take minutes: after 25
        seconds the answer says it is still going, and the TV finishes it (and says so on screen). */
+    // The phone app's Plex tab (plexphone.js): browsing, and playing on the TV.  Sealed: server tokens cross here.
+    plex: function (a) { return PlexPhone.answer(a); },
     mymedia: function (a) {
       var op = String(a.op || 'sources');
       function src() { var s = MediaStore.source(String(a.id || '')); if (!s) throw new Error('That media source no longer exists.'); return s; }
@@ -669,7 +671,7 @@ var Phone = (function () {
     if (ins.length) out.inputs = ins;
     // Movies and Shows tabs on the phone only when the provider has them.
     var vk = Vod.offered();          // several playlists on: any of them
-    out.vod2 = { mediaLibraryVersion:2, movies: vk.indexOf('movie') >= 0, series: vk.indexOf('series') >= 0, media: typeof MediaStore !== 'undefined' && MediaStore.sources().length > 0, onnow: typeof Movies !== 'undefined' && Movies.on(), sports: typeof SportsHub !== 'undefined' && Store.settings.sportsTab !== false };
+    out.vod2 = { mediaLibraryVersion:2, movies: vk.indexOf('movie') >= 0, series: vk.indexOf('series') >= 0, media: typeof MediaStore !== 'undefined' && MediaStore.sources().length > 0, onnow: typeof Movies !== 'undefined' && Movies.on(), sports: typeof SportsHub !== 'undefined' && Store.settings.sportsTab !== false, plex: typeof Plex !== 'undefined' && Plex.added() };
     // Recordings on the phone's home screen: once the TV has a USB drive or recordings, and how many record now.
     if (typeof Record !== 'undefined' && Record.base()) out.rec = { on: Record.shown(), now: Record.recs.filter(function (r) { return r.status === 'recording'; }).length };
     return out;

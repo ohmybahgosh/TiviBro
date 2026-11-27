@@ -27,6 +27,7 @@ import androidx.compose.material.icons.rounded.Movie
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.SettingsRemote
 import androidx.compose.material.icons.rounded.Tv
+import androidx.compose.material.icons.rounded.Subscriptions
 import androidx.compose.material.icons.rounded.VideoLibrary
 import androidx.compose.material.icons.rounded.ViewList
 import androidx.compose.material3.Icon
@@ -56,6 +57,7 @@ private fun tabIcon(t: String): ImageVector = when (t) {
     "Movies" -> Icons.Rounded.Movie
     "Shows" -> Icons.Rounded.Tv
     "My media" -> Icons.Rounded.VideoLibrary
+    "Plex" -> Icons.Rounded.Subscriptions
     else -> Icons.Rounded.Settings
 }
 

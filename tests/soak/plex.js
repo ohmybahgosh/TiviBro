@@ -141,6 +141,20 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     await page.waitForFunction(() => /metadata%2F13/.test((Views.vod && Views.vod.url) || ''), null, { timeout: 8000 }).catch(() => {});
     const conv = await ev(() => (Views.vod && Views.vod.url) || '');
     ok('a file the TV can\'t play: the server converts it', /\/plex\/[0-9a-f]{48}\/video\/:\/transcode\/universal\/start\.m3u8\?path=%2Flibrary%2Fmetadata%2F13/.test(conv) && /protocol=hls/.test(m.state.transcode || ''), conv);
+    // The phone app's Plex tab (plexphone.js): lists from the TV, posters from the server, playing on the TV.
+    const ph = await ev(async () => {
+      const libs = await PlexPhone.answer({ op: 'libs' }), home = await PlexPhone.answer({ op: 'home' });
+      const lib = await PlexPhone.answer({ op: 'lib', server: libs.libs[0].server, key: libs.libs[0].key, offset: 0 });
+      const found = await PlexPhone.answer({ op: 'search', q: 'Northbound' });
+      let bad = ''; try { await PlexPhone.answer({ op: 'lib', server: libs.libs[0].server, key: '../x' }); } catch (e) { bad = e.message; }
+      const played = await PlexPhone.answer({ op: 'play', server: libs.libs[0].server, key: '18' });
+      return { libs: libs.libs.map((l) => l.title), pics: Object.keys(libs.pics).length, rows: home.rows.map((r) => r.title), first: lib.items[0], total: lib.total, found: found.items.map((x) => x.title), bad, played };
+    });
+    ok('phone: the libraries picked, with where posters come from', JSON.stringify(ph.libs) === '["Movies"]' && ph.pics === 1, ph);
+    ok('phone: Home rows, a library a page at a time, search', ph.rows[0] === 'Continue watching' && ph.total === 10 && ph.first && ph.first.key && ph.found.indexOf('Northbound') >= 0, ph);
+    ok('phone: a key that isn\'t a Plex title is refused', /isn't a Plex title/.test(ph.bad), ph.bad);
+    await page.waitForTimeout(2500);
+    ok('phone: Play on TV opens Plex and plays where you stopped', ph.played.title === 'Northbound' && /library\/parts\/7/.test(await ev(() => (Views.vod && Views.vod.url) || '')) && (await ev(() => Views.tab)) === 'plex');
     ok('no page errors', !errs.length, errs);
   } finally { await b.close(); relay.server.close(); m.close(); }
   console.log('screenshots in ' + SHOTS);

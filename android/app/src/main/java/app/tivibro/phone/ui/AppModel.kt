@@ -739,6 +739,19 @@ class AppModel(app: Application) : AndroidViewModel(app) {
 
     suspend fun vodInfo(id: String, kind: String, itemId: String): VodInfo = VodInfo.from(ask(id, "vodinfo", JSONObject().put("kind", kind).put("id", itemId)))
 
+    /** The Plex tab's questions (the TV's plexphone.js), sealed: server tokens for the posters come back. */
+    suspend fun plex(id: String, args: JSONObject): JSONObject = ask(id, "plex", args, seal = true, timeoutMs = 45_000, tries = 2)
+
+    /** A Plex movie or episode played on the TV (from where it stopped, unless [fromStart]). */
+    fun plexPlay(id: String, server: String, key: String, fromStart: Boolean) = viewModelScope.launch {
+        val tv = tv(id) ?: return@launch
+        try {
+            val r = ask(id, "plex", JSONObject().put("op", "play").put("server", server).put("key", key).put("fromStart", fromStart), seal = true, tries = 1)
+            say(tr("Playing {x} on {y}", "x" to r.optString("title", tr("it")), "y" to tv.name))
+        } catch (e: TbException) { say(e.message ?: tr("The TV said no")) }
+        catch (e: Exception) { say(tr("The TV didn't answer.  Is it on, and on the same network?")) }
+    }
+
     fun vodPlay(id: String, kind: String, itemId: String, ep: String?, fromStart: Boolean) = viewModelScope.launch {
         val tv = tv(id) ?: return@launch
         try {

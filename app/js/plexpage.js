@@ -233,5 +233,20 @@ var PlexPage = (function () {
     }, function () { Views.stopAll(); if (PlexView.resume) PlexView.resume(); });
   }
 
-  return { open: open, ended: ended, close: close, _test: { quality: quality, marks: marks, badges: badges, direct: direct, converts: converts, chapters: chapters, item: function () { return item; }, keys: keys, buttons: function () { return btns; } } };
+  /* From the phone app (plexphone.js): the Plex tab on the TV, then the title played (where you stopped, unless
+     fromStart).  Resolves to { title } once it's starting. */
+  function playKey(server, key, fromStart) {
+    if (Views.tab !== 'plex') Views.switchTab('plex');
+    if (Views.tab !== 'plex') return Promise.reject(new Error('Plex could not be opened on the TV.'));
+    if (document.body.classList.contains('nav-open') && Views.closeNav) Views.closeNav();
+    return Plex.call(server, '/library/metadata/' + key + '?includeMarkers=1&includeChapters=1&includeGuids=1').then(function (j) {
+      var m = (mc(j).Metadata || [])[0];
+      if (!m || !/^(movie|episode)$/.test(m.type)) throw new Error('That one doesn\'t play by itself.  Pick a movie or an episode.');
+      m.server = server; item = m; back = function () { if (PlexView.resume) PlexView.resume(); };
+      play(!fromStart && m.viewOffset > 60000 ? m.viewOffset : 0);
+      return { title: m.type === 'episode' ? m.grandparentTitle + ' S' + m.parentIndex + ' · E' + m.index : m.title };
+    });
+  }
+
+  return { open: open, ended: ended, close: close, playKey: playKey, _test: { quality: quality, marks: marks, badges: badges, direct: direct, converts: converts, chapters: chapters, item: function () { return item; }, keys: keys, buttons: function () { return btns; } } };
 })();

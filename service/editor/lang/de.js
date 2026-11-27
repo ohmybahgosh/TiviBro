@@ -2140,5 +2140,9 @@ I18n.add('de', {
   "A TV": "Ein Fernseher",
   "Pair with this TV?": "Mit diesem Fernseher koppeln?",
   "That pairing link points outside your home network, so it was ignored.  Pair from the TV's own code.": "Dieser Kopplungslink zeigt aus deinem Heimnetz hinaus und wurde ignoriert.  Kopple mit dem Code auf dem Fernseher.",
-  "{x} at {y}.  Only pair with a TV that's showing its pairing code right now.": "{x} unter {y}.  Kopple nur mit einem Fernseher, der gerade seinen Kopplungscode zeigt."
+  "{x} at {y}.  Only pair with a TV that's showing its pairing code right now.": "{x} unter {y}.  Kopple nur mit einem Fernseher, der gerade seinen Kopplungscode zeigt.",
+  "Nothing here yet": "Hier ist noch nichts",
+  "Search Plex": "In Plex suchen",
+  "Getting Plex from the TV…": "Plex wird vom Fernseher geholt…",
+  "No match for \"{x}\" on Plex.": "Nichts passt zu „{x}“ in Plex."
 });

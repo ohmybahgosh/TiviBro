@@ -2140,5 +2140,9 @@ I18n.add('tr', {
   "A TV": "Bir TV",
   "Pair with this TV?": "Bu TV ile eşleştirilsin mi?",
   "That pairing link points outside your home network, so it was ignored.  Pair from the TV's own code.": "Bu eşleştirme bağlantısı ev ağınızın dışını gösteriyor, bu yüzden yok sayıldı.  TV'nin kendi koduyla eşleştirin.",
-  "{x} at {y}.  Only pair with a TV that's showing its pairing code right now.": "{x}, {y} adresinde.  Yalnızca şu anda eşleştirme kodunu gösteren bir TV ile eşleştirin."
+  "{x} at {y}.  Only pair with a TV that's showing its pairing code right now.": "{x}, {y} adresinde.  Yalnızca şu anda eşleştirme kodunu gösteren bir TV ile eşleştirin.",
+  "Getting Plex from the TV…": "Plex televizyondan alınıyor…",
+  "No match for \"{x}\" on Plex.": "Plex'te \"{x}\" ile eşleşen bir şey yok.",
+  "Nothing here yet": "Burada henüz bir şey yok",
+  "Search Plex": "Plex'te ara"
 });

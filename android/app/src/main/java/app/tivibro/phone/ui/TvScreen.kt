@@ -199,7 +199,8 @@ fun TvScreen(
             val tabs = listOfNotNull("Remote", "Channels", "Guide", "On now".takeIf { state?.onnow == true || waiting && tab == "On now" },
                 "Sports".takeIf { state?.sports == true || waiting && tab == "Sports" },
                 "Movies".takeIf { state?.movies != false }, "Shows".takeIf { state?.series != false },
-                "My media".takeIf { state?.media == true || waiting && tab == "My media" }, "Settings")
+                "My media".takeIf { state?.media == true || waiting && tab == "My media" },
+                "Plex".takeIf { state?.plex == true || waiting && tab == "Plex" }, "Settings")
             val cur = if (tab in tabs) tab else "Remote"
             // The tabs as icon chips (TabChips.kt).  Their names are their ids (shortcuts and links open them by name).
             TabChips(tabs, cur, onPick = { tab = it })
@@ -214,6 +215,7 @@ fun TvScreen(
                 "Movies" -> VodTab(model, id, "movie")
                 "Shows" -> VodTab(model, id, "series")
                 "My media" -> if ((state?.mediaLibraryVersion ?: 0) >= 2) MyMediaTab(model, id) else VodTab(model, id, "media")
+                "Plex" -> PlexTab(model, id)
                 "Settings" -> SettingsTab(model, id, startSec = if (startTab == "Settings") startSec else null, onGo = onGo)
                 else -> Remote(volume, onKey, onAction, onVolume, onType = { typing = true }, onPowerOff = onPowerOff)
             }

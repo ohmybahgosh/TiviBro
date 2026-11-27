@@ -2140,5 +2140,9 @@ I18n.add('nl', {
   "A TV": "Een tv",
   "Pair with this TV?": "Koppelen met deze tv?",
   "That pairing link points outside your home network, so it was ignored.  Pair from the TV's own code.": "Die koppellink wijst buiten je thuisnetwerk, dus hij is genegeerd.  Koppel met de code op de tv zelf.",
-  "{x} at {y}.  Only pair with a TV that's showing its pairing code right now.": "{x} op {y}.  Koppel alleen met een tv die nu zijn koppelcode toont."
+  "{x} at {y}.  Only pair with a TV that's showing its pairing code right now.": "{x} op {y}.  Koppel alleen met een tv die nu zijn koppelcode toont.",
+  "Getting Plex from the TV…": "Plex ophalen van de tv…",
+  "No match for \"{x}\" on Plex.": "Niets komt overeen met „{x}” op Plex.",
+  "Nothing here yet": "Hier staat nog niets",
+  "Search Plex": "Zoeken in Plex"
 });
