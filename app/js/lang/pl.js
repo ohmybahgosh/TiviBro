@@ -2750,5 +2750,8 @@ I18n.add('pl', {
   "Your settings on this TV were cleared": "Ustawienia na tym telewizorze zostały wyczyszczone",
   "Your last channel starts in a moment, once the guide is in.  TiviBro closed soon after starting last time.": "Ostatni kanał uruchomi się za chwilę, gdy wczyta się przewodnik.  Poprzednio TiviBro zamknęło się krótko po uruchomieniu.",
   "Shuffle": "Losowo",
-  "Play all": "Odtwórz wszystko"
+  "Play all": "Odtwórz wszystko",
+  "A show's theme plays quietly on its page, and its seasons' and episodes', while you look around.": "Muzyka z czołówki serialu gra cicho na jego stronie i na stronach sezonów i odcinków, gdy się rozglądasz.",
+  "Episodes you haven't watched show the show's picture instead of their own, and no story, on the TV and the phone.": "Odcinki, których nie obejrzałeś, pokazują obraz serialu zamiast własnego i bez opisu fabuły, na telewizorze i w telefonie.",
+  "Theme music": "Muzyka z czołówki"
 });

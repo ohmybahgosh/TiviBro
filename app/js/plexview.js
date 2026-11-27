@@ -237,7 +237,7 @@ var PlexView = (function () {
     var rank = r.line ? r.line(m) : '';
     var name = m.type === 'episode' ? (m.grandparentTitle || m.title) : m.title, sub = rank ? rank : m.type === 'episode' ? 'S' + (m.parentIndex || 0) + ' · E' + (m.index || 0) + '  ' + (m.title || '') : m.type === 'season' ? (m.leafCount ? T('{n} episodes', { n: m.leafCount }) : '') : (m.year || (m.childCount ? T('{n} titles', { n: m.childCount }) : ''));
     return '<div class="media-tile' + (sel ? ' sel' : '') + '" style="left:' + (14 + i * ((wide ? 400 : TILE) + GAP)) + 'px;width:' + w + 'px">' +
-      '<div class="media-art" style="width:' + w + 'px;height:' + h + 'px"><img class="media-cover wait" data-pk="' + esc(m.server) + '" data-pp="' + esc(wide ? (m.art || m.thumb || '') : (m.grandparentThumb && m.type === 'episode' ? m.grandparentThumb : m.thumb || '')) + '" data-w="' + w + '" data-h="' + h + '" alt="">' +
+      '<div class="media-art" style="width:' + w + 'px;height:' + h + 'px"><img class="media-cover wait" data-pk="' + esc(m.server) + '" data-pp="' + esc(wide ? (Plex.epPic(m) || m.art || m.thumb || '') : (m.grandparentThumb && m.type === 'episode' ? m.grandparentThumb : m.thumb || '')) + '" data-w="' + w + '" data-h="' + h + '" alt="">' +
       (left > 0 ? '<span class="media-mark">' + left + '</span>' : watched ? '<span class="media-mark done">✓</span>' : '') +
       (/^#\d+/.test(rank) ? '<span class="plex-rank">' + esc(/^#(\d+)/.exec(rank)[1]) + '</span>' : '') +   // a chart's place, big on the poster
       (prog ? '<div class="media-progress"><i style="width:' + prog + '%"></i></div>' : '') + '</div>' +
@@ -326,7 +326,7 @@ var PlexView = (function () {
     if (!(k in logos) && m.Image) logos[k] = logoOf(m);   // the row's own list of pictures
     if (d !== m && !(k in logos)) logos[k] = d.logo || '';
     var facts = [d.year || m.year, d.contentRating || m.contentRating, (d.duration || m.duration) ? Math.round((d.duration || m.duration) / 60000) + ' ' + T('min') : '', (d.leafCount || m.leafCount) ? T('{n} episodes', { n: d.leafCount || m.leafCount }) : ''].filter(Boolean).join('  ·  ');
-    var sum = d.summary || m.summary || '';
+    var sum = Plex.spoiler(m) ? '' : d.summary || m.summary || '';   // Hide spoilers: no unwatched episode's story
     if (heroKey !== k) {
       heroKey = k;
       el.innerHTML = '<div class="media-kicker">' + esc(ep ? 'S' + m.parentIndex + ' · E' + m.index + '  ' + (m.title || '') : (rows[rowAt].title || '')) + '</div>' +
@@ -514,7 +514,7 @@ var PlexView = (function () {
     UI.setHandler(keys); draw(); load();
   }
   // Off the Plex tab: a report sent now isn't about Plex, unless a Plex title is still playing.
-  function leave() { open_ = false; loadSeq++; if (typeof Log !== 'undefined' && !(Views.vod && Views.vod.meta && Views.vod.meta.plex)) Log.state('plex', ''); }
+  function leave() { open_ = false; loadSeq++; if (typeof PlexPage !== 'undefined' && PlexPage.quiet) PlexPage.quiet(); if (typeof Log !== 'undefined' && !(Views.vod && Views.vod.meta && Views.vod.meta.plex)) Log.state('plex', ''); }
 
   // A collection (or a show's seasons) from elsewhere: from a title's page it goes on top, so Back returns there.
   function openShow(m) { if (!m.page) stack = []; push(m); zone = 'rows'; UI.setHandler(keys); draw(); load(); }

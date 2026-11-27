@@ -33,10 +33,10 @@ var PlexPhone = (function () {
     return {
       server: m.server, key: String(m.ratingKey || ''), type: m.type, title: ep ? (m.grandparentTitle || m.title) : m.title,
       sub: ep ? 'S' + (m.parentIndex || 0) + ' · E' + (m.index || 0) + '  ' + (m.title || '') : m.type === 'season' ? (m.title || '') : m.type === 'clip' ? (m.subtype || '') : String(m.year || ''),
-      thumb: ep && m.grandparentThumb ? m.grandparentThumb : m.thumb || '', wide: ep || m.type === 'clip' ? (m.thumb || '') : '',
+      thumb: ep && m.grandparentThumb ? m.grandparentThumb : m.thumb || '', wide: ep || m.type === 'clip' ? (Plex.epPic(m) || m.thumb || '') : '',
       art: m.art || m.grandparentArt || m.parentArt || '',
       offset: m.viewOffset || 0, duration: m.duration || 0, watched: m.viewCount > 0 && !m.viewOffset ? 1 : 0,
-      left: m.leafCount && m.viewedLeafCount != null ? m.leafCount - m.viewedLeafCount : 0, summary: String(m.summary || '').slice(0, 600),
+      left: m.leafCount && m.viewedLeafCount != null ? m.leafCount - m.viewedLeafCount : 0, summary: Plex.spoiler(m) ? '' : String(m.summary || '').slice(0, 600),
       sec: String(m.librarySectionID || '')
     };
   }

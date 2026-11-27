@@ -16,7 +16,7 @@ var PlexShelf = (function () {
     if (kind === 'person') { name = m.tag; sub = m.role || m.job || ''; path = m.thumb || ''; }
     else {
       var ep = m.type === 'episode';
-      name = ep ? m.title : m.title; path = kind === 'wide' ? (m.thumb || m.art || '') : (m.thumb || '');
+      name = ep ? m.title : m.title; path = kind === 'wide' ? (Plex.epPic(m) || m.thumb || m.art || '') : (m.thumb || '');
       sub = ep ? 'S' + (m.parentIndex || 0) + ' · E' + (m.index || 0) + (m.duration ? '  ·  ' + T('{n} min', { n: Math.round(m.duration / 60000) }) : '') :
         m.type === 'season' ? (m.leafCount ? (m.leafCount === 1 ? T('1 episode') : T('{n} episodes', { n: m.leafCount })) : '') : m.subtype === 'trailer' ? T('Trailer') : (m.year || '');
     }

@@ -179,8 +179,14 @@ var Plex = (function () {
   /* topMixed: the "Streaming Top 10s you have" row; topServices: a "Top 10 on X" row each (plextop.js).
      hiddenRows: home rows turned off in Edit home rows, by title (Plex's own order otherwise).
      watchRow: the Watchlist row on Home (plextop.js).
-     stillAfter: Up next asks "Still watching?" instead of counting down after this many episodes in a row (0: never). */
-  var PREFS = { homeQuality: 0, awayQuality: 0, direct: true, topMixed: true, topServices: [], hiddenRows: {}, watchRow: true, stillAfter: 3 };
+     stillAfter: Up next asks "Still watching?" instead of counting down after this many episodes in a row (0: never).
+     theme: a show's theme music plays on its page (and its seasons' and episodes').
+     spoilers: unwatched episodes show the show's picture instead of their own, and no summary (see spoiler()). */
+  var PREFS = { homeQuality: 0, awayQuality: 0, direct: true, topMixed: true, topServices: [], hiddenRows: {}, watchRow: true, stillAfter: 3, theme: true, spoilers: false };
+  // With Hide spoilers on: an episode not watched yet (nor started), whose own picture and summary stay hidden.
+  function spoiler(m) { var p = state.prefs || {}; return !!p.spoilers && !!m && m.type === 'episode' && !(m.viewCount > 0) && !m.viewOffset; }
+  // With Hide spoilers on, an unwatched episode's picture: the show's backdrop instead of its own ('' otherwise).
+  function epPic(m) { return spoiler(m) ? m.grandparentArt || m.art || m.grandparentThumb || '' : ''; }
   // A copy each time (lists and maps too), so a change is kept only through setPref.
   function prefs() { var p = state.prefs || {}, out = {}; for (var k in PREFS) out[k] = JSON.parse(JSON.stringify(p[k] == null ? PREFS[k] : p[k])); return out; }
   function setPref(k, v) { state.prefs = state.prefs || {}; state.prefs[k] = v; save(); }
@@ -244,7 +250,7 @@ var Plex = (function () {
     connect: connect, cancel: cancel, pendingCode: pendingCode, signOut: signOut,
     servers: servers, chosen: chosen, server: server, loadServers: loadServers, choose: choose, reach: reach, call: call, door: door,
     sections: sections, libs: libs, setLib: setLib, shownLibraries: shownLibraries, rememberLibraries: rememberLibraries,
-    homeUsers: homeUsers, switchUser: switchUser, prefs: prefs, setPref: setPref, watchlist: watchlist, watch: watch,
+    homeUsers: homeUsers, switchUser: switchUser, prefs: prefs, setPref: setPref, spoiler: spoiler, epPic: epPic, watchlist: watchlist, watch: watch,
     _test: { state: function () { return state; }, reset: function (s) { state = s || {}; } }
   };
 })();

@@ -2865,5 +2865,8 @@ I18n.add('ru', {
   "Your settings on this TV were cleared": "Настройки на этом телевизоре были сброшены",
   "Your last channel starts in a moment, once the guide is in.  TiviBro closed soon after starting last time.": "Последний канал включится через мгновение, как только загрузится телегид.  В прошлый раз TiviBro закрылся вскоре после запуска.",
   "Shuffle": "Перемешать",
-  "Play all": "Воспроизвести всё"
+  "Play all": "Воспроизвести всё",
+  "A show's theme plays quietly on its page, and its seasons' and episodes', while you look around.": "Музыкальная тема сериала тихо играет на его странице и на страницах сезонов и эпизодов, пока вы смотрите.",
+  "Episodes you haven't watched show the show's picture instead of their own, and no story, on the TV and the phone.": "Непросмотренные эпизоды показывают картинку сериала вместо своей и без описания, на телевизоре и в телефоне.",
+  "Theme music": "Музыкальная тема"
 });

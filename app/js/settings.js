@@ -544,7 +544,9 @@ var Settings = (function () {
       choice('Quality away from home', 'The same, when the server is somewhere else (a friend\'s, or yours from away).  Lower plays smoother on slow internet.', PLEX_Q, PLEX_QL, pr('awayQuality'), set('awayQuality')),
       toggle('Play files as they are', 'The TV plays the file itself when it can, at full quality, with the server doing nothing.  Off: the server always converts it (for a file that stutters).', pr('direct'), set('direct')),
       autoNextRow(), upNextRow(),
-      choice('Still watching?', 'After this many episodes in a row, Up next waits for OK instead of counting down, so a show doesn\'t play on all night.', [0, 2, 3, 5, 8], ['Never', '2 episodes', '3 episodes', '5 episodes', '8 episodes'], pr('stillAfter'), set('stillAfter'))].concat(also('playback', ['Skip intro', 'Skip credits', 'Seek previews'])).filter(Boolean);
+      choice('Still watching?', 'After this many episodes in a row, Up next waits for OK instead of counting down, so a show doesn\'t play on all night.', [0, 2, 3, 5, 8], ['Never', '2 episodes', '3 episodes', '5 episodes', '8 episodes'], pr('stillAfter'), set('stillAfter')),
+      toggle('Theme music', 'A show\'s theme plays quietly on its page, and its seasons\' and episodes\', while you look around.', pr('theme'), set('theme')),
+      toggle('Hide spoilers', 'Episodes you haven\'t watched show the show\'s picture instead of their own, and no story, on the TV and the phone.', pr('spoilers'), set('spoilers'))].concat(also('playback', ['Skip intro', 'Skip credits', 'Seek previews'])).filter(Boolean);
   }
   /* Settings > Plex > Home rows: Plex's own rows on or off, and the streaming Top 10 rows (plextop.js). */
   function plexRows() {

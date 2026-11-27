@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Plex theme music and Hide spoilers.**  A show's theme plays quietly on its pages (Settings > Plex > Theme music, on).  Hide spoilers (off) shows the show's picture and no story for episodes you haven't watched, on the TV and the phone.
 - **Shuffle and Play all for Plex.**  A show's or a season's page has Shuffle, and a collection or a playlist has Play all and Shuffle (hold OK on it, or Red inside it).  The titles play one after another with Up next.
 - **After a Plex title ends, its page comes back.**  A movie or a show's last episode ended on the Plex tab you came from, which could be an empty Search.  Now its page shows again (the show's, for an episode), as in Plex, and an empty Search opens on Home.
 - **Plex from a server away from home starts smoothly.**  A movie played as it is from a Plex server outside your home could run dry a few seconds in, when the server can barely send it as fast as it plays.  It now starts once 8 seconds are ready, as titles the server converts do.

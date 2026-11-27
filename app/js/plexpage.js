@@ -34,7 +34,7 @@ var PlexPage = (function () {
       '?includeMarkers=1&includeChapters=1&includeExtras=1&includeRelated=1&includeGuids=1';
     Plex.call(m.server, '/library/metadata/' + m.ratingKey + q).then(function (j) {
       var full = (mc(j).Metadata || [])[0]; if (!full || item !== m) return;
-      full.server = m.server; item = full; draw(); UI.setHandler(keys);
+      full.server = m.server; item = full; draw(); UI.setHandler(keys); theme(full);
       rowsFor(full).then(function (rows) {
         if (item !== full) return;
         var el = $('plexPageRows'); if (!el || !rows.length) return;
@@ -78,7 +78,7 @@ var PlexPage = (function () {
       '<div class="plex-page-scroll" id="plexPageScroll"><div class="plex-page-top"><div class="media-kicker" id="plexPageKicker">' + esc(kicker) + '</div>' +
       '<div class="media-title" id="plexPageName">' + esc(m.title) + '</div><div class="media-facts">' + esc(facts(m)) + '</div>' +
       '<div class="plex-badges">' + (plays ? badges(v).map(function (b) { return '<span class="plex-badge">' + esc(b) + '</span>'; }).join('') : '') + scores + '</div>' +
-      '<div class="media-summary plex-summary">' + esc(m.summary || (m.type === 'season' ? '' : '')) + '</div><div class="plex-people">' + esc(people) + '</div></div>' +
+      '<div class="media-summary plex-summary">' + esc(Plex.spoiler(m) ? '' : m.summary || '') + '</div><div class="plex-people">' + esc(people) + '</div></div>' +
       '<div class="plex-btns" id="plexPageBtns">' + btns.map(function (b, i) { return '<div class="plex-btn' + (i === btnAt ? ' sel' : '') + (b.main ? ' main' : '') + '">' + esc(b.label) + '</div>'; }).join('') + '</div>' +
       '<div class="plex-page-track">' + (plays ? track() : '') + '</div><div class="plex-page-rows" id="plexPageRows"></div></div>';
     pageArt.show(m.server, m.art || m.grandparentArt || m.parentArt || m.thumb);
@@ -306,10 +306,30 @@ var PlexPage = (function () {
   }
   function close() { hide(); btnAt = 0; zone = 'btns'; }
   // Out of sight while a person's titles or a collection show over the Plex tab; reshow() brings it back as it was.
-  function hide() { var el = $('plexPage'); if (el) el.classList.add('hidden'); }
+  function hide() { stopTheme(); var el = $('plexPage'); if (el) el.classList.add('hidden'); }
   function reshow() {
     var el = $('plexPage'); if (!el || !item) return false;
-    el.classList.remove('hidden'); paint(); UI.setHandler(keys); return true;
+    el.classList.remove('hidden'); paint(); UI.setHandler(keys); theme(item); return true;
+  }
+
+  /* ---------- Theme music (Settings > Plex > Theme music) ---------- */
+  /* A show's theme, quietly, on its page and on its seasons' and episodes' pages: going from one to another keeps it
+     playing.  Stopped when the page goes, when something plays, and on a movie's page (movies have none). */
+  var themeAudio = null, themeSrc = '';
+  function theme(m) {
+    var p = m.type === 'show' ? m.theme : m.type === 'season' ? m.parentTheme : m.type === 'episode' ? m.grandparentTheme : '';
+    if (!p || !Plex.prefs().theme || (Views.vod && Views.mode === 'vod')) return stopTheme();
+    Plex.door(m.server).then(function (key) {
+      var src = 'http://127.0.0.1:' + Net.port + '/plex/' + key + p;
+      if (item !== m || (themeAudio && themeSrc === src)) return;
+      stopTheme();
+      themeAudio = new Audio(src); themeAudio.volume = 0.35; themeSrc = src;
+      var r = themeAudio.play(); if (r && r.catch) r.catch(function () {});
+    }, function () {});
+  }
+  function stopTheme() {
+    if (themeAudio) { try { themeAudio.pause(); themeAudio.removeAttribute('src'); themeAudio.load(); } catch (e) {} }
+    themeAudio = null; themeSrc = '';
   }
 
   /* ---------- Playing ---------- */
@@ -330,6 +350,7 @@ var PlexPage = (function () {
   /* Starts the title at ms: the file through the door, or the server's converter.  Plex's preview pictures, its
      chapters and a subtitle file kept beside the video go to the player too (a file played as it is). */
   function play(ms, fromUpNext) {
+    stopTheme();
     if (!fromUpNext) { chain = 0; forceCap = null; queue = null; }
     var m = item, v = version(), part = v.Part && v.Part[0];
     if (!part) return U.toast(T('Plex has no file for this one.'), 6000);
@@ -559,11 +580,11 @@ var PlexPage = (function () {
     if (typeof UpNext !== 'undefined') UpNext.hold();
     Views.stopAll();
     var ep = nx.type === 'episode';
-    PlexView.picture(nx.server, ep ? nx.thumb : nx.art || nx.thumb, 1280, 720).then(function (img) {
+    PlexView.picture(nx.server, ep ? Plex.epPic(nx) || nx.thumb : nx.art || nx.thumb, 1280, 720).then(function (img) {
       UpNext.show({ auto: !ask, kicker: ask ? T('Still watching?') : undefined, playLabel: ask ? T('Keep watching') : undefined, image: img,
         show: ep ? nx.grandparentTitle : nx.title, season: ep ? nx.parentIndex : null, episode: ep ? nx.index : null,
         line: ep ? T('Season {x}, episode {y}', { x: nx.parentIndex, y: nx.index }) : String(nx.year || ''), title: ep ? nx.title : '',
-        runtime: mins(nx.duration) ? T('{n} min', { n: mins(nx.duration) }) : '', desc: String(nx.summary || '').slice(0, 400), play: go,
+        runtime: mins(nx.duration) ? T('{n} min', { n: mins(nx.duration) }) : '', desc: Plex.spoiler(nx) ? '' : String(nx.summary || '').slice(0, 400), play: go,
         cancel: function () { queue = null; afterEnd(m); } });
     });
   }
@@ -660,5 +681,5 @@ var PlexPage = (function () {
     return Plex.call(server, (on ? '/:/scrobble' : '/:/unscrobble') + '?identifier=com.plexapp.plugins.library&key=' + encodeURIComponent(String(key))).then(function () { return { on: !!on }; });
   }
 
-  return { diag: diag, open: open, ended: ended, playAll: playAll, shuffleOf: shuffleOf, close: close, reshow: reshow, playKey: playKey, playerItems: playerItems, pageData: pageData, playExtra: playExtra, playNextKey: playNextKey, markKey: markKey, _test: { quality: quality, marks: marks, badges: badges, direct: direct, converts: converts, chapters: chapters, item: function () { return item; }, keys: keys, buttons: function () { return btns; }, shelf: function () { return shelf; } } };
+  return { quiet: stopTheme, diag: diag, open: open, ended: ended, playAll: playAll, shuffleOf: shuffleOf, close: close, reshow: reshow, playKey: playKey, playerItems: playerItems, pageData: pageData, playExtra: playExtra, playNextKey: playNextKey, markKey: markKey, _test: { theme: function () { return themeSrc; }, quality: quality, marks: marks, badges: badges, direct: direct, converts: converts, chapters: chapters, item: function () { return item; }, keys: keys, buttons: function () { return btns; }, shelf: function () { return shelf; } } };
 })();

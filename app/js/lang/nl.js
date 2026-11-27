@@ -2750,5 +2750,8 @@ I18n.add('nl', {
   "Your settings on this TV were cleared": "Je instellingen op deze tv zijn gewist",
   "Your last channel starts in a moment, once the guide is in.  TiviBro closed soon after starting last time.": "Je laatste zender start zo, zodra de gids binnen is.  TiviBro sloot de vorige keer kort na het opstarten af.",
   "Shuffle": "Willekeurig afspelen",
-  "Play all": "Alles afspelen"
+  "Play all": "Alles afspelen",
+  "A show's theme plays quietly on its page, and its seasons' and episodes', while you look around.": "De titelmuziek van een serie speelt zacht op de pagina, en op die van de seizoenen en afleveringen, terwijl je rondkijkt.",
+  "Episodes you haven't watched show the show's picture instead of their own, and no story, on the TV and the phone.": "Afleveringen die je nog niet hebt gezien tonen de afbeelding van de serie in plaats van hun eigen, en geen verhaal, op de tv en de telefoon.",
+  "Theme music": "Titelmuziek"
 });

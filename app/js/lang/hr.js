@@ -2736,5 +2736,8 @@ I18n.add('hr', {
   "Your settings on this TV were cleared": "Vaše postavke na ovom TV-u su očišćene",
   "Your last channel starts in a moment, once the guide is in.  TiviBro closed soon after starting last time.": "Vaš zadnji kanal počinje za trenutak, čim se učita vodič.  TiviBro se prošli put zatvorio ubrzo nakon pokretanja.",
   "Shuffle": "Nasumično",
-  "Play all": "Reproduciraj sve"
+  "Play all": "Reproduciraj sve",
+  "A show's theme plays quietly on its page, and its seasons' and episodes', while you look around.": "Glazbena tema serije tiho svira na njezinoj stranici i na stranicama sezona i epizoda dok razgledavate.",
+  "Episodes you haven't watched show the show's picture instead of their own, and no story, on the TV and the phone.": "Epizode koje niste gledali prikazuju sliku serije umjesto svoje i bez radnje, na TV-u i na mobitelu.",
+  "Theme music": "Glazbena tema"
 });

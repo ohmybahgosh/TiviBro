@@ -250,6 +250,10 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     await ev(() => { Views.stopAll(); PlexPage.open({ ratingKey: '40', type: 'show', title: 'The Harbor Lights', server: Plex.chosen()[0].id }, function () {}); });
     await page.waitForFunction(() => PlexPage._test.shelf() && (PlexPage._test.item() || {}).type === 'show', null, { timeout: 8000 }).catch(() => {});
     const sp = await ev(() => ({ btns: PlexPage._test.buttons().map((b) => b.label), rows: PlexPage._test.shelf().rows.map((r) => r.title) }));
+    const th = await ev(() => PlexPage._test.theme());
+    ok('a show\'s page plays its theme through the helper', /\/plex\/[0-9a-f]{48}\/library\/metadata\/40\/theme\/1$/.test(th), th);
+    const off = await ev(() => { Plex.setPref('spoilers', true); const r = [Plex.spoiler({ type: 'episode' }), Plex.spoiler({ type: 'episode', viewCount: 1 }), Plex.epPic({ type: 'episode', thumb: '/t', grandparentArt: '/a' })]; Plex.setPref('spoilers', false); return r; });
+    ok('Hide spoilers: an unwatched episode hides, a watched one doesn\'t, the show\'s backdrop instead', off[0] === true && off[1] === false && off[2] === '/a', JSON.stringify(off));
     ok('a show\'s page: Resume its next episode, Seasons, Cast and crew', sp.btns[0] === 'Resume S2 · E1' && sp.btns.indexOf('Shuffle') > 0 && sp.rows[0] === 'Seasons' && sp.rows.indexOf('Cast and crew') > 0, sp);
     await shot('6c-show');
     await ev(() => PlexPage._test.keys('back'));

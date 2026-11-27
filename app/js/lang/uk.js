@@ -2736,5 +2736,8 @@ I18n.add('uk', {
   "Your settings on this TV were cleared": "Ваші налаштування на цьому ТВ було очищено",
   "Your last channel starts in a moment, once the guide is in.  TiviBro closed soon after starting last time.": "Ваш останній канал запуститься за мить, щойно завантажиться телепрограма.  Минулого разу TiviBro закрився невдовзі після запуску.",
   "Shuffle": "Перемішати",
-  "Play all": "Відтворити все"
+  "Play all": "Відтворити все",
+  "A show's theme plays quietly on its page, and its seasons' and episodes', while you look around.": "Музична тема серіалу тихо грає на його сторінці та на сторінках сезонів і епізодів, поки ви переглядаєте.",
+  "Episodes you haven't watched show the show's picture instead of their own, and no story, on the TV and the phone.": "Непереглянуті епізоди показують зображення серіалу замість свого і без опису, на телевізорі й у телефоні.",
+  "Theme music": "Музична тема"
 });

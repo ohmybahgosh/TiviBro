@@ -2019,5 +2019,8 @@ I18n.add('fr', {
   "Your settings on this TV were cleared": "Vos réglages sur cette TV ont été effacés",
   "Your last channel starts in a moment, once the guide is in.  TiviBro closed soon after starting last time.": "Votre dernière chaîne démarre dans un instant, une fois le guide chargé.  TiviBro s'est fermé peu après son démarrage la dernière fois.",
   "Shuffle": "Lecture aléatoire",
-  "Play all": "Tout lire"
+  "Play all": "Tout lire",
+  "A show's theme plays quietly on its page, and its seasons' and episodes', while you look around.": "Le générique d'une série joue doucement sur sa page, et sur celles de ses saisons et épisodes, pendant que vous regardez.",
+  "Episodes you haven't watched show the show's picture instead of their own, and no story, on the TV and the phone.": "Les épisodes pas encore vus montrent l'image de la série au lieu de la leur, et pas de résumé, sur la TV et le téléphone.",
+  "Theme music": "Générique"
 });

@@ -2736,5 +2736,8 @@ I18n.add('ar', {
   "Your settings on this TV were cleared": "تم مسح إعداداتك على هذا التلفزيون",
   "Your last channel starts in a moment, once the guide is in.  TiviBro closed soon after starting last time.": "ستبدأ قناتك الأخيرة بعد لحظات، فور تحميل الدليل.  أُغلق TiviBro بعد وقت قصير من بدء التشغيل في المرة السابقة.",
   "Shuffle": "تشغيل عشوائي",
-  "Play all": "تشغيل الكل"
+  "Play all": "تشغيل الكل",
+  "A show's theme plays quietly on its page, and its seasons' and episodes', while you look around.": "تُعزف موسيقى شارة المسلسل بهدوء في صفحته وفي صفحات مواسمه وحلقاته أثناء تصفحك.",
+  "Episodes you haven't watched show the show's picture instead of their own, and no story, on the TV and the phone.": "الحلقات التي لم تشاهدها تعرض صورة المسلسل بدلاً من صورتها، ومن دون قصة، على التلفاز والهاتف.",
+  "Theme music": "موسيقى الشارة"
 });

@@ -2736,5 +2736,8 @@ I18n.add('hi', {
   "Your settings on this TV were cleared": "इस TV की आपकी सेटिंग मिट गईं",
   "Your last channel starts in a moment, once the guide is in.  TiviBro closed soon after starting last time.": "आपका पिछला चैनल गाइड लोड होते ही कुछ पल में शुरू हो जाएगा।  पिछली बार TiviBro शुरू होने के थोड़ी देर बाद बंद हो गया था।",
   "Shuffle": "शफ़ल",
-  "Play all": "सब चलाएँ"
+  "Play all": "सब चलाएँ",
+  "A show's theme plays quietly on its page, and its seasons' and episodes', while you look around.": "किसी शो का थीम संगीत उसके पेज पर, और उसके सीज़न और एपिसोड के पेज पर, धीमे से बजता है जब आप देखते हैं।",
+  "Episodes you haven't watched show the show's picture instead of their own, and no story, on the TV and the phone.": "जो एपिसोड आपने नहीं देखे, वे अपनी तस्वीर की जगह शो की तस्वीर दिखाते हैं, और कहानी नहीं, टीवी और फ़ोन पर।",
+  "Theme music": "थीम संगीत"
 });

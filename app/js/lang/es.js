@@ -2862,5 +2862,8 @@ I18n.add('es', {
   "Your settings on this TV were cleared": "Se borró tu configuración en este televisor",
   "Your last channel starts in a moment, once the guide is in.  TiviBro closed soon after starting last time.": "Tu último canal empezará en un momento, cuando cargue la guía.  La vez anterior TiviBro se cerró poco después de iniciarse.",
   "Shuffle": "Aleatorio",
-  "Play all": "Reproducir todo"
+  "Play all": "Reproducir todo",
+  "A show's theme plays quietly on its page, and its seasons' and episodes', while you look around.": "El tema de una serie suena bajito en su página, y en las de sus temporadas y episodios, mientras miras.",
+  "Episodes you haven't watched show the show's picture instead of their own, and no story, on the TV and the phone.": "Los episodios que no has visto muestran la imagen de la serie en lugar de la suya, y sin argumento, en la tele y en el móvil.",
+  "Theme music": "Música del tema"
 });

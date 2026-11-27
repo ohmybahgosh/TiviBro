@@ -2750,5 +2750,8 @@ I18n.add('tr', {
   "Your settings on this TV were cleared": "Bu TV'deki ayarlarınız temizlendi",
   "Your last channel starts in a moment, once the guide is in.  TiviBro closed soon after starting last time.": "Son izlediğiniz kanal, rehber yüklenir yüklenmez birazdan başlayacak.  TiviBro geçen sefer açıldıktan kısa süre sonra kapandı.",
   "Shuffle": "Karışık çal",
-  "Play all": "Tümünü oynat"
+  "Play all": "Tümünü oynat",
+  "A show's theme plays quietly on its page, and its seasons' and episodes', while you look around.": "Bir dizinin tema müziği, siz göz gezdirirken sayfasında ve sezon ve bölüm sayfalarında kısık sesle çalar.",
+  "Episodes you haven't watched show the show's picture instead of their own, and no story, on the TV and the phone.": "İzlemediğiniz bölümler kendi resimleri yerine dizinin resmini gösterir ve konusu gösterilmez, TV'de ve telefonda.",
+  "Theme music": "Tema müziği"
 });
