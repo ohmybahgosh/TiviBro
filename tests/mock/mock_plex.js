@@ -64,6 +64,8 @@ function route(state, req, port) {
     Extras: { Metadata: [{ ratingKey: '80', type: 'clip', subtype: 'trailer', title: 'Trailer' }] },
     Media: [{ videoResolution: '4k', videoCodec: old ? 'mpeg2video' : 'hevc', container: old ? 'mpeg' : 'mkv', audioChannels: 8, bitrate: 60000, Part: [{ id: 7, key: '/library/parts/7/1700000000/file.mkv', size: 58e9, indexes: 'sd', Stream: [{ id: 1, streamType: 1, DOVIPresent: true }, { id: 2, streamType: 2, displayTitle: 'English (TrueHD Atmos 7.1)', selected: true }, { id: 3, streamType: 3, displayTitle: 'English (SRT)', codec: 'srt', key: '/library/streams/3', language: 'English', selected: true }] }] }] })] } }]; }
   if (p === '/:/timeline') { state.timeline = q; return [200, null]; }
+  // As a real server: no converter profile for webOS, so 400 unless the request names one.
+  if (p === '/video/:/transcode/universal/start.m3u8' && !req.headers['x-plex-client-profile-name']) return [400, 'Bad Request', 'text/html'];
   if (p === '/video/:/transcode/universal/start.m3u8') { state.transcode = q; return [200, '#EXTM3U\n', 'application/vnd.apple.mpegurl']; }
   if (p === '/:/scrobble' && req.method === 'GET') { state.scrobbled = q; return [200, null]; }
   return [404, { error: 'not here' }];

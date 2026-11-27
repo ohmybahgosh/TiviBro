@@ -207,7 +207,9 @@ function allowedPath(method, path) {
 function server(q, cb) {
   var method = String(q.op).toUpperCase(), path = String(q.path || '');
   if (!allowedBase(q.base) || !allowedPath(method, path) || !validToken(q.token)) return cb(failure('bad'));
-  call(method, String(q.base).replace(/\/$/, '') + path, headers(q), null, function (e, r) {
+  var h = headers(q);
+  if (/^\/video\/:\/transcode\//.test(path)) h['X-Plex-Client-Profile-Name'] = 'Generic';   // as in doorGet
+  call(method, String(q.base).replace(/\/$/, '') + path, h, null, function (e, r) {
     if (e) return cb(failure('unreachable'));
     if (r.status >= 400) return cb(fromStatus(r));
     cb({ status: r.status, data: r.json });
@@ -253,6 +255,8 @@ function doorGet(req, res, ALLOW) {
   if (!d || d.until < Date.now() || !DOOR_PATHS.test(m[2]) || /(^|\/)\.\.?(\/|\?|$)|%2e%2e/i.test(m[2])) { res.writeHead(404, ALLOW); return res.end(); }
   var u = URL.parse(d.base + m[2]), lib = u.protocol === 'http:' ? http : https;
   var h = headers({ cid: d.cid, token: d.token }); delete h.Accept;
+  // The converter has no profile of its own for webOS and answers 400 without one: Plex's Generic profile.
+  if (/^\/video\/:\/transcode\//.test(m[2])) h['X-Plex-Client-Profile-Name'] = 'Generic';
   if (req.headers.range) h.Range = req.headers.range;
   var out = lib.request({ hostname: u.hostname, port: u.port, path: u.path, method: req.method === 'HEAD' ? 'HEAD' : 'GET', headers: h }, function (up) {
     var head = {}; ['content-type', 'content-length', 'content-range', 'accept-ranges', 'cache-control', 'last-modified', 'etag'].forEach(function (k) { if (up.headers[k] != null) head[k] = up.headers[k]; });
