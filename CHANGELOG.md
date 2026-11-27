@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Subtitles stay with Dialogue boost on.**  Turning on dialogue boost or night mode while a movie with subtitles played stopped the subtitles for a minute, and then they ran up to a few seconds ahead of the voices.  The lines read before carry on at once, and the subtitles and the timeline now follow where the converted picture really starts.
 - **A stuck network helper no longer closes TiviBro on 1 GB TVs with big lists.**  When the helper wasn't running, TiviBro read the whole provider guide in its own memory instead, and a TV with 57,000 channels closed it a minute after starting (issue #197).  The guide it has now stays on screen and is read again once the helper is back.
 - **No more closing a minute after every start on some webOS 6 TVs.**  When TiviBro closed soon after starting while a channel played, the next start loads the guide and the channel logos first and starts the last channel about 50 seconds in, so they never fill the TV's memory together (issues #194, #195).  A channel you pick meanwhile plays at once.
 

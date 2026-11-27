@@ -129,9 +129,12 @@ var EmbedSubs = (function () {
         if (liveTracks[a].mode !== 'showing') continue;
         selected = true;
         // Subs timing and alignment change live cue times.  Some native players
-        // clear a <track>'s cues when enabling it; retain the text cache fallback.
-        var live = liveTracks[a].cues, useLive = live && live.length;
-        var list = useLive ? live : rec && rec.cues[a] || [];
+        // clear a <track>'s cues when enabling it (LG's Chromium does, also cues added since); retain the text
+        // cache fallback.  The kept lines are used whenever they are more than the track still has: after
+        // dialogue boost started the converter, the lines read before were gone from the track, and only lines
+        // read from then on showed, a minute later (Plex, Toy Story on a C2).
+        var live = liveTracks[a].cues, kept = rec && rec.cues[a] || [], useLive = live && live.length && live.length >= kept.length;
+        var list = useLive ? live : kept;
         // The text cache holds file times: show them where Subs shows this track (Line up, Timing).
         var tm = useLive ? null : ctx.timing(a), scale = tm ? tm.scale || 1 : 1, delay = tm ? (tm.off || 0) + (tm.delay || 0) : 0;
         // A track's cue list is in start order: find where "now" falls instead of walking every cue

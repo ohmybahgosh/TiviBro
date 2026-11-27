@@ -131,8 +131,10 @@ function args(o) {
   a.push('-i', o.pipe ? 'pipe:0' : o.input);
   if (t && o.pipe) a.push('-ss', t);                  // from a pipe: read and drop up to t
   // Movies keep their own times (a seek to 1:00:00 starts the stream at 1:00:00, see app/js/player.js).
-  // Live channels start at zero.
+  // Live channels start at zero.  A movie as MPEG-TS from a seek keeps them too (mpegts_copyts below), so the
+  // helper can tell where its picture really starts (firstPts).
   if (o.fmt !== 'ts') a.push('-copyts', '-start_at_zero');
+  else if (t && !o.pipe) a.push('-copyts');
   a.push('-map', '0:v:0?', '-map', '0:a:' + (o.a | 0), '-c:v', 'copy');
   /* Dolby Vision profile 7 (UHD Blu-ray remuxes), which LG's player shows only as its HDR10 base: as profile 8.1,
      which it shows in Dolby Vision.  The enhancement layer goes and the RPU is rewritten (dovi_rpu's p81,
@@ -142,11 +144,37 @@ function args(o) {
   // Dialogue boost or night mode: the chosen sound through fxChain, out as stereo Dolby Digital (the TV plays it).
   a = a.concat(o.fx ? ['-af', o.fx, '-c:a', 'ac3', '-b:a', '224k', '-ac', '2'] : audioArgs(o.track).args);
   a.push('-sn', '-dn', '-max_muxing_queue_size', '1024');
+  if (o.fmt === 'ts' && t && !o.pipe) a.push('-mpegts_copyts', '1');
   if (o.fmt === 'ts') a.push('-f', 'mpegts', 'pipe:1');
   // Not "-live 1": LG's player takes a live-marked MKV for a live stream, fills a few seconds and stops
   // reading (tested on a C2: a live MKV starved every 10 s, the same file without it played through).
   else a.push('-f', 'matroska', 'pipe:1');
   return a;
+}
+
+/* Where a converted movie's picture really starts (issue: Plex subtitles out of step with dialogue boost).  The
+   picture can only start on a keyframe, so a seek to t starts up to several seconds before t (-noaccurate_seek
+   keeps the sound with it), and the player's clock counts from there.  With the movie's own times kept in the
+   MPEG-TS (-copyts, -mpegts_copyts), the first video PES header's PTS says where: seconds, once found, into
+   st.first.  st: { buf, seen }, for chunks as ffmpeg writes them; it gives up after 4 MB. */
+function firstPts(st, chunk) {
+  if (st.first != null || st.seen > 4194304) return;
+  st.seen += chunk.length;
+  var b = st.buf ? Buffer.concat([st.buf, chunk]) : chunk, i = 0;
+  while (i < b.length && b[i] !== 0x47) i++;
+  for (; i + 188 <= b.length; i += 188) {
+    if (b[i] !== 0x47) { while (i < b.length && b[i] !== 0x47) i++; i -= 188; continue; }
+    if (!(b[i + 1] & 0x40)) continue;                          // not the start of a PES packet
+    var afc = (b[i + 3] >> 4) & 3, o = i + 4;
+    if (afc === 2) continue;                                   // no payload
+    if (afc === 3) o += 1 + b[i + 4];
+    if (o + 14 > i + 188 || b[o] !== 0 || b[o + 1] !== 0 || b[o + 2] !== 1) continue;
+    if (b[o + 3] < 0xE0 || b[o + 3] > 0xEF || !(b[o + 7] & 0x80)) continue;   // a video stream, with a PTS
+    var p = o + 9, pts = ((b[p] >> 1) & 7) * 1073741824 + b[p + 1] * 4194304 + (b[p + 2] >> 1) * 32768 + b[p + 3] * 128 + (b[p + 4] >> 1);
+    st.first = pts / 90000; st.buf = null;
+    return;
+  }
+  st.buf = b.slice(i);                                         // a packet cut between chunks
 }
 
 /* ---------- running ffmpeg ---------- */
@@ -258,6 +286,8 @@ function send(res, ALLOW, code, obj) {
 function control(req, res, ALLOW, log, port, redact) {
   var route = req.url.split('?')[0], q = query(req.url);
   if (route === '/convert/key') return send(res, ALLOW, 200, { key: KEY });
+  // Where the running conversion's picture starts in the movie (firstPts), and the time it was asked to start from.
+  if (route === '/convert/first') return send(res, ALLOW, 200, current ? { from: current.t, first: current.pts ? current.pts.first : null } : { from: null, first: null });
   if (route === '/convert/probe') {
     var input = inputFor(q.u, q.ua, port);
     if (!input) return send(res, ALLOW, 400, { error: 'not a web address' });
@@ -432,8 +462,14 @@ function stream(req, res, ALLOW, log, port, redact) {
     me = { p: p, at: Date.now(), bytes: 0, speed: '', stopped: '' };
     me.stop = function (why) { if (!me.stopped) me.stopped = why; stopProc(p); if (current === me) current = null; try { res.end(); } catch (e) {} };
   }
-  me.feeder = null;
+  me.feeder = null; me.t = t;
   current = me;
+  // A movie as MPEG-TS from a seek: where its picture starts (firstPts), read from the output as it goes past.
+  if (fmt === 'ts' && t && !pipe) {
+    me.pts = { buf: null, seen: 0, first: null };
+    var onPts = function (d) { firstPts(me.pts, d); if (me.pts.first != null || me.pts.seen > 4194304) { p.stdout.removeListener('data', onPts); if (me.pts.first != null) log({ lv: 'info', event: 'convert picture starts', from_s: t, at_s: Math.round(me.pts.first * 1000) / 1000 }); } };
+    p.stdout.on('data', onPts);
+  }
   log({ lv: 'info', event: 'convert start', u: redact(q.u), from_s: t, a: a, fmt: fmt, from: track ? track.codec + ' ' + track.channels + 'ch' : 'not probed', to: choice.out, nice: !!nice(), pipe: pipe, spool: !!dir, pid: p.pid });
   var errTail = '', lastLog = Date.now();
   p.stderr.on('data', function (d) {
@@ -468,5 +504,5 @@ function busy() { return current ? { pid: current.p.pid, since: current.at, spee
 // Tests: the spool's sizes.
 function _sizes(seg, ahead, behind, idle, wait) { SEG = seg; AHEAD = ahead; BEHIND = behind; if (idle) IDLE_MS = idle; if (wait) WAIT_MS = wait; }
 
-module.exports = { parseProbe: parseProbe, args: args, audioArgs: audioArgs, fxChain: fxChain, inputFor: inputFor, isStream: isStream, stream: stream, control: control,
+module.exports = { firstPts: firstPts, parseProbe: parseProbe, args: args, audioArgs: audioArgs, fxChain: fxChain, inputFor: inputFor, isStream: isStream, stream: stream, control: control,
   busy: busy, stats: stats, _sizes: _sizes, get session() { return session; }, get key() { return KEY; }, _forget: function () { probes = {}; probeOrder = []; } };

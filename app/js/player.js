@@ -1180,6 +1180,7 @@ var Player = (function () {
     if (cur.conv && st.started && !cur.conv.checked && t > 0) {
       cur.conv.checked = true; cur.conv.played = true;
       if (cur.conv.t > 5 && t > cur.conv.t / 2) { cur.conv.base = 0; video._tbOffset = 0; Log.info('player', 'The TV player shows the movie\'s own times'); }
+      else if (st.kind !== 'native' && cur.conv.t > 0 && Convert.first) firstFrame(myToken, cur.conv);
     }
     if (st.started && video.readyState > 0 && !video.seeking) cur.pos = t + base();
     /* A movie's place by the clock too: how long it has been playing since this try started there.  The TV
@@ -1560,6 +1561,19 @@ var Player = (function () {
 
   /* ---------- sound the TV can't play (convert.js) ---------- */
   function base() { return cur && cur.conv ? cur.conv.base || 0 : 0; }
+  /* A converted movie from a seek plays from the keyframe before the seek, up to several seconds earlier, and the
+     player's clock counts from that keyframe: subtitles (and Player.position) would be that far ahead of the
+     sound.  The helper reads where the picture really starts (service/convert.js firstPts); the clock's base is
+     put there.  Asked a few times while the helper is still reading it. */
+  function firstFrame(my, conv, n) {
+    Convert.first().then(function (j) {
+      if (my !== token || !cur || cur.conv !== conv || !j || Math.abs((j.from || 0) - conv.t) > 0.01) return;
+      if (j.first == null) { if ((n || 0) < 5) setTimeout(function () { firstFrame(my, conv, (n || 0) + 1); }, 1000); return; }
+      if (j.first > conv.t + 1 || conv.t - j.first > 30) return;            // not believable: keep the asked time
+      Log.info('player', 'Converted picture starts at ' + j.first.toFixed(2) + 's, ' + (conv.t - j.first).toFixed(2) + 's before ' + conv.t.toFixed(2) + 's: clock and subtitles lined up');
+      conv.base = j.first; video._tbOffset = j.first;
+    }, function () {});
+  }
   /* The subtitles inside a movie that plays through the converter as MPEG-TS (issue #154: none showed, only
      OpenSubtitles): the converter's output carries the picture and sound only, so the MKV reader looks at the
      movie itself, as the TV player's path does, and the helper keeps the subtitle lines from the converter's own

@@ -52,6 +52,21 @@ ok('only http for the input', /-protocol_whitelist http,tcp/.test(j), j);
 ok('progress every 5 s for the speed log', /-stats -stats_period 5/.test(j), j);
 a = C.args({ input: 'pipe:0', pipe: true, t: 30, a: 0, fmt: 'ts', track: { codec: 'dts', channels: 6 } }).join(' ');
 ok('pipe: read stdin, seek after -i, MPEG-TS out, live times from zero', /-i pipe:0 -ss 30 /.test(a) && / -f mpegts pipe:1$/.test(a) && !/copyts/.test(a), a);
+// A movie as MPEG-TS from a seek keeps its own times, so the helper can read where the picture starts (firstPts).
+a = C.args({ input: 'http://x/m.mkv', t: 357.591, a: 0, fmt: 'ts', fx: 'x' }).join(' ');
+ok('MPEG-TS from a seek: the movie\'s own times kept', / -copyts /.test(a) && / -mpegts_copyts 1 -f mpegts pipe:1$/.test(a) && !/start_at_zero/.test(a), a);
+ok('MPEG-TS from the start (a live channel): times from zero as before', !/copyts/.test(C.args({ input: 'http://x/', t: 0, a: 0, fmt: 'ts' }).join(' ')));
+{
+  // One PES packet's start, as ffmpeg writes it: video stream 0xE0 with a PTS of 354.729 s, after an adaptation field.
+  const pkt = Buffer.alloc(188, 0xff), pts = Math.round(354.729 * 90000);
+  pkt[0] = 0x47; pkt[1] = 0x41; pkt[2] = 0x00; pkt[3] = 0x30; pkt[4] = 7; pkt[5] = 0x10;
+  const o = 12; pkt[o] = 0; pkt[o + 1] = 0; pkt[o + 2] = 1; pkt[o + 3] = 0xe0; pkt[o + 6] = 0x80; pkt[o + 7] = 0x80; pkt[o + 8] = 5;
+  pkt[o + 9] = 0x21 | ((Math.floor(pts / 1073741824) & 7) << 1); pkt[o + 10] = (pts >> 22) & 0xff; pkt[o + 11] = (((pts >> 15) & 0x7f) << 1) | 1; pkt[o + 12] = (pts >> 7) & 0xff; pkt[o + 13] = ((pts & 0x7f) << 1) | 1;
+  const audio = Buffer.from(pkt); audio[o + 3] = 0xc0; audio[o + 13] = 1;
+  const all = Buffer.concat([Buffer.from([1, 2, 3]), audio, pkt]), st = { buf: null, seen: 0, first: null };
+  for (let i = 0; i < all.length; i += 50) C.firstPts(st, all.slice(i, i + 50));     // cut anywhere between chunks
+  ok('where the picture starts: the first video PES header\'s PTS, across chunks, after an audio one', Math.abs(st.first - 354.729) < 0.001, st.first);
+}
 a = C.args({ input: 'http://x/', t: 0, a: 0, fmt: 'mkv' }).join(' ');
 ok('no -ss at the start', !/-ss/.test(a), a);
 

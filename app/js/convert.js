@@ -111,6 +111,8 @@ var Convert = (function () {
       // Dialogue boost and night mode (dialog.js): the converter's filters on the sound (service/convert.js fxChain).
       (conv.fx && conv.fx.b ? '&b=' + conv.fx.b : '') + (conv.fx && conv.fx.n ? '&n=1' : '') + (ua ? '&ua=' + encodeURIComponent(ua) : '');
   }
+  // Where the running conversion's picture starts in the movie: { from, first } (service/convert.js firstPts).
+  function first() { return ask('/convert/first'); }
   function probe(url) {
     var k = url + '|' + (typeof Net !== 'undefined' ? Net.ua : '');
     if (probes[k]) return Promise.resolve(probes[k]);
@@ -259,6 +261,6 @@ var Convert = (function () {
   }
   function noSound(what) { return what + ' sound, which this TV can\'t play.  Settings > Audio and subtitles can get the audio converter, or pick another audio track.'; }
 
-  return { _forSync: forSync, _forBoost: forBoost, fmtFor: fmtFor, on: on, status: status, get: get, remove: remove, describe: describe, decide: decide, link: link, plan: plan, planLive: planLive, planBoost: planBoost, offer: offer, noSound: noSound,
+  return { first: first, _forSync: forSync, _forBoost: forBoost, fmtFor: fmtFor, on: on, status: status, get: get, remove: remove, describe: describe, decide: decide, link: link, plan: plan, planLive: planLive, planBoost: planBoost, offer: offer, noSound: noSound,
     probe: probe, ensureKey: ensureKey, NAMES: NAMES, _dv81: dv81, get key() { return key; }, _reset: function () { key = ''; st = null; probes = {}; } };
 })();
