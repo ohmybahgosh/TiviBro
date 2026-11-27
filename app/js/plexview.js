@@ -425,7 +425,8 @@ var PlexView = (function () {
   function options() {
     var t = tabNow(), sub = SUBS[subAt][0], top = stack[stack.length - 1];
     if (top && /^(show|season)$/.test(top.type)) return showOptions(top);
-    if (t.id !== 'lib' || sub !== 'library' || stack.length) return UI.menu(T('Plex'), [{ label: T('Refresh'), action: function () { load(); } }].concat(t.id === 'home' && !stack.length ? [{ label: T('Edit home rows'), action: function () { editRows(); } }] : []));
+    var top = stack[stack.length - 1];
+    if (t.id !== 'lib' || sub !== 'library' || stack.length) return UI.menu(T('Plex'), (top && /^(collection|playlist)$/.test(top.type) ? allRows(top) : []).concat([{ label: T('Refresh'), action: function () { load(); } }]).concat(t.id === 'home' && !stack.length ? [{ label: T('Edit home rows'), action: function () { editRows(); } }] : []));
     var p = libPrefs(t.lib);
     UI.menu(t.lib.title, [
       { label: T('Sort'), sub: T((SORTS.filter(function (s) { return s[0] === (p.sort || 'addedAt:desc'); })[0] || SORTS[0])[1]), action: function () {
@@ -444,6 +445,7 @@ var PlexView = (function () {
   function itemOptions(m) {
     if (/^(movie|episode)$/.test(m.type) && !m._full) return more(m).then(function (d) { m.guid = m.guid || d.guid; m._full = true; itemOptions(m); }, function () { m._full = true; itemOptions(m); });
     if (/^(show|season)$/.test(m.type)) return showOptions(m);
+    if (/^(collection|playlist)$/.test(m.type)) return UI.menu(I18n.raw(m.title), [{ label: T('Open'), action: function () { openItem(m); } }].concat(allRows(m)));
     if (!/^(movie|episode)$/.test(m.type)) return UI.menu(I18n.raw(m.title), [{ label: T('Open'), action: function () { openItem(m); } }]);
     var list = [], watched = m.viewCount > 0 && !m.viewOffset, play = function (fromStart) { return function () { PlexPage.playKey(m.server, String(m.ratingKey), fromStart).catch(function (e) { U.toast(e.message, 6000); }); }; };
     if (m.viewOffset > 60000) list.push({ label: T('Resume from {x}', { x: clock(m.viewOffset) }), action: play(false) });
@@ -472,9 +474,15 @@ var PlexView = (function () {
       var eps = mc(j).Metadata || [], next = eps.filter(function (e) { return e.viewOffset; })[0] || eps.filter(function (e) { return !e.viewCount; })[0];
       var rows = [];
       if (next) rows.push({ label: T('Play S{x} · E{y}', { x: next.parentIndex, y: next.index }), sub: I18n.raw(next.title || ''), action: function () { PlexPage.playKey(m.server, String(next.ratingKey), false).catch(function (e) { U.toast(e.message, 6000); }); } });
+      if (eps.length > 1) rows.push({ label: T('Shuffle'), action: function () { PlexPage.playAll(m.server, eps, true); } });
       rows.push({ label: T('Mark all watched'), action: function () { markAll(m, true); } }, { label: T('Mark all not watched'), action: function () { markAll(m, false); } }, { label: T('Refresh'), action: function () { load(); } });
       UI.menu(I18n.raw(m.title), rows);
     }, function (e) { U.toast(e.message, 6000); });
+  }
+  // Play all and Shuffle for a collection or a playlist: its titles read, then played in order or mixed up.
+  function allRows(m) {
+    var go = function (shuffle) { return function () { childRows(m).then(function (rs) { PlexPage.playAll(m.server, [].concat.apply([], rs.map(function (r) { return r.items; })), shuffle); }, function (e) { U.toast(e.message, 6000); }); }; };
+    return [{ label: T('Play all'), action: go(false) }, { label: T('Shuffle'), action: go(true) }];
   }
   function markAll(m, on) {
     Plex.call(m.server, (on ? '/:/scrobble' : '/:/unscrobble') + '?identifier=com.plexapp.plugins.library&key=' + m.ratingKey).then(function () { U.toast(on ? T('Marked as watched') : T('Marked as not watched')); load(); }, function (e) { U.toast(e.message, 6000); });

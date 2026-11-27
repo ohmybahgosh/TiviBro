@@ -235,11 +235,22 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     const after = await ev(() => ({ shown: !document.getElementById('plexPage').classList.contains('hidden'), key: String((PlexPage._test.item() || {}).ratingKey), vod: !!Views.vod }));
     ok('a title ends without a next one: its show\'s page, not the Plex tab', after.shown && after.key === '40' && !after.vod, JSON.stringify(after));
     await ev(() => { UI.press('back'); }); await page.waitForTimeout(800);
+    // Play all: the list's titles one after another with Up next, then the last one's page.
+    await ev(() => { Views.stopAll(); const sv = Plex.chosen()[0].id; return Plex.call(sv, '/library/metadata/40/allLeaves').then((j) => { const l = j.MediaContainer.Metadata; PlexPage.playAll(sv, [l[0], l[2]], false); }); }); await page.waitForTimeout(2500);
+    const q1 = await ev(() => String((PlexPage._test.item() || {}).ratingKey));
+    await ev(() => PlexPage.ended(false)); await page.waitForTimeout(1500);
+    const qUp = await ev(() => document.body.innerText);
+    await ev(() => UI.press('ok')); await page.waitForTimeout(2500);
+    const q2 = await ev(() => String((PlexPage._test.item() || {}).ratingKey));
+    ok('Play all: the first, Up next with the second, then the second', q1 === '41' && /Episode 3/.test(qUp) && q2 === '43', q1 + ' ' + q2);
+    await ev(() => PlexPage.ended(false)); await page.waitForTimeout(2500);
+    ok('…and after the last of the list, its page', await ev(() => !document.getElementById('plexPage').classList.contains('hidden') && !Views.vod));
+    await ev(() => { UI.press('back'); }); await page.waitForTimeout(800);
     // A show's page: Play its next episode, Seasons and Cast and crew rows.
     await ev(() => { Views.stopAll(); PlexPage.open({ ratingKey: '40', type: 'show', title: 'The Harbor Lights', server: Plex.chosen()[0].id }, function () {}); });
     await page.waitForFunction(() => PlexPage._test.shelf() && (PlexPage._test.item() || {}).type === 'show', null, { timeout: 8000 }).catch(() => {});
     const sp = await ev(() => ({ btns: PlexPage._test.buttons().map((b) => b.label), rows: PlexPage._test.shelf().rows.map((r) => r.title) }));
-    ok('a show\'s page: Resume its next episode, Seasons, Cast and crew', sp.btns[0] === 'Resume S2 · E1' && sp.rows[0] === 'Seasons' && sp.rows.indexOf('Cast and crew') > 0, sp);
+    ok('a show\'s page: Resume its next episode, Seasons, Cast and crew', sp.btns[0] === 'Resume S2 · E1' && sp.btns.indexOf('Shuffle') > 0 && sp.rows[0] === 'Seasons' && sp.rows.indexOf('Cast and crew') > 0, sp);
     await shot('6c-show');
     await ev(() => PlexPage._test.keys('back'));
     // Red on a show: play the next episode, mark it all watched.

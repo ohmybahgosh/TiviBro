@@ -2734,5 +2734,7 @@ I18n.add('hr', {
   "Xtream Codes, kept on {x}.  Its channel edits come back from its restore points.": "Xtream Codes, spremljeno {x}.  Njezine izmjene kanala vraćaju se iz njezinih točaka vraćanja.",
   "Your playlist from before is still on this TV": "Vaša prijašnja playlista još je na ovom TV-u",
   "Your settings on this TV were cleared": "Vaše postavke na ovom TV-u su očišćene",
-  "Your last channel starts in a moment, once the guide is in.  TiviBro closed soon after starting last time.": "Vaš zadnji kanal počinje za trenutak, čim se učita vodič.  TiviBro se prošli put zatvorio ubrzo nakon pokretanja."
+  "Your last channel starts in a moment, once the guide is in.  TiviBro closed soon after starting last time.": "Vaš zadnji kanal počinje za trenutak, čim se učita vodič.  TiviBro se prošli put zatvorio ubrzo nakon pokretanja.",
+  "Shuffle": "Nasumično",
+  "Play all": "Reproduciraj sve"
 });

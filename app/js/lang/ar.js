@@ -2734,5 +2734,7 @@ I18n.add('ar', {
   "Xtream Codes, kept on {x}.  Its channel edits come back from its restore points.": "Xtream Codes، محفوظة في {x}.  تعديلات قنواتها تعود من نقاط الاستعادة الخاصة بها.",
   "Your playlist from before is still on this TV": "قائمة التشغيل السابقة لا تزال على هذا التلفزيون",
   "Your settings on this TV were cleared": "تم مسح إعداداتك على هذا التلفزيون",
-  "Your last channel starts in a moment, once the guide is in.  TiviBro closed soon after starting last time.": "ستبدأ قناتك الأخيرة بعد لحظات، فور تحميل الدليل.  أُغلق TiviBro بعد وقت قصير من بدء التشغيل في المرة السابقة."
+  "Your last channel starts in a moment, once the guide is in.  TiviBro closed soon after starting last time.": "ستبدأ قناتك الأخيرة بعد لحظات، فور تحميل الدليل.  أُغلق TiviBro بعد وقت قصير من بدء التشغيل في المرة السابقة.",
+  "Shuffle": "تشغيل عشوائي",
+  "Play all": "تشغيل الكل"
 });

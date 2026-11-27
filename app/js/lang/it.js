@@ -2748,5 +2748,7 @@ I18n.add('it', {
   "Xtream Codes, kept on {x}.  Its channel edits come back from its restore points.": "Xtream Codes, salvata il {x}.  Le sue modifiche ai canali tornano dai suoi punti di ripristino.",
   "Your playlist from before is still on this TV": "La tua playlist di prima è ancora su questa TV",
   "Your settings on this TV were cleared": "Le impostazioni su questa TV sono state cancellate",
-  "Your last channel starts in a moment, once the guide is in.  TiviBro closed soon after starting last time.": "L'ultimo canale che hai guardato partirà tra un attimo, appena la guida sarà pronta.  L'ultima volta TiviBro si è chiuso poco dopo l'avvio."
+  "Your last channel starts in a moment, once the guide is in.  TiviBro closed soon after starting last time.": "L'ultimo canale che hai guardato partirà tra un attimo, appena la guida sarà pronta.  L'ultima volta TiviBro si è chiuso poco dopo l'avvio.",
+  "Shuffle": "Riproduzione casuale",
+  "Play all": "Riproduci tutto"
 });

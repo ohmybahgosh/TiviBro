@@ -25,6 +25,8 @@ var PlexPage = (function () {
      related, every version; a show's next episode), then its rows (Cast and crew, Seasons or Episodes, More like
      this, the collection's other titles, Extras).  A title opened from a row comes back here with Back (hist). */
   var hist = [], shelf = null, zone = 'btns';
+  // Play all or Shuffle: the titles still to come ({ list, at }), played one after another with Up next.
+  var queue = null;
   function open(m, onBack) { back = onBack; hist = []; show(m); }
   function show(m) {
     item = m; btnAt = 0; zone = 'btns'; shelf = null;
@@ -153,6 +155,7 @@ var PlexPage = (function () {
       var nx = m.OnDeck && m.OnDeck.Metadata && m.OnDeck.Metadata[0];
       out.push({ label: nx ? (nx.viewOffset > 60000 ? T('Resume S{x} · E{y}', { x: nx.parentIndex, y: nx.index }) : T('Play S{x} · E{y}', { x: nx.parentIndex, y: nx.index })) : T('Play'), main: true, act: function () { playNext(m); } });
       var allSeen = m.leafCount && m.viewedLeafCount >= m.leafCount;
+      out.push({ label: T('Shuffle'), act: function () { shuffleOf(m); } });
       out.push({ label: allSeen ? T('Mark not watched') : T('Mark watched'), act: function () { mark(!allSeen); } });
       out.push({ label: T('More'), act: more });
       return out;
@@ -327,7 +330,7 @@ var PlexPage = (function () {
   /* Starts the title at ms: the file through the door, or the server's converter.  Plex's preview pictures, its
      chapters and a subtitle file kept beside the video go to the player too (a file played as it is). */
   function play(ms, fromUpNext) {
-    if (!fromUpNext) { chain = 0; forceCap = null; }
+    if (!fromUpNext) { chain = 0; forceCap = null; queue = null; }
     var m = item, v = version(), part = v.Part && v.Part[0];
     if (!part) return U.toast(T('Plex has no file for this one.'), 6000);
     Plex.door(m.server).then(function (key) {
@@ -525,23 +528,56 @@ var PlexPage = (function () {
     var p = playing; report('stopped'); stopTimer();
     if (!p) return;
     var m = p.item;
+    if (queue) {
+      var q = queue;
+      if (q.at + 1 >= q.list.length) { queue = null; return afterEnd(m); }
+      return offerNext(m, q.list[q.at + 1], force, function () { q.at++; }, 0);
+    }
     if (m.type !== 'episode' || !m.grandparentRatingKey) return afterEnd(m);
     Plex.call(m.server, '/library/metadata/' + m.grandparentRatingKey + '/allLeaves').then(function (j) {
       var all = mc(j).Metadata || [], i = -1;
       all.forEach(function (x, n) { if (String(x.ratingKey) === String(m.ratingKey)) i = n; });
       var nx = i >= 0 ? all[i + 1] : null;
       if (!nx) return afterEnd(m);
-      nx.server = m.server;
-      // Still watching?  After the episodes in a row set in Settings > Plex, Up next asks instead of counting down.
-      var after = +Plex.prefs().stillAfter || 0, ask = !!after && chain >= after;
-      var go = function () { chain = ask ? 0 : chain + 1; item = nx; Plex.call(nx.server, '/library/metadata/' + nx.ratingKey + '?includeMarkers=1').then(function (k) { item = (mc(k).Metadata || [])[0] || nx; item.server = nx.server; play(item.viewOffset > 60000 ? item.viewOffset : 0, true); }); };
-      if (force) return go();
-      if (typeof UpNext !== 'undefined') UpNext.hold();
-      Views.stopAll();
-      PlexView.picture(nx.server, nx.thumb, 1280, 720).then(function (img) {
-        UpNext.show({ auto: !ask, kicker: ask ? T('Still watching?') : undefined, playLabel: ask ? T('Keep watching') : undefined, image: img, show: nx.grandparentTitle, season: nx.parentIndex, episode: nx.index, line: T('Season {x}, episode {y}', { x: nx.parentIndex, y: nx.index }), title: nx.title, runtime: mins(nx.duration) ? T('{n} min', { n: mins(nx.duration) }) : '', desc: String(nx.summary || '').slice(0, 400), play: go, cancel: function () { afterEnd(m); } });
-      });
+      offerNext(m, nx, force, null, -1);
     }, function () { afterEnd(m); });
+  }
+  /* Up next for [nx] after [m]: a countdown (or Still watching? after the episodes in a row set in Settings > Plex),
+     then it plays; [onGo] runs first (a queue moves on).  [from] is where to start: -1 where you stopped, else 0. */
+  function offerNext(m, nx, force, onGo, from) {
+    nx.server = nx.server || m.server;
+    var after = +Plex.prefs().stillAfter || 0, ask = !!after && chain >= after, kept = queue;
+    var go = function () {
+      if (onGo) onGo();
+      chain = ask ? 0 : chain + 1; item = nx;
+      Plex.call(nx.server, '/library/metadata/' + nx.ratingKey + '?includeMarkers=1').then(function (k) {
+        item = (mc(k).Metadata || [])[0] || nx; item.server = nx.server;
+        play(from < 0 && item.viewOffset > 60000 ? item.viewOffset : 0, true); queue = kept;
+      });
+    };
+    if (force) return go();
+    if (typeof UpNext !== 'undefined') UpNext.hold();
+    Views.stopAll();
+    var ep = nx.type === 'episode';
+    PlexView.picture(nx.server, ep ? nx.thumb : nx.art || nx.thumb, 1280, 720).then(function (img) {
+      UpNext.show({ auto: !ask, kicker: ask ? T('Still watching?') : undefined, playLabel: ask ? T('Keep watching') : undefined, image: img,
+        show: ep ? nx.grandparentTitle : nx.title, season: ep ? nx.parentIndex : null, episode: ep ? nx.index : null,
+        line: ep ? T('Season {x}, episode {y}', { x: nx.parentIndex, y: nx.index }) : String(nx.year || ''), title: ep ? nx.title : '',
+        runtime: mins(nx.duration) ? T('{n} min', { n: mins(nx.duration) }) : '', desc: String(nx.summary || '').slice(0, 400), play: go,
+        cancel: function () { queue = null; afterEnd(m); } });
+    });
+  }
+  /* Play all, or Shuffle: the movies and episodes of [list] (a collection's, a playlist's, a show's) one after
+     another from the start, each with Up next.  Shows inside a collection are left out (their episodes aren't read). */
+  function playAll(server, list, shuffle) {
+    var l = (list || []).filter(function (x) { return /^(movie|episode)$/.test(x.type); }).map(function (x) { x.server = x.server || server; return x; });
+    if (!l.length) return U.toast(T('Nothing to play yet'), 5000);
+    if (shuffle) for (var i = l.length - 1; i > 0; i--) { var r = Math.floor(Math.random() * (i + 1)), t = l[i]; l[i] = l[r]; l[r] = t; }
+    playKey(l[0].server, String(l[0].ratingKey), true).then(function () { queue = { list: l, at: 0 }; }, function (e) { U.toast(e.message, 6000); });
+  }
+  // A show's or a season's episodes in a random order.
+  function shuffleOf(m) {
+    Plex.call(m.server, '/library/metadata/' + m.ratingKey + '/allLeaves').then(function (j) { playAll(m.server, mc(j).Metadata || [], true); }, function (e) { U.toast(e.message, 6000); });
   }
   /* After the last of it, as Plex does: the title's page (a show's for its episode), read again so it shows as
      watched; Back from there goes where the page would have gone (the Plex tab, as it was). */
@@ -624,5 +660,5 @@ var PlexPage = (function () {
     return Plex.call(server, (on ? '/:/scrobble' : '/:/unscrobble') + '?identifier=com.plexapp.plugins.library&key=' + encodeURIComponent(String(key))).then(function () { return { on: !!on }; });
   }
 
-  return { diag: diag, open: open, ended: ended, close: close, reshow: reshow, playKey: playKey, playerItems: playerItems, pageData: pageData, playExtra: playExtra, playNextKey: playNextKey, markKey: markKey, _test: { quality: quality, marks: marks, badges: badges, direct: direct, converts: converts, chapters: chapters, item: function () { return item; }, keys: keys, buttons: function () { return btns; }, shelf: function () { return shelf; } } };
+  return { diag: diag, open: open, ended: ended, playAll: playAll, shuffleOf: shuffleOf, close: close, reshow: reshow, playKey: playKey, playerItems: playerItems, pageData: pageData, playExtra: playExtra, playNextKey: playNextKey, markKey: markKey, _test: { quality: quality, marks: marks, badges: badges, direct: direct, converts: converts, chapters: chapters, item: function () { return item; }, keys: keys, buttons: function () { return btns; }, shelf: function () { return shelf; } } };
 })();

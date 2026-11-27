@@ -2748,5 +2748,7 @@ I18n.add('tr', {
   "Xtream Codes, kept on {x}.  Its channel edits come back from its restore points.": "Xtream Codes, {x} tarihinde saklandı.  Kanal düzenlemeleri geri yükleme noktalarından geri gelir.",
   "Your playlist from before is still on this TV": "Önceki oynatma listeniz hâlâ bu TV'de",
   "Your settings on this TV were cleared": "Bu TV'deki ayarlarınız temizlendi",
-  "Your last channel starts in a moment, once the guide is in.  TiviBro closed soon after starting last time.": "Son izlediğiniz kanal, rehber yüklenir yüklenmez birazdan başlayacak.  TiviBro geçen sefer açıldıktan kısa süre sonra kapandı."
+  "Your last channel starts in a moment, once the guide is in.  TiviBro closed soon after starting last time.": "Son izlediğiniz kanal, rehber yüklenir yüklenmez birazdan başlayacak.  TiviBro geçen sefer açıldıktan kısa süre sonra kapandı.",
+  "Shuffle": "Karışık çal",
+  "Play all": "Tümünü oynat"
 });
