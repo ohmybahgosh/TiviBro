@@ -1021,6 +1021,11 @@ body.full .activity,body.mgr-open .activity{display:none}
 .media-busy{position:absolute;right:56px;top:66px;z-index:3;font-size:20px;color:var(--text);padding:6px 16px 6px 36px;border-radius:999px;background:rgba(0,0,0,.55);white-space:nowrap}
 .media-busy::before{content:'';position:absolute;left:14px;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:50%;background:var(--ok);animation:tb-pulse 1.4s ease-in-out infinite}
 @keyframes tb-pulse{0%,100%{opacity:1}50%{opacity:.25}}
+/* The Plex tab (plexview.js): My media's look, Plex's own tabs under the library tabs. */
+#viewPlex .plex-subs{top:88px}
+#viewPlex .plex-subs .media-tab{font-size:21px;padding:6px 20px}
+#viewPlex .media-hero{top:150px;height:320px}
+.plex-empty{position:absolute;left:152px;top:520px;font-size:28px;color:var(--muted)}
 .media-shelf-stage{position:relative;transition:transform 210ms ease;will-change:transform}
 .media-shelf{position:absolute;left:0;right:0;top:0;height:480px}
 .media-shelf-title{height:50px;display:flex;align-items:baseline;gap:18px;padding-left:4px;white-space:nowrap;overflow:hidden}

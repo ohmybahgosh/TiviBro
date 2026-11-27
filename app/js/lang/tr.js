@@ -2597,5 +2597,17 @@ I18n.add('tr', {
   "Your Plex movies and shows in TiviBro, with their posters, collections, playlists and watched marks.  Once a server and a library are added, Plex gets its own place in the menu, the phone app and the web editor.": "Plex filmlerin ve dizilerin TiviBro'da; afişleri, koleksiyonları, oynatma listeleri ve izlendi işaretleriyle.  Bir sunucu ve bir kitaplık eklenince Plex menüde, telefon uygulamasında ve web düzenleyicisinde kendi yerini alır.",
   "Yours": "Senin",
   "Yours, and the ones friends share with you.": "Seninkiler ve arkadaşlarının seninle paylaştıkları.",
-  "{x}'s PIN": "{x} için PIN"
+  "{x}'s PIN": "{x} için PIN",
+  "Playlists": "Oynatma listeleri",
+  "Refresh": "Yenile",
+  "{n} titles": ["{n} başlık", "{n} başlık"],
+  "Any": "Herhangi",
+  "Nothing here yet": "Burada henüz bir şey yok",
+  "Plex did not answer.": "Plex yanıt vermedi.",
+  "Press OK to search Plex": "Plex'te aramak için OK'a bas",
+  "Random": "Rastgele",
+  "Recommended": "Önerilen",
+  "Search Plex": "Plex'te ara",
+  "Unwatched only": "Yalnızca izlenmemişler",
+  "{n} collections": ["{n} koleksiyon", "{n} koleksiyon"]
 });

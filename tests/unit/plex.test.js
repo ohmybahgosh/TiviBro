@@ -73,6 +73,23 @@ const ask = (q) => new Promise((ok) => Plex.handle(Object.assign({ cid: 'tv-0123
     assert.equal((await ask({ op: 'switch', token, uuid: 'kid1', pin: '1234' })).token, 'mock-kid-token');
     console.log('PASS Plex Home: a wrong PIN says so, the right one signs in as that person');
 
+    // Doors: a random key in the link stands for the server and its token (the TV's img and video tags can't send it).
+    const d1 = await ask({ op: 'door', base, token: st }), d2 = await ask({ op: 'door', base, token: st });
+    assert(/^[0-9a-f]{48}$/.test(d1.key)); assert.equal(d1.key, d2.key, 'one door a server');
+    assert.equal((await ask({ op: 'door', base: 'http://8.8.8.8:32400', token: st })).error, 'bad');
+    const http = require('http');
+    const front = http.createServer((req, res) => Plex.doorGet(req, res, {}));
+    await new Promise((ok) => front.listen(0, '127.0.0.1', ok));
+    const get = (path, h) => new Promise((ok) => http.get({ host: '127.0.0.1', port: front.address().port, path, headers: h || {} }, (r) => { let b = ''; r.on('data', (c) => (b += c)); r.on('end', () => ok({ status: r.statusCode, body: b, type: r.headers['content-type'] })); }));
+    const pic = await get('/plex/' + d1.key + '/photo/:/transcode?width=300&height=450&url=%2Flibrary%2Fmetadata%2F10%2Fthumb%2F1');
+    assert.equal(pic.status, 200); assert.equal(pic.type, 'image/png'); assert(/width=300/.test(pic.body));
+    const vid = await get('/plex/' + d1.key + '/library/parts/7/1700000000/file.mkv', { Range: 'bytes=100-' });
+    assert.equal(vid.status, 206); assert.equal(vid.body, 'MKVBYTES'); assert.equal(m.state.range, 'bytes=100-', 'seeking passes on');
+    assert.equal((await get('/plex/' + d1.key + '/:/prefs')).status, 404, 'only pictures and video');
+    assert.equal((await get('/plex/' + 'f'.repeat(48) + '/photo/:/transcode?url=x')).status, 404, 'an unknown key');
+    front.close();
+    console.log('PASS pictures and video through a door, the token kept in the helper');
+
     const logged = JSON.stringify(m.state.seen.map((s) => s.path));
     assert(!/mock-account-token|mock-server-token/.test(logged), 'tokens go in headers, never in addresses');
     console.log('PASS tokens never in an address');

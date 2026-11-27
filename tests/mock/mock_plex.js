@@ -24,18 +24,39 @@ function route(state, req, port) {
   if (tok !== SERVER_TOKEN) return [401, { error: 'unauthorized' }];
   if (p === '/identity') return [200, { MediaContainer: { machineIdentifier: MACHINE, version: '1.42.2' } }];
   if (p === '/library/sections') return [200, { MediaContainer: { Directory: [{ key: '1', type: 'movie', title: 'Movies' }] } }];
-  if (p === '/library/sections/1/all') return [200, { MediaContainer: { totalSize: 1, Metadata: [{ ratingKey: '10', title: 'Copper Sky', year: 2026, type: 'movie' }] } }];
+  if (p === '/library/sections/1/all') { state.lastAll = q; var list = /unwatched=1/.test(q) ? MOVIES.slice(3) : MOVIES; return [200, { MediaContainer: { totalSize: list.length, Metadata: list.map(function (m, i) { return movie(10 + i, m); }) } }]; }
+  if (p === '/photo/:/transcode') return state.realPng ? [200, PNG, 'image/png'] : [200, 'PNG:' + q, 'image/png'];
+  if (p === '/hubs/continueWatching') return [200, { MediaContainer: { Hub: [{ title: 'Continue Watching', hubIdentifier: 'home.continue', Metadata: [movie(11, 'Northbound', { viewOffset: 2400000, lastViewedAt: 1700000500 }), episode(31, 4)] }] } }];
+  if (p === '/hubs') return [200, { MediaContainer: { Hub: [
+    { title: 'Continue Watching', hubIdentifier: 'home.continue', Metadata: [movie(11, 'Northbound')] },
+    { title: 'Recently Added in Movies', hubIdentifier: 'home.movies.recent', Metadata: MOVIES.map(function (m, i) { return movie(10 + i, m); }) },
+    { title: 'Recently Added in Music', hubIdentifier: 'home.music.recent', Metadata: [{ ratingKey: '90', title: 'An album', type: 'album', librarySectionID: 9 }] },
+    { title: 'Friday Night Picks', hubIdentifier: 'collection.5', Metadata: MOVIES.slice(2, 7).map(function (m, i) { return movie(12 + i, m); }) }] } }];
+  if (p === '/hubs/sections/1') return [200, { MediaContainer: { Hub: [{ title: 'Recently Released', Metadata: MOVIES.slice(0, 6).map(function (m, i) { return movie(10 + i, m); }) }, { title: 'Top Unwatched', Metadata: MOVIES.slice(4).map(function (m, i) { return movie(14 + i, m); }) }] } }];
+  if (p === '/library/sections/1/collections') return [200, { MediaContainer: { Metadata: [{ ratingKey: '500', type: 'collection', title: 'The Copper Trilogy', childCount: 3, librarySectionID: 1 }] } }];
+  if (p === '/library/collections/500/children') return [200, { MediaContainer: { Metadata: MOVIES.slice(0, 3).map(function (m, i) { return movie(10 + i, m); }) } }];
+  if (p === '/library/sections/1/genre') return [200, { MediaContainer: { Directory: [{ title: 'Drama' }, { title: 'Comedy' }] } }];
+  if (p === '/playlists') return [200, { MediaContainer: { Metadata: [{ ratingKey: '700', type: 'playlist', title: 'Movie Marathon', leafCount: 6 }] } }];
+  if (p === '/hubs/search') return [200, { MediaContainer: { Hub: [{ title: 'Movies', Metadata: [movie(10, 'Copper Sky')] }] } }];
+  if (p === '/library/parts/7/1700000000/file.mkv') { state.range = req.headers.range; return [206, 'MKVBYTES', 'video/x-matroska']; }
   if (p === '/:/scrobble' && req.method === 'GET') { state.scrobbled = q; return [200, null]; }
   return [404, { error: 'not here' }];
 }
+
+var MOVIES = ['Copper Sky', 'Midnight Ferry', 'Paper Kingdoms', 'Low Tide', 'Hollow Pines', 'Signal Fire', 'Ember Road', 'Atlas of Rain', 'Northbound', 'Glass Orchard'];
+// A movie as Plex lists it, in library 1.
+function movie(k, title, more) { return Object.assign({ ratingKey: String(k), key: '/library/metadata/' + k, type: 'movie', title: title, year: 2026 - (k % 7), contentRating: 'PG-13', duration: 7200000, summary: 'A summary of ' + title + '.', thumb: '/library/metadata/' + k + '/thumb/1', art: '/library/metadata/' + k + '/art/1', librarySectionID: 1 }, more || {}); }
+function episode(k, n) { return { ratingKey: String(k), type: 'episode', title: 'Episode ' + n, grandparentTitle: 'The Harbor Lights', parentIndex: 2, index: n, viewOffset: 600000, duration: 2700000, thumb: '/library/metadata/' + k + '/thumb/1', librarySectionID: 2 }; }
+// A 1-by-1 blue picture.
+var PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
 
 function start(cb) {
   var state = { signedIn: false, seen: [] };
   var srv = http.createServer(function (req, res) {
     state.seen.push({ path: req.url, headers: req.headers });
     var r = route(state, req, srv.address().port);
-    res.writeHead(r[0], { 'Content-Type': 'application/json' });
-    res.end(r[1] == null ? '' : JSON.stringify(r[1]));
+    res.writeHead(r[0], { 'Content-Type': r[2] || 'application/json' });
+    res.end(r[1] == null ? '' : typeof r[1] === 'string' || Buffer.isBuffer(r[1]) ? r[1] : JSON.stringify(r[1]));
   });
   srv.listen(0, '127.0.0.1', function () { cb({ port: srv.address().port, state: state, close: function (f) { srv.close(f); } }); });
 }

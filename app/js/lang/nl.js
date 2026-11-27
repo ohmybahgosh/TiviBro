@@ -2597,5 +2597,17 @@ I18n.add('nl', {
   "Your Plex movies and shows in TiviBro, with their posters, collections, playlists and watched marks.  Once a server and a library are added, Plex gets its own place in the menu, the phone app and the web editor.": "Je Plex-films en -series in TiviBro, met hun posters, collecties, afspeellijsten en gezien-markeringen.  Zodra een server en een bibliotheek zijn toegevoegd, krijgt Plex een eigen plek in het menu, de telefoonapp en de webeditor.",
   "Yours": "Van jou",
   "Yours, and the ones friends share with you.": "Die van jou, en die vrienden met je delen.",
-  "{x}'s PIN": "Pincode van {x}"
+  "{x}'s PIN": "Pincode van {x}",
+  "Playlists": "Afspeellijsten",
+  "Refresh": "Vernieuwen",
+  "{n} titles": ["{n} titel", "{n} titels"],
+  "Any": "Alle",
+  "Nothing here yet": "Hier staat nog niets",
+  "Plex did not answer.": "Plex gaf geen antwoord.",
+  "Press OK to search Plex": "Druk op OK om in Plex te zoeken",
+  "Random": "Willekeurig",
+  "Recommended": "Aanbevolen",
+  "Search Plex": "Zoeken in Plex",
+  "Unwatched only": "Alleen niet bekeken",
+  "{n} collections": ["{n} collectie", "{n} collecties"]
 });

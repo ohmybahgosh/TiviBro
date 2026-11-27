@@ -41,7 +41,7 @@ var Views = (function () {
 
   // In the language chosen (app/js/i18n.js).
   function T(x, v) { return typeof I18n !== 'undefined' ? I18n.t(x, v) : v ? String(x).replace(/\{([a-z]+)\}/g, function (a, k) { return v[k] != null ? v[k] : a; }) : x; }
-  var TAB_LABELS = { live: 'Channels', guide: 'Guide', onnow: 'Movies on now', sports: 'Sports', movies: 'Movies', shows: 'Shows', media: 'My media', recordings: 'Recordings', search: 'Search', editor: 'Edit on phone', settings: 'Settings', report: 'Report a problem' };
+  var TAB_LABELS = { live: 'Channels', guide: 'Guide', onnow: 'Movies on now', sports: 'Sports', movies: 'Movies', shows: 'Shows', media: 'My media', plex: 'Plex', recordings: 'Recordings', search: 'Search', editor: 'Edit on phone', settings: 'Settings', report: 'Report a problem' };
   // The guide is home: the app opens on it and Back from any other screen comes back to it.
   function home() { return Store.settings.startTab === 'live' ? 'live' : 'guide'; }
   /* The plain channel list in the menu: most people browse with the guide, so it shows only when
@@ -58,6 +58,7 @@ var Views = (function () {
     movies: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
     media: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M10 11l5 3-5 3z"/>',
     shows: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 3l4 4 4-4"/>',
+    plex: '<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M10 8l4 2.5-4 2.5z"/>',
     search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
     editor: '<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
     recordings: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor"/>',
@@ -82,6 +83,8 @@ var Views = (function () {
     if (vk.indexOf('series') >= 0) tabs.push('shows');
     // My media: in the menu once a media source is added (Settings > My media is the way in before that).
     if (typeof MediaStore !== 'undefined' && MediaStore.sources().length) tabs.push('media');
+    // Plex (plexview.js): once a server and a library are added in Settings > Plex, never before.
+    if (typeof Plex !== 'undefined' && Plex.added()) tabs.push('plex');
     // Recordings (recordings.js): once a USB drive is in the TV, or something's been recorded.
     if (typeof Record !== 'undefined' && Record.shown()) tabs.push('recordings');
     tabs.push('search', 'editor', 'settings');
@@ -658,10 +661,11 @@ var Views = (function () {
   function doSwitch(t) {
     if (lvis && t !== 'live') endListVis(true);
     if (tab === 'media' && t !== 'media') Media.leave();
+    if (tab === 'plex' && t !== 'plex' && typeof PlexView !== 'undefined') PlexView.leave();
     if (tab === 'onnow' && t !== 'onnow') OnNow.leave();
     if (tab === 'sports' && t !== 'sports' && typeof SportsHub !== 'undefined') SportsHub.leave();
     if (tab === 'recordings' && t !== 'recordings' && typeof Recordings !== 'undefined') Recordings.leave();
-    document.body.classList.toggle('media-open', t === 'media');
+    document.body.classList.toggle('media-open', t === 'media' || t === 'plex');
     if ((tab === 'movies' || tab === 'shows') && t !== 'movies' && t !== 'shows' && typeof VodHome !== 'undefined') VodHome.hide();                 // the clock over a backdrop gets a shadow
     if ((t === 'settings' || t === 'search') && (tab === 'guide' || tab === 'live')) pipFrom = tab;
     tab = t;
@@ -673,7 +677,7 @@ var Views = (function () {
       if (on) tabSel = i;
     });
     if (t !== 'guide') Guide.leave();
-    ['Live', 'Guide', 'Settings', 'Vod', 'Media', 'Onnow', 'Sports', 'Recordings', 'Search'].forEach(function (x) {
+    ['Live', 'Guide', 'Settings', 'Vod', 'Media', 'Plex', 'Onnow', 'Sports', 'Recordings', 'Search'].forEach(function (x) {
       var want = t === 'movies' || t === 'shows' ? 'Vod' : t.charAt(0).toUpperCase() + t.slice(1);
       var v = $('view' + x);
       if (v) v.classList.toggle('hidden', x !== want);
@@ -702,6 +706,7 @@ var Views = (function () {
       else if (t === 'search') { Search.open(); pipUpdate(); }
       else if (t === 'movies' || t === 'shows') Vod.open(t === 'shows' ? 'series' : 'movie');
       else if (t === 'media') Media.open();
+      else if (t === 'plex') PlexView.open();
       else if (t === 'onnow') OnNow.open();
       else if (t === 'sports') SportsHub.open();
       else if (t === 'recordings') Recordings.open();

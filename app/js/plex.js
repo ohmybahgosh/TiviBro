@@ -73,7 +73,7 @@ var Plex = (function () {
   }
   /* Signing out forgets the sign-in, the servers and the libraries; Plex leaves the menu again. */
   function signOut(quiet) {
-    var keep = state.cid; state = { cid: keep }; picking = {}; save();
+    var keep = state.cid; state = { cid: keep }; picking = {}; doorKeys = {}; save();
     if (!quiet) note('info', 'Signed out of Plex');
     changed();
   }
@@ -115,6 +115,14 @@ var Plex = (function () {
       return reach(id, true).then(go);
     }).then(function (r) { return r.data || {}; });
   }
+  /* A door for pictures and video (service/plex.js): a random key in the link stands for the server and its token,
+     since the TV's img and video tags can't send it.  One a server, asked for once. */
+  var doorKeys = {};
+  function door(id) {
+    if (doorKeys[id]) return doorKeys[id];
+    doorKeys[id] = reach(id).then(function (s) { return req({ op: 'door', base: s.uri, token: s.token }); }).then(function (r) { return r.key; }, function (e) { doorKeys[id] = null; throw e; });
+    return doorKeys[id];
+  }
   function container(j) { return (j && j.MediaContainer) || {}; }
 
   /* ---------- Libraries ---------- */
@@ -142,7 +150,7 @@ var Plex = (function () {
     var account = state.accountToken || state.token;
     return req({ op: 'switch', token: account, uuid: uuid, pin: pin }).then(function (r) {
       state.accountToken = account; state.token = r.token; save();
-      return req({ op: 'user', token: r.token }).then(function (u) { state.user = u.user; picking = {}; save(); return loadServers(); }).then(function () { changed(); return user().name; });
+      return req({ op: 'user', token: r.token }).then(function (u) { state.user = u.user; picking = {}; doorKeys = {}; save(); return loadServers(); }).then(function () { changed(); return user().name; });
     });
   }
 
@@ -156,7 +164,7 @@ var Plex = (function () {
   return {
     signedIn: signedIn, added: added, user: user, describe: describe, onChange: onChange,
     connect: connect, cancel: cancel, pendingCode: pendingCode, signOut: signOut,
-    servers: servers, chosen: chosen, server: server, loadServers: loadServers, choose: choose, reach: reach, call: call,
+    servers: servers, chosen: chosen, server: server, loadServers: loadServers, choose: choose, reach: reach, call: call, door: door,
     sections: sections, libs: libs, setLib: setLib, shownLibraries: shownLibraries, rememberLibraries: rememberLibraries,
     homeUsers: homeUsers, switchUser: switchUser,
     _test: { state: function () { return state; }, reset: function (s) { state = s || {}; } }

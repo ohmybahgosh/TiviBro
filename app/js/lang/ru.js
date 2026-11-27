@@ -2721,5 +2721,16 @@ I18n.add('ru', {
   "Your Plex movies and shows in TiviBro, with their posters, collections, playlists and watched marks.  Once a server and a library are added, Plex gets its own place in the menu, the phone app and the web editor.": "Ваши фильмы и сериалы из Plex в TiviBro, с постерами, коллекциями, плейлистами и отметками о просмотре.  Когда добавлены сервер и библиотека, у Plex появляется своё место в меню, в приложении для телефона и в веб-редакторе.",
   "Yours": "Ваш",
   "Yours, and the ones friends share with you.": "Ваши и те, к которым друзья открыли вам доступ.",
-  "{x}'s PIN": "PIN-код {x}"
+  "{x}'s PIN": "PIN-код {x}",
+  "Refresh": "Обновить",
+  "{n} titles": ["{n} название", "{n} названия", "{n} названий"],
+  "Any": "Любой",
+  "Nothing here yet": "Здесь пока ничего нет",
+  "Plex did not answer.": "Plex не ответил.",
+  "Press OK to search Plex": "Нажмите OK, чтобы искать в Plex",
+  "Random": "Случайно",
+  "Recommended": "Рекомендуемое",
+  "Search Plex": "Поиск в Plex",
+  "Unwatched only": "Только непросмотренные",
+  "{n} collections": ["{n} коллекция", "{n} коллекции", "{n} коллекций"]
 });

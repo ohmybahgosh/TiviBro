@@ -2597,5 +2597,17 @@ I18n.add('it', {
   "Your Plex movies and shows in TiviBro, with their posters, collections, playlists and watched marks.  Once a server and a library are added, Plex gets its own place in the menu, the phone app and the web editor.": "I tuoi film e serie di Plex in TiviBro, con poster, raccolte, playlist e segni di visto.  Quando aggiungi un server e una libreria, Plex ha il suo posto nel menu, nell'app del telefono e nell'editor web.",
   "Yours": "Tuo",
   "Yours, and the ones friends share with you.": "I tuoi, e quelli che gli amici condividono con te.",
-  "{x}'s PIN": "PIN di {x}"
+  "{x}'s PIN": "PIN di {x}",
+  "Playlists": "Playlist",
+  "Refresh": "Aggiorna",
+  "{n} titles": ["{n} titolo", "{n} titoli"],
+  "Any": "Qualsiasi",
+  "Nothing here yet": "Ancora niente qui",
+  "Plex did not answer.": "Plex non ha risposto.",
+  "Press OK to search Plex": "Premi OK per cercare in Plex",
+  "Random": "Casuale",
+  "Recommended": "Consigliati",
+  "Search Plex": "Cerca in Plex",
+  "Unwatched only": "Solo non visti",
+  "{n} collections": ["{n} raccolta", "{n} raccolte"]
 });

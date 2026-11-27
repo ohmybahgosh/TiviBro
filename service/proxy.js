@@ -279,6 +279,8 @@ function create(opts) {
       return;
     }
     if (req.url.indexOf('/media-stream/') === 0) return require('./media-stream').handle(req, res, ALLOW);
+    // Plex pictures and video (plex.js): a random key in the link stands for the server and its token.
+    if (req.url.indexOf('/plex/') === 0 && (req.method === 'GET' || req.method === 'HEAD')) return require('./plex').doorGet(req, res, ALLOW);
     // Converted sound (convert.js): the link carries its own key, since the TV's player can't send the secret.
     if (Convert.isStream(req.url)) return Convert.stream(req, res, ALLOW, log, ownPort(), redact);
     // Seek previews (seekprev.js): pictures of the movie playing, with the converter's key in the link like its stream.

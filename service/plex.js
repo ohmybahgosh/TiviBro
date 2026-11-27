@@ -8,10 +8,16 @@
      POST /media/plex { op: 'home', cid, token }                 -> { users }  Plex Home people
      POST /media/plex { op: 'switch', cid, token, uuid, pin }    -> { token, user }  sign in as another Plex Home person
      POST /media/plex { op: 'get'|'put'|'post'|'delete', cid, base, path, token } -> { status, data }  a server call
+     POST /media/plex { op: 'door', cid, base, token }          -> { key }  a door for pictures and video (below)
+     GET  /plex/<key>/<path>                                     pictures (/photo/:/transcode) and video (a part's
+                                                                file, the converter's playlist and pieces) from that
+                                                                server, Range passed on; the TV's img and video tags
+                                                                can't send the token, so it stays here.
    cid is the TV's own X-Plex-Client-Identifier (made once by the app).  Only plex.tv, and only servers on a home
    network address or a plex.direct name, are ever called, and only the server paths in SERVER_PATHS.  Tokens and
    PINs pass through and are never logged (media.js logs the op alone).  ES5 / Node 0.12. */
 'use strict';
+require('./compat');
 var http = require('http');
 var https = require('https');
 var URL = require('url');
@@ -25,7 +31,7 @@ try { VERSION = require('../package.json').version; } catch (e) {}
 // Server paths TiviBro uses (official API, developer.plex.tv/pms), and the methods each may use.
 var SERVER_PATHS = [
   [/^\/identity$/, 'GET'],
-  [/^\/library\/sections(\/[0-9]+(\/(all|filters|sorts|collections|firstCharacter|autocomplete|categories))?)?$/, 'GET'],
+  [/^\/library\/sections(\/[0-9]+(\/(all|filters|sorts|collections|firstCharacter|autocomplete|categories|genre|year|decade|contentRating))?)?$/, 'GET'],
   [/^\/library\/metadata\/[0-9]+(\/(children|allLeaves|extras|related|similar|grandchildren))?$/, 'GET'],
   [/^\/library\/collections\/[0-9]+(\/children)?$/, 'GET'],
   [/^\/library\/parts\/[0-9]+$/, 'PUT'],
@@ -221,7 +227,42 @@ function switchUser(q, cb) {
   });
 }
 
-var OPS = { pin: pin, poll: poll, user: user, servers: servers, pick: pick, home: home, 'switch': switchUser, get: server, put: server, post: server, 'delete': server };
+/* ---------- Doors: pictures and video by a random key, the token kept here ---------- */
+var crypto = require('crypto');
+var doors = {}, DOOR_TTL = 24 * 3600000, DOOR_MAX = 16;
+var DOOR_PATHS = /^\/(photo\/:\/transcode\?|library\/parts\/[0-9]+\/[0-9]+\/[^/?]+|library\/parts\/[0-9]+\/indexes\/sd\/[0-9]+|library\/streams\/[0-9]+|video\/:\/transcode\/universal\/(start\.m3u8|session\/[A-Za-z0-9-]+\/[A-Za-z0-9_/.-]+)|library\/metadata\/[0-9]+\/(thumb|art|clearLogo|theme)\/[0-9]+)/;
+// A door to one server (same server and token: the same door), oldest let go past 16.
+function door(q, cb) {
+  if (!allowedBase(q.base) || !validToken(q.token)) return cb(failure('bad'));
+  var base = String(q.base).replace(/\/$/, ''), now = Date.now(), have = null;
+  Object.keys(doors).forEach(function (k) { if (doors[k].until < now) delete doors[k]; else if (doors[k].base === base && doors[k].token === q.token) have = k; });
+  if (have) { doors[have].until = now + DOOR_TTL; return cb({ key: have }); }
+  var keys = Object.keys(doors).sort(function (a, b) { return doors[a].until - doors[b].until; });
+  while (keys.length >= DOOR_MAX) delete doors[keys.shift()];
+  var key = crypto.randomBytes(24).toString('hex');
+  doors[key] = { base: base, token: q.token, cid: q.cid, until: now + DOOR_TTL };
+  cb({ key: key });
+}
+/* GET /plex/<key>/<path>: passed on to the server with the token in a header, the answer streamed back as it comes
+   (Range for seeking).  Only the picture and video paths in DOOR_PATHS. */
+function doorGet(req, res, ALLOW) {
+  var m = /^\/plex\/([0-9a-f]{48})(\/.*)$/.exec(req.url), d = m && doors[m[1]];
+  if (!d || d.until < Date.now() || !DOOR_PATHS.test(m[2]) || /(^|\/)\.\.?(\/|\?|$)|%2e%2e/i.test(m[2])) { res.writeHead(404, ALLOW); return res.end(); }
+  var u = URL.parse(d.base + m[2]), lib = u.protocol === 'http:' ? http : https;
+  var h = headers({ cid: d.cid, token: d.token }); delete h.Accept;
+  if (req.headers.range) h.Range = req.headers.range;
+  var out = lib.request({ hostname: u.hostname, port: u.port, path: u.path, method: req.method === 'HEAD' ? 'HEAD' : 'GET', headers: h }, function (up) {
+    var head = {}; ['content-type', 'content-length', 'content-range', 'accept-ranges', 'cache-control', 'last-modified', 'etag'].forEach(function (k) { if (up.headers[k] != null) head[k] = up.headers[k]; });
+    res.writeHead(up.statusCode, Object.assign(head, ALLOW));
+    up.pipe(res);
+  });
+  out.on('error', function () { if (!res.headersSent) res.writeHead(502, ALLOW); res.end(); });
+  req.on('close', function () { out.abort(); });
+  out.end();
+}
+function isDoor(url) { return String(url || '').indexOf('/plex/') === 0; }
+
+var OPS = { door: door, pin: pin, poll: poll, user: user, servers: servers, pick: pick, home: home, 'switch': switchUser, get: server, put: server, post: server, 'delete': server };
 
 /* The /media/plex route: checks the TV id and the token shape, then runs the op. */
 function handle(q, cb) {
@@ -231,4 +272,4 @@ function handle(q, cb) {
   OPS[q.op](q, cb);
 }
 
-module.exports = { handle: handle, _test: { allowedBase: allowedBase, allowedPath: allowedPath, order: order, setPlexTv: function (u) { PLEX_TV = u; }, loopback: function (on) { LOOPBACK = !!on; } } };
+module.exports = { handle: handle, isDoor: isDoor, doorGet: doorGet, _test: { allowedBase: allowedBase, allowedPath: allowedPath, order: order, setPlexTv: function (u) { PLEX_TV = u; }, loopback: function (on) { LOOPBACK = !!on; } } };
