@@ -2775,5 +2775,7 @@ I18n.add('ar', {
   "Shows it now.  Any button comes back here.": "يعرضها الآن.  أي زر يعيدك إلى هنا.",
   "Starts after": "يبدأ بعد",
   "When nobody has come back.": "عندما لا يعود أحد.",
-  "Your teams' scores and next games, slowly wandering, when they have one.": "نتائج فرقك ومبارياتها القادمة، تتحرك ببطء، عند وجود مباراة."
+  "Your teams' scores and next games, slowly wandering, when they have one.": "نتائج فرقك ومبارياتها القادمة، تتحرك ببطء، عند وجود مباراة.",
+  "Starts Aerial now.  Any button comes back.": "يبدأ Aerial الآن.  أي زر يعيدك.",
+  "The TV didn't let TiviBro start Aerial.  Open Aerial to try it from there.": "لم يسمح التلفزيون لـ TiviBro بتشغيل Aerial.  افتح Aerial وجرّب التشغيل من هناك."
 });

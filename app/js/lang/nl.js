@@ -2789,5 +2789,7 @@ I18n.add('nl', {
   "Shows it now.  Any button comes back here.": "Toont hem nu.  Met elke knop kom je hier terug.",
   "Starts after": "Start na",
   "When nobody has come back.": "Als er niemand is teruggekomen.",
-  "Your teams' scores and next games, slowly wandering, when they have one.": "De uitslagen en volgende wedstrijden van je teams, langzaam rondzwevend, als ze er een hebben."
+  "Your teams' scores and next games, slowly wandering, when they have one.": "De uitslagen en volgende wedstrijden van je teams, langzaam rondzwevend, als ze er een hebben.",
+  "Starts Aerial now.  Any button comes back.": "Start Aerial nu.  Met elke knop kom je terug.",
+  "The TV didn't let TiviBro start Aerial.  Open Aerial to try it from there.": "De tv liet TiviBro Aerial niet starten.  Open Aerial om het vanaf daar te proberen."
 });

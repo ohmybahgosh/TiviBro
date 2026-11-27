@@ -31,8 +31,8 @@ var Burnin = (function () {
      the next one, which is what happened: the dim was only lifted at the next 90-second tick). */
   function check() {
     if (full()) { last = Date.now(); return setDim(false); }
-    // TiviBro's own screensaver (saver.js) does the dimming's job when it is on.
-    if (mode() !== 'on' || (typeof Saver !== 'undefined' && Saver.enabled())) return setDim(false);
+    // A screensaver (TiviBro's own, or Aerial: saver.js) does the dimming's job when one is on.
+    if (mode() !== 'on' || (typeof Saver !== 'undefined' && Saver.covers())) return setDim(false);
     if (Date.now() - last > DIM_MS) setDim(true);
   }
   function tick() {

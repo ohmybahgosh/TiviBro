@@ -2791,5 +2791,7 @@ I18n.add('de', {
   "Shows it now.  Any button comes back here.": "Zeigt ihn jetzt.  Mit jeder Taste kommst du hierher zurück.",
   "Starts after": "Startet nach",
   "When nobody has come back.": "Wenn niemand zurückgekommen ist.",
-  "Your teams' scores and next games, slowly wandering, when they have one.": "Die Ergebnisse und nächsten Spiele deiner Teams, langsam wandernd, sofern sie eines haben."
+  "Your teams' scores and next games, slowly wandering, when they have one.": "Die Ergebnisse und nächsten Spiele deiner Teams, langsam wandernd, sofern sie eines haben.",
+  "Starts Aerial now.  Any button comes back.": "Startet Aerial jetzt.  Mit einer beliebigen Taste geht es zurück.",
+  "The TV didn't let TiviBro start Aerial.  Open Aerial to try it from there.": "Der TV hat nicht erlaubt, dass TiviBro Aerial startet.  Öffne Aerial und versuche es dort."
 });

@@ -1788,8 +1788,13 @@ var Settings = (function () {
     var s = S(), out = [head('Screensaver')];
     var looks = function () { return s.saverLooks || {}; }, setLook = function (k) { return function (v) { var o = looks(); o[k] = v; s.saverLooks = o; save(); }; };
     var getLook = function (k) { return function () { return looks()[k] !== false; }; };
-    out.push(toggle('Screensaver', 'After a while with no button pressed (never over a video that plays), the screen goes almost black with a slow, dim clock or picture, so an OLED screen doesn\'t wear in.  Any button brings TiviBro back.', function () { return s.saver !== 'off'; }, function (v) { s.saver = v ? 'on' : 'off'; save(); build(); }));
+    // Aerial is offered once it's found installed (or picked before).
+    var aer = (typeof Saver !== 'undefined' && Saver.aerial()) || s.saver === 'aerial';
+    var vals = aer ? ['on', 'aerial', 'off'] : ['on', 'off'], labs = aer ? ['TiviBro\'s', 'Aerial', 'Off'] : ['On', 'Off'];
+    out.push(choice('Screensaver', aer ? 'After a while with no button pressed (never over a video that plays), the screen goes almost black, so an OLED screen doesn\'t wear in.  TiviBro\'s: a slow, dim clock or picture.  Aerial: the Aerial screensaver you installed, when the TV starts its screensaver.' : 'After a while with no button pressed (never over a video that plays), the screen goes almost black with a slow, dim clock or picture, so an OLED screen doesn\'t wear in.  Any button brings TiviBro back.',
+      vals, labs, function () { return s.saver === 'off' ? 'off' : s.saver === 'aerial' && aer ? 'aerial' : 'on'; }, function (v) { s.saver = v; save(); build(); }));
     if (s.saver === 'off') return out;
+    if (s.saver === 'aerial') { out.push(action('Preview', 'Starts Aerial now.  Any button comes back.', function () { if (typeof Saver !== 'undefined') Saver.preview(); }, function () { return 'OK'; })); return out; }
     out.push(choice('Starts after', 'How long without a button press before it comes on.', [2, 5, 10, 15, 30], ['2 minutes', '5 minutes', '10 minutes', '15 minutes', '30 minutes'], function () { return +s.saverAfter || 5; }, function (v) { s.saverAfter = v; save(); }));
     out.push(choice('Over a paused video', 'A paused picture is the hardest on an OLED screen.', [0, 2, 5, 10], ['Never', 'After 2 minutes', 'After 5 minutes', 'After 10 minutes'], function () { return s.saverPaused === 0 || s.saverPaused === '0' ? 0 : +s.saverPaused || 5; }, function (v) { s.saverPaused = v; save(); }));
     out.push(toggle('Clock', 'A big, dim clock and the date, slowly wandering, with your next game.', getLook('clock'), setLook('clock')));

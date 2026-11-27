@@ -3410,5 +3410,7 @@ I18n.add('pt-BR', {
   "Shows it now.  Any button comes back here.": "Mostra agora.  Qualquer botão volta para cá.",
   "Starts after": "Começa após",
   "When nobody has come back.": "Quando ninguém voltou.",
-  "Your teams' scores and next games, slowly wandering, when they have one.": "Os placares e os próximos jogos dos seus times, se movendo devagar, quando houver."
+  "Your teams' scores and next games, slowly wandering, when they have one.": "Os placares e os próximos jogos dos seus times, se movendo devagar, quando houver.",
+  "Starts Aerial now.  Any button comes back.": "Inicia o Aerial agora.  Qualquer botão volta.",
+  "The TV didn't let TiviBro start Aerial.  Open Aerial to try it from there.": "A TV não permitiu que o TiviBro iniciasse o Aerial.  Abra o Aerial para tentar por lá."
 });

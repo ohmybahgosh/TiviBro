@@ -2058,5 +2058,7 @@ I18n.add('fr', {
   "Shows it now.  Any button comes back here.": "L'affiche maintenant.  Une touche quelconque ramène ici.",
   "Starts after": "Démarre après",
   "When nobody has come back.": "Quand personne n'est revenu.",
-  "Your teams' scores and next games, slowly wandering, when they have one.": "Les scores et les prochains matchs de vos équipes, qui se déplacent lentement, quand elles en ont un."
+  "Your teams' scores and next games, slowly wandering, when they have one.": "Les scores et les prochains matchs de vos équipes, qui se déplacent lentement, quand elles en ont un.",
+  "Starts Aerial now.  Any button comes back.": "Lance Aerial maintenant.  Appuyez sur n'importe quelle touche pour revenir.",
+  "The TV didn't let TiviBro start Aerial.  Open Aerial to try it from there.": "La TV n'a pas autorisé TiviBro à lancer Aerial.  Ouvrez Aerial pour l'essayer depuis cette application."
 });
