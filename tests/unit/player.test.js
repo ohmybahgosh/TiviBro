@@ -930,6 +930,17 @@ ok('other files play directly, without subtitle extraction', mp4.calls.length ==
   ok('Try again starts on the player the channel started on', t.last().kind === k0, k0 + ' -> ' + t.made.map(x => x.kind).join(','));
 }
 
+// ---- a Plex file from a server away from home waits for the converted-title cushion; one at home doesn't ----
+{
+  const startLog = (m) => m.logs.filter(l => /^Start /.test(l)).pop() || '';
+  t = setup();
+  t.P.play({ n: 'Far film', url: 'http://p/plex/k/library/parts/1/file.mkv' }, { live: false, startAt: 0, meta: { plex: true, farServer: true } });
+  ok('far Plex server: starts on 8s', /prebuffer 8s/.test(startLog(t)), startLog(t));
+  t = setup();
+  t.P.play({ n: 'Home film', url: 'http://p/plex/k/library/parts/2/file.mkv' }, { live: false, startAt: 0, meta: { plex: true, farServer: false } });
+  ok('home Plex server: the usual prebuffer', !/prebuffer 8s/.test(startLog(t)), startLog(t));
+}
+
 p152.then(() => {
   if (fail) { console.log(fail + ' player test(s) failed'); process.exit(1); }
   console.log('all player tests passed');

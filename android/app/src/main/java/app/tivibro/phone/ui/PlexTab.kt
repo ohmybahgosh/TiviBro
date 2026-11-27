@@ -101,18 +101,25 @@ internal fun picsOf(j: JSONObject): Map<String, PlexPics> {
     val p = j.optJSONObject("pics") ?: return emptyMap()
     return p.keys().asSequence().associateWith { k -> p.getJSONObject(k).let { PlexPics(it.optString("base"), it.optString("token")) } }
 }
+/** What Now on the TV hands the Plex tab to open: server, key, type and title, tab-separated (see [plexOpenSec]). */
+fun plexOpenItem(s: String?): PlexItem? {
+    val p = s?.split('\t') ?: return null
+    if (p.size < 4 || p[1].isBlank()) return null
+    return PlexItem(p[0], p[1], p[2], p[3], "", "", 0, 0, false, 0, "")
+}
 private fun err(e: Exception) = (e as? TbException)?.message ?: tr("The TV didn't answer.  Is it on, and on the same network?")
 private fun clock(ms: Long): String { val s = ms / 1000; val h = s / 3600; val m = s % 3600 / 60; return if (h > 0) "$h:%02d:%02d".format(m, s % 60) else "$m:%02d".format(s % 60) }
 
 @Composable
-fun PlexTab(model: AppModel, id: String) {
+fun PlexTab(model: AppModel, id: String, open: String? = null) {
     var libs by remember { mutableStateOf<List<PlexLib>?>(null) }
     var views by remember { mutableStateOf<List<PlexViewName>>(emptyList()) }
     var hasTop by remember { mutableStateOf(false) }
     var pics by remember { mutableStateOf<Map<String, PlexPics>>(emptyMap()) }
     var error by remember { mutableStateOf<String?>(null) }
     var attempt by remember { mutableIntStateOf(0) }
-    val stack = remember { mutableStateListOf(PlexScreen("home")) }
+    // [open] (from Now on the TV) starts on that title's page, with Home behind it.
+    val stack = remember { mutableStateListOf(PlexScreen("home")).apply { plexOpenItem(open)?.let { add(PlexScreen("details", parent = it)) } } }
     // The view picked last in each library (as the TV keeps it), Recommended the first time.
     val viewOf = remember { mutableStateMapOf<String, String>() }
     var q by remember { mutableStateOf("") }

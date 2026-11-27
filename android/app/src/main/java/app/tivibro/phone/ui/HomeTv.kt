@@ -63,7 +63,7 @@ fun stateOf(u: TvUi): Pair<Color, String> = when (u.power) {
    movie or episode playing), and the score when it's a game of a followed team the Sports widget knows (its cache,
    matched by both teams' names in the programme's title).  Nothing when TiviBro isn't open or shows nothing playing. */
 @Composable
-fun NowOnTv(u: TvUi) {
+fun NowOnTv(u: TvUi, onPlex: (String) -> Unit = {}) {
     val c = u.caps ?: return
     if (!c.open || (c.channel.isBlank() && c.vodTitle.isBlank())) return
     val now = System.currentTimeMillis()
@@ -73,9 +73,11 @@ fun NowOnTv(u: TvUi) {
         c.now != null && c.now.end > c.now.start -> (now - c.now.start).toFloat() / (c.now.end - c.now.start)
         else -> -1f
     }
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color(0xFF0F1A33)).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    // A Plex title opens its page in the Plex tab when tapped.
+    val sec = plexOpenSec(c)
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color(0xFF0F1A33)).then(if (sec != null) Modifier.clickable { onPlex(sec) } else Modifier).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            if (c.vodTitle.isNotBlank() && hasPoster(c)) NowPoster(c, Modifier.size(36.dp, 54.dp).clip(RoundedCornerShape(6.dp)))
+            if (c.vodTitle.isNotBlank() && hasPoster(c)) NowPoster(c, Modifier.size(72.dp, 108.dp).clip(RoundedCornerShape(8.dp)))
             else Box(Modifier.size(48.dp, 36.dp).clip(RoundedCornerShape(8.dp)).background(Color.White), contentAlignment = Alignment.Center) {
                 if (c.logo.isNotBlank() && c.vodTitle.isBlank()) AsyncImage(c.logo, null, Modifier.padding(3.dp))
                 else Text(if (c.vodTitle.isNotBlank()) "▶" else c.number, color = Ink, fontWeight = FontWeight.Black, style = MaterialTheme.typography.labelMedium)
@@ -193,3 +195,7 @@ fun NowPoster(c: NowState, modifier: Modifier) {
     if (c.vodPlexPath.isNotBlank() && PlexPicsCache.pics.containsKey(c.vodPlexServer)) PlexPic(PlexPicsCache.pics, c.vodPlexServer, c.vodPlexPath, 120, 180, modifier)
     else AsyncImage(c.vodImg, null, contentScale = ContentScale.Crop, modifier = modifier)
 }
+
+/** What the Plex tab needs to open the title on the TV (server, key, type, title), or null when it isn't a Plex one. */
+fun plexOpenSec(c: NowState): String? =
+    if (c.vodPlexKey.isBlank() || c.vodTitle.isBlank()) null else listOf(c.vodPlexServer, c.vodPlexKey, c.vodPlexType, c.vodTitle).joinToString("\t")

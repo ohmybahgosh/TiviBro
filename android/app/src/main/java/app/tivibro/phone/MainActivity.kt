@@ -218,6 +218,7 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
                 onFind = { nav.navigate("add") },
                 onEditor = { id -> go(id, "editor") },
                 onTab = { id, tab -> nav.navigate(tvAt(id, tab)) },
+                onTabAt = { id, tab, sec -> nav.navigate(tvAt(id, tab, sec)) },
                 onReminders = { id -> go(id, "reminders") },
                 onRecordings = { id -> go(id, "recordings") },
                 onOpen = { model.openTiviBro(it) },

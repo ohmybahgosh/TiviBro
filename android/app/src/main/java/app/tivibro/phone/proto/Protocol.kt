@@ -368,6 +368,8 @@ data class NowState(
     val vodTitle: String = "", val vodPos: Int = 0, val vodDur: Int = 0,
     /** The movie or episode's picture: a poster on the web, or a Plex title's on its server (server id and path). */
     val vodImg: String = "", val vodPlexServer: String = "", val vodPlexPath: String = "",
+    /** A Plex title's key and type (movie, episode), for opening its page in the Plex tab. */
+    val vodPlexKey: String = "", val vodPlexType: String = "",
     val inputs: List<TvInput> = emptyList(),
     /** TiviBro is open but busy (a huge playlist, a big clean-up): presses wait until it's done. */
     val busy: Boolean = false,
@@ -402,6 +404,7 @@ data class NowState(
                 vodTitle = v?.optString("title").orEmpty(), vodPos = v?.optInt("pos") ?: 0, vodDur = v?.optInt("dur") ?: 0,
                 vodImg = v?.optString("img").orEmpty(), vodPlexServer = v?.optJSONObject("plex")?.optString("s").orEmpty(),
                 vodPlexPath = v?.optJSONObject("plex")?.optString("p").orEmpty(),
+                vodPlexKey = v?.optJSONObject("plex")?.optString("k").orEmpty(), vodPlexType = v?.optJSONObject("plex")?.optString("t").orEmpty(),
                 busy = j.optBoolean("busy"),
                 movies = s?.optJSONObject("vod2")?.optBoolean("movies"), series = s?.optJSONObject("vod2")?.optBoolean("series"),
                 media = s?.optJSONObject("vod2")?.takeIf { it.has("media") }?.optBoolean("media"),

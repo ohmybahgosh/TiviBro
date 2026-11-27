@@ -129,6 +129,8 @@ fun HomeScreen(
     onEditor: (String) -> Unit,
     /** Opens one TV's screen on a tab (TvScreen's tab names: Remote, Guide, On now, Movies, Shows, My media, Settings). */
     onTab: (String, String) -> Unit,
+    /** Opens one TV's screen on a tab with something in it opened (a Plex title's page from Now on the TV). */
+    onTabAt: (String, String, String) -> Unit = { _, _, _ -> },
     onReminders: (String) -> Unit,
     onOpen: (String) -> Unit,
     onWake: (String) -> Unit,
@@ -267,7 +269,7 @@ fun HomeScreen(
                     }
                     item(key = "tv") {
                         TvCard(u, isTile = tileTv == u.tv.id && tvs.size > 1, onEditor, onTab, onReminders, onOpen, onWake, onForget, onTile, onRepair, onBackups,
-                            bleLog = bleLog, onBleListen = onBleListen, onAddress = onAddress, onOff = onOff, onRecordings = onRecordings,
+                            bleLog = bleLog, onBleListen = onBleListen, onAddress = onAddress, onOff = onOff, onRecordings = onRecordings, onTabAt = onTabAt,
                             appUpdate = if (BuildConfig.SELF_UPDATE) AppUpdateTile(checking, rel != null && relHidden.not(), ::checkNow)
                                 else AppUpdateTile(checking, playNew && relHidden.not(), ::checkPlay),
                             position = page, count = tvs.size, onSwitch = { switching = true })
@@ -388,6 +390,7 @@ private fun TvCard(
     bleLog: () -> String = { "" }, onBleListen: (String) -> Unit = {},
     appUpdate: AppUpdateTile? = null,
     onAddress: (String, String) -> Unit = { _, _ -> },
+    onTabAt: (String, String, String) -> Unit = { _, _, _ -> },
     onOff: (String) -> Unit = {},
     onRecordings: (String) -> Unit = {},
     /** Which of [count] TVs this is; [onSwitch] opens the list of them (tapping the name, with several). */
@@ -479,7 +482,7 @@ private fun TvCard(
                         else -> onTab(tv.id, Shortcut.tab(sc, u.caps) ?: tr("Remote"))
                     }
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        NowOnTv(u)
+                        NowOnTv(u) { sec -> onTabAt(tv.id, "Plex", sec) }
                         // The two used most: Remote big, Guide beside it.
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Button(onClick = { open(Shortcut.REMOTE) }, enabled = on, shape = MaterialTheme.shapes.medium, modifier = Modifier.weight(2f).height(60.dp)) {

@@ -1842,10 +1842,12 @@ var Player = (function () {
      little faster than it plays, or barely as fast for a 4K picture, so starting on a second or two of it ran dry over
      and over (a stutter, like pause and play pressed again and again), where Plex's own apps wait for a cushion.
      So: start once 8 s are ready (also when resuming part way in), refill to 12 s, and give a slow server time
-     before calling it stuck.  The start and refill checks read cur.server. */
+     before calling it stuck.  The start and refill checks read cur.server.  A Plex file played as it is from a
+     server away from home (meta.farServer) gets the same: its upload is often barely faster than the film, and a
+     start on 2 s ran dry a few seconds in. */
   var SERVER_START = 8, SERVER_REFILL = 12, SERVER_QUIET = 20000;
   function padConverted() {
-    cur.server = !!(cur.meta && cur.meta.serverConvert);
+    cur.server = !!(cur.meta && (cur.meta.serverConvert || cur.meta.farServer));
     if (!cur.server || cur.preview) return;
     cur.p.prebuffer = Math.max(cur.p.prebuffer, SERVER_START);
     cur.p.refill = Math.max(cur.p.refill, SERVER_REFILL);

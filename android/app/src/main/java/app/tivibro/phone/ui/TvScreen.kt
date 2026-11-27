@@ -90,6 +90,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -156,6 +157,9 @@ fun TvScreen(
     onPowerOff: () -> Unit = {},
 ) {
     var tab by rememberSaveable { mutableStateOf(startTab.ifBlank { "Remote" }) }
+    // A Plex title to open on the Plex tab (from Now on the TV, here or on the home screen).
+    var plexOpen by remember { mutableStateOf(if (startTab == "Plex") startSec else null) }
+    LaunchedEffect(tab) { if (tab != "Plex") plexOpen = null }      // opened once: Plex starts on Home next time
     var chanOptions by remember { mutableStateOf<Chan?>(null) }
     var typing by remember { mutableStateOf(false) }
     // The clock, for programme progress: once every 20 seconds is plenty.
@@ -183,7 +187,7 @@ fun TvScreen(
         },
     ) { pad ->
         Column(Modifier.padding(pad).fillMaxSize()) {
-            NowPlaying(state, now, onKey, onOpen, Modifier.padding(16.dp, 4.dp, 16.dp, 8.dp), onSubs = { pickSubs.launch(arrayOf("*/*")) })
+            NowPlaying(state, now, onKey, onOpen, Modifier.padding(16.dp, 4.dp, 16.dp, 8.dp), onSubs = { pickSubs.launch(arrayOf("*/*")) }, onPlex = { plexOpen = it; tab = "Plex" })
             if (state?.busy == true) Surface(color = Panel2, shape = MaterialTheme.shapes.medium, modifier = Modifier.padding(16.dp, 0.dp, 16.dp, 8.dp).fillMaxWidth()) {
                 Row(Modifier.padding(14.dp, 10.dp), verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = Accent)
@@ -215,7 +219,7 @@ fun TvScreen(
                 "Movies" -> VodTab(model, id, "movie")
                 "Shows" -> VodTab(model, id, "series")
                 "My media" -> if ((state?.mediaLibraryVersion ?: 0) >= 2) MyMediaTab(model, id) else VodTab(model, id, "media")
-                "Plex" -> PlexTab(model, id)
+                "Plex" -> key(plexOpen) { PlexTab(model, id, plexOpen) }
                 "Settings" -> SettingsTab(model, id, startSec = if (startTab == "Settings") startSec else null, onGo = onGo)
                 else -> Remote(volume, onKey, onAction, onVolume, onType = { typing = true }, onPowerOff = onPowerOff)
             }
@@ -228,7 +232,7 @@ fun TvScreen(
 private fun clock(t: Long): String = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(t))
 
 @Composable
-private fun NowPlaying(st: NowState?, now: Long, onKey: (String) -> Unit, onOpen: () -> Unit, modifier: Modifier, onSubs: () -> Unit = {}) {
+private fun NowPlaying(st: NowState?, now: Long, onKey: (String) -> Unit, onOpen: () -> Unit, modifier: Modifier, onSubs: () -> Unit = {}, onPlex: (String) -> Unit = {}) {
     Surface(color = Panel, shape = MaterialTheme.shapes.medium, modifier = modifier.fillMaxWidth()) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             when {
@@ -244,7 +248,12 @@ private fun NowPlaying(st: NowState?, now: Long, onKey: (String) -> Unit, onOpen
                     Button(onClick = onOpen) { Text(tr("Open TiviBro")) }
                 }
                 st.vodTitle.isNotBlank() -> {
-                    if (hasPoster(st)) { NowPoster(st, Modifier.size(40.dp, 60.dp).clip(RoundedCornerShape(6.dp))); Spacer(Modifier.width(10.dp)) }
+                    if (hasPoster(st)) {
+                        // Tapping a Plex title's poster opens its page on the Plex tab.
+                        val sec = plexOpenSec(st)
+                        NowPoster(st, Modifier.size(52.dp, 78.dp).clip(RoundedCornerShape(6.dp)).then(if (sec != null) Modifier.clickable { onPlex(sec) } else Modifier))
+                        Spacer(Modifier.width(10.dp))
+                    }
                     Column(Modifier.weight(1f)) {
                         Text(st.vodTitle, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         if (st.vodDur > 0) {
