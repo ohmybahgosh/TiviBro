@@ -31,7 +31,8 @@ var Burnin = (function () {
      the next one, which is what happened: the dim was only lifted at the next 90-second tick). */
   function check() {
     if (full()) { last = Date.now(); return setDim(false); }
-    if (mode() !== 'on') return setDim(false);
+    // TiviBro's own screensaver (saver.js) does the dimming's job when it is on.
+    if (mode() !== 'on' || (typeof Saver !== 'undefined' && Saver.enabled())) return setDim(false);
     if (Date.now() - last > DIM_MS) setDim(true);
   }
   function tick() {
@@ -41,6 +42,7 @@ var Burnin = (function () {
   // A key or the pointer: awake again.  True when this key only woke the screen (the caller drops it).
   function activity() {
     last = Date.now();
+    if (typeof Saver !== 'undefined' && Saver.activity()) return true;   // only took TiviBro's screensaver away
     if (dimmed) { setDim(false); return true; }
     return false;
   }

@@ -1782,10 +1782,29 @@ var Settings = (function () {
       return { label: I18n.raw(g.name), sub: L.channels(g.id).length + ' channels', current: g.id === s.openGroup, action: function () { s.openGroup = g.id; s.openOn = 'group'; save(); build(); } };
     }));
   }
+  /* Settings > Appearance > Screensaver (saver.js): on or off, each look on or off, how long before it starts (and
+     over a paused video), what happens an hour in, and a preview.  Shown on the phone and in the editor too. */
+  function saverRows() {
+    var s = S(), out = [head('Screensaver')];
+    var looks = function () { return s.saverLooks || {}; }, setLook = function (k) { return function (v) { var o = looks(); o[k] = v; s.saverLooks = o; save(); }; };
+    var getLook = function (k) { return function () { return looks()[k] !== false; }; };
+    out.push(toggle('Screensaver', 'After a while with no button pressed (never over a video that plays), the screen goes almost black with a slow, dim clock or picture, so an OLED screen doesn\'t wear in.  Any button brings TiviBro back.', function () { return s.saver !== 'off'; }, function (v) { s.saver = v ? 'on' : 'off'; save(); build(); }));
+    if (s.saver === 'off') return out;
+    out.push(choice('Starts after', 'How long without a button press before it comes on.', [2, 5, 10, 15, 30], ['2 minutes', '5 minutes', '10 minutes', '15 minutes', '30 minutes'], function () { return +s.saverAfter || 5; }, function (v) { s.saverAfter = v; save(); }));
+    out.push(choice('Over a paused video', 'A paused picture is the hardest on an OLED screen.', [0, 2, 5, 10], ['Never', 'After 2 minutes', 'After 5 minutes', 'After 10 minutes'], function () { return s.saverPaused === 0 || s.saverPaused === '0' ? 0 : +s.saverPaused || 5; }, function (v) { s.saverPaused = v; save(); }));
+    out.push(toggle('Clock', 'A big, dim clock and the date, slowly wandering, with your next game.', getLook('clock'), setLook('clock')));
+    out.push(toggle('Aurora', 'Dark colours slowly drifting into each other, with a small clock.  Not on TVs with 1 GB of memory.', getLook('aurora'), setLook('aurora')));
+    out.push(toggle('From your Plex', 'A picture from your Plex home, dimmed and slowly moving, with its title.', getLook('library'), setLook('library')));
+    out.push(toggle('My teams', 'Your teams\' scores and next games, slowly wandering, when they have one.', getLook('teams'), setLook('teams')));
+    out.push(choice('After an hour', 'When nobody has come back.', ['tv', 'keep'], ['Let the TV take over', 'Keep going'], function () { return s.saverHour === 'keep' ? 'keep' : 'tv'; }, function (v) { s.saverHour = v; save(); }));
+    out.push(action('Preview', 'Shows it now.  Any button comes back here.', function () { if (typeof Saver !== 'undefined') Saver.preview(); }, function () { return 'OK'; }));
+    return out;
+  }
   function look() {
     var s = S(), out = [];
     out.push(choice('Burn-in protection', 'For OLED TVs left on the guide or a menu: every 90 seconds the screen moves a few pixels, and after 10 minutes without a key press it dims until you press one.  Fullscreen video is left alone.',
       ['on', 'shift', 'off'], ['Pixel shift and dimming', 'Pixel shift only', 'Off'], function () { return s.burnin === 'shift' || s.burnin === 'off' ? s.burnin : 'on'; }, function (v) { s.burnin = v; save(); if (typeof Burnin !== 'undefined') Burnin._tick(); }));
+    out = out.concat(saverRows());
     out.push(head('Start and navigation'));
     out.push(choice('Start screen', 'What TiviBro opens on, and where Back from other screens leads.', ['guide', 'live'], ['Guide', 'Channels screen'],
       function () { return s.startTab === 'live' ? 'live' : 'guide'; }, function (v) { s.startTab = v; save(); Views.buildTabs(); }));

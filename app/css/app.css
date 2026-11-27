@@ -1513,6 +1513,41 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .mgr-empty{top:300px}
 /* Burn-in protection (burnin.js): the dimming veil over everything but fullscreen video, and the shift's
    transitions slow enough not to be seen. */
+/* TiviBro's screensaver (saver.js): almost black, nothing bright, everything moving slowly (a lap in 5 minutes). */
+.saver{position:fixed;top:0;left:0;width:1920px;height:1080px;background:#000;z-index:10000;opacity:0;pointer-events:none;transition:opacity 1.5s ease;overflow:hidden;color:#8C93A8}
+.saver.on{opacity:1}
+.saver-layer{position:absolute;top:0;left:0;width:1920px;height:1080px;transition:transform 4s ease}
+.saver .sv-time{font-size:220px;font-weight:200;letter-spacing:-6px;line-height:1}
+.saver .sv-date{font-size:34px;font-weight:300;letter-spacing:1px;opacity:.8;margin-top:14px;padding-left:10px}
+.saver .sv-next{font-size:26px;font-weight:300;margin-top:40px;padding-left:10px;opacity:.55}
+.saver small{font-size:.7em;opacity:.7;margin-left:18px}
+@keyframes svWander{0%,100%{transform:translate(0,0)}25%{transform:translate(380px,-140px)}50%{transform:translate(620px,120px)}75%{transform:translate(160px,200px)}}
+.saver .sv-wander{position:absolute;left:480px;top:330px;animation:svWander 300s ease-in-out infinite}
+.saver .sv-games{margin-top:44px;padding-left:10px}
+.saver .sv-row .sv-time{font-size:130px}
+.saver .sv-game{font-size:32px;font-weight:300;margin-bottom:22px;display:flex;align-items:center}
+.saver .sv-game i{width:12px;height:12px;border-radius:50%;border:2px solid #5D6A8C;margin-right:22px;box-sizing:border-box}
+.saver .sv-game.live i{background:#B5523B;border-color:#B5523B}
+@keyframes svG1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(420px,160px) scale(1.25)}}
+@keyframes svG2{0%,100%{transform:translate(0,0) scale(1.1)}50%{transform:translate(-380px,-120px) scale(.9)}}
+@keyframes svG3{0%,100%{transform:translate(0,0)}50%{transform:translate(260px,-220px)}}
+.saver .sv-glow{position:absolute;border-radius:50%}
+.saver .g1{left:180px;top:120px;width:900px;height:700px;background:radial-gradient(closest-side,rgba(28,63,140,.6),rgba(0,0,0,0));animation:svG1 90s ease-in-out infinite}
+.saver .g2{left:900px;top:300px;width:1000px;height:760px;background:radial-gradient(closest-side,rgba(14,90,99,.5),rgba(0,0,0,0));animation:svG2 120s ease-in-out infinite}
+.saver .g3{left:520px;top:560px;width:760px;height:520px;background:radial-gradient(closest-side,rgba(74,42,122,.4),rgba(0,0,0,0));animation:svG3 150s ease-in-out infinite}
+@keyframes svCorner{0%,24%{transform:translate(0,0)}25%,49%{transform:translate(1180px,0)}50%,74%{transform:translate(1180px,-720px)}75%,100%{transform:translate(0,-720px)}}
+.saver .sv-corner{position:absolute;left:120px;top:860px;animation:svCorner 1200s steps(1) infinite}
+.saver .sv-corner .sv-time,.saver .sv-topclock .sv-time{font-size:72px;letter-spacing:-2px}
+.saver .sv-corner .sv-date,.saver .sv-topclock .sv-date{font-size:22px;margin-top:6px;padding-left:0}
+@keyframes svKen{0%{transform:scale(1.04) translate(0,0)}100%{transform:scale(1.16) translate(-60px,-30px)}}
+.saver .sv-art{position:absolute;top:0;left:0;width:1920px;height:1080px;background-size:cover;background-position:center;opacity:0;transition:opacity 3s ease;animation:svKen 120s ease-in-out infinite alternate}
+.saver .sv-art.in{opacity:.5}
+.saver .sv-artshade{position:absolute;top:0;left:0;width:1920px;height:1080px;background:linear-gradient(0deg,#000 0,rgba(0,0,0,.75) 28%,rgba(0,0,0,0) 60%),linear-gradient(90deg,rgba(0,0,0,.6) 0,rgba(0,0,0,0) 45%)}
+.saver .sv-title{position:absolute;left:120px;bottom:110px;color:#A3A9BA}
+.saver .sv-kicker{font-size:18px;font-weight:600;letter-spacing:4px;color:#6F8BC2}
+.saver .sv-name{font-size:64px;font-weight:300;color:#B9BECB;margin:10px 0}
+.saver .sv-facts{font-size:24px;font-weight:300}
+.saver .sv-topclock{position:absolute;right:120px;top:90px;text-align:right}
 .burn-veil{position:fixed;top:0;left:0;right:0;bottom:0;background:#000;opacity:0;pointer-events:none;z-index:9999;transition:opacity 2s}
 .burn-veil.on{opacity:.7}
 /* Never over fullscreen video: the moment a channel or episode goes fullscreen, the dim is gone (burnin.js). */

@@ -1,0 +1,154 @@
+/* TiviBro's own screensaver, for OLED TVs (Settings > Appearance > Screensaver).  After some minutes without a key
+   press on any screen but a playing video (and, on its own clock, over a video paused full screen), the screen goes
+   almost black with the looks turned on in Settings, a new one every 4 minutes when there are several:
+     clock    a big, thin, dim clock and the date, wandering slowly round the screen, with your next game under it;
+     aurora   very dark coloured glows drifting into each other, with a small clock that changes corner;
+     library  a backdrop from your Plex home, dimmed and slowly zooming, with its title;
+     teams    your teams' games (live scores first, then what's next) with the clock, wandering like the clock.
+   A look with nothing to show (no Plex, no game today) is skipped.  Settings: saver ('off' turns it off),
+   saverLooks ({ clock, aurora, library, teams }: false leaves one out), saverAfter and saverPaused (minutes;
+   saverPaused 0: never over a paused video), saverHour ('keep': never hand over to the TV).
+   Nothing stays in one place (the whole layer also moves a few pixels every minute), there is no white and no fixed
+   bar.  The first key press only takes it away (Burnin.activity drops it).  While it shows, and while it waits to
+   start, the TV's own screensaver is held off (Awake asks Saver.holds); after an hour, with "Let the TV take over"
+   (the default), TiviBro stops holding it, so the TV's screensaver or screen-off takes over for the night.
+   'off' leaves the older behaviour: the screen just dims (Burnin). */
+var Saver = (function () {
+  'use strict';
+  var T = function (s, v) { return typeof I18n !== 'undefined' ? I18n.t(s, v) : String(s).replace(/\{(\w+)\}/g, function (a, k) { return v && v[k] != null ? v[k] : a; }); };
+  var LOOKS = ['clock', 'aurora', 'library', 'teams'], MIX_MS = 4 * 60000, HOUR = 3600000, SHIFT = [[0, 0], [6, 2], [8, -4], [2, -8], [-4, -6], [-8, 0], [-6, 6], [0, 8]];
+  var last = Date.now(), el = null, on = false, since = 0, look = '', lookAt = 0, ticks = [], shiftAt = 0, handed = false, home = null, homeAt = 0;
+
+  function S() { return (typeof Store !== 'undefined' && Store.settings) || {}; }
+  function enabled() { return S().saver !== 'off'; }
+  // The looks turned on in Settings (all unless one is turned off; never none: the clock then).
+  function looksOn() { var o = S().saverLooks || {}, l = LOOKS.filter(function (k) { return o[k] !== false; }); return l.length ? l : ['clock']; }
+  function after() { return (+S().saverAfter || 5) * 60000; }
+  function pausedAfter() { var v = S().saverPaused; return v === 0 || v === '0' ? 0 : (+v || 5) * 60000; }
+  function full() { return document.body.classList.contains('full'); }
+  function paused() { return typeof Player !== 'undefined' && !!Player.current && !!Player.userPaused; }
+
+  /* Should it show now, after [idle] ms without a key?  Never while a video plays full screen; over a paused one
+     after its own wait (0: never); on any other screen after "Starts after".  Pure, for the tests. */
+  function due(o) {
+    if (!o.enabled || o.hidden) return false;
+    if (o.full) return o.paused && o.pausedAfter > 0 && o.idle >= o.pausedAfter;
+    return o.idle >= o.after;
+  }
+  function check() {
+    var now = Date.now();
+    if (on) { if (now - shiftAt > 60000) nudge(); if (now - lookAt > MIX_MS) pick(); if (!handed && S().saverHour !== 'keep' && now - since > HOUR) handOver(); return; }
+    if (due({ enabled: enabled(), hidden: document.hidden, full: full(), paused: paused(), idle: now - last, after: after(), pausedAfter: pausedAfter() })) show();
+  }
+
+  /* ---------- Showing ---------- */
+  function show() {
+    if (on) return;
+    on = true; since = Date.now(); handed = false; look = '';
+    if (!el) { el = document.createElement('div'); el.id = 'saver'; el.className = 'saver'; document.body.appendChild(el); }
+    el.innerHTML = '<div class="saver-layer" id="saverLayer"></div>';
+    el.classList.add('on');
+    if (typeof Log !== 'undefined') Log.info('app', 'Screensaver on (' + looksOn().join(', ') + ')');
+    readHome(); readGames();
+    pick(); nudge();
+    ticks.push(setInterval(clock, 15000));
+  }
+  function hide() {
+    if (!on) return false;
+    on = false; ticks.forEach(clearInterval); ticks = [];
+    if (el) { el.classList.remove('on'); el.innerHTML = ''; }
+    if (typeof Log !== 'undefined') Log.info('app', 'Screensaver off after ' + Math.round((Date.now() - since) / 60000) + ' min');
+    return true;
+  }
+  // The whole layer a few pixels elsewhere, once a minute (on top of each look's own slow drift).
+  function nudge() {
+    shiftAt = Date.now();
+    var l = document.getElementById('saverLayer'); if (!l) return;
+    var p = SHIFT[Math.floor(Math.random() * SHIFT.length)];
+    l.style.transform = 'translate(' + p[0] + 'px,' + p[1] + 'px)';
+  }
+  /* The looks turned on that have something to show now: the library one needs Plex home titles, the teams one a
+     game; aurora's large glows are left out on a TV short of memory.  The clock when none is left. */
+  function ready() {
+    var out = looksOn().filter(function (k) {
+      return k === 'library' ? homeArt().length > 0 : k === 'teams' ? games().length > 0 : k === 'aurora' ? !(typeof Player !== 'undefined' && Player.memSafe) : true;
+    });
+    return out.length ? out : ['clock'];
+  }
+  // The next look after the one showing (the same when only one is on, drawn again: a new backdrop).
+  function pick() {
+    lookAt = Date.now();
+    var list = ready();
+    look = list[(list.indexOf(look) + 1) % list.length]; draw();
+  }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function timeNow() { return typeof U !== 'undefined' && U.hhmm ? U.hhmm(Date.now()) : new Date().toTimeString().slice(0, 5); }
+  function dateNow() { try { return new Date().toLocaleDateString(typeof I18n !== 'undefined' && I18n.lang ? I18n.lang() : undefined, { weekday: 'long', month: 'long', day: 'numeric' }); } catch (e) { return new Date().toDateString(); } }
+  function clock() {
+    [].forEach.call(document.querySelectorAll('#saver .sv-time'), function (x) { x.textContent = timeNow(); });
+    [].forEach.call(document.querySelectorAll('#saver .sv-date'), function (x) { x.textContent = dateNow(); });
+  }
+  // The look itself: one block of markup per look; the slow movement is CSS (app.css, .saver).
+  function draw() {
+    var l = document.getElementById('saverLayer'); if (!l) return;
+    var g = games(), next = g.filter(function (x) { return x.state !== 'post'; })[0];
+    var time = '<div class="sv-time">' + esc(timeNow()) + '</div><div class="sv-date">' + esc(dateNow()) + '</div>';
+    if (look === 'aurora') {
+      l.innerHTML = '<div class="sv-glow g1"></div><div class="sv-glow g2"></div><div class="sv-glow g3"></div><div class="sv-corner">' + time + '</div>';
+    } else if (look === 'library') {
+      var a = homeArt(), m = a[Math.floor(Math.random() * a.length)];
+      l.innerHTML = '<div class="sv-art" id="saverArt"></div><div class="sv-artshade"></div><div class="sv-title"><div class="sv-kicker">' + esc(T('In your Plex')) + '</div><div class="sv-name">' + esc(m.title) + '</div><div class="sv-facts">' + esc([m.year, m.genre].filter(Boolean).join('  ·  ')) + '</div></div><div class="sv-topclock">' + time + '</div>';
+      PlexView.picture(m.server, m.art, 1920, 1080).then(function (u) { var x = document.getElementById('saverArt'); if (x && u) { x.style.backgroundImage = 'url("' + u + '")'; x.classList.add('in'); } }, function () {});
+    } else if (look === 'teams') {
+      l.innerHTML = '<div class="sv-wander"><div class="sv-row">' + time + '</div><div class="sv-games">' + g.slice(0, 4).map(gameLine).join('') + '</div></div>';
+    } else {
+      l.innerHTML = '<div class="sv-wander">' + time + (next ? '<div class="sv-next">' + gameText(next) + '</div>' : '') + '</div>';
+    }
+  }
+  function gameText(x) {
+    var t = x.teams || [], a = t[0] || {}, b = t[1] || {};
+    if (x.state === 'in') return esc(a.name + '  ' + a.score + '  –  ' + b.score + '  ' + b.name) + '<small>' + esc(x.detail) + '</small>';
+    if (x.state === 'post') return esc(a.name + '  ' + a.score + '  –  ' + b.score + '  ' + b.name) + '<small>' + esc(T('Final')) + '</small>';
+    return esc(T('{x} at {y}', { x: a.name, y: b.name })) + '<small>' + esc(typeof U !== 'undefined' && U.hhmm ? U.hhmm(x.s) : '') + '</small>';
+  }
+  function gameLine(x) { return '<div class="sv-game' + (x.state === 'in' ? ' live' : '') + '"><i></i>' + gameText(x) + '</div>'; }
+
+  /* ---------- What the looks show ---------- */
+  // Your teams' games the Sports screen knows (on now first, then today's next), read again when the saver starts.
+  function games() {
+    if (typeof Sports === 'undefined' || !Sports.rows) return [];
+    var mine = (Sports.rows() || []).filter(function (r) { return r.id === 'mine'; })[0];
+    return mine ? mine.items.filter(function (g) { return g.teams && g.teams.length === 2; }) : [];
+  }
+  function readGames() {
+    if (typeof Sports === 'undefined' || !Sports.refreshToday || !Sports.followedLeagues) return;
+    try { Sports.refreshToday(Sports.followedLeagues()).then(function () { if (on && (look === 'teams' || look === 'clock')) draw(); }, function () {}); } catch (e) {}
+  }
+  // Titles from the Plex home rows with a backdrop, read once an hour at most.
+  function homeArt() { return home || []; }
+  function readHome() {
+    if (typeof PlexView === 'undefined' || typeof Plex === 'undefined' || !Plex.chosen || !Plex.chosen().length || Date.now() - homeAt < HOUR) return;
+    homeAt = Date.now();
+    PlexView.read.home().then(function (rows) {
+      var seen = {}, out = [];
+      (rows || []).forEach(function (r) { (r.items || []).forEach(function (m) {
+        var art = m.art || m.grandparentArt, k = m.server + ':' + (m.grandparentRatingKey || m.ratingKey);
+        if (!art || seen[k] || !/^(movie|episode|show)$/.test(m.type)) return;
+        seen[k] = 1; out.push({ server: m.server, art: art, title: m.type === 'episode' ? m.grandparentTitle : m.title, year: m.year || '', genre: ((m.Genre || [])[0] || {}).tag || '' });
+      }); });
+      home = out.slice(0, 60);
+    }, function () { homeAt = 0; });
+  }
+
+  // An hour in, with "Let the TV take over": TiviBro stops holding the TV's own screensaver back.
+  function handOver() { handed = true; if (typeof Log !== 'undefined') Log.info('app', 'Screensaver: an hour on, the TV may take over'); }
+
+  /* ---------- For Burnin, Awake and Settings ---------- */
+  // A key or the pointer (Burnin.activity): awake again; true when it only took the screensaver away.
+  function activity() { last = Date.now(); return hide(); }
+  // Whether the TV's own screensaver should wait: while this one is on (until it hands over) or still to come.
+  function holds() { return enabled() && !document.hidden && !handed; }
+  function start() { setInterval(check, 15000); }
+  function preview() { last = 0; show(); }
+  return { start: start, activity: activity, holds: holds, enabled: enabled, preview: preview, get on() { return on; }, LOOKS: LOOKS, _due: due, _ready: ready };
+})();

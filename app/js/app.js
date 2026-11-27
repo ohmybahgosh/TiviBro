@@ -384,7 +384,7 @@ var App = (function () {
     leanLogosAt = lean ? Date.now() + lean.logos : 0;
     if (lean) setTimeout(function () { leanLogosAt = 0; Logos.load(Library.data); }, lean.logos); else Logos.load(data);
     Vod.reset();
-    if (!ready) { Views.init(); Watch.start(); if (typeof Burnin !== 'undefined') Burnin.start(); if (typeof Memwatch !== 'undefined') Memwatch.start(); Remind.start(); ready = true; if (typeof Media !== 'undefined' && Media.autoSoon) Media.autoSoon(45000); if (typeof Media !== 'undefined' && Media.newMediaSoon) Media.newMediaSoon(60000); if (typeof Movies !== 'undefined') Movies.start(); if (typeof Trakt !== 'undefined') MediaStore.load().then(function () { Trakt.start(); }).catch(function () {}); }   // movies still without details or posters
+    if (!ready) { Views.init(); Watch.start(); if (typeof Burnin !== 'undefined') Burnin.start(); if (typeof Saver !== 'undefined') Saver.start(); if (typeof Memwatch !== 'undefined') Memwatch.start(); Remind.start(); ready = true; if (typeof Media !== 'undefined' && Media.autoSoon) Media.autoSoon(45000); if (typeof Media !== 'undefined' && Media.newMediaSoon) Media.newMediaSoon(60000); if (typeof Movies !== 'undefined') Movies.start(); if (typeof Trakt !== 'undefined') MediaStore.load().then(function () { Trakt.start(); }).catch(function () {}); }   // movies still without details or posters
     window.__tbBooted = true;              // compat.js shows an error screen if errors stop the start
     Views.stopAll();
     Views.reload(false);

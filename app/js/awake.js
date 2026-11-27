@@ -74,7 +74,9 @@ var Awake = (function () {
     lastAsk = Date.now();
     var p = playerNow(), now = Date.now(), hid = hiddenNow(), playing = busy(p, hid);
     if (playing) playedAt = now;
-    var no = wait(p, hid, now, playedAt, inputAt);
+    var no = wait(p, hid, now, playedAt, inputAt), ours = !no && !hid && typeof Saver !== 'undefined' && Saver.holds();
+    // TiviBro's own screensaver is on, or will start: the TV's waits (until an hour in, see saver.js).
+    if (ours) { refused++; log('info', 'Screensaver held off: TiviBro\'s own screensaver ' + (Saver.on ? 'is on' : 'will start')); return respond(r.timestamp, false); }
     if (no) {
       refused++;
       var ch = p && p.current, what = ch && (ch.n || ch.title) ? '"' + (ch.n || ch.title) + '"' : 'a video';
