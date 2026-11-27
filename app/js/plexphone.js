@@ -45,7 +45,8 @@ var PlexPhone = (function () {
     var op = String(a.op || 'libs');
     try {
       if (op === 'libs') return Promise.all(Plex.chosen().map(function (s) { return Plex.reach(s.id).catch(function () {}); })).then(function () { return withPics({ libs: libs() }); });
-      if (op === 'home') return PlexView.read.home().then(function (rows) { return withPics({ rows: rows.map(function (r) { return { title: r.title, wide: !!r.wide, items: r.items.slice(0, 30).map(slim) }; }) }); });
+      // Home: "#3 on Netflix" under a Top 10's posters, as on the TV.
+      if (op === 'home') return PlexView.read.home().then(function (rows) { return withPics({ rows: rows.map(function (r) { return { title: r.title, wide: !!r.wide, items: r.items.slice(0, 30).map(function (m) { var x = slim(m); if (r.line && r.line(m)) x.sub = r.line(m); return x; }) }; }) }); });
       if (op === 'lib') {
         known(a.server); var k = okKey(a.key), off = Math.max(0, +a.offset || 0), l = libs().filter(function (x) { return x.server === a.server && x.key === k; })[0];
         if (!l) throw new Error('That library isn\'t picked on the TV.');
