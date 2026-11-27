@@ -2747,5 +2747,6 @@ I18n.add('nl', {
   "The copy is deleted and the set-up screen opens": "De kopie wordt verwijderd en het installatiescherm gaat open",
   "Xtream Codes, kept on {x}.  Its channel edits come back from its restore points.": "Xtream Codes, bewaard op {x}.  De zenderwijzigingen komen terug uit de herstelpunten.",
   "Your playlist from before is still on this TV": "Je eerdere afspeellijst staat nog op deze tv",
-  "Your settings on this TV were cleared": "Je instellingen op deze tv zijn gewist"
+  "Your settings on this TV were cleared": "Je instellingen op deze tv zijn gewist",
+  "Your last channel starts in a moment, once the guide is in.  TiviBro closed soon after starting last time.": "Je laatste zender start zo, zodra de gids binnen is.  TiviBro sloot de vorige keer kort na het opstarten af."
 });

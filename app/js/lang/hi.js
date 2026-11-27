@@ -2733,5 +2733,6 @@ I18n.add('hi', {
   "The copy is deleted and the set-up screen opens": "कॉपी हटा दी जाएगी और सेट-अप स्क्रीन खुलेगी",
   "Xtream Codes, kept on {x}.  Its channel edits come back from its restore points.": "Xtream Codes, {x} को रखी गई।  इसके चैनल में किए बदलाव इसके रिस्टोर पॉइंट से वापस आते हैं।",
   "Your playlist from before is still on this TV": "आपकी पहले वाली प्लेलिस्ट अभी भी इस TV पर है",
-  "Your settings on this TV were cleared": "इस TV की आपकी सेटिंग मिट गईं"
+  "Your settings on this TV were cleared": "इस TV की आपकी सेटिंग मिट गईं",
+  "Your last channel starts in a moment, once the guide is in.  TiviBro closed soon after starting last time.": "आपका पिछला चैनल गाइड लोड होते ही कुछ पल में शुरू हो जाएगा।  पिछली बार TiviBro शुरू होने के थोड़ी देर बाद बंद हो गया था।"
 });

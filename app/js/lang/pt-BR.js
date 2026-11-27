@@ -3368,5 +3368,6 @@ I18n.add('pt-BR', {
   "The copy is deleted and the set-up screen opens": "A cópia é excluída e a tela de configuração é aberta",
   "Xtream Codes, kept on {x}.  Its channel edits come back from its restore points.": "Xtream Codes, guardada em {x}.  As edições de canais dela voltam dos pontos de restauração.",
   "Your playlist from before is still on this TV": "Sua lista de antes ainda está nesta TV",
-  "Your settings on this TV were cleared": "As configurações desta TV foram apagadas"
+  "Your settings on this TV were cleared": "As configurações desta TV foram apagadas",
+  "Your last channel starts in a moment, once the guide is in.  TiviBro closed soon after starting last time.": "Seu último canal começa em instantes, assim que o guia carregar.  O TiviBro fechou logo depois de abrir da última vez."
 });

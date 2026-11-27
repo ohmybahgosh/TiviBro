@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **No more closing a minute after every start on some webOS 6 TVs.**  When TiviBro closed soon after starting while a channel played, the next start loads the guide and the channel logos first and starts the last channel about 50 seconds in, so they never fill the TV's memory together (issues #194, #195).  A channel you pick meanwhile plays at once.
+
 ## 0.6.0 (alpha 230, 2026-11-27)
 
 Pre-release: expect rough edges, and keep a backup before installing.

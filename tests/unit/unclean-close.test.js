@@ -25,6 +25,8 @@ L = boot(Object.assign({ t: Date.now() - 2 * 60000 }, base));
 ok('no helper, two minutes ago: a crash', !!L.settle(null));
 L = boot(Object.assign({ t: Date.now() - 5 * 3600e3 }, base));
 ok('with the helper and no power-off seen, a long gap is still a crash', !!L.settle({ bootAt: 0, power: [] }));
+L = boot(Object.assign({ t: Date.now() - 2 * 60000, t0: Date.now() - 2 * 60000 - 45000 }, base));
+ok('how long after starting it closed (issues #194, #195: an early close while playing waits with the last channel)', L.settle(null).up === 45000);
 // The log is kept at most 1.5 s after a line comes, even with a line every second (issues #140 to #167: a start that
 // kept logging pushed the save back until the TV closed TiviBro, and the report stopped at its first second).
 {

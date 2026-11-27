@@ -170,7 +170,7 @@ var Log = (function () {
     var hist = []; try { hist = JSON.parse(localStorage.getItem('tivibro.crashes') || '[]') || []; } catch (e) {}
     hist = hist.filter(function (t) { return Date.now() - t < 3600e3; }); hist.push(run.t || Date.now());
     try { localStorage.setItem('tivibro.crashes', JSON.stringify(hist.slice(-10))); } catch (e) {}
-    unclean = { s: run.s, at: run.t, text: describe(run), doing: run.doing || {}, heap: run.heap || 0, recent: hist.length, checked: !!sys };
+    unclean = { s: run.s, at: run.t, up: run.t0 ? run.t - run.t0 : 0, text: describe(run), doing: run.doing || {}, heap: run.heap || 0, recent: hist.length, checked: !!sys };
     add('error', 'app', 'TiviBro closed unexpectedly last time, ' + unclean.text + (hist.length > 1 ? '.  ' + hist.length + ' times in the last hour.' : '.'));
     return unclean;
   }

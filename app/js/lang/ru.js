@@ -2862,5 +2862,6 @@ I18n.add('ru', {
   "The copy is deleted and the set-up screen opens": "Копия будет удалена, и откроется экран настройки",
   "Xtream Codes, kept on {x}.  Its channel edits come back from its restore points.": "Xtream Codes, сохранён {x}.  Правки каналов вернутся из его точек восстановления.",
   "Your playlist from before is still on this TV": "Ваш прежний плейлист всё ещё на этом телевизоре",
-  "Your settings on this TV were cleared": "Настройки на этом телевизоре были сброшены"
+  "Your settings on this TV were cleared": "Настройки на этом телевизоре были сброшены",
+  "Your last channel starts in a moment, once the guide is in.  TiviBro closed soon after starting last time.": "Последний канал включится через мгновение, как только загрузится телегид.  В прошлый раз TiviBro закрылся вскоре после запуска."
 });

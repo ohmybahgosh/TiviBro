@@ -380,7 +380,7 @@ var App = (function () {
        after it started, issues #140, #141 and #146): the channel list and the last channel first, and the logo
        library and the guide one after the other later, so they never all build at once. */
     var lean = leanStart();
-    if (lean) Log.info('app', 'Big list on a TV short of memory: the guide in ' + lean.guide / 1000 + 's, the logo library in ' + lean.logos / 1000 + 's');
+    if (lean) Log.info('app', (earlyClose ? 'Closed soon after starting last time' : 'Big list on a TV short of memory') + ': the guide in ' + lean.guide / 1000 + 's, the logo library in ' + lean.logos / 1000 + 's');
     leanLogosAt = lean ? Date.now() + lean.logos : 0;
     if (lean) setTimeout(function () { leanLogosAt = 0; Logos.load(Library.data); }, lean.logos); else Logos.load(data);
     Vod.reset();
@@ -402,14 +402,14 @@ var App = (function () {
     var gen = ++startGen, last = Store.edits.last, later = !!(Store.others().length && (last && !Library.find(last) || memSafe()));
     openOthers(gen).then(function () {
       if (gen !== startGen) return;
-      if (later) Views.resume();                   // the last channel was one of another playlist's
+      if (later) resumeLast(lean);                 // the last channel was one of another playlist's
       setTimeout(function () { Epg.init(Library); }, lean ? lean.guide : fromCache ? 1500 : 300);
       // A reminder can be for a channel of another playlist: once they are all in.
       if (pendingRem) { var pr = pendingRem; pendingRem = null; setTimeout(function () { openReminder(pr); }, 600); }
       Launch.ready();
       if (typeof SportsLive !== 'undefined') SportsLive.start();
     });
-    if (!later) Views.resume();
+    if (!later) resumeLast(lean);
     if (tourNext) { tourNext = false; setTimeout(function () { if (!Tour.isOpen) Tour.open({ first: true }); }, 400); }
   }
 
@@ -489,10 +489,26 @@ var App = (function () {
      on counts (the others by their size at their last load, p.chans): two lists of 4,200 closed a 1 GB TV 15 to 30 s
      after every start, the first alone being under the line (issues #169, #170). */
   function leanStart() {
+    // Closed soon after starting last time, while playing: one thing at a time whatever the list's size, the channel last.
+    if (earlyClose) return { guide: 15000, logos: 30000, play: 50000 };
     var gb = (navigator.deviceMemory || 0), n = Library.count ? Library.count() : 0;
     Store.others().forEach(function (p) { n += +p.chans || 0; });
     if (n <= 8000 || !(memSafe() || (gb && gb <= 1))) return null;
     return { guide: 20000, logos: 40000 };
+  }
+  /* How long after starting TiviBro closed last time, when it closed while playing within 3 minutes (ms; 0 otherwise).
+     webOS 6 TVs closed it 30 to 60 s in, every start, while the last channel played and the guide, the logo library
+     and a second playlist loaded (issues #194, #195). */
+  var earlyClose = 0;
+  /* The last channel at launch.  After such an early close it waits until the guide and the logo library are in
+     (lean.play), so their loading and the video never use the TV's memory at once.  A channel picked meanwhile
+     plays at once, and then this one doesn't start over it. */
+  function resumeLast(lean) {
+    if (!lean || !lean.play) return Views.resume();
+    if (!Store.edits.last || !Store.settings.resumeLast) return;
+    Log.info('app', 'TiviBro closed ' + Math.round(earlyClose / 1000) + ' s after starting last time, while playing: the last channel starts in ' + lean.play / 1000 + ' s, once the guide and logos are in');
+    U.toast('Your last channel starts in a moment, once the guide is in.  TiviBro closed soon after starting last time.', 7000);
+    setTimeout(function () { if (!Views.playing) Views.resume(); }, lean.play);
   }
   // A lean start's logo library still to come (its time, ms since the epoch): the other playlists wait for it.
   var leanLogosAt = 0;
@@ -947,6 +963,7 @@ var App = (function () {
       // Something broke last time (an error, or TiviBro closed on its own): offer to report it, once.
       var crash = Log.lastCrash, gone = Log.settle(Net.info && Net.info.sys), key = gone ? 'u' + gone.s : crash ? crash.s : '';
       playSafe(gone);
+      earlyClose = gone && gone.doing && gone.doing.player && gone.up > 0 && gone.up < 180000 ? gone.up : 0;
       var guard = crashGuard(gone);
       if (key && localStorage.getItem('tivibro.crashSeen') !== key) {
         try { localStorage.setItem('tivibro.crashSeen', key); } catch (e) {}
