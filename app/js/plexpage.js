@@ -334,7 +334,7 @@ var PlexPage = (function () {
       var base = 'http://127.0.0.1:' + Net.port + '/plex/' + key, url, converting = converts(v), cap = quality();
       if (!converting) url = base + part.key;
       else url = base + '/video/:/transcode/universal/start.m3u8?path=' + encodeURIComponent('/library/metadata/' + m.ratingKey) + '&mediaIndex=' + Math.max(0, (m.Media || []).indexOf(v)) + '&partIndex=0&protocol=hls&fastSeek=1&directPlay=0&directStream=1&directStreamAudio=1&videoQuality=100' + (cap ? '&maxVideoBitrate=' + cap + resFor(cap) : '') + '&subtitles=burn&copyts=1&offset=0&session=' + newSession();
-      var meta = { id: 'plex:' + m.server + ':' + m.ratingKey, plex: true, plexNext: m.type === 'episode' ? 'episode' : '', title: m.type === 'episode' ? m.grandparentTitle + '  S' + m.parentIndex + ' · E' + m.index : m.title, sub: m.type === 'episode' ? m.title : [m.year, m.contentRating].filter(Boolean).join('  ·  '), marks: marks(m), chapters: converting ? [] : chapters(m) };
+      var meta = { id: 'plex:' + m.server + ':' + m.ratingKey, plex: true, serverConvert: converting, plexNext: m.type === 'episode' ? 'episode' : '', title: m.type === 'episode' ? m.grandparentTitle + '  S' + m.parentIndex + ' · E' + m.index : m.title, sub: m.type === 'episode' ? m.title : [m.year, m.contentRating].filter(Boolean).join('  ·  '), marks: marks(m), chapters: converting ? [] : chapters(m) };
       if (!converting && /(^|,)sd(,|$)/.test(part.indexes || '')) meta.pics = function (t) { return base + '/library/parts/' + part.id + '/indexes/sd/' + Math.round(t * 1000); };
       playing = { item: m, meta: meta, converting: converting, last: 0, scrobbled: false };
       /* The converter's playlist covers the whole title (it converts from wherever the player asks), so both ways
@@ -452,7 +452,9 @@ var PlexPage = (function () {
     out.push({ label: T('Quality'), sub: p.converting ? (cap ? qLabel(cap) : T('Converted by {x}', { x: RAW(srv) })) : T('Original  ·  plays as it is'), action: function () {
       // Each with a few plain words (what it looks like, what internet it needs), as Plex lists them.
       var now = forceCap != null ? forceCap : cap;
-      UI.menu(T('Quality'), Plex.QUALITY.map(function (q) { return { label: qLabel(q.b), sub: T(q.sub), current: now === q.b, action: function () { forceCap = q.b; restart(); } }; }), null,
+      // Original and the qualities below the file's own (a higher one would be the same file, converted for nothing).
+      var own = v.bitrate || 0, list = Plex.QUALITY.filter(function (q) { return !q.b || !own || q.b < own; });
+      UI.menu(T('Quality'), list.map(function (q) { return { label: q.b ? qLabel(q.b) : T('Original') + (own ? '  ·  ' + T('{x} Mbps', { x: Math.round(own / 100) / 10 }) + (v.videoResolution ? '  ·  ' + RAW(/^\d+$/.test(v.videoResolution) ? v.videoResolution + 'p' : String(v.videoResolution).toUpperCase()) : '') : ''), sub: T(q.sub), current: now === q.b, action: function () { forceCap = q.b; restart(); } }; }), null,
         { sub: T('Mbps is how much picture comes each second: higher looks sharper, lower plays smoother on slow internet.') });
     } });
     if (part) {

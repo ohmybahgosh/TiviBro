@@ -1225,9 +1225,10 @@ var Player = (function () {
       // After this channel has run dry, reconnects wait for the bigger cushion too (capped so a
       // reconnect never sits for long).
       var need = cur.boost && cur.everPlayed && cur.starved ? Math.min(Math.max(p.prebuffer, refillGoal()), p.prebuffer + 2) : p.prebuffer;
-      var ready = video.readyState >= 2 && (ahead >= need || now - st.at > 4000 + need * 1000);
-      // A movie resuming part way through: the TV player buffers at the new spot after the seek.
-      if (cur.startAt && isFile() && video.readyState >= 1) ready = true;
+      var ready = video.readyState >= 2 && (ahead >= need || now - st.at > (cur.server ? SERVER_QUIET : 4000) + need * 1000);
+      // A movie resuming part way through: the TV player buffers at the new spot after the seek (not one a server
+      // converts: that waits for its cushion like any start).
+      if (cur.startAt && isFile() && !cur.server && video.readyState >= 1) ready = true;
       if (ready) {
         st.started = true; st.lastMove = now;
         if (!cur.audioPicked) { cur.audioPicked = true; preferAudio(); }
@@ -1309,18 +1310,19 @@ var Player = (function () {
     if (st.refilling) {
       // Resume at the full goal, or after 4s once the profile's own target is there: a refill
       // should never become a long wait just because the cushion grew.
-      if (ahead >= goal || (ahead >= p.refill && now - st.refillSince > 4000) || now - st.refillSince > 6000 + goal * 1000) {
+      var waitMax = cur.server ? SERVER_QUIET + goal * 1000 : 6000 + goal * 1000;
+      if (ahead >= goal || (ahead >= p.refill && now - st.refillSince > 4000) || now - st.refillSince > waitMax) {
         st.refilling = false; st.lastMove = now;
         if (eng && eng.edge && cur.live && !cur.timeshift && !cur.tshift) eng.edge();
         var pr2 = video.play(); if (pr2 && pr2.catch) pr2.catch(function () {});
         state('playing');
-      } else if (now - st.refillSince > 3000 && now - (st.growAt || st.refillSince) > 4000) {
+      } else if (now - st.refillSince > 3000 && now - (st.growAt || st.refillSince) > (cur.server ? SERVER_QUIET : 4000)) {
         // Nothing has arrived for 4s: the provider stopped sending.  A fresh connection usually
         // comes with a burst, so reconnect rather than wait it out.
         st.refilling = false;
         cur.starved = true;
         reconnect(myToken, 'No data from the provider, reconnecting');
-      } else if (now - st.refillSince > p.stall * 1000 && ahead < 0.2) {
+      } else if (now - st.refillSince > (cur.server ? Math.max(p.stall, 30) : p.stall) * 1000 && ahead < 0.2) {
         st.refilling = false;
         cur.starved = true;
         reconnect(myToken, 'Stream stalled, reconnecting');
@@ -1458,6 +1460,7 @@ var Player = (function () {
       tshift: !!opts.tshift, tsFrom: opts.tsFrom != null ? opts.tsFrom : -1,
       knownDur: +(opts.dur || (opts.meta && opts.meta.dur)) || 0,      // a recording's length (an MPEG-TS file says none)
       media: opts.media || (opts.meta && opts.meta.media) || null, opts: opts };
+    padConverted();
     // Audio sync: the delay kept for this channel, or this movie or episode, before the player is chosen.
     if (window.AvSync) AvSync.use(AvSync.keyFor(ch, opts), (opts.meta && opts.meta.title) || (ch && ch.n) || '');
     // keepTrying: a channel known to work here (back from its backups during an outage) retries
@@ -1819,6 +1822,19 @@ var Player = (function () {
     if (!cur) return;
     cur.preview = preview;
     cur.p = cfg(preview, cur.origUrl || cur.url);
+    padConverted();
+  }
+  /* A title a media server converts as it plays (Plex's converter, meta.serverConvert): the server makes the video a
+     little faster than it plays, or barely as fast for a 4K picture, so starting on a second or two of it ran dry over
+     and over (a stutter, like pause and play pressed again and again), where Plex's own apps wait for a cushion.
+     So: start once 8 s are ready (also when resuming part way in), refill to 12 s, and give a slow server time
+     before calling it stuck.  The start and refill checks read cur.server. */
+  var SERVER_START = 8, SERVER_REFILL = 12, SERVER_QUIET = 20000;
+  function padConverted() {
+    cur.server = !!(cur.meta && cur.meta.serverConvert);
+    if (!cur.server || cur.preview) return;
+    cur.p.prebuffer = Math.max(cur.p.prebuffer, SERVER_START);
+    cur.p.refill = Math.max(cur.p.refill, SERVER_REFILL);
   }
   function stop() { notePlayed(); token++; if (cur) clearTimeout(cur.timer); cur = null; held = null; teardown(); state('idle'); Log.state('player', ''); }
 
