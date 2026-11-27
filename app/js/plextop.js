@@ -10,7 +10,7 @@
 var PlexTop = (function () {
   'use strict';
   var T = function (s, v) { return typeof I18n !== 'undefined' ? I18n.t(s, v) : String(s).replace(/\{(\w+)\}/g, function (a, k) { return v && v[k] != null ? v[k] : a; }); };
-  var KEY = 'tivibro.plexTop', AT_ONCE = 2;
+  var KEY = 'tivibro.plexTop', AT_ONCE = 2, TOP_MAX = 40;
   var found = read(), busy = false, waiting = [];
 
   function read() { try { return JSON.parse(localStorage.getItem(KEY) || 'null') || {}; } catch (e) { return {}; } }
@@ -96,6 +96,7 @@ var PlexTop = (function () {
         ranks[id] = { r: x.r, svc: svc || x._svc };
       });
       items.sort(function (a, b) { return ranks[a.server + ':' + a.ratingKey].r - ranks[b.server + ':' + b.ratingKey].r; });
+      items = items.slice(0, TOP_MAX);   // a big library matches 90 and more across every service: the best places
       return { items: items, line: function (m) { var k = ranks[m.server + ':' + m.ratingKey]; return k ? '#' + k.r + ' ' + T('on {x}', { x: k.svc }) : ''; } };
     }
     function entries(ch) {
