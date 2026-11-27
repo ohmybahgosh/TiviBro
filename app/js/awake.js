@@ -81,11 +81,7 @@ var Awake = (function () {
       refused++;
       var ch = p && p.current, what = ch && (ch.n || ch.title) ? '"' + (ch.n || ch.title) + '"' : 'a video';
       log('info', 'Screensaver held off: ' + (playing ? what + ' is playing (' + p.state + ')' : now - inputAt < INPUT_GRACE ? 'TiviBro is in use (a button ' + Math.round((now - inputAt) / 1000) + ' s ago)' : 'something played ' + Math.round((now - playedAt) / 1000) + ' s ago'));
-    } else {
-      allowed++; log('info', 'Screensaver allowed: nothing playing' + (hid ? ' (TiviBro in the background)' : ''));
-      // Aerial picked: a paused video lets go of the TV's video decoder first, or Aerial shows only its clock.
-      if (typeof Saver !== 'undefined' && Saver.wantsDecoder() && typeof Player !== 'undefined' && Player.park) Player.park();
-    }
+    } else { allowed++; log('info', 'Screensaver allowed: nothing playing' + (hid ? ' (TiviBro in the background)' : '')); }
     respond(r.timestamp, !no);
   }
   function respond(timestamp, ack) {

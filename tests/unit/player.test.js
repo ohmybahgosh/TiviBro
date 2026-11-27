@@ -353,18 +353,6 @@ ok('#34: and never says the format cannot be played', !t.states.some(s => /forma
 t.video.duration = 7200; t.feed(0, 4000); t.run(1500);
 ok('#34: it comes back at the same spot, still playing', Math.abs(t.video.currentTime - 1200) < 3 && !t.video.paused, t.video.currentTime);
 
-// ---- a paused movie let go for the TV's screensaver (Aerial needs the video decoder), back where it was ----
-t = setup();
-t.P.play({ n: 'Parked film', url: 'http://p/movie/u/p/32.mkv' }, { live: false });
-t.video.duration = 7200; t.feed(0, 4000); t.run(2000);
-t.video.currentTime = 1500; t.run(500);
-ok('park: nothing paused, nothing let go', t.P.park() === false);
-t.P.setPaused(true); t.run(1000);
-const parked = t.P.park();
-ok('park: a paused movie lets go of the decoder (no source left)', parked && !t.video._src && t.logs.some(l => /let go, so the TV/.test(l)), t.video._src);
-t.P.setPaused(false); t.video.duration = 7200; t.feed(0, 4000); t.run(2500);
-ok('park: play opens it again where it was, without "Back to live"', /movie\/u\/p\/32\.mkv$/.test(t.video._src) && Math.abs(t.video.currentTime - 1500) < 3 && !t.logs.some(l => /Back to live/.test(l)), t.video.currentTime);
-
 t = setup({ settings: { buffer: 'custom', custom: { prebuffer: 1, ahead: 10, back: 4, stall: 4, retries: 2 } } });
 t.P.play({ n: 'Gone film', url: 'http://p/movie/u/p/31.mp4' }, { live: false });
 t.video.duration = 7200; t.feed(0, 4000); t.run(2000);
