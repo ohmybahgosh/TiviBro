@@ -1025,6 +1025,19 @@ body.full .activity,body.mgr-open .activity{display:none}
 #viewPlex .plex-subs{top:88px}
 #viewPlex .plex-subs .media-tab{font-size:21px;padding:6px 20px}
 #viewPlex .media-hero{top:150px;height:320px}
+.plex-page{position:absolute;top:0;right:0;bottom:0;left:0;z-index:5;background:var(--ink)}
+.plex-page .media-bd{height:760px}
+.plex-page-top{position:absolute;left:152px;top:90px;width:900px;text-shadow:0 2px 12px rgba(0,0,0,.85)}
+.plex-badges{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 6px}
+.plex-badge{font-size:18px;font-weight:700;padding:4px 12px;border-radius:8px;border:2px solid rgba(255,255,255,.35)}
+.plex-score{font-size:18px;font-weight:700;padding:4px 12px;border-radius:8px;background:rgba(61,220,151,.18);color:#6fe8b2}
+.plex-summary{-webkit-line-clamp:3}
+.plex-people{font-size:21px;color:var(--muted);margin-top:12px}
+.plex-btns{position:absolute;left:152px;top:640px;display:flex;gap:16px}
+.plex-btn{height:72px;line-height:72px;padding:0 30px;border-radius:999px;font-size:24px;font-weight:600;background:rgba(255,255,255,.08);border:3px solid rgba(255,255,255,.22);white-space:nowrap}
+.plex-btn.main{background:#f2f4fa;color:#0b0e1a;border-color:#f2f4fa}
+.plex-btn.sel{box-shadow:0 0 0 5px var(--accent);transform:scale(1.04)}
+.plex-page-track{position:absolute;left:152px;top:740px;font-size:21px;color:var(--muted);white-space:pre}
 .plex-empty{position:absolute;left:152px;top:520px;font-size:28px;color:var(--muted)}
 .media-shelf-stage{position:relative;transition:transform 210ms ease;will-change:transform}
 .media-shelf{position:absolute;left:0;right:0;top:0;height:480px}

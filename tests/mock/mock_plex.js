@@ -26,9 +26,9 @@ function route(state, req, port) {
   if (p === '/library/sections') return [200, { MediaContainer: { Directory: [{ key: '1', type: 'movie', title: 'Movies' }] } }];
   if (p === '/library/sections/1/all') { state.lastAll = q; var list = /unwatched=1/.test(q) ? MOVIES.slice(3) : MOVIES; return [200, { MediaContainer: { totalSize: list.length, Metadata: list.map(function (m, i) { return movie(10 + i, m); }) } }]; }
   if (p === '/photo/:/transcode') return state.realPng ? [200, PNG, 'image/png'] : [200, 'PNG:' + q, 'image/png'];
-  if (p === '/hubs/continueWatching') return [200, { MediaContainer: { Hub: [{ title: 'Continue Watching', hubIdentifier: 'home.continue', Metadata: [movie(11, 'Northbound', { viewOffset: 2400000, lastViewedAt: 1700000500 }), episode(31, 4)] }] } }];
+  if (p === '/hubs/continueWatching') return [200, { MediaContainer: { Hub: [{ title: 'Continue Watching', hubIdentifier: 'home.continue', Metadata: [movie(18, 'Northbound', { viewOffset: 2400000, lastViewedAt: 1700000500 }), episode(31, 4)] }] } }];
   if (p === '/hubs') return [200, { MediaContainer: { Hub: [
-    { title: 'Continue Watching', hubIdentifier: 'home.continue', Metadata: [movie(11, 'Northbound')] },
+    { title: 'Continue Watching', hubIdentifier: 'home.continue', Metadata: [movie(18, 'Northbound')] },
     { title: 'Recently Added in Movies', hubIdentifier: 'home.movies.recent', Metadata: MOVIES.map(function (m, i) { return movie(10 + i, m); }) },
     { title: 'Recently Added in Music', hubIdentifier: 'home.music.recent', Metadata: [{ ratingKey: '90', title: 'An album', type: 'album', librarySectionID: 9 }] },
     { title: 'Friday Night Picks', hubIdentifier: 'collection.5', Metadata: MOVIES.slice(2, 7).map(function (m, i) { return movie(12 + i, m); }) }] } }];
@@ -39,6 +39,14 @@ function route(state, req, port) {
   if (p === '/playlists') return [200, { MediaContainer: { Metadata: [{ ratingKey: '700', type: 'playlist', title: 'Movie Marathon', leafCount: 6 }] } }];
   if (p === '/hubs/search') return [200, { MediaContainer: { Hub: [{ title: 'Movies', Metadata: [movie(10, 'Copper Sky')] }] } }];
   if (p === '/library/parts/7/1700000000/file.mkv') { state.range = req.headers.range; return [206, 'MKVBYTES', 'video/x-matroska']; }
+  var md = /^\/library\/metadata\/(\d+)$/.exec(p);
+  if (md) { var k = +md[1], old = k === 13; return [200, { MediaContainer: { Metadata: [movie(k, MOVIES[k - 10] || 'X', { viewOffset: k === 18 ? 2400000 : 0, librarySectionTitle: 'Movies', rating: 9.2, audienceRating: 8.8,
+    Director: [{ tag: 'Ana Ruiz' }], Role: [{ tag: 'Mara Quinn' }, { tag: 'Theo Lake' }],
+    Marker: [{ type: 'intro', startTimeOffset: 5000, endTimeOffset: 65000 }, { type: 'credits', startTimeOffset: 6900000, endTimeOffset: 7200000, final: true }],
+    Extras: { Metadata: [{ ratingKey: '80', type: 'clip', subtype: 'trailer', title: 'Trailer' }] },
+    Media: [{ videoResolution: '4k', videoCodec: old ? 'mpeg2video' : 'hevc', container: old ? 'mpeg' : 'mkv', audioChannels: 8, Part: [{ id: 7, key: '/library/parts/7/1700000000/file.mkv', size: 58e9, Stream: [{ id: 1, streamType: 1, DOVIPresent: true }, { id: 2, streamType: 2, displayTitle: 'English (TrueHD Atmos 7.1)', selected: true }, { id: 3, streamType: 3, displayTitle: 'English (SRT)' }] }] }] })] } }]; }
+  if (p === '/:/timeline') { state.timeline = q; return [200, null]; }
+  if (p === '/video/:/transcode/universal/start.m3u8') { state.transcode = q; return [200, '#EXTM3U\n', 'application/vnd.apple.mpegurl']; }
   if (p === '/:/scrobble' && req.method === 'GET') { state.scrobbled = q; return [200, null]; }
   return [404, { error: 'not here' }];
 }

@@ -2796,7 +2796,7 @@ var Views = (function () {
     ]);
   }
   // The movie or episode is over (it ended, or Up next at the credits: skipper.js): My media's or the provider's next step.
-  function endVod(force) { if (mode !== 'vod') return; if (vod && vod.meta.local) Media.ended(force === true); else Vod.ended(force === true); }
+  function endVod(force) { if (mode !== 'vod') return; if (vod && vod.meta.plex && typeof PlexPage !== 'undefined') PlexPage.ended(force === true); else if (vod && vod.meta.local) Media.ended(force === true); else Vod.ended(force === true); }
   function stopAll() { tsEnd(); Subs.reset(); if (typeof SeekPrev !== 'undefined') SeekPrev.stop(); if (full) { full = false; document.body.classList.remove('full'); stage.classList.remove('full'); stage.classList.add('preview'); } Player.stop(); playing = null; mode = 'live'; cu = null; vod = null; stage.classList.add('off');  if (pipTab()) pipUpdate(); }
 
   return {

@@ -126,6 +126,8 @@ var Skipper = (function () {
      setting off. */
   function start(meta) {
     db = null; dbFor = meta || null; dbAsk = null;
+    // A Plex title brings its own markers (plexpage.js marks): those, and nothing asked of the databases.
+    if (meta && meta.marks) { db = meta.marks; return; }
     if (!meta || !online() || (meta.item && meta.item.recording) || typeof Media === 'undefined' || !Media.request) return;
     dbAsk = meta;
   }

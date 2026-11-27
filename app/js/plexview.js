@@ -263,5 +263,8 @@ var PlexView = (function () {
   function resume() { if (!open_) return open(); UI.setHandler(keys); draw(); load(); }
   function leave() { open_ = false; loadSeq++; }
 
-  return { open: open, resume: resume, leave: leave, _test: { tabs: function () { return tabsList; }, rows: function () { return rows; }, keys: keys, focused: focused } };
+  // A show opened from somewhere else (a title's Go to show): its seasons in place on the Plex tab.
+  function openShow(m) { stack = [m]; rowAt = 0; colAt = {}; zone = 'rows'; UI.setHandler(keys); load(); }
+
+  return { open: open, resume: resume, leave: leave, picture: pic, openShow: openShow, _test: { tabs: function () { return tabsList; }, rows: function () { return rows; }, keys: keys, focused: focused } };
 })();
