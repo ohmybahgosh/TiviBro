@@ -39,6 +39,8 @@ adb logcat -c
 adb shell am start -W -n $PKG/.MainActivity
 shot 1-empty 5
 adb shell am start -W -a android.intent.action.VIEW -d "tivibro://pair?v=1\&h=10.0.2.2%3A$PORT\&id=$TVID\&c=$CODE\&n=Living%20room%20TV" $PKG
+# A pairing link from outside the app asks first ("Pair with this TV?"), as a person would answer it.
+tap "Pair"
 shot 2-paired 8
 tap "Edit channels"
 shot 3-editor 10
