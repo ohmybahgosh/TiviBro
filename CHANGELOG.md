@@ -1,8 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 229, 2026-11-27)
 
-- **Plex.**  Sign in with a code at plex.tv/link in Settings > Plex, and your Plex server gets its own tab: Home with Continue watching, your Watchlist and your Plex home rows, each library with Recommended, Library, Collections, Categories and Playlists, sorting, filters and search.  Nothing is scanned; posters, watched marks and where you stopped come from your server and go back to it.
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 229
+
+- **First Plex release: it will have bugs, please report them.**  If anything about Plex goes wrong, send it from the Plex tab with Report a problem (in the menu): it's filed under Plex with what's needed to look into it.
+- **Plex, in its own tab.**  Sign in with a code at plex.tv/link in Settings > Plex, and your Plex server gets its own tab: Home with Continue watching, your Watchlist and your Plex home rows, each library with Recommended, Library, Collections, Categories and Playlists, sorting, filters and search.  Nothing is scanned; posters, watched marks and where you stopped come from your server and go back to it.
 - **Plex titles play at full quality.**  A file the TV can play plays as it is; the server converts the rest, within the quality you set for home and away.  Resume, versions, audio and subtitle tracks, the trailer, Skip intro and Skip credits from Plex's markers, Plex's seek previews and chapters, Up next and Still watching? all come along.
 - **Streaming Top 10s for Plex.**  A row of the titles your Plex has that are on yesterday's streaming Top 10s, with "#3 on Netflix" under each, and a Top 10 tab with every service on one page: each one's top movies and shows that your Plex has, in the chart's order.
 - **Plex's tabs as words.**  The Plex tab's navigation is words instead of two rows of pills, as on Plex's TV app: the open tab underlined, and under it a library's views (Recommended, Library, Collections, Categories, Playlists), smaller.
@@ -19,11 +24,7 @@
 - **Stalker channels that switch to HLS keep playing.**  A channel the portal sends as HLS could, after a dropout, be retried the wrong way for as long as it stayed on, until another channel was picked (#193).  It now goes straight back to HLS.  The helper also no longer restarts itself when a movie's details were asked for before its list.
 - **More DASH playlists play.**  ClearKey keys written in base64, and Kodi 21's newer licence lines (drm_legacy and drm), are now read, and the playlist's licence is tried first when a stream also lists Widevine or PlayReady (#185, #187).
 
-## 0.6.0 (alpha 228, 2026-11-26)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 228
+### In alpha 228
 
 - **Safer pairing links and widgets in the phone app.**  A pairing link opened from outside the app now asks first, and is refused if it points outside your home network.  Other apps on the phone can no longer press the Remote widget's buttons or the Sports widget's.
 - **The helper refuses tricky names.**  The TiviBro helper now turns away requests whose names could reach inside its own code, rather than looking them up.
