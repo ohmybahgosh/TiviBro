@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 232, 2026-11-27)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 232
 
 - **A screensaver made for OLED TVs.**  After a while with no button pressed (5 minutes unless you choose), or over a paused video, the screen goes almost black with a slow, dim clock, dark drifting colours, a picture from your Plex or your teams' scores, in turn.  Nothing stays in one place.  Settings > Appearance > Screensaver turns each look on or off, sets the wait and has a preview.  An hour in, the TV's own screensaver takes over.
 - **A movie's trailer behind its page.**  Settings > Plex > Trailer on a movie's page: two seconds after a movie's page opens, its trailer from your Plex server plays behind the whole page, without sound or with it.  Press ▲ to watch it full screen with sound (OK pauses, ◀ ▶ skip 10 seconds, Back returns to the page).  Off unless you turn it on; not on TVs with 1 GB of memory.
@@ -11,11 +15,7 @@
 - **Plex from a server away from home starts smoothly.**  A movie played as it is from a Plex server outside your home could run dry a few seconds in, when the server can barely send it as fast as it plays.  It now starts once 8 seconds are ready, as titles the server converts do.
 - **Open what's playing from the phone.**  Now on the TV shows a bigger poster, and tapping a Plex title opens its page in the phone's Plex tab.
 
-## 0.6.0 (alpha 231, 2026-11-27)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 231
+### In alpha 231
 
 - **Skip intro no longer stays on movies.**  A movie whose first chapter was called something like "Opening Credits/Accident" offered Skip intro for its first minutes, and the button never went away.  Plex movies no longer offer it, a chapter counts as an intro only when that's all its name says, and the button now fades after 6 seconds (it comes back with the controls).
 - **The phone shows what's playing on the TV.**  Now on the TV, on the phone's home screen and on the TV's page, shows the movie or episode's poster, Plex titles included.
