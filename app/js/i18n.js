@@ -24,9 +24,9 @@ var I18n = (function () {
   'use strict';
   // langs:begin
   // code, name in its own language, name in English (from i18n/langs.json by scripts/i18n-langs.js)
-  var LANGS = [['en', 'English', 'English'], ['es', 'Español', 'Spanish'], ['es-ES', 'Español (España)', 'Spanish (Spain)'], ['fr', 'Français', 'French'], ['pt-BR', 'Português (Brasil)', 'Portuguese (Brazil)'], ['pt-PT', 'Português (Portugal)', 'Portuguese (Portugal)'], ['ru', 'Русский', 'Russian'], ['de', 'Deutsch', 'German'], ['it', 'Italiano', 'Italian'], ['tr', 'Türkçe', 'Turkish'], ['pl', 'Polski', 'Polish'], ['nl', 'Nederlands', 'Dutch']];
+  var LANGS = [['en', 'English', 'English'], ['es', 'Español', 'Spanish'], ['es-ES', 'Español (España)', 'Spanish (Spain)'], ['fr', 'Français', 'French'], ['pt-BR', 'Português (Brasil)', 'Portuguese (Brazil)'], ['pt-PT', 'Português (Portugal)', 'Portuguese (Portugal)'], ['ru', 'Русский', 'Russian'], ['de', 'Deutsch', 'German'], ['it', 'Italiano', 'Italian'], ['tr', 'Türkçe', 'Turkish'], ['pl', 'Polski', 'Polish'], ['nl', 'Nederlands', 'Dutch'], ['ar', 'العربية', 'Arabic'], ['hi', 'हिन्दी', 'Hindi'], ['hr', 'Hrvatski', 'Croatian'], ['uk', 'Українська', 'Ukrainian']];
   // Each one's plural rule (see plural below), and the ones made from another (variant)
-  var PLURAL = { 'en': 'one', 'es': 'one', 'es-ES': 'one', 'fr': 'fr', 'pt-BR': 'pt', 'pt-PT': 'pt', 'ru': 'ru', 'de': 'one', 'it': 'one', 'tr': 'one', 'pl': 'pl', 'nl': 'one' };
+  var PLURAL = { 'en': 'one', 'es': 'one', 'es-ES': 'one', 'fr': 'fr', 'pt-BR': 'pt', 'pt-PT': 'pt', 'ru': 'ru', 'de': 'one', 'it': 'one', 'tr': 'one', 'pl': 'pl', 'nl': 'one', 'ar': 'ar', 'hi': 'fr', 'hr': 'ru', 'uk': 'ru' };
   var FROM = { 'es-ES': 'es', 'pt-PT': 'pt-BR' };
   // langs:end
   var dicts = {}, pats = {}, cache = {}, cacheN = 0, misses = {}, missN = 0, tv = '', tvAsked = false, listeners = [];
@@ -123,7 +123,8 @@ var I18n = (function () {
 
   /* Plural forms (CLDR), by each language's rule (PLURAL, from i18n/langs.json): the index into a list in the
      dictionary.  one: one/other.  fr and pt: 0 and 1 singular ("0 heure", "1 hora").  ru: one/few/many
-     (1 and 21, 2-4 and 22-24, the rest).  pl: one/few/many (only 1, 2-4 and 22-24 but not 12-14, the rest). */
+     (1 and 21, 2-4 and 22-24, the rest).  pl: one/few/many (only 1, 2-4 and 22-24 but not 12-14, the rest).
+     ar: zero/one/two/few/many/other (0, 1, 2, 3-10 and 103-110, 11-99 and 111-199, the rest: 100, 101, 102). */
   function plural(code, n) {
     n = Math.abs(+String(n).replace(/[^\d.-]/g, '')) || 0;
     var rule = PLURAL[code] || 'one', i = Math.floor(n), m10 = i % 10, m100 = i % 100;
@@ -131,6 +132,7 @@ var I18n = (function () {
     if (rule === 'pl') return i !== n ? 1 : i === 1 ? 0 : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? 1 : 2;
     if (rule === 'pt') return i <= 1 ? 0 : 1;
     if (rule === 'fr') return n < 2 ? 0 : 1;
+    if (rule === 'ar') return i !== n ? 5 : i === 0 ? 0 : i === 1 ? 1 : i === 2 ? 2 : m100 >= 3 && m100 <= 10 ? 3 : m100 >= 11 ? 4 : 5;
     return n === 1 ? 0 : 1;
   }
   function pick(code, v, vars) {
@@ -208,7 +210,16 @@ var I18n = (function () {
     files = map || {};
     var s = {}; try { s = JSON.parse(localStorage.getItem('tivibro.settings') || 'null') || {}; } catch (e) {}
     var d = detected(), l = s.lang && s.lang !== 'auto' && has(s.lang) ? s.lang : d.supported ? d.code : 'en';
+    mark(l);
     [FROM[l], l].forEach(function (c) { if (c && files[c] && !dicts[c]) document.write('<script src="' + files[c] + '"><\/script>'); });
+  }
+  /* Right-to-left languages (Arabic): the page keeps its layout, but each paragraph of text runs its own way
+     (html.rtl in app.css and the editor's page: unicode-bidi plaintext), so Arabic reads right to left and a
+     name in Latin letters stays left to right.  mark() puts the language and that class on <html>. */
+  var RTL = { ar: 1 };
+  function rtl(code) { return !!RTL[String(code || '').split('-')[0]]; }
+  function mark(code) {
+    try { var el = document.documentElement; el.lang = code; el.className = (el.className || '').replace(/(^|\s)rtl(?=\s|$)/g, '').trim() + (rtl(code) ? ' rtl' : ''); } catch (e) {}
   }
   // A language's dictionary (and the one a variant is made from, first), then done().  At once when it's there.
   function load(code, done) {
@@ -255,7 +266,7 @@ var I18n = (function () {
     load(now, function () {
       if (lang() !== now) return;                    // changed again meanwhile: that load tells them
       cache = {}; cacheN = 0;
-      try { document.documentElement.lang = now; } catch (e) {}
+      mark(now);
       listeners.forEach(function (f) { try { f(now); } catch (e) {} });
     });
   }
@@ -339,7 +350,7 @@ var I18n = (function () {
       return false;
     },
     t: t, raw: raw, add: add, lang: lang, locale: locale, set: set, setting: function () { return chosen() || 'auto'; }, detected: detected, base: base,
-    plural: plural, page: page, onChange: onChange, within: within, msg: msg, join: join, say: say, variant: variant, askTV: askTV, name: name, langs: langs, has: has, changed: changed,
+    plural: plural, rtl: rtl, mark: mark, page: page, onChange: onChange, within: within, msg: msg, join: join, say: say, variant: variant, askTV: askTV, name: name, langs: langs, has: has, changed: changed,
     boot: boot, load: load, need: need, use: use, keys: keys, hash: hash,
     misses: function () { return Object.keys(misses); }, _dicts: dicts, _setTV: function (l) { tv = l; changed(); }
   };

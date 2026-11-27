@@ -16,13 +16,15 @@
      one  2 forms: n is 1, else the other (English, Spanish, German, Italian, Dutch, Turkish...)
      fr   2 forms: 0 and 1 (and 1.5) singular (French)
      pt   2 forms: 0 and 1 singular (Portuguese)
-     ru   3 forms: one (1, 21), few (2-4, 22-24), many (5-20, 25...) (Russian, Ukrainian)
-     pl   3 forms: one (only 1), few (2-4, 22-24 but not 12-14), many (the rest) (Polish) */
+     fr   is also Hindi's rule (0 and 1 singular)
+     ru   3 forms: one (1, 21), few (2-4, 22-24), many (5-20, 25...) (Russian, Ukrainian, Croatian)
+     pl   3 forms: one (only 1), few (2-4, 22-24 but not 12-14), many (the rest) (Polish)
+     ar   6 forms: zero (0), one (1), two (2), few (3-10, 103-110...), many (11-99, 111-199...), other (100-102...) (Arabic) */
 'use strict';
 const fs = require('fs'), path = require('path');
 const ROOT = path.join(__dirname, '..');
 const LIST = JSON.parse(fs.readFileSync(path.join(ROOT, 'i18n', 'langs.json'), 'utf8')).langs;
-const PLURALS = { one: 2, fr: 2, pt: 2, ru: 3, pl: 3 };
+const PLURALS = { one: 2, fr: 2, pt: 2, ru: 3, pl: 3, ar: 6 };
 const KT = path.join(ROOT, 'android', 'app', 'src', 'main', 'java', 'app', 'tivibro', 'phone', 'I18n.kt');
 const XML = path.join(ROOT, 'android', 'app', 'src', 'main', 'res', 'xml', 'locales_config.xml');
 

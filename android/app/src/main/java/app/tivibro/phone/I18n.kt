@@ -21,11 +21,11 @@ import java.util.Locale
 object I18n {
     // langs:begin
     /** The languages TiviBro has, as the TV and the web editor name them (i18n/langs.json, by scripts/i18n-langs.js). */
-    val LANGS = listOf("en", "es", "es-ES", "fr", "pt-BR", "pt-PT", "ru", "de", "it", "tr", "pl", "nl")
+    val LANGS = listOf("en", "es", "es-ES", "fr", "pt-BR", "pt-PT", "ru", "de", "it", "tr", "pl", "nl", "ar", "hi", "hr", "uk")
     /** Languages made from another one with their own words swapped (I18n.variant in the files). */
     val VARIANTS = mapOf("es-ES" to "es", "pt-PT" to "pt-BR")
     /** Each one's plural rule (see [plural]). */
-    val PLURAL = mapOf("en" to "one", "es" to "one", "es-ES" to "one", "fr" to "fr", "pt-BR" to "pt", "pt-PT" to "pt", "ru" to "ru", "de" to "one", "it" to "one", "tr" to "one", "pl" to "pl", "nl" to "one")
+    val PLURAL = mapOf("en" to "one", "es" to "one", "es-ES" to "one", "fr" to "fr", "pt-BR" to "pt", "pt-PT" to "pt", "ru" to "ru", "de" to "one", "it" to "one", "tr" to "one", "pl" to "pl", "nl" to "one", "ar" to "ar", "hi" to "fr", "hr" to "ru", "uk" to "ru")
     // langs:end
 
     /** The language in use (a code from [LANGS]). */
@@ -106,6 +106,7 @@ object I18n {
             "pl" -> if (i.toDouble() != x) 1 else if (i == 1L) 0 else if (few) 1 else 2
             "pt" -> if (i <= 1) 0 else 1
             "fr" -> if (x < 2) 0 else 1
+            "ar" -> if (i.toDouble() != x) 5 else if (i == 0L) 0 else if (i == 1L) 1 else if (i == 2L) 2 else if (m100 in 3..10) 3 else if (m100 >= 11) 4 else 5
             else -> if (x == 1.0) 0 else 1
         }
     }

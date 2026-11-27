@@ -134,5 +134,8 @@ const html = fs.readFileSync(path.join(APP, '..', 'index.html'), 'utf8');
 ok('index.html loads no dictionary by itself, only through I18n.boot', !/<script src="js\/lang\/(?!keys)/.test(html) && /I18n\.boot\(\{/.test(html));
 // Polish plural rule: 1, 2-4 and 22-24 (not 12-14), the rest.
 ok('Polish plural forms', [1, 2, 4, 5, 12, 22, 25, 112].map((n) => I.plural('pl', n)).join() === '0,1,1,2,2,1,2,2' || !LANGS.LIST.some((l) => l.code === 'pl'));
+// Arabic: zero, one, two, few (3-10), many (11-99), other (100-102); right to left (html.rtl).
+ok('Arabic plural forms', [0, 1, 2, 3, 10, 11, 99, 100, 102, 103, 111, 1.5].map((n) => I.plural('ar', n)).join() === '0,1,2,3,3,4,4,5,5,3,4,5');
+ok('Arabic reads right to left, the rest left to right', I.rtl('ar') && I.rtl('ar-EG') && !I.rtl('en') && !I.rtl('hi'));
 console.log(fails ? fails + ' failures' : 'all language checks passed');
 process.exit(fails ? 1 : 0);

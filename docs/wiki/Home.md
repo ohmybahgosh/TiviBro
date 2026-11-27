@@ -22,7 +22,7 @@ Welcome to the TiviBro wiki.  It explains every screen and every setting on the 
 
 > TiviBro is in alpha testing on real LG TVs (webOS 4 to 26), with beta next.  Expect some rough edges, and keep a backup before updating.
 
-In 🇺🇸 English, 🇩🇪 German, 🇪🇸 🇲🇽 Spanish, 🇫🇷 French, 🇮🇹 Italian, 🇳🇱 Dutch, 🇵🇱 Polish, 🇧🇷 🇵🇹 Portuguese, 🇷🇺 Russian and 🇹🇷 Turkish ([Language](Language)).
+In 🇺🇸 English, 🇩🇪 German, 🇪🇸 🇲🇽 Spanish, 🇫🇷 French, 🇮🇹 Italian, 🇳🇱 Dutch, 🇵🇱 Polish, 🇧🇷 🇵🇹 Portuguese, 🇷🇺 Russian, 🇹🇷 Turkish, 🇺🇦 Ukrainian, 🇭🇷 Croatian, 🇮🇳 Hindi and 🇸🇦 Arabic ([Language](Language)).
 
 ## Start here
 

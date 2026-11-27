@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Four more languages: Arabic, Hindi, Croatian and Ukrainian.**  On the TV, the phone app, the web editor and tivibro.app.  Arabic text reads right to left; the TV's layout stays as it is.
+
 ## 0.6.0 (alpha 229, 2026-11-27)
 
 Pre-release: expect rough edges, and keep a backup before installing.

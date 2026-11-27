@@ -12,6 +12,9 @@
   --row:76px; --grow:80px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
+/* Arabic (html.rtl, I18n.mark): the layout stays, but each paragraph of text runs its own way, so Arabic reads
+   right to left from the right edge, and a channel or title in Latin letters stays left to right. */
+html.rtl *{unicode-bidi:plaintext}
 html,body{width:1920px;height:1080px;overflow:hidden;background:var(--ink);color:var(--text);
   font-family:"LG Smart UI","LG Smart_UI","Museo Sans","TiviBro Symbols",Roboto,"Segoe UI",sans-serif;font-size:26px;line-height:1.3}
 .hidden{display:none!important}

@@ -60,7 +60,7 @@ English is the key: each language's dictionaries map an English text to its tran
 
 `npm run i18n` shows how far each language is.
 
-**A new language:** `node scripts/i18n-add-lang.js de Deutsch German one` (its code, its own name, its English name, its plural rule: `one`, `fr`, `pt`, `ru` or `pl`; `--from es` for a variant).  It adds it to `i18n/langs.json`, the one list of languages, and `scripts/i18n-langs.js` writes that list into the TV app, the web editor and the phone app.  Then fill it as above.
+**A new language:** `node scripts/i18n-add-lang.js de Deutsch German one` (its code, its own name, its English name, its plural rule: `one`, `fr`, `pt`, `ru`, `pl` or `ar`; `--from es` for a variant).  It adds it to `i18n/langs.json`, the one list of languages, and `scripts/i18n-langs.js` writes that list into the TV app, the web editor and the phone app.  Then fill it as above.
 
 **Words that stay the same:** `i18n/glossary.json` lists TiviBro's own words (Guide, Catch-up, Send to TV...).  Each language's word for one is whatever its dictionary says, the todo file puts the ones a language lacks first, and every text gets the words it uses, so a term is translated the same way everywhere.
 

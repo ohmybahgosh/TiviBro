@@ -60,7 +60,7 @@ Yes, since alpha 229: **Settings > Plex > Sign in to Plex** shows a code for ple
 No.  Without one, movies and shows get their details from TheTVDB through TiviBro's own service.  With your own free TMDB token you can choose TMDB instead, for movies and shows on their own.  See [No TMDB token? TheTVDB](No-TMDB-token-TheTVDB).
 
 **Which languages is it in?**
-🇺🇸 English, 🇩🇪 German, 🇪🇸 🇲🇽 Spanish, 🇫🇷 French, 🇮🇹 Italian, 🇳🇱 Dutch, 🇵🇱 Polish, 🇧🇷 🇵🇹 Portuguese, 🇷🇺 Russian and 🇹🇷 Turkish, on the TV, the phone app and the web editor.  See [Language](Language).
+🇺🇸 English, 🇩🇪 German, 🇪🇸 🇲🇽 Spanish, 🇫🇷 French, 🇮🇹 Italian, 🇳🇱 Dutch, 🇵🇱 Polish, 🇧🇷 🇵🇹 Portuguese, 🇷🇺 Russian, 🇹🇷 Turkish, 🇺🇦 Ukrainian, 🇭🇷 Croatian, 🇮🇳 Hindi and 🇸🇦 Arabic, on the TV, the phone app and the web editor.  See [Language](Language).
 
 **Something else?**
 Try [Troubleshooting](Troubleshooting), or open an [issue](https://github.com/ohmybahgosh/TiviBro/issues) with a copy of **Settings > System > View app log** (it hides usernames and passwords).

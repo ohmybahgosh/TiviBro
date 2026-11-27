@@ -15,9 +15,18 @@ const lang = (code) => LIST.filter((l) => l.code === code)[0];
 // The plural forms a list has in this language, and what each is for.
 function forms(code) {
   const n = PLURALS[lang(code).plural];
+  if (n === 6) return { n, names: ['zero (0)', 'one (1)', 'two (2)', 'few (3-10, 103-110...)', 'many (11-99, 111-199...)', 'other (100, 101, 102...)'] };
   return { n, names: n === 3 ? ['one (1, 21, 31...)', 'few (2-4, 22-24...)', 'many (5-20, 25-30...)'] : lang(code).plural === 'one' ? ['one (exactly 1)', 'other'] : ['one (0 and 1)', 'other'] };
 }
 
+/* How a language is written, for whoever translates it (i18n-todo.js rules, the site's fill): what the plain
+   rules don't settle, such as which Arabic, Hindi's English loanwords, or digits. */
+const STYLE = {
+  ar: 'Modern Standard Arabic, plain and short, as Arabic TV and phone apps write it (readers are in Egypt, Algeria, Tunisia, the Gulf).  Western digits (0-9).  Arabic punctuation (\u060c \u061f) where a sentence needs it.  Names in Latin letters stay in Latin letters.',
+  hi: 'Everyday Hindi in Devanagari, as Indian apps write it: common tech words people say in English (app, server, Wi-Fi, playlist, login) may stay as they are said, in Devanagari, rather than a formal Sanskrit word nobody uses.  Western digits (0-9).',
+  hr: 'Standard Croatian (not Serbian), Latin script.',
+  uk: 'Standard Ukrainian (not Russian words), Cyrillic.'
+};
 // Every English text a part shows: { text: [where...] }, as its own check script finds them.
 function found(part) {
   const script = part === 'tv' ? 'i18n-check.js' : 'i18n-companion.js';
@@ -108,4 +117,4 @@ function importAll(code, got, replace) {
   return { tv: write('tv', code, toTv), ed: variant ? 0 : write('ed', code, toEd), bad, unknown };
 }
 
-module.exports = { importAll,  ROOT, LIST, lang, forms, found, dict, problem, write, glossary, termsIn, GLOSSARY, FILES };
+module.exports = { STYLE, importAll,  ROOT, LIST, lang, forms, found, dict, problem, write, glossary, termsIn, GLOSSARY, FILES };

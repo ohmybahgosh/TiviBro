@@ -65,7 +65,7 @@ console.log(JSON.stringify({
     'Keep the English punctuation style: two spaces after a sentence\'s full stop where the English has two.  Never an em dash.',
     'A text that starts or ends with a space or a punctuation mark is a piece of a longer sentence: keep that space or mark.',
     'Answer with one JSON object: { "English text": "translation", "Text with {n}": ["form", "form"] }.'
-  ],
+  ].concat(L.STYLE[code] ? [L.STYLE[code]] : []),
   items: list
 }, null, 1));
 console.error(list.length + ' texts to translate into ' + lg.english);

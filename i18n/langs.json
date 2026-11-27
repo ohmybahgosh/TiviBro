@@ -12,6 +12,10 @@
     { "code": "it", "name": "Italiano", "english": "Italian", "plural": "one" },
     { "code": "tr", "name": "Türkçe", "english": "Turkish", "plural": "one" },
     { "code": "pl", "name": "Polski", "english": "Polish", "plural": "pl" },
-    { "code": "nl", "name": "Nederlands", "english": "Dutch", "plural": "one" }
+    { "code": "nl", "name": "Nederlands", "english": "Dutch", "plural": "one" },
+    { "code": "ar", "name": "العربية", "english": "Arabic", "plural": "ar" },
+    { "code": "hi", "name": "हिन्दी", "english": "Hindi", "plural": "fr" },
+    { "code": "hr", "name": "Hrvatski", "english": "Croatian", "plural": "ru" },
+    { "code": "uk", "name": "Українська", "english": "Ukrainian", "plural": "ru" }
   ]
 }

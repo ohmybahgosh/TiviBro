@@ -43,6 +43,8 @@ class I18nTest {
         assertEquals(0, I18n.plural("ru", 1)); assertEquals(0, I18n.plural("ru", 21))
         assertEquals(1, I18n.plural("ru", 3)); assertEquals(2, I18n.plural("ru", 11)); assertEquals(2, I18n.plural("ru", 5))
         assertEquals(0, I18n.plural("fr", 0)); assertEquals(0, I18n.plural("pt-BR", 1)); assertEquals(1, I18n.plural("es", 0))
+        assertEquals(0, I18n.plural("ar", 0)); assertEquals(2, I18n.plural("ar", 2)); assertEquals(3, I18n.plural("ar", 10))
+        assertEquals(4, I18n.plural("ar", 11)); assertEquals(5, I18n.plural("ar", 100)); assertEquals(3, I18n.plural("ar", 103))
         I18n.use("ru", read)
         assertEquals("21 изменение", trn(21, "{n} change", "{n} changes"))
         assertEquals("3 изменения", trn(3, "{n} change", "{n} changes"))

@@ -26,7 +26,7 @@ j.langs.push(Object.assign({ code, name, english, plural }, from ? { from } : {}
 fs.writeFileSync(FILE, '{\n  "_about": ' + JSON.stringify(j._about) + ',\n  "langs": [\n' + j.langs.map((l) => '    ' + JSON.stringify(l).replace(/,"/g, ', "').replace(/":/g, '": ').replace(/^\{/, '{ ').replace(/\}$/, ' }')).join(',\n') + '\n  ]\n}\n');
 
 // The dictionaries, empty.  A variant starts with its word swaps (I18n.variant) instead.
-const forms = PLURALS[plural] === 3 ? '[one, few, many]' : '[one, other]';
+const forms = PLURALS[plural] === 6 ? '[zero, one, two, few, many, other]' : PLURALS[plural] === 3 ? '[one, few, many]' : '[one, other]';
 function start(file, text) { if (fs.existsSync(file)) return console.log('kept ' + path.relative(ROOT, file)); fs.writeFileSync(file, text); console.log('wrote ' + path.relative(ROOT, file)); }
 if (from) {
   start(path.join(ROOT, 'app', 'js', 'lang', code + '.js'), '/* ' + name + ': ' + english + ', made from ' + from + ' (lang/' + from + '.js) with these words swapped (whole words, a capital kept),\n' +

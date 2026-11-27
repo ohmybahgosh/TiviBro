@@ -6,6 +6,8 @@
 <title>TiviBro Editor</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <style>
+/* Arabic (html.rtl, I18n.mark): the layout stays, each paragraph of text runs its own way (right to left for Arabic). */
+html.rtl *{unicode-bidi:plaintext}
 :root{/* Midnight Electric */--ink:#0b0e1a;--side:#080b16;--panel:#141a2e;--panel2:#18203a;--raised:#1d2540;--line:#2a3352;--text:#e8ecf8;--muted:#8f9bbf;--dim:#5e6886;
   --accent:#5b8cff;--accent-ink:#0b0e1a;--accent2:#33e1ff;--accbg:#16224a;--accline:#2c3f7a;--warn:#f2b33d;--air:#e5484d;--ok:#3ddc97;--okbg:#12352a;--warnbg:#2a2412;--warnline:#5a4a1c;--badbg:#3a1d20;--info:#5b8cff;--infobg:#141c34;--infoline:#2c3f7a;--r:12px}
   /* One scheme, the TV's (app/css/app.css): the accent (blue) for buttons, links, selected things and
@@ -493,7 +495,7 @@ var Store = { settings: { lang: (function () {
 })() }, saveSettings: function () { try { localStorage.setItem('tivibro.editor.lang', JSON.stringify(Store.settings.lang)); } catch (e) {} } };
 (function () {
   var l = I18n.lang();
-  document.documentElement.lang = l;
+  I18n.mark(l);                                    // <html lang>, and class rtl for Arabic
   if (l === 'en') return;
   // langs:begin: the variants and what they're made from (i18n/langs.json, scripts/i18n-langs.js)
   var from = { 'es-ES': 'es', 'pt-PT': 'pt-BR' }[l];

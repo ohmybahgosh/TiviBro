@@ -25,7 +25,11 @@ const LANGS = [
   { code: 'pl', dir: 'pl', flag: '🇵🇱', name: 'Polski', english: 'Polish' },
   { code: 'pt-BR', dir: 'pt', flag: '🇧🇷', name: 'Português', english: 'Portuguese (Brazil)' },
   { code: 'ru', dir: 'ru', flag: '🇷🇺', name: 'Русский', english: 'Russian' },
-  { code: 'tr', dir: 'tr', flag: '🇹🇷', name: 'Türkçe', english: 'Turkish' }
+  { code: 'tr', dir: 'tr', flag: '🇹🇷', name: 'Türkçe', english: 'Turkish' },
+  { code: 'uk', dir: 'uk', flag: '🇺🇦', name: 'Українська', english: 'Ukrainian' },
+  { code: 'hr', dir: 'hr', flag: '🇭🇷', name: 'Hrvatski', english: 'Croatian' },
+  { code: 'hi', dir: 'hi', flag: '🇮🇳', name: 'हिन्दी', english: 'Hindi' },
+  { code: 'ar', dir: 'ar', flag: '🇸🇦', name: 'العربية', english: 'Arabic', rtl: true }
 ];
 const EN = { code: 'en', dir: '', flag: '🇺🇸', name: 'English' };
 const ORIGIN = 'https://tivibro.app';
@@ -168,7 +172,7 @@ function translatePage(html, page, lang, dict) {
     html = html.replace(ATTRS, (all, a, v) => { const tv = t(norm(v)); return tv ? ' ' + a + '="' + tv + '"' : all; })
       .replace(/<title>([^<]*)<\/title>/, (all, v) => { const tv = t(norm(v)); return tv ? '<title>' + tv + '</title>' : all; })
       .replace(/(<meta (?:name|property)="(?:description|og:title|og:description|twitter:title|twitter:description)" content=")([^"]*)"/g, (all, a, v) => { const tv = t(norm(v)); return tv ? a + tv + '"' : all; })
-      .replace(/<html lang="en"/, '<html lang="' + lang.code + '"')
+      .replace(/<html lang="en"/, '<html lang="' + lang.code + '"' + (lang.rtl ? ' dir="rtl"' : ''))
       // Links to translated pages stay in the language; everything else (images, videos, the repo) is shared.
       .replace(/(href=")\/([^"#?]*)/g, (all, a, p) => {
         const target = (p === '' ? 'index.html' : p.replace(/\/$/, '/index.html'));
