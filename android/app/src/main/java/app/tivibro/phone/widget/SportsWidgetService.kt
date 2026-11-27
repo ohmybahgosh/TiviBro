@@ -63,7 +63,20 @@ private sealed class Item(val key: String) {
     object Back : Item("back")
 }
 
-private class Rows(private val ctx: Context, private val widget: Int) : RemoteViewsService.RemoteViewsFactory {
+/* The rows as one whole set, for Android 12 and later (RemoteCollectionItems): the widget hands the launcher every row,
+   logos inside, on each update.  The Pixel launcher (Android 17) never re-read a row's picture when a factory row was
+   reused, by any means (bitmap, icon or address), so every game's card kept the first Spotlight's logos; whole rows
+   handed over each time carry their own pictures. */
+@androidx.annotation.RequiresApi(31)
+internal fun sportsRows(ctx: Context, widget: Int): RemoteViews.RemoteCollectionItems {
+    val rows = Rows(ctx, widget, inline = true).also { it.onDataSetChanged() }
+    val b = RemoteViews.RemoteCollectionItems.Builder().setHasStableIds(true).setViewTypeCount(rows.viewTypeCount)
+    for (i in 0 until rows.count) b.addItem(rows.getItemId(i), rows.getViewAt(i))
+    return b.build()
+}
+
+/** The list's rows.  [inline]: logos go in as pictures (whole rows, Android 12+), else by address (LogoProvider). */
+private class Rows(private val ctx: Context, private val widget: Int, private val inline: Boolean = false) : RemoteViewsService.RemoteViewsFactory {
     private var items: List<Item> = emptyList()
     private var spot: Set<String> = emptySet()
     private var chans: Map<String, String> = emptyMap()
@@ -189,12 +202,12 @@ private class Rows(private val ctx: Context, private val widget: Int) : RemoteVi
 
     // The big one.
     private fun spotlight(g: WGame): RemoteViews =
-        RemoteViews(ctx.packageName, R.layout.widget_sports_spot).also { SpotDraw.fill(ctx, it, SpotDraw.LIST, g, channel(g)) }
+        RemoteViews(ctx.packageName, R.layout.widget_sports_spot).also { SpotDraw.fill(ctx, it, SpotDraw.LIST, g, channel(g), inline) }
 
     // One line.
     private fun line(g: WGame): RemoteViews {
         val v = RemoteViews(ctx.packageName, R.layout.widget_sports_row)
-        SpotDraw.logo(ctx, v, R.id.swr_logo, g.mine)
+        SpotDraw.logo(ctx, v, R.id.swr_logo, g.mine, inline)
         val ms = g.mine.score; val os = g.other.score
         val title: CharSequence = if (g.state == "post" && ms != null && os != null) {
             val s = SpannableString("${g.mine.name} $ms  ·  ${g.other.name} $os")
@@ -234,7 +247,7 @@ object SpotDraw {
     val LIST = Ids(R.id.sp_root, R.id.sp_stripe_away, R.id.sp_stripe_home, R.id.sp_league, R.id.sp_pill, R.id.sp_away_logo, R.id.sp_home_logo,
         R.id.sp_away_name, R.id.sp_home_name, R.id.sp_away_score, R.id.sp_home_score, R.id.sp_mid, R.id.sp_state, R.id.sp_sit, R.id.sp_watch)
 
-    fun fill(ctx: Context, v: RemoteViews, i: Ids, g: WGame, chan: String) {
+    fun fill(ctx: Context, v: RemoteViews, i: Ids, g: WGame, chan: String, inline: Boolean = false) {
         val awayC = TeamColors.team(g.away.color, g.away.alt); val homeC = TeamColors.team(g.home.color, g.home.alt)
         val mineC = if (g.home.mine) homeC else awayC
         if (Build.VERSION.SDK_INT >= 31) {
@@ -250,7 +263,7 @@ object SpotDraw {
         val post = g.state == "post"
         v.setTextViewText(i.pill, (if (g.live) tr("Live") else if (post) tr("Final") else tr("Next")).uppercase())
         if (Build.VERSION.SDK_INT >= 31) v.setColorStateList(i.pill, "setBackgroundTintList", ColorStateList.valueOf(if (g.live) 0xFFE5484D.toInt() else if (post) 0xFF3A4566.toInt() else 0xFF5B8CFF.toInt()))
-        logo(ctx, v, i.awayLogo, g.away); logo(ctx, v, i.homeLogo, g.home)
+        logo(ctx, v, i.awayLogo, g.away, inline); logo(ctx, v, i.homeLogo, g.home, inline)
         v.setTextViewText(i.awayName, name(g.away)); v.setTextViewText(i.homeName, name(g.home))
         if (g.state != "pre") {
             val a = g.away.score?.toIntOrNull(); val h = g.home.score?.toIntOrNull()
@@ -277,10 +290,16 @@ object SpotDraw {
 
     private fun name(t: WTeam): CharSequence = SpannableString(t.name.ifBlank { t.abbr }).also { if (t.mine) it.setSpan(StyleSpan(Typeface.BOLD), 0, it.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) }
 
-    /** A team's logo kept on the phone (SportsWidgetWorker), by its address (LogoProvider), or TiviBro's mark. */
-    fun logo(ctx: Context, v: RemoteViews, id: Int, t: WTeam) {
+    /** A team's logo kept on the phone (SportsWidgetWorker): as a picture ([inline], whole rows) or by its address
+        (LogoProvider), or TiviBro's mark when there's none. */
+    fun logo(ctx: Context, v: RemoteViews, id: Int, t: WTeam, inline: Boolean = false) {
         val f = if (t.logo.startsWith("https://")) SportsWidgetWorker.file(ctx, t.logo) else null
-        if (f != null && f.exists()) v.setImageViewUri(id, LogoProvider.uri(f)) else v.setImageViewResource(id, R.drawable.ic_tile)
+        val bmp = if (inline && f != null && f.exists()) android.graphics.BitmapFactory.decodeFile(f.path) else null
+        when {
+            bmp != null -> v.setImageViewBitmap(id, bmp)
+            !inline && f != null && f.exists() -> v.setImageViewUri(id, LogoProvider.uri(f))
+            else -> v.setImageViewResource(id, R.drawable.ic_tile)
+        }
     }
 
     /** When a game starts: "3:30 PM" today ([short]) or "Today 3:30 PM", "Fri 3:00 PM" this week. */

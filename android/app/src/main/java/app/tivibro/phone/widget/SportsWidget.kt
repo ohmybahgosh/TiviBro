@@ -98,7 +98,8 @@ class SportsWidget : AppWidgetProvider() {
             val ids = wm.getAppWidgetIds(ComponentName(ctx, SportsWidget::class.java))
             // One widget that fails to draw (logged) mustn't keep the others, or the list, from updating.
             ids.forEach { id -> runCatching { draw(ctx, wm, id) }.onFailure { android.util.Log.w("TiviBroWidget", "Sports widget $id: ${it.message}") } }
-            @Suppress("DEPRECATION") wm.notifyAppWidgetViewDataChanged(ids, R.id.sw_list)
+            // Android 12+ draws carry the whole list; older ones ask SportsWidgetService again.
+            if (android.os.Build.VERSION.SDK_INT < 31) @Suppress("DEPRECATION") wm.notifyAppWidgetViewDataChanged(ids, R.id.sw_list)
         }
 
         internal fun draw(ctx: Context, wm: AppWidgetManager, id: Int) {
@@ -117,10 +118,14 @@ class SportsWidget : AppWidgetProvider() {
                 at == 0L -> tr("Getting the scores…")
                 else -> tr("No games this week")
             })
-            // The list: one row per game, from SportsWidgetService.  Its own URI per widget, so each keeps its own list.
-            val svc = Intent(ctx, SportsWidgetService::class.java).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
-            svc.data = Uri.parse(svc.toUri(Intent.URI_INTENT_SCHEME))
-            @Suppress("DEPRECATION") v.setRemoteAdapter(R.id.sw_list, svc)
+            // The list: Android 12+ gets every row whole (sportsRows, logos inside); older ones ask SportsWidgetService,
+            // with its own URI per widget so each keeps its own list.
+            if (android.os.Build.VERSION.SDK_INT >= 31) v.setRemoteAdapter(R.id.sw_list, sportsRows(ctx, id))
+            else {
+                val svc = Intent(ctx, SportsWidgetService::class.java).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
+                svc.data = Uri.parse(svc.toUri(Intent.URI_INTENT_SCHEME))
+                @Suppress("DEPRECATION") v.setRemoteAdapter(R.id.sw_list, svc)
+            }
             v.setEmptyView(R.id.sw_list, R.id.sw_empty)
             // One per widget (its id in it), so a game opens in the widget it was tapped in.
             v.setPendingIntentTemplate(R.id.sw_list, PendingIntent.getBroadcast(ctx, 2000 + id, Intent(ctx, WidgetTaps::class.java).setAction(PLAY).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id),

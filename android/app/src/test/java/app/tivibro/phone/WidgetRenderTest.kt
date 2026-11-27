@@ -108,4 +108,23 @@ class WidgetRenderTest {
         f.getViewAt(0).reapply(ctx, first)
         assertEquals(Color.BLUE, colourOf(first.findViewById(R.id.sp_away_logo)))
     }
+
+    // Android 12+: the whole list handed over at once (sportsRows), each card's head with its own game's logos, as
+    // pictures: the Pixel launcher never re-read a reused row's picture.  Both games' cards, not just one.
+    @Test @Config(sdk = [33]) fun wholeRowsCarryEachCardsOwnLogos() {
+        val id = widget()
+        val parent = FrameLayout(ctx)
+        for ((game, away, home) in listOf(Triple(msu, Color.RED, Color.GREEN), Triple(wings, Color.BLUE, Color.YELLOW))) {
+            DetailOpen.open(ctx, id, game.id)
+            val rows = app.tivibro.phone.widget.sportsRows(ctx, id)
+            assertTrue(text(rows.getItemView(0).apply(ctx, parent), R.id.sh_text).contains("All my teams"))
+            val head = rows.getItemView(1).apply(ctx, parent)
+            assertEquals(game.away.name, text(head, R.id.sp_away_name))
+            assertEquals(away, colourOf(head.findViewById(R.id.sp_away_logo)))
+            assertEquals(home, colourOf(head.findViewById(R.id.sp_home_logo)))
+        }
+        DetailOpen.close(ctx, id)
+        val list = app.tivibro.phone.widget.sportsRows(ctx, id)
+        assertEquals(Color.RED, colourOf(list.getItemView(0).apply(ctx, parent).findViewById(R.id.sp_away_logo)))
+    }
 }
