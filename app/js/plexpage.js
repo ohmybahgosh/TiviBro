@@ -21,15 +21,27 @@ var PlexPage = (function () {
   function clock(ms) { var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ':' + (m < 10 ? '0' : '') : '') + m + ':' + (x < 10 ? '0' : '') + x; }
 
   /* ---------- The page ---------- */
-  /* Opens a movie or an episode: its full details read first (markers, chapters, extras, related, every version). */
-  function open(m, onBack) {
-    back = onBack; item = m;
-    U.toast(T('Opening {x}…', { x: m.title }));
-    Plex.call(m.server, '/library/metadata/' + m.ratingKey + '?includeMarkers=1&includeChapters=1&includeExtras=1&includeRelated=1&includeGuids=1').then(function (j) {
+  /* A page, as in Plex: a movie, an episode, a show or a season.  Its full details first (markers, chapters, extras,
+     related, every version; a show's next episode), then its rows (Cast and crew, Seasons or Episodes, More like
+     this, the collection's other titles, Extras).  A title opened from a row comes back here with Back (hist). */
+  var hist = [], shelf = null, zone = 'btns';
+  function open(m, onBack) { back = onBack; hist = []; show(m); }
+  function show(m) {
+    item = m; btnAt = 0; zone = 'btns'; shelf = null;
+    var q = m.type === 'show' ? '?includeExtras=1&includeRelated=1&includeOnDeck=1&includeGuids=1' : m.type === 'season' ? '' :
+      '?includeMarkers=1&includeChapters=1&includeExtras=1&includeRelated=1&includeGuids=1';
+    Plex.call(m.server, '/library/metadata/' + m.ratingKey + q).then(function (j) {
       var full = (mc(j).Metadata || [])[0]; if (!full || item !== m) return;
       full.server = m.server; item = full; draw(); UI.setHandler(keys);
+      rowsFor(full).then(function (rows) {
+        if (item !== full) return;
+        var el = $('plexPageRows'); if (!el || !rows.length) return;
+        shelf = PlexShelf.make(el, full.server, rows);
+      });
     }, function (e) { U.toast(e.message, 6000); });
   }
+  // From inside the page: another title (from a row), Back returns here.
+  function openFrom(m) { hist.push(item); m.server = m.server || item.server; show(m); }
   // The badges a version earns: 4K, HDR or Dolby Vision, Atmos, the sound's channels.
   function badges(media) {
     var v = media || {}, out = [];
@@ -42,42 +54,88 @@ var PlexPage = (function () {
     return out;
   }
   function streamsOf(media, type) { var p = media && media.Part && media.Part[0]; return ((p && p.Stream) || []).filter(function (s) { return s.streamType === type; }); }
-  function version() { var list = item.Media || []; return list[Math.min(versionOf[item.ratingKey] || 0, list.length - 1)] || {}; }
-  // Draws the page over the Plex tab: the top, the buttons, then Cast and More like this.
+  function version(m) { m = m || item; var list = m.Media || []; return list[Math.min(versionOf[m.ratingKey] || 0, list.length - 1)] || {}; }
+  function facts(m) {
+    var ep = m.type === 'episode';
+    if (m.type === 'show') return [m.year, m.contentRating, m.childCount ? count(m.childCount, T('1 season'), '{n} seasons') : '', m.leafCount ? count(m.leafCount, T('1 episode'), '{n} episodes') : '', m.studio].filter(Boolean).join('  ·  ');
+    if (m.type === 'season') return [m.parentTitle, m.leafCount ? T('{n} episodes', { n: m.leafCount }) : ''].filter(Boolean).join('  ·  ');
+    return [ep ? 'S' + m.parentIndex + ' · E' + m.index : '', m.year, m.contentRating, mins(m.duration) ? T('{n} min', { n: mins(m.duration) }) : '', m.duration ? T('Ends {x}', { x: U.hhmm ? U.hhmm(Date.now() + (m.duration - (m.viewOffset || 0))) : '' }) : ''].filter(Boolean).join('  ·  ');
+  }
+  // Draws the page over the Plex tab: the backdrop (fixed), and a part that scrolls: the top, the buttons, the rows.
   function draw() {
     var el = $('plexPage');
     if (!el) { el = U.el('div', 'plex-page'); el.id = 'plexPage'; $('viewPlex').appendChild(el); }
     el.classList.remove('hidden');
-    var m = item, ep = m.type === 'episode', v = version();
-    var facts = [ep ? 'S' + m.parentIndex + ' · E' + m.index : '', m.year, m.contentRating, mins(m.duration) ? T('{n} min', { n: mins(m.duration) }) : '', m.duration ? T('Ends {x}', { x: U.hhmm ? U.hhmm(Date.now() + (m.duration - (m.viewOffset || 0))) : '' }) : ''].filter(Boolean).join('  ·  ');
+    var m = item, ep = m.type === 'episode', v = version(), plays = /^(movie|episode)$/.test(m.type);
     var scores = (m.rating ? '<span class="plex-score">' + esc(T('Critics {x}', { x: Math.round(m.rating * 10) + '%' })) + '</span>' : '') + (m.audienceRating ? '<span class="plex-score">' + esc(T('Audience {x}', { x: Math.round(m.audienceRating * 10) + '%' })) + '</span>' : '');
-    var people = ((m.Director || []).slice(0, 1).map(function (d) { return T('Directed by {x}', { x: d.tag }); }).concat((m.Role || []).slice(0, 3).map(function (r) { return r.tag; }))).join('  ·  ');
+    var people = ((m.Director || []).slice(0, 1).map(function (d) { return T('Directed by {x}', { x: d.tag }); }).concat((m.Genre || []).slice(0, 3).map(function (g) { return g.tag; }))).join('  ·  ');
     btns = buttons();
+    var kicker = ep ? m.grandparentTitle : m.type === 'season' ? m.parentTitle : (m.librarySectionTitle || 'Plex');
     el.innerHTML = '<div class="plex-bg" id="plexPageBg"></div><div class="media-bd"><img class="media-hero-art" id="plexPageArt" alt=""></div><div class="plex-shade"></div>' +
-      '<div class="plex-page-top"><div class="media-kicker" id="plexPageKicker">' + esc(ep ? m.grandparentTitle : (m.librarySectionTitle || 'Plex')) + '</div>' +
-      '<div class="media-title" id="plexPageName">' + esc(m.title) + '</div><div class="media-facts">' + esc(facts) + '</div>' +
-      '<div class="plex-badges">' + badges(v).map(function (b) { return '<span class="plex-badge">' + esc(b) + '</span>'; }).join('') + scores + '</div>' +
-      '<div class="media-summary plex-summary">' + esc(m.summary || '') + '</div><div class="plex-people">' + esc(people) + '</div></div>' +
-      '<div class="plex-btns">' + btns.map(function (b, i) { return '<div class="plex-btn' + (i === btnAt ? ' sel' : '') + (b.main ? ' main' : '') + '">' + esc(b.label) + '</div>'; }).join('') + '</div>' +
-      '<div class="plex-page-track">' + track() + '</div>';
-    var path = m.art || m.grandparentArt || m.thumb;
+      '<div class="plex-page-scroll" id="plexPageScroll"><div class="plex-page-top"><div class="media-kicker" id="plexPageKicker">' + esc(kicker) + '</div>' +
+      '<div class="media-title" id="plexPageName">' + esc(m.title) + '</div><div class="media-facts">' + esc(facts(m)) + '</div>' +
+      '<div class="plex-badges">' + (plays ? badges(v).map(function (b) { return '<span class="plex-badge">' + esc(b) + '</span>'; }).join('') : '') + scores + '</div>' +
+      '<div class="media-summary plex-summary">' + esc(m.summary || (m.type === 'season' ? '' : '')) + '</div><div class="plex-people">' + esc(people) + '</div></div>' +
+      '<div class="plex-btns" id="plexPageBtns">' + btns.map(function (b, i) { return '<div class="plex-btn' + (i === btnAt ? ' sel' : '') + (b.main ? ' main' : '') + '">' + esc(b.label) + '</div>'; }).join('') + '</div>' +
+      '<div class="plex-page-track">' + (plays ? track() : '') + '</div><div class="plex-page-rows" id="plexPageRows"></div></div>';
+    var path = m.art || m.grandparentArt || m.parentArt || m.thumb;
     PlexView.picture(m.server, path, 1500, 844).then(function (u) { var a = $('plexPageArt'); if (u && a && item === m) { a.onload = function () { a.style.opacity = 1; }; a.src = u; } });
     PlexView.picture(m.server, path, 480, 270, '&blur=36').then(function (u) { var b = $('plexPageBg'); if (u && b && item === m) { b.style.backgroundImage = 'url("' + u + '")'; b.style.opacity = 1; } });
     logo(m);
   }
-  /* The title logo (Plex's clearLogo) in place of the name: a movie's own, an episode's show's in place of the
-     show's name above the episode's. */
+  // "1 season" or "6 seasons" (English has no plural forms in the dictionaries).
+  function count(n, one, many) { return n === 1 ? one : T(many, { n: n }); }
+  // A key moved the focus: the ring on the button, or the rows scrolled up into view (no redraw of the page).
+  function paint() {
+    var b = $('plexPageBtns'), sc = $('plexPageScroll');
+    if (b) [].forEach.call(b.children, function (x, i) { x.classList.toggle('sel', zone === 'btns' && i === btnAt); });
+    if (sc) sc.style.transform = 'translateY(' + (zone === 'rows' && shelf ? -(SCROLL_TOP + shelf.scroll()) : 0) + 'px)';
+    var pg = $('plexPage'); if (pg) pg.classList.toggle('rows', zone === 'rows');   // the art dims behind the rows, as on Plex
+    if (shelf) shelf.paint(zone === 'rows');
+  }
+  var SCROLL_TOP = 770;
+  /* The page's rows, read when it opens.  A movie: Cast and crew, Extras, each collection it's in, More like this.
+     An episode: the rest of its season, Cast and crew.  A show: Seasons, Cast and crew, Extras, More like this.  A
+     season: its Episodes. */
+  function rowsFor(m) {
+    var out = [], jobs = [], people = (m.Director || []).map(function (d) { return { tag: d.tag, job: T('Director'), thumb: d.thumb, id: d.id, kind: 'director' }; })
+      .concat((m.Role || []).map(function (r) { return { tag: r.tag, role: r.role, thumb: r.thumb, id: r.id, kind: 'actor' }; })).slice(0, 30);
+    var related = ((m.Related && m.Related.Hub) || []).filter(function (h) { return (h.Metadata || []).length; });
+    var extras = ((m.Extras && m.Extras.Metadata) || []);
+    if (m.type === 'season' || m.type === 'show') jobs.push(Plex.call(m.server, '/library/metadata/' + m.ratingKey + '/children').then(function (j) {
+      var kids = mc(j).Metadata || []; if (kids.length) out.push({ order: 0, title: m.type === 'show' ? T('Seasons') : T('Episodes'), kind: m.type === 'show' ? 'poster' : 'wide', items: kids });
+    }, function () {}));
+    if (m.type === 'episode' && m.parentRatingKey) jobs.push(Plex.call(m.server, '/library/metadata/' + m.parentRatingKey + '/children').then(function (j) {
+      var kids = mc(j).Metadata || []; if (kids.length > 1) out.push({ order: 0, title: m.parentTitle || T('Season {n}', { n: m.parentIndex }), kind: 'wide', items: kids });
+    }, function () {}));
+    if (people.length) out.push({ order: 1, title: T('Cast and crew'), kind: 'person', items: people });
+    if (extras.length) out.push({ order: 2, title: T('Extras'), kind: 'wide', items: extras });
+    (m.Collection || []).slice(0, 3).forEach(function (c, n) {
+      if (!c.id) return;
+      jobs.push(Plex.call(m.server, '/library/collections/' + c.id + '/children').then(function (j) {
+        var kids = (mc(j).Metadata || []).filter(function (x) { return String(x.ratingKey) !== String(m.ratingKey); });
+        if (kids.length) out.push({ order: 3 + n / 10, title: T('More in {x}', { x: c.tag }), kind: 'poster', items: kids });
+      }, function () {}));
+    });
+    related.slice(0, 3).forEach(function (h, n) { out.push({ order: 4 + n / 10, title: h.title || T('More like this'), kind: 'poster', items: h.Metadata }); });
+    if (!related.length && /^(movie|show)$/.test(m.type)) jobs.push(Plex.call(m.server, '/library/metadata/' + m.ratingKey + '/similar').then(function (j) {
+      var kids = mc(j).Metadata || []; if (kids.length) out.push({ order: 4, title: T('More like this'), kind: 'poster', items: kids });
+    }, function () {}));
+    return Promise.all(jobs).then(function () { out.sort(function (a, b) { return a.order - b.order; }); out.forEach(function (r) { r.items.forEach(function (x) { x.server = x.server || m.server; }); }); return out; });
+  }
+  /* The title logo (Plex's clearLogo) in place of the name: a movie's or a show's own; an episode's or a season's
+     show's in place of the show's name above. */
   function logo(m) {
-    var t = $(m.type === 'episode' ? 'plexPageKicker' : 'plexPageName');
+    var small = m.type === 'episode' || m.type === 'season', t = $(small ? 'plexPageKicker' : 'plexPageName');
     if (t) t.classList.add('unseen');   // the name waits unseen until it's known whether a logo takes its place
-    var show = function () { if (t) t.classList.remove('unseen'); };
+    var showName = function () { if (t) t.classList.remove('unseen'); };
     PlexView.details(m).then(function (d) { return d.logo && item === m ? PlexView.file(m.server, d.logo) : ''; }).then(function (u) {
-      if (!u || !t || item !== m) return show();
-      var lg = U.el('img', 'media-logo' + (m.type === 'episode' ? ' small' : '')); lg.alt = m.type === 'episode' ? m.grandparentTitle || '' : m.title || '';
+      if (!u || !t || item !== m) return showName();
+      var lg = U.el('img', 'media-logo' + (small ? ' small' : '')); lg.alt = small ? m.grandparentTitle || m.parentTitle || '' : m.title || '';
       lg.onload = function () { if (t.parentNode) t.parentNode.replaceChild(lg, t); };
-      lg.onerror = show;
+      lg.onerror = showName;
       lg.src = u;
-    }, show);
+    }, showName);
   }
   // The track under the buttons: what's playing in it (the version, its sound and subtitles).
   function track() {
@@ -86,9 +144,18 @@ var PlexPage = (function () {
     return esc(bits.filter(Boolean).join('    '));
   }
   function describeVersion(v) { return [String(v.videoResolution || '').toUpperCase(), (v.videoCodec || '').toUpperCase(), v.Part && v.Part[0] && v.Part[0].size ? (v.Part[0].size / 1073741824).toFixed(1) + ' GB' : ''].filter(Boolean).join(' · '); }
-  // Resume (when partly watched), Play from the start, Trailer, Watched, More.
+  /* The buttons.  A movie or an episode: Resume, Play from the start, Trailer, Watched, More.  A show or a season:
+     Play (or Resume) its next episode, Watched, More. */
   function buttons() {
     var m = item, out = [];
+    if (/^(show|season)$/.test(m.type)) {
+      var nx = m.OnDeck && m.OnDeck.Metadata && m.OnDeck.Metadata[0];
+      out.push({ label: nx ? (nx.viewOffset > 60000 ? T('Resume S{x} · E{y}', { x: nx.parentIndex, y: nx.index }) : T('Play S{x} · E{y}', { x: nx.parentIndex, y: nx.index })) : T('Play'), main: true, act: function () { playNext(m); } });
+      var allSeen = m.leafCount && m.viewedLeafCount >= m.leafCount;
+      out.push({ label: allSeen ? T('Mark not watched') : T('Mark watched'), act: function () { mark(!allSeen); } });
+      out.push({ label: T('More'), act: more });
+      return out;
+    }
     if (m.viewOffset > 60000) out.push({ label: T('Resume from {x}', { x: clock(m.viewOffset) }), main: true, act: function () { play(m.viewOffset); } });
     out.push({ label: m.viewOffset > 60000 ? T('Play from the start') : T('Play'), main: !(m.viewOffset > 60000), act: function () { play(0); } });
     var trailer = ((m.Extras && m.Extras.Metadata) || []).filter(function (x) { return x.subtype === 'trailer' || x.extraType === 1; })[0];
@@ -98,53 +165,98 @@ var PlexPage = (function () {
     out.push({ label: T('More'), act: more });
     return out;
   }
-  function mark(on) {
-    Plex.call(item.server, (on ? '/:/scrobble' : '/:/unscrobble') + '?identifier=com.plexapp.plugins.library&key=' + item.ratingKey).then(function () {
-      if (on) { item.viewCount = (item.viewCount || 0) + 1; item.viewOffset = 0; } else item.viewCount = 0;
-      U.toast(on ? T('Marked as watched') : T('Marked as not watched')); draw();
+  // A show's or a season's next episode: the one you're in, else the first not watched, else the first.
+  function playNext(m) {
+    Plex.call(m.server, '/library/metadata/' + m.ratingKey + '/allLeaves').then(function (j) {
+      var eps = mc(j).Metadata || [], nx = eps.filter(function (e) { return e.viewOffset; })[0] || eps.filter(function (e) { return !e.viewCount; })[0] || eps[0];
+      if (!nx) return U.toast(T('Nothing to play yet'), 5000);
+      playKey(m.server, String(nx.ratingKey), false).catch(function (e) { U.toast(e.message, 6000); });
     }, function (e) { U.toast(e.message, 6000); });
   }
-  // More: the version, audio and subtitles (Plex remembers them for you), Remove from Continue watching, Go to show.
+  function mark(on) {
+    Plex.call(item.server, (on ? '/:/scrobble' : '/:/unscrobble') + '?identifier=com.plexapp.plugins.library&key=' + item.ratingKey).then(function () {
+      if (on) { item.viewCount = (item.viewCount || 0) + 1; item.viewOffset = 0; item.viewedLeafCount = item.leafCount; } else { item.viewCount = 0; item.viewedLeafCount = 0; }
+      U.toast(on ? T('Marked as watched') : T('Marked as not watched')); redrawButtons();
+    }, function (e) { U.toast(e.message, 6000); });
+  }
+  // The buttons again (their words changed), the rest of the page as it is.
+  function redrawButtons() {
+    btns = buttons(); var b = $('plexPageBtns'); if (!b) return;
+    btnAt = Math.min(btnAt, btns.length - 1);
+    b.innerHTML = btns.map(function (x, i) { return '<div class="plex-btn' + (zone === 'btns' && i === btnAt ? ' sel' : '') + (x.main ? ' main' : '') + '">' + esc(x.label) + '</div>'; }).join('');
+  }
+  // More: the version, audio and subtitles (Plex remembers them for you), the Watchlist, Continue watching, Go to show.
   function more() {
     var m = item, v = version(), part = v.Part && v.Part[0], rows = [];
     if ((m.Media || []).length > 1) rows.push({ label: T('Version'), sub: RAW(describeVersion(v)), action: function () {
       UI.menu(T('Version'), m.Media.map(function (x, i) { return { label: RAW(describeVersion(x)), sub: RAW(badges(x).join('  ·  ')), action: function () { versionOf[m.ratingKey] = i; draw(); } }; }));
     } });
     if (part) rows.push({ label: T('Audio'), action: function () { pickStream(part, 2); } }, { label: T('Subtitles'), action: function () { pickStream(part, 3); } });
-    // The Watchlist (Plex's, the same in every Plex app): for what you haven't watched yet, as Plex offers it.
-    if (m.type === 'movie' && m.guid && typeof PlexTop !== 'undefined') {
+    // The Watchlist (Plex's, the same in every Plex app).
+    if (/^(movie|show)$/.test(m.type) && m.guid && typeof PlexTop !== 'undefined') {
       var on = PlexTop.onWatch(m);
       rows.push({ label: on ? T('Remove from Watchlist') : T('Add to Watchlist'), action: function () {
         Plex.watch(m.guid, !on).then(function () { PlexTop.changedWatch(); U.toast(on ? T('Removed from your Watchlist') : T('Added to your Watchlist')); }, function (e) { U.toast(e.message, 6000); });
       } });
     }
     if (m.viewOffset) rows.push({ label: T('Remove from Continue watching'), action: function () {
-      Plex.call(m.server, '/actions/removeFromContinueWatching?ratingKey=' + m.ratingKey, 'put').then(function () { m.viewOffset = 0; U.toast(T('Removed from Continue watching')); draw(); }, function (e) { U.toast(e.message, 6000); });
+      Plex.call(m.server, '/actions/removeFromContinueWatching?ratingKey=' + m.ratingKey, 'put').then(function () { m.viewOffset = 0; U.toast(T('Removed from Continue watching')); redrawButtons(); }, function (e) { U.toast(e.message, 6000); });
     } });
-    if (m.type === 'episode' && m.grandparentRatingKey) rows.push({ label: T('Go to show'), action: function () { close(); PlexView.openShow({ ratingKey: m.grandparentRatingKey, type: 'show', title: m.grandparentTitle, server: m.server }); } });
+    if (m.type === 'episode' && m.grandparentRatingKey) rows.push({ label: T('Go to show'), action: function () { openFrom({ ratingKey: m.grandparentRatingKey, type: 'show', title: m.grandparentTitle, server: m.server }); } });
+    if (m.type === 'episode' && m.parentRatingKey) rows.push({ label: T('Go to season'), action: function () { openFrom({ ratingKey: m.parentRatingKey, type: 'season', title: m.parentTitle, server: m.server }); } });
+    if (m.type === 'season' && m.parentRatingKey) rows.push({ label: T('Go to show'), action: function () { openFrom({ ratingKey: m.parentRatingKey, type: 'show', title: m.parentTitle, server: m.server }); } });
     UI.menu(RAW(m.title), rows);
   }
   // An audio or subtitle track picked: kept by Plex for this title (and by TiviBro's player while it plays).
-  function pickStream(part, type) {
+  function pickStream(part, type, after) {
     var list = (part.Stream || []).filter(function (s) { return s.streamType === type; });
-    var rows = (type === 3 ? [{ label: T('Off'), action: function () { choose(0); } }] : []).concat(list.map(function (s) { return { label: RAW((s.selected ? '✓  ' : '') + (s.displayTitle || s.language || '?')), action: function () { choose(s.id); } }; }));
+    var rows = (type === 3 ? [{ label: T('Off'), current: !list.some(function (s) { return s.selected; }), action: function () { choose(0); } }] : []).concat(list.map(function (s) { return { label: RAW(s.displayTitle || s.extendedDisplayTitle || s.language || '?'), sub: RAW(s.title || ''), current: !!s.selected, action: function () { choose(s.id); } }; }));
     function choose(id) {
       var q = type === 2 ? 'audioStreamID=' + id : 'subtitleStreamID=' + id;
-      Plex.call(item.server, '/library/parts/' + part.id + '?allParts=1&' + q, 'put').then(function () { list.forEach(function (s) { s.selected = s.id === id; }); draw(); }, function (e) { U.toast(e.message, 6000); });
+      Plex.call(item.server, '/library/parts/' + part.id + '?allParts=1&' + q, 'put').then(function () { list.forEach(function (s) { s.selected = s.id === id; }); if (after) after(id); else { var t = document.querySelector('#plexPage .plex-page-track'); if (t) t.innerHTML = track(); } }, function (e) { U.toast(e.message, 6000); });
     }
     UI.menu(type === 2 ? T('Audio') : T('Subtitles'), rows);
   }
 
+  /* Keys: ◀ ▶ along the buttons, ▼ into the rows (the page scrolls up), OK plays or opens, Back goes to the page
+     before (a title opened from a row) or out to the Plex tab.  Hold OK or Red: More.  Yellow: watched or not. */
   function keys(a) {
-    if (a === 'back') { close(); if (back) back(); return true; }
-    if (a === 'left') { if (btnAt > 0) { btnAt--; draw(); } return true; }
-    if (a === 'right') { if (btnAt < btns.length - 1) { btnAt++; draw(); } return true; }
+    if (a === 'back') {
+      if (zone === 'rows') { zone = 'btns'; paint(); return true; }
+      if (hist.length) { show(hist.pop()); return true; }
+      close(); if (back) back(); return true;
+    }
+    if (zone === 'rows' && shelf) {
+      if (a === 'up' && shelf.row === 0) { zone = 'btns'; paint(); return true; }
+      var f = shelf.focused();
+      if (a === 'ok') { if (f && f.item) pick(f.row, f.item); return true; }
+      // Hold OK or Red on a title in a row: its options (play, watched, Watchlist...), as on the Plex tab.
+      if ((a === 'hold' || a === 'red') && f && f.item && f.row.kind !== 'person' && /^(movie|episode|show|season)$/.test(f.item.type)) { f.item.server = f.item.server || item.server; PlexView.itemOptions(f.item); return true; }
+      if (shelf.move(a)) { paint(); return true; }
+      return true;
+    }
+    if (a === 'left') { if (btnAt > 0) { btnAt--; paint(); } return true; }
+    if (a === 'right') { if (btnAt < btns.length - 1) { btnAt++; paint(); } return true; }
+    if (a === 'down') { if (shelf) { zone = 'rows'; paint(); } return true; }
     if (a === 'ok') { if (btns[btnAt]) btns[btnAt].act(); return true; }
     if (a === 'red' || a === 'hold') { more(); return true; }
-    if (a === 'yellow') { mark(!(item.viewCount > 0 && !item.viewOffset)); return true; }
+    if (a === 'yellow') { if (btns.some(function (b) { return /watched/i.test(b.label); })) mark(!(item.viewCount > 0 && !item.viewOffset)); return true; }
     return true;
   }
-  function close() { var el = $('plexPage'); if (el) el.classList.add('hidden'); btnAt = 0; }
+  // OK on a row's tile: a person's titles, an extra plays, anything else opens its own page.
+  function pick(row, x) {
+    if (row.kind === 'person') { hide(); PlexView.openPerson(item, x); return; }
+    if (x.type === 'clip' || x.subtype) { x.server = item.server; playOther(x); return; }
+    if (x.type === 'collection' || x.type === 'playlist') { hide(); x.page = true; PlexView.openShow(x); return; }
+    openFrom(x);
+  }
+  function close() { hide(); btnAt = 0; zone = 'btns'; }
+  // Out of sight while a person's titles or a collection show over the Plex tab; reshow() brings it back as it was.
+  function hide() { var el = $('plexPage'); if (el) el.classList.add('hidden'); }
+  function reshow() {
+    var el = $('plexPage'); if (!el || !item) return false;
+    el.classList.remove('hidden'); paint(); UI.setHandler(keys); return true;
+  }
 
   /* ---------- Playing ---------- */
   // The TV plays this version's video as it is (sound is TiviBro's converter's job when the TV can't).
@@ -164,7 +276,7 @@ var PlexPage = (function () {
   /* Starts the title at ms: the file through the door, or the server's converter.  Plex's preview pictures, its
      chapters and a subtitle file kept beside the video go to the player too (a file played as it is). */
   function play(ms, fromUpNext) {
-    if (!fromUpNext) chain = 0;
+    if (!fromUpNext) { chain = 0; forceCap = null; }
     var m = item, v = version(), part = v.Part && v.Part[0];
     if (!part) return U.toast(T('Plex has no file for this one.'), 6000);
     Plex.door(m.server).then(function (key) {
@@ -178,7 +290,7 @@ var PlexPage = (function () {
          start the player where you stopped and its times are the title's own (progress to Plex, Skip intro). */
       // Back from watching: to the title's page when it was open (its buttons take the keys again), else the Plex tab.
       var page = $('plexPage'), fromPage = !!(page && !page.classList.contains('hidden'));
-      Views.playVod(meta, url, ms / 1000, function () { report('stopped'); stopTimer(); if (fromPage && item) { draw(); UI.setHandler(keys); } else if (PlexView.resume) PlexView.resume(); });
+      Views.playVod(meta, url, ms / 1000, function () { report('stopped'); stopTimer(); if (fromPage && item) { var el = $('plexPage'); if (el) el.classList.remove('hidden'); paint(); UI.setHandler(keys); } else if (PlexView.resume) PlexView.resume(); });
       startTimer();
       if (!converting) sideSubtitle(base, part, playing);
       if (converting) U.toast(T('{x} is converting this one for the TV', { x: (Plex.server(m.server) || {}).name || 'Plex' }), 5000);
@@ -203,7 +315,7 @@ var PlexPage = (function () {
   function playOther(x) { var keep = item; item = x; Plex.call(x.server, '/library/metadata/' + x.ratingKey).then(function (j) { item = (mc(j).Metadata || [])[0] || x; item.server = x.server; play(0); item = keep; }, function (e) { item = keep; U.toast(e.message, 6000); }); }
   // The quality cap for the converter (kbps, 0: Original): Settings > Plex, at home and away.
   function quality() {
-    var s = Plex.server(item.server) || {}, p = Plex.prefs(), cap = +(s.local ? p.homeQuality : p.awayQuality) || 0;
+    var s = Plex.server(item.server) || {}, p = Plex.prefs(), cap = forceCap != null ? forceCap : +(s.local ? p.homeQuality : p.awayQuality) || 0;
     // Through Plex's relay (the server can't be reached directly), Plex lets through 2 Mbps at most.
     return s.relay ? Math.min(cap || RELAY, RELAY) : cap;
   }
@@ -237,6 +349,51 @@ var PlexPage = (function () {
     Plex.call(p.item.server, '/:/timeline?ratingKey=' + p.item.ratingKey + '&key=' + encodeURIComponent('/library/metadata/' + p.item.ratingKey) + '&state=' + state + '&time=' + at + '&duration=' + dur + '&identifier=com.plexapp.plugins.library').catch(function () {});
     if (!p.scrobbled && dur && at >= dur * 0.9) { p.scrobbled = true; Plex.call(p.item.server, '/:/scrobble?identifier=com.plexapp.plugins.library&key=' + p.item.ratingKey).catch(function () {}); }
     if (state === 'stopped') playing = null;
+  }
+
+  /* ---------- Options while watching: the player's Options (Red) open on a Plex tab, as in Plex's player ---------- */
+  var forceCap = null;   // a quality picked while watching: kept for this title until another is started by hand
+  var Q = [0, 20000, 12000, 8000, 4000, 2000];
+  function qLabel(q) { return q ? T('{x} Mbps', { x: q / 1000 }) : T('Original'); }
+  // The title again from where it is now, with a new quality, audio or subtitle (Plex keeps the track choices).
+  function restart() { var at = Math.round((Player.position || 0) * 1000); U.toast(T('One moment…'), 2000); play(at, true); }
+  function playerItems() {
+    var p = playing; if (!p) return [];
+    var m = p.item, v = version(m), part = v.Part && v.Part[0], out = [], cap = quality(), srv = (Plex.server(m.server) || {}).name || 'Plex';
+    var sel = function (type) { var x = (part && part.Stream || []).filter(function (s) { return s.streamType === type && s.selected; })[0]; return x ? RAW(x.displayTitle || x.language || '') : (type === 3 ? T('Off') : ''); };
+    out.push({ label: T('Quality'), sub: p.converting ? (cap ? qLabel(cap) : T('Converted by {x}', { x: RAW(srv) })) : T('Original  ·  plays as it is'), action: function () {
+      UI.menu(T('Quality'), Q.map(function (q) { return { label: qLabel(q), sub: q ? '' : T('as the file is, when the TV can play it'), current: (forceCap != null ? forceCap : -1) === q, action: function () { forceCap = q; restart(); } }; }));
+    } });
+    if (part) {
+      out.push({ label: T('Audio'), sub: sel(2), action: function () { pickStream(part, 2, restart); } });
+      out.push({ label: T('Subtitles'), sub: sel(3), action: function () { pickStream(part, 3, restart); } });
+    }
+    out.push({ label: T('Playback info'), sub: p.converting ? T('Converted by {x}', { x: RAW(srv) }) : T('Direct play'), action: function () { info(p, v, srv); } });
+    if (m.type === 'episode') {
+      out.push({ label: T('Next episode'), action: function () { step(m, 1); } }, { label: T('Previous episode'), action: function () { step(m, -1); } });
+    }
+    out.push({ label: T('Mark watched'), sub: T('and stop'), action: function () { Plex.call(m.server, '/:/scrobble?identifier=com.plexapp.plugins.library&key=' + m.ratingKey).then(function () { if (playing) playing.scrobbled = true; U.toast(T('Marked as watched')); Views.stopAll(); if (PlexView.resume) PlexView.resume(); }); } });
+    return out;
+  }
+  // What's playing and how, as Plex's Playback info shows it.
+  function info(p, v, srv) {
+    var s = Plex.server(p.item.server) || {}, a = streamsOf(v, 2).filter(function (x) { return x.selected; })[0] || streamsOf(v, 2)[0] || {}, vs = streamsOf(v, 1)[0] || {};
+    UI.menu(T('Playback info'), [
+      { label: T('Playing'), sub: p.converting ? T('Converted by {x}', { x: RAW(srv) }) : T('Direct play: the file as it is') },
+      { label: T('Video'), sub: RAW([String(v.videoResolution || '').toUpperCase(), (vs.codec || v.videoCodec || '').toUpperCase(), vs.DOVIPresent ? 'Dolby Vision' : '', v.bitrate ? (v.bitrate / 1000).toFixed(1) + ' Mbps' : ''].filter(Boolean).join('  ·  ')) },
+      { label: T('Audio'), sub: RAW(a.displayTitle || [a.codec, a.channels].filter(Boolean).join(' ')) },
+      { label: T('Server'), sub: RAW(srv) + '  ·  ' + (s.relay ? T('through Plex\'s relay') : s.local ? T('on your network') : T('over the internet')) }
+    ]);
+  }
+  // The episode after or before this one, from the show's list.
+  function step(m, d) {
+    Plex.call(m.server, '/library/metadata/' + m.grandparentRatingKey + '/allLeaves').then(function (j) {
+      var all = mc(j).Metadata || [], i = -1;
+      all.forEach(function (x, n) { if (String(x.ratingKey) === String(m.ratingKey)) i = n; });
+      var nx = i >= 0 ? all[i + d] : null;
+      if (!nx) return U.toast(d > 0 ? T('This is the last episode') : T('This is the first episode'), 4000);
+      report('stopped'); playKey(m.server, String(nx.ratingKey), true);
+    }, function (e) { U.toast(e.message, 6000); });
   }
 
   /* The movie or episode ended (views.js endVod): an episode's next one with Up next, else back to the page. */
@@ -278,5 +435,5 @@ var PlexPage = (function () {
     });
   }
 
-  return { open: open, ended: ended, close: close, playKey: playKey, _test: { quality: quality, marks: marks, badges: badges, direct: direct, converts: converts, chapters: chapters, item: function () { return item; }, keys: keys, buttons: function () { return btns; } } };
+  return { open: open, ended: ended, close: close, reshow: reshow, playKey: playKey, playerItems: playerItems, _test: { quality: quality, marks: marks, badges: badges, direct: direct, converts: converts, chapters: chapters, item: function () { return item; }, keys: keys, buttons: function () { return btns; }, shelf: function () { return shelf; } } };
 })();

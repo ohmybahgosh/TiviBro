@@ -28,6 +28,7 @@ function route(state, req, port) {
   if (tok !== SERVER_TOKEN) return [401, { error: 'unauthorized' }];
   if (p === '/identity') return [200, { MediaContainer: { machineIdentifier: MACHINE, version: '1.42.2' } }];
   if (p === '/library/sections') return [200, { MediaContainer: { Directory: [{ key: '1', type: 'movie', title: 'Movies' }] } }];
+  if (p === '/library/sections/1/all' && /actor=902/.test(q)) { state.actor = true; return [200, { MediaContainer: { Metadata: [movie(18, 'Northbound'), movie(12, 'Paper Kingdoms')] } }]; }
   if (p === '/library/sections/1/all' && /guid=/.test(q)) { var g = decodeURIComponent((/guid=([^&]*)/.exec(q) || [])[1] || ''); return [200, { MediaContainer: { Metadata: g === 'plex://movie/5d776b59ad5437001f79c6f8' ? [movie(18, 'Northbound', { guid: g })] : [] } }]; }
   if (p === '/library/sections/1/all') { state.lastAll = q; var list = /unwatched=1/.test(q) ? MOVIES.slice(3) : MOVIES; return [200, { MediaContainer: { totalSize: list.length, Metadata: list.map(function (m, i) { return movie(10 + i, m); }) } }]; }
   if (p === '/photo/:/transcode') return state.realPng ? [200, PNG, 'image/png'] : [200, 'PNG:' + q, 'image/png'];
@@ -55,11 +56,15 @@ function route(state, req, port) {
   if (p === '/library/parts/7/1700000000/file.mkv') { state.range = req.headers.range; return [206, 'MKVBYTES', 'video/x-matroska']; }
   // A show (40) with three episodes (41 to 43), each playing the same file: for Up next and Still watching?
   if (p === '/library/metadata/40/allLeaves') return [200, { MediaContainer: { Metadata: [41, 42, 43].map(function (k, i) { return Object.assign(episode(k, i + 1), { grandparentRatingKey: '40', viewOffset: 0 }); }) } }];
+  if (p === '/library/metadata/40') return [200, { MediaContainer: { Metadata: [{ ratingKey: '40', type: 'show', title: 'The Harbor Lights', year: 2025, childCount: 1, leafCount: 3, viewedLeafCount: 0, summary: 'A show.', librarySectionID: 2, Role: [{ tag: 'Ivy Moss', role: 'Keeper', id: 904 }], OnDeck: { Metadata: [Object.assign(episode(41, 1), { grandparentRatingKey: '40' })] } }] } }];
+  if (p === '/library/metadata/40/children') return [200, { MediaContainer: { Metadata: [{ ratingKey: '45', type: 'season', title: 'Season 2', index: 2, leafCount: 3, parentRatingKey: '40', thumb: '/library/metadata/45/thumb/1' }] } }];
   var me = /^\/library\/metadata\/(4[1-3])$/.exec(p);
   if (me) return [200, { MediaContainer: { Metadata: [Object.assign(episode(+me[1], +me[1] - 40), { grandparentRatingKey: '40', viewOffset: 0, Media: [{ videoResolution: '1080', videoCodec: 'h264', container: 'mkv', bitrate: 8000, Part: [{ id: 7, key: '/library/parts/7/1700000000/file.mkv', Stream: [] }] }] })] } }];
   var md = /^\/library\/metadata\/(\d+)$/.exec(p);
   if (md) { var k = +md[1], old = k === 13; return [200, { MediaContainer: { Metadata: [movie(k, MOVIES[k - 10] || 'X', { Image: k === 18 ? [{ type: 'clearLogo', url: '/library/metadata/18/clearLogo/1' }] : undefined, guid: k === 18 ? 'plex://movie/5d776b59ad5437001f79c6f8' : undefined, viewOffset: k === 18 ? 2400000 : 0, librarySectionTitle: 'Movies', rating: 9.2, audienceRating: 8.8,
-    Director: [{ tag: 'Ana Ruiz' }], Role: [{ tag: 'Mara Quinn' }, { tag: 'Theo Lake' }],
+    Director: [{ tag: 'Ana Ruiz', id: 901 }], Role: [{ tag: 'Mara Quinn', role: 'Captain Vey', id: 902, thumb: '/library/metadata/18/thumb/1' }, { tag: 'Theo Lake', role: 'Pilot', id: 903 }],
+    Collection: k === 18 ? [{ id: 500, tag: 'The Copper Trilogy' }] : undefined,
+    Related: k === 18 ? { Hub: [{ title: 'More like Northbound', Metadata: [movie(11, 'Midnight Ferry'), movie(12, 'Paper Kingdoms')] }] } : undefined,
     Marker: [{ type: 'intro', startTimeOffset: 5000, endTimeOffset: 65000 }, { type: 'credits', startTimeOffset: 6900000, endTimeOffset: 7200000, final: true }],
     Chapter: [{ tag: 'Opening', startTimeOffset: 0, endTimeOffset: 600000 }, { tag: 'The ferry', startTimeOffset: 600000, endTimeOffset: 7200000 }],
     Extras: { Metadata: [{ ratingKey: '80', type: 'clip', subtype: 'trailer', title: 'Trailer' }] },

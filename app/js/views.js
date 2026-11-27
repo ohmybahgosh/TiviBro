@@ -2614,7 +2614,10 @@ var Views = (function () {
     items.push({ label: 'Reconnect stream', action: function () { Player.retryNow(); } });
     items.forEach(function (it) { it.tab = 'Sound and picture'; });
     if (mode === 'live' && playing) items = items.concat(chanItems(playing, curGroup).filter(Boolean));
-    UI.menu(mode === 'vod' && vod ? RAW(vod.meta.title) : playing ? RAW(L.name(playing)) : 'Player', qpSlots(items), null, { tab: 'Sound and picture' });
+    // A Plex title: Plex's own options first, on their own tab (quality, audio, subtitles, playback info, episodes).
+    var plexRows = mode === 'vod' && vod && vod.meta.plex && typeof PlexPage !== 'undefined' ? PlexPage.playerItems() : [];
+    plexRows.forEach(function (it) { it.tab = 'Plex'; });
+    UI.menu(mode === 'vod' && vod ? RAW(vod.meta.title) : playing ? RAW(L.name(playing)) : 'Player', plexRows.concat(qpSlots(items)), null, { tab: plexRows.length ? 'Plex' : 'Sound and picture' });
   }
   /* Options (Red) in the order of the quick menu buttons too (discussion #36: Stream info moved to the front there
      stayed near the end here).  They all sit in its Sound and picture tab, so a viewer's order applies there whole.  The rows that are also quick buttons trade places among themselves; the channel's

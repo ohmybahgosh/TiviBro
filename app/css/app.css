@@ -1054,6 +1054,12 @@ body.full .activity,body.mgr-open .activity{display:none}
 .plex-btn{height:72px;line-height:72px;padding:0 30px;border-radius:999px;font-size:24px;font-weight:600;background:rgba(255,255,255,.08);border:3px solid rgba(255,255,255,.22);white-space:nowrap}
 .plex-btn.main{background:#f2f4fa;color:#0b0e1a;border-color:#f2f4fa}
 .plex-btn.sel{box-shadow:0 0 0 5px var(--accent);transform:scale(1.04)}
+/* A page scrolls as one: the top and the buttons go up and its rows come into view (Cast and crew, Seasons…). */
+.plex-page-scroll{position:absolute;top:0;left:0;right:0;height:100%;transition:transform .28s ease;will-change:transform}
+.plex-page-rows{position:absolute;left:138px;right:0;top:830px}
+.plex-page .media-bd{transition:opacity .3s ease}.plex-page.rows .media-bd{opacity:.18}.plex-page.rows .plex-bg{opacity:.5!important}
+.plex-tile-person .media-art{border-radius:50%;overflow:hidden}
+.plex-tile-person .media-tile-title,.plex-tile-person .media-tile-year{text-align:center}
 .plex-page-track{position:absolute;left:152px;top:740px;font-size:21px;color:var(--muted);white-space:pre}
 .plex-empty{position:absolute;left:152px;top:520px;font-size:28px;color:var(--muted)}
 .media-shelf-stage{position:relative;transition:transform 210ms ease;will-change:transform}

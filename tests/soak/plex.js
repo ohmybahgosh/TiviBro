@@ -116,7 +116,7 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     ok('a Top 10 tab once there are charts', t10 > 0);
     await ev((i) => { PlexView._test.tab(i); }, t10); await page.waitForTimeout(1500);
     const chart = await ev(() => ({ subs: document.getElementById('plexSubs').innerText, rows: PlexView._test.rows().map((r) => r.title + ':' + r.items.map((m) => r.line(m) + ' ' + m.title).join(',')) }));
-    ok('Top 10: a pill per service, the chart\'s movies you have with their place', /Netflix/.test(chart.subs) && chart.rows[0] === 'Top 10 movies on Netflix:#3 Northbound', JSON.stringify(chart));
+    ok('Top 10: every service on one page, the chart\'s movies you have with their place', chart.rows[0] === 'Top 10 movies on Netflix:#3 Northbound', JSON.stringify(chart));
     await shot('5d-top10-tab');
     await ev(() => PlexView._test.home()); await page.waitForTimeout(1200);
     // A movie's page and playing it.
@@ -129,6 +129,28 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     ok('the page: Dolby Vision, 4K, Atmos and the scores', /Dolby Vision/.test(pg) && /4K/.test(pg) && /Atmos/.test(pg) && /Critics 92%/.test(pg), pg);
     await shot('6-movie');
     ok('the page is the title picked', (await ev(() => PlexPage._test.item().title)) === 'Northbound');
+    // Its rows, as Plex shows them: Cast and crew, the collection's other titles, More like this.
+    await page.waitForFunction(() => PlexPage._test.shelf(), null, { timeout: 8000 }).catch(() => {});
+    const prow = await ev(() => (PlexPage._test.shelf() || { rows: [] }).rows.map((r) => r.title + ':' + r.items.length));
+    ok('the page\'s rows: Cast and crew, Extras, More in the collection, More like this', JSON.stringify(prow) === JSON.stringify(['Cast and crew:3', 'Extras:1', 'More in The Copper Trilogy:3', 'More like Northbound:2']), prow);
+    const keepPage = await ev(() => { const b = document.getElementById('plexPageBtns'); PlexPage._test.keys('right'); PlexPage._test.keys('left'); return document.getElementById('plexPageBtns') === b; });
+    ok('◀ ▶ on the buttons doesn\'t draw the page again', keepPage);
+    await ev(() => PlexPage._test.keys('down')); await page.waitForTimeout(500);
+    await shot('6b-page-rows');
+    ok('▼ scrolls the rows into view', /translateY\(-/.test(await ev(() => document.getElementById('plexPageScroll').style.transform)));
+    // Hold OK on a title in a row: its options, as on the Plex tab.
+    await ev(() => { PlexPage._test.keys('down'); PlexPage._test.keys('down'); PlexPage._test.keys('hold'); }); await page.waitForTimeout(900);
+    const holdRows = await ev(() => UI.menuLabels || []);
+    ok('hold OK on a title in a row: its options', holdRows.some((x) => /^(Play|Resume from)/.test(x)), holdRows);
+    await ev(() => { UI.press('back'); PlexPage._test.keys('up'); PlexPage._test.keys('up'); }); await page.waitForTimeout(300);
+    // OK on a person: their titles; Back comes back to the page as it was.
+    await ev(() => PlexPage._test.keys('ok')); await page.waitForTimeout(1200);
+    const person = await ev(() => ({ hidden: document.getElementById('plexPage').classList.contains('hidden'), rows: PlexView._test.rows().map((r) => r.title) }));
+    ok('OK on a person: their titles in the library', person.hidden && person.rows.length > 0, person);
+    await ev(() => PlexView._test.keys('back')); await page.waitForTimeout(500);
+    const backTo = await ev(() => ({ shown: !document.getElementById('plexPage').classList.contains('hidden'), title: PlexPage._test.item().title, row: PlexPage._test.shelf().row }));
+    ok('Back from a person\'s titles: the page again, on the same row', backTo.shown && backTo.title === 'Northbound' && backTo.row === 0, backTo);
+    await ev(() => PlexPage._test.keys('up'));
     // More > Remove from Watchlist (it's on it), through Plex's catalogue with its key.
     await ev(() => { PlexPage._test.keys('red'); }); await page.waitForTimeout(400);
     const moreRows = await ev(() => UI.menuLabels);
@@ -174,6 +196,13 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     const up2 = await ev(() => document.body.innerText);
     ok('after the episodes in a row set: Still watching? waits for OK', /Still watching\?/i.test(up2) && /Keep watching/.test(up2), up2.slice(-400));
     await ev(() => { UI.press('back'); Plex.setPref('stillAfter', 3); }); await page.waitForTimeout(800);
+    // A show's page: Play its next episode, Seasons and Cast and crew rows.
+    await ev(() => { Views.stopAll(); PlexPage.open({ ratingKey: '40', type: 'show', title: 'The Harbor Lights', server: Plex.chosen()[0].id }, function () {}); });
+    await page.waitForFunction(() => PlexPage._test.shelf() && (PlexPage._test.item() || {}).type === 'show', null, { timeout: 8000 }).catch(() => {});
+    const sp = await ev(() => ({ btns: PlexPage._test.buttons().map((b) => b.label), rows: PlexPage._test.shelf().rows.map((r) => r.title) }));
+    ok('a show\'s page: Resume its next episode, Seasons, Cast and crew', sp.btns[0] === 'Resume S2 · E1' && sp.rows[0] === 'Seasons' && sp.rows.indexOf('Cast and crew') > 0, sp);
+    await shot('6c-show');
+    await ev(() => PlexPage._test.keys('back'));
     // Red on a show: play the next episode, mark it all watched.
     await ev(() => { Views.stopAll(); UI.close && UI.close(); PlexView.openShow({ ratingKey: '40', type: 'show', title: 'The Harbor Lights', server: Plex.chosen()[0].id }); PlexView._test.keys('red'); });
     await page.waitForTimeout(1200);

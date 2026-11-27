@@ -33,23 +33,21 @@ var PlexView = (function () {
   function makeTabs() {
     tabsList = [{ id: 'home', label: T('Home') }].concat(Plex.shownLibraries().filter(function (l) { return Plex.libs(l.server).indexOf(l.key) >= 0 && Plex.chosen().some(function (s) { return s.id === l.server; }); })
       .map(function (l) { return { id: 'lib', lib: l, label: l.title }; }),
-      // Top 10: each streaming service's chart (FlixPatrol) with the titles your Plex has, a pill each.
+      // Top 10: each streaming service's chart (FlixPatrol) with the titles your Plex has, all on one page.
       typeof PlexTop !== 'undefined' && PlexTop.services().length ? [{ id: 'top', label: T('Top 10') }] : [],
       [{ id: 'search', label: T('Search') }]);
     if (tabAt >= tabsList.length) tabAt = 0;
   }
-  /* The second row of pills: a library's Plex tabs, or on Top 10 the streaming services with a chart today. */
+  /* The second row of pills: a library's Plex tabs. */
   function subList() {
     var t = tabNow();
     if (t.id === 'lib') return SUBS;
-    if (t.id === 'top' && typeof PlexTop !== 'undefined') return PlexTop.services().map(function (x) { return [x, x]; });
     return [];
   }
   // Where a tab's pills start: the one picked last time there.
   function firstSub() {
     var t = tabNow(), ids = subList().map(function (x) { return x[0]; });
     if (t.lib) return Math.max(0, ids.indexOf(libPrefs(t.lib).sub || 'recommended'));
-    if (t.id === 'top') return Math.max(0, ids.indexOf(prefs.topSvc));
     return 0;
   }
   function tabNow() { return tabsList[tabAt] || tabsList[0]; }
@@ -153,7 +151,8 @@ var PlexView = (function () {
   }
   // A show, a season, a collection or a playlist opened: its children as rows.
   function childRows(m) {
-    var path = m.type === 'collection' ? '/library/collections/' + m.ratingKey + '/children' : m.type === 'playlist' ? '/playlists/' + m.ratingKey + '/items' : '/library/metadata/' + m.ratingKey + '/children';
+    var path = m.type === 'collection' ? '/library/collections/' + m.ratingKey + '/children' : m.type === 'playlist' ? '/playlists/' + m.ratingKey + '/items' :
+      m.type === 'filter' ? '/library/sections/' + m.sec + '/all?' + m.field + '=' + encodeURIComponent(m.id) : '/library/metadata/' + m.ratingKey + '/children';
     return Plex.call(m.server, path).then(function (j) {
       var all = itemsOf(j, m.server), out = [];
       for (var i = 0; i < all.length; i += COLS) out.push({ title: i ? '' : m.title, items: all.slice(i, i + COLS), wide: /episode/.test((all[0] || {}).type) });
@@ -181,7 +180,8 @@ var PlexView = (function () {
     if (Object.keys(details).length > 600) { details = {}; logos = {}; }   // links to old pictures, let go now and then
     var seq = ++loadSeq, t = tabNow(), top = stack[stack.length - 1], sub = (subList()[subAt] || [])[0];
     var p = top ? childRows(top) : t.id === 'home' ? homeRows() : t.id === 'search' ? searchRows(lastSearch) :
-      t.id === 'top' ? Promise.resolve(PlexTop.chartRows(sub, function () { if (open_ && tabNow().id === 'top' && !stack.length) load(); })) :
+      // Top 10: every service's chart on one page, its movies then its shows, the services in FlixPatrol's order.
+      t.id === 'top' ? Promise.resolve([].concat.apply([], PlexTop.services().map(function (svc) { return PlexTop.chartRows(svc, function () { if (open_ && tabNow().id === 'top' && !stack.length) load(); }); }))) :
       sub === 'recommended' ? recommendedRows(t.lib) : sub === 'library' ? libraryRows(t.lib) : sub === 'collections' ? collectionRows(t.lib) : sub === 'categories' ? categoryRows(t.lib) : playlistRows();
     if (!rows.length) empty(T('Loading…'));   // reading again over rows already drawn: no "Loading" on top of them
     p.then(function (r) { if (seq !== loadSeq) return; rows = r; rowAt = Math.min(rowAt, Math.max(0, rows.length - 1)); colAt = {}; empty(rows.length ? '' : t.id === 'search' ? T('Press OK to search Plex') : T('Nothing here yet')); draw(); },
@@ -305,7 +305,7 @@ var PlexView = (function () {
 
   /* ---------- Keys ---------- */
   function keys(a) {
-    if (a === 'back') { if (stack.length) { stack.pop(); load(); return true; } Views.tabBar(restore); return true; }
+    if (a === 'back') { if (stack.length) { pop(); return true; } Views.tabBar(restore); return true; }
     if (zone === 'tabs') return tabKeys(a);
     if (zone === 'subs') return subKeys(a);
     var r = rows[rowAt], c = colAt[rowAt] || 0;
@@ -333,13 +333,29 @@ var PlexView = (function () {
     return true;
   }
   function switched() { stack = []; rowAt = 0; colAt = {}; rows = []; subAt = firstSub(); if (zone === 'subs' && !subList().length) zone = 'rows'; prefs.tab = tabNow().id === 'lib' ? tabNow().lib.server + ':' + tabNow().lib.key : tabNow().id; savePrefs(); draw(); load(); }
-  function subSwitched() { var l = tabNow().lib; if (l) { libPrefs(l).sub = SUBS[subAt][0]; savePrefs(); } else if (tabNow().id === 'top') { prefs.topSvc = (subList()[subAt] || [])[0]; savePrefs(); } rowAt = 0; colAt = {}; rows = []; draw(); load(); }
+  function subSwitched() { var l = tabNow().lib; if (l) { libPrefs(l).sub = SUBS[subAt][0]; savePrefs(); } rowAt = 0; colAt = {}; rows = []; draw(); load(); }
   function ask() { UI.prompt(T('Search Plex'), lastSearch, function (t) { lastSearch = String(t || '').trim(); zone = 'rows'; rowAt = 0; load(); }); }
 
   // OK on a title: a show, season, collection or playlist opens in place; a movie or episode opens its page.
+  /* Into a collection, a playlist or a person's titles, and back out: the rows and the place you were come back
+     as they were (no reading again), and a person opened from a title's page goes back to that page. */
+  function push(m) { m._was = { rows: rows, row: rowAt, col: colAt }; stack.push(m); rowAt = 0; colAt = {}; rows = []; }
+  function pop() {
+    var m = stack.pop(), w = m._was;
+    if (w && w.rows.length) { rows = w.rows; rowAt = w.row; colAt = w.col; empty(''); draw(); } else load();
+    if (m.page && typeof PlexPage !== 'undefined' && PlexPage.reshow()) return;
+    UI.setHandler(keys);
+  }
   function openItem(m) {
-    if (/^(show|season|collection|playlist)$/.test(m.type)) { stack.push(m); rowAt = 0; colAt = {}; load(); return; }
+    if (/^(collection|playlist|filter)$/.test(m.type)) { push(m); load(); return; }
+    // A movie, an episode, a show or a season: its own page, as in Plex.
     if (typeof PlexPage !== 'undefined') PlexPage.open(m, restore);
+  }
+  /* A person from a page's Cast and crew: their titles in that title's library, in place on the Plex tab. */
+  function openPerson(from, p) {
+    var m = { type: 'filter', server: from.server, title: p.tag, ratingKey: '', sec: from.librarySectionID, field: p.kind === 'director' ? 'director' : 'actor', id: p.id };
+    if (!m.sec || !m.id) return U.toast(T('Plex has no list of titles for {x}', { x: p.tag }), 5000);
+    m.page = true; push(m); zone = 'rows'; UI.setHandler(keys); draw(); load();
   }
   // Red: on Library, how it's sorted and filtered (kept per library); elsewhere, the rows' refresh.
   function options() {
@@ -377,8 +393,8 @@ var PlexView = (function () {
       var on = PlexTop.onWatch(m);
       list.push({ label: on ? T('Remove from Watchlist') : T('Add to Watchlist'), action: function () { Plex.watch(m.guid, !on).then(function () { PlexTop.changedWatch(); U.toast(on ? T('Removed from your Watchlist') : T('Added to your Watchlist')); }, function (e) { U.toast(e.message, 6000); }); } });
     }
-    if (m.type === 'episode' && m.grandparentRatingKey) list.push({ label: T('Go to show'), action: function () { openShow({ ratingKey: m.grandparentRatingKey, type: 'show', title: m.grandparentTitle, server: m.server }); } });
-    if (m.type === 'episode' && m.parentRatingKey) list.push({ label: T('Go to season'), action: function () { stack = [{ ratingKey: m.grandparentRatingKey, type: 'show', title: m.grandparentTitle, server: m.server }, { ratingKey: m.parentRatingKey, type: 'season', title: m.parentTitle || T('Season {n}', { n: m.parentIndex }), server: m.server }]; rowAt = 0; colAt = {}; rows = []; zone = 'rows'; draw(); load(); } });
+    if (m.type === 'episode' && m.grandparentRatingKey) list.push({ label: T('Go to show'), action: function () { PlexPage.open({ ratingKey: m.grandparentRatingKey, type: 'show', title: m.grandparentTitle, server: m.server }, restore); } });
+    if (m.type === 'episode' && m.parentRatingKey) list.push({ label: T('Go to season'), action: function () { PlexPage.open({ ratingKey: m.parentRatingKey, type: 'season', title: m.parentTitle, server: m.server }, restore); } });
     UI.menu(I18n.raw(m.type === 'episode' ? (m.grandparentTitle || '') + '  ·  ' + (m.title || '') : m.title), list);
   }
   // One movie or episode watched or not, on the server.
@@ -421,7 +437,8 @@ var PlexView = (function () {
   function leave() { open_ = false; loadSeq++; }
 
   // A show opened from somewhere else (a title's Go to show): its seasons in place on the Plex tab.
-  function openShow(m) { stack = [m]; rowAt = 0; colAt = {}; zone = 'rows'; UI.setHandler(keys); load(); }
+  // A collection (or a show's seasons) from elsewhere: from a title's page it goes on top, so Back returns there.
+  function openShow(m) { if (!m.page) stack = []; push(m); zone = 'rows'; UI.setHandler(keys); draw(); load(); }
 
-  return { open: open, resume: resume, leave: leave, picture: pic, file: raw, details: more, openShow: openShow, editRows: editRows, read: { home: homeRows, children: childRows, search: searchRows }, homeTitles: function () { return lastHome; }, _test: { more: more, tab: function (i) { tabAt = i; switched(); }, home: function () { tabAt = 0; switched(); }, tabs: function () { return tabsList; }, rows: function () { return rows; }, keys: keys, focused: focused } };
+  return { open: open, resume: resume, leave: leave, picture: pic, file: raw, details: more, openShow: openShow, openPerson: openPerson, itemOptions: itemOptions, editRows: editRows, read: { home: homeRows, children: childRows, search: searchRows }, homeTitles: function () { return lastHome; }, _test: { more: more, tab: function (i) { tabAt = i; switched(); }, home: function () { tabAt = 0; switched(); }, tabs: function () { return tabsList; }, rows: function () { return rows; }, keys: keys, focused: focused } };
 })();
