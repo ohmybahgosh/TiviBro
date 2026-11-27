@@ -799,7 +799,7 @@ Everyone who has helped build TiviBro with code, ideas or bug reports.  This lis
   <a href="https://github.com/NassimDIB" title="NassimDIB: 1 pull request"><img src="https://avatars.githubusercontent.com/u/48483304?v=4&amp;s=96" width="48" height="48" alt="NassimDIB"></a>
   <a href="https://github.com/ich0x" title="ich0x: 15 ideas and bug reports"><img src="https://avatars.githubusercontent.com/u/25590184?v=4&amp;s=96" width="48" height="48" alt="ich0x"></a>
   <a href="https://github.com/abada89" title="abada89: 5 ideas and bug reports"><img src="https://avatars.githubusercontent.com/u/185412895?v=4&amp;s=96" width="48" height="48" alt="abada89"></a>
-  <a href="https://github.com/Hitesh04444" title="Hitesh04444: 3 ideas and bug reports"><img src="https://avatars.githubusercontent.com/u/289120057?v=4&amp;s=96" width="48" height="48" alt="Hitesh04444"></a>
+  <a href="https://github.com/Hitesh04444" title="Hitesh04444: 4 ideas and bug reports"><img src="https://avatars.githubusercontent.com/u/289120057?v=4&amp;s=96" width="48" height="48" alt="Hitesh04444"></a>
   <a href="https://github.com/bl4xor" title="bl4xor: 1 idea or bug report"><img src="https://avatars.githubusercontent.com/u/123498914?v=4&amp;s=96" width="48" height="48" alt="bl4xor"></a>
   <a href="https://github.com/doubleraz" title="doubleraz: 1 idea or bug report"><img src="https://avatars.githubusercontent.com/u/260060622?v=4&amp;s=96" width="48" height="48" alt="doubleraz"></a>
   <a href="https://github.com/LordDonkey" title="LordDonkey: 1 idea or bug report"><img src="https://avatars.githubusercontent.com/u/52051804?v=4&amp;s=96" width="48" height="48" alt="LordDonkey"></a>
@@ -810,7 +810,7 @@ Everyone who has helped build TiviBro with code, ideas or bug reports.  This lis
 - **[NassimDIB](https://github.com/NassimDIB)**: 1 pull request
 - **[ich0x](https://github.com/ich0x)**: 15 ideas and bug reports
 - **[abada89](https://github.com/abada89)**: 5 ideas and bug reports
-- **[Hitesh04444](https://github.com/Hitesh04444)**: 3 ideas and bug reports
+- **[Hitesh04444](https://github.com/Hitesh04444)**: 4 ideas and bug reports
 - **[bl4xor](https://github.com/bl4xor)**: 1 idea or bug report
 - **[doubleraz](https://github.com/doubleraz)**: 1 idea or bug report
 - **[LordDonkey](https://github.com/LordDonkey)**: 1 idea or bug report
