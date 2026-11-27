@@ -1022,14 +1022,13 @@ body.full .activity,body.mgr-open .activity{display:none}
 .media-busy{position:absolute;right:56px;top:66px;z-index:3;font-size:20px;color:var(--text);padding:6px 16px 6px 36px;border-radius:999px;background:rgba(0,0,0,.55);white-space:nowrap}
 .media-busy::before{content:'';position:absolute;left:14px;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:50%;background:var(--ok);animation:tb-pulse 1.4s ease-in-out infinite}
 @keyframes tb-pulse{0%,100%{opacity:1}50%{opacity:.25}}
-/* The Plex tab (plexview.js): My media's look, with Plex's navigation on one line as Plex's TV app has it: the tabs as
-   words (the open one bold, underlined in the accent), then a thin line and the library's views, smaller.  With the
-   focus up there, the focused word is a white pill. */
-#viewPlex .plex-nav{position:absolute;left:152px;top:26px;z-index:3;display:flex;align-items:center;gap:34px}
+/* The Plex tab (plexview.js): My media's look, with Plex's navigation as words as Plex's TV app has it: the tabs (the
+   open one bold, underlined in the accent), and under them a library's views, smaller, where ▼ from the tabs goes.
+   With the focus up there, the focused word is a white pill. */
+#viewPlex .plex-nav{position:absolute;left:152px;top:22px;z-index:3;display:flex;flex-direction:column;align-items:flex-start;gap:6px}
 #viewPlex .plex-nav .media-tabs{position:static;gap:38px;align-items:center}
 #viewPlex .plex-nav .plex-subs{gap:30px}
-#viewPlex .plex-nav .plex-subs::before{content:'';width:2px;height:28px;background:rgba(255,255,255,.24);margin-right:4px}
-#viewPlex .media-hero{top:118px;height:340px}
+#viewPlex .media-hero{top:146px;height:316px}
 /* Plex's backdrops without hard edges: the picture blurred over the whole screen, the sharp one top right fading
    out to the left and the bottom, and a shade where the words and rows are. */
 #viewPlex,.plex-page{background:var(--ink)}
