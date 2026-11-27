@@ -275,6 +275,8 @@ var PlexPage = (function () {
   /* Keys: ◀ ▶ along the buttons, ▼ into the rows (the page scrolls up), OK plays or opens, Back goes to the page
      before (a title opened from a row) or out to the Plex tab.  Hold OK or Red: More.  Yellow: watched or not. */
   function keys(a) {
+    if (full) return fullKeys(a);
+    if (a === 'up' && zone === 'btns' && trailerVid && trailerVid.classList.contains('on')) { watchFull(true); return true; }
     if (a === 'back') {
       if (zone === 'rows') { zone = 'btns'; paint(); return true; }
       if (hist.length) { show(hist.pop()); return true; }
@@ -348,7 +350,8 @@ var PlexPage = (function () {
         var vid = document.createElement('video');
         vid.className = 'plex-trailer'; vid.muted = how !== 'sound'; vid.volume = 0.6; vid.setAttribute('playsinline', '');
         vid.src = 'http://127.0.0.1:' + Net.port + '/plex/' + r[1] + part.key;
-        vid.addEventListener('playing', function () { vid.classList.add('on'); if (how === 'sound') stopTheme(); });
+        vid.addEventListener('playing', function () { vid.classList.add('on'); hint(true); if (how === 'sound') stopTheme(); });
+        vid.addEventListener('timeupdate', function () { if (full) bar(false); });
         vid.addEventListener('ended', function () { stopTrailer(true); });
         vid.addEventListener('error', function () { stopTrailer(); });
         el.insertBefore(vid, el.querySelector('.plex-shade'));
@@ -361,10 +364,49 @@ var PlexPage = (function () {
   function stopTrailer(fade) {
     clearTimeout(trailerWait); trailerWait = 0;
     var v = trailerVid; trailerVid = null;
+    if (full) watchFull(false);
+    hint(false);
     if (!v) return;
     var drop = function () { try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) {} if (v.parentNode) v.parentNode.removeChild(v); };
     v.classList.remove('on');
     if (fade) setTimeout(drop, 900); else drop();
+  }
+  /* Watching it full screen (▲ on the page's buttons while it plays, as PlxNative does): the page fades away, the
+     trailer fills the screen with sound, and a small bar shows "Trailer", the title and where it is.  OK pauses and
+     plays, ◀ ▶ go back and forward 10 seconds, Back or ▼ return to the page (as it was, sound as the setting says). */
+  var full = false, barTimer = 0;
+  function watchFull(on) {
+    var el = $('plexPage'), v = trailerVid; if (!el) return;
+    full = !!(on && v);
+    el.classList.toggle('trailer-full', full);
+    if (v) { v.muted = full ? false : Plex.prefs().pageTrailer !== 'sound'; if (full) stopTheme(); }
+    if (full) bar(true); else { var b = $('plexTrailerBar'); if (b) b.classList.remove('show'); }
+    if (!full) paint();
+  }
+  function fullKeys(a) {
+    var v = trailerVid;
+    if (!v || a === 'back' || a === 'down') { watchFull(false); return true; }
+    if (a === 'ok' || a === 'play' || a === 'pause' || a === 'playpause') { if (v.paused) { var p = v.play(); if (p && p.catch) p.catch(function () {}); } else v.pause(); }
+    else if (a === 'left' || a === 'rew') v.currentTime = Math.max(0, v.currentTime - 10);
+    else if (a === 'right' || a === 'ff') v.currentTime = Math.min((v.duration || 0) - 0.5, v.currentTime + 10);
+    bar(true); return true;
+  }
+  // The full-screen trailer's bar, drawn again; [wake] shows it for 4 seconds (any key does).
+  function bar(wake) {
+    var el = $('plexPage'), v = trailerVid; if (!el || !v) return;
+    var b = $('plexTrailerBar');
+    if (!b) { b = U.el('div', 'plex-trailer-bar'); b.id = 'plexTrailerBar'; el.appendChild(b); }
+    var d = v.duration || 0, t = v.currentTime || 0;
+    b.innerHTML = '<div class="media-kicker">' + esc(T('Trailer')) + (v.paused ? '  ·  ' + esc(T('Paused')) : '') + '</div><div class="ptb-title">' + esc(item ? item.title : '') + '</div>' +
+      '<div class="ptb-line"><span>' + clock(t * 1000) + '</span><div class="media-progress"><i style="width:' + (d ? Math.min(100, t / d * 100) : 0) + '%"></i></div><span>' + (d ? clock(d * 1000) : '') + '</span></div>';
+    if (wake) { b.classList.add('show'); clearTimeout(barTimer); barTimer = setTimeout(function () { if (trailerVid && !trailerVid.paused) b.classList.remove('show'); }, 4000); }
+  }
+  // "▲ Watch the trailer", in the corner while it plays behind the page.
+  function hint(on) {
+    var el = $('plexPage'); if (!el) return;
+    var h = $('plexTrailerHint');
+    if (!h && on) { h = U.el('div', 'plex-trailer-hint', '▲  ' + T('Watch the trailer')); h.id = 'plexTrailerHint'; el.appendChild(h); }
+    if (h) h.classList.toggle('show', !!on);
   }
   function stopTheme() {
     if (themeAudio) { try { themeAudio.pause(); themeAudio.removeAttribute('src'); themeAudio.load(); } catch (e) {} }
@@ -753,5 +795,5 @@ var PlexPage = (function () {
     return Plex.call(server, (on ? '/:/scrobble' : '/:/unscrobble') + '?identifier=com.plexapp.plugins.library&key=' + encodeURIComponent(String(key))).then(function () { return { on: !!on }; });
   }
 
-  return { quiet: function () { stopTheme(); stopTrailer(); }, diag: diag, open: open, ended: ended, playAll: playAll, shuffleOf: shuffleOf, close: close, reshow: reshow, playKey: playKey, playerItems: playerItems, pageData: pageData, playExtra: playExtra, playNextKey: playNextKey, markKey: markKey, _test: { theme: function () { return themeSrc; }, trailer: function () { return trailerLast; }, stalled: stalled, lowerQuality: lowerQuality, quality: quality, marks: marks, badges: badges, direct: direct, converts: converts, chapters: chapters, item: function () { return item; }, keys: keys, buttons: function () { return btns; }, shelf: function () { return shelf; } } };
+  return { quiet: function () { stopTheme(); stopTrailer(); }, diag: diag, open: open, ended: ended, playAll: playAll, shuffleOf: shuffleOf, close: close, reshow: reshow, playKey: playKey, playerItems: playerItems, pageData: pageData, playExtra: playExtra, playNextKey: playNextKey, markKey: markKey, _test: { theme: function () { return themeSrc; }, full: function () { return full; }, trailer: function () { return trailerLast; }, stalled: stalled, lowerQuality: lowerQuality, quality: quality, marks: marks, badges: badges, direct: direct, converts: converts, chapters: chapters, item: function () { return item; }, keys: keys, buttons: function () { return btns; }, shelf: function () { return shelf; } } };
 })();
