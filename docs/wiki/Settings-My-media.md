@@ -13,7 +13,7 @@ Your libraries, like Plex's: each one is a folder of movies or TV shows on a med
 | **Scan all libraries** | | Same as Green on My media: scan every library for movies and episodes. |
 | **Fetch details for all** | | Same as Red > Fetch missing details on My media: look up details for movies, shows and the episodes you have, and refresh outdated language details. |
 | **Edit on a computer** *(on the TV)* | | Shows a code for a computer or phone browser: the web editor's My media page, for typing server logins, fixing many matches at once and TV show episodes. |
-| **Display and shelves ›** | | Sorting (**Sort movies by**, **Sort TV shows by**, reversed or not), **Arrange shelves** (one per tab with movies and shows), **Library poster size**, **Watched marks on posters**, **Mark what's new**, **Open where you left off**, **Play the next one automatically**, **Favorites also in lists** and **Metadata language**. |
+| **Display and shelves ›** | | Sorting (**Sort movies by**, **Sort TV shows by**, **Reverse the movie order**, **Reverse the TV show order**), **Arrange Home shelves**, **Arrange Movies shelves** and **Arrange TV shows shelves** (Red on My media too), **Library poster size**, **Watched marks on posters**, **Mark what's new**, **Open where you left off**, **Play the next one automatically**, **Favorites also in lists** and **Metadata language**. |
 | **Trakt ›** | | [Settings: Trakt](Settings-My-media#settings-trakt). |
 | **TMDB API token ›** | | Opens [API keys](Settings-API-keys), the one place the token lives: add, test or remove it there. |
 
@@ -26,6 +26,7 @@ Your libraries, like Plex's: each one is a folder of movies or TV shows on a med
 | **Show on Home** | On: its Recently added, Continue watching and favorites are on My media's Home.  Off: only on the Movies and TV shows tabs. |
 | **Scan now**, **Restart scan** | Look for added or removed files; Restart starts over from the first folder.  While it scans: **Pause scan**. |
 | **Fetch movie details** / **Fetch show details** | From TMDB, for this library. |
+| **Not looked up yet** | Movies TMDB hasn't been asked about yet (a lookup that stopped, or no token then).  OK looks them up now; it also happens by itself. |
 | **Change login** *(shares and WebDAV)* | A new user name and password, checked with the server before it's saved.  The library and its matches stay.  In the phone app it's in the library's form, in the web editor on its card. |
 | **More for this library** | Its folder, Dropbox sign-in, pause or restart a scan.  In the phone app: the phone's own form. |
 | **Unmatched movies ›** | The movies TMDB didn't recognise, each with **Fix match** (type the title, pick the right movie) or **Exclude from My media** (a sample, a clip or anything else you don't want there).  The web editor and the phone app have an **Exclude** button beside Fix match. |
@@ -45,10 +46,11 @@ Your libraries, like Plex's: each one is a folder of movies or TV shows on a med
 | **Mark as watched on Trakt** | **On** | A movie or episode you finish on My media goes on your Trakt history.  Kept and sent later when Trakt can't be reached. |
 | **Bring my Trakt history in** | **On** | What you watched in other apps shows as watched here, so Next up and Not watched yet follow along. |
 | *(each list)* | | Its page: **On My media**, **Holds** (movies, TV shows or both, and so its tab), its name, **Refresh now** and **Remove from My media**. |
-| **Add a list by its link** | | Like Radarr and Sonarr: paste a trakt.tv/users/NAME/lists/LIST link, or type NAME/LIST.  The list must be public, or yours. |
-| **Find a list** | | Search Trakt's public lists by name. |
-| **Add a Trakt chart** | | Trending, popular, most anticipated, box office and most watched, for movies or shows. |
-| **Add your watchlist or recommendations** | | Your Trakt watchlist, and the movies and shows Trakt recommends for you. |
+| **From your Trakt account** | | Once connected: **Recently watched** and **Your watchlist** (on Home), **Movies Trakt recommends for you** and **Shows Trakt recommends for you**.  One already on My media has a ✓. |
+| **Trakt charts: movies**, **Trakt charts: TV shows** | | Trending, popular, most anticipated, box office and most watched, each a shelf on its tab. |
+| **Search lists by name** | | Under **Lists other people made**.  Christmas, A24, Oscar winners, 80s horror: each result says what it holds. |
+| **Popular lists**, **Trending lists** | | The lists most liked, or most looked at now, on Trakt. |
+| **Paste a list's link** | | Like Radarr and Sonarr: a trakt.tv/users/NAME/lists/LIST link, or NAME/LIST.  The list must be public, or yours. |
 
 Lists refresh every 6 hours.  TiviBro uses Trakt but is not endorsed or certified by Trakt.  Trakt's free accounts have limits on lists and items; TiviBro says so when Trakt answers that one is reached.
 

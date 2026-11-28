@@ -2,9 +2,9 @@
 
 Everything TiviBro does, on the TV and from your computer.  Every picture here comes from a made-up demo provider, so the channel names are invented.
 
-**On the TV:** [First start](#first-start) · [The set-up tour](#the-set-up-tour) · [Channel logos](#channel-logos) · [The remote](#the-remote) · [The guide](#the-guide) · [Groups and the menu](#groups-and-the-menu) · [Watching fullscreen](#watching-fullscreen) · [Other versions of a channel](#other-versions-of-a-channel) · [Event channels](#event-channels-pay-per-view-and-sports-passes) · [My teams](#my-teams) · [Movies on now](#movies-on-now) · [My media](#my-media) · [Catch-up](#catch-up) · [Movies and shows](#movies-and-shows) · [Search](#search) · [Favorites, hiding and your own groups](#favorites-hiding-and-your-own-groups) · [Reminders](#reminders) · [Settings](#settings) · [Updates](#updates) · [Parental controls](#parental-controls)
+**On the TV:** [First start](#first-start) · [The set-up tour](#the-set-up-tour) · [Channel logos](#channel-logos) · [The remote](#the-remote) · [The guide](#the-guide) · [Groups and the menu](#groups-and-the-menu) · [Watching fullscreen](#watching-fullscreen) · [Other versions of a channel](#other-versions-of-a-channel) · [Event channels](#event-channels-pay-per-view-and-sports-passes) · [My teams](#my-teams) · [Sports](#sports) · [Movies on now](#movies-on-now) · [My media](#my-media) · [Plex](#plex) · [Catch-up](#catch-up) · [Movies and shows](#movies-and-shows) · [Search](#search) · [Favorites, hiding and your own groups](#favorites-hiding-and-your-own-groups) · [Reminders](#reminders) · [Settings](#settings) · [Updates](#updates) · [Parental controls](#parental-controls) · [Screensaver](#screensaver)
 
-**Every setting:** [Playlists](#settings-playlists-and-accounts) · [Phone app and web editor](#settings-phone-app-and-web-editor) · [Guide](#settings-guide) · [Channels and groups](#settings-channels-and-groups) · [Channel and group names](#settings-channel-and-group-names) · [Playback](#settings-playback) · [Audio and subtitles](#settings-audio-and-subtitles) · [Recording and live pause](#settings-recording-and-live-pause) · [Remote and buttons](#settings-remote-and-buttons) · [Movies and shows](#settings-movies-and-shows) · [My media](#settings-my-media) · [Trakt](#settings-trakt) · [Reminders and watchlist](#settings-reminders-and-watchlist) · [Parental controls](#settings-parental-controls) · [Appearance](#settings-appearance) · [API keys](#settings-api-keys) · [Backups and restore points](#settings-backups-and-restore-points) · [System](#settings-system)
+**Every setting:** [Playlists](#settings-playlists-and-accounts) · [Phone app and web editor](#settings-phone-app-and-web-editor) · [Guide](#settings-guide) · [Channels and groups](#settings-channels-and-groups) · [Sports](#settings-sports) · [Channel and group names](#settings-channel-and-group-names) · [Playback](#settings-playback) · [Audio and subtitles](#settings-audio-and-subtitles) · [Recording and live pause](#settings-recording-and-live-pause) · [Remote and buttons](#settings-remote-and-buttons) · [Movies and shows](#settings-movies-and-shows) · [My media](#settings-my-media) · [Trakt](#settings-trakt) · [Plex](#settings-plex) · [Reminders and watchlist](#settings-reminders-and-watchlist) · [Parental controls](#settings-parental-controls) · [Appearance](#settings-appearance) · [API keys](#settings-api-keys) · [Backups and restore points](#settings-backups-and-restore-points) · [System](#settings-system)
 
 **From your computer:** [Turning on the web editor](#turning-on-the-web-editor) · [Drafts and Send to TV](#drafts-and-send-to-tv) · [Channels and groups](#channels-and-groups) · [Smart clean-up](#smart-clean-up) · [Channel and group names](#channel-and-group-names) · [The programme guide](#the-programme-guide) · [Reminders and watchlist](#reminders-and-watchlist) · [Playlists](#playlists) · [My media in the editor](#my-media-in-the-editor) · [Backups and restore points](#backups-and-restore-points)
 
@@ -232,7 +232,7 @@ The **Channels** screen (in the side menu when **Channels screen in the menu** i
 ### Watching fullscreen
 
 - **▲ ▼** or **CH + / CH −** change channel.  An info bar shows the channel, what's on now and next, and how far into the programme you are.
-- **The screensaver waits.**  While a channel, a movie or episode, My media or catch-up plays, TiviBro asks the TV to hold off its screensaver (a homebrew one such as Aerial too).  It also waits for a minute and a half after something last played (so a reconnect or a channel that won't play doesn't let it in), and for 3 minutes after you last pressed a button, including on the phone app, whose presses the TV doesn't count.  When nothing plays, playback is paused, or you are in another app, the screensaver comes on as usual.  There is nothing to set.
+- **The screensaver waits.**  While a channel, a movie or episode, My media or catch-up plays, TiviBro asks the TV to hold off its screensaver (a homebrew one such as Aerial too).  It also waits for a minute and a half after something last played (so a reconnect or a channel that won't play doesn't let it in), and for 3 minutes after you last pressed a button, including on the phone app, whose presses the TV doesn't count.  When nothing plays, playback is paused, or you are in another app, TiviBro's own [screensaver](#screensaver) comes on (and holds the TV's back for its first hour); with it turned off, the TV's screensaver comes on as usual.
 - **▶** shows the full programme info.  **Yellow** jumps back to the last channel.  **Green** goes back to the TV guide.
 - **Hold OK** (or **OK > Channel guide**) lays the channel guide over the video: the group's channels with what's on now.  **OK** on another channel switches to it and keeps the channel guide open so you can keep browsing; **OK** on the channel that's already playing closes it.  **◀ ▶** change group.
 - **OK** opens the **quick menu**: Channel guide, From start (catch-up channels), Favorite, TV guide, Other versions (when the channel has them), Scores (while one of your teams is playing: turns your teams' score corner on or off), Captions, Aspect, Sleep timer, Stream info and Reconnect.
@@ -666,19 +666,25 @@ Watch your Plex server in TiviBro.  **Plex** joins the menu once you sign in and
 
 **The Plex tab** has **Home**, then your libraries, then **Search**.  Home starts with **Continue watching** from every server, then your **Watchlist** and the rows of your Plex home in Plex's own order.  **Streaming Top 10s you have** shows the titles your Plex has that are on yesterday's streaming Top 10s in your country (FlixPatrol), with "#3 on Netflix" under each poster.  Each library has Plex's own tabs: **Recommended**, **Library**, **Collections**, **Categories** and **Playlists**.  On **Library**, **Red** sorts it (date added, title, release date, ratings, last watched, plays, length, random) and filters it (unwatched only, a genre); TiviBro remembers both for each library.  On Home, **Red > Edit home rows** turns any of Plex's rows off.
 
-**A movie or an episode** opens its page: the backdrop, year, rating, length and when it would end, 4K, HDR, Dolby Vision and Atmos badges, the critics' and audience scores, the summary and the cast.  **Resume from** where you stopped (here or in any other Plex app), **Play from the start**, **Trailer**, **Mark watched**, and **More**: another version of the file, the audio and subtitle tracks (Plex keeps your choice), **Add to Watchlist**, **Remove from Continue watching** and **Go to show**.  **Yellow** marks it watched or not watched.
+**A movie or an episode** opens its page: the backdrop, year, rating, length and when it would end, 4K, HDR, Dolby Vision and Atmos badges, the critics' and audience scores, the summary and the cast.  **Resume from** where you stopped (here or in any other Plex app), **Play from the start**, **Trailer**, **Mark watched**, and **More**: another version of the file, the audio and subtitle tracks (Plex keeps your choice), **Add to Watchlist**, **Remove from Continue watching** and **Go to show**.  **Yellow** marks it watched or not watched.  A show's or a season's page has **Play** (the episode you're in, else the next one) and **Shuffle** (its episodes in a random order).
 
-**Watching.**  A file the TV can play is played as it is, at full quality.  Anything else (an old MPEG-2 recording, a file bigger than your quality setting) is converted by the server.  Where you are goes to Plex every 10 seconds, so you can stop here and carry on in Plex's own app.  90% counts as watched, as in Plex.  **Skip intro** and **Skip credits** use Plex's own markers, seeking shows Plex's preview pictures with its chapters on the bar, and the subtitle file you picked in Plex comes along.  When an episode ends, **Up next** counts down to the next one; after three in a row it asks **Still watching?** instead.
+**On a title's page**, with **Settings > Plex > Theme music** on, a show's theme plays quietly, and keeps playing as you move to its seasons and episodes.  With **Trailer on a movie's page** set (Without sound or With sound), a movie's trailer from your server fades in behind its page two seconds after it opens; **▲** on the page's buttons watches it full screen with sound (**OK** pauses, **◀ ▶** go 10 seconds back or forward, **Back** or **▼** return to the page).  Not on TVs with 1 GB of memory.  **Hide spoilers** shows the show's picture and no story for episodes you haven't watched, on the TV and in the phone app.
+
+**Play all and Shuffle** for a collection or a playlist: hold OK on it, or press **Red** inside it.  The titles play one after another with Up next; after the last one, its page comes back.
+
+**Watching.**  A file the TV can play is played as it is, at full quality.  Anything else (an old MPEG-2 recording, a file bigger than your quality setting) is converted by the server.  Where you are goes to Plex every 10 seconds, so you can stop here and carry on in Plex's own app.  90% counts as watched, as in Plex.  **Skip intro** and **Skip credits** use Plex's own markers, seeking shows Plex's preview pictures with its chapters on the bar, and the subtitle file you picked in Plex comes along.  When an episode ends, **Up next** counts down to the next one; after three in a row it asks **Still watching?** instead.  When a movie or a show's last episode ends, its page comes back (the show's, for an episode), as in Plex.  A file played from a server away from home waits for 8 seconds of picture before it starts, so a slow upload doesn't make it stutter, and a title that keeps stopping to load offers to play at the next quality down.
 
 **While watching**, **Red** (Options) opens on a **Plex** tab: **Quality** (Original, and the qualities below the file's own, each with a few words on how it looks and what internet it needs), **Audio**, **Subtitles** (with **Search for subtitles**, which asks your server to find them online), **Playback info** (whether the server converts the picture or the sound, on its graphics chip or processor, and whether it keeps up), the next and previous episode, and **Mark watched**.  Back in any of them returns to Options.
 
 **A title's page** shows what Plex shows under it: **Cast and crew** (OK on a person lists their titles in that library), **Seasons** or **Episodes**, **Extras**, the collections it's in and **More like this**.  **Hold OK** on a title in a row for its options.
 
+**Keeping up.**  While the Plex tab shows, TiviBro looks at your server once a minute: a new title, or something marked watched in another Plex app, shows up by itself, without moving you (watched marks from other apps need the server's owner's sign-in).  **Red > Refresh** reads it all again at once.
+
 **Something wrong with Plex?**  Use **Report a problem** from the Plex tab (or while a Plex title plays): the report is filed under Plex and says how Plex is set up and how the last title played (direct or converted, and why), without your server's name, address or sign-in.
 
 **Away from home**, Plex plays video only with Plex Pass (yours or the server owner's) or a Remote Watch Pass; at home it's free.  A server reached only through Plex's relay is limited to 2 Mbps.  TiviBro says so before it plays.
 
-**In the phone app**, a **Plex** tab shows Home, each library, a show's seasons and episodes, and search.  Tap a title for **Resume on TV** or **Play on TV**: the TV opens Plex and plays it.  While the TV shows the sign-in code, the phone app's **Settings > Plex** opens Plex's page with the code filled in.
+**In the phone app**, **Plex** has its own shortcut on the home screen and sits next to My media in Settings.  Its tab is laid out like the TV's: **Home**, **Top 10** and each library with its views (Recommended, Library, Collections, Categories, Playlists), in the same rows.  Tap a title for its page: backdrop and logo, facts and scores, the summary, **Play** or **Resume** on the TV, the trailer (on the TV, or on YouTube), **Mark watched**, then its cast (tap someone for their titles), seasons and episodes, extras and More like this.  While a Plex title plays, **Now on the TV** on the phone's home screen shows its poster; tap it to open its page.  While the TV shows the sign-in code, the phone app's **Settings > Plex** opens Plex's page with the code filled in.
 
 ### Search
 
@@ -775,6 +781,7 @@ The sections, in the order the TV lists them.  Every option is explained, with i
 | [**Phone app and web editor**](#settings-phone-app-and-web-editor) | Pair the TiviBro phone app, the phone app connection and paired phones, and the web editor (QR code, address, password, port).  In release builds it's called **Web editor** |
 | [**Guide**](#settings-guide) | How your guide is built, provider guide mode and offset, your own guide sources, reloads, public fill-in, guide coverage, assigning a guide, and how the guide looks |
 | [**Channels and groups**](#settings-channels-and-groups) | Manage groups, sorting, which special groups show, My teams, event channels, your own groups, hidden groups and channels, tidy-up |
+| [**Sports**](#settings-sports) | Your teams, their scores while you watch and alerts, the My teams group, the Sports screen, hidden scores |
 | [**Channel and group names**](#settings-channel-and-group-names) | Tidy how names read ("USA \| ESPN HD" becomes "ESPN"): the preloaded rules and your own prefixes and suffixes |
 | [**Playback**](#settings-playback) | Buffer, aspect, catch-up steps, switching channels and what happens when one stops working, memory-safe playback; advanced: player engine, stream format, connection, HDR |
 | [**Audio and subtitles**](#settings-audio-and-subtitles) | Audio language, surround and the audio converter, subtitles and closed captions and how they look, subtitle languages for OpenSubtitles |
@@ -782,10 +789,11 @@ The sections, in the order the TV lists them.  Every option is explained, with i
 | [**Remote and buttons**](#settings-remote-and-buttons) | Up and Down in fullscreen, each button in the player, the guide and the Channels screen, the quick menu's buttons, learning a button |
 | [**Movies and shows**](#settings-movies-and-shows) | Where they open, the order, next episode, hiding spoilers, where details come from (TMDB or TheTVDB) |
 | [**My media**](#settings-my-media) | Your libraries (each with its own page), add a library, look for new files, display and shelves, and Trakt |
+| [**Plex**](#settings-plex) | Sign in, servers and libraries, home rows and Top 10s, quality, Up next, theme music, the trailer on a movie's page, hiding spoilers |
 | [**Reminders and watchlist**](#settings-reminders-and-watchlist) | When reminders come up, the watchlist, every reminder coming up, holding notices during movies |
 | [**Parental controls**](#settings-parental-controls) | Content filter, PIN, what it protects, blocked groups and channels |
-| [**Appearance**](#settings-appearance) | Burn-in protection, start screen and navigation, theme, accent colour, background, focus style, text size, panels over video, logos, clock, numbers |
-| [**API keys**](#settings-api-keys) | The one place for the TMDB token (movie and show details and posters) and the OpenSubtitles key and sign-in |
+| [**Appearance**](#settings-appearance) | Burn-in protection and the screensaver, start screen and navigation, theme, accent colour, background, focus style, text size, panels over video, logos, clock, numbers |
+| [**API keys**](#settings-api-keys) | The one place for the TMDB token (movie and show details and posters), the OpenSubtitles key and sign-in, and Trakt |
 | [**Backups and restore points**](#settings-backups-and-restore-points) | Everything saved, to put back on this TV or another one |
 | [**System**](#settings-system) | Fix a problem, your version and updates, about and licences, report a problem, connection and speed tests, logs, what this TV can play, status, provider status |
 
@@ -836,6 +844,19 @@ Set a PIN under **Settings > Parental controls**, then **Hold OK** on any channe
   <a href="https://tivibro.app/view/#tv-settings-parental"><img src="screenshots/tv-settings-parental.png" width="49%" alt="Parental controls with a PIN"></a>
   <a href="https://tivibro.app/view/#tv-pin"><img src="screenshots/tv-pin.png" width="49%" alt="A blocked channel asks for the PIN"></a>
 </p>
+
+### Screensaver
+
+An OLED screen left on the same picture can wear in.  After a while with no button pressed (5 minutes unless you choose), on any screen but a video that plays, TiviBro's screensaver makes the screen almost black with one of these, a new one every 4 minutes:
+
+- **Clock**: a big, dim clock and the date, slowly wandering round the screen, with your next game under it.
+- **Aurora**: dark colours slowly drifting into each other, with a small clock that changes corner (not on TVs with 1 GB of memory).
+- **From your Plex**: a picture from your Plex home, dimmed and slowly moving, with its title.
+- **My teams**: your teams' scores and next games, when they have one today.
+
+A look with nothing to show is skipped.  Nothing stays in one place: each look moves slowly, and the whole screen shifts a few pixels every minute.  Over a **paused video** it comes on too, after its own wait (5 minutes unless you choose).  The first button you press only brings TiviBro back, so it never changes the channel by accident.  While it shows, the TV's own screensaver waits; an hour in, it takes over for the night (or TiviBro's keeps going, if you choose).
+
+Turn it off, pick the looks, set the waits or **Preview** it in [Settings > Appearance > Screensaver](#settings-appearance).  With it off, the screen dims after 10 minutes instead (Burn-in protection).
 
 ### Opening TiviBro from other apps
 
@@ -946,7 +967,7 @@ In release builds, where the phone app isn't offered yet, this page is called **
 
 The TiviBro app for Android is a remote and a second screen for this TV.  Pair a phone once and it stays paired.
 
-- **The home screen** shows one TV at a time, the one you used last: its state with a power button, **Now on the TV** (the channel, the programme and how far into it), a big **Remote** next to **Guide**, the other shortcuts it has (**Sports**, **On now**, **Movies and Shows**, **My media**, **Reminders**, **Recordings**, **Edit channels**, **Backups**, **Settings**), and its reminders **Coming up**.  With several TVs, swipe the card for the next one (the dots under it say which), or tap the TV's name for a list of them all, where one that's off can be turned on and one showing another app can open TiviBro.  **Add a TV** is at the top with one TV, and in that list with several.
+- **The home screen** shows one TV at a time, the one you used last: its state with a power button, **Now on the TV** (the channel, the programme and how far into it, or the movie or episode with its poster: tap a Plex one to open its page), a big **Remote** next to **Guide**, the other shortcuts it has (**Sports**, **On now**, **Movies and Shows**, **My media**, **Plex**, **Reminders**, **Recordings**, **Edit channels**, **Backups**, **Settings**), and its reminders **Coming up**.  With several TVs, swipe the card for the next one (the dots under it say which), or tap the TV's name for a list of them all, where one that's off can be turned on and one showing another app can open TiviBro.  **Add a TV** is at the top with one TV, and in that list with several.
 - **Remote**: arrows round OK (hold OK for options), Back, channel and volume buttons, play and pause, the colour buttons and Info.
 - **Type on your phone**: whenever the TV shows a box to type in (setting up a playlist, Search, renaming a group), the same boxes show at the top of the app.  Type with the phone's keyboard and the TV fills in as you go.  Passwords travel encrypted and are never shown on the phone.
 - **Channels**: every channel as TiviBro shows it, by group, with what is on now.  Tap one to play it on the TV, and the star to add or remove it from your Favorites.  **Press and hold** a channel for its options: Favorites, your own groups (in or out, or a new group with it), **Rename…** and **Hide on the TV**.
@@ -957,7 +978,7 @@ The TiviBro app for Android is a remote and a second screen for this TV.  Pair a
 - **Remote widget**: add **TiviBro Remote** to the phone's home screen for a remote laid out like the real one, without opening the app: the arrows on a ring round OK, volume and channel as up-and-down rockers, Back, Home, the menu, the guide, mute, Info, rewind, play and fast forward, and the colour buttons.  Resize it and its layout follows: a strip with the arrows, both rockers and Back, a wide one, a tall one, and nearly the whole page with bigger buttons and a number pad.  The TV button opens TiviBro.  The power button turns the TV on and opens TiviBro when it's off, and turns it off when it's on.  Both widgets use the TV picked for the Quick Settings tile (or your only TV).
 - **Recordings**: the USB drive in the TV and its room, then **Recording now**, **Scheduled**, **Recorded** and **Didn't record**, as on the TV's Recordings screen, with how much you've watched.  Tap one to **Watch on TV** (where you left off, or **Watch from the start**), **Stop recording**, **Cancel recording** or **Delete** (it asks first).  To record, tap a programme in the Guide and choose **Record** (one on now records from now to its end, a later one is scheduled), or press and hold a channel for **Record now**.
 - **Movies** and **Shows**: the TV's own lists (its languages, hidden categories and PIN) as posters.  Search, pick a category, and open a title: **Resume on TV**, **From the start**, or a show's season and episode.
-- **Settings**: every page of TiviBro's Settings on the TV, in the same 17 sections, changed on the TV at once.  When a button asks something (a box to type in, a menu to pick from, an "are you sure"), the question appears on the phone instead of the TV, and your answer goes back to the TV; a username then a password come one after the other.  Rows marked **On the TV** (**Learn a button**, **Button tester**, **Set-up tour**, **Pair the TiviBro app…**, the QR codes) happen on the TV's screen, so look there.  **Settings > My media** adds and manages sources on the phone itself: **Add media** (the TV looks for servers on your network, or type a WebDAV address and login), each source's rescan, content, details and remove, and the TMDB token.  **View app log**, and **TiviBro log** at the bottom of the section list, open the log on the phone.  When the TV's Settings are locked with a PIN, the phone asks for it.
+- **Settings**: every page of TiviBro's Settings on the TV, in the same 20 sections, changed on the TV at once.  When a button asks something (a box to type in, a menu to pick from, an "are you sure"), the question appears on the phone instead of the TV, and your answer goes back to the TV; a username then a password come one after the other.  Rows marked **On the TV** (**Learn a button**, **Button tester**, **Set-up tour**, **Pair the TiviBro app…**, the QR codes) happen on the TV's screen, so look there.  **Settings > My media** adds and manages sources on the phone itself: **Add media** (the TV looks for servers on your network, or type a WebDAV address and login), each source's rescan, content, details and remove, and the TMDB token.  **View app log**, and **TiviBro log** at the bottom of the section list, open the log on the phone.  When the TV's Settings are locked with a PIN, the phone asks for it.
 - **Edit channels**: the [web editor](#turning-on-the-web-editor) full screen, already signed in.  Its My media and Backups and restore points pages hand over to the app's own screens.
 - **Backups and restore points** (the **Backups** shortcut, also from Settings and the web editor): one screen with three parts.
   - **Saved on this phone**: **Back up now**, and **Back up every week** (while TiviBro is open on the TV and the phone is on your Wi-Fi).  Backups stay on the phone, encrypted.  Put one back on this TV or another paired TV.  The newest 8 automatic backups are kept; named, copied and edited ones stay until you delete them.
@@ -1096,6 +1117,24 @@ Which groups show, in what order, the special groups (Recent, Favorites, My team
 | **Times with no time zone are in** | **The provider's time zone** | For names without ET, PT, UK and so on.  US Eastern, Central, Mountain or Pacific, UK, Central Europe, UTC, or this TV's time.  Times always show in the TV's own time. |
 | *(list)* | | How many event channels the playlist has, and the next few events. |
 
+### Settings: Sports
+
+The teams you follow and what TiviBro does with them.  See [My teams](#my-teams) and [Sports](#sports).
+
+| Setting | Choices | What it does |
+|---|---|---|
+| *(each league)* | | Under **Your teams**.  The leagues in your playlist (NFL, NBA, NHL, MLB, WNBA, MLS, college football and college basketball): open one and tick your teams.  Teams with their own channel say so.  Or hold OK on a team's channel and choose **Follow**. |
+| **My teams' scores while watching** | **On** · Off | Under **While you watch**.  While you watch something else full screen, a live game of a team you follow shows its score in a corner, kept up to date (several take turns).  Never the game you're watching. |
+| **Where the scores go** | Top left · **Top right** · Bottom left · Bottom right | The corner for those scores: pick one your channels' own logos and scores don't use. |
+| **Teams in the corner** | | Turn a team off to leave its games out of the corner.  Sports and alerts still have them. |
+| **Alerts for my teams** | **On** · Off | A close game near the end asks whether to switch to it, and a final score says so, wherever you are in TiviBro.  Never for the game you're watching. |
+| **Final scores** | | Turn a team off and its final score no longer pops up.  Close-game alerts still come. |
+| **Show the My teams group** | **On** · Off | Under **In the guide**.  Near the top of the guide: their games on now first, then the ones starting soon. |
+| **Games starting within** | 3 · **6** · 12 · 24 hours | How soon a game has to start to be in the group. |
+| **Remind me before their games** | On · **Off** | Reminders for their games, like the watchlist (set up in Settings > Reminders and watchlist > Watchlist). |
+| **Sports in the menu** | **On** · Off | Under **Sports screen**.  The screen of today's games with live scores and logos. |
+| **Hide scores** | | A team's scores stay hidden in Sports, the corner and alerts, for a game you recorded or will watch later.  On a game's page, **Show the score** shows that one. |
+
 ### Settings: Channel and group names
 
 Rules that strip clutter from every channel and group name at once, for the playlist in use (each playlist has its own rules, also on its page under **Playlists**).  Your provider's names are never changed: switch a rule off and the original comes back.  Names you set by hand stay.
@@ -1162,6 +1201,8 @@ How channels start, how much video TiviBro holds, which player it uses, and what
 | **Black screen while switching** | On · **Off** | Hides the last picture until the next channel starts, instead of leaving it frozen. |
 | **When a channel stops working** | **Switch to another version** · Ask me · Keep retrying | When a channel has run out of retries and your playlist has it more than once (another quality, another group, or a copy you hid), TiviBro switches to the next version, steadiest first: Full HD, HD, unmarked, 4K, then SD.  *Ask me* asks before switching.  See [Other versions of a channel](#other-versions-of-a-channel). |
 | **Ask when a channel is slow to start** | **On** · Off | After 12 seconds without a picture (fullscreen), TiviBro says what it has seen (nothing from the provider yet, an error from the provider, or video the TV shows no picture for, and which players it tried) and asks: **Keep trying** (asks again a minute later), **Start over**, **Other versions of this channel** or **Stop**.  It closes by itself if the channel starts. |
+| **Channels with their own format** | | Only when some channels have their own stream format (set from a channel's options): which ones, and OK sets every channel back to the format above. |
+| **Dolby Vision 7 (UHD Blu-ray)** | **Automatic** · Off | A UHD Blu-ray remux's Dolby Vision (profile 7) shows only as HDR10 on LG TVs.  *Automatic* plays it as profile 8.1 through the converter, in Dolby Vision.  *Off*: HDR10, as before. |
 
 ### Settings: Audio and subtitles
 
@@ -1183,6 +1224,9 @@ Which audio track plays, sound the TV can't play, subtitles and captions, and su
 | **Subtitle colour** | **White** · Yellow · Gold · Light blue · Light green | For subtitles in movies, shows and channels.  Closed captions keep the channel's own colours. |
 | **Subtitle size** | Small · **Medium** · Large · Extra large | |
 | **Subtitle background** | **Outline** · See-through box · Black box | A box behind each line is easier to read over bright scenes. |
+| **Subtitle position** | Lowest · **Normal** · A little higher · Higher · Highest | Higher keeps the lines clear of a picture's own captions or a score bar.  For subtitles TiviBro draws (most of them).  Also in the player: Subtitles > Size and style. |
+| **Subtitle brightness** | **Full** · 90 % · 75 % · 60 % | Dimmer white lines are easier on the eyes in a dark room, and on an OLED. |
+| **Bold subtitles** | On · **Off** | Thicker letters. |
 | **Subtitle languages** | English and others, several at once | Under **Subtitles from OpenSubtitles**.  The languages **Find subtitles** looks for, your first one listed first. |
 | **Set up OpenSubtitles (step by step)** | | The free key from opensubtitles.com, step by step (see [Subtitles for movies and shows](#movies-and-shows)).  Kept on this TV, out of backups.  Once set up the row reads **OpenSubtitles API key saved**, to replace the key; an empty key removes it. |
 | **Sign in (optional)** | | Shows once a key is saved.  Your OpenSubtitles account: 20 downloads a day instead of 5.  Kept on this TV only.  In the phone app the username and then the password are asked on the phone. |
@@ -1232,6 +1276,7 @@ Remap any button, choose the quick menu's buttons, and teach TiviBro keys it doe
 | **Quick menu buttons ›** | Switch each quick menu button on or off: Channel guide, Watch from start, Favorite, TV guide, Other versions, Audio track, Subtitles, Closed captions, Video quality, Aspect, Sleep timer, Stream info, Reconnect.  All are on by default; a button only appears when it applies (Audio needs two or more tracks, for example). |
 | **Learn a button** *(on the TV)* | Under **Extra buttons**.  For keys TiviBro doesn't know yet (some LG remotes have extras).  Press this, then the button; it then appears in the button pages to assign.  Some buttons belong to the TV itself (Home, Live TV, the TV's own Guide, Input, Settings): webOS acts on them before TiviBro hears them, so they leave TiviBro and can't be learned. |
 | **Button tester** *(on the TV)* | Shows the key code the TV sends for the next button you press, and what it does in TiviBro. |
+| **Use the Magic Remote buttons** *(a Magic Remote)* | In fullscreen, Hold Red records, Hold Yellow pauses and Hold Blue shows stream info.  Hold Red records in the guide and lists too, and Hold Blue gives a show's details in the guide.  OK in fullscreen has them all as well. |
 | **Restore default buttons** | Puts every button back the way it came, after asking.  Each button page also has **Restore defaults for this screen**. |
 
 The buttons and their defaults:
@@ -1266,11 +1311,13 @@ The Movies and Shows screens, and the details (TMDB or TheTVDB) for them and the
 | Setting | Choices | What it does |
 |---|---|---|
 | **Order movies and shows** | **The provider's order** · Recently added first · Name (A–Z) · Rating (highest first) | The order of titles in each Movies and Shows category and My list.  All movies and All shows stay newest first in the provider's order; Recently added is always newest first. |
+| **Reverse the order** | On · **Off** | Turns the order round: Z to A, oldest, lowest or added longest ago first. |
 | **Category under each poster** | On · **Off** | On shelves that mix categories (Recently added, Continue watching, My list, TMDB's lists), each poster says which category it's in, after its year and rating. |
 | **Count as watched at** | 85% · **90% (as Plex)** · 95% · 98% | A movie, an episode (from your provider or My media) or a recording stopped this far in, or in its last minute, is marked watched and leaves Continue watching. |
 | **Order categories** | **The provider's order** · Name (A–Z) | The order of the categories in the Movies and Shows lists.  Continue watching, My list and the newest titles stay at the top. |
 | **Categories by language** | On · **Off** | A folder for each language when your provider's category names say the language ("HINDI MOVIES", "\|EN\| Action"): open one to see its categories, Back to leave it.  Nothing more is loaded, so it suits TVs with little memory too.  Not with categories ordered by name. |
 | **Open a category as** | **List** · Posters, full screen | A list beside the categories, or the category's titles as a full-screen wall of posters, with the title you're on (its year, length, genre, rating and summary) at the top.  Back goes to the categories. |
+| **Arrange the Movies home**, **Arrange the Shows home** | | Move the home's shelves up or down, switch them off, and pin categories.  **Red** on the Movies or Shows home too. |
 | **Reload movies and shows now** | | Both lists again from your provider, for titles added since they last loaded, without reloading the channels.  Also **Red** on the Movies or Shows home. |
 | **Play the next one automatically** | **On** · Off | When an episode ends, Up next shows the next one and starts it when its countdown ends; the same for the next movie of a collection you play.  Off: Up next waits for OK.  Also in My media. |
 | **Up next countdown** *(Play the next one automatically on)* | 5 · **10** · 15 · 20 seconds | How long Up next counts down before the next one starts.  Also in My media. |
@@ -1294,7 +1341,7 @@ Your libraries, like Plex's: each one is a folder of movies or TV shows on a med
 | **Scan all libraries** | | Same as Green on My media: scan every library for movies and episodes. |
 | **Fetch details for all** | | Same as Red > Fetch missing details on My media: look up details for movies, shows and the episodes you have, and refresh outdated language details. |
 | **Edit on a computer** *(on the TV)* | | Shows a code for a computer or phone browser: the web editor's My media page, for typing server logins, fixing many matches at once and TV show episodes. |
-| **Display and shelves ›** | | Sorting (**Sort movies by**, **Sort TV shows by**, reversed or not), **Arrange shelves** (one per tab with movies and shows), **Library poster size**, **Watched marks on posters**, **Mark what's new**, **Open where you left off**, **Play the next one automatically**, **Favorites also in lists** and **Metadata language**. |
+| **Display and shelves ›** | | Sorting (**Sort movies by**, **Sort TV shows by**, **Reverse the movie order**, **Reverse the TV show order**), **Arrange Home shelves**, **Arrange Movies shelves** and **Arrange TV shows shelves** (Red on My media too), **Library poster size**, **Watched marks on posters**, **Mark what's new**, **Open where you left off**, **Play the next one automatically**, **Favorites also in lists** and **Metadata language**. |
 | **Trakt ›** | | [Settings: Trakt](#settings-trakt). |
 | **TMDB API token ›** | | Opens [API keys](#settings-api-keys), the one place the token lives: add, test or remove it there. |
 
@@ -1307,6 +1354,7 @@ Your libraries, like Plex's: each one is a folder of movies or TV shows on a med
 | **Show on Home** | On: its Recently added, Continue watching and favorites are on My media's Home.  Off: only on the Movies and TV shows tabs. |
 | **Scan now**, **Restart scan** | Look for added or removed files; Restart starts over from the first folder.  While it scans: **Pause scan**. |
 | **Fetch movie details** / **Fetch show details** | From TMDB, for this library. |
+| **Not looked up yet** | Movies TMDB hasn't been asked about yet (a lookup that stopped, or no token then).  OK looks them up now; it also happens by itself. |
 | **Change login** *(shares and WebDAV)* | A new user name and password, checked with the server before it's saved.  The library and its matches stay.  In the phone app it's in the library's form, in the web editor on its card. |
 | **More for this library** | Its folder, Dropbox sign-in, pause or restart a scan.  In the phone app: the phone's own form. |
 | **Unmatched movies ›** | The movies TMDB didn't recognise, each with **Fix match** (type the title, pick the right movie) or **Exclude from My media** (a sample, a clip or anything else you don't want there).  The web editor and the phone app have an **Exclude** button beside Fix match. |
@@ -1326,10 +1374,11 @@ Your libraries, like Plex's: each one is a folder of movies or TV shows on a med
 | **Mark as watched on Trakt** | **On** | A movie or episode you finish on My media goes on your Trakt history.  Kept and sent later when Trakt can't be reached. |
 | **Bring my Trakt history in** | **On** | What you watched in other apps shows as watched here, so Next up and Not watched yet follow along. |
 | *(each list)* | | Its page: **On My media**, **Holds** (movies, TV shows or both, and so its tab), its name, **Refresh now** and **Remove from My media**. |
-| **Add a list by its link** | | Like Radarr and Sonarr: paste a trakt.tv/users/NAME/lists/LIST link, or type NAME/LIST.  The list must be public, or yours. |
-| **Find a list** | | Search Trakt's public lists by name. |
-| **Add a Trakt chart** | | Trending, popular, most anticipated, box office and most watched, for movies or shows. |
-| **Add your watchlist or recommendations** | | Your Trakt watchlist, and the movies and shows Trakt recommends for you. |
+| **From your Trakt account** | | Once connected: **Recently watched** and **Your watchlist** (on Home), **Movies Trakt recommends for you** and **Shows Trakt recommends for you**.  One already on My media has a ✓. |
+| **Trakt charts: movies**, **Trakt charts: TV shows** | | Trending, popular, most anticipated, box office and most watched, each a shelf on its tab. |
+| **Search lists by name** | | Under **Lists other people made**.  Christmas, A24, Oscar winners, 80s horror: each result says what it holds. |
+| **Popular lists**, **Trending lists** | | The lists most liked, or most looked at now, on Trakt. |
+| **Paste a list's link** | | Like Radarr and Sonarr: a trakt.tv/users/NAME/lists/LIST link, or NAME/LIST.  The list must be public, or yours. |
 
 Lists refresh every 6 hours.  TiviBro uses Trakt but is not endorsed or certified by Trakt.  Trakt's free accounts have limits on lists and items; TiviBro says so when Trakt answers that one is reached.
 
@@ -1352,6 +1401,9 @@ Sign in to Plex, pick servers and libraries, and how Plex titles play.  See [Ple
 | **Play files as they are** | On | The TV plays the file itself when it can.  Off: the server always converts (for a file that stutters). |
 | **Play the next one automatically**, **Up next countdown** | On, 10 seconds | Up next for Plex episodes, shared with My media. |
 | **Still watching?** | 3 episodes | After this many episodes in a row, Up next waits for OK. |
+| **Theme music** | On | A show's theme plays quietly on its page, and its seasons' and episodes'. |
+| **Trailer on a movie's page** | Off | Without sound or With sound: a movie's trailer from your server plays behind its page two seconds after it opens; **▲** watches it full screen.  Not on TVs with 1 GB of memory. |
+| **Hide spoilers** | Off | Episodes you haven't watched show the show's picture instead of their own, and no story, on the TV and the phone. |
 | **Skip intro**, **Skip credits**, **Seek previews** | | The same rows as in Settings > Playback. |
 | **Sign out of Plex** | | Plex leaves the menu, the phone app and the web editor until you sign in again. |
 
@@ -1408,7 +1460,13 @@ Which screen TiviBro opens on, where the lists start, colours, sizes and what's 
 
 | Setting | Choices | What it does |
 |---|---|---|
-| **Burn-in protection** | **Pixel shift and dimming** · Pixel shift only · Off | For OLED TVs left on the guide or a menu: every 90 seconds the screen moves a few pixels (4 at most), and after 10 minutes without a key press it dims until you press one (that key only wakes it).  Fullscreen video is left alone. |
+| **Burn-in protection** | **Pixel shift and dimming** · Pixel shift only · Off | For OLED TVs left on the guide or a menu: every 90 seconds the screen moves a few pixels (4 at most), and after 10 minutes without a key press it dims until you press one (that key only wakes it), unless the screensaver below is on.  Fullscreen video is left alone. |
+| **Screensaver** | **On** · Off | Under **Screensaver**.  TiviBro's own screensaver for OLED TVs: see [Screensaver](#screensaver).  Off: the screen dims instead (Burn-in protection). |
+| **Starts after** | 2 · **5** · 10 · 15 · 30 minutes | How long without a button press before it comes on. |
+| **Over a paused video** | Never · 2 · **5** · 10 minutes | A paused picture is the hardest on an OLED screen. |
+| **Clock**, **Aurora**, **From your Plex**, **My teams** | **On** | Each look on or off.  With several on, they take turns every 4 minutes; one with nothing to show is skipped. |
+| **After an hour** | **Let the TV take over** · Keep going | When nobody has come back: the TV's own screensaver (or screen off) takes over, or TiviBro's keeps going. |
+| **Preview** | | Shows it now.  Any button comes back. |
 | **Start screen** | **Guide** · Channels screen | Under **Start and navigation**.  What TiviBro opens on, and where **Back** from other screens leads. |
 | **Lists open on** | **Where I left off** · The first group · A group I pick | Where the selection is when TiviBro opens.  Where I left off is the group and channel you were on last; the other two start at the top of that group (unless a channel is already playing).  With **A group I pick**, **Group to open on** chooses it: any group, Favorites and All channels too. |
 | **Channels screen in the menu** | On · **Off** | The plain channel list (without the guide) in the side menu.  Off, **Green** in the guide still opens it.  Always there while TiviBro starts on it. |
@@ -1444,6 +1502,7 @@ Every key you paste, in one place.  Typing them from the TiviBro phone app (Sett
 |---|---|---|
 | **Add TMDB API token** | | Your free key or Read Access Token from themoviedb.org/settings/api, for movie and show details and posters (My media, Movies on now).  Then **Test TMDB token** and **Remove TMDB token**. |
 | **Set up OpenSubtitles (step by step)** | | The free key for Find subtitles, step by step (an account, the key and what to tick, paste it, checked straight away).  Once set up: **OpenSubtitles API key saved** to replace it, **Test OpenSubtitles key** (the key, and your sign-in if any), **Sign in** for more downloads, and **Remove OpenSubtitles key**. |
+| **Connect Trakt** | | Under **Trakt: watch history and lists**.  The same as in [Settings: Trakt](#settings-trakt); **Trakt history and lists** opens the rest of it in My media. |
 
 The keys stay on this TV, out of backups.
 

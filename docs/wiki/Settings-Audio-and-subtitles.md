@@ -20,6 +20,9 @@ Which audio track plays, sound the TV can't play, subtitles and captions, and su
 | **Subtitle colour** | **White** · Yellow · Gold · Light blue · Light green | For subtitles in movies, shows and channels.  Closed captions keep the channel's own colours. |
 | **Subtitle size** | Small · **Medium** · Large · Extra large | |
 | **Subtitle background** | **Outline** · See-through box · Black box | A box behind each line is easier to read over bright scenes. |
+| **Subtitle position** | Lowest · **Normal** · A little higher · Higher · Highest | Higher keeps the lines clear of a picture's own captions or a score bar.  For subtitles TiviBro draws (most of them).  Also in the player: Subtitles > Size and style. |
+| **Subtitle brightness** | **Full** · 90 % · 75 % · 60 % | Dimmer white lines are easier on the eyes in a dark room, and on an OLED. |
+| **Bold subtitles** | On · **Off** | Thicker letters. |
 | **Subtitle languages** | English and others, several at once | Under **Subtitles from OpenSubtitles**.  The languages **Find subtitles** looks for, your first one listed first. |
 | **Set up OpenSubtitles (step by step)** | | The free key from opensubtitles.com, step by step (see [Subtitles for movies and shows](Movies-and-shows)).  Kept on this TV, out of backups.  Once set up the row reads **OpenSubtitles API key saved**, to replace the key; an empty key removes it. |
 | **Sign in (optional)** | | Shows once a key is saved.  Your OpenSubtitles account: 20 downloads a day instead of 5.  Kept on this TV only.  In the phone app the username and then the password are asked on the phone. |

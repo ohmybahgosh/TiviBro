@@ -28,4 +28,4 @@ Rules that strip clutter from every channel and group name at once, for the play
 
 ---
 
-← [Settings: Channels and groups](Settings-Channels-and-groups)  ·  [Home](Home)  ·  [Settings: Playback](Settings-Playback) →
+← [Settings: Sports](Settings-Sports)  ·  [Home](Home)  ·  [Settings: Playback](Settings-Playback) →

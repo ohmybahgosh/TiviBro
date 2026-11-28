@@ -19,6 +19,7 @@ Remap any button, choose the quick menu's buttons, and teach TiviBro keys it doe
 | **Quick menu buttons ›** | Switch each quick menu button on or off: Channel guide, Watch from start, Favorite, TV guide, Other versions, Audio track, Subtitles, Closed captions, Video quality, Aspect, Sleep timer, Stream info, Reconnect.  All are on by default; a button only appears when it applies (Audio needs two or more tracks, for example). |
 | **Learn a button** *(on the TV)* | Under **Extra buttons**.  For keys TiviBro doesn't know yet (some LG remotes have extras).  Press this, then the button; it then appears in the button pages to assign.  Some buttons belong to the TV itself (Home, Live TV, the TV's own Guide, Input, Settings): webOS acts on them before TiviBro hears them, so they leave TiviBro and can't be learned. |
 | **Button tester** *(on the TV)* | Shows the key code the TV sends for the next button you press, and what it does in TiviBro. |
+| **Use the Magic Remote buttons** *(a Magic Remote)* | In fullscreen, Hold Red records, Hold Yellow pauses and Hold Blue shows stream info.  Hold Red records in the guide and lists too, and Hold Blue gives a show's details in the guide.  OK in fullscreen has them all as well. |
 | **Restore default buttons** | Puts every button back the way it came, after asking.  Each button page also has **Restore defaults for this screen**. |
 
 The buttons and their defaults:

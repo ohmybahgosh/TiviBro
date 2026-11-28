@@ -26,6 +26,7 @@ The sections, in the order the TV lists them.  Every option is explained, with i
 | [**Phone app and web editor**](Settings-Phone-app-and-web-editor) | Pair the TiviBro phone app, the phone app connection and paired phones, and the web editor (QR code, address, password, port).  In release builds it's called **Web editor** |
 | [**Guide**](Settings-Guide) | How your guide is built, provider guide mode and offset, your own guide sources, reloads, public fill-in, guide coverage, assigning a guide, and how the guide looks |
 | [**Channels and groups**](Settings-Channels-and-groups) | Manage groups, sorting, which special groups show, My teams, event channels, your own groups, hidden groups and channels, tidy-up |
+| [**Sports**](Settings-Sports) | Your teams, their scores while you watch and alerts, the My teams group, the Sports screen, hidden scores |
 | [**Channel and group names**](Settings-Channel-and-group-names) | Tidy how names read ("USA \| ESPN HD" becomes "ESPN"): the preloaded rules and your own prefixes and suffixes |
 | [**Playback**](Settings-Playback) | Buffer, aspect, catch-up steps, switching channels and what happens when one stops working, memory-safe playback; advanced: player engine, stream format, connection, HDR |
 | [**Audio and subtitles**](Settings-Audio-and-subtitles) | Audio language, surround and the audio converter, subtitles and closed captions and how they look, subtitle languages for OpenSubtitles |
@@ -33,10 +34,11 @@ The sections, in the order the TV lists them.  Every option is explained, with i
 | [**Remote and buttons**](Settings-Remote-and-buttons) | Up and Down in fullscreen, each button in the player, the guide and the Channels screen, the quick menu's buttons, learning a button |
 | [**Movies and shows**](Settings-Movies-and-shows) | Where they open, the order, next episode, hiding spoilers, where details come from (TMDB or TheTVDB) |
 | [**My media**](Settings-My-media) | Your libraries (each with its own page), add a library, look for new files, display and shelves, and Trakt |
+| [**Plex**](Settings-Plex) | Sign in, servers and libraries, home rows and Top 10s, quality, Up next, theme music, the trailer on a movie's page, hiding spoilers |
 | [**Reminders and watchlist**](Settings-Reminders-and-watchlist) | When reminders come up, the watchlist, every reminder coming up, holding notices during movies |
 | [**Parental controls**](Settings-Parental-controls) | Content filter, PIN, what it protects, blocked groups and channels |
-| [**Appearance**](Settings-Appearance) | Burn-in protection, start screen and navigation, theme, accent colour, background, focus style, text size, panels over video, logos, clock, numbers |
-| [**API keys**](Settings-API-keys) | The one place for the TMDB token (movie and show details and posters) and the OpenSubtitles key and sign-in |
+| [**Appearance**](Settings-Appearance) | Burn-in protection and the screensaver, start screen and navigation, theme, accent colour, background, focus style, text size, panels over video, logos, clock, numbers |
+| [**API keys**](Settings-API-keys) | The one place for the TMDB token (movie and show details and posters), the OpenSubtitles key and sign-in, and Trakt |
 | [**Backups and restore points**](Settings-Backups-and-restore-points) | Everything saved, to put back on this TV or another one |
 | [**System**](Settings-System) | Fix a problem, your version and updates, about and licences, report a problem, connection and speed tests, logs, what this TV can play, status, provider status |
 

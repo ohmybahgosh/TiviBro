@@ -54,7 +54,10 @@ Yes, for free (Plex keeps it for Plex Pass): **Dialogue boost** (Low or High) li
 
 **Does TiviBro work with Plex?**
 
-Yes, since alpha 229: **Settings > Plex > Sign in to Plex** shows a code for plex.tv/link, and once you pick a library your server gets its own **Plex** tab, laid out as Plex's TV app (home rows, libraries, title pages with cast and extras, Plex's quality list and subtitle search while watching).  Watched marks and where you stopped go back to Plex.  It's new, so please send anything that goes wrong with **Report a problem** from the Plex tab.
+Yes: **Settings > Plex > Sign in to Plex** shows a code for plex.tv/link, and once you pick a library your server gets its own **Plex** tab, laid out as Plex's TV app (home rows, libraries, title pages with cast and extras, Shuffle and Play all, theme music, a movie's trailer behind its page, Plex's quality list and subtitle search while watching).  Watched marks and where you stopped go back to Plex, and the phone app has a Plex tab of its own.  It's new, so please send anything that goes wrong with **Report a problem** from the Plex tab.
+
+**Does TiviBro have a screensaver?  I have an OLED TV.**
+Yes: after 5 minutes with no button pressed (or over a paused video), the screen goes almost black with a slow, dim clock, dark drifting colours, a picture from your Plex or your teams' scores.  Nothing stays in one place, and the first button only brings TiviBro back.  Turn looks on or off, change the wait or preview it in Settings > Appearance > Screensaver.  See [Screensaver](Screensaver).
 
 **Do I need a TMDB token for posters and details?**
 No.  Without one, movies and shows get their details from TheTVDB through TiviBro's own service.  With your own free TMDB token you can choose TMDB instead, for movies and shows on their own.  See [No TMDB token? TheTVDB](No-TMDB-token-TheTVDB).

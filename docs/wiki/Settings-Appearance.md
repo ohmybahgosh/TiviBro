@@ -12,7 +12,13 @@ Which screen TiviBro opens on, where the lists start, colours, sizes and what's 
 
 | Setting | Choices | What it does |
 |---|---|---|
-| **Burn-in protection** | **Pixel shift and dimming** · Pixel shift only · Off | For OLED TVs left on the guide or a menu: every 90 seconds the screen moves a few pixels (4 at most), and after 10 minutes without a key press it dims until you press one (that key only wakes it).  Fullscreen video is left alone. |
+| **Burn-in protection** | **Pixel shift and dimming** · Pixel shift only · Off | For OLED TVs left on the guide or a menu: every 90 seconds the screen moves a few pixels (4 at most), and after 10 minutes without a key press it dims until you press one (that key only wakes it), unless the screensaver below is on.  Fullscreen video is left alone. |
+| **Screensaver** | **On** · Off | Under **Screensaver**.  TiviBro's own screensaver for OLED TVs: see [Screensaver](Screensaver).  Off: the screen dims instead (Burn-in protection). |
+| **Starts after** | 2 · **5** · 10 · 15 · 30 minutes | How long without a button press before it comes on. |
+| **Over a paused video** | Never · 2 · **5** · 10 minutes | A paused picture is the hardest on an OLED screen. |
+| **Clock**, **Aurora**, **From your Plex**, **My teams** | **On** | Each look on or off.  With several on, they take turns every 4 minutes; one with nothing to show is skipped. |
+| **After an hour** | **Let the TV take over** · Keep going | When nobody has come back: the TV's own screensaver (or screen off) takes over, or TiviBro's keeps going. |
+| **Preview** | | Shows it now.  Any button comes back. |
 | **Start screen** | **Guide** · Channels screen | Under **Start and navigation**.  What TiviBro opens on, and where **Back** from other screens leads. |
 | **Lists open on** | **Where I left off** · The first group · A group I pick | Where the selection is when TiviBro opens.  Where I left off is the group and channel you were on last; the other two start at the top of that group (unless a channel is already playing).  With **A group I pick**, **Group to open on** chooses it: any group, Favorites and All channels too. |
 | **Channels screen in the menu** | On · **Off** | The plain channel list (without the guide) in the side menu.  Off, **Green** in the guide still opens it.  Always there while TiviBro starts on it. |

@@ -19,6 +19,9 @@ Sign in to Plex, pick servers and libraries, and how Plex titles play.  See [Ple
 | **Play files as they are** | On | The TV plays the file itself when it can.  Off: the server always converts (for a file that stutters). |
 | **Play the next one automatically**, **Up next countdown** | On, 10 seconds | Up next for Plex episodes, shared with My media. |
 | **Still watching?** | 3 episodes | After this many episodes in a row, Up next waits for OK. |
+| **Theme music** | On | A show's theme plays quietly on its page, and its seasons' and episodes'. |
+| **Trailer on a movie's page** | Off | Without sound or With sound: a movie's trailer from your server plays behind its page two seconds after it opens; **▲** watches it full screen.  Not on TVs with 1 GB of memory. |
+| **Hide spoilers** | Off | Episodes you haven't watched show the show's picture instead of their own, and no story, on the TV and the phone. |
 | **Skip intro**, **Skip credits**, **Seek previews** | | The same rows as in Settings > Playback. |
 | **Sign out of Plex** | | Plex leaves the menu, the phone app and the web editor until you sign in again. |
 

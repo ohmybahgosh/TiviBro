@@ -36,6 +36,7 @@
 - [Settings](Settings)
 - [Updates](Updates)
 - [Parental controls](Parental-controls)
+- [Screensaver](Screensaver)
 - [Opening TiviBro from other apps](Opening-TiviBro-from-other-apps)
 
 **Every setting**
@@ -44,6 +45,7 @@
 - [Settings: Phone app and web editor](Settings-Phone-app-and-web-editor)
 - [Settings: Guide](Settings-Guide)
 - [Settings: Channels and groups](Settings-Channels-and-groups)
+- [Settings: Sports](Settings-Sports)
 - [Settings: Channel and group names](Settings-Channel-and-group-names)
 - [Settings: Playback](Settings-Playback)
 - [Settings: Audio and subtitles](Settings-Audio-and-subtitles)

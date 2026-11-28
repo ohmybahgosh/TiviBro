@@ -28,4 +28,4 @@ Hidden channels are never opened, and locked ones still ask for the PIN.  Every 
 
 ---
 
-← [Parental controls](Parental-controls)  ·  [Home](Home)  ·  [Settings: Language](Settings-Language) →
+← [Screensaver](Screensaver)  ·  [Home](Home)  ·  [Settings: Language](Settings-Language) →

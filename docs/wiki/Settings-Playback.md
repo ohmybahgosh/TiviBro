@@ -40,6 +40,8 @@ How channels start, how much video TiviBro holds, which player it uses, and what
 | **Black screen while switching** | On · **Off** | Hides the last picture until the next channel starts, instead of leaving it frozen. |
 | **When a channel stops working** | **Switch to another version** · Ask me · Keep retrying | When a channel has run out of retries and your playlist has it more than once (another quality, another group, or a copy you hid), TiviBro switches to the next version, steadiest first: Full HD, HD, unmarked, 4K, then SD.  *Ask me* asks before switching.  See [Other versions of a channel](Other-versions-of-a-channel). |
 | **Ask when a channel is slow to start** | **On** · Off | After 12 seconds without a picture (fullscreen), TiviBro says what it has seen (nothing from the provider yet, an error from the provider, or video the TV shows no picture for, and which players it tried) and asks: **Keep trying** (asks again a minute later), **Start over**, **Other versions of this channel** or **Stop**.  It closes by itself if the channel starts. |
+| **Channels with their own format** | | Only when some channels have their own stream format (set from a channel's options): which ones, and OK sets every channel back to the format above. |
+| **Dolby Vision 7 (UHD Blu-ray)** | **Automatic** · Off | A UHD Blu-ray remux's Dolby Vision (profile 7) shows only as HDR10 on LG TVs.  *Automatic* plays it as profile 8.1 through the converter, in Dolby Vision.  *Off*: HDR10, as before. |
 
 ---
 

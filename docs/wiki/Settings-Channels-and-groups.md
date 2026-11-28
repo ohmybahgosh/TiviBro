@@ -50,4 +50,4 @@ Which groups show, in what order, the special groups (Recent, Favorites, My team
 
 ---
 
-← [Settings: Guide](Settings-Guide)  ·  [Home](Home)  ·  [Settings: Channel and group names](Settings-Channel-and-group-names) →
+← [Settings: Guide](Settings-Guide)  ·  [Home](Home)  ·  [Settings: Sports](Settings-Sports) →
