@@ -9,6 +9,7 @@
 - **The screensaver can turn the screen off instead.**  Settings > Appearance > Screensaver > Turn the screen off instead: with nothing playing, the screen goes off as the TV's own Screen off does, and any button brings it back.
 - **A playlist of only movies and shows can be added.**  It was turned down for having no channels; its films and series now go to Movies and Shows.
 - **Converted sound comes back after TiviBro restarts.**  Opening the same channel again after TiviBro closed could leave its sound unconverted (HTTP 416); a new conversion starts instead.
+- **ClearKey channels play when the stream names Widevine.**  Many protected live channels name only Widevine and PlayReady while their playlist gives a ClearKey licence, so the TV picked Widevine and said "No license server URL specified".  The playlist's ClearKey is used now.
 
 ## 0.6.0 (alpha 234, 2026-11-27)
 

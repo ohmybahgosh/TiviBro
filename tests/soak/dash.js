@@ -23,7 +23,11 @@ function make(dir, enc) {
   cp.execFileSync(FF, a.concat([path.join(dir, 'stream.mpd')]));
   if (enc) {   // ffmpeg doesn't write the ContentProtection a player looks for
     const kid = KID.replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, '$1-$2-$3-$4-$5');
-    const f = path.join(dir, 'stream.mpd'), m = fs.readFileSync(f, 'utf8').replace(/(<AdaptationSet id="0"[^>]*>)/, '$1\n<ContentProtection xmlns:cenc="urn:mpeg:cenc:2013" schemeIdUri="urn:mpeg:dash:mp4protection:2011" value="cenc" cenc:default_KID="' + kid + '"/>\n<ContentProtection schemeIdUri="urn:uuid:e2719d58-a985-b3c9-781a-b030af78d30e" value="ClearKey1.0"/>');
+    /* enc 'wv': as many live channels are written (issue #201), only Widevine and PlayReady named, no ClearKey, though
+       the playlist's licence is ClearKey. */
+    const other = '<ContentProtection schemeIdUri="urn:uuid:edef8ba9-79d6-4ace-a3c8-27dcd51d21ed" value="Widevine"/>\n<ContentProtection schemeIdUri="urn:uuid:9a04f079-9840-4286-ab92-e65be0885f95" value="MSPR 2.0"/>';
+    const ck = enc === 'wv' ? other : '<ContentProtection schemeIdUri="urn:uuid:e2719d58-a985-b3c9-781a-b030af78d30e" value="ClearKey1.0"/>';
+    const f = path.join(dir, 'stream.mpd'), m = fs.readFileSync(f, 'utf8').replace(/(<AdaptationSet id="0"[^>]*>)/, '$1\n<ContentProtection xmlns:cenc="urn:mpeg:cenc:2013" schemeIdUri="urn:mpeg:dash:mp4protection:2011" value="cenc" cenc:default_KID="' + kid + '"/>\n' + ck);
     fs.writeFileSync(f, m);
   }
 }
@@ -31,7 +35,7 @@ function make(dir, enc) {
 (async () => {
   try { cp.execFileSync(FF, ['-version']); } catch (e) { console.log('SKIP no ffmpeg'); process.exit(0); }
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tb-dash-'));
-  make(path.join(tmp, 'clear'), false); make(path.join(tmp, 'ck'), true);
+  make(path.join(tmp, 'clear'), false); make(path.join(tmp, 'ck'), true); make(path.join(tmp, 'wv'), 'wv');
   let seenUA = '';
   let licAsked = 0;
   const srv = http.createServer((req, res) => {
@@ -91,6 +95,13 @@ function make(dir, enc) {
     await page.waitForFunction(() => window.__lic, null, { timeout: 30000 }).catch(() => {});
     const cs = await ev(() => ({ lic: window.__lic, err: window.__perr }));
     ok('ClearKey from a licence server: asked, and its keys reach the browser', licAsked > 0 && cs.lic && cs.lic.keys && cs.lic.keys[0].kid === 'ASNFZ4mrze8BI0VniavN7w', JSON.stringify(cs) + ' asked ' + licAsked);
+    // The same, on a stream that names only Widevine and PlayReady (issue #201): ClearKey is still what's asked for.
+    await ev(() => { window.__lic = null; window.__perr = ''; window.__ks = []; });
+    const asked0 = licAsked;
+    await ev((a) => Player.play({ k: 'dash2c', n: 'DASH ClearKey, Widevine named', url: a.u, dash: 1, drm: { type: 'clearkey', key: a.lic } }), { u: BASE + '/wv/stream.mpd', lic: BASE + '/cklic?id=1133' });
+    await page.waitForFunction(() => window.__lic || window.__perr, null, { timeout: 30000 }).catch(() => {});
+    const cw = await ev(() => ({ lic: window.__lic, err: window.__perr, ks: window.__ks }));
+    ok('a stream naming only Widevine: ClearKey from the playlist\'s licence server all the same', licAsked > asked0 && cw.lic && cw.lic.keys && cw.ks.indexOf('org.w3.clearkey') >= 0 && !/No license server/.test(cw.err), JSON.stringify(cw));
     // Widevine: a licence server from license_key, its User-Agent through the helper, its Content-Type to the browser.
     // ClearKey ids and keys already in base64 (issue #187), as some playlists write them: the same keys as the hex ones.
     const b64 = await ev(() => Player._dashProtection({ type: 'clearkey', key: 'ASNFZ4mrze8BI0VniavN7w==:/ty6mHZUMhD+3LqYdlQyEA==' }, { pl: null }));

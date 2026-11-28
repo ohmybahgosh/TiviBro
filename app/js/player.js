@@ -347,6 +347,33 @@ var Player = (function () {
     out[sys] = o;
     return out;
   }
+  /* A ClearKey channel whose stream names only Widevine and PlayReady (issue #201: many live channels are written
+     so, and their playlist gives a ClearKey licence).  dash.js offers the TV only the systems the stream names, so
+     the TV took Widevine, with no licence server ("No license server URL specified!").  Before dash.js looks, each
+     protected part of the manifest gets ClearKey added and the others taken out; the key id stays the stream's own
+     (cenc:default_KID). */
+  var CK_SCHEME = 'urn:uuid:e2719d58-a985-b3c9-781a-b030af78d30e', CK_W3C = 'urn:uuid:1077efec-c0b2-4d02-ace3-3c1e52e2fb4b', MP4PROT = 'urn:mpeg:dash:mp4protection:2011';
+  function clearKeyOnly(mpd) {
+    var fixed = 0;
+    function fix(node) {
+      var list = node && (node.ContentProtection_asArray || (node.ContentProtection ? [].concat(node.ContentProtection) : null));
+      if (!list || !list.length) return;
+      var scheme = function (c) { return String(c.schemeIdUri || '').toLowerCase(); };
+      var keep = list.filter(function (c) { var s = scheme(c); return s === MP4PROT || s === CK_SCHEME || s === CK_W3C; });
+      if (!keep.some(function (c) { return scheme(c) === CK_SCHEME || scheme(c) === CK_W3C; })) keep.push({ schemeIdUri: CK_SCHEME, value: 'ClearKey1.0' });
+      if (keep.length === list.length && list.every(function (c, i) { return c === keep[i]; })) return;
+      node.ContentProtection_asArray = keep; node.ContentProtection = keep.length === 1 ? keep[0] : keep; fixed++;
+    }
+    try {
+      (mpd && (mpd.Period_asArray || [].concat(mpd.Period || [])) || []).forEach(function (per) {
+        (per.AdaptationSet_asArray || [].concat(per.AdaptationSet || [])).forEach(function (as) {
+          fix(as);
+          (as.Representation_asArray || [].concat(as.Representation || [])).forEach(fix);
+        });
+      });
+    } catch (e) { Log.warn('player', 'ClearKey: the stream\'s protection could not be read (' + e.message + ')'); }
+    return fixed;
+  }
   function dashEngine(url, p, preview, fail, media, tracks) {
     var pw = plWrap(), drm = cur.ch && cur.ch.drm, live = cur.live && !cur.timeshift, dead = false, pl = null, E = null;
     var api = {
@@ -380,6 +407,8 @@ var Player = (function () {
       // Every request through the helper (the channel's User-Agent and Referer; CORS).
       pl.extend('RequestModifier', function () { return { modifyRequestHeader: function (x) { return x; }, modifyRequestURL: function (u) { return Net.active ? Net.wrap(u, pw) : u; } }; }, true);
       if (prot) pl.setProtectionData(prot);
+      var ckSaid = false;
+      if (drm && drm.type === 'clearkey') pl.on(E.MANIFEST_LOADED, function (e) { if (clearKeyOnly(e && e.data) && !ckSaid) { ckSaid = true; Log.info('player', 'ClearKey: the stream names other protection; ClearKey from the playlist is used'); } });
       pl.on(E.ERROR, function (ev) {
         if (dead) return;
         var er = ev && ev.error || {}, code = +er.code || 0, msg = er.message || 'DASH error';
