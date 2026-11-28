@@ -2797,5 +2797,19 @@ I18n.add('tr', {
   "Each one you turn on gets a row of its own on Home, in that service's order.  Streaming Top 10s you have mixes them all in one row.": "Açtığınız her servis için Ana ekranda kendi satırı olur, servisin kendi sırasıyla.  Sahip olduğunuz yayın İlk 10'ları hepsini tek bir satırda toplar.",
   "One row for all the services together: yesterday's Top 10s in your country (FlixPatrol), only the movies and shows your Plex has, best place first, with \"#3 on Netflix\" under each.  On Home.": "Tüm servisler için tek bir satır: ülkenizdeki dünün İlk 10 listeleri (FlixPatrol), yalnızca Plex'inizde bulunan filmler ve diziler, en iyi sıra başta, her birinin altında \"Netflix'te #3\" yazar.  Ana ekranda.",
   "Pick services (Netflix, Max, Prime Video and more): each gets a row of its own, \"Top 10 on Netflix\", in that service's order, with the titles your Plex has.  On Home and in each library's Recommended.  Apart from the row above.": "Servisleri seçin (Netflix, Max, Prime Video ve daha fazlası): her biri için kendi satırı olur, \"Netflix'te İlk 10\", servisin kendi sırasıyla ve Plex'inizde bulunan yapımlarla.  Ana ekranda ve her kitaplığın Önerilenler bölümünde.  Yukarıdaki satırdan ayrıdır.",
-  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "TiviBro V'si, eski DVD ekran koruyucusu gibi duvardan duvara süzülür, her çarpışta yeni bir renge bürünür."
+  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "TiviBro V'si, eski DVD ekran koruyucusu gibi duvardan duvara süzülür, her çarpışta yeni bir renge bürünür.",
+  "Shown": "Gösterilen",
+  "All shown": "Tümü gösteriliyor",
+  "Channels before and after while zapping": "Kanal değiştirirken önceki ve sonraki kanallar",
+  "From your provider, as opening Movies or Shows does.": "Sağlayıcınızdan, Filmler veya Diziler açıldığında olduğu gibi.",
+  "Hearing-impaired notes such as [door slams] and (music), and speakers' names in capitals, are left out.  For subtitles TiviBro draws (most of them).": "[kapı çarpar] ve (müzik) gibi işitme engelliler için notlar ile büyük harfle yazılan konuşmacı adları çıkarılır.  TiviBro'nun çizdiği altyazılar için geçerlidir (çoğu).",
+  "Hide all categories": "Tüm kategorileri gizle",
+  "Hide all {n} categories?  You can switch them back on here.": ["{n} kategorinin tümü gizlensin mi?  Buradan tekrar açabilirsiniz.", "{n} kategorinin tümü gizlensin mi?  Buradan tekrar açabilirsiniz."],
+  "Leave out sound notes": "Ses notlarını çıkar",
+  "Load them now": "Şimdi yükle",
+  "Movie categories": "Film kategorileri",
+  "Show all categories": "Tüm kategorileri göster",
+  "Show categories": "Kategorileri göster",
+  "With CH + and CH −, the channel before and after the one shown, on the right, with what's on.": "CH + ve CH − ile, gösterilen kanalın öncesindeki ve sonrasındaki kanal, ne yayınlandığıyla birlikte sağda görünür.",
+  "{n} hidden": ["{n} gizli", "{n} gizli"]
 });

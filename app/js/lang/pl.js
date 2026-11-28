@@ -2797,5 +2797,19 @@ I18n.add('pl', {
   "Each one you turn on gets a row of its own on Home, in that service's order.  Streaming Top 10s you have mixes them all in one row.": "Każdy włączony serwis dostaje własny rząd na ekranie głównym, w kolejności tego serwisu.  Opcja „Streamingowe Top 10 u Ciebie” łączy wszystkie w jednym rzędzie.",
   "One row for all the services together: yesterday's Top 10s in your country (FlixPatrol), only the movies and shows your Plex has, best place first, with \"#3 on Netflix\" under each.  On Home.": "Jeden rząd dla wszystkich serwisów razem: wczorajsze Top 10 w Twoim kraju (FlixPatrol), tylko filmy i seriale, które ma Twój Plex, od najwyższego miejsca, z napisem „#3 na Netflix” pod każdym.  Na ekranie głównym.",
   "Pick services (Netflix, Max, Prime Video and more): each gets a row of its own, \"Top 10 on Netflix\", in that service's order, with the titles your Plex has.  On Home and in each library's Recommended.  Apart from the row above.": "Wybierz serwisy (Netflix, Max, Prime Video i inne): każdy dostaje własny rząd, „Top 10 na Netflix”, w kolejności tego serwisu, z tytułami, które ma Twój Plex.  Na ekranie głównym i w sekcji Polecane każdej biblioteki.  Osobno od rzędu powyżej.",
-  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "Litera V z TiviBro sunie od ściany do ściany jak stary wygaszacz DVD i za każdym uderzeniem w ścianę zmienia kolor."
+  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "Litera V z TiviBro sunie od ściany do ściany jak stary wygaszacz DVD i za każdym uderzeniem w ścianę zmienia kolor.",
+  "Shown": "Pokazane",
+  "All shown": "Wszystko widoczne",
+  "Channels before and after while zapping": "Poprzedni i następny kanał podczas zappingu",
+  "From your provider, as opening Movies or Shows does.": "Od dostawcy, tak jak przy otwieraniu sekcji Filmy lub Seriale.",
+  "Hearing-impaired notes such as [door slams] and (music), and speakers' names in capitals, are left out.  For subtitles TiviBro draws (most of them).": "Opisy dźwięków dla niesłyszących, takie jak [trzask drzwi] i (muzyka), oraz imiona mówiących wielkimi literami są pomijane.  Dotyczy napisów rysowanych przez TiviBro (większości z nich).",
+  "Hide all categories": "Ukryj wszystkie kategorie",
+  "Hide all {n} categories?  You can switch them back on here.": ["Ukryć {n} kategorię?  Możesz ją tutaj ponownie włączyć.", "Ukryć wszystkie {n} kategorie?  Możesz je tutaj ponownie włączyć.", "Ukryć wszystkie {n} kategorii?  Możesz je tutaj ponownie włączyć."],
+  "Leave out sound notes": "Pomijaj opisy dźwięków",
+  "Load them now": "Wczytaj je teraz",
+  "Movie categories": "Kategorie filmów",
+  "Show all categories": "Pokaż wszystkie kategorie",
+  "Show categories": "Pokaż kategorie",
+  "With CH + and CH −, the channel before and after the one shown, on the right, with what's on.": "Przyciskami CH + i CH − po prawej widać poprzedni i następny kanał względem bieżącego, wraz z tym, co na nich leci.",
+  "{n} hidden": ["{n} ukryta", "{n} ukryte", "{n} ukrytych"]
 });

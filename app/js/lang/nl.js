@@ -2797,5 +2797,19 @@ I18n.add('nl', {
   "Each one you turn on gets a row of its own on Home, in that service's order.  Streaming Top 10s you have mixes them all in one row.": "Elke dienst die je aanzet krijgt een eigen rij op Home, in de volgorde van die dienst.  Streaming Top 10s die je hebt mengt ze allemaal in één rij.",
   "One row for all the services together: yesterday's Top 10s in your country (FlixPatrol), only the movies and shows your Plex has, best place first, with \"#3 on Netflix\" under each.  On Home.": "Eén rij voor alle diensten samen: de Top 10's van gisteren in jouw land (FlixPatrol), alleen de films en series die jouw Plex heeft, beste plek eerst, met \"#3 op Netflix\" eronder.  Op Home.",
   "Pick services (Netflix, Max, Prime Video and more): each gets a row of its own, \"Top 10 on Netflix\", in that service's order, with the titles your Plex has.  On Home and in each library's Recommended.  Apart from the row above.": "Kies diensten (Netflix, Max, Prime Video en meer): elke dienst krijgt een eigen rij, \"Top 10 op Netflix\", in de volgorde van die dienst, met de titels die jouw Plex heeft.  Op Home en bij Aanbevolen in elke bibliotheek.  Los van de rij hierboven.",
-  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "De TiviBro V glijdt van wand naar wand, zoals de oude dvd-screensaver, en krijgt elke keer dat hij een wand raakt een nieuwe kleur."
+  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "De TiviBro V glijdt van wand naar wand, zoals de oude dvd-screensaver, en krijgt elke keer dat hij een wand raakt een nieuwe kleur.",
+  "Shown": "Getoond",
+  "All shown": "Alles getoond",
+  "Channels before and after while zapping": "Zenders ervoor en erna tijdens het zappen",
+  "From your provider, as opening Movies or Shows does.": "Van je provider, zoals bij het openen van Films of Series.",
+  "Hearing-impaired notes such as [door slams] and (music), and speakers' names in capitals, are left out.  For subtitles TiviBro draws (most of them).": "Aanduidingen voor slechthorenden, zoals [deur slaat dicht] en (muziek), en namen van sprekers in hoofdletters worden weggelaten.  Voor ondertitels die TiviBro zelf tekent (de meeste).",
+  "Hide all categories": "Alle categorieën verbergen",
+  "Hide all {n} categories?  You can switch them back on here.": ["Alle {n} categorie verbergen?  Je kunt hem hier weer aanzetten.", "Alle {n} categorieën verbergen?  Je kunt ze hier weer aanzetten."],
+  "Leave out sound notes": "Geluidsaanduidingen weglaten",
+  "Load them now": "Nu laden",
+  "Movie categories": "Filmcategorieën",
+  "Show all categories": "Alle categorieën tonen",
+  "Show categories": "Categorieën tonen",
+  "With CH + and CH −, the channel before and after the one shown, on the right, with what's on.": "Met CH + en CH − staan rechts de zender voor en na de huidige zender, met wat erop is.",
+  "{n} hidden": ["{n} verborgen", "{n} verborgen"]
 });

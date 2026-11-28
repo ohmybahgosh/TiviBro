@@ -2783,5 +2783,19 @@ I18n.add('hr', {
   "Each one you turn on gets a row of its own on Home, in that service's order.  Streaming Top 10s you have mixes them all in one row.": "Svaka koju uključite dobiva svoj red na početnom zaslonu, prema redoslijedu te usluge.  Streaming Top 10 koji imate spaja ih sve u jedan red.",
   "One row for all the services together: yesterday's Top 10s in your country (FlixPatrol), only the movies and shows your Plex has, best place first, with \"#3 on Netflix\" under each.  On Home.": "Jedan red za sve usluge zajedno: jučerašnji Top 10 u vašoj zemlji (FlixPatrol), samo filmovi i serije koje ima vaš Plex, najbolje mjesto prvo, s oznakom \"#3 na Netflixu\" ispod svakog.  Na početnom zaslonu.",
   "Pick services (Netflix, Max, Prime Video and more): each gets a row of its own, \"Top 10 on Netflix\", in that service's order, with the titles your Plex has.  On Home and in each library's Recommended.  Apart from the row above.": "Odaberite usluge (Netflix, Max, Prime Video i druge): svaka dobiva svoj red, \"Top 10 na Netflixu\", prema redoslijedu te usluge, s naslovima koje ima vaš Plex.  Na početnom zaslonu i u Preporučenom svake knjižnice.  Odvojeno od gornjeg reda.",
-  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "TiviBro V klizi od ruba do ruba kao stari DVD screensaver, a pri svakom udarcu o rub promijeni boju."
+  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "TiviBro V klizi od ruba do ruba kao stari DVD screensaver, a pri svakom udarcu o rub promijeni boju.",
+  "Shown": "Prikazano",
+  "All shown": "Sve prikazano",
+  "Channels before and after while zapping": "Kanali prije i poslije pri zapiranju",
+  "From your provider, as opening Movies or Shows does.": "Od vašeg pružatelja usluge, kao pri otvaranju Filmova ili Serija.",
+  "Hearing-impaired notes such as [door slams] and (music), and speakers' names in capitals, are left out.  For subtitles TiviBro draws (most of them).": "Bilješke za osobe oštećena sluha, poput [zalupljena vrata] i (glazba), te imena govornika velikim slovima izostavljaju se.  Za titlove koje TiviBro crta (većinu njih).",
+  "Hide all categories": "Sakrij sve kategorije",
+  "Hide all {n} categories?  You can switch them back on here.": ["Sakriti {n} kategoriju?  Možete je ponovno uključiti ovdje.", "Sakriti sve {n} kategorije?  Možete ih ponovno uključiti ovdje.", "Sakriti svih {n} kategorija?  Možete ih ponovno uključiti ovdje."],
+  "Leave out sound notes": "Izostavi bilješke o zvuku",
+  "Load them now": "Učitaj ih sada",
+  "Movie categories": "Kategorije filmova",
+  "Show all categories": "Prikaži sve kategorije",
+  "Show categories": "Prikaži kategorije",
+  "With CH + and CH −, the channel before and after the one shown, on the right, with what's on.": "Tipkama CH + i CH − prikazuju se kanal prije i kanal poslije trenutnog, s desne strane, uz ono što se na njima prikazuje.",
+  "{n} hidden": ["{n} skrivena", "{n} skrivene", "{n} skrivenih"]
 });

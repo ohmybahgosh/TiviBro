@@ -2783,5 +2783,19 @@ I18n.add('ar', {
   "Each one you turn on gets a row of its own on Home, in that service's order.  Streaming Top 10s you have mixes them all in one row.": "كل خدمة تفعّلها تحصل على صف خاص بها في الرئيسية، بترتيب تلك الخدمة.  أما خيار \"Streaming Top 10s you have\" فيجمعها كلها في صف واحد.",
   "One row for all the services together: yesterday's Top 10s in your country (FlixPatrol), only the movies and shows your Plex has, best place first, with \"#3 on Netflix\" under each.  On Home.": "صف واحد لكل الخدمات معًا: قوائم أفضل 10 لأمس في بلدك (FlixPatrol)، مع الأفلام والمسلسلات الموجودة في Plex لديك فقط، من أعلى مرتبة إلى أدناها، وتحت كل عنوان عبارة مثل \"#3 على Netflix\".  في الرئيسية.",
   "Pick services (Netflix, Max, Prime Video and more): each gets a row of its own, \"Top 10 on Netflix\", in that service's order, with the titles your Plex has.  On Home and in each library's Recommended.  Apart from the row above.": "اختر الخدمات (Netflix وMax وPrime Video وغيرها): كل خدمة تحصل على صف خاص بها، مثل \"أفضل 10 على Netflix\"، بترتيب تلك الخدمة، مع العناوين الموجودة في Plex لديك.  في الرئيسية وفي قسم \"موصى به\" في كل مكتبة.  وهو منفصل عن الصف أعلاه.",
-  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "يتنقل حرف V الخاص بـ TiviBro من حافة إلى أخرى مثل شاشة توقف DVD القديمة، بلون جديد كلما اصطدم بحافة."
+  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "يتنقل حرف V الخاص بـ TiviBro من حافة إلى أخرى مثل شاشة توقف DVD القديمة، بلون جديد كلما اصطدم بحافة.",
+  "Shown": "ظاهرة",
+  "All shown": "الكل ظاهر",
+  "Channels before and after while zapping": "القنوات السابقة واللاحقة أثناء التنقل بين القنوات",
+  "From your provider, as opening Movies or Shows does.": "من مزوّدك، كما يحدث عند فتح أفلام أو مسلسلات.",
+  "Hearing-impaired notes such as [door slams] and (music), and speakers' names in capitals, are left out.  For subtitles TiviBro draws (most of them).": "تُحذف ملاحظات ضعاف السمع مثل [إغلاق باب] و(موسيقى)، وأسماء المتحدثين بالأحرف الكبيرة.  ينطبق هذا على الترجمة التي يرسمها TiviBro (معظمها).",
+  "Hide all categories": "إخفاء كل الفئات",
+  "Hide all {n} categories?  You can switch them back on here.": ["إخفاء كل الفئات ({n})؟  يمكنك إعادة إظهارها من هنا.", "إخفاء الفئة ({n})؟  يمكنك إعادة إظهارها من هنا.", "إخفاء الفئتين ({n})؟  يمكنك إعادة إظهارهما من هنا.", "إخفاء كل {n} فئات؟  يمكنك إعادة إظهارها من هنا.", "إخفاء كل {n} فئة؟  يمكنك إعادة إظهارها من هنا.", "إخفاء كل {n} فئة؟  يمكنك إعادة إظهارها من هنا."],
+  "Leave out sound notes": "حذف ملاحظات الصوت",
+  "Load them now": "حمّلها الآن",
+  "Movie categories": "فئات الأفلام",
+  "Show all categories": "إظهار كل الفئات",
+  "Show categories": "إظهار الفئات",
+  "With CH + and CH −, the channel before and after the one shown, on the right, with what's on.": "عند الضغط على CH + وCH −، تظهر على اليمين القناة التي قبل القناة المعروضة والتي بعدها، مع ما يُعرض عليهما.",
+  "{n} hidden": ["{n} مخفية", "{n} مخفية", "{n} مخفيتان", "{n} مخفية", "{n} مخفية", "{n} مخفية"]
 });

@@ -2799,5 +2799,19 @@ I18n.add('de', {
   "Each one you turn on gets a row of its own on Home, in that service's order.  Streaming Top 10s you have mixes them all in one row.": "Jeder Dienst, den du aktivierst, bekommt auf der Startseite eine eigene Reihe, in der Reihenfolge des Dienstes.  „Streaming-Top-10, die du hast“ mischt alle in einer Reihe.",
   "One row for all the services together: yesterday's Top 10s in your country (FlixPatrol), only the movies and shows your Plex has, best place first, with \"#3 on Netflix\" under each.  On Home.": "Eine Reihe für alle Dienste zusammen: die Top 10 von gestern in deinem Land (FlixPatrol), nur Filme und Serien, die dein Plex hat, beste Platzierung zuerst, mit „#3 auf Netflix“ darunter.  Auf der Startseite.",
   "Pick services (Netflix, Max, Prime Video and more): each gets a row of its own, \"Top 10 on Netflix\", in that service's order, with the titles your Plex has.  On Home and in each library's Recommended.  Apart from the row above.": "Wähle Dienste (Netflix, Max, Prime Video und mehr): Jeder bekommt eine eigene Reihe, „Top 10 auf Netflix“, in der Reihenfolge des Dienstes, mit den Titeln, die dein Plex hat.  Auf der Startseite und unter „Empfohlen“ in jeder Mediathek.  Zusätzlich zur Reihe oben.",
-  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "Das TiviBro-V gleitet von Wand zu Wand wie der alte DVD-Bildschirmschoner, bei jedem Aufprall in einer neuen Farbe."
+  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "Das TiviBro-V gleitet von Wand zu Wand wie der alte DVD-Bildschirmschoner, bei jedem Aufprall in einer neuen Farbe.",
+  "Shown": "Eingeblendet",
+  "All shown": "Alle eingeblendet",
+  "Channels before and after while zapping": "Sender davor und danach beim Zappen",
+  "From your provider, as opening Movies or Shows does.": "Von deinem Anbieter, wie beim Öffnen von Filme oder Serien.",
+  "Hearing-impaired notes such as [door slams] and (music), and speakers' names in capitals, are left out.  For subtitles TiviBro draws (most of them).": "Hinweise für Hörgeschädigte wie [Tür knallt] und (Musik) sowie Sprechernamen in Großbuchstaben werden weggelassen.  Gilt für Untertitel, die TiviBro selbst zeichnet (die meisten).",
+  "Hide all categories": "Alle Kategorien ausblenden",
+  "Hide all {n} categories?  You can switch them back on here.": ["Die {n} Kategorie ausblenden?  Du kannst sie hier wieder einschalten.", "Alle {n} Kategorien ausblenden?  Du kannst sie hier wieder einschalten."],
+  "Leave out sound notes": "Geräuschhinweise weglassen",
+  "Load them now": "Jetzt laden",
+  "Movie categories": "Film-Kategorien",
+  "Show all categories": "Alle Kategorien einblenden",
+  "Show categories": "Kategorien einblenden",
+  "With CH + and CH −, the channel before and after the one shown, on the right, with what's on.": "Mit CH + und CH − werden rechts der Sender davor und danach angezeigt, mit dem aktuellen Programm.",
+  "{n} hidden": ["{n} ausgeblendet", "{n} ausgeblendet"]
 });

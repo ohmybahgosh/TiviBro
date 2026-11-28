@@ -2783,5 +2783,19 @@ I18n.add('uk', {
   "Each one you turn on gets a row of its own on Home, in that service's order.  Streaming Top 10s you have mixes them all in one row.": "Кожен увімкнений сервіс отримує окремий рядок на Головній, у порядку цього сервісу.  Топ-10 стримінгів, які у вас є, об'єднує їх в одному рядку.",
   "One row for all the services together: yesterday's Top 10s in your country (FlixPatrol), only the movies and shows your Plex has, best place first, with \"#3 on Netflix\" under each.  On Home.": "Один рядок для всіх сервісів разом: вчорашні Топ-10 у вашій країні (FlixPatrol), лише фільми й серіали, які є у вашому Plex, найвище місце першим, з підписом \"№3 на Netflix\" під кожним.  На Головній.",
   "Pick services (Netflix, Max, Prime Video and more): each gets a row of its own, \"Top 10 on Netflix\", in that service's order, with the titles your Plex has.  On Home and in each library's Recommended.  Apart from the row above.": "Оберіть сервіси (Netflix, Max, Prime Video та інші): кожен отримує окремий рядок, \"Топ-10 на Netflix\", у порядку цього сервісу, з тими назвами, які є у вашому Plex.  На Головній і в рекомендаціях кожної бібліотеки.  Окремо від рядка вище.",
-  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "Логотип TiviBro V ковзає від краю до краю, як на старій заставці DVD, і щоразу змінює колір, коли торкається краю."
+  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "Логотип TiviBro V ковзає від краю до краю, як на старій заставці DVD, і щоразу змінює колір, коли торкається краю.",
+  "Shown": "Показані",
+  "All shown": "Усі показано",
+  "Channels before and after while zapping": "Канали до і після поточного під час перемикання",
+  "From your provider, as opening Movies or Shows does.": "Від вашого провайдера, як під час відкриття розділів «Фільми» або «Серіали».",
+  "Hearing-impaired notes such as [door slams] and (music), and speakers' names in capitals, are left out.  For subtitles TiviBro draws (most of them).": "Примітки для людей з порушенням слуху, як-от [грюкають двері] та (музика), а також імена мовців великими літерами пропускаються.  Стосується субтитрів, які малює TiviBro (більшості).",
+  "Hide all categories": "Приховати всі категорії",
+  "Hide all {n} categories?  You can switch them back on here.": ["Приховати {n} категорію?  Її можна знову ввімкнути тут.", "Приховати всі {n} категорії?  Їх можна знову ввімкнути тут.", "Приховати всі {n} категорій?  Їх можна знову ввімкнути тут."],
+  "Leave out sound notes": "Пропускати позначки звуків",
+  "Load them now": "Завантажити зараз",
+  "Movie categories": "Категорії фільмів",
+  "Show all categories": "Показати всі категорії",
+  "Show categories": "Показувати категорії",
+  "With CH + and CH −, the channel before and after the one shown, on the right, with what's on.": "Під час перемикання кнопками CH + і CH − праворуч показано попередній і наступний канали та їхні передачі.",
+  "{n} hidden": ["{n} прихована", "{n} приховані", "{n} прихованих"]
 });

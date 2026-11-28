@@ -2912,5 +2912,17 @@ I18n.add('ru', {
   "Each one you turn on gets a row of its own on Home, in that service's order.  Streaming Top 10s you have mixes them all in one row.": "Каждый включённый сервис получает на главном экране свой ряд, в порядке этого сервиса.  «Streaming Top 10s you have» собирает все сервисы в одном ряду.",
   "One row for all the services together: yesterday's Top 10s in your country (FlixPatrol), only the movies and shows your Plex has, best place first, with \"#3 on Netflix\" under each.  On Home.": "Один ряд для всех сервисов сразу: вчерашние топ-10 в вашей стране (FlixPatrol), только фильмы и сериалы из вашего Plex, лучшее место первым, под каждым подпись «№3 в Netflix».  На главном экране.",
   "Pick services (Netflix, Max, Prime Video and more): each gets a row of its own, \"Top 10 on Netflix\", in that service's order, with the titles your Plex has.  On Home and in each library's Recommended.  Apart from the row above.": "Выберите сервисы (Netflix, Max, Prime Video и другие): каждый получает свой ряд, «Топ-10 в Netflix», в порядке этого сервиса, с теми названиями, что есть в вашем Plex.  На главном экране и в разделе «Рекомендуем» каждой библиотеки.  Отдельно от ряда выше.",
-  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "Буква V из TiviBro летает от края до края, как старая заставка DVD, и при каждом касании края меняет цвет."
+  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "Буква V из TiviBro летает от края до края, как старая заставка DVD, и при каждом касании края меняет цвет.",
+  "Shown": "Видимые",
+  "All shown": "Все показаны",
+  "Channels before and after while zapping": "Предыдущий и следующий каналы при переключении",
+  "From your provider, as opening Movies or Shows does.": "От вашего провайдера, как при открытии разделов «Фильмы» или «Сериалы».",
+  "Hearing-impaired notes such as [door slams] and (music), and speakers' names in capitals, are left out.  For subtitles TiviBro draws (most of them).": "Пометки для слабослышащих, например [хлопнула дверь] и (музыка), а также имена говорящих заглавными буквами пропускаются.  Для субтитров, которые рисует TiviBro (большинство из них).",
+  "Hide all categories": "Скрыть все категории",
+  "Hide all {n} categories?  You can switch them back on here.": ["Скрыть {n} категорию?  Вернуть её можно здесь.", "Скрыть все {n} категории?  Вернуть их можно здесь.", "Скрыть все {n} категорий?  Вернуть их можно здесь."],
+  "Leave out sound notes": "Пропускать пометки о звуках",
+  "Load them now": "Загрузить сейчас",
+  "Show all categories": "Показать все категории",
+  "Show categories": "Показать категории",
+  "With CH + and CH −, the channel before and after the one shown, on the right, with what's on.": "При нажатии CH + и CH − справа показываются предыдущий и следующий каналы и что на них идёт."
 });

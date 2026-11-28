@@ -2783,5 +2783,19 @@ I18n.add('hi', {
   "Each one you turn on gets a row of its own on Home, in that service's order.  Streaming Top 10s you have mixes them all in one row.": "आप जिसे भी चालू करते हैं, उसकी Home पर अपनी अलग पंक्ति बनती है, उसी सर्विस के क्रम में.  \"Streaming Top 10s you have\" सबको एक ही पंक्ति में मिला देता है.",
   "One row for all the services together: yesterday's Top 10s in your country (FlixPatrol), only the movies and shows your Plex has, best place first, with \"#3 on Netflix\" under each.  On Home.": "सभी सर्विस की एक ही पंक्ति: आपके देश में कल के Top 10 (FlixPatrol), सिर्फ़ वही फ़िल्में और शो जो आपके Plex में हैं, सबसे ऊपर वाला पहले, और हर एक के नीचे \"Netflix पर #3\" लिखा होगा.  Home पर.",
   "Pick services (Netflix, Max, Prime Video and more): each gets a row of its own, \"Top 10 on Netflix\", in that service's order, with the titles your Plex has.  On Home and in each library's Recommended.  Apart from the row above.": "सर्विस चुनें (Netflix, Max, Prime Video और भी): हर एक की अपनी पंक्ति बनती है, जैसे \"Netflix पर Top 10\", उसी सर्विस के क्रम में, उन टाइटल के साथ जो आपके Plex में हैं.  Home पर और हर लाइब्रेरी के Recommended में.  ऊपर वाली पंक्ति से अलग.",
-  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "TiviBro का V पुराने DVD स्क्रीनसेवर की तरह एक किनारे से दूसरे किनारे तक तैरता है, और हर बार किनारे से टकराने पर नया रंग बदलता है."
+  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "TiviBro का V पुराने DVD स्क्रीनसेवर की तरह एक किनारे से दूसरे किनारे तक तैरता है, और हर बार किनारे से टकराने पर नया रंग बदलता है.",
+  "Shown": "दिखाए गए",
+  "All shown": "सभी दिख रहे हैं",
+  "Channels before and after while zapping": "ज़ैपिंग के समय पहले और बाद के चैनल",
+  "From your provider, as opening Movies or Shows does.": "आपके प्रोवाइडर से, जैसे फ़िल्में या शो खोलने पर आता है।",
+  "Hearing-impaired notes such as [door slams] and (music), and speakers' names in capitals, are left out.  For subtitles TiviBro draws (most of them).": "सुनने में अक्षम लोगों के लिए लिखे नोट, जैसे [door slams] और (music), और कैपिटल में बोलने वालों के नाम हटा दिए जाते हैं।  यह उन सबटाइटल के लिए है जो TiviBro खुद बनाता है (ज़्यादातर)।",
+  "Hide all categories": "सभी कैटेगरी छिपाएं",
+  "Hide all {n} categories?  You can switch them back on here.": ["सभी {n} कैटेगरी छिपाएं?  आप इन्हें यहीं वापस चालू कर सकते हैं।", "सभी {n} कैटेगरी छिपाएं?  आप इन्हें यहीं वापस चालू कर सकते हैं।"],
+  "Leave out sound notes": "आवाज़ के नोट हटाएं",
+  "Load them now": "अभी लोड करें",
+  "Movie categories": "फ़िल्म कैटेगरी",
+  "Show all categories": "सभी कैटेगरी दिखाएं",
+  "Show categories": "कैटेगरी दिखाएं",
+  "With CH + and CH −, the channel before and after the one shown, on the right, with what's on.": "CH + और CH − से, चल रहे चैनल से पहले और बाद का चैनल, दाईं ओर, उस पर चल रहे कार्यक्रम के साथ दिखता है।",
+  "{n} hidden": ["{n} छिपी हुई", "{n} छिपी हुई"]
 });
