@@ -1554,7 +1554,7 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 @keyframes svKen{0%{transform:scale(1.04) translate(0,0)}100%{transform:scale(1.16) translate(-60px,-30px)}}
 .saver .sv-art{position:absolute;top:0;left:0;width:1920px;height:1080px;background-size:cover;background-position:center;opacity:0;transition:opacity 3s ease;animation:svKen 120s ease-in-out infinite alternate}
 .saver .sv-art.in{opacity:.5}
-.saver .sv-artshade{position:absolute;top:0;left:0;width:1920px;height:1080px;background:linear-gradient(0deg,#000 0,rgba(0,0,0,.75) 28%,rgba(0,0,0,0) 60%),linear-gradient(90deg,rgba(0,0,0,.6) 0,rgba(0,0,0,0) 45%)}
+.saver .sv-artshade{position:absolute;top:0;left:0;width:1920px;height:1080px;background:linear-gradient(180deg,rgba(0,0,0,.8) 0,rgba(0,0,0,.35) 16%,rgba(0,0,0,0) 34%),linear-gradient(0deg,#000 0,rgba(0,0,0,.75) 28%,rgba(0,0,0,0) 60%),linear-gradient(90deg,rgba(0,0,0,.6) 0,rgba(0,0,0,0) 45%)}
 .saver .sv-title{position:absolute;left:120px;bottom:110px;color:#A3A9BA;will-change:transform}
 .saver .sv-kicker{font-size:18px;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:#6F8BC2}
 .saver .sv-name{font-size:64px;font-weight:300;color:#B9BECB;margin:10px 0}
