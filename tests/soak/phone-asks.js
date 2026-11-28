@@ -320,7 +320,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const sa = (o) => ask('settings', o, { seal: true });
   await ev(() => { Store.settings.advView = true; });   // every row in place (Advanced view), as the checks below expect
   const secs = await sa({ op: 'sections' });
-  ok('the phone gets the TV\'s settings pages', secs.sections.some((x) => x.id === 'look' && x.title === 'Appearance') && secs.sections.length === 19, secs.sections.length + ' ' + secs.sections.map((x) => x.id).join(' '));
+  ok('the phone gets the TV\'s settings pages', secs.sections.some((x) => x.id === 'look' && x.title === 'Appearance') && secs.sections.length === 20, secs.sections.length + ' ' + secs.sections.map((x) => x.id).join(' '));
   // A phone in Spanish gets them in Spanish, while the TV stays in its own language; a message from later (a
   // restore point list, after the TV looked it up) too.
   // The everyday sections say what they're set to now, for the phone's big cards; the rest say nothing.
