@@ -534,7 +534,7 @@ var App = (function () {
         if (+p.chans && !fits(p, +p.chans)) return;
         return Store.bigGet(cacheKey(p)).then(function (cached) {
           if (gen !== startGen) return;
-          if (cached && cached.sig === Source.sig(p) && cached.channels && cached.channels.length) {
+          if (kept(p, cached)) {
             if (!useOther(p, cached)) return;
             Log.info('app', 'Added ' + cached.channels.length + ' channels of ' + (p.name || 'another playlist') + ' kept from its last load');
             if (plDue(p, cached.at, true)) otherQ.push(p.id);
@@ -616,7 +616,7 @@ var App = (function () {
       chain = chain.then(function () {
         return Store.bigGet(cacheKey(p)).then(function (cached) {
           if (gen !== startGen) return;
-          if (cached && cached.sig === Source.sig(p) && cached.channels && cached.channels.length) { if (useOther(p, cached)) changed = true; }
+          if (kept(p, cached)) { if (useOther(p, cached)) changed = true; }
           else if (otherQ.indexOf(p.id) < 0) { otherQ.push(p.id); U.toast(I18n.t('Loading the channels of {x}', { x: p.name || I18n.t('the playlist') }), 4000); }
         });
       });
@@ -797,6 +797,8 @@ var App = (function () {
   /* A playlist bigger than a TV comfortably holds (186,928 channels on a 32-inch 2022 set, issues #24
      and #25): say so once, with what helps.  Every reload of such a list is a big moment for the TV. */
   var BIG = 100000;
+  // A playlist's last load, kept on the TV, still good to open: its channels, or only movies and shows (issue #198).
+  function kept(p, cached) { return !!(cached && cached.sig === Source.sig(p) && cached.channels && (cached.channels.length || (cached.vod && (cached.vod.movies || cached.vod.series)))); }
   function bigList(p) {
     var part = Library.partOf(p.id), n = part ? part.channels.length : Library.count();      // that playlist's own, several on
     if (n < BIG || p.bigNoted) return;
@@ -810,7 +812,7 @@ var App = (function () {
     // Said before the read, so a report from a TV that closed while reading a big list shows it was then (issue #153).
     Log.info('app', 'Opening the channel list kept from the last load');
     return Store.bigGet(cacheKey(p)).then(function (cached) {
-      if (cached && cached.sig === Source.sig(p) && cached.channels && cached.channels.length) {
+      if (kept(p, cached)) {
         Log.info('app', 'Opened ' + cached.channels.length + ' channels kept from the last load');
         var big = cached.channels.length >= BIG;
         if (big) busyStart(p, 'opening');

@@ -5,6 +5,10 @@
 - **Dialogue boost keeps the picture on Dolby Vision movies.**  Turning on dialogue boost or night mode on a Dolby Vision movie (a Plex one, say) left the screen black with the sound playing.  The picture now stays, in Dolby Vision, to the last second of the credits.
 - **A Plex movie isn't marked watched by something else.**  When another movie or a channel started without the Plex one being stopped first, its place was still sent to Plex as the Plex movie's, and could mark it watched.
 - **The screensaver stays away while anything plays.**  It could come on over a movie or channel playing in the guide's preview or picture-in-picture.  Now it waits for nothing to be playing, or for a paused video.
+- **Cricket matches find your channels.**  Holding OK on a live match said it wasn't on any of your channels, because ESPN names no broadcaster for cricket.  TiviBro now looks in your guide for the match (both sides named, a channel named after it, or a cricket programme on a cricket channel at that time).
+- **The screensaver can turn the screen off instead.**  Settings > Appearance > Screensaver > Turn the screen off instead: with nothing playing, the screen goes off as the TV's own Screen off does, and any button brings it back.
+- **A playlist of only movies and shows can be added.**  It was turned down for having no channels; its films and series now go to Movies and Shows.
+- **Converted sound comes back after TiviBro restarts.**  Opening the same channel again after TiviBro closed could leave its sound unconverted (HTTP 416); a new conversion starts instead.
 
 ## 0.6.0 (alpha 234, 2026-11-27)
 

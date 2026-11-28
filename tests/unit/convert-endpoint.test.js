@@ -132,6 +132,12 @@ src.listen(0, '127.0.0.1', () => relay.server.listen(0, '127.0.0.1', async () =>
     r = await fetch(fastLink, { headers: { Range: 'bytes=' + (head.length + tail.length + 10) + '-' } });
     ok('past the end of a finished conversion: 416', r.status === 416, r.status);
     ok('pieces far behind the player are deleted', fs.readdirSync(path.join(tmp, 'store', 'convert')).length < Math.ceil((head.length + tail.length) / 65536), fs.readdirSync(path.join(tmp, 'store', 'convert')).length);
+    // TiviBro back after closing, asking for the start again once the first pieces are gone (issue #198): a new
+    // conversion, not 416.
+    const floor0 = Convert.session && Convert.session.floor;
+    r = await fetch(fastLink);
+    ok('the start asked for again once it is gone: a new conversion from the beginning', floor0 > 0 && r.status === 200 && proxy.LOG.some((x) => x.event === 'convert restart'), [floor0, r.status]);
+    await r.arrayBuffer();
     ok('...and when the player is gone, the conversion and its spool go too', await until(() => !Convert.session && fs.readdirSync(path.join(tmp, 'store', 'convert')).length === 0, 4000));
 
     // The player hangs up and doesn't come back: ffmpeg is stopped, nothing left running.

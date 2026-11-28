@@ -23,10 +23,11 @@ let LIST = '#EXTM3U\n' +
   L('Big Film (2020)', 'Films | Action', MOCK + '/movie/u/p/11.mp4', MOCK + '/logo/1.svg') + L('Quiet Film (2019)', 'Films | Drama', MOCK + '/movie/u/p/12.mkv') + L('Loud Film (2021)', 'Films | Action', MOCK + '/movie/u/p/13.mp4') +
   L('Test Show S01 E02', 'Series | Drama', MOCK + '/series/u/p/22.mp4') + L('Test Show S01 E01', 'Series | Drama', MOCK + '/series/u/p/21.mp4') + L('Test Show S02 E01', 'Series | Drama', MOCK + '/series/u/p/23.mp4') +
   L('Other Show S01E01', 'Series | Comedy', MOCK + '/series/u/p/31.mp4');
+const FILMS_ONLY = '#EXTM3U\n' + L('Big Film (2020)', 'Films | Action', MOCK + '/movie/u/p/11.mp4') + L('Quiet Film (2019)', 'Films | Drama', MOCK + '/movie/u/p/12.mkv');
 const LIVE_ONLY = '#EXTM3U\n' + L('News One', 'News', MOCK + '/live/u/p/1.ts') + L('Sports One', 'Sports', MOCK + '/live/u/p/2.ts');
 
 (async () => {
-  const srv = http.createServer((req, res) => { res.writeHead(200, { 'Content-Type': 'audio/x-mpegurl' }); res.end(/live-only/.test(req.url) ? LIVE_ONLY : LIST); }).listen(8095, '127.0.0.1');
+  const srv = http.createServer((req, res) => { res.writeHead(200, { 'Content-Type': 'audio/x-mpegurl' }); res.end(/live-only/.test(req.url) ? LIVE_ONLY : /films-only/.test(req.url) ? FILMS_ONLY : LIST); }).listen(8095, '127.0.0.1');
   const b = await chromium.launch();
   const page = await (await b.newContext({ viewport: { width: 1920, height: 1080 } })).newPage();
   const errs = []; page.on('pageerror', (e) => errs.push(e.message));
@@ -83,6 +84,15 @@ const LIVE_ONLY = '#EXTM3U\n' + L('News One', 'News', MOCK + '/live/u/p/1.ts') +
   await page.waitForFunction(() => Store.settings.active === 'mv2' && window.Library && Library.count() === 2, null, { timeout: 30000 }).catch(() => {});
   const tabs2 = await ev(() => [].slice.call(document.querySelectorAll('.tab .lbl')).map((x) => x.textContent));
   ok('a list without films has no Movies or Shows', tabs2.indexOf('Movies') < 0 && tabs2.indexOf('Shows') < 0, tabs2.join(', '));
+
+  // A list of films only (issue #198): it loads, with no channels, and its films are in Movies.
+  await ev(() => { ['mv1', 'mv2'].forEach((id) => { const d = Store.byId(id); d.off = true; Store.upsertPlaylist(d); }); Store.upsertPlaylist({ id: 'mv3', name: 'Films only', type: 'm3u', m3u: 'http://127.0.0.1:8095/films-only.m3u' }); App.switchPlaylist('mv3'); });
+  await page.waitForFunction(() => Store.settings.active === 'mv3' && Store.playlist.vod && Store.playlist.vod.movies, null, { timeout: 30000 }).catch(() => {});
+  const fo = await ev(() => ({ vod: Store.playlist.vod, n: Library.count(), err: (Store.playlist.lastError || '') + '' }));
+  ok('a list of films only loads: no channels, its movies', fo.vod && fo.vod.movies && !fo.vod.series && fo.n === 0, JSON.stringify(fo));
+  await ev(() => { Views.buildTabs(); Vod.reset && Vod.reset(); return Vod.prepare(); });
+  const fa = await ev(() => Vod.allItems().map((x) => x.it.name).sort().join());
+  ok('...and its films are in Movies', fa === 'Big Film (2020),Quiet Film (2019)', fa);
 
   ok('no page errors', !errs.length, errs.join(' | '));
   await b.close(); srv.close();

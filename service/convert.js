@@ -440,6 +440,13 @@ function stream(req, res, ALLOW, log, port, redact) {
   log({ lv: 'info', event: 'convert request', range: req.headers.range || undefined, joins: S ? Math.round(S.written / 1048576) + ' MB converted' : undefined, method: req.method === 'HEAD' ? 'HEAD' : undefined });
   if (req.method === 'HEAD') { res.writeHead(200, h); return res.end(); }
 
+  /* The start again of a session whose first bytes are gone (a live channel converting for a while, or a movie
+     far in): TiviBro restarted after closing and asks for the beginning, which the spool no longer has.  That
+     answered 416, and the channel played without its sound converted (issue #198).  A fresh conversion instead. */
+  if (S && dir && from === 0 && S.floor > 0 && req.method !== 'HEAD') {
+    log({ lv: 'info', event: 'convert restart', why: 'the start was asked for again', had_mb: Math.round(S.written / 1048576) });
+    S.stop('asked for from the start again'); S = null;
+  }
   // A later byte of the running conversion: from the spool.
   if (S && dir) {
     if (from < S.floor || (S.done && !S.stopped && from >= S.written)) { res.writeHead(416, Object.assign({ 'Content-Range': 'bytes */' + S.written }, ALLOW)); return res.end(); }

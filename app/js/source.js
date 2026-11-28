@@ -224,7 +224,8 @@ var Source = (function () {
       Log.info('m3u', (t.shaped ? 'The helper parsed ' : 'Parsed ') + d.channels.length + ' channels in ' + d.groups.length + ' groups (' + Math.round(size / 1024) + ' KB, ' + (Date.now() - t0) + 'ms)' + (d.epgUrl ? '; guide address in playlist' : '; no guide address in playlist') +
         (d.vodSkipped ? '; left out ' + d.vodSkipped + ' movies and series episodes (a list this big keeps its live channels)' : '') +
         (d.vod ? '; ' + d.vod.movies + ' movies and ' + d.vod.series + ' shows go to Movies and Shows' : ''));
-      if (!d.channels.length) throw Object.assign(new Error('The playlist downloaded but has no channels in it.'), { kind: 'parse' });
+      // A playlist of movies and shows only (issue #198) is fine: they go to Movies and Shows.
+      if (!d.channels.length && !(d.vod && (d.vod.movies || d.vod.series))) throw Object.assign(new Error('The playlist downloaded but has no channels in it.'), { kind: 'parse' });
       d.m3u = used;
       return d;
     });
