@@ -50,6 +50,7 @@ import androidx.compose.material.icons.rounded.Article
 import androidx.compose.material.icons.rounded.CalendarViewWeek
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.EmojiEvents
 import androidx.compose.material.icons.rounded.FiberManualRecord
 import androidx.compose.material.icons.rounded.Key
@@ -439,6 +440,7 @@ internal fun sectionIcon(id: String): Pair<ImageVector, Color> = when (id) {
     "connect" -> Icons.Rounded.PhoneAndroid to Muted
     "keys" -> Icons.Rounded.Key to Muted
     "backups" -> Icons.Rounded.Restore to Muted
+    "about" -> Icons.Rounded.Info to Muted
     "log" -> Icons.Rounded.Article to Muted
     else -> Icons.Rounded.Settings to Muted
 }

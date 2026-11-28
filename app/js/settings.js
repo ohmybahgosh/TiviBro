@@ -555,18 +555,18 @@ var Settings = (function () {
     return [head('Home rows'),
       action('Edit home rows', 'The rows of your Plex home, in Plex\'s order: turn any off.  Red on the Plex tab\'s Home too.', function () { PlexView.editRows(function () { build(); }); }, function () { var n = Object.keys(p.hiddenRows || {}).length; return n ? T('Rows off: {x}', { x: n }) : T('As in Plex'); }),
       toggle('Watchlist row', 'Your Plex Watchlist on Home, with the titles your servers have.  More > Add to Watchlist on a movie\'s page.', function () { return Plex.prefs().watchRow; }, function (v) { Plex.setPref('watchRow', v); paint(); }),
-      toggle('Streaming Top 10s you have', 'Yesterday\'s Top 10s of the streaming services in your country (FlixPatrol) with the movies and shows your Plex has, best place first, "#3 on Netflix" under each.', function () { return Plex.prefs().topMixed; }, function (v) { Plex.setPref('topMixed', v); paint(); }),
-      page('Top 10 rows', 'A row of its own for a service\'s Top 10, with the titles your Plex has.  On Home and in each library\'s Recommended.', 'Top 10 rows', plexTopPick, function () { return String(Plex.prefs().topServices.length); })];
+      toggle('Streaming Top 10s you have', 'One row for all the services together: yesterday\'s Top 10s in your country (FlixPatrol), only the movies and shows your Plex has, best place first, with "#3 on Netflix" under each.  On Home.', function () { return Plex.prefs().topMixed; }, function (v) { Plex.setPref('topMixed', v); paint(); }),
+      page('A Top 10 row for each service', 'Pick services (Netflix, Max, Prime Video and more): each gets a row of its own, "Top 10 on Netflix", in that service\'s order, with the titles your Plex has.  On Home and in each library\'s Recommended.  Apart from the row above.', 'A Top 10 row for each service', plexTopPick, function () { var n = Plex.prefs().topServices.length; return n ? String(n) : T('None'); })];
   }
   // The services with a chart today, each a row on or off.
   function plexTopPick() {
     var svcs = typeof PlexTop !== 'undefined' ? PlexTop.services() : [];
     if (!svcs.length) return [info('No Top 10s yet.  They come once a day; look again in a minute.', '')];
-    return svcs.map(function (svc) {
+    return [info('Each one you turn on gets a row of its own on Home, in that service\'s order.  Streaming Top 10s you have mixes them all in one row.', '')].concat(svcs.map(function (svc) {
       return toggle(T('Top 10 on {x}', { x: I18n.raw(svc) }), '', function () { return Plex.prefs().topServices.indexOf(svc) >= 0; }, function (v) {
         var l = Plex.prefs().topServices.filter(function (x) { return x !== svc; }); if (v) l.push(svc); Plex.setPref('topServices', l); paint();
       });
-    });
+    }));
   }
   function plexSection() {
     var out = [info('Your Plex movies and shows in TiviBro, with their posters, collections, playlists and watched marks.  Once a server and a library are added, Plex gets its own place in the menu, the phone app and the web editor.', '')];
@@ -1797,8 +1797,10 @@ var Settings = (function () {
     out.push(toggle('From your Plex', 'A picture from your Plex home, dimmed and slowly moving, with its title.', getLook('library'), setLook('library')));
     if (getLook('library')()) out.push(toggle('Family-friendly pictures only', 'Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.', function () { return s.saverRated !== false; }, function (v) { s.saverRated = v; save(); }));
     out.push(toggle('My teams', 'Your teams\' scores and next games, slowly wandering, when they have one.', getLook('teams'), setLook('teams')));
+    out.push(toggle('Bouncing logo', 'The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.', getLook('bounce'), setLook('bounce')));
     out.push(choice('After an hour', 'When nobody has come back.', ['tv', 'keep'], ['Let the TV take over', 'Keep going'], function () { return s.saverHour === 'keep' ? 'keep' : 'tv'; }, function (v) { s.saverHour = v; save(); }));
-    out.push(action('Preview', 'Shows it now.  Any button comes back here.', function () { if (typeof Saver !== 'undefined') Saver.preview(); }, function () { return 'OK'; }));
+    // On the TV's screen, also when pressed in the phone app or the web editor (they say so).
+    out.push(tvOnly(action('Preview', 'Shows it now.  Any button comes back here.', function () { if (typeof Saver !== 'undefined') Saver.preview(); }, function () { return 'OK'; })));
     return out;
   }
   function look() {
@@ -2605,6 +2607,7 @@ var Settings = (function () {
     var on = e && zone === 'body' && e._title;
     h.classList.toggle('empty', !on);
     if (!on) { if (h._t !== '') { h.innerHTML = ''; h._t = ''; } return; }
+    underNow(h);
     var it = items[rowEls.indexOf(e)], extra = it && it.extra;
     var key = e._title + '|' + (e._help || '') + '|' + e._how + (extra ? '|' + (it.get ? it.get() : it.value && it.value()) + Logos.status.at : '');
     if (h._t === key) return;
@@ -2616,6 +2619,16 @@ var Settings = (function () {
     if (e._help && !extra) h.appendChild(U.el('p', '', e._help));
     if (e._how) h.appendChild(U.el('div', 'sh-how', e._how));
     if (extra) try { h.appendChild(extra()); } catch (x) {}
+  }
+  /* With a channel playing in the corner, the panel goes just under its name and programme, wherever they end: a
+     long programme name on two lines ran under a fixed spot (392 px), and the panel covered its last lines. */
+  function underNow(h) {
+    var v = document.getElementById('viewSettings'), info = v && v.classList.contains('pip') && v.querySelector('.set-now-info');
+    var last = info && info.lastElementChild, box = h.offsetParent;
+    if (!last || !box) { h.style.top = ''; h.style.maxHeight = ''; return; }
+    var top = Math.round(last.getBoundingClientRect().bottom - box.getBoundingClientRect().top + 20);
+    if (top < 0) { h.style.top = ''; h.style.maxHeight = ''; return; }
+    h.style.top = top + 'px'; h.style.maxHeight = 'calc(100% - ' + top + 'px)';
   }
   // What the remote does on a row, in plain words, for the panel.
   function howTo(k, tone, it) {
@@ -3182,6 +3195,6 @@ var Settings = (function () {
   function regain() { UI.setHandler(keys); build(); }
   // The home too when it's showing (the language can change while it is: the TV's own, or a dictionary still loading).
   function redraw() { if (document.getElementById('viewSettings').classList.contains('hidden')) return; if (onHome) homeBuild(); else build(); }
-  return { capturing: function () { return !!cap; }, dns: { ids: DNS_IDS, names: DNS_NAMES, ask: askDns }, open: open, openFrom: openFrom, redraw: redraw, regain: regain, assignGuide: assignGuide, section: section, showRow: showRow, openPlaylist: openPlaylist, openTeams: openTeams, live: live, reset: function () { stack = []; sel = 0; }, phone: forPhone,
+  return { capturing: function () { return !!cap; }, dns: { ids: DNS_IDS, names: DNS_NAMES, ask: askDns }, open: open, openFrom: openFrom, redraw: redraw, regain: regain, assignGuide: assignGuide, section: section, showRow: showRow, openPlaylist: openPlaylist, openTeams: openTeams, live: live, reset: function () { stack = []; sel = 0; }, phone: forPhone, placeHelp: function () { var h = document.getElementById('setHelp'); if (h && !h.classList.contains('empty')) underNow(h); },
     LOOK: { ACCENTS: ACCENTS, ACCENT_NAMES: ACCENT_NAMES, THEMES: THEMES, THEME_NAMES: THEME_NAMES, THEME_INK: THEME_INK } };
 })();

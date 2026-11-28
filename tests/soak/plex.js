@@ -329,7 +329,7 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
       const sv = pg.rows.find((r) => r.label === 'Servers'), svRows = sv ? Settings.phone.page('plex', [sv.i]).rows.map((r) => r.label) : [];
       return { rows, opts: q ? q.options.length : 0, now, svRows };
     });
-    const want = ['Signed in as', 'Servers', 'Edit home rows', 'Watchlist row', 'Streaming Top 10s you have', 'Top 10 rows', 'Quality at home', 'Quality away from home', 'Play files as they are', 'Still watching?', 'Sign out of Plex'];
+    const want = ['Signed in as', 'Servers', 'Edit home rows', 'Watchlist row', 'Streaming Top 10s you have', 'A Top 10 row for each service', 'Quality at home', 'Quality away from home', 'Play files as they are', 'Still watching?', 'Sign out of Plex'];
     ok('Settings > Plex on the phone and in the web editor: every row the TV has', want.every((x) => spg.rows.indexOf(x) >= 0), spg.rows);
     ok('...Plex\'s quality list there too', spg.opts >= 9, spg.opts);
     ok('...and changes from the phone reach the TV (quality, playing files as they are, the Watchlist row)', spg.now.q === 20000 && spg.now.d === false && typeof spg.now.w === 'boolean', spg.now);

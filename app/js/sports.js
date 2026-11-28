@@ -61,10 +61,13 @@ var Sports = (function () {
 
   /* ---------- reading ESPN ---------- */
   function num(x) { return x == null || x === '' ? null : +x; }
+  /* ESPN's logo for a dark screen (500-dark): the plain one has black lettering on some teams (Ohio State's
+     "OHIO STATE" across the O), which vanished on TiviBro's dark cards and in the screensaver. */
+  function darkLogo(u) { return String(u || '').replace(/^http:/, 'https:').replace(/(\/teamlogos\/[a-z]+)\/500\//, '$1/500-dark/'); }
   function team(lg, t) {
     var tm = t.team || {}, rec = (t.records || [])[0];
     var o = { abbr: tm.abbreviation || '', name: tm.shortDisplayName || tm.displayName || tm.name || '', full: tm.displayName || '', loc: tm.location || '',
-      logo: tm.logo || '', color: tm.color || '', alt: tm.alternateColor || '', home: t.homeAway === 'home', score: num(t.score),
+      logo: darkLogo(tm.logo), color: tm.color || '', alt: tm.alternateColor || '', home: t.homeAway === 'home', score: num(t.score),
       rec: rec && rec.summary || '', rank: t.curatedRank && t.curatedRank.current < 26 ? t.curatedRank.current : 0, win: !!t.winner };
     o.id = teamId(lg, o);
     o.eid = String(tm.id || '');           // ESPN's own id (the phone's Sports widget reads ESPN with it)
@@ -187,7 +190,7 @@ var Sports = (function () {
         var rec = st.wins != null && st.losses != null ? st.wins + '-' + st.losses + (st.otLosses != null ? '-' + st.otLosses : st.ties && st.ties !== '0' ? '-' + st.ties : '') : st.overall || '';
         var extra = st.points != null ? { k: 'PTS', v: st.points } : st.gamesBehind != null ? { k: 'GB', v: st.gamesBehind } : st['vs. Conf.'] != null ? { k: 'CONF', v: st['vs. Conf.'] } : null;
         var lg = (e.logo || []).filter(function (l) { return (l.rel || []).indexOf('dark') >= 0; })[0] || (e.logo || [])[0];
-        return { team: e.team || '', rec: rec, extra: extra, streak: st.streak || '', logo: lg && lg.href ? String(lg.href).replace(/^http:/, 'https:') : '' };
+        return { team: e.team || '', rec: rec, extra: extra, streak: st.streak || '', logo: lg && lg.href ? darkLogo(lg.href) : '' };
       }) };
     }).filter(function (gr) { return gr.rows.length; });
     var info = j.gameInfo || {};
@@ -405,7 +408,7 @@ var Sports = (function () {
   // "Lions at Packers" (the guide's and reminders' way of naming a game).
   function title(g) { return g.teams.length === 2 ? g.teams[0].name + ' at ' + g.teams[1].name : g.name; }
 
-  return { netChannels: netChannels, covered: covered, rowOrder: rowOrder, setOrder: setOrder, rows: rows, follows: follows, reminded: reminded, remind: remind, loaded: loaded, refreshToday: refreshToday, byId: byId, summary: summary, gameOn: gameOn, hidesTeam: hidesTeam, hideTeam: hideTeam, hidden: hidden, reveal: reveal, followedLeagues: followedLeagues, _readSummary: readSummary,
+  return { darkLogo: darkLogo, netChannels: netChannels, covered: covered, rowOrder: rowOrder, setOrder: setOrder, rows: rows, follows: follows, reminded: reminded, remind: remind, loaded: loaded, refreshToday: refreshToday, byId: byId, summary: summary, gameOn: gameOn, hidesTeam: hidesTeam, hideTeam: hideTeam, hidden: hidden, reveal: reveal, followedLeagues: followedLeagues, _readSummary: readSummary,
     LEAGUES: LEAGUES, league: function (id) { return BY[id]; }, leagues: leagues, setLeagues: setLeagues, refresh: refresh, anyLive: anyLive, all: all, day: day, errOf: errOf,
     channels: channels, byNet: byNet, title: title, onChange: onChange, dayKey: dayKey, LIVE_MS: LIVE_MS, TODAY_MS: TODAY_MS, _game: game, _squash: squash, _bare: bare, _store: store };
 })();

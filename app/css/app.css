@@ -1560,6 +1560,19 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .saver .sv-name{font-size:64px;font-weight:300;color:#B9BECB;margin:10px 0}
 .saver .sv-facts{font-size:24px;font-weight:300}
 .saver .sv-topclock{position:absolute;right:120px;top:90px;text-align:right}
+/* The bouncing V (saver.js bounce): across in 21 s and down in 10.9 s, both 80 px a second, turning at the walls. */
+@keyframes svBx{from{transform:translateX(0)}to{transform:translateX(1680px)}}
+@keyframes svBy{from{transform:translateY(0)}to{transform:translateY(870px)}}
+.saver .sv-bx{position:absolute;left:0;top:0;animation:svBx 21s linear infinite alternate;will-change:transform}
+.saver .sv-by{animation:svBy 10.875s linear infinite alternate;will-change:transform}
+.saver .sv-v{display:block;opacity:.55;transition:opacity 1s}
+.saver .sv-v.corner{opacity:.85}
+.saver .sv-v .s1{stop-color:#4FB6FF}.saver .sv-v .s2{stop-color:#1F5FE8}
+.saver .sv-v.c1 .s1{stop-color:#46E0C8}.saver .sv-v.c1 .s2{stop-color:#11907E}
+.saver .sv-v.c2 .s1{stop-color:#B48CFF}.saver .sv-v.c2 .s2{stop-color:#6A3BD8}
+.saver .sv-v.c3 .s1{stop-color:#FF8FB8}.saver .sv-v.c3 .s2{stop-color:#D23C78}
+.saver .sv-v.c4 .s1{stop-color:#FFC56A}.saver .sv-v.c4 .s2{stop-color:#D9831C}
+.saver .sv-v.c5 .s1{stop-color:#8EE87A}.saver .sv-v.c5 .s2{stop-color:#2F9E3A}
 .burn-veil{position:fixed;top:0;left:0;right:0;bottom:0;background:#000;opacity:0;pointer-events:none;z-index:9999;transition:opacity 2s}
 .burn-veil.on{opacity:.7}
 /* Never over fullscreen video: the moment a channel or episode goes fullscreen, the dim is gone (burnin.js). */

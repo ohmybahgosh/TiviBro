@@ -98,6 +98,10 @@
         <receiver
             android:name=".widget.WidgetTaps"
             android:exported="false" />
+        <!-- The Sports widget's minute while a game is live (widget/LiveTick.kt): its own alarm, not exported. -->
+        <receiver
+            android:name=".widget.LiveTick"
+            android:exported="false" />
         <!-- The Sports widget's team logos, read by the launcher by address (widget/LogoProvider.kt): read-only,
              public ESPN logos only. -->
         <provider

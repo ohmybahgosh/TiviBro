@@ -139,6 +139,7 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
     // While the app is on screen, keep every TV's state fresh; nothing runs in the background.
     LaunchedEffect(lifecycle) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            app.tivibro.phone.widget.SportsWidgetWorker.opened(ctx.applicationContext)    // the Sports widget catches up too
             while (true) { model.refresh(); delay(15_000) }
         }
     }

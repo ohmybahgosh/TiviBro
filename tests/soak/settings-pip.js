@@ -46,6 +46,24 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const after = await audit();
   ok('no setting cut off with the picture there (none more than without it)', after.bad.length <= before.bad.length && after.bad.every((x) => before.bad.indexOf(x) >= 0), JSON.stringify(after.bad.filter((x) => before.bad.indexOf(x) < 0)));
   ok('no setting under the picture', !after.under.length, JSON.stringify(after.under.slice(0, 5)));
+  // The panel about the focused row sits under what's playing, never over its last lines (a long programme name, two lines).
+  const over = await ev(async () => {
+    const out = [], ch = Library.channels(Library.ALL)[2], nn = Epg.nowNext(ch);
+    if (nn && nn.now) nn.now.t = 'Milwaukee Bucks at Detroit Pistons, the second game of the night';   // two lines
+    Views.pipUpdate && Views.pipUpdate();
+    for (const s of Settings.phone.sections()) {
+      Settings.section(s.id); await new Promise((r) => setTimeout(r, 80));
+      UI.press('right'); await new Promise((r) => setTimeout(r, 120));
+      const h = document.getElementById('setHelp'), info = document.querySelector('#viewSettings .set-now-info');
+      if (!h || h.classList.contains('empty') || !info) continue;
+      const kids = [...info.children], last = kids.length ? kids[kids.length - 1].getBoundingClientRect().bottom : 0;
+      const top = h.getBoundingClientRect().top;
+      if (top < last + 4) out.push(s.id + ': help ' + Math.round(top) + ' < info ' + Math.round(last));
+      if (h.getBoundingClientRect().bottom > window.innerHeight + 1) out.push(s.id + ': help off the screen');
+    }
+    return out;
+  });
+  ok('the help panel is never drawn over the playing channel\'s name and lines', !over.length, JSON.stringify(over.slice(0, 6)));
   await page.waitForTimeout(1500);
   ok('and it is still playing after going through every section', await ev(() => Views.pipOn && document.getElementById('video').currentTime) > st.t0);
   // A player setting starts it again; the set-up screen stops it.

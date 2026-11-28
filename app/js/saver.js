@@ -4,9 +4,10 @@
      clock    a big, thin, dim clock and the date, wandering slowly round the screen, with your next game under it;
      aurora   very dark coloured glows drifting into each other, with a small clock that changes corner;
      library  a backdrop from your Plex home, dimmed and slowly zooming, with its title;
-     teams    your teams' games (live scores first, then what's next) with the clock, wandering like the clock.
+     teams    your teams' games (live scores first, then what's next) with the clock, wandering like the clock;
+     bounce   the TiviBro V gliding corner to corner like the old DVD screensaver, a new colour at each wall.
    A look with nothing to show (no Plex, no game today) is skipped.  Settings: saver ('off' turns it off),
-   saverLooks ({ clock, aurora, library, teams }: false leaves one out), saverAfter and saverPaused (minutes;
+   saverLooks ({ clock, aurora, library, teams, bounce }: false leaves one out), saverAfter and saverPaused (minutes;
    saverPaused 0: never over a paused video), saverHour ('keep': never hand over to the TV).
    Nothing stays in one place (the whole layer also moves a few pixels every minute), there is no white and no fixed
    bar.  The first key press only takes it away (Burnin.activity drops it).  While it shows, and while it waits to
@@ -16,7 +17,7 @@
 var Saver = (function () {
   'use strict';
   var T = function (s, v) { return typeof I18n !== 'undefined' ? I18n.t(s, v) : String(s).replace(/\{(\w+)\}/g, function (a, k) { return v && v[k] != null ? v[k] : a; }); };
-  var homeRated = true, LOOKS = ['clock', 'aurora', 'library', 'teams'], MIX_MS = 4 * 60000, HOUR = 3600000, SHIFT = [[0, 0], [6, 2], [8, -4], [2, -8], [-4, -6], [-8, 0], [-6, 6], [0, 8]];
+  var homeRated = true, LOOKS = ['clock', 'aurora', 'library', 'teams', 'bounce'], MIX_MS = 4 * 60000, HOUR = 3600000, SHIFT = [[0, 0], [6, 2], [8, -4], [2, -8], [-4, -6], [-8, 0], [-6, 6], [0, 8]];
   var last = Date.now(), el = null, on = false, since = 0, look = '', lookAt = 0, ticks = [], shiftAt = 0, handed = false, home = null, homeAt = 0;
 
   function S() { return (typeof Store !== 'undefined' && Store.settings) || {}; }
@@ -99,18 +100,46 @@ var Saver = (function () {
       var a = homeArt(), m = a[Math.floor(Math.random() * a.length)];
       l.innerHTML = '<div class="sv-art" id="saverArt"></div><div class="sv-artshade"></div><div class="sv-title"><div class="sv-kicker">' + esc(T('In your Plex')) + '</div><div class="sv-name">' + esc(m.title) + '</div><div class="sv-facts">' + esc([m.year, m.genre].filter(Boolean).join('  ·  ')) + '</div></div><div class="sv-topclock">' + time + '</div>';
       PlexView.picture(m.server, m.art, 1920, 1080).then(function (u) { var x = document.getElementById('saverArt'); if (x && u) { x.style.backgroundImage = 'url("' + u + '")'; x.classList.add('in'); } }, function () {});
+    } else if (look === 'bounce') {
+      l.innerHTML = '<div class="sv-corner">' + time + '</div><div class="sv-bx"><div class="sv-by">' + V_SVG + '</div></div>';
+      bounce(l);
     } else if (look === 'teams') {
       l.innerHTML = '<div class="sv-wander wide"><div class="sv-row">' + time + '</div><div class="sv-games">' + g.slice(0, 4).map(function (x) { return gameCard(x); }).join('') + '</div></div>';
     } else {
       l.innerHTML = '<div class="sv-wander">' + time + (next ? gameCard(next, true) : '') + '</div>';
     }
   }
+  /* The bouncing V: the TiviBro mark drawn as two rounded strokes (crisp at any size), its colours set by a class. */
+  var V_SVG = '<svg class="sv-v" width="240" height="210" viewBox="0 0 240 210"><defs><linearGradient id="svVg" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" class="s1"/><stop offset="1" class="s2"/></linearGradient></defs>' +
+    '<path d="M44 44 L120 166 L196 44" fill="none" stroke="url(#svVg)" stroke-width="60" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '<path d="M40 38 L86 112" fill="none" stroke="rgba(255,255,255,.28)" stroke-width="10" stroke-linecap="round"/></svg>';
+  var V_COLOURS = 6;
+  /* Like the DVD screensaver: one animation slides it across and back, another up and down, at the same speed, so it
+     travels on the diagonal and turns at the walls (app.css, svBx and svBy).  Each wall it reaches (an animation
+     turning round) gives it the next colour; both walls at once is a corner, and it glows for a moment.  It starts
+     at a random point of its path. */
+  function bounce(l) {
+    var bx = l.querySelector('.sv-bx'), by = l.querySelector('.sv-by'), v = l.querySelector('.sv-v');
+    if (!bx || !by || !v) return;
+    var c = 0, lastX = 0, lastY = 0;
+    bx.style.animationDelay = '-' + (Math.random() * 21).toFixed(2) + 's';
+    by.style.animationDelay = '-' + (Math.random() * 10.9).toFixed(2) + 's';
+    function wall(x) {
+      var now = Date.now();
+      if (x) lastX = now; else lastY = now;
+      c = (c + 1) % V_COLOURS; v.setAttribute('class', 'sv-v c' + c + (Math.abs(lastX - lastY) < 300 ? ' corner' : ''));
+    }
+    bx.addEventListener('animationiteration', function () { wall(true); });
+    by.addEventListener('animationiteration', function () { wall(false); });
+  }
   /* A game as a card: the visiting team (logo, name), the score (or the start time) with the clock, "Final" or the day
      under it, and the home team.  [small]: the single card under the clock look. */
   function gameCard(x, small) {
     var t = x.teams || [], a = t[0] || {}, b = t[1] || {}, on = x.state === 'in', done = x.state === 'post';
     var team = function (m, right) {
-      var logo = m.logo ? '<img class="sv-logo" src="' + esc(m.logo) + '" alt="">' : '';
+      var src = m.logo && Sports.darkLogo ? Sports.darkLogo(m.logo) : m.logo;    // games read before the dark logos came in too
+      var logo = src ? '<img class="sv-logo" src="' + esc(src) + '" alt="">' : '';
       return '<div class="sv-team' + (right ? ' r' : '') + '">' + (right ? '<span>' + esc(m.name) + '</span>' + logo : logo + '<span>' + esc(m.name) + '</span>') + '</div>';
     };
     var when = typeof U !== 'undefined' && U.hhmm ? U.hhmm(x.s) : '';

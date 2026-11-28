@@ -15,10 +15,10 @@ ok('never over a video that plays', !S._due(Object.assign({}, base, { full: true
 ok('over a paused video: after its own wait', S._due(Object.assign({}, base, { full: true, paused: true, idle: 300000 })));
 ok('…and never when that is "Never"', !S._due(Object.assign({}, base, { full: true, paused: true, idle: 9e6, pausedAfter: 0 })));
 ok('turned off, or TiviBro in the background: never', !S._due(Object.assign({}, base, { enabled: false, idle: 9e6 })) && !S._due(Object.assign({}, base, { hidden: true, idle: 9e6 })));
-ok('by default: clock and aurora (no Plex, no games to show)', S._ready().join() === 'clock,aurora', S._ready().join());
-ctx.Store.settings.saverLooks = { clock: false, aurora: true };
+ok('by default: clock, aurora and the bouncing logo (no Plex, no games to show)', S._ready().join() === 'clock,aurora,bounce', S._ready().join());
+ctx.Store.settings.saverLooks = { clock: false, aurora: true, bounce: false };
 ok('a look turned off is left out', S._ready().join() === 'aurora', S._ready().join());
-ctx.Store.settings.saverLooks = { clock: false, aurora: false, library: false, teams: false };
+ctx.Store.settings.saverLooks = { clock: false, aurora: false, library: false, teams: false, bounce: false };
 ok('all turned off: the clock anyway', S._ready().join() === 'clock', S._ready().join());
 ok('family-friendly: PG-13 and TV-14 in, R, TV-MA and no rating out', S._rated({ contentRating: 'PG-13' }) && S._rated({ contentRating: 'TV-14' }) && !S._rated({ contentRating: 'R' }) && !S._rated({ contentRating: 'TV-MA' }) && !S._rated({}));
 ctx.Store.settings.saverRated = false;

@@ -1,6 +1,8 @@
 /* Fills the Sports widget: the followed teams' games from ESPN (Scores), their logos kept on the phone, then every
    Sports widget drawn again.  A full read about every 15 minutes while a widget is on the home screen; while one of
-   the games is live, its score and clock every minute from ESPN's small per-game feeds.  When the phone doesn't know the TV's teams yet, the TV is asked (only if TiviBro is open
+   the games is live, its score and clock every minute from ESPN's small per-game feeds.  That minute is an alarm
+   (LiveTick), not WorkManager: Android holds back an app's background jobs for hours when it isn't opened often,
+   and the scores stood still until the refresh button.  When the phone doesn't know the TV's teams yet, the TV is asked (only if TiviBro is open
    on it: it is never opened for this). */
 package app.tivibro.phone.widget
 
@@ -30,51 +32,57 @@ import java.util.concurrent.TimeUnit
 
 class SportsWidgetWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, params) {
     override suspend fun doWork(): Result {
-        val app = applicationContext
-        if (ids(app).isEmpty()) return Result.success()
-        if (MyTeams.all(app).isEmpty()) learnFromTv(app)
-        val teams = MyTeams.all(app)
-        val now = System.currentTimeMillis()
-        val before = Cache.games(app)
-        // Between full reads (every 15 minutes, or when asked), live games are brought up to date from ESPN's small
-        // per-game feeds (Scores.refreshLive).  A full read when a game should have started, or one just ended.
-        val full = inputData.getBoolean("full", false) || now - Cache.fullAt(app) > 14 * 60_000L || before.none { it.live } ||
-            before.any { it.state == "pre" && it.start <= now }
-        val games = when {
-            teams.isEmpty() -> emptyList()
-            full -> Scores.fetch(teams).take(12)
-            else -> Scores.order(before.map { g -> if (g.live) Scores.refreshLive(g) ?: g else g })
-        }
-        games.flatMap { listOf(it.away.logo, it.home.logo) }.distinct().forEach { logo(app, it) }
-        Cache.save(app, games, full)
-        // An open inner card: its summary again every two minutes while the game is live (it's about 400 KB).
-        DetailOpen.all(app).forEach { id -> games.firstOrNull { it.id == id }?.let { g ->
-            val d = GameDetail.cached(app, id)
-            if (d == null || inputData.getBoolean("full", false) || (g.live && now - d.at > 110_000L)) GameDetail.fetch(app, g)
-        } }
-        SportsWidget.drawAll(app)
-        // Live: again in a minute (WorkManager's periodic work can't run more often than every 15); a game that just
-        // ended gets a full read then too.  A game about to start: around its start.
-        when {
-            games.any { it.live } -> soon(app, 1, full = before.any { b -> b.live && games.none { it.id == b.id && it.live } })
-            games.any { it.state == "pre" && it.start - now in 0..15 * 60_000L } -> soon(app, 5, full = true)
-        }
+        refresh(applicationContext, inputData.getBoolean("full", false))
         return Result.success()
-    }
-
-    // The TV's followed teams, from its Sports, when TiviBro is open on it (never opened for this).
-    private fun learnFromTv(app: Context) {
-        val tv = TvStore(app).tileChoice() ?: return
-        runCatching {
-            val r = TvClient(tv, 20_000).ask("sports", JSONObject().put("op", "list"), noOpen = true)
-            r.optJSONObject("data")?.let { MyTeams.learn(app, SportsList.from(it)) }
-        }
     }
 
     companion object {
         private const val EVERY = "tivibro-sports-widget"
         private const val SOON = "tivibro-sports-widget-soon"
         private val net = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
+
+        /* One refresh, from the worker or the live alarm (it blocks: run it off the main thread).  [asked]: a full read
+           was asked for (the refresh button, new teams).  Then the next one: in a minute while a game is live. */
+        fun refresh(app: Context, asked: Boolean) {
+            if (ids(app).isEmpty()) return
+            if (MyTeams.all(app).isEmpty()) learnFromTv(app)
+            val teams = MyTeams.all(app)
+            val now = System.currentTimeMillis()
+            val before = Cache.games(app)
+            // Between full reads (every 15 minutes, or when asked), live games are brought up to date from ESPN's small
+            // per-game feeds (Scores.refreshLive).  A full read when a game should have started, or one just ended.
+            val full = asked || now - Cache.fullAt(app) > 14 * 60_000L || before.none { it.live } ||
+                before.any { it.state == "pre" && it.start <= now }
+            val games = when {
+                teams.isEmpty() -> emptyList()
+                full -> Scores.fetch(teams).take(12)
+                else -> Scores.order(before.map { g -> if (g.live) Scores.refreshLive(g) ?: g else g })
+            }
+            games.flatMap { listOf(it.away.logo, it.home.logo) }.distinct().forEach { logo(app, it) }
+            Cache.save(app, games, full)
+            // An open inner card: its summary again every two minutes while the game is live (it's about 400 KB).
+            DetailOpen.all(app).forEach { id -> games.firstOrNull { it.id == id }?.let { g ->
+                val d = GameDetail.cached(app, id)
+                if (d == null || asked || (g.live && now - d.at > 110_000L)) GameDetail.fetch(app, g)
+            } }
+            SportsWidget.drawAll(app)
+            // Live: again in a minute, by alarm (LiveTick); a game that just ended gets a full read then too.  A game
+            // about to start: around its start.  Nothing live or close: the 15-minute work is enough.
+            when {
+                games.any { it.live } -> LiveTick.at(app, 60_000L, full = before.any { b -> b.live && games.none { it.id == b.id && it.live } })
+                games.any { it.state == "pre" && it.start - now in 0..15 * 60_000L } -> LiveTick.at(app, 5 * 60_000L, full = true)
+                else -> LiveTick.cancel(app)
+            }
+        }
+
+        // The TV's followed teams, from its Sports, when TiviBro is open on it (never opened for this).
+        private fun learnFromTv(app: Context) {
+            val tv = TvStore(app).tileChoice() ?: return
+            runCatching {
+                val r = TvClient(tv, 20_000).ask("sports", JSONObject().put("op", "list"), noOpen = true)
+                r.optJSONObject("data")?.let { MyTeams.learn(app, SportsList.from(it)) }
+            }
+        }
 
         fun ids(ctx: Context): IntArray = AppWidgetManager.getInstance(ctx).getAppWidgetIds(ComponentName(ctx, SportsWidget::class.java))
 
@@ -85,9 +93,11 @@ class SportsWidgetWorker(ctx: Context, params: WorkerParameters) : CoroutineWork
             now(ctx)
         }
         /** The last widget went: nothing more to refresh. */
-        fun stop(ctx: Context) { WorkManager.getInstance(ctx).cancelUniqueWork(EVERY); WorkManager.getInstance(ctx).cancelUniqueWork(SOON) }
+        fun stop(ctx: Context) { WorkManager.getInstance(ctx).cancelUniqueWork(EVERY); WorkManager.getInstance(ctx).cancelUniqueWork(SOON); LiveTick.cancel(ctx) }
         /** Refresh now, everything (the refresh button, new teams). */
         fun now(ctx: Context) = soon(ctx, 0, full = true)
+        /** The app came on screen: the widget's games again (Android runs an open app's work at once). */
+        fun opened(ctx: Context) { if (ids(ctx).isNotEmpty() && System.currentTimeMillis() - Cache.at(ctx) > 60_000L) soon(ctx, 0) }
         private fun soon(ctx: Context, minutes: Long, full: Boolean = false) {
             if (ids(ctx).isEmpty()) return
             WorkManager.getInstance(ctx).enqueueUniqueWork(SOON, ExistingWorkPolicy.REPLACE,

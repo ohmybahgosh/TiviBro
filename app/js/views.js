@@ -2796,6 +2796,7 @@ var Views = (function () {
     if (box._k !== key) {
       box._k = key; box.innerHTML = '';
       lines.forEach(function (l) { box.appendChild(U.el('div', l[0], l[1])); });
+      if (tab === 'settings' && typeof Settings !== 'undefined' && Settings.placeHelp) Settings.placeHelp();   // the help panel goes under the new lines
     }
     stage.classList.remove('off');
     placePreview();
