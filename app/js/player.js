@@ -1368,14 +1368,15 @@ var Player = (function () {
 
     var stuck = now - st.lastMove;
     st.healthySince = 0;
+    /* A converted movie that stops in its last seconds has ended: a Dolby Vision conversion's connection is kept
+       open after the movie's last byte (service/convert.js dvLength), so the TV player never says "ended" itself;
+       its picture just stops on the last frame (seen on a C2: frozen with half a second still buffered). */
+    if (stuck > 1500 && convAtEnd(t)) { Log.info('player', 'Converted movie reached its end at ' + Math.round(t + base()) + 's'); clearInterval(wd); wd = 0; state('ended'); return; }
     // 3. Gap jump: a hole just ahead of the playhead.
     if (stuck > 800) {
       var gap = nextRangeStart();
       if (gap > 0) { st.arr = null; Log.debug('player', 'Jumped a ' + (gap - t).toFixed(2) + 's gap in the buffer'); video.currentTime = gap + 0.05; st.lastMove = now; return; }
     }
-    // A converted movie that runs dry in its last seconds has ended: a Dolby Vision conversion's connection is kept
-    // open after the movie's last byte (service/convert.js dvLength), so the TV player never says "ended" itself.
-    if (stuck > 600 && ahead < 0.3 && convAtEnd(t)) { Log.info('player', 'Converted movie reached its end at ' + Math.round(t + base()) + 's'); clearInterval(wd); wd = 0; state('ended'); return; }
     // Ran dry: start a proper refill instead of stutter-playing.
     if (stuck > 600 && ahead < 0.3) {
       st.refilling = true; st.refillSince = now; st.refills = (st.refills || 0) + 1; st.arr = null;
