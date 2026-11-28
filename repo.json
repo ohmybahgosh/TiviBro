@@ -10,31 +10,31 @@
       "id": "app.tivibro.tv",
       "title": "TiviBro",
       "iconUri": "https://raw.githubusercontent.com/ohmybahgosh/TiviBro/main/logos/clean/tivibro-icon-512.png",
-      "manifestUrl": "https://github.com/ohmybahgosh/TiviBro/releases/download/v0.6.0-alpha.233/app.tivibro.tv.manifest.json",
+      "manifestUrl": "https://github.com/ohmybahgosh/TiviBro/releases/download/v0.6.0-alpha.234/app.tivibro.tv.manifest.json",
       "manifest": {
         "id": "app.tivibro.tv",
-        "version": "0.5.10233",
+        "version": "0.5.10234",
         "type": "web",
         "title": "TiviBro",
-        "appDescription": "Test build 0.6.0-alpha.233.  Free, guide-first IPTV player for your own Xtream Codes, M3U or Stalker portal subscription: a free DVR, live pause, Multiview, Skip intro and live sports scores",
+        "appDescription": "Test build 0.6.0-alpha.234.  Free, guide-first IPTV player for your own Xtream Codes, M3U or Stalker portal subscription: a free DVR, live pause, Multiview, Skip intro and live sports scores",
         "iconUri": "https://raw.githubusercontent.com/ohmybahgosh/TiviBro/main/logos/clean/tivibro-icon-512.png",
         "sourceUrl": "https://github.com/ohmybahgosh/TiviBro",
         "rootRequired": false,
-        "ipkUrl": "https://github.com/ohmybahgosh/TiviBro/releases/download/v0.6.0-alpha.233/app.tivibro.tv_0.5.10233_all.ipk",
-        "ipkSize": 10413366,
+        "ipkUrl": "https://github.com/ohmybahgosh/TiviBro/releases/download/v0.6.0-alpha.234/app.tivibro.tv_0.5.10234_all.ipk",
+        "ipkSize": 10422236,
         "ipkHash": {
-          "sha256": "bd53a3b14c7cd498b478cd4c9618d4a14f5cbae357150b4ab8b1f74c08c9903b"
+          "sha256": "0d61eb2f85d0ca3bcec71874daeea68eb5de7316ecdb74415c3cae98e8afe9f7"
         },
-        "tivibroSig": "IroQNEpKZ1V0fC5PNPZ15yKJdX3hn19XSdi1IAAu3X0f5HWqYnCwadP1cy6BIRzxqLQgBBFPQp8FlRZJtV1UqzH7TmQTJQ3XSPSLmGkmBqh9oLDciuz0JHAgwjYFMj5TsDvT64qKws0+KPJxkaxMpWT4J2NhkOJXAJYKpBt4v9qT9bNiuh1SyahxCx5rOvRLfqs2fjISHychep+C/w97ag33WDMmpuve8Ga7IrtDg7208b08phjfK5Ecu6TC37KFxTLuUtZba9vh7Cungzrg8dg8c1sReUkASfs4/zT2QAh2KOdewlgag/EHog+Kj7veJTWcTCh+WLnoHr6gcLTO+inqhLu25jFAX+vEcMqpnckcaHebhh2bzn2tD346M7Z4dQjqqcYU1k/gLYus8IajHGxAnMOteErz3LsiIQ4BR+aVBGydP8em6D73t3umNKslHit6+rse5p6K7qNV6BLPuKrLoXOcqrMC6tWSrchQZuN9c6U/RLK0wM2esEuR/2aZ"
+        "tivibroSig": "bVObeOveYKFdq0VRhLgmOcOhe2ycu5g0U7/sAKKkXOSdbwnqxG2DPbV8IxLILba8+wasrzsQE5BPQEduCb2lauxAhq3zWGIrvGXhPzcfiPBMZ4Vb+FVMVWFAwlcSHGrczM8LAFSHfZLvXkXB0k/SClar6/XF0W3nFhwe4MLlVCHNABKqZLQCF6Y+Sh36wX05iG65FSIWsWOa1dKTEpuE6mHuWIUiIcsOynW71boZThQNjPnmd8fM2Fd6riQVF3W2xcPHJuSYa9sqSDG/KjCa3kU1im5jhsqOjjs7mPArGGICTJZh/tF5zPBifOhBf3eDBFZalJxmXTZPwPSFgNSiBFpBccOwrpyqEbiiz+E5blQnaVt/DH4uKhleSnGIy1Irm7SZclXSBJuu8bOlQB0KbVlqwskvSW2V2wI3jPMMEfNSThySW86L3mjeEDsv3iwcmLhC9E0LcidT5KLa/5uOyJ3KcUT5035Ip/HW9XEZGq9RuGNtvTds8bpseMRsy9GR"
       },
-      "shortDescription": "Test build 0.6.0-alpha.233: The ultimate IPTV player for LG webOS",
+      "shortDescription": "Test build 0.6.0-alpha.234: The ultimate IPTV player for LG webOS",
       "fullDescriptionUrl": "https://tivibro.app/hb/description.html",
       "requirements": {
         "webosRelease": ">=4.0"
       },
       "tivibro": {
-        "tag": "v0.6.0-alpha.233",
-        "version": "0.6.0-alpha.233",
+        "tag": "v0.6.0-alpha.234",
+        "version": "0.6.0-alpha.234",
         "prerelease": true
       }
     }
