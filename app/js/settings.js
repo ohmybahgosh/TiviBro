@@ -2382,6 +2382,12 @@ var Settings = (function () {
       if (R.share) items.push({ label: 'Stop recording to a share', icon: 'stop', action: function () { R.setShare(null).then(build, function () {}); } });
       UI.menu('Network share', items);
     }, function () { var sh = R.share; return sh ? (sh.name || sh.host) + ' ›' : T('None') + ' ›'; }));
+    /* A drive with two or more partitions (discussion #199): which one recordings and live pause use.  The list is
+       what the helper last said; the first partition is used until one is picked. */
+    if (R && R.parts && R.parts.length > 1) out.push(choice('USB drive', 'The drive\'s partition recordings and live pause go to.', R.parts.map(function (d) { return d.name; }),
+      R.parts.map(function (d) { return d.name + (d.freeMB >= 0 ? '  ·  ' + T('{x} free', { x: gb(d.freeMB) }) : ''); }),
+      function () { return R.pick && R.parts.some(function (d) { return d.name === R.pick; }) ? R.pick : R.parts[0].name; },
+      function (v) { R.setDrive(v).then(build, function (e) { U.toast(e && e.message || 'No answer from the helper', 6000); }); }));
     if (R && R.share && sp) out.push(choice('Record to', 'With both a USB drive and a network share, where new recordings go.', ['', 'share'], ['USB drive', 'Network share'],
       function () { return s.recTo === 'share' ? 'share' : ''; }, function (v) { s.recTo = v; save(); }));
     if (R) out.push(action('Open Recordings', 'Watch, stop, cancel or delete recordings.', function () { Views.switchTab('recordings'); }, function () { var n = R.recs.length; return n ? n + ' ›' : '›'; }));

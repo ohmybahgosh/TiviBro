@@ -9,7 +9,7 @@ var Record = (function () {
   // Minutes before and after a programme (Settings > Recording and live pause), 2 and 5 at first.
   function padB() { var v = Store.settings.recPadBefore; return (v == null ? 2 : +v) * 60000; }
   function padA() { var v = Store.settings.recPadAfter; return (v == null ? 5 : +v) * 60000; }
-  var last = { recs: [], at: 0 }, drive = false, space = null, pauseHere = false, pauseShare = false, share = null;
+  var last = { recs: [], at: 0 }, drive = false, space = null, parts = [], pick = '', pauseHere = false, pauseShare = false, share = null;
 
   function T(s, o) { var t = typeof I18n !== 'undefined' ? I18n.t(s) : s; return t.replace(/\{(\w+)\}/g, function (a, k) { return o && o[k] != null ? o[k] : a; }); }
   function base() { return Net.port ? 'http://127.0.0.1:' + Net.port : ''; }
@@ -46,6 +46,8 @@ var Record = (function () {
     return api('/record/target', body).then(function () { return list(); });
   }
   // Live pause on the share (on by default once a share is chosen), else the TV's own 10 minutes.
+  // The USB partition to record to (a drive with two or more): its name, '' for the first.
+  function setDrive(name) { return api('/record/drive', { name: name || '' }).then(function () { return list(); }); }
   function setSharePause(on) { return api('/record/target/pause', { on: !!on }).then(function () { return list(); }); }
   function descOf(ch, p) { try { return p && typeof Epg !== 'undefined' && Epg.desc ? Epg.desc(ch, p) || '' : ''; } catch (e) { return ''; } }
   /* What TMDB knows about each recording (with your token): the guide's own match when Movies on now already found
@@ -75,7 +77,7 @@ var Record = (function () {
   function list() {
     return api('/record/list').then(function (j) {
       var was = sig(last.recs), had = shown();
-      last = { recs: j.recs || [], at: Date.now() }; space = j.drive || null; drive = !!space; pauseHere = !!j.pauseHere; pauseShare = !!j.pauseShare; share = j.target || null;
+      last = { recs: j.recs || [], at: Date.now() }; space = j.drive || null; drive = !!space; parts = j.drives || []; pick = j.pick || ''; pauseHere = !!j.pauseHere; pauseShare = !!j.pauseShare; share = j.target || null;
       // The guide marks what's recording, so it's redrawn when that changes.
       if (shown() !== had && typeof Views !== 'undefined' && Views.buildTabs) Views.buildTabs();
       if (sig(last.recs) !== was && typeof Guide !== 'undefined' && Guide.vis) try { Guide.draw(); } catch (e) {}
@@ -238,6 +240,6 @@ var Record = (function () {
 
   // Subtitle files on a USB drive (subs.js Load a subtitle file): 'browse' { path } or 'get' { path, lang }.
   function subs(op, body) { return api('/record/subs/' + (op === 'get' ? 'get' : 'browse'), body || {}); }
-  return { subs: subs, setShare: setShare, setSharePause: setSharePause, get share() { return share; }, get pauseShare() { return pauseShare; }, now: now, schedule: schedule, convert: convert, canConvert: canConvert, tsStart: tsStart, tsPing: tsPing, tsStop: tsStop, canPause: canPause, canBuffer: canBuffer, enrich: enrich, base: base, stop: stop, remove: remove, list: list, drives: drives, open: open, shown: shown, watch: watch, posOf: posOf, forget: forget, hms: hms, sizeOf: sizeOf, whenOf: whenOf, get space() { return space; }, menuItem: menuItem, of: of, urlFor: urlFor,
+  return { subs: subs, setDrive: setDrive, get parts() { return parts; }, get pick() { return pick; }, setShare: setShare, setSharePause: setSharePause, get share() { return share; }, get pauseShare() { return pauseShare; }, now: now, schedule: schedule, convert: convert, canConvert: canConvert, tsStart: tsStart, tsPing: tsPing, tsStop: tsStop, canPause: canPause, canBuffer: canBuffer, enrich: enrich, base: base, stop: stop, remove: remove, list: list, drives: drives, open: open, shown: shown, watch: watch, posOf: posOf, forget: forget, hms: hms, sizeOf: sizeOf, whenOf: whenOf, get space() { return space; }, menuItem: menuItem, of: of, urlFor: urlFor,
     get recs() { return last.recs; } };
 })();

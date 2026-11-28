@@ -20,7 +20,8 @@
 
    Routes (on the relay, with TiviBro's secret like /kv/):
      GET  /record/drives                      -> { drives: [{ dir, name, freeMB }] }
-     GET  /record/list                        -> { recs: [...] }
+     GET  /record/list                        -> { recs: [...], drive, drives (when more than one), pick }
+     POST /record/drive    { name }   the USB partition to use ('' for the first)
      POST /record/start    { url, title, channel, end, drive? }        -> { id }   (now, until end)
      POST /record/schedule { url, title, channel, start, end, drive? } -> { id }
      POST /record/stop     { id }    (a scheduled one is cancelled)
@@ -190,6 +191,10 @@ function drives() {
       });
     });
   });
+  /* The partition chosen in Settings > Recording > USB drive (discussion #199: a drive with a small first
+     partition) first, so recordings and live pause go there; the rest as webOS mounted them. */
+  var pick = load().drive || '';
+  if (pick) out.sort(function (a, b) { return (a.name === pick ? 0 : 1) - (b.name === pick ? 0 : 1); });
   return out;
 }
 function folderOn(drive) {
@@ -755,8 +760,8 @@ function serveFile(req, res, ALLOW, r, part) {
 }
 /* ---------- the agent (rooted TVs) ---------- */
 /* Raised whenever record-agent.js or what it runs changes in a way an old agent would miss (2: it keeps the helper up
-   for the phone app; 3: recordings filed for media servers, Convert to MP4; 4: recording to a WebDAV share; 5: to a Windows share, and live pause there; 6: subtitle files on a USB drive; 7: a pause's redirected connection closed when it stops).  The version can't tell: every alpha is 0.6.0 to the helper. */
-var AGENT_REV = 7;
+   for the phone app; 3: recordings filed for media servers, Convert to MP4; 4: recording to a WebDAV share; 5: to a Windows share, and live pause there; 6: subtitle files on a USB drive; 7: a pause's redirected connection closed when it stops; 8: the USB partition to use, POST /record/drive).  The version can't tell: every alpha is 0.6.0 to the helper. */
+var AGENT_REV = 8;
 function agentUp(cb) {
   var r = http.get({ hostname: '127.0.0.1', port: AGENT_PORT, path: '/record/ping', headers: { 'X-TiviBro-Ctl': agentKey() } }, function (res) {
     var b = ''; res.on('data', function (d) { b += d; });
@@ -828,7 +833,7 @@ function handleHere(req, res, ALLOW) {
     tick();
     var dl = drives(), sp0 = dl.length ? space(dl[0].dir) : null;
     var tg0 = target(); shareRoom(tg0);
-    return send(res, ALLOW, 200, { target: tg0 ? { type: tg0.type, name: tg0.name || '', host: tg0.type === 'smb' ? String(tg0.host || tg0.server || '') : (Dav.base(tg0) || { u: {} }).u.hostname || '', user: tg0.user || '', pause: tg0.pause !== false, freeMB: tg0.address === room.address ? room.freeMB : -1 } : null, recs: load().recs.map(pub), drive: sp0 ? { name: dl[0].name, freeMB: sp0.freeMB, totalMB: sp0.totalMB, low: sp0.freeMB >= 0 && sp0.freeMB < LOW_MB } : null,
+    return send(res, ALLOW, 200, { target: tg0 ? { type: tg0.type, name: tg0.name || '', host: tg0.type === 'smb' ? String(tg0.host || tg0.server || '') : (Dav.base(tg0) || { u: {} }).u.hostname || '', user: tg0.user || '', pause: tg0.pause !== false, freeMB: tg0.address === room.address ? room.freeMB : -1 } : null, recs: load().recs.map(pub), drive: sp0 ? { name: dl[0].name, freeMB: sp0.freeMB, totalMB: sp0.totalMB, low: sp0.freeMB >= 0 && sp0.freeMB < LOW_MB } : null, drives: dl.length > 1 ? dl.map(function (d) { return { name: d.name, freeMB: d.freeMB }; }) : undefined, pick: load().drive || '',
       pauseHere: !dl.length && (!!tvRoom() || !!(pauseToShare() && tg0)), pauseShare: !dl.length && !!(pauseToShare() && tg0) });
   }
   var fm = /^\/record\/file\/([A-Za-z0-9]+)(?:\/[^\/]*)?$/.exec(p);       // "/rec.ts" after the id tells the player what it is
@@ -857,6 +862,14 @@ function handleHere(req, res, ALLOW) {
        share, its login kept here (the list file is 0600).  { type: 'webdav', address, user, pass, name, check },
        { type: 'smb', server, host, share, folder, user, pass, domain, name, check } or { type: '' } to stop.
        A login left out for the same share keeps the one saved (the app never gets it back to send again). */
+    // The USB partition to record to, by its name (empty: the first one webOS mounted).
+    if (p === '/record/drive') {
+      var nm = typeof q.name === 'string' ? q.name.slice(0, 200) : '';
+      if (nm && !drives().some(function (d) { return d.name === nm; })) return send(res, ALLOW, 404, { error: 'That drive isn\'t plugged in.' });
+      load().drive = nm; save();
+      note('info', 'recording: USB drive chosen', { drive: nm || 'the first' });
+      return send(res, ALLOW, 200, { ok: true, drives: drives() });
+    }
     if (p === '/record/target') {
       if (!q.type) { load().target = null; save(); return send(res, ALLOW, 200, { ok: true, target: null }); }
       var was = load().target || {}, tg;

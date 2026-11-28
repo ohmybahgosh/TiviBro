@@ -164,6 +164,17 @@ function call(method, url, body, headers) {
   ok('subtitles: a file read, its codepage worked out', sb.j && /Café/.test(sb.j.text || ''), JSON.stringify(sb.j));
   sb = await call('POST', '/record/subs/get', { path: '/etc/passwd' });
   ok('subtitles: nothing outside a drive', sb.code === 400, sb.code);
+  // A drive with two partitions (discussion #199): the one picked in Settings comes first; a missing one is refused.
+  const second = path.join(tmp, 'usb', 'sda', 'sda2'); fs.mkdirSync(second, { recursive: true });
+  let dv = await call('GET', '/record/list');
+  ok('two partitions: all listed, the first in use', dv.j.drives && dv.j.drives.length >= 2 && dv.j.drives.some((d) => d.name === 'sda2') && dv.j.drive.name === 'sda' && dv.j.pick === '', JSON.stringify(dv.j.drives));
+  dv = await call('POST', '/record/drive', { name: 'sda2' });
+  ok('the second picked: it comes first', dv.code === 200 && dv.j.drives[0].name === 'sda2', JSON.stringify(dv.j));
+  dv = await call('GET', '/record/list');
+  ok('...and is the drive in use, kept as picked', dv.j.drive.name === 'sda2' && dv.j.pick === 'sda2', JSON.stringify(dv.j.drive));
+  dv = await call('POST', '/record/drive', { name: 'sdz9' });
+  ok('a partition that isn\'t there: refused', dv.code === 404, dv.code);
+  await call('POST', '/record/drive', { name: '' });
   R._reset(); srv.close();
   fs.rmSync(tmp, { recursive: true, force: true });
   if (fail) { console.log(fail + ' recording test(s) failed'); process.exit(1); }

@@ -11,6 +11,7 @@
 - **Converted sound comes back after TiviBro restarts.**  Opening the same channel again after TiviBro closed could leave its sound unconverted (HTTP 416); a new conversion starts instead.
 - **ClearKey channels play when the stream names Widevine.**  Many protected live channels name only Widevine and PlayReady while their playlist gives a ClearKey licence, so the TV picked Widevine and said "No license server URL specified".  The playlist's ClearKey is used now.
 - **No game reminders for shows about the sport.**  A baseball season review whose description named two teams was taken for a game of a team you follow, out of season.  A game found only by its description now needs a title like "MLB Baseball" or "College Football".
+- **Pick the USB drive's partition to record to.**  On a drive with two or more partitions, Settings > Recording > USB drive chooses which one recordings and live pause use, instead of always the first.
 
 ## 0.6.0 (alpha 234, 2026-11-27)
 
