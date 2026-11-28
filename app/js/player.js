@@ -1209,7 +1209,8 @@ var Player = (function () {
     if (cur.conv && st.started && !cur.conv.checked && t > 0) {
       cur.conv.checked = true; cur.conv.played = true;
       if (cur.conv.t > 5 && t > cur.conv.t / 2) { cur.conv.base = 0; video._tbOffset = 0; Log.info('player', 'The TV player shows the movie\'s own times'); }
-      else if (st.kind !== 'native' && cur.conv.t > 0 && Convert.first) firstFrame(myToken, cur.conv);
+      // MKV on the TV's own player counts from its first picture too (service/convert.js firstMkv).
+      else if ((st.kind !== 'native' || cur.conv.fmt === 'mkv') && cur.conv.t > 0 && Convert.first) firstFrame(myToken, cur.conv);
     }
     if (st.started && video.readyState > 0 && !video.seeking) cur.pos = t + base();
     /* A movie's place by the clock too: how long it has been playing since this try started there.  The TV
