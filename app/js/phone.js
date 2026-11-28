@@ -309,7 +309,7 @@ var Phone = (function () {
        best channel, set or cancelled), 'follow' (a team, on or off).  A team whose scores you hide comes without them. */
     sports: function (a) {
       if (typeof Sports === 'undefined') return { off: true, msg: 'Update TiviBro on the TV for Sports.' };
-      function team(g, t) { var h = Sports.hidden(g); return { id: t.id || '', eid: t.eid || '', name: t.name, full: t.full, abbr: t.abbr, logo: t.logo, color: t.color, rec: t.rec, rank: t.rank || 0, score: h || g.state === 'pre' || t.score == null ? null : t.score, mine: t.id && Teams.follows(t.id) ? 1 : 0 }; }
+      function team(g, t) { var h = Sports.hidden(g); return { id: t.id || '', eid: t.eid || '', name: t.name, full: t.full, abbr: t.abbr, logo: t.logo, color: t.color, rec: t.rec, rank: t.rank || 0, score: h || g.state === 'pre' || t.score == null || g.text ? null : t.score, txt: !h && g.state !== 'pre' && g.text && t.score != null ? String(t.score) : '', mine: t.id && Teams.follows(t.id) ? 1 : 0 }; }
       function chans(g) { return Sports.channels(g).slice(0, 8).map(function (x) { return { k: x.c.k, n: Library.name(x.c), logo: Views.logoOf(x.c) || '', what: x.p ? x.p.t : x.net ? x.net + ' shows it' : '' }; }); }
       function one(g, full) {
         var cs = full ? chans(g) : chans(g).slice(0, 1);

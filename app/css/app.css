@@ -23,8 +23,8 @@ body.full #app{visibility:hidden}
 
 
 .view{flex:1;display:flex;min-height:0;padding:40px 56px 0 152px}
-.hints{height:64px;flex:none;display:flex;align-items:center;gap:36px;padding:0 56px 0 152px;color:var(--dim);font-size:22px}
-.hints b{display:inline-block;width:18px;height:18px;border-radius:4px;margin-right:10px;vertical-align:-2px}
+.hints{height:64px;flex:none;display:flex;align-items:center;gap:36px;padding:0 56px 0 152px;color:var(--muted);font-size:23px;font-weight:600}
+.hints b{display:inline-block;width:20px;height:20px;border-radius:5px;margin-right:10px;vertical-align:-3px}
 .hints{overflow:hidden}
 .hints.tight{gap:22px;font-size:20px}
 .k-red{background:#d6453d}.k-green{background:#3fa85f}.k-yellow{background:#e0b630}.k-blue{background:#3d79d6}
@@ -177,6 +177,15 @@ body.full .vid-error{left:50%;right:auto;bottom:auto;top:40%;transform:translate
 .meter-rate{width:156px;text-align:right}
 body:not(.full) .meter{top:auto;bottom:24px;right:auto}
 
+.zap-sides{position:fixed;right:48px;top:50%;transform:translateY(-50%);z-index:9;width:460px;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.zap-sides .zs-row{display:flex;align-items:center;gap:14px;padding:12px 18px;border-radius:14px;background:rgba(7,9,18,.72);color:var(--muted)}
+.zap-sides .zs-row.here{background:rgba(20,26,46,.92);border:2px solid var(--accent);color:var(--text)}
+.zap-sides .zs-arrow{width:58px;flex:none;font-size:18px;font-weight:700;color:var(--dim)}
+.zap-sides .zs-txt{min-width:0;flex:1}
+.zap-sides .zs-name{font-size:24px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zap-sides .zs-prog{font-size:19px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.zap-sides .here .zs-prog{color:var(--muted)}
+body:not(.full) .zap-sides{display:none}
 .zapnum{position:absolute;top:60px;left:80px;z-index:8;font-size:96px;font-weight:700;color:var(--accent-text);font-variant-numeric:tabular-nums;background:rgba(7,9,18,.8);padding:8px 32px;border-radius:16px}
 
 /* guide */
@@ -472,7 +481,7 @@ body.dimpast .gp.past{color:var(--dim)}
 
 /* fullscreen button legend */
 .osd-keys{display:flex;flex-wrap:wrap;gap:12px 34px;margin-top:22px;font-size:22px;color:var(--muted)}
-.osd-keys b,.hints b{display:inline-block;width:18px;height:18px;border-radius:4px;margin-right:10px;vertical-align:-2px}
+.osd-keys b{display:inline-block;width:18px;height:18px;border-radius:4px;margin-right:10px;vertical-align:-2px}
 /* pointer (Magic Remote) */
 body.pointer .clickable,body.pointer .tab,body.pointer .row,body.pointer .opt,body.pointer .mi,body.pointer .grow,body.pointer .btn,body.pointer .set-nav>div{cursor:pointer}
 body.pointer .clickable:hover{color:var(--text)}
@@ -728,6 +737,10 @@ body.ts-l .gp .gt,body.ts-l .row .name{font-size:28px}
 body.ts-l .gp .gs,body.ts-l .row .sub{font-size:21px}
 body.ts-l .gch .n{font-size:30px}
 body.ts-l .guide-detail p.gd-desc{font-size:27px}
+/* The button hints along the bottom, a size larger with Large text (discussion #102: hard to read from the couch). */
+body.ts-l .hints{font-size:26px;gap:40px}
+body.ts-l .hints b{width:22px;height:22px}
+body.ts-l .hints.tight{font-size:23px;gap:26px}
 /* transparency of panels over video */
 body.ov-l .osd,body.ov-l .qpanel{background:linear-gradient(transparent,rgba(7,9,18,.99) 22%)}
 body.ov-h .osd,body.ov-h .qpanel{background:linear-gradient(transparent,rgba(7,9,18,.72) 30%)}
@@ -1730,6 +1743,8 @@ body.focus-ring .sp-card.focus{box-shadow:0 0 0 5px var(--accent),0 0 0 9px #fff
 .sp-rank{display:inline-block;min-width:46px;font-size:22px;color:var(--muted);margin-right:6px;font-weight:700}
 .sp-rec{font-size:24px;color:var(--text);opacity:.72;margin-left:10px;font-weight:500}
 .sp-score{font-size:42px;font-weight:800;font-variant-numeric:tabular-nums}
+.sp-score.text{font-size:34px;white-space:nowrap}
+.sp-score.text small{font-size:20px;font-weight:600;color:var(--muted);margin-left:6px}
 .sp-team.lose .sp-name,.sp-team.lose .sp-score{color:var(--dim)}
 .sp-team.lose .sp-logo{opacity:.5}
 .sp-team.win .sp-name,.sp-team.win .sp-score{font-weight:800;color:var(--text)}

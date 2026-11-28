@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **Cricket in Sports.**  Internationals (Tests, ODIs and T20Is, men's and women's) and the big T20 leagues, with scores as cricket writes them and how each match stands.  On at first for TVs set to a cricket country; elsewhere Blue in Sports adds it.  In the phone app too.
+- **Age ratings.**  PG-13, TV-MA, 12 or 16 next to the year in a movie's or show's details: the provider's when it gives one, else TMDB's for your region.
+- **The channels before and after while zapping.**  CH + and CH − show the channel before and after the one you're on, with what's on, on the right.  Settings > Playback can turn it off.
+- **Leave out sound notes.**  Settings > Audio and subtitles: [door slams], (music) and speakers' names in capitals leave the subtitles.
+- **Switch movie and show categories on or off in one list.**  Settings > Movies and shows > Movie categories and Show categories, with Show all and Hide all, so it's quick on the phone or in the web editor.
+- **Easier to read button hints.**  The hints along the bottom are brighter and bolder, and bigger with Large text.
 - **Back from a Plex movie, its page says where you stopped.**  The page still offered Resume from the time it had when it opened.  Now Resume from, Mark watched and the end time follow what you just watched.
 - **No guide chip over what you're watching.**  The Loading guide chip showed over a movie playing full screen (a Plex title, say).  It now waits until you leave full screen, like TiviBro's other background notes.
 

@@ -194,6 +194,7 @@ var Settings = (function () {
       ['auto', 'ask', 'off'], ['Switch to another version', 'Ask me', 'Keep retrying'], function () { return s.backups || 'auto'; }, function (v) { s.backups = v; save(); }));
     out.push(toggle('Ask when a channel is slow to start', 'After 12 seconds without a picture: says what TiviBro has seen, and asks whether to keep trying, start over, try another version or stop.', function () { return s.slowAsk !== false; }, function (v) { s.slowAsk = v; save(); }));
     out.push(toggle('Info panel when switching channels', 'Off shows just the number and name.', function () { return s.osdOnZap !== false; }, function (v) { s.osdOnZap = v; save(); }));
+    out.push(toggle('Channels before and after while zapping', 'With CH + and CH −, the channel before and after the one shown, on the right, with what\'s on.', function () { return s.zapSides !== false; }, function (v) { s.zapSides = v; save(); }));
     // How long the info panel stays (Appearance) and which way Up and Down change channel (Remote and buttons).
     out = out.concat(also('look', ['Info panel stays for']), also('remote', ['Up and Down in fullscreen']));
     out.push(toggle('Show stream details in the info panel', 'Resolution and which player is in use.', function () { return s.osdMedia !== false; }, function (v) { s.osdMedia = v; save(); }));
@@ -228,6 +229,7 @@ var Settings = (function () {
     out.push(choice('Subtitle position', 'Higher keeps the lines clear of a picture\'s own captions or a score bar.  For subtitles TiviBro draws (most of them); the TV\'s own keep their place.  Also in the player: Subtitles > Size and style.', ['low', '', 'up1', 'up2', 'up3'], ['Lowest', 'Normal', 'A little higher', 'Higher', 'Highest'], function () { return s.subPos || ''; }, function (v) { s.subPos = v; Views.applyLook(); save(); }));
     out.push(choice('Subtitle brightness', 'Dimmer white lines are easier on the eyes in a dark room, and on an OLED.', ['', '90', '75', '60'], ['Full', '90 %', '75 %', '60 %'], function () { return s.subBright || ''; }, function (v) { s.subBright = v; Views.applyLook(); save(); }));
     out.push(toggle('Bold subtitles', '', function () { return !!s.subBold; }, function (v) { s.subBold = v; Views.applyLook(); save(); }));
+    out.push(toggle('Leave out sound notes', 'Hearing-impaired notes such as [door slams] and (music), and speakers\' names in capitals, are left out.  For subtitles TiviBro draws (most of them).', function () { return !!s.subSdh; }, function (v) { s.subSdh = v; save(); }));
     out.push(head('Subtitles from OpenSubtitles'));
     out.push(action('Subtitle languages', 'For Find subtitles (Subtitles in a movie or show\'s menu).  Several at once: English and Spanish (Latin America), say.', function () { Subs.langMenu(function () { build(); }); },
       function () { return Subs.langs().map(Subs.langName).join(', '); }));
@@ -1654,6 +1656,21 @@ var Settings = (function () {
     return out;
   }
 
+  /* A kind's categories, each a switch (on: shown), with Show all and Hide all; the list loads first if it hasn't. */
+  function vodCatRows(k) {
+    var l = Vod.catsFor(k);
+    if (!l) return [info(k === 'series' ? 'The shows haven\'t loaded yet.' : 'The movies haven\'t loaded yet.', ''),
+      action('Load them now', 'From your provider, as opening Movies or Shows does.', function () { U.toast(T('Loading…')); Vod.loadCats(k).then(function () { build(); }, function (e) { U.toast(e.message || String(e), 6000); }); })];
+    var out = [info('Shown', (l.length - l.filter(function (c) { return c.hidden; }).length) + ' / ' + l.length)];
+    out.push(action('Show all categories', '', function () { Vod.catsFor(k).forEach(function (c) { if (c.hidden) Vod.setCatHidden(k, c.id, false); }); build(); }));
+    out.push(action('Hide all categories', 'Then switch on just the ones you watch.', function () {
+      UI.confirm(T('Hide all {n} categories?  You can switch them back on here.', { n: l.length }), 'Hide all', function () { Vod.catsFor(k).forEach(function (c) { if (!c.hidden) Vod.setCatHidden(k, c.id, true); }); build(); });
+    }));
+    l.forEach(function (c) {
+      out.push(toggle(I18n.raw(c.name), '', function () { return !c.hidden; }, function (v) { Vod.setCatHidden(k, c.id, !v); c.hidden = !v; paint(); }));
+    });
+    return out;
+  }
   /* ---------- Movies and shows: the Movies and Shows screens, and TMDB details for them and the guide ---------- */
   function vodSettings() {
     var s = S(), out = [];
@@ -1669,6 +1686,11 @@ var Settings = (function () {
       ['85', '90', '95', '98'], ['85%', '90% (as Plex)', '95%', '98%'], function () { return String(+s.watchedAt || 90); }, function (v) { s.watchedAt = +v; save(); }));
     out.push(choice('Order categories', 'The provider\'s order, or by name from A to Z.  Continue watching, My list and the newest titles stay at the top.',
       ['provider', 'name'], ['The provider\'s order', 'Name (A–Z)'], function () { return s.vodCatSort === 'name' ? 'name' : 'provider'; }, function (v) { s.vodCatSort = v; save(); if (typeof Vod !== 'undefined' && Vod.recats) Vod.recats(); }));
+    // Discussion #119: every category of each kind with a switch, here, on the phone and in the web editor.
+    if (typeof Vod !== 'undefined' && Vod.catsFor) [['movie', 'Movie categories'], ['series', 'Show categories']].forEach(function (x) {
+      out.push(page(x[1], 'Switch off the categories you never watch (other languages, kids, sport): they and their titles leave the list, All and Search.  Hold OK on a category in the list does the same.', x[1], function () { return vodCatRows(x[0]); },
+        function () { var l = Vod.catsFor(x[0]); if (!l) return '›'; var n = l.filter(function (c) { return c.hidden; }).length; return n ? T('{n} hidden', { n: n }) : T('All shown'); }));
+    });
     out.push(toggle('Categories by language', 'A folder for each language, when your provider\'s category names say the language ("HINDI MOVIES", "|EN| Action"): open a language to see its categories.  Nothing more is loaded, so it suits TVs with little memory too.',
       function () { return !!s.vodLangFolders; }, function (v) { s.vodLangFolders = v; save(); if (typeof Vod !== 'undefined' && Vod.recats) Vod.recats(); }));
     out.push(choice('Open a category as', 'A list beside the categories, or a full-screen wall of posters (Back goes to the categories).',

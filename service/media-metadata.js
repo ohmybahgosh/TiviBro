@@ -54,7 +54,21 @@ function art(list, language, fallback) {
   }
   return fallback || '';
 }
-function details(m, en, language) {
+/* The age rating (discussion #99): a movie's certification (release_dates) or a show's rating (content_ratings)
+   in [region], else the US one, else the first given.  A movie's theatrical release first (type 3), then any. */
+function certOf(m, region) {
+  var list = m.release_dates && m.release_dates.results || m.content_ratings && m.content_ratings.results || [];
+  function of(cc) {
+    var r = list.filter(function (x) { return x && x.iso_3166_1 === cc; })[0];
+    if (!r) return '';
+    if (r.rating != null) return str(r.rating, 12).trim();
+    var d = (r.release_dates || []).filter(function (x) { return x && x.certification; });
+    d.sort(function (a, b) { return (a.type === 3 ? 0 : 1) - (b.type === 3 ? 0 : 1); });
+    return d[0] ? str(d[0].certification, 12).trim() : '';
+  }
+  return of(region) || of('US') || '';
+}
+function details(m, en, language, region) {
   var fallbackFields = [], images = m.images || {}, out = { provider: 'TMDB', id: 'tmdb:' + m.id, language: language, requestedLanguage: language };
   function field(name, local, english) {
     if (local) return local;
@@ -86,10 +100,13 @@ function details(m, en, language) {
   if (col && /^[1-9][0-9]*$/.test(String(col.id))) out.collection = { id: 'tmdb:collection:' + col.id, name: str(col.name, 200) };
   out.directors = ((m.credits || {}).crew || []).filter(function (c) { return c && c.job === 'Director'; }).slice(0, 3).map(function (c) { return str(c.name, 100); }).filter(Boolean);
   out.cast = ((m.credits || {}).cast || []).slice(0, 6).map(function (c) { return str(c && c.name, 100); }).filter(Boolean).join(', ');
+  out.cert = certOf(m, region);                // the age rating where the viewer is (PG-13, 12, TV-MA), discussion #99
   out.v = 2;                                   // details with these (Media.needsDetails looks again at older ones)
   out.fallbackFields = fallbackFields;
   return out;
 }
+// Where the viewer is, for age ratings: the app's region (q.region, "GB"), else the language's country (en-US: US).
+function regionOf(q, locale) { return /^[A-Z]{2}$/.test(String(q && q.region || '')) ? q.region : String(locale || 'en-US').split('-')[1] || 'US'; }
 function create(opts) {
   opts = opts || {};
   var credential = str(opts.credential, 2048).trim(), read = opts.read || json, cancelled=false, jobs=[];
@@ -185,12 +202,12 @@ function create(opts) {
       });
       if (!/^tmdb:[1-9][0-9]*$/.test(id)) return cb(new Error('Choose a valid movie match.'));
       var path = '/movie/' + id.slice(5);
-      request(path + '?language=' + locale + '&append_to_response=images,credits&include_image_language=' + language + ',en,null', function (e, m) {
+      request(path + '?language=' + locale + '&append_to_response=images,credits,release_dates&include_image_language=' + language + ',en,null', function (e, m) {
         if (e) return cb(e);
         if (!m || !m.id) return cb(new Error('No movie details found.'));
         var needsEnglish = language !== 'en' && (!m.title || !m.overview || !m.genres || !m.genres.length);
-        if (!needsEnglish) return cb(null, { metadata: details(m, {}, language) });
-        request(path + '?language=en-US', function (e, en) { if (e) return cb(e); cb(null, { metadata: details(m, en || {}, language) }); });
+        if (!needsEnglish) return cb(null, { metadata: details(m, {}, language, regionOf(q, locale)) });
+        request(path + '?language=en-US', function (e, en) { if (e) return cb(e); cb(null, { metadata: details(m, en || {}, language, regionOf(q, locale)) }); });
       });
     }
     if (q.id) return byId(q.id);
@@ -355,7 +372,7 @@ function create(opts) {
     }
     function convert(m, english) {
       function movieShape(x) { var out = {}; Object.keys(x).forEach(function (k) { out[k] = x[k]; }); out.title = x.name; out.release_date = x.first_air_date || x.air_date; out.runtime = x.runtime || (x.episode_run_time || [])[0]; return out; }
-      var out = details(movieShape(m),movieShape(english || {}),language);
+      var out = details(movieShape(m),movieShape(english || {}),language,regionOf(q, locale));
       out.id = key; out.kind = q.episode != null ? 'episode' : q.season != null ? 'season' : 'show'; out.originalTitle = str(m.original_name,200); out.status = str(m.status,100);
       out.still = image(m.still_path,'w500');
       out.cast = ((m.credits || {}).cast || []).slice(0,20).map(function(person){return str(person.name,100);}).filter(Boolean).join(', ');
@@ -364,7 +381,7 @@ function create(opts) {
       if (Array.isArray(m.episodes)) out.episodes = m.episodes.map(function (episode) { var en={};((english||{}).episodes||[]).some(function(e){if(e.episode_number===episode.episode_number){en=e;return true;}return false;}); return {id:'tmdb:tv:'+id+':season:'+q.season+':episode:'+episode.episode_number,number:episode.episode_number,season:episode.season_number,title:str(episode.name||en.name,200),plot:str(episode.overview||en.overview,5000),airDate:str(episode.air_date,10),runtime:episode.runtime || null,still:image(episode.still_path,'w500')}; });
       return out;
     }
-    request(route+suffix+'?language='+locale+'&append_to_response=images,credits&include_image_language='+language+',en,null',function (e,m) {
+    request(route+suffix+'?language='+locale+'&append_to_response=images,credits'+(suffix ? '' : ',content_ratings')+'&include_image_language='+language+',en,null',function (e,m) {
       if (e) return cb(e);
       if (!m || !m.id) return cb(new Error('No TV details found.'));
       if (language === 'en' || (m.name && m.overview && !(m.episodes||[]).some(function(ep){return !ep.name || !ep.overview;}))) return cb(null,{metadata:convert(m,{})});

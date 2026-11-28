@@ -38,6 +38,15 @@ function lookup(client, q) { return new Promise((res, rej) => client.lookup(q, (
   assert.equal((await lookup(tv,{id:'tmdb:tv:42',groupId:'group_demo'})).group.id,'group_demo');
   await assert.rejects(lookup(tv,{id:'tmdb:tv:42',season:-1}),/valid season/);
   assert(!tvCalls.some(url => url.includes('/movie/')));
+  // Age ratings (discussion #99): the viewer's region first, else the US; a show's from content_ratings.
+  const rated = M.create({ credential: 'demo-token', read: (url, headers, cb) => {
+    if (url.includes('/tv/5')) return cb(null, { id: 5, name: 'Show', overview: 'x', content_ratings: { results: [{ iso_3166_1: 'US', rating: 'TV-14' }, { iso_3166_1: 'GB', rating: '15' }] } });
+    cb(null, { id: 3, title: 'Film', overview: 'x', release_dates: { results: [{ iso_3166_1: 'US', release_dates: [{ type: 4, certification: '' }, { type: 3, certification: 'PG-13' }] }, { iso_3166_1: 'DE', release_dates: [{ type: 3, certification: '12' }] }] } });
+  } });
+  assert.equal((await lookup(rated, { id: 'tmdb:3' })).metadata.cert, 'PG-13', 'a movie: the US rating for en');
+  assert.equal((await lookup(rated, { id: 'tmdb:3', region: 'DE' })).metadata.cert, '12', 'the viewer\'s region first');
+  assert.equal((await lookup(rated, { id: 'tmdb:3', region: 'FR' })).metadata.cert, 'PG-13', 'else the US one');
+  assert.equal((await lookup(rated, { id: 'tmdb:tv:5', region: 'GB' })).metadata.cert, '15', 'a show: content_ratings');
   // Shelves from TMDB (discussion #184): a region's streaming services biggest first, genres, and one service's or genre's titles.
   const shelfCalls = [];
   const sh = M.create({ credential: 'demo-token', read: (url, headers, cb) => {

@@ -31,10 +31,14 @@ var Sports = (function () {
     { id: 'mls', name: 'MLS', path: 'soccer/usa.1', team: 'mls' },
     { id: 'epl', name: 'Premier League', short: 'EPL', path: 'soccer/eng.1' },
     { id: 'ucl', name: 'Champions League', short: 'UCL', path: 'soccer/uefa.champions' },
-    { id: 'f1', name: 'Formula 1', short: 'F1', path: 'racing/f1', race: true }
+    { id: 'f1', name: 'Formula 1', short: 'F1', path: 'racing/f1', race: true },
+    // Cricket: no single scoreboard, so ESPN's "header" for the sport (every series on now, see cricket()).
+    { id: 'cricket', name: 'Cricket', header: 'cricket' }
   ];
   var BY = {}; LEAGUES.forEach(function (l) { BY[l.id] = l; });
   var DEFAULT = ['nfl', 'ncaaf', 'nba', 'nhl', 'mlb'];
+  // Cricket shown at first where it's followed most (the TV's language and region: India, Pakistan, the UK...).
+  if (/^(hi|ur|bn|si|ta|te|mr|gu|kn|ml|pa)\b|-(in|pk|gb|au|nz|za|lk|bd|jm|tt|bb|af|ie|ae)$/i.test(typeof navigator !== 'undefined' && navigator.language || '')) DEFAULT.push('cricket');
   var LIVE_MS = 30000, TODAY_MS = 5 * 60000, AHEAD_MS = 60 * 60000, AHEAD_DAYS = 6;
 
   var store = {};          // league id -> { 'YYYYMMDD': { at, games, err } }
@@ -97,15 +101,46 @@ var Sports = (function () {
       detail: ty.shortDetail || ty.detail || '', clock: st.displayClock || '', period: st.period || 0, name: e.name || e.shortName || '',
       teams: teams, nets: nets, venue: c.venue && c.venue.fullName || '', note: (c.notes || [])[0] && c.notes[0].headline || '' };
   }
+  // The cricket series kept besides internationals: the big T20 leagues and the world events.
+  var CRICKET_LEAGUES = /premier league|big bash|super league|the hundred|sa20|international league t20|caribbean premier|major league cricket|world cup|champions trophy|asia cup|world test championship/i;
+  /* Cricket from ESPN's header for the sport (site.web.api.espn.com/apis/v2/scoreboard/header?sport=cricket): the
+     matches on now, just played and next, across every series.  Only internationals (Tests, ODIs, T20Is, men's and
+     women's: internationalClassId > 0) and the big T20 leagues are kept; the rest is domestic cricket few follow.
+     The score is cricket's own ("245/6 (42.3 ov)", "356 & 120/2"), kept as written; the winner is ESPN's.  The line
+     under it says how the match stands ("India trail by 297 runs", "New Zealand won by 6 wickets"). */
+  function cricket(lg, j) {
+    var out = [];
+    ((j.sports || [])[0] || { leagues: [] }).leagues.forEach(function (L) {
+      (L.events || []).forEach(function (e) {
+        var intl = +((e.class || {}).internationalClassId || 0) > 0;
+        if (!intl && !CRICKET_LEAGUES.test(L.name || '')) return;
+        if (/under-?19|u19|\ba team\b/i.test((L.name || '') + ' ' + (e.name || ''))) return;
+        var fs = e.fullStatus || {}, ty = fs.type || {};
+        var teams = (e.competitors || []).map(function (c) {
+          return { abbr: c.abbreviation || '', name: c.displayName || c.name || '', full: c.displayName || '', loc: c.location || '', logo: String(c.logo || '').replace(/^http:/, 'https:'),      // cricket has no dark logos (500-dark is a 404)
+            color: String(c.color || '').replace('#', ''), alt: '', home: c.homeAway === 'home', score: c.score ? String(c.score) : null, rec: '', rank: 0, win: !!c.winner, id: '', eid: String(c.id || '') };
+        }).sort(function (a, b) { return (a.home ? 1 : 0) - (b.home ? 1 : 0); });
+        if (teams.length !== 2) return;
+        var state = e.status === 'in' || e.status === 'post' ? e.status : 'pre';
+        out.push({ id: String(e.id), lg: lg.id, s: Date.parse(e.date) || 0, state: state, done: state === 'post',
+          detail: state === 'pre' ? '' : fs.summary || ty.shortDetail || e.summary || '', clock: '', period: e.period || 0, name: e.name || '',
+          teams: teams, nets: [], venue: e.location || '', note: [e.title, (e.class || {}).generalClassCard, L.name].filter(Boolean).filter(function (x, i, a) { return a.indexOf(x) === i; }).join('  ·  '), text: true });
+      });
+    });
+    return out;
+  }
   function load(lg, key, force) {
     var day = (store[lg.id] || (store[lg.id] = {}))[key], now = Date.now(), today = key === dayKey(0);
     var ttl = !today ? AHEAD_MS : day && day.games.some(function (g) { return g.state === 'in'; }) ? LIVE_MS : TODAY_MS;
     if (!force && day && now - day.at < ttl) return Promise.resolve(day);
     var bk = lg.id + key;
     if (busy[bk]) return busy[bk];
-    var url = BASE + lg.path + '/scoreboard' + (today ? '' : '?dates=' + key) + (lg.id === 'ncaab' || lg.id === 'ncaaf' ? (today ? '?' : '&') + 'limit=100' : '');
+    // Cricket's header has no days: it all comes with today, and the other days are empty.
+    if (lg.header && !today) { store[lg.id][key] = { at: now, games: [] }; return Promise.resolve(store[lg.id][key]); }
+    var url = lg.header ? 'https://site.web.api.espn.com/apis/v2/scoreboard/header?sport=' + lg.header + '&lang=en&region=us'
+      : BASE + lg.path + '/scoreboard' + (today ? '' : '?dates=' + key) + (lg.id === 'ncaab' || lg.id === 'ncaaf' ? (today ? '?' : '&') + 'limit=100' : '');
     busy[bk] = fetch(url, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('ESPN said ' + r.status); return r.json(); }).then(function (j) {
-      var list = (j.events || []).map(function (e) { return game(lg, e); }).filter(function (g) { return g.s && (lg.race || g.teams.length === 2); });
+      var list = lg.header ? cricket(lg, j) : (j.events || []).map(function (e) { return game(lg, e); }).filter(function (g) { return g.s && (lg.race || g.teams.length === 2); });
       store[lg.id][key] = { at: Date.now(), games: list };
       // Days gone by aren't kept (TiviBro can stay open for days).
       var y = dayKey(-4); Object.keys(store[lg.id]).forEach(function (k) { if (k < y) delete store[lg.id][k]; });
@@ -166,6 +201,8 @@ var Sports = (function () {
   function summary(g, force) {
     var lg = BY[g.lg], c = sums[g.id], ttl = g.state === 'in' ? LIVE_MS : 60000;
     if (!lg) return Promise.resolve(null);
+    // Cricket: the card has it all (the scores, how it stands, the series); no box score by period.
+    if (lg.header) return Promise.resolve({ lines: [], leaders: [], standings: [], venue: g.venue || '', city: '', none: true });
     if (!force && c && Date.now() - c.at < ttl) return Promise.resolve(c.v);
     return fetch(BASE + lg.path + '/summary?event=' + encodeURIComponent(g.id), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('ESPN said ' + r.status); return r.json(); }).then(function (j) {
       var v = readSummary(j);

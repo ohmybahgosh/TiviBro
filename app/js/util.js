@@ -275,12 +275,21 @@ var U = (function () {
      between them, so textContent reads as the text itself. */
   function lines(el, text) {
     text = String(text || '');
+    if (typeof Store !== 'undefined' && Store.settings && Store.settings.subSdh) text = sdh(text);
     if (typeof document === 'undefined' || !el.appendChild || !document.createTextNode) { el.textContent = text; return; }
     el.textContent = '';
     text.split('\n').forEach(function (l, i) {
       if (i) el.appendChild(document.createTextNode('\n'));
       if (l) { var sp = document.createElement('span'); sp.textContent = l; el.appendChild(sp); }
     });
+  }
+  /* Hearing-impaired notes out of a subtitle (Settings > Audio and subtitles > Leave out sound notes, discussion
+     #100): [door slams] and (music) go, and a speaker's name in capitals before a line ("JOHN: Hi" -> "Hi").  A
+     line left with nothing (or only a dash) goes too. */
+  function sdh(text) {
+    return String(text || '').split('\n').map(function (l) {
+      return l.replace(/\[[^\]]*\]|\([^)]*\)/g, '').replace(/^(\s*-?\s*)[A-Z][A-Z0-9 .'&-]{0,30}:\s+/, '$1').replace(/\s{2,}/g, ' ').trim();
+    }).filter(function (l) { return l && !/^[-–—\s]*$/.test(l); }).join('\n');
   }
   /* Watched: played this far (Settings > Movies and shows > Count as watched at; 90% at first, as Plex), or into its
      last minute.  Movies and shows from the provider, My media and recordings all use it. */
@@ -294,7 +303,7 @@ var U = (function () {
   }
   return {
     watchedFrac: watchedFrac, isWatchedAt: isWatchedAt, tvdbCredit: tvdbCredit,
-    lines: lines, notice: notice, hsl: hsl, luminance: luminance, onColor: onColor, mix: mix,
+    lines: lines, sdh: sdh, notice: notice, hsl: hsl, luminance: luminance, onColor: onColor, mix: mix,
     runtime: runtime, secretShape: secretShape, KEY: KEY, $: $, el: el, clamp: clamp, debounce: debounce, hhmm: hhmm, day: day, dateShort: dateShort, tvLocale: tvLocale, LANGS: LANGS, lang: lang, hash: hash,
     b64utf8: b64utf8, request: request, readJSON: readJSON, httpSays: httpSays, getJSON: getJSON, getText: getText, toast: toast, idle: idle, pad: pad, loc: loc };
 })();

@@ -129,7 +129,7 @@ private fun TeamLine(t: SportTeam, lose: Boolean, big: Boolean = false, rankSlot
         Text(t.name, fontWeight = FontWeight.SemiBold, color = if (lose) Muted else TextHi, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
         if (t.rec.isNotBlank()) Text("  " + t.rec, color = Muted, fontSize = 11.sp, maxLines = 1)
         Spacer(Modifier.weight(1f))
-        t.score?.let { Text(it.toString(), fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = if (lose) Muted else TextHi) }
+        t.shown?.let { Text(it, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = if (lose) Muted else TextHi) }
     }
 }
 private fun loses(g: SportGame, t: SportTeam): Boolean {
@@ -187,7 +187,7 @@ private fun GameSheet(model: AppModel, id: String, first: SportGame, now: Long, 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (a != null) TeamBlock(a, Modifier.weight(1f), win == 0, win == 1)
                     Column(Modifier.weight(1.2f), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(if (g.teams.size == 2 && g.state != "pre" && !g.hidden) "${a?.score ?: ""}  –  ${h?.score ?: ""}" else if (g.hidden) tr("Score hidden") else clock(g.start),
+                        Text(if (g.teams.size == 2 && g.state != "pre" && !g.hidden) "${a?.shown ?: ""}  –  ${h?.shown ?: ""}" else if (g.hidden) tr("Score hidden") else clock(g.start),
                             fontSize = if (g.state != "pre" && !g.hidden) 36.sp else 24.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.Center)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             if (g.live) { StatusTag(true, "LIVE"); Spacer(Modifier.width(6.dp)) }

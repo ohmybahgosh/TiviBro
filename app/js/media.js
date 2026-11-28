@@ -16,6 +16,8 @@ var Media = (function () {
   /* ---------- helper ---------- */
   function ask(route, body, ms) {
     if(route==='library/query'&&body&&body.kind==='show'&&!body.sort){body.sort=MediaStore.preferences().showSort;body.reverse=!!MediaStore.preferences().showSortReverse;}   // Sort TV shows by
+    // The TV's region ("GB" from en-GB) for age ratings (discussion #99) and streaming services, when not given.
+    if (route === 'metadata' && body && !body.region) { var lr = ''; try { lr = String((typeof I18n !== 'undefined' && I18n.detected && I18n.detected().locale) || navigator.language || ''); } catch (e) {} var rm = /[-_]([A-Za-z]{2})(?:$|[-_.@])/.exec(lr); if (rm) body.region = rm[1].toUpperCase(); }
     if(route==='library/edit'&&!body.idempotencyKey)body.idempotencyKey='edit_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2);
     if (!Net.port) return Promise.reject(new Error('The TiviBro helper is not running.  Close TiviBro and open it again.'));
     var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
@@ -263,7 +265,7 @@ var Media = (function () {
     return sh.on.concat(sh.soon).map(function (g) {
       var m = g.m;
       return { id: 'live:' + m.id + (g.live ? ':on' : ':soon'), kind: 'live', live: g, title: m.title, year: m.year,
-        metadata: { id: m.id, title: m.title, year: m.year, poster: m.poster, backdrop: m.backdrop, backdropHd: m.backdropHd, logo: m.logo, plot: m.plot, genre: m.genre, runtime: m.runtime, rating: m.rating } };
+        metadata: { id: m.id, title: m.title, year: m.year, poster: m.poster, backdrop: m.backdrop, backdropHd: m.backdropHd, logo: m.logo, plot: m.plot, genre: m.genre, runtime: m.runtime, rating: m.rating, cert: m.cert || '' } };
     });
   }
   function liveLine(g, short) {
@@ -764,7 +766,7 @@ var Media = (function () {
       lg.src = wrap(md.logo); box.appendChild(lg);
     } else box.appendChild(U.el('h1', 'media-title', title));
     var seasons = Array.isArray(md.seasons) ? md.seasons.filter(function (x) { return x.number > 0; }).length : 0;
-    var facts = [m.kind === 'show' ? 'TV show' : '', m.year || md.year, RT(md.runtime), seasons ? count(seasons, '1 season', '{n} seasons') : '', genresOf(m).slice(0, 3).join(', '), rating(m) ? '★ ' + md.rating : '', m.kind === 'live' ? '' : pictureInfo(m), n > 1 ? n + ' copies' : '', (m.favourite || MediaStore.isFavorite(m.id)) ? '♥ Favorite' : ''];
+    var facts = [m.kind === 'show' ? 'TV show' : '', m.year || md.year, md.cert || '', RT(md.runtime), seasons ? count(seasons, '1 season', '{n} seasons') : '', genresOf(m).slice(0, 3).join(', '), rating(m) ? '★ ' + md.rating : '', m.kind === 'live' ? '' : pictureInfo(m), n > 1 ? n + ' copies' : '', (m.favourite || MediaStore.isFavorite(m.id)) ? '♥ Favorite' : ''];
     box.appendChild(U.el('div', 'media-facts', facts.filter(Boolean).join('   ·   ')));
     formatSoon(m, function (x) { if (itemsVL.current() === x) showInfo(); });
     box.appendChild(U.el('p', 'media-summary', md.plot || (m.kind === 'show' ? 'Press OK for its seasons and episodes.' : 'Press OK to play.  Red for options.')));

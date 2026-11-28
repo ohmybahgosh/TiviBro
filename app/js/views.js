@@ -1122,7 +1122,7 @@ var Views = (function () {
     if (!p) { box.appendChild(U.el('p', 'om-desc', T('No guide information for this channel.'))); return; }
     var mv = typeof Movies !== 'undefined' ? Movies.of(c, p) : null, sh = !mv && typeof Series !== 'undefined' ? Series.of(c, p) : null;
     var se = sh && p.ep ? Series.episode(sh, p.ep) : null, gd = Epg.desc(c, p) || '';
-    var meta = mv ? [T('Movie'), mv.year, U.runtime(mv.runtime), mv.genre, mv.rating ? '★ ' + mv.rating + ' TMDB' : '']
+    var meta = mv ? [T('Movie'), mv.year, mv.cert, U.runtime(mv.runtime), mv.genre, mv.rating ? '★ ' + mv.rating + ' TMDB' : '']
       : sh ? [T('Series'), p.ep, se && se.t, sh.network, sh.genre, sh.rating ? '★ ' + sh.rating + ' TMDB' : '']
       : [T({ s: 'Sports', n: 'News', c: 'Kids', d: 'Documentary' }[p.k] || ''), p.mv ? T('Movie') : '', p.y, p.ep, p.n ? T('New') : ''];
     if ((!gd || gd.length < 60) && mv && mv.plot) gd = mv.plot;
@@ -1264,8 +1264,28 @@ var Views = (function () {
     if (zapIdx < 0) zapIdx = 0;
     zapIdx = (zapIdx + d + list.length) % list.length;
     zapShow(list[zapIdx]);
+    zapSides(list, zapIdx);
     Epg.request(list[zapIdx]);
     zapCommit();
+  }
+  /* While zapping (discussion #98): on the right, the channel before and after the one shown, in its group, so you
+     know where CH + and CH − go next.  Each with its number, name and what's on, ★ for a favorite.  It goes 2 s
+     after the last press.  Settings > Playback > Channels before and after while zapping (on). */
+  function zapSides(list, at) {
+    var el = $('zapSides');
+    if (Store.settings.zapSides === false || list.length < 3) { if (el) el.classList.add('hidden'); return; }
+    if (!el) { el = U.el('div', 'zap-sides hidden'); el.id = 'zapSides'; el.setAttribute('data-raw', ''); document.body.appendChild(el); }
+    el.innerHTML = '';
+    [-1, 0, 1].forEach(function (d) {
+      var c = list[(at + d + list.length) % list.length], nn = Epg.nowNext ? Epg.nowNext(c) : null, row = U.el('div', 'zs-row' + (d ? '' : ' here'));
+      row.appendChild(U.el('span', 'zs-arrow', d < 0 ? 'CH −' : d > 0 ? 'CH +' : ''));
+      var t = U.el('div', 'zs-txt');
+      t.appendChild(U.el('div', 'zs-name', (Store.settings.showNumbers && c.num ? c.num + '  ' : '') + L.name(c) + (L.isFav(c.k) ? '  ★' : '')));
+      if (nn && nn.now) t.appendChild(U.el('div', 'zs-prog', nn.now.t));
+      row.appendChild(t); el.appendChild(row);
+    });
+    el.classList.remove('hidden');
+    clearTimeout(zapSides.t); zapSides.t = setTimeout(function () { el.classList.add('hidden'); }, 2000);
   }
   // Pressing Last repeatedly flips between two channels on screen; only the one you stop on starts.
   var lastTarget = null, lastCommit = burstCommit(function () {
@@ -3403,7 +3423,7 @@ var Guide = (function () {
     detail.classList.toggle('has-poster', !!(mv && mv.poster));
     if (mv) {
       var m3 = U.el('div', 'gd-meta gd-movie');
-      m3.textContent = ['Movie', mv.year, U.runtime(mv.runtime), mv.genre, mv.rating ? '★ ' + mv.rating + ' TMDB' : ''].filter(Boolean).join('   ·   ');
+      m3.textContent = ['Movie', mv.year, mv.cert, U.runtime(mv.runtime), mv.genre, mv.rating ? '★ ' + mv.rating + ' TMDB' : ''].filter(Boolean).join('   ·   ');
       detail.appendChild(m3);
       if (mv.poster) { var pim = U.el('img', 'gd-poster'); pim.src = mv.poster; pim.alt = ''; pim.onerror = function () { this.remove(); detail.classList.remove('has-poster'); }; detail.appendChild(pim); }
       if ((!gd || gd.length < 60) && mv.plot) gd = mv.plot;

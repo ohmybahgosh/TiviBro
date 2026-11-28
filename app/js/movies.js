@@ -159,7 +159,7 @@ var Movies = (function () {
   }
   function channels() { return list().map(function (x) { return x.c; }); }
   // What is kept of a movie: the details shown, the summary cut to what the guide's panel shows.
-  function lite(m) { return { id: m.id, title: m.title, year: m.year, poster: m.poster, backdrop: m.backdrop, backdropHd: m.backdropHd || '', logo: m.logo || '', plot: String(m.plot || '').slice(0, 600), genre: m.genre, runtime: m.runtime, rating: m.rating }; }
+  function lite(m) { return { id: m.id, title: m.title, year: m.year, poster: m.poster, backdrop: m.backdrop, backdropHd: m.backdropHd || '', logo: m.logo || '', plot: String(m.plot || '').slice(0, 600), genre: m.genre, runtime: m.runtime, rating: m.rating, cert: m.cert || '' }; }
   /* At most MAX answers, the oldest going first; fewer on a TV short of memory (1 GB, or TiviBro closed while
      playing lately), where every MB counts. */
   function cap() { return window.Player && Player.memSafe ? MAX_LOW : MAX; }

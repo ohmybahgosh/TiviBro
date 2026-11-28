@@ -64,7 +64,7 @@ var Vod = (function () {
     info.appendChild(U.el('div', 'media-kicker', 'Show'));
     info.appendChild(U.el('div', 'media-title', RAW(s.name)));
     var n = sp.rows.filter(function (r) { return +r.season !== 0; }).length;
-    var facts = [s.year || (tv && tv.year), n ? n + (n === 1 ? ' season' : ' seasons') : '', episodes && episodes.length ? episodes.length + ' episodes' : '', stars(s.rating) || (tv && tv.rating ? '★ ' + tv.rating : ''), tv && tv.genre].filter(Boolean).join('   ·   ');
+    var facts = [s.year || (tv && tv.year), tv && tv.cert || '', n ? n + (n === 1 ? ' season' : ' seasons') : '', episodes && episodes.length ? episodes.length + ' episodes' : '', stars(s.rating) || (tv && tv.rating ? '★ ' + tv.rating : ''), tv && tv.genre].filter(Boolean).join('   ·   ');
     if (facts) info.appendChild(U.el('div', 'media-facts', facts));
     var plot = s.plot && s.plot.length >= 40 ? s.plot : (tv && tv.plot) || s.plot || '';
     if (plot) info.appendChild(U.el('div', 'media-summary shp-plot', plot));
@@ -1022,7 +1022,7 @@ var Vod = (function () {
     return Source.vodInfo(it.id, plOf(it)).then(function (r) {
       var i = (r && r.info) || {}, md = (r && r.movie_data) || {};
       // The provider's trailer: a YouTube id, or a whole YouTube link.
-      var m = { trailer: ytId(i.youtube_trailer || i.trailer), plot: i.plot || i.description || '', genre: i.genre || '', cast: i.cast || i.actors || '', director: i.director || '', dur: i.duration || '', year: (i.releasedate || i.release_date || '').slice(0, 4), poster: i.movie_image || i.cover_big || '', backdrop: [].concat(i.backdrop_path || [])[0] || '', media: Caps.fromXtream(i), tmdb: tmdbOf(i.tmdb_id || i.tmdb || md.tmdb_id) };
+      var m = { trailer: ytId(i.youtube_trailer || i.trailer), plot: i.plot || i.description || '', genre: i.genre || '', cast: i.cast || i.actors || '', director: i.director || '', dur: i.duration || '', year: (i.releasedate || i.release_date || '').slice(0, 4), cert: certOf(i), poster: i.movie_image || i.cover_big || '', backdrop: [].concat(i.backdrop_path || [])[0] || '', media: Caps.fromXtream(i), tmdb: tmdbOf(i.tmdb_id || i.tmdb || md.tmdb_id) };
       info.set(k, m);
       if (then) then();
       if (!m.trailer) m.tr = new Promise(function (res) { movieTrailer(i.tmdb_id || i.tmdb || md.tmdb_id, nm, m.year || yr, function (t) { if (t && info.get(k) === m) { m.trailer = t; if (then) then(); } res(t || ''); }); });
@@ -1037,6 +1037,8 @@ var Vod = (function () {
     return sh && Media.idsOfMeta ? Media.idsOfMeta(sh) : {};
   }
   // A TMDB id as a provider gives it (a number, a string, sometimes "0" or a link): the number, or ''.
+  // The age rating some providers give a movie (mpaa_rating, age): "PG-13", "16+"; nothing for 0, N/A or a long text.
+  function certOf(i) { var c = String(i.mpaa_rating || i.mpaa || i.age || i.certification || '').trim(); return c && c.length <= 8 && !/^(0|n\/?a|none|not rated|-)$/i.test(c) ? c : ''; }
   function tmdbOf(v) { var m = /^\s*([1-9][0-9]{0,9})\s*$/.exec(String(v == null ? '' : v)); return m ? m[1] : ''; }
   /* A provider's movie's TMDB id, for skip times (skipper.js): from its row in the list, its details already
      loaded, or its details asked for now.  '' when the provider doesn't say. */
@@ -1081,7 +1083,7 @@ var Vod = (function () {
     if (poster) { var img = U.el('img', 'vod-poster' + (it.ep && te && poster === te.still ? ' still' : '')); img.src = poster; img.onerror = function () { if (!Net.retryImage(this, true)) this.remove(); }; box.appendChild(img); }
     box.appendChild(U.el('h2', '', it.ep ? (te && te.t && /^S\d+ E[\d?]+\s*$/.test(it.label) ? it.label + '   ' + te.t : it.label) : it.name));
     var rating = stars(it.rating) || (tv && !it.ep && tv.rating ? '★ ' + tv.rating + ' TMDB' : '');
-    var meta = [m && m.year || it.year || (!it.ep && tv && tv.year), niceDur(m && m.dur || it.dur), m && m.genre || (!it.ep && tv && tv.genre), !it.ep && tv && tv.network, it.ep && te && te.air ? 'aired ' + new Date(te.air + 'T12:00:00').toLocaleDateString(U.loc ? U.loc() : undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '', rating].filter(Boolean).join('   ');
+    var meta = [m && m.year || it.year || (!it.ep && tv && tv.year), (m && m.cert) || (!it.ep && tv && tv.cert) || '', niceDur(m && m.dur || it.dur), m && m.genre || (!it.ep && tv && tv.genre), !it.ep && tv && tv.network, it.ep && te && te.air ? 'aired ' + new Date(te.air + 'T12:00:00').toLocaleDateString(U.loc ? U.loc() : undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '', rating].filter(Boolean).join('   ');
     if (meta) box.appendChild(U.el('div', 'vod-meta', meta));
     // What the file is, from the provider's own scan of it: 4K, HDR or Dolby Vision, sound format.
     var md = mediaOf(it);
@@ -1560,6 +1562,22 @@ var Vod = (function () {
     var cl = catList(), at = c.up ? cl.findIndex(function (x) { return x.folder === left; }) : cl.findIndex(function (x) { return !x.up && !x.head; });
     catsVL.setItems(cl, Math.max(0, at)); onCat(catsVL.sel, catsVL.current());
   }
+  /* Settings > Movies and shows > Movie categories / Show categories (discussion #119): each category of a kind
+     with whether it's hidden, for a switch apiece on the TV, the phone and in the web editor.  null until that
+     kind has loaded (loadCats loads it).  Hidden as Hide this category does: in the category's own playlist. */
+  function catsFor(k) {
+    var d = data[k]; if (!d) return null;
+    var hid = {}; vodPls().forEach(function (q, n) { hiddenCats(k, q).forEach(function (c) { hid[(n && d.multi ? q.id + ':' : '') + c] = 1; }); });
+    var names = catLabels(d);
+    return d.cats.filter(function (c) { return c && c.id != null; }).map(function (c) { return { id: String(c.id), name: names[c.id] || c.name, hidden: !!hid[c.id] }; });
+  }
+  function loadCats(k) { return load(k); }
+  function setCatHidden(k, id, hide) {
+    var home = catHome(id), p = prefs(home.p), h = p.hide || (p.hide = {}), list = h[k] || (h[k] = []), at = list.indexOf(home.id);
+    if (hide && at < 0) list.push(home.id); else if (!hide && at >= 0) list.splice(at, 1); else return;
+    Store.upsertPlaylist(home.p);
+    if (kind === k && catsVL && data[k]) reshow();
+  }
   function recats() { if (!catsVL || !data[kind]) return; var c = catsVL.current(), cl = catList(); catsVL.setItems(cl, Math.max(0, cl.findIndex(function (x) { return c && x.id === c.id; }))); }
-  return { arrange: arrange, movieTmdb: movieTmdb, recats: recats, reloadNow: reloadNow, homeApi: function () { return homeApi; }, _test: { catLang: catLang, byLang: byLang, inFolders: inFolders, forFolders: forFolders, nameSays: nameSays, curCat: function () { var c = catsVL && catsVL.current(); return c ? String(c.id) : ''; }, homeApi: function () { return homeApi; }, catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, lean: lean, findRemote: findRemote, titleCount: titleCount, countsFor: countsFor, get searchState() { return searchState(); }, offered: offered, reset: function (fresh) { if (fresh) freshAt = Date.now(); gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; seriesAsk++; spClose(); } };
+  return { arrange: arrange, movieTmdb: movieTmdb, recats: recats, catsFor: catsFor, loadCats: loadCats, setCatHidden: setCatHidden, reloadNow: reloadNow, homeApi: function () { return homeApi; }, _test: { catLang: catLang, byLang: byLang, inFolders: inFolders, forFolders: forFolders, nameSays: nameSays, curCat: function () { var c = catsVL && catsVL.current(); return c ? String(c.id) : ''; }, homeApi: function () { return homeApi; }, catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, lean: lean, findRemote: findRemote, titleCount: titleCount, countsFor: countsFor, get searchState() { return searchState(); }, offered: offered, reset: function (fresh) { if (fresh) freshAt = Date.now(); gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; seriesAsk++; spClose(); } };
 })();

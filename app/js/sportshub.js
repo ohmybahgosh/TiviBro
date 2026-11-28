@@ -28,8 +28,9 @@ var SportsHub = (function () {
 
   /* ---------- cards ---------- */
   function teamRow(g, t, o) {
-    var hide = Sports.hidden(g), lose = !hide && g.state === 'post' && o && t.score != null && o.score != null && t.score < o.score;
-    var win = !hide && g.state === 'post' && o && t.score != null && o.score != null && t.score > o.score;
+    var hide = Sports.hidden(g), lose = !hide && g.state === 'post' && o && t.score != null && o.score != null && (g.text ? !!o.win : t.score < o.score);
+    // Cricket's scores are written out ("245/6"): its winner is ESPN's, not the bigger number.
+    var win = !hide && g.state === 'post' && o && t.score != null && o.score != null && (g.text ? !!t.win : t.score > o.score);
     var el = U.el('div', 'sp-team' + (lose ? ' lose' : '') + (win ? ' win' : ''));
     var lg = U.el('div', 'sp-logo');
     if (t.logo) { var im = new Image(); im.decoding = 'async'; im.alt = ''; im.onerror = function () { this.remove(); lg.textContent = t.abbr; }; im.src = t.logo; lg.appendChild(im); }
@@ -41,7 +42,13 @@ var SportsHub = (function () {
     n.appendChild(document.createTextNode(RAW(t.name)));
     if (t.rec) n.appendChild(U.el('span', 'sp-rec', t.rec));
     el.appendChild(n);
-    if (g.state !== 'pre' && t.score != null && !hide) el.appendChild(U.el('div', 'sp-score', String(t.score)));
+    if (g.state !== 'pre' && t.score != null && !hide) {
+      // Cricket's "59/3 (14.4 ov)": the runs big, the overs small beside them, so the team's name keeps its room.
+      var sc = U.el('div', 'sp-score' + (g.text ? ' text' : '')), parts = g.text ? /^(.*?)\s*(\([^)]*\))\s*$/.exec(String(t.score)) : null;
+      sc.appendChild(document.createTextNode(parts ? parts[1] : String(t.score)));
+      if (parts) sc.appendChild(U.el('small', '', parts[2]));
+      el.appendChild(sc);
+    }
     // The winner of a final: a mark beside the score (the loser is greyed).
     if (g.state === 'post' && !hide && o && t.score != null) el.appendChild(U.el('div', 'sp-win', win ? '◀' : ''));
     return el;
@@ -55,7 +62,8 @@ var SportsHub = (function () {
   function status(g) {
     if (g.state !== 'pre' && Sports.hidden(g)) return g.state === 'in' ? T('On now, score hidden') : T('Played, score hidden');
     if (g.state === 'in') return g.detail.replace(/\s+-\s+/, ' ');
-    if (g.state === 'post') return T('Final') + (/OT|SO|\/\d/.test(g.detail) ? ' ' + g.detail.replace(/^Final\/?/i, '') : '');
+    // Cricket says how it ended ("New Zealand won by 6 wickets", "Match drawn").
+    if (g.state === 'post') return g.text && g.detail ? g.detail : T('Final') + (/OT|SO|\/\d/.test(g.detail) ? ' ' + g.detail.replace(/^Final\/?/i, '') : '');
     var d = U.day(g.s);
     return (d === T('Today') ? '' : d + ' ') + U.hhmm(g.s);
   }
@@ -326,7 +334,8 @@ var SportsHub = (function () {
     var root = el; el = U.el('div', 'sp-scroll'); root.appendChild(el);
     var a = g.teams[0] || {}, h = g.teams[1] || {};
     // A final with a winner (not a tie, not hidden): { w: 0 | 1 }.
-    var fin = g.state === 'post' && !hide && g.teams.length === 2 && a.score != null && h.score != null && a.score !== h.score ? { w: a.score > h.score ? 0 : 1 } : null;
+    var fin = g.text ? (g.state === 'post' && !hide && (a.win || h.win) ? { w: a.win ? 0 : 1 } : null)
+      : g.state === 'post' && !hide && g.teams.length === 2 && a.score != null && h.score != null && a.score !== h.score ? { w: a.score > h.score ? 0 : 1 } : null;
     var hero = U.el('div', 'sp-hero');
     // Each team's side in its colour.
     // Deepened, so a logo in the same colour (UCLA's blue on blue) still stands out.
@@ -370,6 +379,8 @@ var SportsHub = (function () {
     var left = U.el('div', 'sp-panel sp-box');
     if (hide) left.appendChild(U.el('div', 'sp-muted', T('The score is hidden.  Show the score above when you\'ve watched it.')));
     else if (!sum) left.appendChild(U.el('div', 'sp-muted', g.state === 'pre' ? T('The box score starts with the game.') : T('Loading the box score…')));
+    // Cricket: no box score by period; how the match stands and which match of which series it is.
+    else if (sum.none) { if (g.detail) left.appendChild(U.el('div', 'sp-cap', RAW(g.detail))); if (g.note) left.appendChild(U.el('div', 'sp-muted', RAW(g.note))); }
     else {
       var lines = sum.lines.filter(function (l) { return l.periods.length; });
       if (lines.length === 2) {

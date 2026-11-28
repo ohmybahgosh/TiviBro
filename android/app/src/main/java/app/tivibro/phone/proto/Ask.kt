@@ -173,13 +173,16 @@ data class VodInfo(
 
 /* Sports (sports.js on the TV, phone.js 'sports'): the rows of the TV's Sports screen, and one game's page.
    A team whose scores are hidden on the TV comes without its score ([SportGame.hidden]). */
-/** A team in a game.  [eid]: ESPN's own id for it (from TiviBro 224; the Sports widget reads ESPN with it). */
+/** A team in a game.  [eid]: ESPN's own id for it (from TiviBro 224; the Sports widget reads ESPN with it).  [text]: a
+    score written out, as cricket's are ("245/6 (42.3 ov)"; [score] is then null). */
 data class SportTeam(val id: String, val name: String, val full: String, val abbr: String, val logo: String, val color: String, val rec: String,
-                     val rank: Int, val score: Int?, val mine: Boolean, val eid: String = "") {
+                     val rank: Int, val score: Int?, val mine: Boolean, val eid: String = "", val text: String = "") {
+    /** The score as shown: written out, else the number, else nothing. */
+    val shown: String? get() = text.ifBlank { null } ?: score?.toString()
     companion object {
         fun from(j: JSONObject) = SportTeam(j.optString("id"), j.optString("name"), j.optString("full"), j.optString("abbr"), j.optString("logo"),
             j.optString("color"), j.optString("rec"), j.optInt("rank"), if (j.isNull("score") || !j.has("score")) null else j.optInt("score"), j.optInt("mine") == 1,
-            j.optString("eid"))
+            j.optString("eid"), j.optString("txt"))
     }
 }
 data class SportChan(val key: String, val name: String, val logo: String, val what: String)
