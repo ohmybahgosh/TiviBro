@@ -311,7 +311,14 @@ var PlexPage = (function () {
   function hide() { stopTheme(); stopTrailer(); var el = $('plexPage'); if (el) el.classList.add('hidden'); }
   function reshow() {
     var el = $('plexPage'); if (!el || !item) return false;
-    el.classList.remove('hidden'); paint(); UI.setHandler(keys); theme(item); backTrailer(item); return true;
+    el.classList.remove('hidden'); fresh(); paint(); UI.setHandler(keys); theme(item); backTrailer(item); return true;
+  }
+  /* Back on the page after watching: its buttons (Resume from where you stopped, Mark watched) and its facts (Ends at)
+     from the title as it now is (kept, in report). */
+  function fresh() {
+    if (!item) return;
+    redrawButtons();
+    var f = document.querySelector('#plexPage .media-facts'); if (f) f.textContent = facts(item);
   }
 
   /* ---------- Theme music (Settings > Plex > Theme music) ---------- */
@@ -461,7 +468,7 @@ var PlexPage = (function () {
          start the player where you stopped and its times are the title's own (progress to Plex, Skip intro). */
       // Back from watching: to the title's page when it was open (its buttons take the keys again), else the Plex tab.
       var page = $('plexPage'), fromPage = !!(page && !page.classList.contains('hidden'));
-      Views.playVod(meta, url, ms / 1000, function () { report('stopped'); stopTimer(); if (typeof Log !== 'undefined') Log.state('plex', 'browsing Plex'); if (fromPage && item) { var el = $('plexPage'); if (el) el.classList.remove('hidden'); paint(); UI.setHandler(keys); } else if (PlexView.resume) PlexView.resume(); });
+      Views.playVod(meta, url, ms / 1000, function () { report('stopped'); stopTimer(); if (typeof Log !== 'undefined') Log.state('plex', 'browsing Plex'); if (fromPage && item) { var el = $('plexPage'); if (el) el.classList.remove('hidden'); fresh(); paint(); UI.setHandler(keys); } else if (PlexView.resume) PlexView.resume(); });
       startTimer();
       // The title logo over the timeline (an episode shows its show's), once it's known.
       var own = m.type === 'episode' ? '' : PlexView.logoOf(m);
@@ -529,7 +536,17 @@ var PlexPage = (function () {
     p.last = at;
     Plex.call(p.item.server, '/:/timeline?ratingKey=' + p.item.ratingKey + '&key=' + encodeURIComponent('/library/metadata/' + p.item.ratingKey) + '&state=' + state + '&time=' + at + '&duration=' + dur + '&identifier=com.plexapp.plugins.library').catch(function () {});
     if (!p.scrobbled && dur && at >= dur * 0.9) { p.scrobbled = true; Plex.call(p.item.server, '/:/scrobble?identifier=com.plexapp.plugins.library&key=' + p.item.ratingKey).catch(function () {}); }
+    kept(p, at);
     if (state === 'stopped') playing = null;
+  }
+  /* The title's own copy (and the page's, when it shows the same title) as Plex now has it, so Back to its page
+     says Resume from where you stopped, or watched past 90%, without reading it again. */
+  function kept(p, at) {
+    [p.item, item].forEach(function (m) {
+      if (!m || String(m.ratingKey) !== String(p.item.ratingKey) || m.server !== p.item.server) return;
+      if (p.scrobbled) { if (m.viewOffset || !m.viewCount) m.viewCount = (m.viewCount || 0) + 1; m.viewOffset = 0; }
+      else if (at > 0) m.viewOffset = at;
+    });
   }
 
   /* ---------- Options while watching: the player's Options (Red) open on a Plex tab, as in Plex's player ---------- */

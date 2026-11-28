@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Back from a Plex movie, its page says where you stopped.**  The page still offered Resume from the time it had when it opened.  Now Resume from, Mark watched and the end time follow what you just watched.
 - **No guide chip over what you're watching.**  The Loading guide chip showed over a movie playing full screen (a Plex title, say).  It now waits until you leave full screen, like TiviBro's other background notes.
 
 ## 0.6.0 (alpha 233, 2026-11-27)

@@ -213,9 +213,18 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     // Settings > Plex > Quality away from home: a file bigger than the cap is converted down to it.
     await ev(() => { Views.stopAll(); Plex.setPref('homeQuality', 8000); PlexPage.open({ ratingKey: '18', title: 'Northbound', type: 'movie', server: Plex.chosen()[0].id }, function () {}); });
     await page.waitForFunction(() => (PlexPage._test.item() || {}).Media && PlexPage._test.buttons().length, null, { timeout: 8000 });
+    // (where it stops, for Back below: 50:00)
+    await ev(() => { window.__pos = Object.getOwnPropertyDescriptor(Player, 'position'); Object.defineProperty(Player, 'position', { get: () => 3000, configurable: true }); });
     await ev(() => PlexPage._test.keys('ok')); await page.waitForTimeout(2500);
     const capped = await ev(() => (Views.vod && Views.vod.url) || '');
     ok('a 60 Mbps file with an 8 Mbps cap: the server converts it to 8 Mbps', /maxVideoBitrate=8000/.test(capped), capped);
+    // Back from it to its page: Resume from where it stopped now (50:00), without reading the title again.
+    // (the stand-in's file won't play: the first Back closes the player's controls, the second stops)
+    for (let i = 0; i < 3 && await ev(() => document.body.classList.contains('full')); i++) { await ev(() => UI.press('back')); await page.waitForTimeout(700); }
+    await page.waitForTimeout(500);
+    const backPg = await ev(() => { const p = document.getElementById('plexPage'); return p && !p.classList.contains('hidden') ? p.innerText : ''; });
+    await ev(() => { if (window.__pos) Object.defineProperty(Player, 'position', window.__pos); else delete Player.position; });
+    ok('Back from a movie to its page: Resume from where it stopped', /Resume from 50:00/.test(backPg), backPg.slice(0, 300) + ' ' + JSON.stringify(await ev(() => ({ mode: Views.mode, full: document.body.classList.contains('full'), tab: Views.tab, off: (PlexPage._test.item() || {}).viewOffset, modal: UI.modalOpen, txt: document.body.innerText.slice(0, 200) }))));
     await ev(() => Plex.setPref('homeQuality', 0));
     // An old MPEG-2 file the TV can't play as is: the server converts it (HLS), from where you start.
     await ev(() => { Views.stopAll(); PlexPage.open({ ratingKey: '13', title: 'Low Tide', type: 'movie', server: Plex.chosen()[0].id }, function () {}); });
