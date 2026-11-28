@@ -4,6 +4,7 @@
 
 - **Dialogue boost keeps the picture on Dolby Vision movies.**  Turning on dialogue boost or night mode on a Dolby Vision movie (a Plex one, say) left the screen black with the sound playing.  The picture now stays, in Dolby Vision, to the last second of the credits.
 - **A Plex movie isn't marked watched by something else.**  When another movie or a channel started without the Plex one being stopped first, its place was still sent to Plex as the Plex movie's, and could mark it watched.
+- **The screensaver stays away while anything plays.**  It could come on over a movie or channel playing in the guide's preview or picture-in-picture.  Now it waits for nothing to be playing, or for a paused video.
 
 ## 0.6.0 (alpha 234, 2026-11-27)
 

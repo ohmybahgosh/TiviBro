@@ -1,5 +1,5 @@
-/* TiviBro's screensaver (saver.js): when it starts (never over a playing video, over a paused one on its own
-   clock, on other screens after "Starts after"), and which looks it shows (those turned on that have something). */
+/* TiviBro's screensaver (saver.js): when it starts (never while a video plays anywhere, over a paused one on its own
+   clock, with nothing playing after "Starts after"), and which looks it shows (those turned on that have something). */
 'use strict';
 const fs = require('fs'), vm = require('vm');
 let fail = 0;
@@ -9,11 +9,12 @@ const ctx = { console, setInterval: () => 0, clearInterval: () => {}, Date, Math
   Store: { settings: {} } };
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync('app/js/saver.js', 'utf8') + '\nthis.Saver = Saver;', ctx);
-const S = ctx.Saver, base = { enabled: true, hidden: false, full: false, paused: false, idle: 0, after: 300000, pausedAfter: 300000 };
+const S = ctx.Saver, base = { enabled: true, hidden: false, playing: false, paused: false, idle: 0, after: 300000, pausedAfter: 300000 };
 ok('a menu left alone: on after "Starts after"', S._due(Object.assign({}, base, { idle: 300000 })) && !S._due(Object.assign({}, base, { idle: 299000 })));
-ok('never over a video that plays', !S._due(Object.assign({}, base, { full: true, idle: 9e6 })));
-ok('over a paused video: after its own wait', S._due(Object.assign({}, base, { full: true, paused: true, idle: 300000 })));
-ok('…and never when that is "Never"', !S._due(Object.assign({}, base, { full: true, paused: true, idle: 9e6, pausedAfter: 0 })));
+ok('never over a video that plays', !S._due(Object.assign({}, base, { playing: true, idle: 9e6 })));
+ok('…full screen or not: a paused one counts wherever it is', S._due(Object.assign({}, base, { paused: true, idle: 300000 })) && !S._due(Object.assign({}, base, { paused: true, idle: 299000 })));
+ok('over a paused video: after its own wait', S._due(Object.assign({}, base, { paused: true, idle: 300000 })));
+ok('…and never when that is "Never"', !S._due(Object.assign({}, base, { paused: true, idle: 9e6, pausedAfter: 0 })));
 ok('turned off, or TiviBro in the background: never', !S._due(Object.assign({}, base, { enabled: false, idle: 9e6 })) && !S._due(Object.assign({}, base, { hidden: true, idle: 9e6 })));
 ok('by default: clock, aurora and the bouncing logo (no Plex, no games to show)', S._ready().join() === 'clock,aurora,bounce', S._ready().join());
 ctx.Store.settings.saverLooks = { clock: false, aurora: true, bounce: false };

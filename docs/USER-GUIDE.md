@@ -849,7 +849,7 @@ Set a PIN under **Settings > Parental controls**, then **Hold OK** on any channe
 
 ### Screensaver
 
-An OLED screen left on the same picture can wear in.  After a while with no button pressed (5 minutes unless you choose), on any screen but a video that plays, TiviBro's screensaver makes the screen almost black with one of these, a new one every 4 minutes:
+An OLED screen left on the same picture can wear in.  After a while with no button pressed (5 minutes unless you choose), while nothing plays (a video in the guide's preview, picture-in-picture or Multiview counts as playing), TiviBro's screensaver makes the screen almost black with one of these, a new one every 4 minutes:
 
 - **Clock**: a big, dim clock and the date, slowly wandering round the screen, with your next game under it.
 - **Aurora**: dark colours slowly drifting into each other, with a small clock that changes corner (not on TVs with 1 GB of memory).

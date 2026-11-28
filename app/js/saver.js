@@ -1,5 +1,5 @@
 /* TiviBro's own screensaver, for OLED TVs (Settings > Appearance > Screensaver).  After some minutes without a key
-   press on any screen but a playing video (and, on its own clock, over a video paused full screen), the screen goes
+   press while nothing plays (and, on its own clock, over a paused video), the screen goes
    almost black with the looks turned on in Settings, a new one every 4 minutes when there are several:
      clock    a big, thin, dim clock and the date, wandering slowly round the screen, with your next game under it;
      aurora   very dark coloured glows drifting into each other, with a small clock that changes corner;
@@ -26,20 +26,25 @@ var Saver = (function () {
   function looksOn() { var o = S().saverLooks || {}, l = LOOKS.filter(function (k) { return o[k] !== false; }); return l.length ? l : ['clock']; }
   function after() { return (+S().saverAfter || 5) * 60000; }
   function pausedAfter() { var v = S().saverPaused; return v === 0 || v === '0' ? 0 : (+v || 5) * 60000; }
-  function full() { return document.body.classList.contains('full'); }
   function paused() { return typeof Player !== 'undefined' && !!Player.current && !!Player.userPaused; }
+  // Is something playing anywhere: full screen, in the guide's preview, picture-in-picture or Multiview?
+  function playing() {
+    if (typeof Multiview !== 'undefined' && Multiview.open) return true;
+    return typeof Player !== 'undefined' && !!Player.current && !Player.userPaused;
+  }
 
-  /* Should it show now, after [idle] ms without a key?  Never while a video plays full screen; over a paused one
-     after its own wait (0: never); on any other screen after "Starts after".  Pure, for the tests. */
+  /* Should it show now, after [idle] ms without a key?  Never while a video plays, wherever it plays (a movie in the
+     preview window is still being watched); over a paused one after its own wait (0: never); with nothing playing
+     after "Starts after".  Pure, for the tests. */
   function due(o) {
-    if (!o.enabled || o.hidden) return false;
-    if (o.full) return o.paused && o.pausedAfter > 0 && o.idle >= o.pausedAfter;
+    if (!o.enabled || o.hidden || o.playing) return false;
+    if (o.paused) return o.pausedAfter > 0 && o.idle >= o.pausedAfter;
     return o.idle >= o.after;
   }
   function check() {
     var now = Date.now();
     if (on) { if (now - shiftAt > 60000) nudge(); if (now - lookAt > MIX_MS) pick(); if (!handed && S().saverHour !== 'keep' && now - since > HOUR) handOver(); return; }
-    if (due({ enabled: enabled(), hidden: document.hidden, full: full(), paused: paused(), idle: now - last, after: after(), pausedAfter: pausedAfter() })) show();
+    if (due({ enabled: enabled(), hidden: document.hidden, playing: playing(), paused: paused(), idle: now - last, after: after(), pausedAfter: pausedAfter() })) show();
   }
 
   /* ---------- Showing ---------- */
