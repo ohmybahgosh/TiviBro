@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **No guide chip over what you're watching.**  The Loading guide chip showed over a movie playing full screen (a Plex title, say).  It now waits until you leave full screen, like TiviBro's other background notes.
+
 ## 0.6.0 (alpha 233, 2026-11-27)
 
 Pre-release: expect rough edges, and keep a backup before installing.

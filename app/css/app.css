@@ -752,6 +752,8 @@ body.noguidenames .gch,body.noguidenames .guide-group{width:260px}
 .epgprog i{position:absolute;left:0;bottom:0;height:5px;background:var(--accent2);transition:width .4s}
 .epgprog i.indet{width:30%!important;animation:epgind 1.4s ease-in-out infinite}
 .epgprog.ok b,.epgprog.ok{color:var(--ok)} .epgprog.bad{color:#ff9a9d}
+/* Never over a video watched full screen (a channel, a movie, a Plex title): it comes back when you leave it, if the guide is still loading. */
+body.full .epgprog{display:none}
 @keyframes epgind{0%{left:-30%}100%{left:100%}}
 
 /* setup from a computer */
