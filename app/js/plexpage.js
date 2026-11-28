@@ -531,6 +531,9 @@ var PlexPage = (function () {
   function stopTimer() { clearInterval(timer); timer = 0; }
   function report(state) {
     var p = playing; if (!p || typeof Player === 'undefined') return;
+    /* Something else plays now (another movie, a channel), without this title's stop coming through: its
+       position isn't this title's.  Reporting it marked a Plex movie watched from another file's last minutes. */
+    if (state !== 'stopped' && Views.vodMeta !== p.meta) { stopTimer(); playing = null; return; }
     var at = Math.round((Player.position || 0) * 1000), dur = p.item.duration || Math.round((Player.duration || 0) * 1000);
     if (state !== 'stopped' && at === p.last) return;
     p.last = at;

@@ -184,6 +184,15 @@ const SHOTS = process.env.SHOTS || fs.mkdtempSync(path.join(os.tmpdir(), 'plex-s
     await page.waitForTimeout(10500);
     ok('where you are goes to Plex', /ratingKey=18/.test(m.state.timeline || '') && /state=(playing|paused)/.test(m.state.timeline || ''), m.state.timeline);
     ok('Plex\'s chapters go to the player', JSON.stringify(await ev(() => Views.vodMeta && Views.vodMeta.chapters)) === JSON.stringify([{ s: 0, e: 600, t: 'Opening' }, { s: 600, e: 7200, t: 'The ferry' }]));
+    // Something else starts without the title's own stop: its place is never sent to Plex as this title's (it marked a
+    // Plex movie watched from another file's last minutes).  Then the title again, for what follows.
+    const before = m.state.timeline;
+    await ev(() => Views.playVod({ id: 'other', title: 'Another movie', sub: '' }, 'http://127.0.0.1:8078/missing.mkv', 6800, function () {}));
+    await page.waitForTimeout(11000);
+    ok('another movie playing: nothing more goes to Plex for this title', m.state.timeline === before, m.state.timeline);
+    await ev(() => { Views.stopAll(); PlexPage.open({ ratingKey: '18', title: 'Northbound', type: 'movie', server: Plex.chosen()[0].id }, function () {}); });
+    await page.waitForFunction(() => (PlexPage._test.item() || {}).Media && PlexPage._test.buttons().length, null, { timeout: 8000 });
+    await key('ok'); await page.waitForTimeout(2500);
     const pic = await ev(() => Views.vodMeta && Views.vodMeta.pics ? Views.vodMeta.pics(125) : '');
     ok('seek previews come from the server\'s own pictures, through the door', /\/plex\/[0-9a-f]{48}\/library\/parts\/7\/indexes\/sd\/125000$/.test(pic), pic);
     ok('the picture is there', (await ev((u) => fetch(u).then((r) => r.status), pic)) === 200 && /indexes\/sd\/125000/.test(m.state.preview || ''));
