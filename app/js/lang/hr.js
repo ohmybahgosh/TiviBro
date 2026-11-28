@@ -2775,5 +2775,7 @@ I18n.add('hr', {
   "Shows it now.  Any button comes back here.": "Prikazuje ga sada.  Bilo koja tipka vraća ovamo.",
   "Starts after": "Počinje nakon",
   "When nobody has come back.": "Kad se nitko nije vratio.",
-  "Your teams' scores and next games, slowly wandering, when they have one.": "Rezultati i sljedeće utakmice vaših timova, koji polako lutaju zaslonom, kad ih imaju."
+  "Your teams' scores and next games, slowly wandering, when they have one.": "Rezultati i sljedeće utakmice vaših timova, koji polako lutaju zaslonom, kad ih imaju.",
+  "Family-friendly pictures only": "Samo obiteljski filmovi",
+  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Izostavlja naslove s oznakom R, NC-17 ili TV-MA te one bez oznake."
 });

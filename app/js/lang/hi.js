@@ -2775,5 +2775,7 @@ I18n.add('hi', {
   "Shows it now.  Any button comes back here.": "इसे अभी दिखाता है।  कोई भी बटन दबाने पर यहीं वापस आएंगे।",
   "Starts after": "शुरू होगा",
   "When nobody has come back.": "जब कोई वापस न आया हो।",
-  "Your teams' scores and next games, slowly wandering, when they have one.": "आपकी टीमों के स्कोर और अगले गेम, धीरे-धीरे इधर-उधर घूमते हुए, जब उनका कोई गेम हो।"
+  "Your teams' scores and next games, slowly wandering, when they have one.": "आपकी टीमों के स्कोर और अगले गेम, धीरे-धीरे इधर-उधर घूमते हुए, जब उनका कोई गेम हो।",
+  "Family-friendly pictures only": "सिर्फ़ फ़ैमिली-फ़्रेंडली फ़िल्में",
+  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "R, NC-17 या TV-MA रेटिंग वाले और बिना रेटिंग वाले टाइटल नहीं दिखाए जाते।"
 });

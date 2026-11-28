@@ -852,7 +852,7 @@ An OLED screen left on the same picture can wear in.  After a while with no butt
 - **Clock**: a big, dim clock and the date, slowly wandering round the screen, with your next game under it.
 - **Aurora**: dark colours slowly drifting into each other, with a small clock that changes corner (not on TVs with 1 GB of memory).
 - **From your Plex**: a picture from your Plex home, dimmed and slowly moving, with its title.
-- **My teams**: your teams' scores and next games, when they have one today.
+- **My teams**: your teams' games as scoreboard cards (both logos, the score or start time, LIVE while it's on), when they have one coming up.
 
 A look with nothing to show is skipped.  Nothing stays in one place: each look moves slowly, and the whole screen shifts a few pixels every minute.  Over a **paused video** it comes on too, after its own wait (5 minutes unless you choose).  The first button you press only brings TiviBro back, so it never changes the channel by accident.  While it shows, the TV's own screensaver waits; an hour in, it takes over for the night (or TiviBro's keeps going, if you choose).
 
@@ -1465,6 +1465,7 @@ Which screen TiviBro opens on, where the lists start, colours, sizes and what's 
 | **Starts after** | 2 · **5** · 10 · 15 · 30 minutes | How long without a button press before it comes on. |
 | **Over a paused video** | Never · 2 · **5** · 10 minutes | A paused picture is the hardest on an OLED screen. |
 | **Clock**, **Aurora**, **From your Plex**, **My teams** | **On** | Each look on or off.  With several on, they take turns every 4 minutes; one with nothing to show is skipped. |
+| **Family-friendly pictures only** *(From your Plex on)* | **On** · Off | Leaves titles rated R, NC-17 or TV-MA, and ones with no rating, out of the From your Plex look. |
 | **After an hour** | **Let the TV take over** · Keep going | When nobody has come back: the TV's own screensaver (or screen off) takes over, or TiviBro's keeps going. |
 | **Preview** | | Shows it now.  Any button comes back. |
 | **Start screen** | **Guide** · Channels screen | Under **Start and navigation**.  What TiviBro opens on, and where **Back** from other screens leads. |

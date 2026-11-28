@@ -2901,5 +2901,7 @@ I18n.add('es', {
   "Shows it now.  Any button comes back here.": "Se muestra ahora.  Cualquier botón vuelve aquí.",
   "Starts after": "Se activa después de",
   "When nobody has come back.": "Cuando nadie ha vuelto.",
-  "Your teams' scores and next games, slowly wandering, when they have one.": "Los marcadores y próximos partidos de tus equipos, que se desplazan lentamente, cuando los hay."
+  "Your teams' scores and next games, slowly wandering, when they have one.": "Los marcadores y próximos partidos de tus equipos, que se desplazan lentamente, cuando los hay.",
+  "Family-friendly pictures only": "Solo imágenes aptas para toda la familia",
+  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Excluye los títulos con clasificación R, NC-17 o TV-MA, y los que no tienen clasificación."
 });

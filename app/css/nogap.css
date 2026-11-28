@@ -68,6 +68,8 @@
 .nogap .mmp-buttons > * + *{margin-left:16px}
 .nogap .mmp-btn > * + *{margin-left:12px}
 .nogap .mmp-more > * + *{margin-left:22px}
+.nogap .saver .sv-games > * + *{margin-top:18px}
+.nogap .saver .sv-team > * + *{margin-left:20px}
 .nogap .spo-head > * + *{margin-left:22px}
 .nogap .sp-track > * + *{margin-left:24px}
 .nogap .sp-team > * + *{margin-left:18px}

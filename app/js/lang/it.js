@@ -2789,5 +2789,7 @@ I18n.add('it', {
   "Shows it now.  Any button comes back here.": "Lo mostra ora.  Premi un tasto qualsiasi per tornare qui.",
   "Starts after": "Si avvia dopo",
   "When nobody has come back.": "Quando nessuno è tornato.",
-  "Your teams' scores and next games, slowly wandering, when they have one.": "I risultati e le prossime partite delle tue squadre, che si spostano lentamente, quando ce n'è una."
+  "Your teams' scores and next games, slowly wandering, when they have one.": "I risultati e le prossime partite delle tue squadre, che si spostano lentamente, quando ce n'è una.",
+  "Family-friendly pictures only": "Solo film adatti a tutta la famiglia",
+  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Esclude i titoli classificati R, NC-17 o TV-MA e quelli senza classificazione."
 });

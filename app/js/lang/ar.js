@@ -2775,5 +2775,7 @@ I18n.add('ar', {
   "Shows it now.  Any button comes back here.": "يعرضها الآن.  أي زر يعيدك إلى هنا.",
   "Starts after": "يبدأ بعد",
   "When nobody has come back.": "عندما لا يعود أحد.",
-  "Your teams' scores and next games, slowly wandering, when they have one.": "نتائج فرقك ومبارياتها القادمة، تتحرك ببطء، عند وجود مباراة."
+  "Your teams' scores and next games, slowly wandering, when they have one.": "نتائج فرقك ومبارياتها القادمة، تتحرك ببطء، عند وجود مباراة.",
+  "Family-friendly pictures only": "الأفلام المناسبة للعائلة فقط",
+  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "يستبعد العناوين المصنفة R أو NC-17 أو TV-MA، والعناوين التي لا تحمل تصنيفًا."
 });

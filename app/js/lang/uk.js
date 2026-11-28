@@ -2775,5 +2775,7 @@ I18n.add('uk', {
   "Shows it now.  Any button comes back here.": "Показує її зараз.  Будь-яка кнопка повертає сюди.",
   "Starts after": "Запускається через",
   "When nobody has come back.": "Коли ніхто не повернувся.",
-  "Your teams' scores and next games, slowly wandering, when they have one.": "Рахунок ваших команд і найближчі матчі повільно пересуваються екраном, якщо вони є."
+  "Your teams' scores and next games, slowly wandering, when they have one.": "Рахунок ваших команд і найближчі матчі повільно пересуваються екраном, якщо вони є.",
+  "Family-friendly pictures only": "Лише сімейні фільми",
+  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Приховує назви з рейтингом R, NC-17 або TV-MA, а також без рейтингу."
 });

@@ -1795,6 +1795,7 @@ var Settings = (function () {
     out.push(toggle('Clock', 'A big, dim clock and the date, slowly wandering, with your next game.', getLook('clock'), setLook('clock')));
     out.push(toggle('Aurora', 'Dark colours slowly drifting into each other, with a small clock.  Not on TVs with 1 GB of memory.', getLook('aurora'), setLook('aurora')));
     out.push(toggle('From your Plex', 'A picture from your Plex home, dimmed and slowly moving, with its title.', getLook('library'), setLook('library')));
+    if (getLook('library')()) out.push(toggle('Family-friendly pictures only', 'Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.', function () { return s.saverRated !== false; }, function (v) { s.saverRated = v; save(); }));
     out.push(toggle('My teams', 'Your teams\' scores and next games, slowly wandering, when they have one.', getLook('teams'), setLook('teams')));
     out.push(choice('After an hour', 'When nobody has come back.', ['tv', 'keep'], ['Let the TV take over', 'Keep going'], function () { return s.saverHour === 'keep' ? 'keep' : 'tv'; }, function (v) { s.saverHour = v; save(); }));
     out.push(action('Preview', 'Shows it now.  Any button comes back here.', function () { if (typeof Saver !== 'undefined') Saver.preview(); }, function () { return 'OK'; }));

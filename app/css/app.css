@@ -1519,15 +1519,27 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .saver-layer{position:absolute;top:0;left:0;width:1920px;height:1080px;transition:transform 4s ease}
 .saver .sv-time{font-size:220px;font-weight:200;letter-spacing:-6px;line-height:1}
 .saver .sv-date{font-size:34px;font-weight:300;letter-spacing:1px;opacity:.8;margin-top:14px;padding-left:10px}
-.saver .sv-next{font-size:26px;font-weight:300;margin-top:40px;padding-left:10px;opacity:.55}
-.saver small{font-size:.7em;opacity:.7;margin-left:18px}
-@keyframes svWander{0%,100%{transform:translate(0,0)}25%{transform:translate(380px,-140px)}50%{transform:translate(620px,120px)}75%{transform:translate(160px,200px)}}
-.saver .sv-wander{position:absolute;left:480px;top:330px;animation:svWander 300s ease-in-out infinite}
-.saver .sv-games{margin-top:44px;padding-left:10px}
+@keyframes svWander{0%,100%{transform:translate(0,0)}25%{transform:translate(300px,-120px)}50%{transform:translate(560px,100px)}75%{transform:translate(140px,180px)}}
+@keyframes svWanderWide{0%,100%{transform:translate(0,0)}25%{transform:translate(380px,40px)}50%{transform:translate(600px,90px)}75%{transform:translate(200px,120px)}}
+.saver .sv-wander{position:absolute;left:300px;top:300px;animation:svWander 300s ease-in-out infinite;will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden}
 .saver .sv-row .sv-time{font-size:130px}
-.saver .sv-game{font-size:32px;font-weight:300;margin-bottom:22px;display:flex;align-items:center}
-.saver .sv-game i{width:12px;height:12px;border-radius:50%;border:2px solid #5D6A8C;margin-right:22px;box-sizing:border-box}
-.saver .sv-game.live i{background:#B5523B;border-color:#B5523B}
+/* The teams look: wider (the cards), so it starts further left and wanders less. */
+.saver .sv-wander.wide{left:140px;top:110px;animation-name:svWanderWide}
+/* A game as a scoreboard card (saver.js gameCard): both teams with their logos (ESPN's), the score or the start time
+   in the middle with the clock or "Final" under it, a red LIVE while it's on.  Dim greys on near-black, for OLED. */
+.saver .sv-games{margin-top:48px;display:flex;flex-direction:column;gap:18px;width:1040px}
+.saver .sv-card{display:flex;align-items:center;height:116px;padding:0 34px;border-radius:26px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);color:#A3AABD}
+.saver .sv-card.small{width:820px;height:96px;margin-top:44px}
+.saver .sv-team{flex:1;display:flex;align-items:center;gap:20px;font-size:34px;font-weight:400;min-width:0}
+.saver .sv-team span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.saver .sv-team.r{justify-content:flex-end;text-align:right}
+.saver .sv-logo{width:64px;height:64px;object-fit:contain;flex:none;opacity:.9}
+.saver .sv-card.small .sv-logo{width:52px;height:52px}
+.saver .sv-mid{width:250px;flex:none;text-align:center}
+.saver .sv-mid b{display:block;font-size:44px;font-weight:500;color:#C3C8D4;letter-spacing:1px}
+.saver .sv-mid small{display:block;font-size:22px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#7D8499;margin-top:4px}
+.saver .sv-card.live small{color:#C46A55}
+.saver .sv-card.live small:before{content:'';display:inline-block;width:10px;height:10px;border-radius:50%;background:#C46A55;margin-right:10px;vertical-align:2px}
 @keyframes svG1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(420px,160px) scale(1.25)}}
 @keyframes svG2{0%,100%{transform:translate(0,0) scale(1.1)}50%{transform:translate(-380px,-120px) scale(.9)}}
 @keyframes svG3{0%,100%{transform:translate(0,0)}50%{transform:translate(260px,-220px)}}
@@ -1536,15 +1548,15 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .saver .g2{left:900px;top:300px;width:1000px;height:760px;background:radial-gradient(closest-side,rgba(14,90,99,.5),rgba(0,0,0,0));animation:svG2 120s ease-in-out infinite}
 .saver .g3{left:520px;top:560px;width:760px;height:520px;background:radial-gradient(closest-side,rgba(74,42,122,.4),rgba(0,0,0,0));animation:svG3 150s ease-in-out infinite}
 @keyframes svCorner{0%,24%{transform:translate(0,0)}25%,49%{transform:translate(1180px,0)}50%,74%{transform:translate(1180px,-720px)}75%,100%{transform:translate(0,-720px)}}
-.saver .sv-corner{position:absolute;left:120px;top:860px;animation:svCorner 1200s steps(1) infinite}
+.saver .sv-corner{position:absolute;left:120px;top:860px;animation:svCorner 1200s steps(1) infinite;will-change:transform}
 .saver .sv-corner .sv-time,.saver .sv-topclock .sv-time{font-size:72px;letter-spacing:-2px}
 .saver .sv-corner .sv-date,.saver .sv-topclock .sv-date{font-size:22px;margin-top:6px;padding-left:0}
 @keyframes svKen{0%{transform:scale(1.04) translate(0,0)}100%{transform:scale(1.16) translate(-60px,-30px)}}
 .saver .sv-art{position:absolute;top:0;left:0;width:1920px;height:1080px;background-size:cover;background-position:center;opacity:0;transition:opacity 3s ease;animation:svKen 120s ease-in-out infinite alternate}
 .saver .sv-art.in{opacity:.5}
 .saver .sv-artshade{position:absolute;top:0;left:0;width:1920px;height:1080px;background:linear-gradient(0deg,#000 0,rgba(0,0,0,.75) 28%,rgba(0,0,0,0) 60%),linear-gradient(90deg,rgba(0,0,0,.6) 0,rgba(0,0,0,0) 45%)}
-.saver .sv-title{position:absolute;left:120px;bottom:110px;color:#A3A9BA}
-.saver .sv-kicker{font-size:18px;font-weight:600;letter-spacing:4px;color:#6F8BC2}
+.saver .sv-title{position:absolute;left:120px;bottom:110px;color:#A3A9BA;will-change:transform}
+.saver .sv-kicker{font-size:18px;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:#6F8BC2}
 .saver .sv-name{font-size:64px;font-weight:300;color:#B9BECB;margin:10px 0}
 .saver .sv-facts{font-size:24px;font-weight:300}
 .saver .sv-topclock{position:absolute;right:120px;top:90px;text-align:right}

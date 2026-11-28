@@ -2904,5 +2904,7 @@ I18n.add('ru', {
   "Shows it now.  Any button comes back here.": "Показывает её сейчас.  Любая кнопка возвращает сюда.",
   "Starts after": "Включать через",
   "When nobody has come back.": "Если никто не вернулся.",
-  "Your teams' scores and next games, slowly wandering, when they have one.": "Счёт и ближайшие матчи ваших команд медленно перемещаются по экрану, если матч запланирован."
+  "Your teams' scores and next games, slowly wandering, when they have one.": "Счёт и ближайшие матчи ваших команд медленно перемещаются по экрану, если матч запланирован.",
+  "Family-friendly pictures only": "Только семейное кино",
+  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Скрывает фильмы и сериалы с рейтингом R, NC-17 или TV-MA, а также без рейтинга."
 });

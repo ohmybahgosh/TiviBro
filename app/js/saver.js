@@ -16,7 +16,7 @@
 var Saver = (function () {
   'use strict';
   var T = function (s, v) { return typeof I18n !== 'undefined' ? I18n.t(s, v) : String(s).replace(/\{(\w+)\}/g, function (a, k) { return v && v[k] != null ? v[k] : a; }); };
-  var LOOKS = ['clock', 'aurora', 'library', 'teams'], MIX_MS = 4 * 60000, HOUR = 3600000, SHIFT = [[0, 0], [6, 2], [8, -4], [2, -8], [-4, -6], [-8, 0], [-6, 6], [0, 8]];
+  var homeRated = true, LOOKS = ['clock', 'aurora', 'library', 'teams'], MIX_MS = 4 * 60000, HOUR = 3600000, SHIFT = [[0, 0], [6, 2], [8, -4], [2, -8], [-4, -6], [-8, 0], [-6, 6], [0, 8]];
   var last = Date.now(), el = null, on = false, since = 0, look = '', lookAt = 0, ticks = [], shiftAt = 0, handed = false, home = null, homeAt = 0;
 
   function S() { return (typeof Store !== 'undefined' && Store.settings) || {}; }
@@ -100,18 +100,25 @@ var Saver = (function () {
       l.innerHTML = '<div class="sv-art" id="saverArt"></div><div class="sv-artshade"></div><div class="sv-title"><div class="sv-kicker">' + esc(T('In your Plex')) + '</div><div class="sv-name">' + esc(m.title) + '</div><div class="sv-facts">' + esc([m.year, m.genre].filter(Boolean).join('  ·  ')) + '</div></div><div class="sv-topclock">' + time + '</div>';
       PlexView.picture(m.server, m.art, 1920, 1080).then(function (u) { var x = document.getElementById('saverArt'); if (x && u) { x.style.backgroundImage = 'url("' + u + '")'; x.classList.add('in'); } }, function () {});
     } else if (look === 'teams') {
-      l.innerHTML = '<div class="sv-wander"><div class="sv-row">' + time + '</div><div class="sv-games">' + g.slice(0, 4).map(gameLine).join('') + '</div></div>';
+      l.innerHTML = '<div class="sv-wander wide"><div class="sv-row">' + time + '</div><div class="sv-games">' + g.slice(0, 4).map(function (x) { return gameCard(x); }).join('') + '</div></div>';
     } else {
-      l.innerHTML = '<div class="sv-wander">' + time + (next ? '<div class="sv-next">' + gameText(next) + '</div>' : '') + '</div>';
+      l.innerHTML = '<div class="sv-wander">' + time + (next ? gameCard(next, true) : '') + '</div>';
     }
   }
-  function gameText(x) {
-    var t = x.teams || [], a = t[0] || {}, b = t[1] || {};
-    if (x.state === 'in') return esc(a.name + '  ' + a.score + '  –  ' + b.score + '  ' + b.name) + '<small>' + esc(x.detail) + '</small>';
-    if (x.state === 'post') return esc(a.name + '  ' + a.score + '  –  ' + b.score + '  ' + b.name) + '<small>' + esc(T('Final')) + '</small>';
-    return esc(T('{x} at {y}', { x: a.name, y: b.name })) + '<small>' + esc(typeof U !== 'undefined' && U.hhmm ? U.hhmm(x.s) : '') + '</small>';
+  /* A game as a card: the visiting team (logo, name), the score (or the start time) with the clock, "Final" or the day
+     under it, and the home team.  [small]: the single card under the clock look. */
+  function gameCard(x, small) {
+    var t = x.teams || [], a = t[0] || {}, b = t[1] || {}, on = x.state === 'in', done = x.state === 'post';
+    var team = function (m, right) {
+      var logo = m.logo ? '<img class="sv-logo" src="' + esc(m.logo) + '" alt="">' : '';
+      return '<div class="sv-team' + (right ? ' r' : '') + '">' + (right ? '<span>' + esc(m.name) + '</span>' + logo : logo + '<span>' + esc(m.name) + '</span>') + '</div>';
+    };
+    var when = typeof U !== 'undefined' && U.hhmm ? U.hhmm(x.s) : '';
+    var mid = on || done ? '<b>' + esc(a.score + ' – ' + b.score) + '</b><small>' + esc(on ? (x.detail || T('Live')) : T('Final')) + '</small>'
+      : '<b>' + esc(when) + '</b><small>' + esc(new Date(x.s).toDateString() === new Date().toDateString() ? T('Today') : dayOf(x.s)) + '</small>';
+    return '<div class="sv-card' + (on ? ' live' : '') + (small ? ' small' : '') + '">' + team(a) + '<div class="sv-mid">' + mid + '</div>' + team(b, true) + '</div>';
   }
-  function gameLine(x) { return '<div class="sv-game' + (x.state === 'in' ? ' live' : '') + '"><i></i>' + gameText(x) + '</div>'; }
+  function dayOf(ms) { try { return new Date(ms).toLocaleDateString(typeof I18n !== 'undefined' && I18n.lang ? I18n.lang() : undefined, { weekday: 'short' }); } catch (e) { return ''; } }
 
   /* ---------- What the looks show ---------- */
   // Your teams' games the Sports screen knows (on now first, then today's next), read again when the saver starts.
@@ -124,16 +131,22 @@ var Saver = (function () {
     if (typeof Sports === 'undefined' || !Sports.refreshToday || !Sports.followedLeagues) return;
     try { Sports.refreshToday(Sports.followedLeagues()).then(function () { if (on && (look === 'teams' || look === 'clock')) draw(); }, function () {}); } catch (e) {}
   }
+  /* Family-friendly pictures only (saverRated, on unless turned off): a title rated R, NC-17 or TV-MA, or with no
+     rating, is left out.  Plex's own ratings (contentRating); for an episode, its show's when the row has it. */
+  var FAMILY = /^(G|PG|PG-13|TV-Y|TV-Y7|TV-Y7-FV|TV-G|TV-PG|TV-14|gb\/(U|PG|12A?)|de\/(0|6|12)|ca\/(G|PG|14A))$/i;
+  function rated(m) { return S().saverRated === false || FAMILY.test(String(m.contentRating || m.grandparentContentRating || '').trim()); }
   // Titles from the Plex home rows with a backdrop, read once an hour at most.
   function homeArt() { return home || []; }
   function readHome() {
+    if (home && homeRated !== (S().saverRated !== false)) homeAt = 0;   // the switch changed: read again
+    homeRated = S().saverRated !== false;
     if (typeof PlexView === 'undefined' || typeof Plex === 'undefined' || !Plex.chosen || !Plex.chosen().length || Date.now() - homeAt < HOUR) return;
     homeAt = Date.now();
     PlexView.read.home().then(function (rows) {
       var seen = {}, out = [];
       (rows || []).forEach(function (r) { (r.items || []).forEach(function (m) {
         var art = m.art || m.grandparentArt, k = m.server + ':' + (m.grandparentRatingKey || m.ratingKey);
-        if (!art || seen[k] || !/^(movie|episode|show)$/.test(m.type)) return;
+        if (!art || seen[k] || !/^(movie|episode|show)$/.test(m.type) || !rated(m)) return;
         seen[k] = 1; out.push({ server: m.server, art: art, title: m.type === 'episode' ? m.grandparentTitle : m.title, year: m.year || '', genre: ((m.Genre || [])[0] || {}).tag || '' });
       }); });
       home = out.slice(0, 60);
@@ -150,5 +163,5 @@ var Saver = (function () {
   function holds() { return enabled() && !document.hidden && !handed; }
   function start() { setInterval(check, 15000); }
   function preview() { last = 0; show(); }
-  return { start: start, activity: activity, holds: holds, enabled: enabled, preview: preview, get on() { return on; }, LOOKS: LOOKS, _due: due, _ready: ready };
+  return { start: start, activity: activity, holds: holds, enabled: enabled, preview: preview, get on() { return on; }, LOOKS: LOOKS, _due: due, _ready: ready, _rated: rated };
 })();

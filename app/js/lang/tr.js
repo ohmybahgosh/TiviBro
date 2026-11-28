@@ -2789,5 +2789,7 @@ I18n.add('tr', {
   "Shows it now.  Any button comes back here.": "Şimdi gösterir.  Herhangi bir tuşa basınca buraya dönersiniz.",
   "Starts after": "Başlama süresi",
   "When nobody has come back.": "Kimse geri dönmediğinde.",
-  "Your teams' scores and next games, slowly wandering, when they have one.": "Takımlarınızın skorları ve sonraki maçları, varsa, yavaşça dolaşarak gösterilir."
+  "Your teams' scores and next games, slowly wandering, when they have one.": "Takımlarınızın skorları ve sonraki maçları, varsa, yavaşça dolaşarak gösterilir.",
+  "Family-friendly pictures only": "Yalnızca aile dostu filmler",
+  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "R, NC-17 veya TV-MA derecelendirmeli yapımlar ile derecelendirmesi olmayanlar gösterilmez."
 });

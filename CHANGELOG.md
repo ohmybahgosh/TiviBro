@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **The screensaver's games as scoreboard cards.**  Each game with both teams' logos, the score or start time and the clock, LIVE in red while it's on; bigger, steadier text that no longer flickers.  **Family-friendly pictures only** (on) keeps titles rated R, NC-17 or TV-MA out of the From your Plex look.
+
 ## 0.6.0 (alpha 232, 2026-11-27)
 
 Pre-release: expect rough edges, and keep a backup before installing.

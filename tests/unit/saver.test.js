@@ -20,6 +20,9 @@ ctx.Store.settings.saverLooks = { clock: false, aurora: true };
 ok('a look turned off is left out', S._ready().join() === 'aurora', S._ready().join());
 ctx.Store.settings.saverLooks = { clock: false, aurora: false, library: false, teams: false };
 ok('all turned off: the clock anyway', S._ready().join() === 'clock', S._ready().join());
+ok('family-friendly: PG-13 and TV-14 in, R, TV-MA and no rating out', S._rated({ contentRating: 'PG-13' }) && S._rated({ contentRating: 'TV-14' }) && !S._rated({ contentRating: 'R' }) && !S._rated({ contentRating: 'TV-MA' }) && !S._rated({}));
+ctx.Store.settings.saverRated = false;
+ok('…and with the switch off, everything', S._rated({ contentRating: 'R' }) && S._rated({}));
 ctx.Store.settings.saver = 'off';
 ok('Screensaver off: it never holds the TV\'s back', !S.holds() && !S.enabled());
 if (fail) { console.log(fail + ' screensaver test(s) failed'); process.exit(1); }

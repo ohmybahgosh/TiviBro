@@ -2791,5 +2791,7 @@ I18n.add('de', {
   "Shows it now.  Any button comes back here.": "Zeigt ihn jetzt.  Mit jeder Taste kommst du hierher zurück.",
   "Starts after": "Startet nach",
   "When nobody has come back.": "Wenn niemand zurückgekommen ist.",
-  "Your teams' scores and next games, slowly wandering, when they have one.": "Die Ergebnisse und nächsten Spiele deiner Teams, langsam wandernd, sofern sie eines haben."
+  "Your teams' scores and next games, slowly wandering, when they have one.": "Die Ergebnisse und nächsten Spiele deiner Teams, langsam wandernd, sofern sie eines haben.",
+  "Family-friendly pictures only": "Nur familienfreundliche Filme",
+  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Blendet Titel mit der Freigabe R, NC-17 oder TV-MA aus, ebenso Titel ohne Altersfreigabe."
 });

@@ -2789,5 +2789,7 @@ I18n.add('nl', {
   "Shows it now.  Any button comes back here.": "Toont hem nu.  Met elke knop kom je hier terug.",
   "Starts after": "Start na",
   "When nobody has come back.": "Als er niemand is teruggekomen.",
-  "Your teams' scores and next games, slowly wandering, when they have one.": "De uitslagen en volgende wedstrijden van je teams, langzaam rondzwevend, als ze er een hebben."
+  "Your teams' scores and next games, slowly wandering, when they have one.": "De uitslagen en volgende wedstrijden van je teams, langzaam rondzwevend, als ze er een hebben.",
+  "Family-friendly pictures only": "Alleen gezinsvriendelijke films",
+  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Slaat titels met de rating R, NC-17 of TV-MA over, en titels zonder rating."
 });
