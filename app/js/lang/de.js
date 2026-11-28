@@ -2834,5 +2834,11 @@ I18n.add('de', {
   "Qualifying, sprints and the race": "Qualifying, Sprints und das Rennen",
   "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men's college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men's and women's, and the big T20 leagues' teams) and Formula 1.  Other college sports, women's college games, junior and minor league teams, and other leagues aren't in it yet.": "Die großen nordamerikanischen Ligen (NFL, NBA, NHL, MLB, WNBA und MLS), College-Football (die FBS-Schulen), College-Basketball der Männer (diese Schulen und die wichtigsten Division-I-Schulen ohne FBS-Football), Cricket (die Nationalteams, Männer und Frauen, und die Teams der großen T20-Ligen) und Formel 1.  Andere College-Sportarten, College-Spiele der Frauen, Junioren- und Minor-League-Teams und andere Ligen sind noch nicht dabei.",
   "The race only": "Nur das Rennen",
-  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Welche Sessions eines Rennwochenendes in Meine Teams kommen, mit Erinnerungen, wenn sie laufen."
+  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Welche Sessions eines Rennwochenendes in Meine Teams kommen, mit Erinnerungen, wenn sie laufen.",
+  "Couldn't change the Guide button: {x}": "Die TV-Guide-Taste konnte nicht geändert werden: {x}",
+  "The Guide button opens TiviBro now": "Die TV-Guide-Taste öffnet jetzt TiviBro",
+  "The Guide button opens the TV's guide again": "Die TV-Guide-Taste öffnet wieder den TV-Guide des Fernsehers",
+  "The TV's Guide button": "Die TV-Guide-Taste des Fernsehers",
+  "The TV's Guide button opens TiviBro": "Die TV-Guide-Taste des Fernsehers öffnet TiviBro",
+  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "Die TV-Guide-Taste der Fernbedienung öffnet den TV-Guide von TiviBro statt den des Fernsehers, von überall aus und auch nach einem Neustart des Fernsehers.  Aus: wieder der TV-Guide des Fernsehers."
 });

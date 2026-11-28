@@ -2832,5 +2832,11 @@ I18n.add('it', {
   "Qualifying, sprints and the race": "Qualifiche, sprint e la gara",
   "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men's college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men's and women's, and the big T20 leagues' teams) and Formula 1.  Other college sports, women's college games, junior and minor league teams, and other leagues aren't in it yet.": "Le principali leghe nordamericane (NFL, NBA, NHL, MLB, WNBA e MLS), il football universitario (le scuole FBS), il basket universitario maschile (quelle scuole e le principali di Division I senza football FBS), il cricket (le nazionali, maschili e femminili, e le squadre delle grandi leghe T20) e la Formula 1.  Altri sport universitari, le partite universitarie femminili, le squadre giovanili e delle leghe minori, e altre leghe non ci sono ancora.",
   "The race only": "Solo la gara",
-  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Quali sessioni di un weekend di gara vanno in Le mie squadre, con promemoria quando sono in onda."
+  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Quali sessioni di un weekend di gara vanno in Le mie squadre, con promemoria quando sono in onda.",
+  "Couldn't change the Guide button: {x}": "Impossibile cambiare il tasto Guida: {x}",
+  "The Guide button opens TiviBro now": "Il tasto Guida ora apre TiviBro",
+  "The Guide button opens the TV's guide again": "Il tasto Guida apre di nuovo la guida della TV",
+  "The TV's Guide button": "Il tasto Guida della TV",
+  "The TV's Guide button opens TiviBro": "Il tasto Guida della TV apre TiviBro",
+  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "Il tasto Guida del telecomando apre la guida di TiviBro invece di quella della TV, da qualsiasi punto, anche dopo un riavvio della TV.  Disattivato: di nuovo la guida della TV."
 });

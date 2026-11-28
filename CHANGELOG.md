@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **The remote's Guide button can open TiviBro.**  On a rooted TV, Settings > Remote and buttons > The TV's Guide button opens TiviBro: the Guide button then opens TiviBro's guide from anywhere, also after the TV restarts.
+
 ## 0.6.0 (alpha 235, 2026-11-28)
 
 Pre-release: expect rough edges, and keep a backup before installing.

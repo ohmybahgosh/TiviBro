@@ -639,6 +639,11 @@ function create(opts) {
     var reply = function (code, obj) { res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(obj)); };
     var done = function (e) { if (e) return reply(409, { error: e.message }); reply(200, status()); };
     if (u === '/companion/status') return reply(200, status());
+    // The remote's Guide button (service.js guideKey): GET whether it opens TiviBro; POST { on } below.
+    if (u === '/companion/guidekey' && req.method === 'GET') {
+      if (!opts.guideKey) return reply(501, { error: 'not on this TV' });
+      return opts.guideKey('status', function (e, st) { reply(e ? 409 : 200, e ? { error: e.message } : { on: st === 'on' }); });
+    }
     // The TV's power state for TiviBro's screensaver, while it has turned the screen off ("Active" again: a button woke it).
     if (u === '/companion/screen' && req.method === 'GET') return reply(200, { power: opts.power ? opts.power() || '' : '' });
     // Changes made on the phone while TiviBro was away: handed over once, for TiviBro to make now (setsnap.js).
@@ -694,6 +699,11 @@ function create(opts) {
         st.phones = st.phones.filter(function (x) { return x.id !== j.id; });
         if (st.phones.length !== before) { save(); log({ lv: 'info', event: 'companion: phone removed on the TV' }); }
         return done();
+      }
+      // The remote's Guide button opening TiviBro, or the TV's own guide again (service.js guideKey).
+      if (u === '/companion/guidekey' && req.method === 'POST') {
+        if (!opts.guideKey) return reply(501, { error: 'not on this TV' });
+        return opts.guideKey(j.on ? 'install' : 'remove', function (e, st) { reply(e ? 409 : 200, e ? { error: e.message } : { on: st === 'on' }); });
       }
       // TiviBro's screensaver turning the screen off, or on again (service.js screen).
       if (u === '/companion/screen' && req.method === 'POST') {

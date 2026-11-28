@@ -3451,5 +3451,11 @@ I18n.add('pt-BR', {
   "Qualifying, sprints and the race": "Classificação, sprints e a corrida",
   "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men's college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men's and women's, and the big T20 leagues' teams) and Formula 1.  Other college sports, women's college games, junior and minor league teams, and other leagues aren't in it yet.": "As principais ligas da América do Norte (NFL, NBA, NHL, MLB, WNBA e MLS), o futebol americano universitário (as escolas da FBS), o basquete universitário masculino (essas escolas e as principais da Divisão I sem futebol FBS), o críquete (as seleções, masculinas e femininas, e os times das grandes ligas T20) e a Fórmula 1.  Outros esportes universitários, jogos universitários femininos, times de base e de ligas menores, e outras ligas ainda não estão incluídos.",
   "The race only": "Só a corrida",
-  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Quais sessões de um fim de semana de corrida vão para Meus times, com lembretes quando estiverem passando."
+  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Quais sessões de um fim de semana de corrida vão para Meus times, com lembretes quando estiverem passando.",
+  "Couldn't change the Guide button: {x}": "Não foi possível mudar o botão Guia: {x}",
+  "The Guide button opens TiviBro now": "O botão Guia agora abre o TiviBro",
+  "The Guide button opens the TV's guide again": "O botão Guia volta a abrir o guia da TV",
+  "The TV's Guide button": "O botão Guia da TV",
+  "The TV's Guide button opens TiviBro": "O botão Guia da TV abre o TiviBro",
+  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "O botão Guia do controle abre o guia do TiviBro em vez do guia da TV, de qualquer lugar, e continua assim depois que a TV reinicia.  Desligado: o guia da própria TV de novo."
 });

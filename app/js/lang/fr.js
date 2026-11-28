@@ -2100,5 +2100,11 @@ I18n.add('fr', {
   "Qualifying, sprints and the race": "Qualifications, sprints et la course",
   "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men's college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men's and women's, and the big T20 leagues' teams) and Formula 1.  Other college sports, women's college games, junior and minor league teams, and other leagues aren't in it yet.": "Les grandes ligues nord-américaines (NFL, NBA, NHL, MLB, WNBA et MLS), le football universitaire (les écoles FBS), le basket universitaire masculin (ces écoles et les principales de Division I sans football FBS), le cricket (les équipes nationales, masculines et féminines, et les équipes des grandes ligues T20) et la Formule 1.  Les autres sports universitaires, les matchs universitaires féminins, les équipes juniors et de ligues mineures, et les autres ligues n'y sont pas encore.",
   "The race only": "La course seulement",
-  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Quelles séances d'un week-end de course vont dans Mes équipes, avec des rappels quand elles passent."
+  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Quelles séances d'un week-end de course vont dans Mes équipes, avec des rappels quand elles passent.",
+  "Couldn't change the Guide button: {x}": "Impossible de changer le bouton Guide : {x}",
+  "The Guide button opens TiviBro now": "Le bouton Guide ouvre maintenant TiviBro",
+  "The Guide button opens the TV's guide again": "Le bouton Guide ouvre de nouveau le guide de la TV",
+  "The TV's Guide button": "Le bouton Guide de la TV",
+  "The TV's Guide button opens TiviBro": "Le bouton Guide de la TV ouvre TiviBro",
+  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "Le bouton Guide de la télécommande ouvre le guide de TiviBro au lieu de celui de la TV, depuis n'importe où, et même après un redémarrage de la TV.  Désactivé : de nouveau le guide de la TV."
 });

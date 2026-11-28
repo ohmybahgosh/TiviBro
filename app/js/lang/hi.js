@@ -2818,5 +2818,11 @@ I18n.add('hi', {
   "Qualifying, sprints and the race": "क्वालिफ़ाइंग, स्प्रिंट और रेस",
   "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men's college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men's and women's, and the big T20 leagues' teams) and Formula 1.  Other college sports, women's college games, junior and minor league teams, and other leagues aren't in it yet.": "उत्तरी अमेरिका की बड़ी लीग (NFL, NBA, NHL, MLB, WNBA और MLS), कॉलेज फ़ुटबॉल (FBS स्कूल), पुरुषों का कॉलेज बास्केटबॉल (वही स्कूल और FBS फ़ुटबॉल के बिना मुख्य Division I स्कूल), क्रिकेट (पुरुष और महिला राष्ट्रीय टीमें, और बड़ी T20 लीग की टीमें) और फ़ॉर्मूला 1।  दूसरे कॉलेज खेल, महिलाओं के कॉलेज मैच, जूनियर और माइनर लीग टीमें, और दूसरी लीग अभी इसमें नहीं हैं।",
   "The race only": "सिर्फ़ रेस",
-  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "रेस वीकेंड के कौन से सेशन मेरी टीमें में जाएँ, उनके चलने पर रिमाइंडर के साथ।"
+  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "रेस वीकेंड के कौन से सेशन मेरी टीमें में जाएँ, उनके चलने पर रिमाइंडर के साथ।",
+  "Couldn't change the Guide button: {x}": "गाइड बटन नहीं बदल सका: {x}",
+  "The Guide button opens TiviBro now": "गाइड बटन अब TiviBro खोलता है",
+  "The Guide button opens the TV's guide again": "गाइड बटन फिर से TV की गाइड खोलता है",
+  "The TV's Guide button": "TV का गाइड बटन",
+  "The TV's Guide button opens TiviBro": "TV का गाइड बटन TiviBro खोलता है",
+  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "रिमोट का गाइड बटन TV की गाइड के बजाय TiviBro की गाइड खोलता है, कहीं से भी, और TV के रीस्टार्ट होने के बाद भी।  बंद: फिर से TV की अपनी गाइड।"
 });

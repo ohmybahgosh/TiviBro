@@ -2818,5 +2818,11 @@ I18n.add('ar', {
   "Qualifying, sprints and the race": "التأهيل والسباقات القصيرة والسباق",
   "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men's college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men's and women's, and the big T20 leagues' teams) and Formula 1.  Other college sports, women's college games, junior and minor league teams, and other leagues aren't in it yet.": "الدوريات الكبرى في أمريكا الشمالية (NFL وNBA وNHL وMLB وWNBA وMLS)، وكرة القدم الأمريكية الجامعية (مدارس FBS)، وكرة السلة الجامعية للرجال (تلك المدارس والمدارس الرئيسية في Division I بلا كرة قدم FBS)، والكريكيت (المنتخبات الوطنية للرجال والسيدات، وفرق دوريات T20 الكبرى) والفورمولا 1.  الرياضات الجامعية الأخرى ومباريات السيدات الجامعية وفرق الناشئين والدوريات الصغرى والدوريات الأخرى ليست فيه بعد.",
   "The race only": "السباق فقط",
-  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "أي جلسات من عطلة السباق تذهب إلى فرقي، مع تذكيرات عند عرضها."
+  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "أي جلسات من عطلة السباق تذهب إلى فرقي، مع تذكيرات عند عرضها.",
+  "Couldn't change the Guide button: {x}": "تعذّر تغيير زر الدليل: {x}",
+  "The Guide button opens TiviBro now": "زر الدليل يفتح TiviBro الآن",
+  "The Guide button opens the TV's guide again": "زر الدليل يفتح دليل التلفاز من جديد",
+  "The TV's Guide button": "زر الدليل في التلفاز",
+  "The TV's Guide button opens TiviBro": "زر الدليل في التلفاز يفتح TiviBro",
+  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "زر الدليل في جهاز التحكم يفتح دليل TiviBro بدلًا من دليل التلفاز، من أي مكان، وحتى بعد إعادة تشغيل التلفاز.  إيقاف: دليل التلفاز نفسه من جديد."
 });

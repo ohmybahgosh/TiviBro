@@ -2945,5 +2945,11 @@ I18n.add('ru', {
   "Qualifying, sprints and the race": "Квалификация, спринты и гонка",
   "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men's college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men's and women's, and the big T20 leagues' teams) and Formula 1.  Other college sports, women's college games, junior and minor league teams, and other leagues aren't in it yet.": "Главные лиги Северной Америки (NFL, NBA, NHL, MLB, WNBA и MLS), студенческий американский футбол (школы FBS), мужской студенческий баскетбол (эти школы и главные школы Division I без футбола FBS), крикет (сборные, мужские и женские, и команды больших лиг T20) и Формула-1.  Других студенческих видов спорта, женских студенческих матчей, юниорских команд и команд низших лиг, а также других лиг пока нет.",
   "The race only": "Только гонка",
-  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Какие сессии гоночного уикенда попадают в «Мои команды», с напоминаниями, когда они идут."
+  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Какие сессии гоночного уикенда попадают в «Мои команды», с напоминаниями, когда они идут.",
+  "Couldn't change the Guide button: {x}": "Не удалось изменить кнопку Телегид: {x}",
+  "The Guide button opens TiviBro now": "Кнопка Телегид теперь открывает TiviBro",
+  "The Guide button opens the TV's guide again": "Кнопка Телегид снова открывает телегид телевизора",
+  "The TV's Guide button": "Кнопка Телегид телевизора",
+  "The TV's Guide button opens TiviBro": "Кнопка Телегид телевизора открывает TiviBro",
+  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "Кнопка Телегид на пульте открывает телегид TiviBro вместо телегида телевизора, откуда угодно, и после перезапуска телевизора тоже.  Выкл.: снова телегид телевизора."
 });

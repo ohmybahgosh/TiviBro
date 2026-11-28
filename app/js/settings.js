@@ -705,6 +705,7 @@ var Settings = (function () {
     out.push(head('On the Channels screen')); out = out.concat(keysPage('list'));
     out.push(page('Quick menu buttons', 'Which buttons show when you press OK in fullscreen, and in what order.', 'Quick menu buttons', quickButtons));
     out.push(head('Extra buttons'));
+    out = out.concat(guideKeyRows());
     out.push(tvOnly(action('Learn a button', 'For keys the app does not know yet.  Press this, then press the button.  Some buttons belong to the TV (Home, Live TV, the TV\'s own Guide, Input, Settings): webOS acts on them before TiviBro hears them, so they leave TiviBro and can\'t be learned.', function () {
       U.toast('Press the button to learn', 5000);
       UI.captureNext(function (code, known) {
@@ -719,6 +720,29 @@ var Settings = (function () {
     out.push(head(''));
     out.push(action('Restore default buttons', '', function () { UI.confirm('Restore every button to its default?', 'Restore', function () { Keymap.reset(); U.toast('Default buttons restored'); build(); }); }));
     return out;
+  }
+  /* The TV's Guide button (service/guidekey.sh): webOS opens its own guide before any app hears the button, so on
+     a rooted TV the helper watches for that as root and opens TiviBro's guide instead, after restarts too.  The
+     state is the helper's (asked when the page is drawn); a TV without the Homebrew Channel gets a line saying so. */
+  var guideKey = { on: null, at: 0 };
+  function guideKeyAsk(body) {
+    if (typeof Net === 'undefined' || !Net.port) return Promise.reject(new Error('The network helper is not running'));
+    return Net.ctlFetch('http://127.0.0.1:' + Net.port + '/companion/guidekey', body ? { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { cache: 'no-store' })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status); return j; }); });
+  }
+  function guideKeyRows() {
+    var rooted = typeof Update !== 'undefined' && Update.state && Update.state.installer === 'hbchannel';
+    if (!rooted) return [info('The TV\'s Guide button', 'Can open TiviBro\'s guide on a rooted TV (the Homebrew Channel).  Elsewhere it belongs to the TV.')];
+    if (Date.now() - guideKey.at > 30000) {
+      guideKey.at = Date.now();
+      guideKeyAsk(null).then(function (j) { if (guideKey.on !== !!j.on) { guideKey.on = !!j.on; paint(); } }, function () {});
+    }
+    return [toggle('The TV\'s Guide button opens TiviBro', 'The remote\'s Guide button opens TiviBro\'s guide instead of the TV\'s, from anywhere, and still after the TV restarts.  Off: the TV\'s own guide again.',
+      function () { return !!guideKey.on; }, function (v) {
+        guideKey.on = v; paint();
+        guideKeyAsk({ on: v }).then(function (j) { guideKey.on = !!j.on; guideKey.at = Date.now(); paint(); U.toast(j.on ? T('The Guide button opens TiviBro now') : T('The Guide button opens the TV\'s guide again')); },
+          function (e) { guideKey.on = !v; paint(); U.toast(T('Couldn\'t change the Guide button: {x}', { x: e && e.message || '' }), 6000); });
+      })];
   }
   function keysPage(ctx) {
     var out = [];

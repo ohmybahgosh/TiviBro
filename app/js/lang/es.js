@@ -2942,5 +2942,11 @@ I18n.add('es', {
   "Qualifying, sprints and the race": "Clasificación, sprints y la carrera",
   "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men's college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men's and women's, and the big T20 leagues' teams) and Formula 1.  Other college sports, women's college games, junior and minor league teams, and other leagues aren't in it yet.": "Las grandes ligas de Norteamérica (NFL, NBA, NHL, MLB, WNBA y MLS), el fútbol americano universitario (las escuelas FBS), el baloncesto universitario masculino (esas escuelas y las principales de la División I sin fútbol FBS), el críquet (las selecciones nacionales, masculinas y femeninas, y los equipos de las grandes ligas T20) y la Fórmula 1.  Otros deportes universitarios, los partidos universitarios femeninos, los equipos juveniles y de ligas menores, y otras ligas, aún no están.",
   "The race only": "Solo la carrera",
-  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Qué sesiones de un fin de semana de carreras van a Mis equipos, con recordatorios cuando se emiten."
+  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Qué sesiones de un fin de semana de carreras van a Mis equipos, con recordatorios cuando se emiten.",
+  "Couldn't change the Guide button: {x}": "No se pudo cambiar el botón Guía: {x}",
+  "The Guide button opens TiviBro now": "El botón Guía ahora abre TiviBro",
+  "The Guide button opens the TV's guide again": "El botón Guía vuelve a abrir la guía de la TV",
+  "The TV's Guide button": "El botón Guía de la TV",
+  "The TV's Guide button opens TiviBro": "El botón Guía de la TV abre TiviBro",
+  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "El botón Guía del mando abre la guía de TiviBro en lugar de la de la TV, desde cualquier lugar, y también después de reiniciar la TV.  Desactivado: otra vez la guía de la TV."
 });

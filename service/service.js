@@ -182,6 +182,16 @@ var companion = require('./companion').create({
     }
     next();
   },
+  /* The remote's Guide button opening TiviBro (guidekey.sh), on a rooted TV: op 'install', 'remove' or 'status',
+     run as root through the Homebrew Channel.  cb(error, 'on' | 'off').  No Homebrew Channel: an error. */
+  guideKey: function (op, cb) {
+    if (!/^(install|remove|status)$/.test(op)) return cb(new Error('bad op'));
+    lcall('luna://org.webosbrew.hbchannel.service/exec', { command: 'sh ' + JSON.stringify(require('path').join(__dirname, 'guidekey.sh')) + ' ' + op }, function (r) {
+      var out = String(r && (r.stdoutString || r.stdout) || ''), m = /\b(on|off)\s*$/.exec(out);
+      if (!r || r.returnValue === false || !m) return cb(new Error((r && r.errorText) || out.trim().slice(0, 200) || 'needs a rooted TV'));
+      cb(null, m[1]);
+    });
+  },
   // Wake on BLE: the phone's made-up Bluetooth address, registered with the TV's asc service (blewake.js).
   blewake: require('./blewake').create({ call: lcall, log: function (o) { proxy.log(o); } }).handle,
   editor: function () { return relay ? relay.editor : null; },

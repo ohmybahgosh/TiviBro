@@ -2832,5 +2832,11 @@ I18n.add('tr', {
   "Qualifying, sprints and the race": "Sıralama, sprintler ve yarış",
   "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men's college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men's and women's, and the big T20 leagues' teams) and Formula 1.  Other college sports, women's college games, junior and minor league teams, and other leagues aren't in it yet.": "Kuzey Amerika’nın büyük ligleri (NFL, NBA, NHL, MLB, WNBA ve MLS), üniversite futbolu (FBS okulları), erkek üniversite basketbolu (bu okullar ve FBS futbolu olmayan başlıca Division I okulları), kriket (erkek ve kadın milli takımlar ile büyük T20 liglerinin takımları) ve Formula 1.  Diğer üniversite sporları, kadın üniversite maçları, genç ve alt lig takımları ve diğer ligler henüz yok.",
   "The race only": "Sadece yarış",
-  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Bir yarış hafta sonunun hangi seanslarının Takımlarım’a gideceği, yayındayken hatırlatıcılarla."
+  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Bir yarış hafta sonunun hangi seanslarının Takımlarım’a gideceği, yayındayken hatırlatıcılarla.",
+  "Couldn't change the Guide button: {x}": "Rehber tuşu değiştirilemedi: {x}",
+  "The Guide button opens TiviBro now": "Rehber tuşu artık TiviBro’yu açıyor",
+  "The Guide button opens the TV's guide again": "Rehber tuşu yeniden TV’nin rehberini açıyor",
+  "The TV's Guide button": "TV’nin Rehber tuşu",
+  "The TV's Guide button opens TiviBro": "TV’nin Rehber tuşu TiviBro’yu açar",
+  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "Kumandanın Rehber tuşu, TV’nin rehberi yerine TiviBro’nun rehberini açar; her yerden ve TV yeniden başladıktan sonra da.  Kapalı: yeniden TV’nin kendi rehberi."
 });

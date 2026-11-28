@@ -2832,5 +2832,11 @@ I18n.add('nl', {
   "Qualifying, sprints and the race": "Kwalificatie, sprints en de race",
   "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men's college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men's and women's, and the big T20 leagues' teams) and Formula 1.  Other college sports, women's college games, junior and minor league teams, and other leagues aren't in it yet.": "De grote Noord-Amerikaanse competities (NFL, NBA, NHL, MLB, WNBA en MLS), universiteitsfootball (de FBS-scholen), universiteitsbasketbal voor mannen (die scholen en de belangrijkste Division I-scholen zonder FBS-football), cricket (de nationale teams, mannen en vrouwen, en de teams van de grote T20-competities) en Formule 1.  Andere universiteitssporten, universiteitswedstrijden van vrouwen, jeugd- en lagere-divisieteams en andere competities zitten er nog niet in.",
   "The race only": "Alleen de race",
-  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Welke sessies van een raceweekend naar Mijn teams gaan, met herinneringen als ze uitgezonden worden."
+  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Welke sessies van een raceweekend naar Mijn teams gaan, met herinneringen als ze uitgezonden worden.",
+  "Couldn't change the Guide button: {x}": "Kon de Gids-knop niet wijzigen: {x}",
+  "The Guide button opens TiviBro now": "De Gids-knop opent nu TiviBro",
+  "The Guide button opens the TV's guide again": "De Gids-knop opent weer de gids van de tv",
+  "The TV's Guide button": "De Gids-knop van de tv",
+  "The TV's Guide button opens TiviBro": "De Gids-knop van de tv opent TiviBro",
+  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "De Gids-knop van de afstandsbediening opent de gids van TiviBro in plaats van die van de tv, vanaf overal, ook na een herstart van de tv.  Uit: weer de gids van de tv."
 });

@@ -2818,5 +2818,11 @@ I18n.add('hr', {
   "Qualifying, sprints and the race": "Kvalifikacije, sprintovi i utrka",
   "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men's college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men's and women's, and the big T20 leagues' teams) and Formula 1.  Other college sports, women's college games, junior and minor league teams, and other leagues aren't in it yet.": "Glavne sjevernoameričke lige (NFL, NBA, NHL, MLB, WNBA i MLS), sveučilišni američki nogomet (FBS škole), muška sveučilišna košarka (te škole i glavne Division I škole bez FBS nogometa), kriket (reprezentacije, muške i ženske, i timovi velikih T20 liga) i Formula 1.  Ostali sveučilišni sportovi, ženske sveučilišne utakmice, juniorski timovi i timovi nižih liga te druge lige još nisu uključeni.",
   "The race only": "Samo utrka",
-  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Koje sesije trkaćeg vikenda idu u Moji timovi, s podsjetnicima kad su na programu."
+  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Koje sesije trkaćeg vikenda idu u Moji timovi, s podsjetnicima kad su na programu.",
+  "Couldn't change the Guide button: {x}": "Nije uspjela promjena tipke Vodič: {x}",
+  "The Guide button opens TiviBro now": "Tipka Vodič sada otvara TiviBro",
+  "The Guide button opens the TV's guide again": "Tipka Vodič opet otvara vodič televizora",
+  "The TV's Guide button": "Tipka Vodič televizora",
+  "The TV's Guide button opens TiviBro": "Tipka Vodič televizora otvara TiviBro",
+  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "Tipka Vodič na daljinskom otvara vodič TiviBroa umjesto vodiča televizora, s bilo kojeg mjesta, i nakon ponovnog pokretanja televizora.  Isključeno: opet vodič televizora."
 });

@@ -2832,5 +2832,11 @@ I18n.add('pl', {
   "Qualifying, sprints and the race": "Kwalifikacje, sprinty i wyścig",
   "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men's college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men's and women's, and the big T20 leagues' teams) and Formula 1.  Other college sports, women's college games, junior and minor league teams, and other leagues aren't in it yet.": "Główne ligi Ameryki Północnej (NFL, NBA, NHL, MLB, WNBA i MLS), futbol uniwersytecki (szkoły FBS), męska koszykówka uniwersytecka (te szkoły i główne szkoły Division I bez futbolu FBS), krykiet (reprezentacje, męskie i żeńskie, oraz drużyny dużych lig T20) i Formuła 1.  Innych sportów uniwersyteckich, kobiecych meczów uniwersyteckich, drużyn juniorskich i niższych lig oraz innych lig jeszcze nie ma.",
   "The race only": "Tylko wyścig",
-  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Które sesje weekendu wyścigowego trafiają do Moje drużyny, z przypomnieniami, gdy są na antenie."
+  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Które sesje weekendu wyścigowego trafiają do Moje drużyny, z przypomnieniami, gdy są na antenie.",
+  "Couldn't change the Guide button: {x}": "Nie udało się zmienić przycisku Przewodnik: {x}",
+  "The Guide button opens TiviBro now": "Przycisk Przewodnik otwiera teraz TiviBro",
+  "The Guide button opens the TV's guide again": "Przycisk Przewodnik znów otwiera przewodnik telewizora",
+  "The TV's Guide button": "Przycisk Przewodnik telewizora",
+  "The TV's Guide button opens TiviBro": "Przycisk Przewodnik telewizora otwiera TiviBro",
+  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "Przycisk Przewodnik na pilocie otwiera przewodnik TiviBro zamiast przewodnika telewizora, z każdego miejsca, także po ponownym uruchomieniu telewizora.  Wył.: znów przewodnik telewizora."
 });

@@ -2818,5 +2818,11 @@ I18n.add('uk', {
   "Qualifying, sprints and the race": "Кваліфікація, спринти й гонка",
   "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men's college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men's and women's, and the big T20 leagues' teams) and Formula 1.  Other college sports, women's college games, junior and minor league teams, and other leagues aren't in it yet.": "Головні ліги Північної Америки (NFL, NBA, NHL, MLB, WNBA і MLS), студентський американський футбол (школи FBS), чоловічий студентський баскетбол (ці школи та головні школи Division I без футболу FBS), крикет (збірні, чоловічі й жіночі, і команди великих ліг T20) та Формула-1.  Інших студентських видів спорту, жіночих студентських матчів, юніорських команд і команд нижчих ліг, а також інших ліг поки немає.",
   "The race only": "Лише гонка",
-  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Які сесії гоночного вікенду потрапляють у «Мої команди», з нагадуваннями, коли вони йдуть."
+  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Які сесії гоночного вікенду потрапляють у «Мої команди», з нагадуваннями, коли вони йдуть.",
+  "Couldn't change the Guide button: {x}": "Не вдалося змінити кнопку Телепрограма: {x}",
+  "The Guide button opens TiviBro now": "Кнопка Телепрограма тепер відкриває TiviBro",
+  "The Guide button opens the TV's guide again": "Кнопка Телепрограма знову відкриває телепрограму телевізора",
+  "The TV's Guide button": "Кнопка Телепрограма телевізора",
+  "The TV's Guide button opens TiviBro": "Кнопка Телепрограма телевізора відкриває TiviBro",
+  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "Кнопка Телепрограма на пульті відкриває телепрограму TiviBro замість телепрограми телевізора, звідусіль, і після перезапуску телевізора теж.  Вимк.: знову телепрограма телевізора."
 });
