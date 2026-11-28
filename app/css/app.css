@@ -1808,6 +1808,8 @@ table.sp-lscore tr.lost .sp-mini{opacity:.5}
 .sp-cap{font-size:21px;font-weight:700;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin:4px 0 10px}
 .sp-cap ~ .sp-cap{margin-top:22px}
 .sp-muted{font-size:26px;color:var(--muted);line-height:1.4}
+.sp-muted b{font-weight:600;margin-right:10px}
+.sp-muted.sp-me{color:var(--text)}
 table.sp-lscore{width:100%;border-collapse:collapse;font-size:27px;font-variant-numeric:tabular-nums}
 table.sp-lscore th{font-size:20px;font-weight:600;color:var(--muted);padding:6px 8px;text-align:center}
 table.sp-lscore td{padding:10px 8px;text-align:center;border-top:1px solid var(--line);color:var(--text)}

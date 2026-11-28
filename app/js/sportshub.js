@@ -91,7 +91,13 @@ var SportsHub = (function () {
     var rr = recOf(g, cs);
     if (rr) { var rb = U.el('span', 'sp-recb' + (rr.status === 'recording' ? ' on' : '')); rb.appendChild(U.el('i')); rb.appendChild(document.createTextNode(rr.status === 'recording' ? T('REC') : T('RECORDING SET'))); el.appendChild(rb); }
     if (g.teams.length === 2) { el.appendChild(teamRow(g, g.teams[0], g.teams[1])); el.appendChild(teamRow(g, g.teams[1], g.teams[0])); }
-    else { el.appendChild(U.el('div', 'sp-event', RAW(g.name))); if (g.venue) el.appendChild(U.el('div', 'sp-venue', RAW(g.venue))); }
+    else {
+      el.appendChild(U.el('div', 'sp-event', RAW(g.name)));
+      // A race weekend's session (sports.js race): which one, then its first three once it has run.
+      if (g.session) el.appendChild(U.el('div', 'sp-venue', T(g.session) + (g.top && g.top.length ? '' : g.venue ? '  ·  ' + g.venue : '')));
+      if (g.session && g.top && g.top.length) el.appendChild(U.el('div', 'sp-venue', RAW(g.top.join('   '))));
+      else if (!g.session && g.venue) el.appendChild(U.el('div', 'sp-venue', RAW(g.venue)));
+    }
     el.appendChild(sportIcon(g.lg, 'card'));                    // bottom right, beside the time and channel
     var meta = U.el('div', 'sp-meta');
     if (g.state === 'in') meta.appendChild(U.el('span', 'sp-live', T('LIVE')));
@@ -360,7 +366,10 @@ var SportsHub = (function () {
       big.appendChild(U.el('span', fin && fin.w !== 1 ? 'lost' : '', h.score != null ? String(h.score) : ''));
       mid.appendChild(big);
     }
-    else if (g.teams.length !== 2) mid.appendChild(U.el('div', 'sp-big ev', RAW(g.name)));
+    else if (g.teams.length !== 2) {
+      mid.appendChild(U.el('div', 'sp-big ev', RAW(g.name)));
+      if (g.session) mid.appendChild(U.el('div', 'sp-note', T(g.session) + (g.top && g.top.length ? '   ·   ' + g.top.join('   ') : '') + (g.venue ? '   ·   ' + g.venue : '')));
+    }
     else mid.appendChild(U.el('div', 'sp-big pre', g.state === 'pre' ? U.hhmm(g.s) : T('Score hidden')));
     var line = U.el('div', 'sp-wline');
     if (g.state === 'in') line.appendChild(U.el('span', 'sp-live', T('LIVE')));
@@ -378,6 +387,16 @@ var SportsHub = (function () {
     // Left: box score and leaders (not while the score is hidden).
     var left = U.el('div', 'sp-panel sp-box');
     if (hide) left.appendChild(U.el('div', 'sp-muted', T('The score is hidden.  Show the score above when you\'ve watched it.')));
+    // A race weekend (sports.js race): its sessions, when each is or was, and the first three of those run.
+    else if (g.session) {
+      left.appendChild(U.el('div', 'sp-cap', T('The weekend')));
+      Sports.all().filter(function (x) { return x.ev && x.ev === g.ev; }).sort(function (a, b) { return a.s - b.s; }).forEach(function (x) {
+        var when = x.state === 'in' ? T('LIVE') : x.state === 'post' ? (x.top && x.top.length ? RAW(x.top.join('   ')) : T('Final')) : U.day(x.s) + '  ' + U.hhmm(x.s);
+        var ln = U.el('div', 'sp-muted' + (x.id === g.id ? ' sp-me' : ''));
+        ln.appendChild(U.el('b', '', T(x.session))); ln.appendChild(document.createTextNode('   ' + when));
+        left.appendChild(ln);
+      });
+    }
     else if (!sum) left.appendChild(U.el('div', 'sp-muted', g.state === 'pre' ? T('The box score starts with the game.') : T('Loading the box score…')));
     // Cricket: no box score by period; how the match stands and which match of which series it is.
     else if (sum.none) { if (g.detail) left.appendChild(U.el('div', 'sp-cap', RAW(g.detail))); if (g.note) left.appendChild(U.el('div', 'sp-muted', RAW(g.note))); }
@@ -442,12 +461,12 @@ var SportsHub = (function () {
       var mineT = g.teams.filter(function (t) { return t.id && Teams.follows(t.id); })[0];
       var gr = (mineT && sum.standings.filter(function (x) { return x.rows.some(function (r) { return whose(r) === mineT; }); })[0]) || sum.standings[0];
       var blk = U.el('div', 'sp-panel sp-standblk');
-      blk.appendChild(U.el('div', 'sp-cap', gr.name || T('Standings')));
+      blk.appendChild(U.el('div', 'sp-cap', gr.race ? T(gr.name) : gr.name || T('Standings')));
       var cols = U.el('div', 'sp-standcols'), half = gr.rows.length > 8 ? Math.ceil(gr.rows.length / 2) : gr.rows.length;
       [gr.rows.slice(0, half), gr.rows.slice(half)].forEach(function (part, pi) {
         if (!part.length) return;
         var st = U.el('table', 'sp-stand'), hr2 = U.el('tr');
-        hr2.appendChild(U.el('th', '', '')); hr2.appendChild(U.el('th', '', T('W-L'))); hr2.appendChild(U.el('th', '', gr.rows[0] && gr.rows[0].extra ? gr.rows[0].extra.k : '')); st.appendChild(hr2);
+        hr2.appendChild(U.el('th', '', '')); hr2.appendChild(U.el('th', '', gr.race ? '' : T('W-L'))); hr2.appendChild(U.el('th', '', gr.rows[0] && gr.rows[0].extra ? gr.rows[0].extra.k : '')); st.appendChild(hr2);
         part.forEach(function (r, i) {
           var wt = whose(r), tr = U.el('tr', wt ? 'me' : ''), nt = U.el('td');
           nt.appendChild(U.el('span', 'sp-pos', String(pi * half + i + 1)));

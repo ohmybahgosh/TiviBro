@@ -313,7 +313,7 @@ var Phone = (function () {
       function chans(g) { return Sports.channels(g).slice(0, 8).map(function (x) { return { k: x.c.k, n: Library.name(x.c), logo: Views.logoOf(x.c) || '', what: x.p ? x.p.t : x.net ? x.net + ' shows it' : '' }; }); }
       function one(g, full) {
         var cs = full ? chans(g) : chans(g).slice(0, 1);
-        return { id: g.id, lg: g.lg, league: (Sports.league(g.lg) || {}).name || '', s: g.s, state: g.state, detail: g.detail, hidden: Sports.hidden(g) ? 1 : 0, name: g.name,
+        return { id: g.id, lg: g.lg, league: (Sports.league(g.lg) || {}).name || '', s: g.s, state: g.state, detail: g.detail, hidden: Sports.hidden(g) ? 1 : 0, name: g.session ? g.name + ' · ' + I18n.t(g.session) : g.name,
           teams: g.teams.map(function (t) { return team(g, t); }), nets: g.nets, venue: g.venue, note: g.note, chans: cs, r: cs[0] && Sports.reminded(g, Library.find(cs[0].k)) ? 1 : 0 };
       }
       var op = String(a.op || 'list');

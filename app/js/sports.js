@@ -101,6 +101,24 @@ var Sports = (function () {
       detail: ty.shortDetail || ty.detail || '', clock: st.displayClock || '', period: st.period || 0, name: e.name || e.shortName || '',
       teams: teams, nets: nets, venue: c.venue && c.venue.fullName || '', note: (c.notes || [])[0] && c.notes[0].headline || '' };
   }
+  /* A race weekend (Formula 1, discussion #200): ESPN's event holds each session (practice, qualifying, the sprint,
+     the race) as a competition of its own, with its time, state and broadcasters.  One item per session, so the
+     row shows the weekend's times and each session is live, reminded of or found in the guide on its own.  The
+     first three of a session run or finished are under it ("1 K. Antonelli  2 G. Russell  3 L. Norris"). */
+  // The sessions' names, translated where they're shown (sportshub.js); T() here only marks them for the translations.
+  function T(x) { return x; }
+  var SESSION = { fp1: T('Practice 1'), fp2: T('Practice 2'), fp3: T('Practice 3'), qual: T('Qualifying'), ss: T('Sprint qualifying'), sq: T('Sprint qualifying'), sprint: T('Sprint'), race: T('Race') };
+  function race(lg, e) {
+    return (e.competitions || []).map(function (c, i) {
+      var ty = (c.status || {}).type || {}, ab = String((c.type || {}).abbreviation || '').toLowerCase(), nets = [];
+      (c.broadcasts || []).forEach(function (b) { (b.names || []).forEach(function (n) { if (nets.indexOf(n) < 0) nets.push(n); }); });
+      var top = (c.competitors || []).filter(function (x) { return x.athlete && x.order; }).sort(function (a, b) { return a.order - b.order; }).slice(0, 3)
+        .map(function (x) { return x.order + ' ' + (x.athlete.shortName || x.athlete.displayName || ''); });
+      return { id: String(e.id) + '-' + (c.id || i), ev: String(e.id), lg: lg.id, s: Date.parse(c.date || c.startDate) || 0, state: ty.state || 'pre', done: !!ty.completed,
+        detail: ty.shortDetail || ty.detail || '', clock: '', period: 0, name: e.name || e.shortName || '', session: SESSION[ab] || (c.type || {}).text || ab.toUpperCase(),
+        teams: [], nets: nets, venue: (e.circuit && e.circuit.fullName) || '', note: '', top: ty.state === 'pre' ? [] : top };
+    }).filter(function (g) { return g.s; });
+  }
   // The cricket series kept besides internationals: the big T20 leagues and the world events.
   var CRICKET_LEAGUES = /premier league|big bash|super league|the hundred|sa20|international league t20|caribbean premier|major league cricket|world cup|champions trophy|asia cup|world test championship/i;
   /* Cricket from ESPN's header for the sport (site.web.api.espn.com/apis/v2/scoreboard/header?sport=cricket): the
@@ -140,7 +158,8 @@ var Sports = (function () {
     var url = lg.header ? 'https://site.web.api.espn.com/apis/v2/scoreboard/header?sport=' + lg.header + '&lang=en&region=us'
       : BASE + lg.path + '/scoreboard' + (today ? '' : '?dates=' + key) + (lg.id === 'ncaab' || lg.id === 'ncaaf' ? (today ? '?' : '&') + 'limit=100' : '');
     busy[bk] = fetch(url, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('ESPN said ' + r.status); return r.json(); }).then(function (j) {
-      var list = lg.header ? cricket(lg, j) : (j.events || []).map(function (e) { return game(lg, e); }).filter(function (g) { return g.s && (lg.race || g.teams.length === 2); });
+      var list = lg.header ? cricket(lg, j) : lg.race ? [].concat.apply([], (j.events || []).map(function (e) { return race(lg, e); }))
+        : (j.events || []).map(function (e) { return game(lg, e); }).filter(function (g) { return g.s && g.teams.length === 2; });
       store[lg.id][key] = { at: Date.now(), games: list };
       // Days gone by aren't kept (TiviBro can stay open for days).
       var y = dayKey(-4); Object.keys(store[lg.id]).forEach(function (k) { if (k < y) delete store[lg.id][k]; });
@@ -203,6 +222,7 @@ var Sports = (function () {
     if (!lg) return Promise.resolve(null);
     // Cricket: the card has it all (the scores, how it stands, the series); no box score by period.
     if (lg.header) return Promise.resolve({ lines: [], leaders: [], standings: [], venue: g.venue || '', city: '', none: true });
+    if (lg.race) return raceStandings(lg, force);
     if (!force && c && Date.now() - c.at < ttl) return Promise.resolve(c.v);
     return fetch(BASE + lg.path + '/summary?event=' + encodeURIComponent(g.id), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('ESPN said ' + r.status); return r.json(); }).then(function (j) {
       var v = readSummary(j);
@@ -210,6 +230,28 @@ var Sports = (function () {
       sums[g.id] = { at: Date.now(), v: v };
       return v;
     }, function (e) { if (typeof Log !== 'undefined') Log.warn('sports', 'Game page not loaded: ' + (e && e.message)); return c ? c.v : null; });
+  }
+  /* A race league's page: the drivers' and the teams' championship, as the standings of a game's page are drawn
+     (.../apis/v2/sports/racing/f1/standings), kept an hour. */
+  var raceSt = {};
+  function raceStandings(lg, force) {
+    var c = raceSt[lg.id];
+    if (!force && c && Date.now() - c.at < 3600e3) return Promise.resolve(c.v);
+    return fetch('https://site.api.espn.com/apis/v2/sports/' + lg.path + '/standings', { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('ESPN said ' + r.status); return r.json(); }).then(function (j) {
+      var v = { lines: [], leaders: [], venue: '', city: '', standings: readRaceStandings(j) };
+      raceSt[lg.id] = { at: Date.now(), v: v };
+      return v;
+    }, function (e) { if (typeof Log !== 'undefined') Log.warn('sports', lg.name + ' standings not loaded: ' + (e && e.message)); return c ? c.v : null; });
+  }
+  function readRaceStandings(j) {
+    return (j.children || []).map(function (ch) {
+      var drivers = /driver/i.test(ch.name || '');
+      return { race: 1, name: drivers ? T('Drivers\' championship') : T('Constructors\' championship'), rows: ((ch.standings || {}).entries || []).slice(0, 20).map(function (e) {
+        var st = {}; (e.stats || []).forEach(function (x) { st[x.name] = x.displayValue; });
+        var who = drivers ? e.athlete && (e.athlete.shortName || e.athlete.displayName) : e.team && (e.team.displayName || e.team.name);
+        return { team: who || '', rec: '', extra: { k: 'PTS', v: st.championshipPts || st.points || '0' }, streak: '', logo: '' };
+      }) };
+    }).filter(function (g) { return g.rows.length; });
   }
   function readSummary(j) {
     var comp = j.header && j.header.competitions && j.header.competitions[0] || {};
@@ -425,6 +467,28 @@ var Sports = (function () {
       if (c && CRICKET_CH.test(squash(Library.name(c))) && atMatch(g, r.p) && right(cnorm(r.p.t)) && !/ highlights | replay /.test(cnorm(r.p.t))) add(c, r.p, 'net', 2);
     });
   }
+  /* A race weekend's session in the guide (ESPN names its broadcasters, but rarely a channel you have: Apple TV,
+     F1 TV): a Formula 1 programme at the session's time naming that session ("F1: Qatar GP Qualifying", "Formula
+     1 Live: Practice 2") first, then any Formula 1 programme then. */
+  var RACE_WORDS = /formula\s*(1|one)|\bf1\b|grand prix|\bgp\b/i, RACE_NOT = /highlights|replay|review|preview|reaction|notebook|classic|rewind|show\b|debrief/i;
+  function sessionIn(sess, t) {
+    var n = String(sess || '').toLowerCase(), m = /practice (\d)/.exec(n);
+    if (m) return new RegExp('practice\\s*' + m[1] + '|\\bfp\\s*' + m[1] + '\\b', 'i').test(t);
+    if (n === 'sprint qualifying') return /sprint\s*(qualifying|shootout|quali)/i.test(t);
+    if (n === 'sprint') return /sprint/i.test(t) && !/qualifying|shootout|quali/i.test(t);
+    if (n === 'qualifying') return /qualifying|\bquali\b|\bqualy\b/i.test(t) && !/sprint/i.test(t);
+    if (n === 'race') return /\brace\b|grand prix|\bgp\b/i.test(t) && !/practice|\bfp\d|qualifying|quali|sprint/i.test(t);
+    return false;
+  }
+  function raceChannels(g, add) {
+    if (typeof Epg === 'undefined' || !Epg.search) return;
+    Epg.search(function (t) { return RACE_WORDS.test(t) && !RACE_NOT.test(t); }, 300).forEach(function (r) {
+      if (!atMatch(g, r.p)) return;
+      if (sessionIn(g.session, r.p.t)) return add(chanOf(r.key), r.p, 'guide', 0);
+      // One that doesn't say the session: only when it's on over the session's start (not the one before).
+      if (r.p.s <= g.s + 10 * 60000 && r.p.e > g.s) add(chanOf(r.key), r.p, 'net', 2);
+    });
+  }
   function channelsOf(g, gm) {
     var out = [], seen = {}, ids = g.teams.map(function (t) { return t.id; }).filter(Boolean);
     function add(c, p, how, rank, net) { if (!c || seen[c.k] || !shown(c)) return; seen[c.k] = 1; out.push({ c: c, p: p || null, how: how, net: net || '', r: rank - (Library.isFav && Library.isFav(c.k) ? 0.5 : 0) }); }
@@ -438,6 +502,7 @@ var Sports = (function () {
     });
     g.nets.forEach(function (n) { byNet(n).forEach(function (c) { add(c, null, 'net', 2, n); }); });
     if (g.lg === 'cricket') cricketChannels(g, add);
+    else if (BY[g.lg] && BY[g.lg].race) raceChannels(g, add);
     out.sort(function (a, b) { return a.r - b.r || (a.c.num || 9e9) - (b.c.num || 9e9); });
     return out;
   }
@@ -470,7 +535,8 @@ var Sports = (function () {
       var today = fresh(day(lg.id, 0)), when = '', list = today;
       if (today && !today.length) { list = fresh(day(lg.id, 1)); when = t('Tomorrow'); }
       if (!list || !list.length) return;                     // not loaded yet, or nothing
-      out.push({ id: 'lg:' + lg.id, title: lg.name, sub: (when ? when + '  ·  ' : '') + (list.length === 1 ? t('1 game') : t('{n} games', { n: list.length })), items: list.slice().sort(order) });
+        var many = lg.race ? (list.length === 1 ? t('1 session') : t('{n} sessions', { n: list.length })) : list.length === 1 ? t('1 game') : t('{n} games', { n: list.length });
+      out.push({ id: 'lg:' + lg.id, title: lg.name, sub: (when ? when + '  ·  ' : '') + many, items: list.slice().sort(order) });
     });
     // Your order of the rows (Blue on Sports), the rest after them as they come.
     var ord = Array.isArray(S().sportsOrder) ? S().sportsOrder : [];
@@ -498,11 +564,11 @@ var Sports = (function () {
 
   function changed() { listeners.forEach(function (f) { try { f(); } catch (e) {} }); }
   function onChange(f) { listeners.push(f); }
-  // "Lions at Packers" (the guide's and reminders' way of naming a game).
-  function title(g) { return g.teams.length === 2 ? g.teams[0].name + ' at ' + g.teams[1].name : g.name; }
+  // "Lions at Packers" (the guide's and reminders' way of naming a game); a race weekend's "Qatar Grand Prix: Qualifying".
+  function title(g) { return g.teams.length === 2 ? g.teams[0].name + ' at ' + g.teams[1].name : g.session ? g.name + ': ' + g.session : g.name; }
 
   return { darkLogo: darkLogo, netChannels: netChannels, covered: covered, rowOrder: rowOrder, setOrder: setOrder, rows: rows, follows: follows, reminded: reminded, remind: remind, loaded: loaded, refreshToday: refreshToday, byId: byId, summary: summary, gameOn: gameOn, hidesTeam: hidesTeam, hideTeam: hideTeam, hidden: hidden, reveal: reveal, followedLeagues: followedLeagues, _readSummary: readSummary,
     LEAGUES: LEAGUES, league: function (id) { return BY[id]; }, leagues: leagues, setLeagues: setLeagues, refresh: refresh, anyLive: anyLive, all: all, day: day, errOf: errOf,
-    channels: channels, byNet: byNet, title: title, onChange: onChange, dayKey: dayKey, LIVE_MS: LIVE_MS, TODAY_MS: TODAY_MS, _game: game, _squash: squash, _bare: bare, _sideNames: sideNames, _store: store };
+    channels: channels, byNet: byNet, title: title, onChange: onChange, dayKey: dayKey, LIVE_MS: LIVE_MS, TODAY_MS: TODAY_MS, _game: game, _squash: squash, _bare: bare, _sideNames: sideNames, _race: race, _raceStandings: readRaceStandings, _sessionIn: sessionIn, _store: store };
 })();
 if (typeof module !== 'undefined') module.exports = Sports;
