@@ -2142,7 +2142,6 @@ I18n.add('hr', {
   "The lists most liked on Trakt.": "Popisi koji se najviše sviđaju na usluzi Trakt.",
   "The log goes too, with logins and server names taken out.": "Zapisnik se šalje također, s uklonjenim prijavama i nazivima poslužitelja.",
   "The login saved with": "Prijava spremljena uz",
-  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools) and men's college basketball (those schools and the main Division I ones without FBS football).  Other college sports, women's college games, junior and minor league teams, and other countries' leagues, aren't in it yet.": "Glavne sjevernoameričke lige (NFL, NBA, NHL, MLB, WNBA i MLS), sveučilišni američki nogomet (škole iz FBS-a) i muška sveučilišna košarka (te škole i glavne škole Divizije I bez FBS nogometa).  Ostali sveučilišni sportovi, ženske sveučilišne utakmice, juniorske i niželigaške momčadi te lige drugih zemalja još nisu uključeni.",
   "The most the player downloads ahead while playing.  Movies can fill it; live channels usually stay lower, since the provider only sends a little ahead of real time.": "Najviše što reproduktor unaprijed preuzima tijekom reprodukcije.  Filmovi ga mogu napuniti; kanali uživo obično ostaju niže, jer pružatelj šalje samo malo unaprijed u odnosu na stvarno vrijeme.",
   "The network helper is not running": "Mrežni pomoćnik nije pokrenut",
   "The network helper is not running, so the editor cannot start.  See Settings, System.": "Mrežni pomoćnik nije pokrenut pa se uređivač ne može pokrenuti.  Pogledajte Postavke, Sustav.",
@@ -2810,5 +2809,14 @@ I18n.add('hr', {
   "The drive's partition recordings and live pause go to.": "Particija diska na koju idu snimke i pauza uživo.",
   "The weekend": "Vikend",
   "Turn the screen off instead": "Umjesto toga isključi zaslon",
-  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Kad ništa ne svira, zaslon se gasi kao s TV-ovom funkcijom Isključi zaslon, umjesto da prikazuje izgled.  Bilo koja tipka ga ponovno uključuje.  Preko pauziranog videa i dalje se prikazuju izgledi ispod."
+  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Kad ništa ne svira, zaslon se gasi kao s TV-ovom funkcijom Isključi zaslon, umjesto da prikazuje izgled.  Bilo koja tipka ga ponovno uključuje.  Preko pauziranog videa i dalje se prikazuju izgledi ispod.",
+  "Cricket": "Kriket",
+  "Every session": "Svaka sesija",
+  "Formula 1": "Formula 1",
+  "Formula 1 sessions": "Sesije Formule 1",
+  "Its sessions in My teams, with reminders if you want them": "Njezine sesije u Moji timovi, s podsjetnicima ako želiš",
+  "Qualifying, sprints and the race": "Kvalifikacije, sprintovi i utrka",
+  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men's college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men's and women's, and the big T20 leagues' teams) and Formula 1.  Other college sports, women's college games, junior and minor league teams, and other leagues aren't in it yet.": "Glavne sjevernoameričke lige (NFL, NBA, NHL, MLB, WNBA i MLS), sveučilišni američki nogomet (FBS škole), muška sveučilišna košarka (te škole i glavne Division I škole bez FBS nogometa), kriket (reprezentacije, muške i ženske, i timovi velikih T20 liga) i Formula 1.  Ostali sveučilišni sportovi, ženske sveučilišne utakmice, juniorski timovi i timovi nižih liga te druge lige još nisu uključeni.",
+  "The race only": "Samo utrka",
+  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Koje sesije trkaćeg vikenda idu u Moji timovi, s podsjetnicima kad su na programu."
 });

@@ -27,12 +27,14 @@ var SportsLive = (function () {
     var s = U.el('div', 'sp-bt');
     if (t.logo) { var im = new Image(); im.src = t.logo; im.alt = ''; im.onerror = function () { this.remove(); }; s.appendChild(im); }
     s.appendChild(U.el('span', '', t.abbr));
-    s.appendChild(U.el('b', '', t.score != null ? String(t.score) : ''));
+    // Cricket's score as written, less the overs: "245/6 (42.3 ov)" is 245/6 in the corner.
+    s.appendChild(U.el('b', '', t.score != null ? String(t.score).replace(/\s*\([^)]*\)\s*$/, '') : ''));
     return s;
   }
   function clockOf(g) {
     if (g.state === 'post') return T('Final');
     if (g.state === 'pre') return U.hhmm(g.s);
+    if (g.text) return T('LIVE');                         // cricket: how it stands is a sentence, too long for the corner
     var d = g.detail.split(/\s+-\s+/);                    // "2:10 - 4th", "End of 3rd", "Halftime"
     return d.length === 2 ? d[1] + '\n' + d[0] : g.detail;
   }
@@ -122,7 +124,8 @@ var SportsLive = (function () {
       if (g.state === 'in') said['i' + g.id] = 1;
       if (g.state === 'post' && said['i' + g.id] && !said['f' + g.id] && now - g.s < 6 * 3600e3) {
         said['f' + g.id] = 1;
-        if (!onScreen(g) && finalSaid(g)) U.toast(T('Final') + ':  ' + RAW(g.teams[0].name + ' ' + g.teams[0].score + ',  ' + g.teams[1].name + ' ' + g.teams[1].score), 8000);
+        // Cricket says its result in words ("New Zealand won by 6 wickets").
+        if (!onScreen(g) && finalSaid(g)) U.toast(T('Final') + ':  ' + RAW(g.text && g.detail ? g.detail : g.teams[0].name + ' ' + g.teams[0].score + ',  ' + g.teams[1].name + ' ' + g.teams[1].score), 8000);
       }
     });
   }

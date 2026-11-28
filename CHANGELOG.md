@@ -13,6 +13,7 @@
 - **No game reminders for shows about the sport.**  A baseball season review whose description named two teams was taken for a game of a team you follow, out of season.  A game found only by its description now needs a title like "MLB Baseball" or "College Football".
 - **Pick the USB drive's partition to record to.**  On a drive with two or more partitions, Settings > Recording > USB drive chooses which one recordings and live pause use, instead of always the first.
 - **Formula 1 race weekends in Sports.**  Each session (practices, qualifying, sprint, race) is its own card with its time and the first three once it has run; a session's page shows the whole weekend and the drivers' championship, and your guide is searched for the session.
+- **Follow cricket sides and Formula 1.**  The national sides (men's and women's) and the big T20 leagues' teams can be followed like any team: their matches go to My teams, with reminders, the score corner and alerts.  Following Formula 1 puts its sessions in My teams; Settings > Sports > Formula 1 sessions picks which (the race, qualifying and sprints too, or every session).
 
 ## 0.6.0 (alpha 234, 2026-11-27)
 

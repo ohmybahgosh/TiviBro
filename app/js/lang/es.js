@@ -783,7 +783,6 @@ I18n.add('es', {
   "The group of event channels on now or starting in the next two weeks, soonest first.  The same switch as in Event channels.": "El grupo de canales de eventos en curso o que empiezan en las próximas dos semanas, los más próximos primero.  El mismo interruptor que en Canales de eventos.",
   "The guide": "La guía",
   "The guide shows the event at its time, with \"Starts 7:30 PM\" before it.  A real guide always wins.": "La guía muestra el evento a su hora, con \"Empieza 7:30 PM\" antes.  Una guía real siempre tiene prioridad.",
-  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools) and men's college basketball (those schools and the main Division I ones without FBS football).  Other college sports, women's college games, junior and minor league teams, and other countries' leagues, aren't in it yet.": "Las principales ligas de Norteamérica (NFL, NBA, NHL, MLB, WNBA y MLS), el fútbol americano universitario (las escuelas FBS) y el básquetbol universitario masculino (esas escuelas y las principales de la División I sin fútbol americano FBS).  Otros deportes universitarios, los partidos universitarios femeninos, equipos juveniles y de ligas menores, y ligas de otros países, aún no están.",
   "The most the player downloads ahead while playing.  Movies can fill it; live channels usually stay lower, since the provider only sends a little ahead of real time.": "Lo máximo que el reproductor descarga por adelantado.  Las películas pueden llenarlo; los canales en vivo suelen quedar más bajo, ya que el proveedor solo envía un poco por delante del tiempo real.",
   "The network helper is not running": "El asistente de red no está en ejecución",
   "The other playlists' guides": "Las guías de las otras listas",
@@ -2934,5 +2933,14 @@ I18n.add('es', {
   "The drive's partition recordings and live pause go to.": "La partición del disco donde van las grabaciones y la pausa en directo.",
   "The weekend": "El fin de semana",
   "Turn the screen off instead": "Apagar la pantalla en su lugar",
-  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Sin nada reproduciéndose, la pantalla se apaga como con el Apagar pantalla de la TV, en vez de mostrar un estilo.  Cualquier botón la vuelve a encender.  Sobre un vídeo en pausa se siguen mostrando los estilos de abajo."
+  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Sin nada reproduciéndose, la pantalla se apaga como con el Apagar pantalla de la TV, en vez de mostrar un estilo.  Cualquier botón la vuelve a encender.  Sobre un vídeo en pausa se siguen mostrando los estilos de abajo.",
+  "Cricket": "Críquet",
+  "Every session": "Todas las sesiones",
+  "Formula 1": "Fórmula 1",
+  "Formula 1 sessions": "Sesiones de Fórmula 1",
+  "Its sessions in My teams, with reminders if you want them": "Sus sesiones en Mis equipos, con recordatorios si quieres",
+  "Qualifying, sprints and the race": "Clasificación, sprints y la carrera",
+  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men's college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men's and women's, and the big T20 leagues' teams) and Formula 1.  Other college sports, women's college games, junior and minor league teams, and other leagues aren't in it yet.": "Las grandes ligas de Norteamérica (NFL, NBA, NHL, MLB, WNBA y MLS), el fútbol americano universitario (las escuelas FBS), el baloncesto universitario masculino (esas escuelas y las principales de la División I sin fútbol FBS), el críquet (las selecciones nacionales, masculinas y femeninas, y los equipos de las grandes ligas T20) y la Fórmula 1.  Otros deportes universitarios, los partidos universitarios femeninos, los equipos juveniles y de ligas menores, y otras ligas, aún no están.",
+  "The race only": "Solo la carrera",
+  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Qué sesiones de un fin de semana de carreras van a Mis equipos, con recordatorios cuando se emiten."
 });

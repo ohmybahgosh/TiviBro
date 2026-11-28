@@ -249,6 +249,13 @@ var SportsHub = (function () {
     render(true);
   }
   function follow(g) {
+    // A race weekend's session: Formula 1 itself (its sessions go to My teams; which ones is in Settings > Sports).
+    if (g.session && Teams.F1) {
+      var f1on = Teams.follows(Teams.F1);
+      return UI.menu(T('Follow a team'), [{ label: T('Formula 1'), sub: f1on ? T('Following  ·  OK stops') : T('Its sessions in My teams, with reminders if you want them'), action: function () {
+        Teams.follow(Teams.F1, !f1on); if (Views.refreshLists) Views.refreshLists(true); U.toast(f1on ? T('Not following {x}', { x: T('Formula 1') }) : T('Following {x}', { x: T('Formula 1') })); render(true);
+      } }]);
+    }
     var ts = g.teams.filter(function (t) { return t.id; });
     if (!ts.length) { U.toast(T('These teams can\'t be followed yet')); return; }
     UI.menu(T('Follow a team'), ts.map(function (t) {

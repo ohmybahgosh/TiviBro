@@ -1912,7 +1912,6 @@ I18n.add('tr', {
   "The list stays on Trakt.": "Liste Trakt'te kalır.",
   "The lists most liked on Trakt.": "Trakt'te en çok beğenilen listeler.",
   "The login saved with": "Giriş bilgisi şununla kaydedildi",
-  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools) and men's college basketball (those schools and the main Division I ones without FBS football).  Other college sports, women's college games, junior and minor league teams, and other countries' leagues, aren't in it yet.": "Başlıca Kuzey Amerika ligleri (NFL, NBA, NHL, MLB, WNBA ve MLS), üniversite futbolu (FBS okulları) ve erkekler üniversite basketbolu (bu okullar ve FBS futbolu olmayan başlıca Division I okulları).  Diğer üniversite sporları, kadınlar üniversite maçları, genç ve alt lig takımları ile diğer ülkelerin ligleri henüz yok.",
   "The most the player downloads ahead while playing.  Movies can fill it; live channels usually stay lower, since the provider only sends a little ahead of real time.": "Oynatıcının oynatma sırasında önceden indirdiği en yüksek miktar.  Filmler bunu doldurabilir; canlı kanallar genelde daha düşük kalır, çünkü sağlayıcı gerçek zamanın yalnızca biraz önünü gönderir.",
   "The network helper is not running": "Ağ yardımcısı çalışmıyor",
   "The network helper is not running, so the editor cannot start.  See Settings, System.": "Ağ yardımcısı çalışmıyor, bu yüzden düzenleyici başlatılamıyor.  Ayarlar, Sistem bölümüne bakın.",
@@ -2824,5 +2823,14 @@ I18n.add('tr', {
   "The drive's partition recordings and live pause go to.": "Kayıtların ve canlı duraklatmanın gittiği sürücü bölümü.",
   "The weekend": "Hafta sonu",
   "Turn the screen off instead": "Bunun yerine ekranı kapat",
-  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Hiçbir şey oynatılmıyorken, bir görünüm göstermek yerine ekran TV'nin kendi Ekranı kapat özelliğindeki gibi kapanır.  Herhangi bir tuş onu yeniden açar.  Duraklatılmış bir videonun üzerinde aşağıdaki görünümler yine gösterilir."
+  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Hiçbir şey oynatılmıyorken, bir görünüm göstermek yerine ekran TV'nin kendi Ekranı kapat özelliğindeki gibi kapanır.  Herhangi bir tuş onu yeniden açar.  Duraklatılmış bir videonun üzerinde aşağıdaki görünümler yine gösterilir.",
+  "Cricket": "Kriket",
+  "Every session": "Her seans",
+  "Formula 1": "Formula 1",
+  "Formula 1 sessions": "Formula 1 seansları",
+  "Its sessions in My teams, with reminders if you want them": "Seansları Takımlarım’da, istersen hatırlatıcılarla",
+  "Qualifying, sprints and the race": "Sıralama, sprintler ve yarış",
+  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men's college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men's and women's, and the big T20 leagues' teams) and Formula 1.  Other college sports, women's college games, junior and minor league teams, and other leagues aren't in it yet.": "Kuzey Amerika’nın büyük ligleri (NFL, NBA, NHL, MLB, WNBA ve MLS), üniversite futbolu (FBS okulları), erkek üniversite basketbolu (bu okullar ve FBS futbolu olmayan başlıca Division I okulları), kriket (erkek ve kadın milli takımlar ile büyük T20 liglerinin takımları) ve Formula 1.  Diğer üniversite sporları, kadın üniversite maçları, genç ve alt lig takımları ve diğer ligler henüz yok.",
+  "The race only": "Sadece yarış",
+  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Bir yarış hafta sonunun hangi seanslarının Takımlarım’a gideceği, yayındayken hatırlatıcılarla."
 });

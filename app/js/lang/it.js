@@ -1912,7 +1912,6 @@ I18n.add('it', {
   "The list stays on Trakt.": "La lista resta su Trakt.",
   "The lists most liked on Trakt.": "Le liste più apprezzate su Trakt.",
   "The login saved with": "Il login salvato con",
-  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools) and men's college basketball (those schools and the main Division I ones without FBS football).  Other college sports, women's college games, junior and minor league teams, and other countries' leagues, aren't in it yet.": "I principali campionati nordamericani (NFL, NBA, NHL, MLB, WNBA e MLS), il football universitario (le scuole FBS) e il basket universitario maschile (quelle scuole e le principali della Division I senza football FBS).  Altri sport universitari, le partite universitarie femminili, le squadre giovanili e delle leghe minori e i campionati di altri paesi non ci sono ancora.",
   "The most the player downloads ahead while playing.  Movies can fill it; live channels usually stay lower, since the provider only sends a little ahead of real time.": "Il massimo che il lettore scarica in anticipo durante la riproduzione.  I film possono riempirlo; i canali in diretta di solito restano più bassi, perché il provider invia solo un po' in anticipo rispetto al tempo reale.",
   "The network helper is not running": "L'Assistente di rete non è in esecuzione",
   "The network helper is not running, so the editor cannot start.  See Settings, System.": "L'Assistente di rete non è in esecuzione, quindi l'editor non può avviarsi.  Vedi Impostazioni, Sistema.",
@@ -2824,5 +2823,14 @@ I18n.add('it', {
   "The drive's partition recordings and live pause go to.": "La partizione dell'unità dove vanno le registrazioni e la pausa della diretta.",
   "The weekend": "Il weekend",
   "Turn the screen off instead": "Spegni lo schermo invece",
-  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Quando non c'è niente in riproduzione, lo schermo si spegne come con Schermo spento della TV, invece di mostrare uno stile.  Qualsiasi tasto lo riaccende.  Su un video in pausa si vedono ancora gli stili qui sotto."
+  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Quando non c'è niente in riproduzione, lo schermo si spegne come con Schermo spento della TV, invece di mostrare uno stile.  Qualsiasi tasto lo riaccende.  Su un video in pausa si vedono ancora gli stili qui sotto.",
+  "Cricket": "Cricket",
+  "Every session": "Ogni sessione",
+  "Formula 1": "Formula 1",
+  "Formula 1 sessions": "Sessioni di Formula 1",
+  "Its sessions in My teams, with reminders if you want them": "Le sue sessioni in Le mie squadre, con promemoria se vuoi",
+  "Qualifying, sprints and the race": "Qualifiche, sprint e la gara",
+  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men's college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men's and women's, and the big T20 leagues' teams) and Formula 1.  Other college sports, women's college games, junior and minor league teams, and other leagues aren't in it yet.": "Le principali leghe nordamericane (NFL, NBA, NHL, MLB, WNBA e MLS), il football universitario (le scuole FBS), il basket universitario maschile (quelle scuole e le principali di Division I senza football FBS), il cricket (le nazionali, maschili e femminili, e le squadre delle grandi leghe T20) e la Formula 1.  Altri sport universitari, le partite universitarie femminili, le squadre giovanili e delle leghe minori, e altre leghe non ci sono ancora.",
+  "The race only": "Solo la gara",
+  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Quali sessioni di un weekend di gara vanno in Le mie squadre, con promemoria quando sono in onda."
 });

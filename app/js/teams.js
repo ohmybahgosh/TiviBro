@@ -8,7 +8,7 @@
 var Teams = (function () {
   'use strict';
 
-  var LEAGUES = [['nfl', 'NFL'], ['nba', 'NBA'], ['nhl', 'NHL'], ['mlb', 'MLB'], ['wnba', 'WNBA'], ['mls', 'MLS'], ['ncaaf', 'College Football'], ['ncaab', 'College Basketball']];
+  var LEAGUES = [['nfl', 'NFL'], ['nba', 'NBA'], ['nhl', 'NHL'], ['mlb', 'MLB'], ['wnba', 'WNBA'], ['mls', 'MLS'], ['ncaaf', 'College Football'], ['ncaab', 'College Basketball'], ['cricket', 'Cricket'], ['f1', 'Formula 1']];
   // [abbreviation, full name, nicknames (comma separated, the first is how it's shown short), other full names]
   var DATA = {
     nfl: [['ARI', 'Arizona Cardinals', 'Cardinals'], ['ATL', 'Atlanta Falcons', 'Falcons'], ['BAL', 'Baltimore Ravens', 'Ravens'], ['BUF', 'Buffalo Bills', 'Bills'],
@@ -56,6 +56,28 @@ var Teams = (function () {
       ['SJ', 'San Jose Earthquakes', 'Earthquakes'], ['SEA', 'Seattle Sounders', 'Sounders', 'Seattle Sounders FC'], ['SKC', 'Sporting Kansas City', 'Sporting KC'], ['STL', 'St Louis City SC', 'St Louis City', 'Saint Louis City SC'],
       ['TOR', 'Toronto FC', 'Toronto FC'], ['VAN', 'Vancouver Whitecaps', 'Whitecaps', 'Vancouver Whitecaps FC']]
   };
+  /* Cricket (discussion #184): the national sides, men's and women's (a women's side is its own team), and the
+     big T20 leagues' franchises (IPL, Big Bash, PSL, The Hundred, SA20, ILT20, CPL).  Their matches come from
+     ESPN (sports.js cricket) and, like other teams, from the guide, where a match needs a cricket word ("Test",
+     "ODI", "T20", "cricket") so "Australia v England" in rugby isn't one. */
+  var NATIONS = [['IND', 'India'], ['AUS', 'Australia'], ['ENG', 'England'], ['PAK', 'Pakistan'], ['SA', 'South Africa', 'Proteas'], ['NZ', 'New Zealand', 'Black Caps,Blackcaps'],
+    ['SL', 'Sri Lanka'], ['BAN', 'Bangladesh'], ['WI', 'West Indies', 'Windies'], ['AFG', 'Afghanistan'], ['ZIM', 'Zimbabwe'], ['IRE', 'Ireland'],
+    ['SCO', 'Scotland'], ['NED', 'Netherlands'], ['NEP', 'Nepal'], ['UAE', 'United Arab Emirates', 'UAE'], ['USA', 'United States of America', 'USA'], ['OMA', 'Oman'], ['NAM', 'Namibia'], ['CAN', 'Canada']];
+  var FRANCHISES = [['CSK', 'Chennai Super Kings'], ['MI', 'Mumbai Indians'], ['RCB', 'Royal Challengers Bengaluru', 'Royal Challengers Bangalore'], ['KKR', 'Kolkata Knight Riders'],
+    ['DC', 'Delhi Capitals'], ['PBKS', 'Punjab Kings'], ['RR', 'Rajasthan Royals'], ['SRH', 'Sunrisers Hyderabad'], ['GT', 'Gujarat Titans'], ['LSG', 'Lucknow Super Giants'],
+    ['STR', 'Adelaide Strikers'], ['HEA', 'Brisbane Heat'], ['HUR', 'Hobart Hurricanes'], ['REN', 'Melbourne Renegades'], ['STA', 'Melbourne Stars'], ['SCO6', 'Perth Scorchers'], ['SIX', 'Sydney Sixers'], ['THU', 'Sydney Thunder'],
+    ['ISU', 'Islamabad United'], ['KRK', 'Karachi Kings'], ['LQ', 'Lahore Qalandars'], ['MS', 'Multan Sultans'], ['PZ', 'Peshawar Zalmi'], ['QG', 'Quetta Gladiators'],
+    ['BPH', 'Birmingham Phoenix'], ['LNS', 'London Spirit'], ['MNR', 'Manchester Originals'], ['NOS', 'Northern Superchargers'], ['OVI', 'Oval Invincibles'], ['SOB', 'Southern Brave'], ['TRT', 'Trent Rockets'], ['WEF', 'Welsh Fire'],
+    ['DSG', 'Durban\'s Super Giants', 'Durban Super Giants'], ['JSK', 'Joburg Super Kings'], ['MICT', 'MI Cape Town'], ['PR', 'Paarl Royals'], ['PC', 'Pretoria Capitals'], ['SEC', 'Sunrisers Eastern Cape'],
+    ['ADKR', 'Abu Dhabi Knight Riders'], ['DV', 'Desert Vipers'], ['DCAP', 'Dubai Capitals'], ['GG', 'Gulf Giants'], ['MIE', 'MI Emirates'], ['SW', 'Sharjah Warriors'],
+    ['BR', 'Barbados Royals'], ['GAW', 'Guyana Amazon Warriors'], ['JT', 'Jamaica Tallawahs'], ['SLK', 'Saint Lucia Kings'], ['SNP', 'St Kitts and Nevis Patriots'], ['TKR', 'Trinbago Knight Riders']];
+  // [abbreviation, name, nicknames (the name first), other full names]: a country by its name, which needs a cricket word.
+  DATA.cricket = NATIONS.map(function (r) { return [r[0], r[1], [r[1]].concat(r[2] ? r[2].split(',') : []).join(',')]; })
+    .concat(NATIONS.slice(0, 12).map(function (r) { return [r[0] + 'W', r[1] + ' Women', r[1] + ' Women']; }))
+    .concat(FRANCHISES.map(function (r) { return [r[0], r[1], r[1], r[2] || '']; }));
+  /* Formula 1: the championship itself, one "team" to follow (every driver is in every session).  Which sessions
+     count (Settings > Sports > Formula 1 sessions: f1Sessions) is wanted() below. */
+  DATA.f1 = [['F1', 'Formula 1', 'Formula 1', 'Formula One,F1']];
   /* College football: the FBS schools (and North Dakota State and Sacramento State).  "abbreviation|school|
      nickname|other names of the school".  Nicknames alone never count (dozens of schools are the Tigers or
      the Bulldogs); the school alone ("Alabama at LSU") counts where it's college football. */
@@ -133,7 +155,8 @@ var Teams = (function () {
   var NOT_BEFORE = /(?:^| )(?:north|south|east|west|central|northern|southern|eastern|western|northeastern|southeastern|northwestern|southwestern|southeast|northwest|southwest|new|middle|little|upper)$/;
   var NOT_AFTER = /^(?:state|st|tech|a and m|southern|christian|baptist|pine|valley|wesleyan|lutheran|international|atlantic|poly|mines|central|northern|western|eastern|methodist|tennessee|martin|chattanooga|monroe|lafayette|pacific)(?: |$)/;
   // Words that put a name in a league: "NHL", "Hockey".  Football and soccer stay out (they mean both).
-  var LEAGUE_WORDS = { nfl: /\bnfl\b|sunday ticket|red ?zone/, nba: /\bnba\b|league pass/, nhl: /\bnhl\b|hockey|center ice/, mlb: /\bmlb\b|baseball|extra innings/, wnba: /\bwnba\b/, mls: /\bmls\b|season pass/, ncaaf: CFB, ncaab: CBB };
+  var CRICKET_WORDS = /cricket|\btest\b|\bodi\b|\bt20i?\b|\bipl\b|big bash|\bbbl\b|\bpsl\b|the hundred|\bsa20\b|\bilt20\b|\bcpl\b|\bwpl\b/;
+  var LEAGUE_WORDS = { cricket: CRICKET_WORDS, f1: /formula (1|one)|\bf1\b|grand prix/, nfl: /\bnfl\b|sunday ticket|red ?zone/, nba: /\bnba\b|league pass/, nhl: /\bnhl\b|hockey|center ice/, mlb: /\bmlb\b|baseball|extra innings/, wnba: /\bwnba\b/, mls: /\bmls\b|season pass/, ncaaf: CFB, ncaab: CBB };
 
   // "WPG VS CAR", "WPG vs. CAR", "WPG @ CAR": two abbreviations facing each other.
   var MATCHUP = /\b[A-Z]{2,4}\s+(?:[Vv][Ss]?\.?|AT|at)\s+[A-Z]{2,4}\b|\b[A-Z]{2,4}\s*@\s*[A-Z]{2,4}\b/;
@@ -177,7 +200,7 @@ var Teams = (function () {
        when only one team of that league has that city.
      - Abbreviations ("WPG VS CAR") count only in event titles, with the league in the context.
      - Junior, minor and youth hockey and the like ("U15", "AAA", "OJHL", "flohockey") only by full name. */
-  var CODES = { nfl: /\bnfl\b|sunday ticket|red ?zone/, nba: /\bnba\b|league pass/, nhl: /\bnhl\b|center ice/, mlb: /\bmlb\b|extra innings/, wnba: /\bwnba\b/, mls: /\bmls\b|major league soccer/, ncaaf: CFB, ncaab: CBB };
+  var CODES = { cricket: CRICKET_WORDS, f1: /formula (1|one)|\bf1\b|grand prix/, nfl: /\bnfl\b|sunday ticket|red ?zone/, nba: /\bnba\b|league pass/, nhl: /\bnhl\b|center ice/, mlb: /\bmlb\b|extra innings/, wnba: /\bwnba\b/, mls: /\bmls\b|major league soccer/, ncaaf: CFB, ncaab: CBB };
   var MINOR = /u(?:[89]|1\d|2[01])\b|\baaa\b|\d+aaa\b|\b(?:ojhl|ahl|echl|ohl|whl|qmjhl|bchl|ajhl|sjhl|mjhl|nahl|ushl|nwhl|pwhl|sphl|fphl|junior|jr|midget|bantam|minor|youth|college|ncaa\w*|flohockey|flo ?sports|g ?league|nbl|cfl|xfl|ufl|usl|nwsl)\b/i;
   var BEFORE_OK = /^(vs|v|at|and|the|versus|vs\.|nfl|nba|nhl|mlb|wnba|mls|hockey|football|basketball|baseball|soccer|game|live|watch|preview|pregame|postgame|replay|on|in|night|day|sunday|monday|tuesday|wednesday|thursday|friday|saturday|tonight|today|pass|ticket)$/i;
   function esc(x) { return x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
@@ -270,6 +293,8 @@ var Teams = (function () {
         (x._nick && (word[l] || n(seen, l) >= 2)) ||
         (x._city && (code[l] || n(seen, l) >= 1) && n(seenCity, l) >= 2);
       if (!hit && abbrs && !minor && word[l] && up.indexOf(' ' + x.abbr + ' ') >= 0 && MATCHUP.test(text)) hit = 1;
+      // Cricket: only with a cricket word (not rugby's Australia v England), and the women's side only for a women's match.
+      if (hit && l === 'cricket' && (!word.cricket || / women /.test(t) !== / women /.test(' ' + x.name.toLowerCase() + ' '))) hit = 0;
       if (hit) hits.push(x);
     });
     return hits;
@@ -316,7 +341,8 @@ var Teams = (function () {
     }
     LEAGUES.forEach(function (lg) {
       var own = DATA[lg[0]].filter(function (r) { return tc[lg[0] + ':' + r[0].toLowerCase()]; }).length;
-      if (own || new RegExp(' ' + lg[0] + ' ').test(names) || CODES[lg[0]].test(names) || chanCache.named[lg[0]]) out.push({ id: lg[0], name: lg[1], own: own });
+      // Cricket and Formula 1 always: their matches and sessions come from ESPN, whatever the playlist calls its channels.
+      if (own || lg[0] === 'cricket' || lg[0] === 'f1' || new RegExp(' ' + lg[0] + ' ').test(names) || CODES[lg[0]].test(names) || chanCache.named[lg[0]]) out.push({ id: lg[0], name: lg[1], own: own });
     });
     return out;
   }
@@ -349,8 +375,20 @@ var Teams = (function () {
   }
   function espnByTeam(all) {
     var byTeam = {};
-    all.forEach(function (g) { g.teams.forEach(function (t) { if (t.id) (byTeam[t.id] = byTeam[t.id] || []).push(g); }); });
+    all.forEach(function (g) {
+      g.teams.forEach(function (t) { if (t.id) (byTeam[t.id] = byTeam[t.id] || []).push(g); });
+      if (g.session) (byTeam[F1] = byTeam[F1] || []).push(g);         // a race weekend's session is Formula 1's
+    });
     return byTeam;
+  }
+  /* Formula 1's sessions you follow (Settings > Sports > Formula 1 sessions, f1Sessions): 'race' the race only,
+     'qual' (the default) qualifying, the sprints and the race, 'all' the practices too. */
+  var F1 = 'f1:f1';
+  function wanted(session) {
+    var w = S().f1Sessions || 'qual';
+    if (w === 'all') return true;
+    if (w === 'race') return session === 'Race';
+    return session === 'Race' || session === 'Qualifying' || session === 'Sprint' || session === 'Sprint qualifying';
   }
   /* What ESPN says of a team's game starting at s: the ESPN game it is (within three hours), true when ESPN can't
      tell (that day not read, a league it doesn't cover), false when it rules it out: it has that team's games
@@ -376,7 +414,7 @@ var Teams = (function () {
   // ESPN's games on now or still to come before far (gone: the earliest end still counted), finals left out.
   function espnGames(gone, far) {
     if (typeof Sports === 'undefined' || !Sports.netChannels) return [];
-    return espnAll().filter(function (g) { return g.state !== 'post' && g.s + 3 * 3600e3 > gone && g.s <= far && g.teams.length === 2; });
+    return espnAll().filter(function (g) { return g.state !== 'post' && g.s + 3 * 3600e3 > gone && g.s <= far && (g.teams.length === 2 || (g.session && follows(F1) && wanted(g.session))); });
   }
   /* The ESPN game a channel's listing is (My teams): its teams with scores and records, state and clock, and
      its real start.  null when ESPN has none for it. */
@@ -519,6 +557,14 @@ var Teams = (function () {
        name anywhere still gets the channels ESPN says carry it (a national network, ESPN, a regional sports
        network: Sports.netChannels), from its start for three hours. */
     if (!ids) espnGames(gone, far).forEach(function (eg) {
+      // A Formula 1 session: on the channels Sports finds for it (the guide naming the session, F1 programmes then).
+      if (eg.session) {
+        var f1 = mineIds[F1] && BY_ID[F1];
+        if (!f1 || out.some(function (g) { return g.team.id === F1 && Math.abs(g.p.s - eg.s) < 30 * 60000; })) return;
+        curTag = ''; lastVs = {}; lastVs.f1 = eg.id;
+        Sports.channels(eg).slice(0, 3).forEach(function (x) { take(x.c, { s: eg.s, e: eg.s + (eg.session === 'Race' ? 3 : 2) * 3600e3, t: Sports.title(eg), espn: 1 }, f1); });
+        return;
+      }
       eg.teams.forEach(function (t) {
         var team = mineIds[t.id] && BY_ID[t.id];
         if (!team || out.some(function (g) { return g.team.id === t.id && Math.abs(g.p.s - eg.s) < 3 * 3600e3; })) return;
@@ -868,6 +914,6 @@ var Teams = (function () {
   return {
     LEAGUES: LEAGUES, get descGen() { return descGen; }, all: function () { return ALL; }, team: function (id) { return BY_ID[id]; }, named: named, norm: norm,
     leagues: leagues, inLeague: inLeague, hasChannel: hasChannel, teamChannels: teamChannels, ofChannel: ofChannel,
-    RULES: 3, _gameTitle: GAME_TITLE, recheck: recheck, isGame: isGame, matchup: matchup, aroundGame: aroundGame, SAME_GAME: SAME_GAME, CLOSE: CLOSE, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, espnOf: espnOf, list: list, uniform: uniform, gameTitle: gameTitle, gameOn: gameOn, dirty: dirty, nextGame: nextGame, emptyText: emptyText
+    RULES: 3, _gameTitle: GAME_TITLE, wanted: wanted, F1: F1, recheck: recheck, isGame: isGame, matchup: matchup, aroundGame: aroundGame, SAME_GAME: SAME_GAME, CLOSE: CLOSE, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, espnOf: espnOf, list: list, uniform: uniform, gameTitle: gameTitle, gameOn: gameOn, dirty: dirty, nextGame: nextGame, emptyText: emptyText
   };
 })();

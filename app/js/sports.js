@@ -31,9 +31,9 @@ var Sports = (function () {
     { id: 'mls', name: 'MLS', path: 'soccer/usa.1', team: 'mls' },
     { id: 'epl', name: 'Premier League', short: 'EPL', path: 'soccer/eng.1' },
     { id: 'ucl', name: 'Champions League', short: 'UCL', path: 'soccer/uefa.champions' },
-    { id: 'f1', name: 'Formula 1', short: 'F1', path: 'racing/f1', race: true },
+    { id: 'f1', name: 'Formula 1', short: 'F1', path: 'racing/f1', race: true, team: 'f1' },
     // Cricket: no single scoreboard, so ESPN's "header" for the sport (every series on now, see cricket()).
-    { id: 'cricket', name: 'Cricket', header: 'cricket' }
+    { id: 'cricket', name: 'Cricket', header: 'cricket', team: 'cricket' }
   ];
   var BY = {}; LEAGUES.forEach(function (l) { BY[l.id] = l; });
   var DEFAULT = ['nfl', 'ncaaf', 'nba', 'nhl', 'mlb'];
@@ -85,8 +85,10 @@ var Sports = (function () {
     var key = lg.team + '|' + o.full + '|' + o.abbr;
     if (idCache[key] != null) return idCache[key];
     var full = Teams.norm(o.full).trim(), id = '';
-    Teams.all().some(function (x) { if (x.league === lg.team && x.full.some(function (f) { return f.trim() === full; })) { id = x.id; return true; } return false; });
-    if (!id) { var t = Teams.team(lg.team + ':' + o.abbr.toLowerCase()); if (t) id = t.id; }
+    // By full name; a team whose name is one word (cricket's "India") by its name.
+    Teams.all().some(function (x) { if (x.league === lg.team && (x.full.some(function (f) { return f.trim() === full; }) || Teams.norm(x.name).trim() === full)) { id = x.id; return true; } return false; });
+    // Else by abbreviation, but never for cricket: its sides share them (SA is South Africa's men and its women).
+    if (!id && lg.team !== 'cricket') { var t = Teams.team(lg.team + ':' + o.abbr.toLowerCase()); if (t) id = t.id; }
     return (idCache[key] = id);
   }
   function game(lg, e) {
@@ -137,6 +139,7 @@ var Sports = (function () {
         var teams = (e.competitors || []).map(function (c) {
           return { abbr: c.abbreviation || '', name: c.displayName || c.name || '', full: c.displayName || '', loc: c.location || '', logo: String(c.logo || '').replace(/^http:/, 'https:'),      // cricket has no dark logos (500-dark is a 404)
             color: String(c.color || '').replace('#', ''), alt: '', home: c.homeAway === 'home', score: c.score ? String(c.score) : null, rec: '', rank: 0, win: !!c.winner, id: '', eid: String(c.id || '') };
+        }).map(function (t) { t.id = teamId(lg, t); return t;           // My teams' id ("cricket:ind"), so a side can be followed
         }).sort(function (a, b) { return (a.home ? 1 : 0) - (b.home ? 1 : 0); });
         if (teams.length !== 2) return;
         var state = e.status === 'in' || e.status === 'post' ? e.status : 'pre';
@@ -355,7 +358,11 @@ var Sports = (function () {
     return out;
   }
   // Has ESPN's scoreboard for this league and the day of time t been read (so a team missing from it has no game then)?
-  function covered(lg, t) { var m = store[lg]; return !!(m && m[ymd(t)]); }
+  function covered(lg, t) {
+    // Cricket's header has only today: another day's empty answer says nothing.
+    if (BY[lg] && BY[lg].header && ymd(t) !== dayKey(0)) return false;
+    var m = store[lg]; return !!(m && m[ymd(t)]);
+  }
   // The channels ESPN's broadcast networks for a game are (byNet), for My teams to add a game the guide doesn't name.
   function netChannels(g) {
     var out = [];
@@ -510,7 +517,12 @@ var Sports = (function () {
   /* ---------- the rows of the Sports screen (and the phone app's Sports tab) ----------
      My teams (the games of the teams you follow this week: on now, what's next, today's finals last), Live now,
      then a row per league shown: today's games, or tomorrow's when it has none today.  t: the words, translated. */
-  function follows(g) { return typeof Teams !== 'undefined' && g.teams.some(function (x) { return x.id && Teams.follows(x.id); }); }
+  // A game of a team you follow; a race weekend's session when you follow Formula 1 and that kind of session.
+  function follows(g) {
+    if (typeof Teams === 'undefined') return false;
+    if (g.session) return !!Teams.F1 && Teams.follows(Teams.F1) && Teams.wanted(g.session);
+    return g.teams.some(function (x) { return x.id && Teams.follows(x.id); });
+  }
   function order(a, b) {
     var ra = a.state === 'in' ? 0 : a.state === 'pre' ? 1 : 2, rb = b.state === 'in' ? 0 : b.state === 'pre' ? 1 : 2;
     return ra - rb || (ra === 2 ? b.s - a.s : a.s - b.s);
@@ -569,6 +581,6 @@ var Sports = (function () {
 
   return { darkLogo: darkLogo, netChannels: netChannels, covered: covered, rowOrder: rowOrder, setOrder: setOrder, rows: rows, follows: follows, reminded: reminded, remind: remind, loaded: loaded, refreshToday: refreshToday, byId: byId, summary: summary, gameOn: gameOn, hidesTeam: hidesTeam, hideTeam: hideTeam, hidden: hidden, reveal: reveal, followedLeagues: followedLeagues, _readSummary: readSummary,
     LEAGUES: LEAGUES, league: function (id) { return BY[id]; }, leagues: leagues, setLeagues: setLeagues, refresh: refresh, anyLive: anyLive, all: all, day: day, errOf: errOf,
-    channels: channels, byNet: byNet, title: title, onChange: onChange, dayKey: dayKey, LIVE_MS: LIVE_MS, TODAY_MS: TODAY_MS, _game: game, _squash: squash, _bare: bare, _sideNames: sideNames, _race: race, _raceStandings: readRaceStandings, _sessionIn: sessionIn, _store: store };
+    channels: channels, byNet: byNet, title: title, onChange: onChange, dayKey: dayKey, LIVE_MS: LIVE_MS, TODAY_MS: TODAY_MS, _game: game, _squash: squash, _bare: bare, _sideNames: sideNames, _race: race, _cricket: function (j) { return cricket(BY.cricket, j); }, _raceStandings: readRaceStandings, _sessionIn: sessionIn, _store: store };
 })();
 if (typeof module !== 'undefined') module.exports = Sports;

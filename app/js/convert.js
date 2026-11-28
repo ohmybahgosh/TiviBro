@@ -143,10 +143,13 @@ var Convert = (function () {
     /* o.boost: dialogue boost or night mode (dialog.js), which only the converter can do on a TV: the file goes
        through it too, its sound processed (and whatever it finds, the boost goes along: withFx). */
     var fx = o.boost || null;
-    if (known && !bad && !o.sync && !fx) return Promise.resolve(null);       // the movie's own sound plays here
+    /* o.spool: a movie from a far Plex server that keeps running dry on the TV's own player: through the helper's
+       spool instead, the picture and sound copied (as dialogue boost does, without the boost), which reads ahead
+       of the TV's player (player.js spoolFar). */
+    if (known && !bad && !o.sync && !fx && !o.spool) return Promise.resolve(null);       // the movie's own sound plays here
     var hint = !known && HINT.test((o.title || '') + ' ' + decodeURIComponentSafe(o.url));
     var fileLike = FILE.test(o.url) || /^(mkv|mp4|m4v|mov|avi|ts|m2ts|webm)$/i.test(o.container || '');
-    if (!bad && !hint && !fileLike && !o.sync && !fx) return Promise.resolve(null);
+    if (!bad && !hint && !fileLike && !o.sync && !fx && !o.spool) return Promise.resolve(null);
     return status().then(function (s) {
       // A release carries the converter: unpacking it takes a second, so nothing is asked.
       if (s.state !== 'ready' && s.bundled && s.state !== 'failed') return get().catch(function () { return s; });
@@ -174,6 +177,7 @@ var Convert = (function () {
           });
         }
         if ((d.action === 'play' || d.action === 'track') && fx) return ensureKey().then(function () { return forBoost(info, d, o.url, fx); });
+        if ((d.action === 'play' || d.action === 'track') && o.spool) return ensureKey().then(function () { var r = forBoost(info, d, o.url, null); r.notice = ''; r.conv.spool = true; return r; });
         if ((d.action === 'play' || d.action === 'track') && o.sync) { var sy = forSync(info, d, c, o.url); if (sy) return ensureKey().then(function () { return sy; }); }
         if (d.action === 'play') return null;
         if (d.action === 'track') return { track: d.a, tracks: info.audio, bad: d.bad, dur: info.duration, video: info.video || '' };

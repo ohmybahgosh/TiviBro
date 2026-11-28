@@ -33,6 +33,16 @@ eval(fs.readFileSync(path.join(__dirname, '../../app/js/teams.js'), 'utf8') + ';
 const ids = l => l.map(x => x.id).sort().join(',');
 const all = Teams.all();
 const fb = l => ids(l.filter(x => x.league === 'ncaaf')), bb = l => ids(l.filter(x => x.league === 'ncaab'));
+// Cricket (discussion #184): sides by name with a cricket word, the women's sides apart, franchises by full name.
+const cr = (s, c) => ids(Teams.named(s, c || '', all));
+ok('cricket: two countries and a cricket word', cr('Live Cricket: India v Australia, 2nd Test') === 'cricket:aus,cricket:ind' || cr('Live Cricket: India v Australia, 2nd Test') === 'cricket:ind,cricket:aus', cr('Live Cricket: India v Australia, 2nd Test'));
+ok('cricket: not rugby\'s Australia v England', cr('Australia v England', 'Rugby Union') === '');
+ok('cricket: a women\'s match is the women\'s sides', /cricket:indw/.test(cr('India Women v Australia Women 1st ODI')) && !/cricket:ind(,|$)/.test(cr('India Women v Australia Women 1st ODI')), cr('India Women v Australia Women 1st ODI'));
+ok('cricket: IPL franchises by name', /cricket:mi/.test(cr('IPL 2026: Mumbai Indians vs Chennai Super Kings')) && /cricket:csk/.test(cr('IPL 2026: Mumbai Indians vs Chennai Super Kings')));
+// Formula 1: which sessions count (f1Sessions).
+ok('Formula 1 sessions: qualifying, sprints and the race by default', Teams.wanted('Race') && Teams.wanted('Qualifying') && Teams.wanted('Sprint') && !Teams.wanted('Practice 1'));
+Store.settings.f1Sessions = 'race'; ok('...the race only', Teams.wanted('Race') && !Teams.wanted('Qualifying'));
+Store.settings.f1Sessions = 'all'; ok('...or every session', Teams.wanted('Practice 2')); delete Store.settings.f1Sessions;
 // A title a game goes by when only its description names the teams (not a show about the sport).
 const GT = Teams._gameTitle;
 ok('game titles: the sport last', ['MLB Baseball', 'Live: NFL Football', 'Thursday Night Football', 'College Basketball Doubleheader', 'NFL Football on FOX', 'NHL Hockey (HD)', 'Big Ten Football'].every((t) => GT.test(t)));
@@ -76,7 +86,7 @@ ok('team channel with country and league words', tc['nhl:car'] && tc['nhl:car'][
 ok('event channels are not team channels', !tc['nhl:wpg'] || tc['nhl:wpg'].length === 1);
 ok('Red Wings vs Lions kept apart', tc['nhl:det'] && !tc['nhl:det'].some(c => /LIONS/.test(c.n)));
 const lg = Teams.leagues().map(l => l.id).join(',');
-ok('leagues found', lg === 'nfl,nba,nhl', lg);
+ok('leagues found: those with channels, and cricket and Formula 1 always (from ESPN)', lg === 'nfl,nba,nhl,cricket,f1', lg);
 ok('a TV series is no team channel', !tc['mls:chi']);
 ok('ofChannel', Teams.ofChannel(tc['nhl:det'][0]).id === 'nhl:det');
 

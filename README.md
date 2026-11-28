@@ -175,30 +175,32 @@
 </tr>
 </table>
 
-## New in alpha 234
+## New in alpha 235
 
 <table>
 <tr>
 <td width="50%" valign="top">
 
-### 🌙 A screensaver made for OLED TVs
+### 🏎️ Formula 1 weekends, and your cricket sides
 
-After a while with no button pressed, or over a paused video, the screen goes almost black with a slow, dim clock, dark drifting colours, a picture from your Plex, your teams' games as scoreboard cards or the TiviBro V bouncing from wall to wall, in turn.  Nothing stays in one place.  Each look can be turned on or off, with a preview, in **Settings > Appearance > Screensaver**.
+**Formula 1** in Sports by session: the practices, qualifying, the sprint and the race, each with its time, the first three once it has run, the whole weekend on its page and the drivers' championship.  **Follow Formula 1** and the sessions you pick go to My teams, with reminders.  **Follow your cricket side** (India, Australia, the women's sides, IPL and Big Bash teams and more) like any team, and a match is found on your channels from your guide.
 
 </td>
 <td width="50%" valign="top">
 
-### 🏏 Cricket, age ratings and more
+### 🌑 Screen off, and other asks
 
-**Cricket** in Sports (internationals and the big T20 leagues), **age ratings** next to a title's year, the **channels before and after** while you zap, subtitles without **[sound notes]**, every movie and show **category on or off** in one list (easiest from the phone), and bolder button hints.
+The screensaver can **turn the screen off instead** when nothing plays, and it never comes on over a video that plays.  **Pick the USB drive's partition** for recordings, add a playlist of **only movies and shows**, and **ClearKey channels** play when their stream names Widevine.
 
 </td>
 </tr>
 </table>
 
 <details>
-<summary><b>Earlier highlights: Plex (229), dialogue boost (221), skip intro (208) and Sports (189)</b></summary>
+<summary><b>Earlier highlights: the OLED screensaver and cricket (234), Plex (229), dialogue boost (221), skip intro (208) and Sports (189)</b></summary>
 <br>
+
+**🌙 Alpha 234: a screensaver made for OLED TVs, and cricket.**  After a while with no button pressed, or over a paused video, the screen goes almost black with a slow, dim clock, dark drifting colours, a picture from your Plex, your teams' games or the TiviBro V bouncing from wall to wall.  Cricket in Sports, age ratings next to a title's year, the channels before and after while you zap, subtitles without [sound notes] and every movie and show category on or off.  [Release notes](https://github.com/ohmybahgosh/TiviBro/releases/tag/v0.6.0-alpha.234)
 
 **🍿 Alpha 229: Plex, built in.**  Sign in with a code at plex.tv/link and your Plex server gets its own tab: Continue watching, your Watchlist and your Plex home rows, each library with Recommended, Collections and Categories, and title pages with the cast, seasons, extras and More like this.  Files the TV can play play as they are, Dolby Vision included; the rest the server converts.  While watching: Plex's quality list, subtitle search, Skip intro and Up next.  A row of the titles your Plex has that are on yesterday's streaming Top 10s.  The phone app has a Plex tab laid out the same way.  [How to set it up](docs/USER-GUIDE.md#plex) · [Release notes](https://github.com/ohmybahgosh/TiviBro/releases/tag/v0.6.0-alpha.229)
 

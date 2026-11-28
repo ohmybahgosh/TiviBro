@@ -2142,7 +2142,6 @@ I18n.add('hi', {
   "The lists most liked on Trakt.": "Trakt पर सबसे ज़्यादा पसंद की गई लिस्ट.",
   "The log goes too, with logins and server names taken out.": "लॉग भी जाएगा, लॉगिन और सर्वर के नाम हटाकर.",
   "The login saved with": "इसके साथ सेव किया गया लॉगिन",
-  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools) and men's college basketball (those schools and the main Division I ones without FBS football).  Other college sports, women's college games, junior and minor league teams, and other countries' leagues, aren't in it yet.": "मुख्य उत्तरी अमेरिकी लीग (NFL, NBA, NHL, MLB, WNBA और MLS), कॉलेज फ़ुटबॉल (FBS स्कूल) और पुरुषों का कॉलेज बास्केटबॉल (वे स्कूल और बिना FBS फ़ुटबॉल वाले मुख्य Division I स्कूल).  अन्य कॉलेज खेल, महिलाओं के कॉलेज मैच, जूनियर और माइनर लीग की टीमें और दूसरे देशों की लीग अभी इसमें नहीं हैं.",
   "The most the player downloads ahead while playing.  Movies can fill it; live channels usually stay lower, since the provider only sends a little ahead of real time.": "प्लेबैक के दौरान प्लेयर आगे जितना ज़्यादा डाउनलोड करता है.  फ़िल्में इसे भर सकती हैं; लाइव चैनल आमतौर पर कम रहते हैं, क्योंकि प्रोवाइडर असली समय से बस थोड़ा ही आगे भेजता है.",
   "The network helper is not running": "नेटवर्क हेल्पर नहीं चल रहा",
   "The network helper is not running, so the editor cannot start.  See Settings, System.": "नेटवर्क हेल्पर नहीं चल रहा, इसलिए एडिटर शुरू नहीं हो सकता.  सेटिंग, सिस्टम देखें.",
@@ -2810,5 +2809,14 @@ I18n.add('hi', {
   "The drive's partition recordings and live pause go to.": "ड्राइव का वह पार्टिशन जिसमें रिकॉर्डिंग और लाइव पॉज़ जाते हैं।",
   "The weekend": "वीकेंड",
   "Turn the screen off instead": "इसके बजाय स्क्रीन बंद करें",
-  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "जब कुछ नहीं चल रहा हो, तो कोई लुक दिखाने के बजाय स्क्रीन वैसे ही बंद हो जाती है जैसे TV के अपने स्क्रीन बंद से।  कोई भी बटन इसे फिर से चालू कर देता है।  रुके हुए वीडियो पर नीचे दिए लुक ही दिखते हैं।"
+  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "जब कुछ नहीं चल रहा हो, तो कोई लुक दिखाने के बजाय स्क्रीन वैसे ही बंद हो जाती है जैसे TV के अपने स्क्रीन बंद से।  कोई भी बटन इसे फिर से चालू कर देता है।  रुके हुए वीडियो पर नीचे दिए लुक ही दिखते हैं।",
+  "Cricket": "क्रिकेट",
+  "Every session": "हर सेशन",
+  "Formula 1": "फ़ॉर्मूला 1",
+  "Formula 1 sessions": "फ़ॉर्मूला 1 सेशन",
+  "Its sessions in My teams, with reminders if you want them": "इसके सेशन मेरी टीमें में, चाहें तो रिमाइंडर के साथ",
+  "Qualifying, sprints and the race": "क्वालिफ़ाइंग, स्प्रिंट और रेस",
+  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men's college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men's and women's, and the big T20 leagues' teams) and Formula 1.  Other college sports, women's college games, junior and minor league teams, and other leagues aren't in it yet.": "उत्तरी अमेरिका की बड़ी लीग (NFL, NBA, NHL, MLB, WNBA और MLS), कॉलेज फ़ुटबॉल (FBS स्कूल), पुरुषों का कॉलेज बास्केटबॉल (वही स्कूल और FBS फ़ुटबॉल के बिना मुख्य Division I स्कूल), क्रिकेट (पुरुष और महिला राष्ट्रीय टीमें, और बड़ी T20 लीग की टीमें) और फ़ॉर्मूला 1।  दूसरे कॉलेज खेल, महिलाओं के कॉलेज मैच, जूनियर और माइनर लीग टीमें, और दूसरी लीग अभी इसमें नहीं हैं।",
+  "The race only": "सिर्फ़ रेस",
+  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "रेस वीकेंड के कौन से सेशन मेरी टीमें में जाएँ, उनके चलने पर रिमाइंडर के साथ।"
 });

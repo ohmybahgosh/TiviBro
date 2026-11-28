@@ -1538,6 +1538,9 @@ var Settings = (function () {
     function apply() { Teams.dirty(); Store.saveSettings(); relist(); paint(); }
     out.push(head('Your teams'));
     if (!lgs.length) out.push(info('No NFL, NBA, NHL, MLB, WNBA, MLS, college football or college basketball channels found in this playlist.', ''));
+    // Formula 1 followed: which sessions count (teams.js wanted).
+    if (Teams.F1 && Teams.follows(Teams.F1)) out.push(choice('Formula 1 sessions', 'Which sessions of a race weekend go to My teams, with reminders when they\'re on.', ['race', 'qual', 'all'], ['The race only', 'Qualifying, sprints and the race', 'Every session'],
+      function () { return /^(race|qual|all)$/.test(s.f1Sessions || '') ? s.f1Sessions : 'qual'; }, function (v) { s.f1Sessions = v; apply(); if (s.teamsRemind) Watch.scan(true); }));
     lgs.forEach(function (lg) {
       var n = Teams.inLeague(lg.id).filter(function (x) { return Teams.follows(x.id); }).length;
       out.push(page(lg.name, lg.own ? lg.own + ' teams have their own channel' : 'Games only, no team channels', I18n.raw(I18n.t('{x} teams', { x: I18n.t(lg.name) })), function () { return leaguePage(lg.id); },
@@ -1548,7 +1551,7 @@ var Settings = (function () {
         Teams.follow(x.id, false); U.toast('Stopped following the ' + x.name); relist(); build();
       }, function () { return 'Unfollow'; }));
     });
-    out.push(info('The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools) and men\'s college basketball (those schools and the main Division I ones without FBS football).  Other college sports, women\'s college games, junior and minor league teams, and other countries\' leagues, aren\'t in it yet.', ''));
+    out.push(info('The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men\'s college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men\'s and women\'s, and the big T20 leagues\' teams) and Formula 1.  Other college sports, women\'s college games, junior and minor league teams, and other leagues aren\'t in it yet.', ''));
     out.push(head('While you watch'));
     out.push(toggle('My teams\' scores while watching', 'While you watch something else full screen, a live game of a team you follow shows its score in a corner of the screen, kept up to date (several take turns).  Not the game you\'re watching: its broadcast has its own.',
       function () { return s.sportsBar !== false; }, function (v) { s.sportsBar = v; Store.saveSettings(); paint(); }));

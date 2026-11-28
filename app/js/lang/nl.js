@@ -1912,7 +1912,6 @@ I18n.add('nl', {
   "The list stays on Trakt.": "De lijst blijft op Trakt staan.",
   "The lists most liked on Trakt.": "De lijsten die op Trakt het meest geliked worden.",
   "The login saved with": "De login opgeslagen met",
-  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools) and men's college basketball (those schools and the main Division I ones without FBS football).  Other college sports, women's college games, junior and minor league teams, and other countries' leagues, aren't in it yet.": "De belangrijkste Noord-Amerikaanse competities (NFL, NBA, NHL, MLB, WNBA en MLS), college football (de FBS-scholen) en basketbal voor mannen op colleges (die scholen en de belangrijkste Division I-scholen zonder FBS-football).  Andere collegesporten, wedstrijden van vrouwen op colleges, junior- en minorleagueteams en competities uit andere landen zitten er nog niet in.",
   "The most the player downloads ahead while playing.  Movies can fill it; live channels usually stay lower, since the provider only sends a little ahead of real time.": "Het meeste dat de speler vooruit downloadt tijdens het afspelen.  Films kunnen dit vullen; live zenders blijven meestal lager, omdat de provider maar een klein stukje vooruit stuurt op de echte tijd.",
   "The network helper is not running": "De Netwerkhulp draait niet",
   "The network helper is not running, so the editor cannot start.  See Settings, System.": "De Netwerkhulp draait niet, dus de editor kan niet starten.  Zie Instellingen, Systeem.",
@@ -2824,5 +2823,14 @@ I18n.add('nl', {
   "The drive's partition recordings and live pause go to.": "De partitie van de schijf waar opnames en live pauzeren naartoe gaan.",
   "The weekend": "Het weekend",
   "Turn the screen off instead": "In plaats daarvan het scherm uitzetten",
-  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Als er niets speelt, gaat het scherm uit zoals met Scherm uit van de tv, in plaats van een stijl te tonen.  Elke knop zet het weer aan.  Over een gepauzeerde video worden de stijlen hieronder nog steeds getoond."
+  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Als er niets speelt, gaat het scherm uit zoals met Scherm uit van de tv, in plaats van een stijl te tonen.  Elke knop zet het weer aan.  Over een gepauzeerde video worden de stijlen hieronder nog steeds getoond.",
+  "Cricket": "Cricket",
+  "Every session": "Elke sessie",
+  "Formula 1": "Formule 1",
+  "Formula 1 sessions": "Formule 1-sessies",
+  "Its sessions in My teams, with reminders if you want them": "Haar sessies in Mijn teams, met herinneringen als je wilt",
+  "Qualifying, sprints and the race": "Kwalificatie, sprints en de race",
+  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men's college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men's and women's, and the big T20 leagues' teams) and Formula 1.  Other college sports, women's college games, junior and minor league teams, and other leagues aren't in it yet.": "De grote Noord-Amerikaanse competities (NFL, NBA, NHL, MLB, WNBA en MLS), universiteitsfootball (de FBS-scholen), universiteitsbasketbal voor mannen (die scholen en de belangrijkste Division I-scholen zonder FBS-football), cricket (de nationale teams, mannen en vrouwen, en de teams van de grote T20-competities) en Formule 1.  Andere universiteitssporten, universiteitswedstrijden van vrouwen, jeugd- en lagere-divisieteams en andere competities zitten er nog niet in.",
+  "The race only": "Alleen de race",
+  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Welke sessies van een raceweekend naar Mijn teams gaan, met herinneringen als ze uitgezonden worden."
 });

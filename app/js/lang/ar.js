@@ -2142,7 +2142,6 @@ I18n.add('ar', {
   "The lists most liked on Trakt.": "القوائم الأكثر إعجابًا على Trakt.",
   "The log goes too, with logins and server names taken out.": "يُرسل السجل أيضًا، بعد حذف بيانات الدخول وأسماء الخوادم منه.",
   "The login saved with": "تسجيل الدخول المحفوظ مع",
-  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools) and men's college basketball (those schools and the main Division I ones without FBS football).  Other college sports, women's college games, junior and minor league teams, and other countries' leagues, aren't in it yet.": "أبرز الدوريات في أمريكا الشمالية (NFL وNBA وNHL وMLB وWNBA وMLS)، وكرة القدم الجامعية (مدارس FBS)، وكرة السلة الجامعية للرجال (هذه المدارس وأبرز مدارس Division I التي ليس لديها كرة قدم FBS).  أما بقية الرياضات الجامعية ومباريات الجامعات للسيدات وفرق الناشئين والدوريات الصغرى ودوريات الدول الأخرى فليست مضافة بعد.",
   "The most the player downloads ahead while playing.  Movies can fill it; live channels usually stay lower, since the provider only sends a little ahead of real time.": "أقصى ما ينزّله المشغّل مسبقًا أثناء التشغيل.  يمكن للأفلام أن تملأه؛ أما القنوات المباشرة فتبقى عادةً أقل، لأن المزوّد لا يرسل إلا القليل قبل الوقت الفعلي.",
   "The network helper is not running": "مساعد الشبكة لا يعمل",
   "The network helper is not running, so the editor cannot start.  See Settings, System.": "مساعد الشبكة لا يعمل، لذا لا يمكن تشغيل المحرر.  راجع الإعدادات، النظام.",
@@ -2810,5 +2809,14 @@ I18n.add('ar', {
   "The drive's partition recordings and live pause go to.": "قسم القرص الذي تذهب إليه التسجيلات والإيقاف المؤقت للبث المباشر.",
   "The weekend": "عطلة نهاية الأسبوع",
   "Turn the screen off instead": "إطفاء الشاشة بدلًا من ذلك",
-  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "عندما لا يُشغَّل شيء، تنطفئ الشاشة كما يفعل خيار إطفاء الشاشة في التلفاز، بدلًا من عرض مظهر.  أي زر يعيد تشغيلها.  فوق فيديو متوقف مؤقتًا تظل المظاهر أدناه تظهر."
+  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "عندما لا يُشغَّل شيء، تنطفئ الشاشة كما يفعل خيار إطفاء الشاشة في التلفاز، بدلًا من عرض مظهر.  أي زر يعيد تشغيلها.  فوق فيديو متوقف مؤقتًا تظل المظاهر أدناه تظهر.",
+  "Cricket": "الكريكيت",
+  "Every session": "كل الجلسات",
+  "Formula 1": "الفورمولا 1",
+  "Formula 1 sessions": "جلسات الفورمولا 1",
+  "Its sessions in My teams, with reminders if you want them": "جلساتها في فرقي، مع تذكيرات إن أردت",
+  "Qualifying, sprints and the race": "التأهيل والسباقات القصيرة والسباق",
+  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men's college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men's and women's, and the big T20 leagues' teams) and Formula 1.  Other college sports, women's college games, junior and minor league teams, and other leagues aren't in it yet.": "الدوريات الكبرى في أمريكا الشمالية (NFL وNBA وNHL وMLB وWNBA وMLS)، وكرة القدم الأمريكية الجامعية (مدارس FBS)، وكرة السلة الجامعية للرجال (تلك المدارس والمدارس الرئيسية في Division I بلا كرة قدم FBS)، والكريكيت (المنتخبات الوطنية للرجال والسيدات، وفرق دوريات T20 الكبرى) والفورمولا 1.  الرياضات الجامعية الأخرى ومباريات السيدات الجامعية وفرق الناشئين والدوريات الصغرى والدوريات الأخرى ليست فيه بعد.",
+  "The race only": "السباق فقط",
+  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "أي جلسات من عطلة السباق تذهب إلى فرقي، مع تذكيرات عند عرضها."
 });

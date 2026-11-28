@@ -1169,7 +1169,6 @@ I18n.add('pt-BR', {
   "The group of event channels on now or starting in the next two weeks, soonest first.  The same switch as in Event channels.": "O grupo de canais de eventos em andamento ou começando nas próximas duas semanas, os mais próximos primeiro.  O mesmo botão que em Canais de eventos.",
   "The guide": "O guia",
   "The guide shows the event at its time, with \"Starts 7:30 PM\" before it.  A real guide always wins.": "O guia mostra o evento no horário, com \"Começa 7:30 PM\" antes.  Um guia real sempre tem prioridade.",
-  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools) and men's college basketball (those schools and the main Division I ones without FBS football).  Other college sports, women's college games, junior and minor league teams, and other countries' leagues, aren't in it yet.": "As principais ligas da América do Norte (NFL, NBA, NHL, MLB, WNBA e MLS), o futebol americano universitário (as escolas FBS) e o basquete universitário masculino (essas escolas e as principais da Divisão I sem futebol americano FBS).  Outros esportes universitários, jogos universitários femininos, times juvenis e de ligas menores, e ligas de outros países, ainda não estão.",
   "The most the player downloads ahead while playing.  Movies can fill it; live channels usually stay lower, since the provider only sends a little ahead of real time.": "O máximo que o player baixa adiantado.  Filmes podem enchê-lo; canais ao vivo costumam ficar mais baixo, já que o provedor só envia um pouco à frente do tempo real.",
   "The network helper is not running": "O assistente de rede não está em execução",
   "The other playlists' guides": "Os guias das outras listas",
@@ -3443,5 +3442,14 @@ I18n.add('pt-BR', {
   "The drive's partition recordings and live pause go to.": "A partição do disco onde ficam as gravações e a pausa ao vivo.",
   "The weekend": "O fim de semana",
   "Turn the screen off instead": "Desligar a tela em vez disso",
-  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Sem nada tocando, a tela se apaga como no Desligar tela da TV, em vez de mostrar um visual.  Qualquer botão a liga de novo.  Sobre um vídeo pausado, os visuais abaixo continuam aparecendo."
+  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Sem nada tocando, a tela se apaga como no Desligar tela da TV, em vez de mostrar um visual.  Qualquer botão a liga de novo.  Sobre um vídeo pausado, os visuais abaixo continuam aparecendo.",
+  "Cricket": "Críquete",
+  "Every session": "Todas as sessões",
+  "Formula 1": "Fórmula 1",
+  "Formula 1 sessions": "Sessões da Fórmula 1",
+  "Its sessions in My teams, with reminders if you want them": "As sessões em Meus times, com lembretes se você quiser",
+  "Qualifying, sprints and the race": "Classificação, sprints e a corrida",
+  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men's college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men's and women's, and the big T20 leagues' teams) and Formula 1.  Other college sports, women's college games, junior and minor league teams, and other leagues aren't in it yet.": "As principais ligas da América do Norte (NFL, NBA, NHL, MLB, WNBA e MLS), o futebol americano universitário (as escolas da FBS), o basquete universitário masculino (essas escolas e as principais da Divisão I sem futebol FBS), o críquete (as seleções, masculinas e femininas, e os times das grandes ligas T20) e a Fórmula 1.  Outros esportes universitários, jogos universitários femininos, times de base e de ligas menores, e outras ligas ainda não estão incluídos.",
+  "The race only": "Só a corrida",
+  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Quais sessões de um fim de semana de corrida vão para Meus times, com lembretes quando estiverem passando."
 });

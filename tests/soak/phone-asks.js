@@ -367,6 +367,12 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   ok('the phone has Dialogue boost (off, low, high) and Night mode', db && nm && db.kind === 'choice' && db.options.length === 3 && nm.kind === 'toggle', JSON.stringify(auPg.rows.map((r) => r.label)).slice(-300));
   if (db) { await sa({ op: 'choice', sec: 'audio', i: db.i, v: 2 }); ok('...and sets dialogue boost to High on the TV', await ev(() => Store.settings.dialogBoost) === 'high'); await sa({ op: 'choice', sec: 'audio', i: db.i, v: 0 }); }
   if (nm) { await sa({ op: 'toggle', sec: 'audio', i: nm.i, on: true }); ok('...and turns night mode on on the TV', await ev(() => Store.settings.nightMode) === true); await sa({ op: 'toggle', sec: 'audio', i: nm.i, on: false }); }
+  // Formula 1 followed (discussion #200): Settings > Sports has which sessions count, on the phone too.
+  await ev(() => { Teams.follow(Teams.F1, true); });
+  const spPg = await sa({ op: 'page', sec: 'sports' }), f1s = spPg.rows.find((r) => r.label === 'Formula 1 sessions');
+  ok('following Formula 1: the phone has Formula 1 sessions (race, qualifying and the race, every session)', f1s && f1s.kind === 'choice' && f1s.options.length === 3, JSON.stringify(spPg.rows.map((r) => r.label)).slice(0, 300));
+  if (f1s) { await sa({ op: 'choice', sec: 'sports', i: f1s.i, v: 0 }); ok('...and sets the race only on the TV', await ev(() => Store.settings.f1Sessions) === 'race'); await sa({ op: 'choice', sec: 'sports', i: f1s.i, v: 1 }); }
+  await ev(() => { Teams.follow(Teams.F1, false); });
   // Where details come from (Movies: details from, Shows: details from): on the phone, as choices that switch the TV.
   const vodPg = await sa({ op: 'page', sec: 'vod' }), shw = vodPg.rows.find((r) => r.label === 'Shows: details from'), mov = vodPg.rows.find((r) => r.label === 'Movies: details from');
   ok('the phone has where details come from, for movies and for shows', shw && mov && shw.kind === 'choice' && shw.options.length === 3 && mov.options.length === 3, JSON.stringify(vodPg.rows.map((r) => r.label)).slice(0, 300));

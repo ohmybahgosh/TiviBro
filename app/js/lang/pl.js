@@ -1911,7 +1911,6 @@ I18n.add('pl', {
   "The list stays on Trakt.": "Lista zostaje na Trakt.",
   "The lists most liked on Trakt.": "Najbardziej lubiane listy na Trakt.",
   "The login saved with": "Login zapisany z",
-  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools) and men's college basketball (those schools and the main Division I ones without FBS football).  Other college sports, women's college games, junior and minor league teams, and other countries' leagues, aren't in it yet.": "Główne ligi północnoamerykańskie (NFL, NBA, NHL, MLB, WNBA i MLS), futbol uniwersytecki (szkoły FBS) i koszykówka mężczyzn na uczelniach (te same szkoły oraz główne szkoły Division I bez futbolu FBS).  Inne sporty uniwersyteckie, mecze kobiet na uczelniach, drużyny juniorskie i z lig niższych oraz ligi z innych krajów nie są jeszcze uwzględnione.",
   "The most the player downloads ahead while playing.  Movies can fill it; live channels usually stay lower, since the provider only sends a little ahead of real time.": "Maksimum, jakie odtwarzacz pobiera z wyprzedzeniem podczas odtwarzania.  Filmy mogą je wypełnić; kanały na żywo zwykle zostają niżej, bo dostawca wysyła tylko trochę przed czasem rzeczywistym.",
   "The network helper is not running": "Asystent sieciowy nie działa",
   "The network helper is not running, so the editor cannot start.  See Settings, System.": "Asystent sieciowy nie działa, więc edytor nie może się uruchomić.  Zobacz Ustawienia, System.",
@@ -2824,5 +2823,14 @@ I18n.add('pl', {
   "The drive's partition recordings and live pause go to.": "Partycja dysku, na którą trafiają nagrania i pauza na żywo.",
   "The weekend": "Weekend",
   "Turn the screen off instead": "Zamiast tego wyłącz ekran",
-  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Gdy nic nie jest odtwarzane, ekran gaśnie jak przy funkcji Wyłącz ekran w telewizorze, zamiast pokazywać motyw.  Dowolny przycisk włącza go z powrotem.  Nad wstrzymanym filmem nadal pojawiają się motywy poniżej."
+  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Gdy nic nie jest odtwarzane, ekran gaśnie jak przy funkcji Wyłącz ekran w telewizorze, zamiast pokazywać motyw.  Dowolny przycisk włącza go z powrotem.  Nad wstrzymanym filmem nadal pojawiają się motywy poniżej.",
+  "Cricket": "Krykiet",
+  "Every session": "Każda sesja",
+  "Formula 1": "Formuła 1",
+  "Formula 1 sessions": "Sesje Formuły 1",
+  "Its sessions in My teams, with reminders if you want them": "Jej sesje w Moje drużyny, z przypomnieniami, jeśli chcesz",
+  "Qualifying, sprints and the race": "Kwalifikacje, sprinty i wyścig",
+  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men's college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men's and women's, and the big T20 leagues' teams) and Formula 1.  Other college sports, women's college games, junior and minor league teams, and other leagues aren't in it yet.": "Główne ligi Ameryki Północnej (NFL, NBA, NHL, MLB, WNBA i MLS), futbol uniwersytecki (szkoły FBS), męska koszykówka uniwersytecka (te szkoły i główne szkoły Division I bez futbolu FBS), krykiet (reprezentacje, męskie i żeńskie, oraz drużyny dużych lig T20) i Formuła 1.  Innych sportów uniwersyteckich, kobiecych meczów uniwersyteckich, drużyn juniorskich i niższych lig oraz innych lig jeszcze nie ma.",
+  "The race only": "Tylko wyścig",
+  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Które sesje weekendu wyścigowego trafiają do Moje drużyny, z przypomnieniami, gdy są na antenie."
 });

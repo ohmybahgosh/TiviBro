@@ -1406,7 +1406,8 @@ var Player = (function () {
       var gap = nextRangeStart();
       if (gap > 0) { st.arr = null; Log.debug('player', 'Jumped a ' + (gap - t).toFixed(2) + 's gap in the buffer'); video.currentTime = gap + 0.05; st.lastMove = now; return; }
     }
-    // Ran dry: start a proper refill instead of stutter-playing.
+    // Ran dry: start a proper refill instead of stutter-playing.  A far Plex server's movie: through the helper instead.
+    if (stuck > 600 && ahead < 0.3 && spoolFar(myToken)) return;
     if (stuck > 600 && ahead < 0.3) {
       st.refilling = true; st.refillSince = now; st.refills = (st.refills || 0) + 1; st.arr = null;
       if (cur.live && !cur.timeshift && window.PlayMemo) PlayMemo.ranDry(memoHost());
@@ -1528,7 +1529,8 @@ var Player = (function () {
       var my = token, item = cur.meta && cur.meta.item || {};
       teardown(); st = null;
       state('loading');
-      Convert.plan({ url: cur.url, media: cur.media, title: (cur.meta && cur.meta.title) || '', container: item.ext || item.container_extension || '', sync: syncing(), boost: dialogFx() })
+      // A far server that ran dry before (spoolFar): through the helper from the start this time.
+      Convert.plan({ url: cur.url, media: cur.media, title: (cur.meta && cur.meta.title) || '', container: item.ext || item.container_extension || '', sync: syncing(), boost: dialogFx(), spool: !!(cur.meta && cur.meta.farServer && spooled[hostOf(cur.url)]) })
         .then(function (r) { applyPlan(r, my); }, function () { if (my === token) start(my); });
       return;
     }
@@ -1629,6 +1631,29 @@ var Player = (function () {
     var ch = t.channels >= 8 ? ' 7.1' : t.channels >= 6 ? ' 5.1' : t.channels === 2 ? ' stereo' : '';
     var code = t.lang ? U.lang(t.lang) : '', name = code ? (U.LANGS.filter(function (l) { return l[0] === code; })[0] || [])[1] : '';
     return (t.title || name || (t.lang ? t.lang.toUpperCase() : 'Track ' + (i + 1))) + '  ' + (Convert.NAMES[t.codec] || String(t.codec || '').toUpperCase()) + ch + (bad ? ' (converted)' : '');
+  }
+  /* A movie from a Plex server away from home (meta.farServer), played as the file is by the TV's own player, that
+     runs dry: LG's player reads such a server in short pulls and, paused to refill, stops reading with a few seconds
+     in hand (seen on a C2 with a 25 Mbps 4K Dolby Vision file: 7 s buffered, never the 18 s asked, then reconnect
+     after reconnect).  The same file through the helper's spool (service/convert.js, picture and sound copied) plays
+     through, as it did with dialogue boost on.  Once per movie, from where it is; true when it took over. */
+  var spooled = {};          // far servers that needed the helper's read-ahead this session, by host
+  function hostOf(u) { var m = /^https?:\/\/([^\/?#]+)/i.exec(u || ''); return m ? m[1].toLowerCase() : ''; }
+  function spoolFar(my) {
+    if (!cur || cur.live || cur.conv || cur.spoolTried || cur.preview || !isFile() || !(cur.meta && cur.meta.farServer) || st.kind !== 'native' || !window.Convert || !Convert.on()) return false;
+    cur.spoolTried = true;
+    var at = Math.max(0.1, position()), item = cur.meta.item || {};
+    Log.info('player', 'Ran dry on a far server at ' + Math.round(at) + 's; playing through the helper, which reads ahead');
+    video.pause(); state('buffering');
+    Convert.plan({ url: cur.url, media: cur.media, title: cur.meta.title || '', container: item.ext || item.container_extension || '', sync: syncing(), boost: dialogFx(), spool: true }).then(function (r) {
+      if (my !== token || !cur) return;
+      if (!r || !r.conv) { Log.info('player', 'The helper can\'t read it ahead; refilling as before'); return; }
+      spooled[hostOf(cur.url)] = 1;
+      teardown(); st = null; state('loading');
+      cur.startAt = at; cur.retries = 0;
+      applyPlan(r, my);
+    }, function () {});
+    return true;
   }
   function useConv(conv, why) {
     cur.conv = conv; cur.convNotice = why || ''; cur.audioPicked = true;

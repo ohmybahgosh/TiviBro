@@ -793,7 +793,6 @@ I18n.add('ru', {
   "The group of event channels on now or starting in the next two weeks, soonest first.  The same switch as in Event channels.": "Группа каналов событий, идущих сейчас или в ближайшие две недели, ближайшие первыми.  Тот же переключатель, что и в «Каналах событий».",
   "The guide": "Телегид",
   "The guide shows the event at its time, with \"Starts 7:30 PM\" before it.  A real guide always wins.": "Телегид показывает событие в его время с пометкой «Начало в 19:30».  Настоящий телегид всегда в приоритете.",
-  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools) and men's college basketball (those schools and the main Division I ones without FBS football).  Other college sports, women's college games, junior and minor league teams, and other countries' leagues, aren't in it yet.": "Основные лиги Северной Америки (NFL, NBA, NHL, MLB, WNBA и MLS), студенческий футбол (школы FBS) и мужской студенческий баскетбол (эти школы и основные школы Дивизиона I без футбола FBS).  Другие студенческие виды спорта, женские студенческие игры, юниорские и низшие лиги, а также лиги других стран пока не включены.",
   "The most the player downloads ahead while playing.  Movies can fill it; live channels usually stay lower, since the provider only sends a little ahead of real time.": "Максимум, который плеер загружает вперёд при воспроизведении.  Фильмы могут заполнить его; у живых каналов обычно меньше, так как провайдер отправляет данные лишь немного раньше реального времени.",
   "The network helper is not running": "Сетевой помощник не запущен",
   "The other playlists' guides": "Телегиды других плейлистов",
@@ -2937,5 +2936,14 @@ I18n.add('ru', {
   "The drive's partition recordings and live pause go to.": "Раздел диска, куда идут записи и пауза эфира.",
   "The weekend": "Уикенд",
   "Turn the screen off instead": "Вместо этого выключать экран",
-  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Когда ничего не играет, экран гаснет, как при функции «Выключить экран» телевизора, вместо заставки.  Любая кнопка включает его снова.  Над видео на паузе по-прежнему показываются заставки ниже."
+  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Когда ничего не играет, экран гаснет, как при функции «Выключить экран» телевизора, вместо заставки.  Любая кнопка включает его снова.  Над видео на паузе по-прежнему показываются заставки ниже.",
+  "Cricket": "Крикет",
+  "Every session": "Все сессии",
+  "Formula 1": "Формула-1",
+  "Formula 1 sessions": "Сессии Формулы-1",
+  "Its sessions in My teams, with reminders if you want them": "Её сессии в «Мои команды», с напоминаниями, если хотите",
+  "Qualifying, sprints and the race": "Квалификация, спринты и гонка",
+  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men's college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men's and women's, and the big T20 leagues' teams) and Formula 1.  Other college sports, women's college games, junior and minor league teams, and other leagues aren't in it yet.": "Главные лиги Северной Америки (NFL, NBA, NHL, MLB, WNBA и MLS), студенческий американский футбол (школы FBS), мужской студенческий баскетбол (эти школы и главные школы Division I без футбола FBS), крикет (сборные, мужские и женские, и команды больших лиг T20) и Формула-1.  Других студенческих видов спорта, женских студенческих матчей, юниорских команд и команд низших лиг, а также других лиг пока нет.",
+  "The race only": "Только гонка",
+  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Какие сессии гоночного уикенда попадают в «Мои команды», с напоминаниями, когда они идут."
 });

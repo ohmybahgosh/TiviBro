@@ -2142,7 +2142,6 @@ I18n.add('uk', {
   "The lists most liked on Trakt.": "Списки, які найбільшеподобалися на Trakt.",
   "The log goes too, with logins and server names taken out.": "Журнал теж додається, логіни та назви серверів вилучено.",
   "The login saved with": "Логін, збережений разом із",
-  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools) and men's college basketball (those schools and the main Division I ones without FBS football).  Other college sports, women's college games, junior and minor league teams, and other countries' leagues, aren't in it yet.": "Основні північноамериканські ліги (NFL, NBA, NHL, MLB, WNBA і MLS), студентський футбол (університети FBS) і чоловічий студентський баскетбол (ці університети та основні команди Дивізіону I без футболу FBS).  Інших студентських видів спорту, жіночих студентських ігор, юніорських і нижчих ліг та ліг інших країн тут ще немає.",
   "The most the player downloads ahead while playing.  Movies can fill it; live channels usually stay lower, since the provider only sends a little ahead of real time.": "Скільки найбільше програвач завантажує наперед під час відтворення.  Фільми можуть заповнити його повністю; канали наживо зазвичай залишаються нижче, бо провайдер надсилає лише трохи наперед реального часу.",
   "The network helper is not running": "Мережевий помічник не працює",
   "The network helper is not running, so the editor cannot start.  See Settings, System.": "Мережевий помічник не працює, тому редактор не може запуститися.  Див. Налаштування, Система.",
@@ -2810,5 +2809,14 @@ I18n.add('uk', {
   "The drive's partition recordings and live pause go to.": "Розділ диска, куди йдуть записи та пауза ефіру.",
   "The weekend": "Вікенд",
   "Turn the screen off instead": "Натомість вимикати екран",
-  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Коли нічого не грає, екран гасне, як від функції «Вимкнути екран» телевізора, замість заставки.  Будь-яка кнопка вмикає його знову.  Над відео на паузі й далі показуються заставки нижче."
+  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Коли нічого не грає, екран гасне, як від функції «Вимкнути екран» телевізора, замість заставки.  Будь-яка кнопка вмикає його знову.  Над відео на паузі й далі показуються заставки нижче.",
+  "Cricket": "Крикет",
+  "Every session": "Усі сесії",
+  "Formula 1": "Формула-1",
+  "Formula 1 sessions": "Сесії Формули-1",
+  "Its sessions in My teams, with reminders if you want them": "Її сесії в «Мої команди», з нагадуваннями, якщо хочете",
+  "Qualifying, sprints and the race": "Кваліфікація, спринти й гонка",
+  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools), men's college basketball (those schools and the main Division I ones without FBS football), cricket (the national sides, men's and women's, and the big T20 leagues' teams) and Formula 1.  Other college sports, women's college games, junior and minor league teams, and other leagues aren't in it yet.": "Головні ліги Північної Америки (NFL, NBA, NHL, MLB, WNBA і MLS), студентський американський футбол (школи FBS), чоловічий студентський баскетбол (ці школи та головні школи Division I без футболу FBS), крикет (збірні, чоловічі й жіночі, і команди великих ліг T20) та Формула-1.  Інших студентських видів спорту, жіночих студентських матчів, юніорських команд і команд нижчих ліг, а також інших ліг поки немає.",
+  "The race only": "Лише гонка",
+  "Which sessions of a race weekend go to My teams, with reminders when they're on.": "Які сесії гоночного вікенду потрапляють у «Мої команди», з нагадуваннями, коли вони йдуть."
 });
