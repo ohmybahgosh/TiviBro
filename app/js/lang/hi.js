@@ -2824,5 +2824,7 @@ I18n.add('hi', {
   "The Guide button opens the TV's guide again": "गाइड बटन फिर से TV की गाइड खोलता है",
   "The TV's Guide button": "TV का गाइड बटन",
   "The TV's Guide button opens TiviBro": "TV का गाइड बटन TiviBro खोलता है",
-  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "रिमोट का गाइड बटन TV की गाइड के बजाय TiviBro की गाइड खोलता है, कहीं से भी, और TV के रीस्टार्ट होने के बाद भी।  बंद: फिर से TV की अपनी गाइड।"
+  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "रिमोट का गाइड बटन TV की गाइड के बजाय TiviBro की गाइड खोलता है, कहीं से भी, और TV के रीस्टार्ट होने के बाद भी।  बंद: फिर से TV की अपनी गाइड।",
+  "Needs a rooted TV (the Homebrew Channel): other TVs don't let an app turn their screen off, so the looks below show instead.": "रूट किया हुआ TV चाहिए (Homebrew Channel): दूसरे TV किसी ऐप को स्क्रीन बंद नहीं करने देते, इसलिए नीचे के लुक दिखते हैं।",
+  "This TV doesn't let TiviBro turn its screen off (that needs a rooted TV), so the screensaver shows instead.": "यह TV TiviBro को स्क्रीन बंद नहीं करने देता (इसके लिए रूट किया हुआ TV चाहिए), इसलिए स्क्रीनसेवर दिखता है।"
 });

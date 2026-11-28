@@ -2824,5 +2824,7 @@ I18n.add('uk', {
   "The Guide button opens the TV's guide again": "Кнопка Телепрограма знову відкриває телепрограму телевізора",
   "The TV's Guide button": "Кнопка Телепрограма телевізора",
   "The TV's Guide button opens TiviBro": "Кнопка Телепрограма телевізора відкриває TiviBro",
-  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "Кнопка Телепрограма на пульті відкриває телепрограму TiviBro замість телепрограми телевізора, звідусіль, і після перезапуску телевізора теж.  Вимк.: знову телепрограма телевізора."
+  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "Кнопка Телепрограма на пульті відкриває телепрограму TiviBro замість телепрограми телевізора, звідусіль, і після перезапуску телевізора теж.  Вимк.: знову телепрограма телевізора.",
+  "Needs a rooted TV (the Homebrew Channel): other TVs don't let an app turn their screen off, so the looks below show instead.": "Потрібен телевізор із root (Homebrew Channel): інші не дають застосунку вимикати екран, тож показуються заставки нижче.",
+  "This TV doesn't let TiviBro turn its screen off (that needs a rooted TV), so the screensaver shows instead.": "Цей телевізор не дає TiviBro вимкнути екран (для цього потрібен root), тож показується заставка."
 });

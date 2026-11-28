@@ -2838,5 +2838,7 @@ I18n.add('it', {
   "The Guide button opens the TV's guide again": "Il tasto Guida apre di nuovo la guida della TV",
   "The TV's Guide button": "Il tasto Guida della TV",
   "The TV's Guide button opens TiviBro": "Il tasto Guida della TV apre TiviBro",
-  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "Il tasto Guida del telecomando apre la guida di TiviBro invece di quella della TV, da qualsiasi punto, anche dopo un riavvio della TV.  Disattivato: di nuovo la guida della TV."
+  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "Il tasto Guida del telecomando apre la guida di TiviBro invece di quella della TV, da qualsiasi punto, anche dopo un riavvio della TV.  Disattivato: di nuovo la guida della TV.",
+  "Needs a rooted TV (the Homebrew Channel): other TVs don't let an app turn their screen off, so the looks below show instead.": "Serve una TV con root (Homebrew Channel): le altre non lasciano che un'app spenga lo schermo, quindi si vedono gli stili qui sotto.",
+  "This TV doesn't let TiviBro turn its screen off (that needs a rooted TV), so the screensaver shows instead.": "Questa TV non lascia che TiviBro spenga lo schermo (serve una TV con root), quindi compare il salvaschermo."
 });

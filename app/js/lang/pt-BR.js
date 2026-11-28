@@ -3457,5 +3457,7 @@ I18n.add('pt-BR', {
   "The Guide button opens the TV's guide again": "O botão Guia volta a abrir o guia da TV",
   "The TV's Guide button": "O botão Guia da TV",
   "The TV's Guide button opens TiviBro": "O botão Guia da TV abre o TiviBro",
-  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "O botão Guia do controle abre o guia do TiviBro em vez do guia da TV, de qualquer lugar, e continua assim depois que a TV reinicia.  Desligado: o guia da própria TV de novo."
+  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "O botão Guia do controle abre o guia do TiviBro em vez do guia da TV, de qualquer lugar, e continua assim depois que a TV reinicia.  Desligado: o guia da própria TV de novo.",
+  "Needs a rooted TV (the Homebrew Channel): other TVs don't let an app turn their screen off, so the looks below show instead.": "Precisa de uma TV com root (o Homebrew Channel): as outras não deixam um app desligar a tela, então os visuais abaixo aparecem no lugar.",
+  "This TV doesn't let TiviBro turn its screen off (that needs a rooted TV), so the screensaver shows instead.": "Esta TV não deixa o TiviBro desligar a tela (é preciso uma TV com root), então o protetor de tela aparece no lugar."
 });

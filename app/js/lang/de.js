@@ -2840,5 +2840,7 @@ I18n.add('de', {
   "The Guide button opens the TV's guide again": "Die TV-Guide-Taste öffnet wieder den TV-Guide des Fernsehers",
   "The TV's Guide button": "Die TV-Guide-Taste des Fernsehers",
   "The TV's Guide button opens TiviBro": "Die TV-Guide-Taste des Fernsehers öffnet TiviBro",
-  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "Die TV-Guide-Taste der Fernbedienung öffnet den TV-Guide von TiviBro statt den des Fernsehers, von überall aus und auch nach einem Neustart des Fernsehers.  Aus: wieder der TV-Guide des Fernsehers."
+  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "Die TV-Guide-Taste der Fernbedienung öffnet den TV-Guide von TiviBro statt den des Fernsehers, von überall aus und auch nach einem Neustart des Fernsehers.  Aus: wieder der TV-Guide des Fernsehers.",
+  "Needs a rooted TV (the Homebrew Channel): other TVs don't let an app turn their screen off, so the looks below show instead.": "Braucht einen gerooteten Fernseher (Homebrew Channel): Andere Fernseher lassen eine App ihren Bildschirm nicht ausschalten, daher erscheinen stattdessen die Motive unten.",
+  "This TV doesn't let TiviBro turn its screen off (that needs a rooted TV), so the screensaver shows instead.": "Dieser Fernseher lässt TiviBro den Bildschirm nicht ausschalten (dafür braucht es einen gerooteten Fernseher), daher erscheint stattdessen der Bildschirmschoner."
 });

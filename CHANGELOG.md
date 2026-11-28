@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **More protected DASH channels play.**  Some channels (Jio's, issue #202) want back what their server handed out with the manifest: a cookie, or a CDN token in the link.  TiviBro's helper now keeps both and sends them with the channel's video pieces, as other players do.
+- **Turning the screen off says when it can't.**  It needs a rooted TV; the setting says so, and on a TV that refuses, TiviBro says so once instead of quietly showing the screensaver.
 - **The remote's Guide button can open TiviBro.**  On a rooted TV, Settings > Remote and buttons > The TV's Guide button opens TiviBro: the Guide button then opens TiviBro's guide from anywhere, also after the TV restarts.
 
 ## 0.6.0 (alpha 235, 2026-11-28)

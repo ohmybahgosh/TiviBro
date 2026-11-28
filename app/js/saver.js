@@ -21,7 +21,7 @@ var Saver = (function () {
   'use strict';
   var T = function (s, v) { return typeof I18n !== 'undefined' ? I18n.t(s, v) : String(s).replace(/\{(\w+)\}/g, function (a, k) { return v && v[k] != null ? v[k] : a; }); };
   var homeRated = true, LOOKS = ['clock', 'aurora', 'library', 'teams', 'bounce'], MIX_MS = 4 * 60000, HOUR = 3600000, SHIFT = [[0, 0], [6, 2], [8, -4], [2, -8], [-4, -6], [-8, 0], [-6, 6], [0, 8]];
-  var last = Date.now(), dark = false, el = null, on = false, since = 0, look = '', lookAt = 0, ticks = [], shiftAt = 0, handed = false, home = null, homeAt = 0;
+  var last = Date.now(), dark = false, refusedSaid = false, el = null, on = false, since = 0, look = '', lookAt = 0, ticks = [], shiftAt = 0, handed = false, home = null, homeAt = 0;
 
   function S() { return (typeof Store !== 'undefined' && Store.settings) || {}; }
   function enabled() { return S().saver !== 'off'; }
@@ -76,6 +76,8 @@ var Saver = (function () {
       if (!dark) return;
       dark = false;
       if (typeof Log !== 'undefined') Log.warn('app', 'The TV would not turn the screen off (' + (e && e.message) + '); the screensaver shows instead');
+      // Said once a session, the first time the TV refuses (it needs a rooted TV), so "nothing happened" has a reason.
+      if (!refusedSaid && typeof U !== 'undefined' && U.toast) { refusedSaid = true; U.toast(T('This TV doesn\'t let TiviBro turn its screen off (that needs a rooted TV), so the screensaver shows instead.'), 10000); }
       show();
     });
   }

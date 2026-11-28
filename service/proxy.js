@@ -28,6 +28,7 @@ var Stalker = require('./stalker');
 var Media = require('./media');
 var Convert = require('./convert');
 var SeekPrev = require('./seekprev');
+var StreamAuth = require('./streamauth');
 var Multiview = require('./multiview');
 var Ffmpeg = require('./ffmpeg');
 var Pace = require('./pace');
@@ -360,6 +361,11 @@ function create(opts) {
     if (/^bytes=0-$/i.test(req.headers.range || '') && liveKey(u)) delete req.headers.range;
     var headers = { 'User-Agent': ua || opts.userAgent || 'Mozilla/5.0 (Web0S; Linux/SmartTV) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0 Safari/537.36', 'Accept': '*/*' };
     if (hd) Object.keys(hd).forEach(function (k) { headers[k] = hd[k]; });
+    // The cookies and CDN token the stream's server handed out before (streamauth.js, issue #202).
+    var ck = StreamAuth.api(u.pathname) ? '' : StreamAuth.cookieFor(u.hostname, headers.Cookie);
+    if (ck) headers.Cookie = ck;
+    var withToken = StreamAuth.pathFor(u.host, u.path || '/');
+    if (withToken !== u.path) u.path = withToken;
     if (req.body) { headers['Content-Type'] = req.headers['content-type'] || 'application/octet-stream'; headers['Content-Length'] = req.body.length; }
     if (unz) headers['Accept-Encoding'] = 'gzip, deflate';      // the helper unzips, so ask for the smallest transfer
     else {
@@ -430,6 +436,8 @@ function create(opts) {
          own watchdog notices a provider that stops sending while it plays. */
       if (req.headers.range && (code === 200 || code === 206)) reading = true;
       rec.s = code; rec.ct = ur.headers['content-type'];
+      // Only a stream's manifest (or its redirect) hands out cookies to keep: never a provider's API or a portal.
+      if (ur.headers['set-cookie'] && StreamAuth.isManifest(u.pathname, ur.headers['content-type'])) StreamAuth.remember(u.hostname, ur.headers['set-cookie']);
       rec.firstByteMs = Date.now() - t0;
       if (code >= 300 && code < 400 && ur.headers.location) {
         var next = URL_.resolve(t, ur.headers.location);

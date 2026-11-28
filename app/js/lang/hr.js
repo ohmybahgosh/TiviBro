@@ -2824,5 +2824,7 @@ I18n.add('hr', {
   "The Guide button opens the TV's guide again": "Tipka Vodič opet otvara vodič televizora",
   "The TV's Guide button": "Tipka Vodič televizora",
   "The TV's Guide button opens TiviBro": "Tipka Vodič televizora otvara TiviBro",
-  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "Tipka Vodič na daljinskom otvara vodič TiviBroa umjesto vodiča televizora, s bilo kojeg mjesta, i nakon ponovnog pokretanja televizora.  Isključeno: opet vodič televizora."
+  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "Tipka Vodič na daljinskom otvara vodič TiviBroa umjesto vodiča televizora, s bilo kojeg mjesta, i nakon ponovnog pokretanja televizora.  Isključeno: opet vodič televizora.",
+  "Needs a rooted TV (the Homebrew Channel): other TVs don't let an app turn their screen off, so the looks below show instead.": "Treba rootani televizor (Homebrew Channel): drugi ne daju aplikaciji da im isključi zaslon, pa se prikazuju izgledi ispod.",
+  "This TV doesn't let TiviBro turn its screen off (that needs a rooted TV), so the screensaver shows instead.": "Ovaj televizor ne da TiviBrou da isključi zaslon (za to treba rootani televizor), pa se prikazuje čuvar zaslona."
 });

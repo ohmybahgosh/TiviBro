@@ -2838,5 +2838,7 @@ I18n.add('tr', {
   "The Guide button opens the TV's guide again": "Rehber tuşu yeniden TV’nin rehberini açıyor",
   "The TV's Guide button": "TV’nin Rehber tuşu",
   "The TV's Guide button opens TiviBro": "TV’nin Rehber tuşu TiviBro’yu açar",
-  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "Kumandanın Rehber tuşu, TV’nin rehberi yerine TiviBro’nun rehberini açar; her yerden ve TV yeniden başladıktan sonra da.  Kapalı: yeniden TV’nin kendi rehberi."
+  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "Kumandanın Rehber tuşu, TV’nin rehberi yerine TiviBro’nun rehberini açar; her yerden ve TV yeniden başladıktan sonra da.  Kapalı: yeniden TV’nin kendi rehberi.",
+  "Needs a rooted TV (the Homebrew Channel): other TVs don't let an app turn their screen off, so the looks below show instead.": "Root’lu bir TV gerekir (Homebrew Channel): diğer TV’ler bir uygulamanın ekranı kapatmasına izin vermez, bu yüzden aşağıdaki görünümler gösterilir.",
+  "This TV doesn't let TiviBro turn its screen off (that needs a rooted TV), so the screensaver shows instead.": "Bu TV, TiviBro’nun ekranı kapatmasına izin vermiyor (bunun için root’lu bir TV gerekir), bu yüzden ekran koruyucu gösteriliyor."
 });

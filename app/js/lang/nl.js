@@ -2838,5 +2838,7 @@ I18n.add('nl', {
   "The Guide button opens the TV's guide again": "De Gids-knop opent weer de gids van de tv",
   "The TV's Guide button": "De Gids-knop van de tv",
   "The TV's Guide button opens TiviBro": "De Gids-knop van de tv opent TiviBro",
-  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "De Gids-knop van de afstandsbediening opent de gids van TiviBro in plaats van die van de tv, vanaf overal, ook na een herstart van de tv.  Uit: weer de gids van de tv."
+  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "De Gids-knop van de afstandsbediening opent de gids van TiviBro in plaats van die van de tv, vanaf overal, ook na een herstart van de tv.  Uit: weer de gids van de tv.",
+  "Needs a rooted TV (the Homebrew Channel): other TVs don't let an app turn their screen off, so the looks below show instead.": "Vereist een geroote tv (het Homebrew Channel): andere tv's laten een app hun scherm niet uitzetten, dus worden de stijlen hieronder getoond.",
+  "This TV doesn't let TiviBro turn its screen off (that needs a rooted TV), so the screensaver shows instead.": "Deze tv laat TiviBro het scherm niet uitzetten (daar is een geroote tv voor nodig), dus wordt de screensaver getoond."
 });

@@ -2838,5 +2838,7 @@ I18n.add('pl', {
   "The Guide button opens the TV's guide again": "Przycisk Przewodnik znów otwiera przewodnik telewizora",
   "The TV's Guide button": "Przycisk Przewodnik telewizora",
   "The TV's Guide button opens TiviBro": "Przycisk Przewodnik telewizora otwiera TiviBro",
-  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "Przycisk Przewodnik na pilocie otwiera przewodnik TiviBro zamiast przewodnika telewizora, z każdego miejsca, także po ponownym uruchomieniu telewizora.  Wył.: znów przewodnik telewizora."
+  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "Przycisk Przewodnik na pilocie otwiera przewodnik TiviBro zamiast przewodnika telewizora, z każdego miejsca, także po ponownym uruchomieniu telewizora.  Wył.: znów przewodnik telewizora.",
+  "Needs a rooted TV (the Homebrew Channel): other TVs don't let an app turn their screen off, so the looks below show instead.": "Wymaga zrootowanego telewizora (Homebrew Channel): inne nie pozwalają aplikacji wyłączyć ekranu, więc pojawiają się motywy poniżej.",
+  "This TV doesn't let TiviBro turn its screen off (that needs a rooted TV), so the screensaver shows instead.": "Ten telewizor nie pozwala TiviBro wyłączyć ekranu (potrzebny jest zrootowany telewizor), więc pojawia się wygaszacz ekranu."
 });

@@ -2106,5 +2106,7 @@ I18n.add('fr', {
   "The Guide button opens the TV's guide again": "Le bouton Guide ouvre de nouveau le guide de la TV",
   "The TV's Guide button": "Le bouton Guide de la TV",
   "The TV's Guide button opens TiviBro": "Le bouton Guide de la TV ouvre TiviBro",
-  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "Le bouton Guide de la télécommande ouvre le guide de TiviBro au lieu de celui de la TV, depuis n'importe où, et même après un redémarrage de la TV.  Désactivé : de nouveau le guide de la TV."
+  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "Le bouton Guide de la télécommande ouvre le guide de TiviBro au lieu de celui de la TV, depuis n'importe où, et même après un redémarrage de la TV.  Désactivé : de nouveau le guide de la TV.",
+  "Needs a rooted TV (the Homebrew Channel): other TVs don't let an app turn their screen off, so the looks below show instead.": "Nécessite une TV rootée (le Homebrew Channel) : les autres ne laissent pas une app éteindre leur écran, ce sont donc les styles ci-dessous qui s'affichent.",
+  "This TV doesn't let TiviBro turn its screen off (that needs a rooted TV), so the screensaver shows instead.": "Cette TV ne laisse pas TiviBro éteindre son écran (il faut une TV rootée), c'est donc l'économiseur d'écran qui s'affiche."
 });

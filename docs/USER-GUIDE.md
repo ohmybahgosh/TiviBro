@@ -863,7 +863,7 @@ An OLED screen left on the same picture can wear in.  After a while with no butt
 
 A look with nothing to show is skipped.  Nothing stays in one place: each look moves slowly, and the whole screen shifts a few pixels every minute.  Over a **paused video** it comes on too, after its own wait (5 minutes unless you choose).  The first button you press only brings TiviBro back, so it never changes the channel by accident.  While it shows, the TV's own screensaver waits; an hour in, it takes over for the night (or TiviBro's keeps going, if you choose).
 
-**Turn the screen off instead** skips the looks: with nothing playing, the screen goes off the way the TV's own Screen off does (the sound too), and any button turns it back on.  Over a paused video the looks still show.  Where the TV doesn't let TiviBro turn its screen off, the looks show instead.
+**Turn the screen off instead** skips the looks: with nothing playing, the screen goes off the way the TV's own Screen off does (the sound too), and any button turns it back on.  Over a paused video the looks still show.  It needs a rooted TV (the Homebrew Channel): other TVs don't let an app turn their screen off, so there the looks show instead, and TiviBro says so the first time.
 
 Turn it off, pick the looks, set the waits or **Preview** it in [Settings > Appearance > Screensaver](#settings-appearance).  With it off, the screen dims after 10 minutes instead (Burn-in protection).
 

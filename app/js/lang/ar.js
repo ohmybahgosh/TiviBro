@@ -2824,5 +2824,7 @@ I18n.add('ar', {
   "The Guide button opens the TV's guide again": "زر الدليل يفتح دليل التلفاز من جديد",
   "The TV's Guide button": "زر الدليل في التلفاز",
   "The TV's Guide button opens TiviBro": "زر الدليل في التلفاز يفتح TiviBro",
-  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "زر الدليل في جهاز التحكم يفتح دليل TiviBro بدلًا من دليل التلفاز، من أي مكان، وحتى بعد إعادة تشغيل التلفاز.  إيقاف: دليل التلفاز نفسه من جديد."
+  "The remote's Guide button opens TiviBro's guide instead of the TV's, from anywhere, and still after the TV restarts.  Off: the TV's own guide again.": "زر الدليل في جهاز التحكم يفتح دليل TiviBro بدلًا من دليل التلفاز، من أي مكان، وحتى بعد إعادة تشغيل التلفاز.  إيقاف: دليل التلفاز نفسه من جديد.",
+  "Needs a rooted TV (the Homebrew Channel): other TVs don't let an app turn their screen off, so the looks below show instead.": "يحتاج تلفازًا مفتوح الصلاحيات (Homebrew Channel): التلفازات الأخرى لا تسمح لتطبيق بإطفاء شاشتها، لذا تظهر المظاهر أدناه بدلًا من ذلك.",
+  "This TV doesn't let TiviBro turn its screen off (that needs a rooted TV), so the screensaver shows instead.": "هذا التلفاز لا يسمح لـ TiviBro بإطفاء شاشته (يحتاج ذلك تلفازًا مفتوح الصلاحيات)، لذا تظهر شاشة التوقف بدلًا من ذلك."
 });
