@@ -1,16 +1,16 @@
 # Changelog
 
-## Unreleased
-
-- **More protected DASH channels play.**  Some channels (Jio's, issue #202) want back what their server handed out with the manifest: a cookie, or a CDN token in the link.  TiviBro's helper now keeps both and sends them with the channel's video pieces, as other players do.
-- **Turning the screen off says when it can't.**  It needs a rooted TV; the setting says so, and on a TV that refuses, TiviBro says so once instead of quietly showing the screensaver.
-- **The remote's Guide button can open TiviBro.**  On a rooted TV, Settings > Remote and buttons > The TV's Guide button opens TiviBro: the Guide button then opens TiviBro's guide from anywhere, also after the TV restarts.
-
-## 0.6.0 (alpha 235, 2026-11-28)
+## 0.6.0 (alpha 236, 2026-11-28)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 235
+### New in alpha 236
+
+- **The remote's Guide button can open TiviBro.**  On a rooted TV, Settings > Remote and buttons > The TV's Guide button opens TiviBro: the Guide button then opens TiviBro's guide from anywhere, also after the TV restarts.
+- **More protected DASH channels play.**  Some channels (Jio's, issue #202) want back what their server handed out with the manifest: a cookie, or a CDN token in the link.  TiviBro's helper now keeps both and sends them with the channel's video pieces, as other players do.
+- **Turning the screen off says when it can't.**  It needs a rooted TV; the setting says so, and on a TV that refuses, TiviBro says so once instead of quietly showing the screensaver.
+
+### In alpha 235
 
 - **Follow cricket sides and Formula 1.**  The national sides (men's and women's) and the big T20 leagues' teams can be followed like any team: their matches go to My teams, with reminders, the score corner and alerts.  Following Formula 1 puts its sessions in My teams; Settings > Sports > Formula 1 sessions picks which (the race, qualifying and sprints too, or every session).
 - **Formula 1 race weekends in Sports.**  Each session (practices, qualifying, sprint, race) is its own card with its time and the first three once it has run; a session's page shows the whole weekend and the drivers' championship, and your guide is searched for the session.
