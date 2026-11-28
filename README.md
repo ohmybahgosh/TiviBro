@@ -37,7 +37,7 @@
 
 <p align="center">
   <a href="#highlights">Highlights</a> ·
-  <a href="#new-in-alpha-232">What's new</a> ·
+  <a href="#new-in-alpha-233">What's new</a> ·
   <a href="#free-here-paid-elsewhere">Free here, paid elsewhere</a> ·
   <a href="#see-it-in-action">See it in action</a> ·
   <a href="#a-closer-look">A closer look</a> ·
@@ -175,7 +175,7 @@
 </tr>
 </table>
 
-## New in alpha 232
+## New in alpha 233
 
 <table>
 <tr>
@@ -183,7 +183,7 @@
 
 ### 🌙 A screensaver made for OLED TVs
 
-After a while with no button pressed, or over a paused video, the screen goes almost black with a slow, dim clock, dark drifting colours, a picture from your Plex or your teams' scores, in turn.  Nothing stays in one place.  Each look can be turned on or off, with a preview, in **Settings > Appearance > Screensaver**.
+After a while with no button pressed, or over a paused video, the screen goes almost black with a slow, dim clock, dark drifting colours, a picture from your Plex, your teams' games as scoreboard cards or the TiviBro V bouncing from wall to wall, in turn.  Nothing stays in one place.  Each look can be turned on or off, with a preview, in **Settings > Appearance > Screensaver**.
 
 </td>
 <td width="50%" valign="top">

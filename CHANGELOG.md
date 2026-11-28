@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 233, 2026-11-27)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 233
 
 - **The screensaver's games as scoreboard cards.**  Each game with both teams' logos, the score or start time and the clock, LIVE in red while it's on; bigger, steadier text that no longer flickers.  **Family-friendly pictures only** (on) keeps titles rated R, NC-17 or TV-MA out of the From your Plex look.
 - **A bouncing logo for the screensaver.**  The TiviBro V glides from wall to wall like the old DVD screensaver, a new colour each time it hits one.  Turn it on or off in Settings > Appearance > Screensaver.
@@ -9,11 +13,7 @@
 - **The help panel no longer covers what's playing.**  In Settings with a channel in the corner, a long programme name pushed its last lines under the help panel.  The panel now starts below them.
 - **Clearer Plex Top 10 settings.**  Streaming Top 10s you have is one row mixing every service; A Top 10 row for each service gives each one you pick its own row.
 
-## 0.6.0 (alpha 232, 2026-11-27)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 232
+### In alpha 232
 
 - **A screensaver made for OLED TVs.**  After a while with no button pressed (5 minutes unless you choose), or over a paused video, the screen goes almost black with a slow, dim clock, dark drifting colours, a picture from your Plex or your teams' scores, in turn.  Nothing stays in one place.  Settings > Appearance > Screensaver turns each look on or off, sets the wait and has a preview.  An hour in, the TV's own screensaver takes over.
 - **A movie's trailer behind its page.**  Settings > Plex > Trailer on a movie's page: two seconds after a movie's page opens, its trailer from your Plex server plays behind the whole page, without sound or with it.  Press ▲ to watch it full screen with sound (OK pauses, ◀ ▶ skip 10 seconds, Back returns to the page).  Off unless you turn it on; not on TVs with 1 GB of memory.
