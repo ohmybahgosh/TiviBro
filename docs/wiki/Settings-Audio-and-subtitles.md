@@ -23,6 +23,7 @@ Which audio track plays, sound the TV can't play, subtitles and captions, and su
 | **Subtitle position** | Lowest · **Normal** · A little higher · Higher · Highest | Higher keeps the lines clear of a picture's own captions or a score bar.  For subtitles TiviBro draws (most of them).  Also in the player: Subtitles > Size and style. |
 | **Subtitle brightness** | **Full** · 90 % · 75 % · 60 % | Dimmer white lines are easier on the eyes in a dark room, and on an OLED. |
 | **Bold subtitles** | On · **Off** | Thicker letters. |
+| **Leave out sound notes** | On · **Off** | Hearing-impaired notes such as **[door slams]** and **(music)**, and speakers' names in capitals (**JOHN:**), are left out.  For subtitles TiviBro draws (most of them). |
 | **Subtitle languages** | English and others, several at once | Under **Subtitles from OpenSubtitles**.  The languages **Find subtitles** looks for, your first one listed first. |
 | **Set up OpenSubtitles (step by step)** | | The free key from opensubtitles.com, step by step (see [Subtitles for movies and shows](Movies-and-shows)).  Kept on this TV, out of backups.  Once set up the row reads **OpenSubtitles API key saved**, to replace the key; an empty key removes it. |
 | **Sign in (optional)** | | Shows once a key is saved.  Your OpenSubtitles account: 20 downloads a day instead of 5.  Kept on this TV only.  In the phone app the username and then the password are asked on the phone. |

@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 234, 2026-11-27)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 234
 
 - **Cricket in Sports.**  Internationals (Tests, ODIs and T20Is, men's and women's) and the big T20 leagues, with scores as cricket writes them and how each match stands.  On at first for TVs set to a cricket country; elsewhere Blue in Sports adds it.  In the phone app too.
 - **Age ratings.**  PG-13, TV-MA, 12 or 16 next to the year in a movie's or show's details: the provider's when it gives one, else TMDB's for your region.
@@ -11,11 +15,7 @@
 - **Back from a Plex movie, its page says where you stopped.**  The page still offered Resume from the time it had when it opened.  Now Resume from, Mark watched and the end time follow what you just watched.
 - **No guide chip over what you're watching.**  The Loading guide chip showed over a movie playing full screen (a Plex title, say).  It now waits until you leave full screen, like TiviBro's other background notes.
 
-## 0.6.0 (alpha 233, 2026-11-27)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 233
+### In alpha 233
 
 - **The screensaver's games as scoreboard cards.**  Each game with both teams' logos, the score or start time and the clock, LIVE in red while it's on; bigger, steadier text that no longer flickers.  **Family-friendly pictures only** (on) keeps titles rated R, NC-17 or TV-MA out of the From your Plex look.
 - **A bouncing logo for the screensaver.**  The TiviBro V glides from wall to wall like the old DVD screensaver, a new colour each time it hits one.  Turn it on or off in Settings > Appearance > Screensaver.

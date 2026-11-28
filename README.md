@@ -37,7 +37,7 @@
 
 <p align="center">
   <a href="#highlights">Highlights</a> ·
-  <a href="#new-in-alpha-233">What's new</a> ·
+  <a href="#new-in-alpha-234">What's new</a> ·
   <a href="#free-here-paid-elsewhere">Free here, paid elsewhere</a> ·
   <a href="#see-it-in-action">See it in action</a> ·
   <a href="#a-closer-look">A closer look</a> ·
@@ -175,7 +175,7 @@
 </tr>
 </table>
 
-## New in alpha 233
+## New in alpha 234
 
 <table>
 <tr>
@@ -188,9 +188,9 @@ After a while with no button pressed, or over a paused video, the screen goes al
 </td>
 <td width="50%" valign="top">
 
-### 🍿 Plex, the rest of the way
+### 🏏 Cricket, age ratings and more
 
-**Shuffle** and **Play all**, a show's **theme music**, **Hide spoilers** for episodes you haven't watched, and a movie's **trailer playing behind its page** (▲ to watch it full screen).  New titles and watched marks from other apps show up by themselves, and a title from a server away from home starts smoothly.
+**Cricket** in Sports (internationals and the big T20 leagues), **age ratings** next to a title's year, the **channels before and after** while you zap, subtitles without **[sound notes]**, every movie and show **category on or off** in one list (easiest from the phone), and bolder button hints.
 
 </td>
 </tr>
