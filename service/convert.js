@@ -323,7 +323,7 @@ function Session(o) {
   var S = this, path = require('path');
   S.key = o.key; S.id = crypto.randomBytes(4).toString('hex'); S.dir = o.dir; S.p = o.p; S.at = Date.now();
   S.written = 0; S.floor = 0; S.done = false; S.failed = ''; S.readers = []; S.waiters = []; S.maxRead = 0; S.idle = null; S.stopped = '';
-  S.est = o.est || 0; S.bytes = 0; S.speed = '';
+  S.est = o.est || 0; S.bytes = 0; S.speed = ''; S.dv = !!o.dv;
   S.seg = function (n) { return path.join(S.dir, 's' + S.id + '-' + n + '.part'); };
   var fd = null, segN = -1, paused = false;
   function open(n) { if (fd !== null) { try { fs.closeSync(fd); } catch (e) {} } segN = n; fd = fs.openSync(S.seg(n), 'w'); }
@@ -374,8 +374,20 @@ function Session(o) {
   S.total = function () { return S.done && !S.stopped ? S.written : Math.max(S.est, S.written + 64 * 1048576); };
 }
 
-// Serve bytes from `start` of session S into res, waiting for bytes not converted yet.
-function serveFrom(S, req, res, start, log) {
+/* A Dolby Vision movie as MKV needs a length: LG's player (C2, webOS 10) shows its picture black, sound only,
+   when the answer has no Content-Length (Nov 28: the same conversion played in Dolby Vision once a length came
+   with it, even a guessed one larger than the stream).  So a Dolby Vision conversion answers with the guessed
+   total (the spool's S.total, with room to spare), a range with just its bytes, and the stream ends where
+   ffmpeg's output does.  Other conversions are left as they were.  null: no length to give. */
+function dvLength(S, from, end) {
+  if (!S || !S.dv || !S.est) return null;
+  var tot = S.total();
+  if (end != null) return { code: 206, h: { 'Content-Range': 'bytes ' + from + '-' + end + '/' + tot, 'Content-Length': end - from + 1 } };
+  if (from > 0) return { code: 206, h: { 'Content-Range': 'bytes ' + from + '-' + (tot - 1) + '/' + tot, 'Content-Length': tot - from } };
+  return { code: 200, h: { 'Content-Length': tot } };
+}
+// Serve bytes from `start` (to `end` when given) of session S into res, waiting for bytes not converted yet.
+function serveFrom(S, req, res, start, log, end) {
   var pos = start, closed = false, reading = false;
   S.readers.push(res);
   clearTimeout(S.idle);
@@ -388,14 +400,15 @@ function serveFrom(S, req, res, start, log) {
   function pump() {
     if (closed || reading) return;
     if (pos < S.floor) { done(); try { res.destroy(); } catch (e) {} return; }
+    if (end != null && pos > end) { try { res.end(); } catch (e) {} return done(); }
     if (pos >= S.written) {
       if (S.done) { try { res.end(); } catch (e) {} return done(); }
       var t = setTimeout(function () { if (!closed && pos >= S.written && !S.done) { log({ lv: 'warn', event: 'convert stalled', at_mb: Math.round(pos / 1048576) }); try { res.end(); } catch (e) {} done(); } }, WAIT_MS);
       return S.wait(function () { clearTimeout(t); pump(); });
     }
-    var n = Math.floor(pos / SEG), end = Math.min(S.written, (n + 1) * SEG) - 1;
+    var n = Math.floor(pos / SEG), last = Math.min(S.written, (n + 1) * SEG, end != null ? end + 1 : Infinity) - 1;
     reading = true;
-    var rs = fs.createReadStream(S.seg(n), { start: pos - n * SEG, end: end - n * SEG });
+    var rs = fs.createReadStream(S.seg(n), { start: pos - n * SEG, end: last - n * SEG });
     rs.on('data', function (d) {
       pos += d.length; if (pos > S.maxRead) { S.maxRead = pos; S.check(); }
       if (!res.write(d)) { rs.pause(); res.once('drain', function () { rs.resume(); }); }
@@ -412,7 +425,7 @@ function stream(req, res, ALLOW, log, port, redact) {
   if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405, ALLOW); return res.end(); }
   var fmt = m[2], q = query(req.url), t = Math.max(0, +q.t || 0), a = Math.max(0, Math.min(63, +q.a | 0)), pipe = q['in'] === 'pipe';
   if (!/^https?:\/\//i.test(q.u || '')) { res.writeHead(400, ALLOW); return res.end('not a web address'); }
-  var rg = /bytes=(\d+)-/.exec(req.headers.range || ''), from = rg ? +rg[1] : 0;
+  var rg = /bytes=(\d+)-(\d*)/.exec(req.headers.range || ''), from = rg ? +rg[1] : 0, upTo = rg && rg[2] !== '' ? +rg[2] : null;
   var dir = pipe ? '' : spoolDir();
   var h = Object.assign({ 'Content-Type': fmt === 'ts' ? 'video/mp2t' : 'video/x-matroska', 'Cache-Control': 'no-store', 'Accept-Ranges': dir ? 'bytes' : 'none' }, ALLOW);
   // &b=low|high, &n=1: dialogue boost and night mode (fxChain).
@@ -425,6 +438,8 @@ function stream(req, res, ALLOW, log, port, redact) {
   // A later byte of the running conversion: from the spool.
   if (S && dir) {
     if (from < S.floor || (S.done && !S.stopped && from >= S.written)) { res.writeHead(416, Object.assign({ 'Content-Range': 'bytes */' + S.written }, ALLOW)); return res.end(); }
+    var dl = dvLength(S, from, upTo);
+    if (dl) { res.writeHead(dl.code, Object.assign({}, h, dl.h)); return serveFrom(S, req, res, from, log, upTo); }
     if (rg && from > 0) { var tot = S.total(); res.writeHead(206, Object.assign({ 'Content-Range': 'bytes ' + from + '-' + (tot - 1) + '/' + tot }, h)); }
     else res.writeHead(200, h);
     return serveFrom(S, req, res, from, log);
@@ -456,7 +471,7 @@ function stream(req, res, ALLOW, log, port, redact) {
   var est = info && info.duration && info.kbps ? Math.round(Math.max(1, info.duration - t) * info.kbps * 125 * 1.25) + 64 * 1048576 : 0;
   var me;
   if (dir) {
-    me = new Session({ key: key, dir: dir, p: p, est: est, log: log });
+    me = new Session({ key: key, dir: dir, p: p, est: est, log: log, dv: fmt === 'mkv' && !!(info && info.dv) });
     session = me;
   } else {
     me = { p: p, at: Date.now(), bytes: 0, speed: '', stopped: '' };
@@ -491,7 +506,9 @@ function stream(req, res, ALLOW, log, port, redact) {
     if (!dir && current === me) current = null;
     log(rec);
   });
-  res.writeHead(200, h);
+  var dl0 = dvLength(dir ? me : null, 0, null);
+  if (dl0) { log({ lv: 'info', event: 'convert dolby vision length', mb: Math.round(dl0.h['Content-Length'] / 1048576) }); res.writeHead(200, Object.assign({}, h, dl0.h)); }
+  else res.writeHead(200, h);
   if (dir) return serveFrom(me, req, res, 0, log);
   p.stdout.on('data', function (d) { me.bytes += d.length; });
   p.stdout.pipe(res);                                 // backpressure: a slow player pauses ffmpeg
@@ -505,4 +522,4 @@ function busy() { return current ? { pid: current.p.pid, since: current.at, spee
 function _sizes(seg, ahead, behind, idle, wait) { SEG = seg; AHEAD = ahead; BEHIND = behind; if (idle) IDLE_MS = idle; if (wait) WAIT_MS = wait; }
 
 module.exports = { firstPts: firstPts, parseProbe: parseProbe, args: args, audioArgs: audioArgs, fxChain: fxChain, inputFor: inputFor, isStream: isStream, stream: stream, control: control,
-  busy: busy, stats: stats, _sizes: _sizes, get session() { return session; }, get key() { return KEY; }, _forget: function () { probes = {}; probeOrder = []; } };
+  busy: busy, stats: stats, _sizes: _sizes, _dvLength: dvLength, get session() { return session; }, get key() { return KEY; }, _forget: function () { probes = {}; probeOrder = []; } };

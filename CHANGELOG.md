@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Dialogue boost keeps the picture on Dolby Vision movies.**  Turning on dialogue boost or night mode on a Dolby Vision movie (a Plex one, say) left the screen black with the sound playing.  The picture now stays, in Dolby Vision.
+
 ## 0.6.0 (alpha 234, 2026-11-27)
 
 Pre-release: expect rough edges, and keep a backup before installing.
