@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- **Dialogue boost keeps the picture on Dolby Vision movies.**  Turning on dialogue boost or night mode on a Dolby Vision movie (a Plex one, say) left the screen black with the sound playing.  The picture now stays, in Dolby Vision.
+- **Dialogue boost keeps the picture on Dolby Vision movies.**  Turning on dialogue boost or night mode on a Dolby Vision movie (a Plex one, say) left the screen black with the sound playing.  The picture now stays, in Dolby Vision, to the last second of the credits.
+- **A Plex movie isn't marked watched by something else.**  When another movie or a channel started without the Plex one being stopped first, its place was still sent to Plex as the Plex movie's, and could mark it watched.
 
 ## 0.6.0 (alpha 234, 2026-11-27)
 
