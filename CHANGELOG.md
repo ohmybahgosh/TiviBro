@@ -1,26 +1,26 @@
 # Changelog
 
-## Unreleased
-
-- **Dialogue boost keeps the picture on Dolby Vision movies.**  Turning on dialogue boost or night mode on a Dolby Vision movie (a Plex one, say) left the screen black with the sound playing.  The picture now stays, in Dolby Vision, to the last second of the credits.
-- **A Plex movie isn't marked watched by something else.**  When another movie or a channel started without the Plex one being stopped first, its place was still sent to Plex as the Plex movie's, and could mark it watched.
-- **The screensaver stays away while anything plays.**  It could come on over a movie or channel playing in the guide's preview or picture-in-picture.  Now it waits for nothing to be playing, or for a paused video.
-- **Cricket matches find your channels.**  Holding OK on a live match said it wasn't on any of your channels, because ESPN names no broadcaster for cricket.  TiviBro now looks in your guide for the match (both sides named, a channel named after it, or a cricket programme on a cricket channel at that time).
-- **The screensaver can turn the screen off instead.**  Settings > Appearance > Screensaver > Turn the screen off instead: with nothing playing, the screen goes off as the TV's own Screen off does, and any button brings it back.
-- **A playlist of only movies and shows can be added.**  It was turned down for having no channels; its films and series now go to Movies and Shows.
-- **Converted sound comes back after TiviBro restarts.**  Opening the same channel again after TiviBro closed could leave its sound unconverted (HTTP 416); a new conversion starts instead.
-- **ClearKey channels play when the stream names Widevine.**  Many protected live channels name only Widevine and PlayReady while their playlist gives a ClearKey licence, so the TV picked Widevine and said "No license server URL specified".  The playlist's ClearKey is used now.
-- **No game reminders for shows about the sport.**  A baseball season review whose description named two teams was taken for a game of a team you follow, out of season.  A game found only by its description now needs a title like "MLB Baseball" or "College Football".
-- **Pick the USB drive's partition to record to.**  On a drive with two or more partitions, Settings > Recording > USB drive chooses which one recordings and live pause use, instead of always the first.
-- **Formula 1 race weekends in Sports.**  Each session (practices, qualifying, sprint, race) is its own card with its time and the first three once it has run; a session's page shows the whole weekend and the drivers' championship, and your guide is searched for the session.
-- **Follow cricket sides and Formula 1.**  The national sides (men's and women's) and the big T20 leagues' teams can be followed like any team: their matches go to My teams, with reminders, the score corner and alerts.  Following Formula 1 puts its sessions in My teams; Settings > Sports > Formula 1 sessions picks which (the race, qualifying and sprints too, or every session).
-- **4K movies from a far Plex server keep playing.**  The TV's own player read only a few seconds ahead of a big file from a server away from home, ran dry and reconnected over and over.  Once it runs dry, the movie goes through TiviBro's helper, which reads ahead (picture and sound untouched), and so does that server's next title.
-
-## 0.6.0 (alpha 234, 2026-11-27)
+## 0.6.0 (alpha 235, 2026-11-28)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 234
+### New in alpha 235
+
+- **Follow cricket sides and Formula 1.**  The national sides (men's and women's) and the big T20 leagues' teams can be followed like any team: their matches go to My teams, with reminders, the score corner and alerts.  Following Formula 1 puts its sessions in My teams; Settings > Sports > Formula 1 sessions picks which (the race, qualifying and sprints too, or every session).
+- **Formula 1 race weekends in Sports.**  Each session (practices, qualifying, sprint, race) is its own card with its time and the first three once it has run; a session's page shows the whole weekend and the drivers' championship, and your guide is searched for the session.
+- **The screensaver can turn the screen off instead.**  Settings > Appearance > Screensaver > Turn the screen off instead: with nothing playing, the screen goes off as the TV's own Screen off does, and any button brings it back.
+- **Pick the USB drive's partition to record to.**  On a drive with two or more partitions, Settings > Recording > USB drive chooses which one recordings and live pause use, instead of always the first.
+- **A playlist of only movies and shows can be added.**  It was turned down for having no channels; its films and series now go to Movies and Shows.
+- **4K movies from a far Plex server keep playing.**  The TV's own player read only a few seconds ahead of a big file from a server away from home, ran dry and reconnected over and over.  Once it runs dry, the movie goes through TiviBro's helper, which reads ahead (picture and sound untouched), and so does that server's next title.
+- **ClearKey channels play when the stream names Widevine.**  Many protected live channels name only Widevine and PlayReady while their playlist gives a ClearKey licence, so the TV picked Widevine and said "No license server URL specified".  The playlist's ClearKey is used now.
+- **Cricket matches find your channels.**  Holding OK on a live match said it wasn't on any of your channels, because ESPN names no broadcaster for cricket.  TiviBro now looks in your guide for the match (both sides named, a channel named after it, or a cricket programme on a cricket channel at that time).
+- **Dialogue boost keeps the picture on Dolby Vision movies.**  Turning on dialogue boost or night mode on a Dolby Vision movie (a Plex one, say) left the screen black with the sound playing.  The picture now stays, in Dolby Vision, to the last second of the credits.
+- **The screensaver stays away while anything plays.**  It could come on over a movie or channel playing in the guide's preview or picture-in-picture.  Now it waits for nothing to be playing, or for a paused video.
+- **Converted sound comes back after TiviBro restarts.**  Opening the same channel again after TiviBro closed could leave its sound unconverted (HTTP 416); a new conversion starts instead.
+- **A Plex movie isn't marked watched by something else.**  When another movie or a channel started without the Plex one being stopped first, its place was still sent to Plex as the Plex movie's, and could mark it watched.
+- **No game reminders for shows about the sport.**  A baseball season review whose description named two teams was taken for a game of a team you follow, out of season.  A game found only by its description now needs a title like "MLB Baseball" or "College Football".
+
+### In alpha 234
 
 - **Cricket in Sports.**  Internationals (Tests, ODIs and T20Is, men's and women's) and the big T20 leagues, with scores as cricket writes them and how each match stands.  On at first for TVs set to a cricket country; elsewhere Blue in Sports adds it.  In the phone app too.
 - **Age ratings.**  PG-13, TV-MA, 12 or 16 next to the year in a movie's or show's details: the provider's when it gives one, else TMDB's for your region.
