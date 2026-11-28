@@ -374,8 +374,8 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   if (f1s) { await sa({ op: 'choice', sec: 'sports', i: f1s.i, v: 0 }); ok('...and sets the race only on the TV', await ev(() => Store.settings.f1Sessions) === 'race'); await sa({ op: 'choice', sec: 'sports', i: f1s.i, v: 1 }); }
   await ev(() => { Teams.follow(Teams.F1, false); });
   // The TV's Guide button (guidekey.sh): on a TV without the Homebrew Channel, the phone gets the line saying it needs root.
-  const kPg = await sa({ op: 'page', sec: 'keys' }), gk = kPg.rows.find((r) => /The TV's Guide button/.test(r.label));
-  ok('the phone has The TV\'s Guide button (a rooted TV only)', !!gk, JSON.stringify(kPg.rows.map((r) => r.label)).slice(-300));
+  const kPg = await sa({ op: 'page', sec: 'remote' }), gkey = kPg.rows.find((r) => /The TV's Guide button/.test(r.label));
+  ok('the phone has The TV\'s Guide button (a rooted TV only)', !!gkey, JSON.stringify(kPg.rows.map((r) => r.label)).slice(-300));
   // Where details come from (Movies: details from, Shows: details from): on the phone, as choices that switch the TV.
   const vodPg = await sa({ op: 'page', sec: 'vod' }), shw = vodPg.rows.find((r) => r.label === 'Shows: details from'), mov = vodPg.rows.find((r) => r.label === 'Movies: details from');
   ok('the phone has where details come from, for movies and for shows', shw && mov && shw.kind === 'choice' && shw.options.length === 3 && mov.options.length === 3, JSON.stringify(vodPg.rows.map((r) => r.label)).slice(0, 300));
