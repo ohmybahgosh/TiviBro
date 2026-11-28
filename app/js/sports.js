@@ -418,7 +418,7 @@ var Sports = (function () {
      itself: a programme naming both sides ("New Zealand v India, 2nd Test, Day 3", "IND vs NZ 1st T20I LIVE")
      at the match's time ranks first, a channel named after the match next, then a cricket programme on a cricket
      channel then ("Live Cricket" on Star Sports 1), which may be another match on at the same time. */
-  var CRICKET_ALIAS = { india: ['ind'], 'new zealand': ['nz', 'black caps', 'blackcaps'], australia: ['aus'], england: ['eng'], pakistan: ['pak'],
+  var CRICKET_ALIAS = { india: ['ind'], 'new zealand': ['black caps', 'blackcaps', 'nz'], australia: ['aus'], england: ['eng'], pakistan: ['pak'],
     'south africa': ['sa', 'rsa', 'proteas'], 'sri lanka': ['sl'], bangladesh: ['ban', 'bd'], 'west indies': ['wi', 'windies'], afghanistan: ['afg'],
     zimbabwe: ['zim'], ireland: ['ire'], scotland: ['sco'], netherlands: ['ned'], nepal: ['nep'], 'united arab emirates': ['uae'], 'united states of america': ['usa'] };
   // Channels that show cricket, by the start of their squashed name (after a country tag: "IN: Star Sports 1").

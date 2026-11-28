@@ -2813,5 +2813,18 @@ I18n.add('de', {
   "Show all categories": "Alle Kategorien einblenden",
   "Show categories": "Kategorien einblenden",
   "With CH + and CH −, the channel before and after the one shown, on the right, with what's on.": "Mit CH + und CH − werden rechts der Sender davor und danach angezeigt, mit dem aktuellen Programm.",
-  "{n} hidden": ["{n} ausgeblendet", "{n} ausgeblendet"]
+  "{n} hidden": ["{n} ausgeblendet", "{n} ausgeblendet"],
+  "Constructors' championship": "Konstrukteurswertung",
+  "Drivers' championship": "Fahrerwertung",
+  "Practice 1": "1. Training",
+  "Practice 2": "2. Training",
+  "Practice 3": "3. Training",
+  "Qualifying": "Qualifying",
+  "Race": "Rennen",
+  "Sprint": "Sprint",
+  "Sprint qualifying": "Sprint-Qualifying",
+  "The drive's partition recordings and live pause go to.": "Die Partition des Laufwerks, auf die Aufnahmen und die Live-Pause gehen.",
+  "The weekend": "Das Wochenende",
+  "Turn the screen off instead": "Stattdessen den Bildschirm ausschalten",
+  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Wenn nichts läuft, geht der Bildschirm aus wie beim Bildschirm-aus des TVs, statt ein Motiv zu zeigen.  Jede Taste schaltet ihn wieder ein.  Über einem pausierten Video erscheinen weiter die Motive unten."
 });

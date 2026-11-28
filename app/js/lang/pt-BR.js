@@ -3430,5 +3430,18 @@ I18n.add('pt-BR', {
   "Load them now": "Carregar agora",
   "Show all categories": "Mostrar todas as categorias",
   "Show categories": "Mostrar categorias",
-  "With CH + and CH −, the channel before and after the one shown, on the right, with what's on.": "Com CH + e CH −, o canal antes e depois do atual aparece à direita, com o que está passando."
+  "With CH + and CH −, the channel before and after the one shown, on the right, with what's on.": "Com CH + e CH −, o canal antes e depois do atual aparece à direita, com o que está passando.",
+  "Constructors' championship": "Campeonato de construtores",
+  "Drivers' championship": "Campeonato de pilotos",
+  "Practice 1": "Treino livre 1",
+  "Practice 2": "Treino livre 2",
+  "Practice 3": "Treino livre 3",
+  "Qualifying": "Classificação",
+  "Race": "Corrida",
+  "Sprint": "Sprint",
+  "Sprint qualifying": "Classificação sprint",
+  "The drive's partition recordings and live pause go to.": "A partição do disco onde ficam as gravações e a pausa ao vivo.",
+  "The weekend": "O fim de semana",
+  "Turn the screen off instead": "Desligar a tela em vez disso",
+  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Sem nada tocando, a tela se apaga como no Desligar tela da TV, em vez de mostrar um visual.  Qualquer botão a liga de novo.  Sobre um vídeo pausado, os visuais abaixo continuam aparecendo."
 });

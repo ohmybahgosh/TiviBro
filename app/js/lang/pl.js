@@ -2811,5 +2811,18 @@ I18n.add('pl', {
   "Show all categories": "Pokaż wszystkie kategorie",
   "Show categories": "Pokaż kategorie",
   "With CH + and CH −, the channel before and after the one shown, on the right, with what's on.": "Przyciskami CH + i CH − po prawej widać poprzedni i następny kanał względem bieżącego, wraz z tym, co na nich leci.",
-  "{n} hidden": ["{n} ukryta", "{n} ukryte", "{n} ukrytych"]
+  "{n} hidden": ["{n} ukryta", "{n} ukryte", "{n} ukrytych"],
+  "Constructors' championship": "Klasyfikacja konstruktorów",
+  "Drivers' championship": "Klasyfikacja kierowców",
+  "Practice 1": "Trening 1",
+  "Practice 2": "Trening 2",
+  "Practice 3": "Trening 3",
+  "Qualifying": "Kwalifikacje",
+  "Race": "Wyścig",
+  "Sprint": "Sprint",
+  "Sprint qualifying": "Kwalifikacje do sprintu",
+  "The drive's partition recordings and live pause go to.": "Partycja dysku, na którą trafiają nagrania i pauza na żywo.",
+  "The weekend": "Weekend",
+  "Turn the screen off instead": "Zamiast tego wyłącz ekran",
+  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Gdy nic nie jest odtwarzane, ekran gaśnie jak przy funkcji Wyłącz ekran w telewizorze, zamiast pokazywać motyw.  Dowolny przycisk włącza go z powrotem.  Nad wstrzymanym filmem nadal pojawiają się motywy poniżej."
 });

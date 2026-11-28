@@ -347,12 +347,12 @@ var Player = (function () {
     out[sys] = o;
     return out;
   }
+  var CK_SCHEME = 'urn:uuid:e2719d58-a985-b3c9-781a-b030af78d30e', CK_W3C = 'urn:uuid:1077efec-c0b2-4d02-ace3-3c1e52e2fb4b', MP4PROT = 'urn:mpeg:dash:mp4protection:2011';
   /* A ClearKey channel whose stream names only Widevine and PlayReady (issue #201: many live channels are written
      so, and their playlist gives a ClearKey licence).  dash.js offers the TV only the systems the stream names, so
      the TV took Widevine, with no licence server ("No license server URL specified!").  Before dash.js looks, each
      protected part of the manifest gets ClearKey added and the others taken out; the key id stays the stream's own
      (cenc:default_KID). */
-  var CK_SCHEME = 'urn:uuid:e2719d58-a985-b3c9-781a-b030af78d30e', CK_W3C = 'urn:uuid:1077efec-c0b2-4d02-ace3-3c1e52e2fb4b', MP4PROT = 'urn:mpeg:dash:mp4protection:2011';
   function clearKeyOnly(mpd) {
     var fixed = 0;
     function fix(node) {

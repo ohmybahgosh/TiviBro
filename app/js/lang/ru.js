@@ -2924,5 +2924,18 @@ I18n.add('ru', {
   "Load them now": "Загрузить сейчас",
   "Show all categories": "Показать все категории",
   "Show categories": "Показать категории",
-  "With CH + and CH −, the channel before and after the one shown, on the right, with what's on.": "При нажатии CH + и CH − справа показываются предыдущий и следующий каналы и что на них идёт."
+  "With CH + and CH −, the channel before and after the one shown, on the right, with what's on.": "При нажатии CH + и CH − справа показываются предыдущий и следующий каналы и что на них идёт.",
+  "Constructors' championship": "Кубок конструкторов",
+  "Drivers' championship": "Личный зачёт пилотов",
+  "Practice 1": "Практика 1",
+  "Practice 2": "Практика 2",
+  "Practice 3": "Практика 3",
+  "Qualifying": "Квалификация",
+  "Race": "Гонка",
+  "Sprint": "Спринт",
+  "Sprint qualifying": "Квалификация спринта",
+  "The drive's partition recordings and live pause go to.": "Раздел диска, куда идут записи и пауза эфира.",
+  "The weekend": "Уикенд",
+  "Turn the screen off instead": "Вместо этого выключать экран",
+  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Когда ничего не играет, экран гаснет, как при функции «Выключить экран» телевизора, вместо заставки.  Любая кнопка включает его снова.  Над видео на паузе по-прежнему показываются заставки ниже."
 });

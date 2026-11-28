@@ -176,6 +176,7 @@ function driveError(e) {
 /* ---------- drives ---------- */
 var seen = [];      // what drives() looked at and why it was left out, for /record/drives and the log
 function writable(d) { try { var t = path.join(d, '.tivibro-w'); fs.writeFileSync(t, '1'); fs.unlinkSync(t); return true; } catch (e) { seen.push(d + ': ' + e.code); return false; } }
+// The USB partitions webOS mounted that TiviBro can write to: [{ dir, name, freeMB }], the one picked first.
 function drives() {
   var out = [];
   seen = [];

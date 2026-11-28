@@ -2811,5 +2811,18 @@ I18n.add('it', {
   "Show categories": "Mostra categorie",
   "With CH + and CH −, the channel before and after the one shown, on the right, with what's on.": "Con CH + e CH −, il canale precedente e quello successivo a quello in onda, a destra, con ciò che trasmettono.",
   "{n} hidden": ["{n} nascosta", "{n} nascoste"],
-  "Hide all {n} categories?  You can switch them back on here.": ["Nascondere {n} categoria?  Puoi riattivarla qui.", "Nascondere tutte le {n} categorie?  Puoi riattivarle qui."]
+  "Hide all {n} categories?  You can switch them back on here.": ["Nascondere {n} categoria?  Puoi riattivarla qui.", "Nascondere tutte le {n} categorie?  Puoi riattivarle qui."],
+  "Constructors' championship": "Classifica costruttori",
+  "Drivers' championship": "Classifica piloti",
+  "Practice 1": "Prove libere 1",
+  "Practice 2": "Prove libere 2",
+  "Practice 3": "Prove libere 3",
+  "Qualifying": "Qualifiche",
+  "Race": "Gara",
+  "Sprint": "Sprint",
+  "Sprint qualifying": "Qualifiche sprint",
+  "The drive's partition recordings and live pause go to.": "La partizione dell'unità dove vanno le registrazioni e la pausa della diretta.",
+  "The weekend": "Il weekend",
+  "Turn the screen off instead": "Spegni lo schermo invece",
+  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Quando non c'è niente in riproduzione, lo schermo si spegne come con Schermo spento della TV, invece di mostrare uno stile.  Qualsiasi tasto lo riaccende.  Su un video in pausa si vedono ancora gli stili qui sotto."
 });

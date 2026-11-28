@@ -2079,5 +2079,18 @@ I18n.add('fr', {
   "Show all categories": "Afficher toutes les catégories",
   "Show categories": "Afficher les catégories",
   "With CH + and CH −, the channel before and after the one shown, on the right, with what's on.": "Avec CH + et CH −, la chaîne précédente et la suivante s'affichent à droite, avec le programme en cours.",
-  "{n} hidden": ["{n} masquée", "{n} masquées"]
+  "{n} hidden": ["{n} masquée", "{n} masquées"],
+  "Constructors' championship": "Championnat des constructeurs",
+  "Drivers' championship": "Championnat des pilotes",
+  "Practice 1": "Essais libres 1",
+  "Practice 2": "Essais libres 2",
+  "Practice 3": "Essais libres 3",
+  "Qualifying": "Qualifications",
+  "Race": "Course",
+  "Sprint": "Sprint",
+  "Sprint qualifying": "Qualifications sprint",
+  "The drive's partition recordings and live pause go to.": "La partition du disque où vont les enregistrements et la pause du direct.",
+  "The weekend": "Le week-end",
+  "Turn the screen off instead": "Éteindre l'écran à la place",
+  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Quand rien ne joue, l'écran s'éteint comme avec Écran éteint de la TV, au lieu d'afficher un style.  N'importe quelle touche le rallume.  Sur une vidéo en pause, les styles ci-dessous s'affichent toujours."
 });

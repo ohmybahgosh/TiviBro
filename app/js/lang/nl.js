@@ -2811,5 +2811,18 @@ I18n.add('nl', {
   "Show all categories": "Alle categorieën tonen",
   "Show categories": "Categorieën tonen",
   "With CH + and CH −, the channel before and after the one shown, on the right, with what's on.": "Met CH + en CH − staan rechts de zender voor en na de huidige zender, met wat erop is.",
-  "{n} hidden": ["{n} verborgen", "{n} verborgen"]
+  "{n} hidden": ["{n} verborgen", "{n} verborgen"],
+  "Constructors' championship": "Constructeurskampioenschap",
+  "Drivers' championship": "Coureurskampioenschap",
+  "Practice 1": "Vrije training 1",
+  "Practice 2": "Vrije training 2",
+  "Practice 3": "Vrije training 3",
+  "Qualifying": "Kwalificatie",
+  "Race": "Race",
+  "Sprint": "Sprint",
+  "Sprint qualifying": "Sprintkwalificatie",
+  "The drive's partition recordings and live pause go to.": "De partitie van de schijf waar opnames en live pauzeren naartoe gaan.",
+  "The weekend": "Het weekend",
+  "Turn the screen off instead": "In plaats daarvan het scherm uitzetten",
+  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Als er niets speelt, gaat het scherm uit zoals met Scherm uit van de tv, in plaats van een stijl te tonen.  Elke knop zet het weer aan.  Over een gepauzeerde video worden de stijlen hieronder nog steeds getoond."
 });

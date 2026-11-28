@@ -2811,5 +2811,18 @@ I18n.add('tr', {
   "Show all categories": "Tüm kategorileri göster",
   "Show categories": "Kategorileri göster",
   "With CH + and CH −, the channel before and after the one shown, on the right, with what's on.": "CH + ve CH − ile, gösterilen kanalın öncesindeki ve sonrasındaki kanal, ne yayınlandığıyla birlikte sağda görünür.",
-  "{n} hidden": ["{n} gizli", "{n} gizli"]
+  "{n} hidden": ["{n} gizli", "{n} gizli"],
+  "Constructors' championship": "Takımlar şampiyonası",
+  "Drivers' championship": "Pilotlar şampiyonası",
+  "Practice 1": "1. antrenman",
+  "Practice 2": "2. antrenman",
+  "Practice 3": "3. antrenman",
+  "Qualifying": "Sıralama",
+  "Race": "Yarış",
+  "Sprint": "Sprint",
+  "Sprint qualifying": "Sprint sıralaması",
+  "The drive's partition recordings and live pause go to.": "Kayıtların ve canlı duraklatmanın gittiği sürücü bölümü.",
+  "The weekend": "Hafta sonu",
+  "Turn the screen off instead": "Bunun yerine ekranı kapat",
+  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Hiçbir şey oynatılmıyorken, bir görünüm göstermek yerine ekran TV'nin kendi Ekranı kapat özelliğindeki gibi kapanır.  Herhangi bir tuş onu yeniden açar.  Duraklatılmış bir videonun üzerinde aşağıdaki görünümler yine gösterilir."
 });

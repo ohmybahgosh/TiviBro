@@ -2921,5 +2921,18 @@ I18n.add('es', {
   "Show all categories": "Mostrar todas las categorías",
   "Show categories": "Mostrar categorías",
   "With CH + and CH −, the channel before and after the one shown, on the right, with what's on.": "Con CH + y CH −, se muestran a la derecha el canal anterior y el siguiente al actual, con lo que emiten.",
-  "Hide all {n} categories?  You can switch them back on here.": ["¿Ocultar {n} categoría?  Puedes volver a activarla aquí.", "¿Ocultar las {n} categorías?  Puedes volver a activarlas aquí."]
+  "Hide all {n} categories?  You can switch them back on here.": ["¿Ocultar {n} categoría?  Puedes volver a activarla aquí.", "¿Ocultar las {n} categorías?  Puedes volver a activarlas aquí."],
+  "Constructors' championship": "Mundial de constructores",
+  "Drivers' championship": "Mundial de pilotos",
+  "Practice 1": "Libres 1",
+  "Practice 2": "Libres 2",
+  "Practice 3": "Libres 3",
+  "Qualifying": "Clasificación",
+  "Race": "Carrera",
+  "Sprint": "Sprint",
+  "Sprint qualifying": "Clasificación sprint",
+  "The drive's partition recordings and live pause go to.": "La partición del disco donde van las grabaciones y la pausa en directo.",
+  "The weekend": "El fin de semana",
+  "Turn the screen off instead": "Apagar la pantalla en su lugar",
+  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Sin nada reproduciéndose, la pantalla se apaga como con el Apagar pantalla de la TV, en vez de mostrar un estilo.  Cualquier botón la vuelve a encender.  Sobre un vídeo en pausa se siguen mostrando los estilos de abajo."
 });

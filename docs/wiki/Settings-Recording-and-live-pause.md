@@ -8,6 +8,7 @@ Recording to a USB drive in the TV or a network share, pausing live TV, and the 
 
 | Setting | Choices | What it does |
 |---|---|---|
+| **USB drive** *(a drive with two or more partitions)* | **the first** · each partition, with its free space | Which partition recordings and live pause use. |
 | **Network share** | a My media library | Record (and pause) to a Windows / Samba share or WebDAV folder, chosen from your My media libraries.  No root or USB drive needed.  **Stop recording to a share** goes back to the drive. |
 | **Record to** *(a USB drive and a share)* | **USB drive** · Network share | Where new recordings go when both are there. |
 | **Open Recordings** | (button) | The Recordings screen: what's recording, scheduled and recorded. |
