@@ -177,57 +177,6 @@ function firstPts(st, chunk) {
   st.buf = b.slice(i);                                         // a packet cut between chunks
 }
 
-/* The same for a movie as MKV (the TV's own player): with the movie's own times kept (-copyts -start_at_zero), the
-   first video block of the first Cluster says where the picture starts.  LG's player counts its clock from there
-   (seen on a C2: subtitles 1 to 2 s ahead of the sound after a seek with the stream going through the helper).
-   EBML: an element is an ID (its length marker kept) and a size (marker dropped), both variable-length; a Cluster
-   (1F43B675) holds its Timestamp (E7) and SimpleBlocks (A3) or BlockGroups (A0) with a Block (A1), each starting
-   with its track number, a 16-bit offset from the Cluster's time and flags.  The video is track 1 (mapped first).
-   st: { buf, seen, first }, as firstPts; gives up after 4 MB.
-   vint: one variable-length number at b[i] ({ v, len }); keep: with its length marker (an ID). */
-function vint(b, i, keep) {
-  if (i >= b.length) return null;
-  var x = b[i], len = 1, m = 0x80;
-  while (len <= 8 && !(x & m)) { len++; m >>= 1; }
-  if (len > 8 || i + len > b.length) return null;
-  var v = keep ? x : x & (m - 1);
-  for (var k = 1; k < len; k++) v = v * 256 + b[i + k];
-  return { v: v, len: len, unknown: !keep && v === Math.pow(2, 7 * len) - 1 };
-}
-function uintAt(b, i, n) { var v = 0; for (var k = 0; k < n; k++) v = v * 256 + b[i + k]; return v; }
-// The first video block's time in seconds into st.first (see above), once the output holds it.
-function firstMkv(st, chunk) {
-  if (st.first != null || st.seen > 4194304) return;
-  st.seen += chunk.length;
-  var b = st.buf = st.buf ? Buffer.concat([st.buf, chunk]) : chunk;
-  var scale = 1000000, si = -1;
-  for (var q = 0; q + 3 < b.length && q < 65536; q++) if (b[q] === 0x2A && b[q + 1] === 0xD7 && b[q + 2] === 0xB1) { si = q; break; }
-  if (si >= 0) { var sz = vint(b, si + 3); if (sz && sz.v <= 8 && si + 3 + sz.len + sz.v <= b.length) scale = uintAt(b, si + 3 + sz.len, sz.v) || scale; }
-  var c = -1;
-  for (var j = 0; j + 4 <= b.length; j++) if (b[j] === 0x1F && b[j + 1] === 0x43 && b[j + 2] === 0xB6 && b[j + 3] === 0x75) { c = j; break; }
-  if (c < 0) return;
-  var cs = vint(b, c + 4); if (!cs) return;
-  var i = c + 4 + cs.len, ts = null;
-  // The Cluster's children, and a BlockGroup's, in order: its time first, then blocks.
-  while (i < b.length) {
-    var id = vint(b, i, true); if (!id) return;
-    var size = vint(b, i + id.len); if (!size) return;
-    var d = i + id.len + size.len;
-    if (id.v === 0xA0) { i = d; continue; }                       // a BlockGroup: look inside it
-    if (d + size.v > b.length) return;                            // not all here yet
-    if (id.v === 0xE7) ts = uintAt(b, d, size.v);
-    else if ((id.v === 0xA3 || id.v === 0xA1) && ts != null) {
-      var tr = vint(b, d);
-      if (tr && tr.v === 1) {
-        var rel = b.readInt16BE(d + tr.len);
-        st.first = (ts + rel) * scale / 1e9; st.buf = null;
-        return;
-      }
-    } else if (id.v === 0x1F43B675) return;                        // the next Cluster: no video in the first
-    i = d + size.v;
-  }
-}
-
 /* ---------- running ffmpeg ---------- */
 var NICE = null;
 function nice() {
@@ -542,11 +491,10 @@ function stream(req, res, ALLOW, log, port, redact) {
   }
   me.feeder = null; me.t = t;
   current = me;
-  // A movie from a seek: where its picture starts (firstPts for MPEG-TS, firstMkv), read from the output as it goes past.
-  if (t && !pipe) {
+  // A movie as MPEG-TS from a seek: where its picture starts (firstPts), read from the output as it goes past.
+  if (fmt === 'ts' && t && !pipe) {
     me.pts = { buf: null, seen: 0, first: null };
-    var read = fmt === 'ts' ? firstPts : firstMkv;
-    var onPts = function (d) { read(me.pts, d); if (me.pts.first != null || me.pts.seen > 4194304) { p.stdout.removeListener('data', onPts); if (me.pts.first != null) log({ lv: 'info', event: 'convert picture starts', from_s: t, at_s: Math.round(me.pts.first * 1000) / 1000 }); } };
+    var onPts = function (d) { firstPts(me.pts, d); if (me.pts.first != null || me.pts.seen > 4194304) { p.stdout.removeListener('data', onPts); if (me.pts.first != null) log({ lv: 'info', event: 'convert picture starts', from_s: t, at_s: Math.round(me.pts.first * 1000) / 1000 }); } };
     p.stdout.on('data', onPts);
   }
   log({ lv: 'info', event: 'convert start', u: redact(q.u), from_s: t, a: a, fmt: fmt, from: track ? track.codec + ' ' + track.channels + 'ch' : 'not probed', to: choice.out, nice: !!nice(), pipe: pipe, spool: !!dir, pid: p.pid });
@@ -585,5 +533,5 @@ function busy() { return current ? { pid: current.p.pid, since: current.at, spee
 // Tests: the spool's sizes.
 function _sizes(seg, ahead, behind, idle, wait) { SEG = seg; AHEAD = ahead; BEHIND = behind; if (idle) IDLE_MS = idle; if (wait) WAIT_MS = wait; }
 
-module.exports = { firstPts: firstPts, firstMkv: firstMkv, parseProbe: parseProbe, args: args, audioArgs: audioArgs, fxChain: fxChain, inputFor: inputFor, isStream: isStream, stream: stream, control: control,
+module.exports = { firstPts: firstPts, parseProbe: parseProbe, args: args, audioArgs: audioArgs, fxChain: fxChain, inputFor: inputFor, isStream: isStream, stream: stream, control: control,
   busy: busy, stats: stats, _sizes: _sizes, _dvLength: dvLength, get session() { return session; }, get key() { return KEY; }, _forget: function () { probes = {}; probeOrder = []; } };
