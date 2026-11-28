@@ -370,6 +370,61 @@ var Sports = (function () {
     return out;
   }
   var sticky = {};
+
+  /* ---------- cricket in the guide ----------
+     ESPN names no broadcaster for cricket, and its teams aren't My teams, so a match is found in the guide
+     itself: a programme naming both sides ("New Zealand v India, 2nd Test, Day 3", "IND vs NZ 1st T20I LIVE")
+     at the match's time ranks first, a channel named after the match next, then a cricket programme on a cricket
+     channel then ("Live Cricket" on Star Sports 1), which may be another match on at the same time. */
+  var CRICKET_ALIAS = { india: ['ind'], 'new zealand': ['nz', 'black caps', 'blackcaps'], australia: ['aus'], england: ['eng'], pakistan: ['pak'],
+    'south africa': ['sa', 'rsa', 'proteas'], 'sri lanka': ['sl'], bangladesh: ['ban', 'bd'], 'west indies': ['wi', 'windies'], afghanistan: ['afg'],
+    zimbabwe: ['zim'], ireland: ['ire'], scotland: ['sco'], netherlands: ['ned'], nepal: ['nep'], 'united arab emirates': ['uae'], 'united states of america': ['usa'] };
+  // Channels that show cricket, by the start of their squashed name (after a country tag: "IN: Star Sports 1").
+  var CRICKET_CH = /^([a-z]{2,3})?(starsports|sonysports|sonyten|sonysix|ten\d|willow|skysportscricket|skycricket|foxcricket|supersportcricket|ssc|ptvsports|asports|tensports|tsports|sports18|jiostar|jiohotstar|hotstar|gazitv|maasranga|astrocricket|cricket)/;
+  function cnorm(t) { return ' ' + String(t || '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').trim() + ' '; }
+  // A side's names, whole words: "india", "ind" (a women's side by its country, see below).
+  function sideNames(t) {
+    var full = cnorm(t.full || t.name).replace(/ women /g, ' ').trim(), out = [full];
+    (CRICKET_ALIAS[full] || []).forEach(function (a) { out.push(a); });
+    if (t.abbr && t.abbr.length >= 2 && t.abbr.length <= 4) out.push(t.abbr.toLowerCase().replace(/w$/, '') || t.abbr.toLowerCase());
+    return out.filter(function (x, i, a) { return x && a.indexOf(x) === i; });
+  }
+  function names(text, list) { return list.some(function (n) { return text.indexOf(' ' + n + ' ') >= 0; }); }
+  // Did programme [p] air at the match's time (now, for one being played)?
+  function atMatch(g, p) {
+    var now = Date.now();
+    if (g.state === 'in') return p.s <= now + 15 * 60000 && p.e > now;
+    return (p.s <= g.s && p.e > g.s) || Math.abs(p.s - g.s) < 2 * 3600e3;
+  }
+  var byGuideId = null;
+  // The channel a guide search result is on (its own key, else the channel showing that guide id).
+  function chanOf(key) {
+    var c = Library.find(key);
+    if (c) return c;
+    if (!byGuideId || byGuideId.of !== Library.data.channels) {
+      var m = {}, cs = Library.data.channels;
+      for (var i = 0; i < cs.length; i++) { var id = typeof Epg !== 'undefined' && Epg.epgId ? Epg.epgId(cs[i]) : ''; if (id && (!m[id] || !shown(m[id]))) m[id] = cs[i]; }
+      byGuideId = { of: cs, map: m };
+    }
+    return byGuideId.map[key] || null;
+  }
+  function cricketChannels(g, add) {
+    if (g.teams.length !== 2 || typeof Epg === 'undefined' || !Epg.search) return;
+    var a = sideNames(g.teams[0]), b = sideNames(g.teams[1]), women = /women/i.test(g.teams[0].full + ' ' + g.teams[1].full);
+    // A men's match isn't the women's one between the same countries, and the other way round.
+    var right = function (t) { return women ? / women | w /.test(t) : !/ women /.test(t); };
+    // A quick look at the letters first: the guide has every channel's week of programmes.
+    var rx = function (l) { return new RegExp('\\b(' + l.map(function (x) { return x.replace(/ /g, '\\W+'); }).join('|') + ')\\b', 'i'); }, qa = rx(a), qb = rx(b);
+    Epg.search(function (t) { if (!qa.test(t) || !qb.test(t)) return false; var n = cnorm(t); return right(n) && names(n, a) && names(n, b) && !/ highlights | replay | review | preview /.test(n); }, 300).forEach(function (r) {
+      if (atMatch(g, r.p)) add(chanOf(r.key), r.p, 'guide', 0);
+    });
+    var cs = Library.data.channels;
+    for (var i = 0; i < cs.length; i++) { var nm = Library.name(cs[i]); if (!qa.test(nm) || !qb.test(nm)) continue; var n = cnorm(nm); if (names(n, a) && names(n, b) && right(n)) add(cs[i], null, 'guide', 0.5); }
+    Epg.search(function (t) { return /cricket|test|odi|t20/i.test(t) && / cricket | test match | odi | t20i? /.test(cnorm(t)); }, 300).forEach(function (r) {
+      var c = chanOf(r.key);
+      if (c && CRICKET_CH.test(squash(Library.name(c))) && atMatch(g, r.p) && right(cnorm(r.p.t)) && !/ highlights | replay /.test(cnorm(r.p.t))) add(c, r.p, 'net', 2);
+    });
+  }
   function channelsOf(g, gm) {
     var out = [], seen = {}, ids = g.teams.map(function (t) { return t.id; }).filter(Boolean);
     function add(c, p, how, rank, net) { if (!c || seen[c.k] || !shown(c)) return; seen[c.k] = 1; out.push({ c: c, p: p || null, how: how, net: net || '', r: rank - (Library.isFav && Library.isFav(c.k) ? 0.5 : 0) }); }
@@ -382,6 +437,7 @@ var Sports = (function () {
       });
     });
     g.nets.forEach(function (n) { byNet(n).forEach(function (c) { add(c, null, 'net', 2, n); }); });
+    if (g.lg === 'cricket') cricketChannels(g, add);
     out.sort(function (a, b) { return a.r - b.r || (a.c.num || 9e9) - (b.c.num || 9e9); });
     return out;
   }
@@ -447,6 +503,6 @@ var Sports = (function () {
 
   return { darkLogo: darkLogo, netChannels: netChannels, covered: covered, rowOrder: rowOrder, setOrder: setOrder, rows: rows, follows: follows, reminded: reminded, remind: remind, loaded: loaded, refreshToday: refreshToday, byId: byId, summary: summary, gameOn: gameOn, hidesTeam: hidesTeam, hideTeam: hideTeam, hidden: hidden, reveal: reveal, followedLeagues: followedLeagues, _readSummary: readSummary,
     LEAGUES: LEAGUES, league: function (id) { return BY[id]; }, leagues: leagues, setLeagues: setLeagues, refresh: refresh, anyLive: anyLive, all: all, day: day, errOf: errOf,
-    channels: channels, byNet: byNet, title: title, onChange: onChange, dayKey: dayKey, LIVE_MS: LIVE_MS, TODAY_MS: TODAY_MS, _game: game, _squash: squash, _bare: bare, _store: store };
+    channels: channels, byNet: byNet, title: title, onChange: onChange, dayKey: dayKey, LIVE_MS: LIVE_MS, TODAY_MS: TODAY_MS, _game: game, _squash: squash, _bare: bare, _sideNames: sideNames, _store: store };
 })();
 if (typeof module !== 'undefined') module.exports = Sports;
