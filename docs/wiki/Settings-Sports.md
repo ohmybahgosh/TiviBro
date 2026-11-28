@@ -6,7 +6,8 @@ The teams you follow and what TiviBro does with them.  See [My teams](My-teams) 
 
 | Setting | Choices | What it does |
 |---|---|---|
-| *(each league)* | | Under **Your teams**.  The leagues in your playlist (NFL, NBA, NHL, MLB, WNBA, MLS, college football and college basketball): open one and tick your teams.  Teams with their own channel say so.  Or hold OK on a team's channel and choose **Follow**. |
+| *(each league)* | | Under **Your teams**.  The leagues in your playlist (NFL, NBA, NHL, MLB, WNBA, MLS, college football and college basketball), and always Cricket and Formula 1: open one and tick your teams.  Teams with their own channel say so.  Or hold OK on a team's channel and choose **Follow**. |
+| **Formula 1 sessions** *(Formula 1 followed)* | The race only · **Qualifying, sprints and the race** · Every session | Which sessions of a race weekend go to My teams, with reminders. |
 | **My teams' scores while watching** | **On** · Off | Under **While you watch**.  While you watch something else full screen, a live game of a team you follow shows its score in a corner, kept up to date (several take turns).  Never the game you're watching. |
 | **Where the scores go** | Top left · **Top right** · Bottom left · Bottom right | The corner for those scores: pick one your channels' own logos and scores don't use. |
 | **Teams in the corner** | | Turn a team off to leave its games out of the corner.  Sports and alerts still have them. |

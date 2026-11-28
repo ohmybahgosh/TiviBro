@@ -71,7 +71,7 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | 🧭 **A set-up tour built from your own playlist** | Right after you connect, TiviBro counts what your list has and asks only about that: the countries in it, East or West, the cities its local groups carry, its event channels, its duplicates. |
 | 🖼️ **Fills in missing logos, without hosting a single one** | A small index points at Worldwide TV Logos', tv-logos' and iptv-org's own logos, matched by guide id, cleaned name, country and local call sign. |
 | 🏟️ **Reads sports and PPV listings from channel names** | When a provider writes the event into the name instead of the guide, TiviBro turns it into a short channel name and a guide entry at the real time in your time zone. |
-| 🏈 **Your teams' live scores while you watch** | A Sports screen tied to your channels, a page per game, and your teams' scores in the corner while you watch something else. |
+| 🏈 **Your teams' live scores while you watch** | A Sports screen tied to your channels, a page per game, and your teams' scores in the corner while you watch something else.  Follow your cricket side or Formula 1 (every session of a race weekend, with the drivers' championship). |
 | 🖥️ **A full editor on your phone or computer** | Clean up 10,000 channels with a keyboard instead of a remote, then **Send to TV**.  Unsent work is autosaved on the TV within seconds. |
 | 🔁 **Switches to a working copy by itself** | Same channel in FHD, HD and SD?  When one dies, TiviBro moves to the next version on its own and tells you. |
 | 🙈 **Hides channels with nothing on** | Event channels that say "Off Air" or "No Event Scheduled" stay out of the way, and come back by themselves when an event is named. |
