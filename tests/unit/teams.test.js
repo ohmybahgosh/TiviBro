@@ -33,6 +33,10 @@ eval(fs.readFileSync(path.join(__dirname, '../../app/js/teams.js'), 'utf8') + ';
 const ids = l => l.map(x => x.id).sort().join(',');
 const all = Teams.all();
 const fb = l => ids(l.filter(x => x.league === 'ncaaf')), bb = l => ids(l.filter(x => x.league === 'ncaab'));
+// A title a game goes by when only its description names the teams (not a show about the sport).
+const GT = Teams._gameTitle;
+ok('game titles: the sport last', ['MLB Baseball', 'Live: NFL Football', 'Thursday Night Football', 'College Basketball Doubleheader', 'NFL Football on FOX', 'NHL Hockey (HD)', 'Big Ten Football'].every((t) => GT.test(t)));
+ok('not a show about the sport: "Baseball\'s Seasons" (issue: a Tigers reminder in November)', !GT.test('Baseball\'s Seasons') && !GT.test('Football Night in America') && !GT.test('MLB Tonight') && !GT.test('Inside the NFL'));
 ok('full name', ids(Teams.named('Detroit Lions at Minnesota Vikings', '', all)) === 'nfl:det,nfl:min');
 ok('nicknames need the league: Magic Mike is no game', ids(Teams.named('Magic Mike', 'HBO', all)) === '');
 ok('two nicknames of one league', ids(Teams.named('Heat at Magic', '', all)) === 'nba:mia,nba:orl');

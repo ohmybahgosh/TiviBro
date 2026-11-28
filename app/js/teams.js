@@ -494,7 +494,7 @@ var Teams = (function () {
     descHits(dwords).forEach(function (r) {
       var c = Library.find(r.key) || byEpg[r.key], p = r.p;
       if (c && Library.mixed && !Library.mixed(c, 'teams')) c = byEpg[r.key] || null;     // a playlist not mixed into My teams
-      if (!c || p.e <= gone || p.s > to || p.rp || !SPORTY.test(p.t) || /\breplay\b/i.test(p.t) || oldGame(p.t)) return;
+      if (!c || p.e <= gone || p.s > to || p.rp || !GAME_TITLE.test(p.t) || /\breplay\b/i.test(p.t) || oldGame(p.t)) return;
       // A description is loose talk: the team by its full name, or the league named ("NFL Football"), so a
       // college game between the Tigers and the Cardinals isn't the Detroit Tigers.
       var ctx = p.t + ' | ' + c.n + ' | ' + (gname[c.g] || '');
@@ -578,7 +578,10 @@ var Teams = (function () {
     g.c = pick.c; g.p = pick.p;
   }
   var MAX_FEEDS = 8, SAME_GAME = 12 * 3600e3, CLOSE = 90 * 60000;
-  var SPORTY = /\b(nfl|nba|nhl|mlb|wnba|mls|football|basketball|hockey|baseball|soccer)\b/i;
+  /* A title a game goes by when only its description names the teams: the sport last ("MLB Baseball", "Live: NFL
+     Football", "Thursday Night Football", "NFL Football on FOX", "College Basketball Doubleheader").  Not a show about the sport
+     ("Baseball's Seasons", a season review whose description named the Blue Jays and the Tigers). */
+  var GAME_TITLE = /\b(football|basketball|hockey|baseball|soccer|f[uú]tbol)\b(?!['\u2019])(\s+(game|playoffs?|championship|doubleheader|double-header|live|en vivo))?(\s+on\s+[\w-]+)?\s*(\([^)]*\))?\s*[!.]?\s*$/i;
   // Not the game: placeholders ("not found yet"), and the shows around it.
   // Guide placeholders, never a programme to be reminded of (the helper's remind.js has the same list).
   var PLACEHOLDER = /^\s*next (?:game|event|match)\b|(?:^|[\s|:–-])next\s*:|\bup next\b|\bcoming up\s*:|not found|no (?:future |upcoming |more |scheduled )?(?:games?|events?|matches)\b|not scheduled|nothing scheduled/i;
@@ -865,6 +868,6 @@ var Teams = (function () {
   return {
     LEAGUES: LEAGUES, get descGen() { return descGen; }, all: function () { return ALL; }, team: function (id) { return BY_ID[id]; }, named: named, norm: norm,
     leagues: leagues, inLeague: inLeague, hasChannel: hasChannel, teamChannels: teamChannels, ofChannel: ofChannel,
-    RULES: 3, recheck: recheck, isGame: isGame, matchup: matchup, aroundGame: aroundGame, SAME_GAME: SAME_GAME, CLOSE: CLOSE, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, espnOf: espnOf, list: list, uniform: uniform, gameTitle: gameTitle, gameOn: gameOn, dirty: dirty, nextGame: nextGame, emptyText: emptyText
+    RULES: 3, _gameTitle: GAME_TITLE, recheck: recheck, isGame: isGame, matchup: matchup, aroundGame: aroundGame, SAME_GAME: SAME_GAME, CLOSE: CLOSE, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, espnOf: espnOf, list: list, uniform: uniform, gameTitle: gameTitle, gameOn: gameOn, dirty: dirty, nextGame: nextGame, emptyText: emptyText
   };
 })();
