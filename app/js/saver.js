@@ -47,7 +47,13 @@ var Saver = (function () {
   function check() {
     var now = Date.now();
     // The screen turned off: something started playing meanwhile (from the phone, a reminder): on again.
-    if (dark) { if (playing()) wake('something plays'); return; }
+    if (dark) {
+      if (playing()) { wake('something plays'); return; }
+      /* The TV turns the screen on by itself for a button, which may not reach TiviBro: once its power state says
+         "Active" again, the screen is on and the wait starts over. */
+      powerNow().then(function (st) { if (dark && st === 'Active') { dark = false; last = Date.now(); if (typeof Log !== 'undefined') Log.info('app', 'Screen on again (the TV woke it)'); } }, function () {});
+      return;
+    }
     if (on) { if (now - shiftAt > 60000) nudge(); if (now - lookAt > MIX_MS) pick(); if (!handed && S().saverHour !== 'keep' && now - since > HOUR) handOver(); return; }
     if (due({ enabled: enabled(), hidden: document.hidden, playing: playing(), paused: paused(), idle: now - last, after: after(), pausedAfter: pausedAfter() })) { if (S().saverScreenOff && !paused()) screenOff(); else show(); }
   }
@@ -58,6 +64,10 @@ var Saver = (function () {
     if (typeof Net === 'undefined' || !Net.port || !Net.ctlFetch) return Promise.reject(new Error('no network helper'));
     return Net.ctlFetch('http://127.0.0.1:' + Net.port + '/companion/screen', { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ on: onNow }) })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status); return j; }); });
+  }
+  function powerNow() {
+    if (typeof Net === 'undefined' || !Net.port || !Net.ctlFetch) return Promise.reject(new Error('no network helper'));
+    return Net.ctlFetch('http://127.0.0.1:' + Net.port + '/companion/screen', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) { return j && j.power || ''; });
   }
   function screenOff() {
     dark = true; since = Date.now();

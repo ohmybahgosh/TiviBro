@@ -171,6 +171,7 @@ var companion = require('./companion').create({
      standbyMode; older ones take nothing.  Where the helper isn't let call it, the Homebrew Channel's root exec
      (a rooted TV) sends the same call. */
   screen: function (on, cb) {
+    watchPower();                       // its state, so TiviBro can tell when a button turned the screen on again
     var P = 'luna://com.webos.service.tvpower/power/' + (on ? 'turnOnScreen' : 'turnOffScreen'), tries = [{}, { standbyMode: 'active' }], i = 0, last = null;
     function next() {
       if (i >= tries.length * 2) return cb(new Error((last && last.errorText) || 'refused'));

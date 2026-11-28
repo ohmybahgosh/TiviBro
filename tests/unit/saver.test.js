@@ -30,7 +30,8 @@ ok('…and with the switch off, everything', S._rated({ contentRating: 'R' }) &&
 /* Turn the screen off instead (discussion #184): with nothing playing the helper is asked to turn it off; the first
    button turns it on again and is used up; where the TV refuses, the looks show instead. */
 const asked = []; let refuse = false;
-ctx.Net = { port: 1, ctlFetch: (u, o) => { asked.push(JSON.parse(o.body).on); return Promise.resolve({ ok: !refuse, status: refuse ? 409 : 200, json: () => Promise.resolve(refuse ? { error: 'refused' } : { ok: true }) }); } };
+let power = 'Screen Off';
+ctx.Net = { port: 1, ctlFetch: (u, o) => { if (!o.body) return Promise.resolve({ ok: true, json: () => Promise.resolve({ power }) }); asked.push(JSON.parse(o.body).on); return Promise.resolve({ ok: !refuse, status: refuse ? 409 : 200, json: () => Promise.resolve(refuse ? { error: 'refused' } : { ok: true }) }); } };
 ctx.Store.settings.saverScreenOff = true; ctx.Store.settings.saverAfter = 2;
 S.start(); S.activity();
 const realNow = Date.now; let fake = realNow();
@@ -38,7 +39,13 @@ ctx.Date = class extends Date {}; ctx.Date.now = () => fake;
 const wait = () => new Promise((r) => setTimeout(r, 5));
 fake += 3 * 60000; tick(); await wait();
 ok('nothing playing: the screen is turned off, not a look', S.dark && !S.on && asked.join() === 'false', asked.join());
-ok('the first button only turns it on again', S.activity() === true && !S.dark && asked.join() === 'false,true');
+fake += 20000; tick(); await wait();
+ok('still off while the TV says so', S.dark);
+power = 'Active'; fake += 20000; tick(); await wait();
+ok('the TV woke it by itself (a button TiviBro didn\'t see): on again, the wait starts over', !S.dark && asked.join() === 'false', asked.join());
+power = 'Screen Off'; fake += 3 * 60000; tick(); await wait();
+ok('...and off again after another wait', S.dark && asked.join() === 'false,false', asked.join());
+ok('the first button only turns it on again', S.activity() === true && !S.dark && asked.join() === 'false,false,true');
 ctx.Player = { current: { n: 'x' }, userPaused: true }; ctx.Store.settings.saverPaused = 2;
 fake += 3 * 60000; tick(); await wait();
 ok('over a paused video: the looks, not the screen off', S.on && !S.dark);

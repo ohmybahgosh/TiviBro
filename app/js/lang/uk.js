@@ -2797,5 +2797,18 @@ I18n.add('uk', {
   "Show all categories": "Показати всі категорії",
   "Show categories": "Показувати категорії",
   "With CH + and CH −, the channel before and after the one shown, on the right, with what's on.": "Під час перемикання кнопками CH + і CH − праворуч показано попередній і наступний канали та їхні передачі.",
-  "{n} hidden": ["{n} прихована", "{n} приховані", "{n} прихованих"]
+  "{n} hidden": ["{n} прихована", "{n} приховані", "{n} прихованих"],
+  "Constructors' championship": "Кубок конструкторів",
+  "Drivers' championship": "Особистий залік пілотів",
+  "Practice 1": "Практика 1",
+  "Practice 2": "Практика 2",
+  "Practice 3": "Практика 3",
+  "Qualifying": "Кваліфікація",
+  "Race": "Гонка",
+  "Sprint": "Спринт",
+  "Sprint qualifying": "Кваліфікація спринту",
+  "The drive's partition recordings and live pause go to.": "Розділ диска, куди йдуть записи та пауза ефіру.",
+  "The weekend": "Вікенд",
+  "Turn the screen off instead": "Натомість вимикати екран",
+  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Коли нічого не грає, екран гасне, як від функції «Вимкнути екран» телевізора, замість заставки.  Будь-яка кнопка вмикає його знову.  Над відео на паузі й далі показуються заставки нижче."
 });

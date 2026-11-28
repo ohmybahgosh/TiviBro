@@ -2797,5 +2797,18 @@ I18n.add('hr', {
   "Show all categories": "Prikaži sve kategorije",
   "Show categories": "Prikaži kategorije",
   "With CH + and CH −, the channel before and after the one shown, on the right, with what's on.": "Tipkama CH + i CH − prikazuju se kanal prije i kanal poslije trenutnog, s desne strane, uz ono što se na njima prikazuje.",
-  "{n} hidden": ["{n} skrivena", "{n} skrivene", "{n} skrivenih"]
+  "{n} hidden": ["{n} skrivena", "{n} skrivene", "{n} skrivenih"],
+  "Constructors' championship": "Prvenstvo konstruktora",
+  "Drivers' championship": "Prvenstvo vozača",
+  "Practice 1": "Trening 1",
+  "Practice 2": "Trening 2",
+  "Practice 3": "Trening 3",
+  "Qualifying": "Kvalifikacije",
+  "Race": "Utrka",
+  "Sprint": "Sprint",
+  "Sprint qualifying": "Sprint kvalifikacije",
+  "The drive's partition recordings and live pause go to.": "Particija diska na koju idu snimke i pauza uživo.",
+  "The weekend": "Vikend",
+  "Turn the screen off instead": "Umjesto toga isključi zaslon",
+  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "Kad ništa ne svira, zaslon se gasi kao s TV-ovom funkcijom Isključi zaslon, umjesto da prikazuje izgled.  Bilo koja tipka ga ponovno uključuje.  Preko pauziranog videa i dalje se prikazuju izgledi ispod."
 });

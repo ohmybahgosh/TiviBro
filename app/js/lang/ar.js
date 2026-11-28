@@ -2797,5 +2797,18 @@ I18n.add('ar', {
   "Show all categories": "إظهار كل الفئات",
   "Show categories": "إظهار الفئات",
   "With CH + and CH −, the channel before and after the one shown, on the right, with what's on.": "عند الضغط على CH + وCH −، تظهر على اليمين القناة التي قبل القناة المعروضة والتي بعدها، مع ما يُعرض عليهما.",
-  "{n} hidden": ["{n} مخفية", "{n} مخفية", "{n} مخفيتان", "{n} مخفية", "{n} مخفية", "{n} مخفية"]
+  "{n} hidden": ["{n} مخفية", "{n} مخفية", "{n} مخفيتان", "{n} مخفية", "{n} مخفية", "{n} مخفية"],
+  "Constructors' championship": "بطولة الصانعين",
+  "Drivers' championship": "بطولة السائقين",
+  "Practice 1": "التجارب الحرة 1",
+  "Practice 2": "التجارب الحرة 2",
+  "Practice 3": "التجارب الحرة 3",
+  "Qualifying": "التأهيل",
+  "Race": "السباق",
+  "Sprint": "السباق القصير",
+  "Sprint qualifying": "تأهيل السباق القصير",
+  "The drive's partition recordings and live pause go to.": "قسم القرص الذي تذهب إليه التسجيلات والإيقاف المؤقت للبث المباشر.",
+  "The weekend": "عطلة نهاية الأسبوع",
+  "Turn the screen off instead": "إطفاء الشاشة بدلًا من ذلك",
+  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "عندما لا يُشغَّل شيء، تنطفئ الشاشة كما يفعل خيار إطفاء الشاشة في التلفاز، بدلًا من عرض مظهر.  أي زر يعيد تشغيلها.  فوق فيديو متوقف مؤقتًا تظل المظاهر أدناه تظهر."
 });

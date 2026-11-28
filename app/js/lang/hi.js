@@ -2797,5 +2797,18 @@ I18n.add('hi', {
   "Show all categories": "सभी कैटेगरी दिखाएं",
   "Show categories": "कैटेगरी दिखाएं",
   "With CH + and CH −, the channel before and after the one shown, on the right, with what's on.": "CH + और CH − से, चल रहे चैनल से पहले और बाद का चैनल, दाईं ओर, उस पर चल रहे कार्यक्रम के साथ दिखता है।",
-  "{n} hidden": ["{n} छिपी हुई", "{n} छिपी हुई"]
+  "{n} hidden": ["{n} छिपी हुई", "{n} छिपी हुई"],
+  "Constructors' championship": "कंस्ट्रक्टर्स चैंपियनशिप",
+  "Drivers' championship": "ड्राइवर्स चैंपियनशिप",
+  "Practice 1": "प्रैक्टिस 1",
+  "Practice 2": "प्रैक्टिस 2",
+  "Practice 3": "प्रैक्टिस 3",
+  "Qualifying": "क्वालिफ़ाइंग",
+  "Race": "रेस",
+  "Sprint": "स्प्रिंट",
+  "Sprint qualifying": "स्प्रिंट क्वालिफ़ाइंग",
+  "The drive's partition recordings and live pause go to.": "ड्राइव का वह पार्टिशन जिसमें रिकॉर्डिंग और लाइव पॉज़ जाते हैं।",
+  "The weekend": "वीकेंड",
+  "Turn the screen off instead": "इसके बजाय स्क्रीन बंद करें",
+  "With nothing playing, the screen goes off as the TV's own Screen off does, rather than show a look.  Any button turns it back on.  Over a paused video the looks below still show.": "जब कुछ नहीं चल रहा हो, तो कोई लुक दिखाने के बजाय स्क्रीन वैसे ही बंद हो जाती है जैसे TV के अपने स्क्रीन बंद से।  कोई भी बटन इसे फिर से चालू कर देता है।  रुके हुए वीडियो पर नीचे दिए लुक ही दिखते हैं।"
 });

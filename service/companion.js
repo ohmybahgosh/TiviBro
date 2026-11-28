@@ -639,6 +639,8 @@ function create(opts) {
     var reply = function (code, obj) { res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(obj)); };
     var done = function (e) { if (e) return reply(409, { error: e.message }); reply(200, status()); };
     if (u === '/companion/status') return reply(200, status());
+    // The TV's power state for TiviBro's screensaver, while it has turned the screen off ("Active" again: a button woke it).
+    if (u === '/companion/screen' && req.method === 'GET') return reply(200, { power: opts.power ? opts.power() || '' : '' });
     // Changes made on the phone while TiviBro was away: handed over once, for TiviBro to make now (setsnap.js).
     if (u === '/companion/pending') { var ch = pending; pending = []; saveSnap(); return reply(200, { changes: ch }); }
     // TiviBro waits here for commands from phones (and for a phone wanting the channel list).
