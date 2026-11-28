@@ -1307,7 +1307,8 @@ var Player = (function () {
       return;
     }
 
-    // 2. Refill goal: once dry, stay paused until there's a real cushion.
+    // 2. Refill goal: once dry, stay paused until there's a real cushion (a converted movie at its end has ended).
+    if (st.refilling && convAtEnd(t)) { Log.info('player', 'Converted movie reached its end at ' + Math.round(t + base()) + 's'); clearInterval(wd); wd = 0; state('ended'); return; }
     if (st.refilling) {
       // Resume at the full goal, or after 4s once the profile's own target is there: a refill
       // should never become a long wait just because the cushion grew.
@@ -1372,6 +1373,9 @@ var Player = (function () {
       var gap = nextRangeStart();
       if (gap > 0) { st.arr = null; Log.debug('player', 'Jumped a ' + (gap - t).toFixed(2) + 's gap in the buffer'); video.currentTime = gap + 0.05; st.lastMove = now; return; }
     }
+    // A converted movie that runs dry in its last seconds has ended: a Dolby Vision conversion's connection is kept
+    // open after the movie's last byte (service/convert.js dvLength), so the TV player never says "ended" itself.
+    if (stuck > 600 && ahead < 0.3 && convAtEnd(t)) { Log.info('player', 'Converted movie reached its end at ' + Math.round(t + base()) + 's'); clearInterval(wd); wd = 0; state('ended'); return; }
     // Ran dry: start a proper refill instead of stutter-playing.
     if (stuck > 600 && ahead < 0.3) {
       st.refilling = true; st.refillSince = now; st.refills = (st.refills || 0) + 1; st.arr = null;
@@ -1560,6 +1564,8 @@ var Player = (function () {
   }
 
   /* ---------- sound the TV can't play (convert.js) ---------- */
+  // At a converted movie's end: within its last 3 seconds (its length from the helper's probe).
+  function convAtEnd(t) { var d = cur && cur.conv && cur.conv.dur; return isFile() && d > 120 && t + base() >= d - 3; }
   function base() { return cur && cur.conv ? cur.conv.base || 0 : 0; }
   /* A converted movie from a seek plays from the keyframe before the seek, up to several seconds earlier, and the
      player's clock counts from that keyframe: subtitles (and Player.position) would be that far ahead of the

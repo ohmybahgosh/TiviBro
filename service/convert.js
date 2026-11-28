@@ -397,11 +397,16 @@ function serveFrom(S, req, res, start, log, end) {
     if (!S.readers.length && !S.stopped) S.idle = setTimeout(function () { S.stop('the player went away'); }, IDLE_MS);
   }
   res.on('close', done); req.on('close', done); res.on('finish', done);
+  // The next bytes: from the spool's pieces as far as written (and `end`), then waits for ffmpeg's next ones.
   function pump() {
     if (closed || reading) return;
     if (pos < S.floor) { done(); try { res.destroy(); } catch (e) {} return; }
     if (end != null && pos > end) { try { res.end(); } catch (e) {} return done(); }
     if (pos >= S.written) {
+      /* A Dolby Vision answer has a guessed length larger than the movie: ended early, the TV player calls it an
+         error and drops what it has buffered (the last 20 seconds).  So it stays open after the last byte; the
+         player ends the movie when its picture reaches the end (player.js convAtEnd), and hangs up. */
+      if (S.done && S.dv && end == null && !S.stopped) return S.wait(function () {});
       if (S.done) { try { res.end(); } catch (e) {} return done(); }
       var t = setTimeout(function () { if (!closed && pos >= S.written && !S.done) { log({ lv: 'warn', event: 'convert stalled', at_mb: Math.round(pos / 1048576) }); try { res.end(); } catch (e) {} done(); } }, WAIT_MS);
       return S.wait(function () { clearTimeout(t); pump(); });
