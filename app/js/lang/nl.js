@@ -2791,5 +2791,11 @@ I18n.add('nl', {
   "When nobody has come back.": "Als er niemand is teruggekomen.",
   "Your teams' scores and next games, slowly wandering, when they have one.": "De uitslagen en volgende wedstrijden van je teams, langzaam rondzwevend, als ze er een hebben.",
   "Family-friendly pictures only": "Alleen gezinsvriendelijke films",
-  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Slaat titels met de rating R, NC-17 of TV-MA over, en titels zonder rating."
+  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Slaat titels met de rating R, NC-17 of TV-MA over, en titels zonder rating.",
+  "A Top 10 row for each service": "Een Top 10-rij per dienst",
+  "Bouncing logo": "Stuiterend logo",
+  "Each one you turn on gets a row of its own on Home, in that service's order.  Streaming Top 10s you have mixes them all in one row.": "Elke dienst die je aanzet krijgt een eigen rij op Home, in de volgorde van die dienst.  Streaming Top 10s die je hebt mengt ze allemaal in één rij.",
+  "One row for all the services together: yesterday's Top 10s in your country (FlixPatrol), only the movies and shows your Plex has, best place first, with \"#3 on Netflix\" under each.  On Home.": "Eén rij voor alle diensten samen: de Top 10's van gisteren in jouw land (FlixPatrol), alleen de films en series die jouw Plex heeft, beste plek eerst, met \"#3 op Netflix\" eronder.  Op Home.",
+  "Pick services (Netflix, Max, Prime Video and more): each gets a row of its own, \"Top 10 on Netflix\", in that service's order, with the titles your Plex has.  On Home and in each library's Recommended.  Apart from the row above.": "Kies diensten (Netflix, Max, Prime Video en meer): elke dienst krijgt een eigen rij, \"Top 10 op Netflix\", in de volgorde van die dienst, met de titels die jouw Plex heeft.  Op Home en bij Aanbevolen in elke bibliotheek.  Los van de rij hierboven.",
+  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "De TiviBro V glijdt van wand naar wand, zoals de oude dvd-screensaver, en krijgt elke keer dat hij een wand raakt een nieuwe kleur."
 });

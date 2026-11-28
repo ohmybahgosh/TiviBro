@@ -2791,5 +2791,11 @@ I18n.add('it', {
   "When nobody has come back.": "Quando nessuno è tornato.",
   "Your teams' scores and next games, slowly wandering, when they have one.": "I risultati e le prossime partite delle tue squadre, che si spostano lentamente, quando ce n'è una.",
   "Family-friendly pictures only": "Solo film adatti a tutta la famiglia",
-  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Esclude i titoli classificati R, NC-17 o TV-MA e quelli senza classificazione."
+  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Esclude i titoli classificati R, NC-17 o TV-MA e quelli senza classificazione.",
+  "A Top 10 row for each service": "Una riga Top 10 per ogni servizio",
+  "Bouncing logo": "Logo rimbalzante",
+  "Each one you turn on gets a row of its own on Home, in that service's order.  Streaming Top 10s you have mixes them all in one row.": "Ogni servizio che attivi ha una riga tutta sua nella Home, nell'ordine di quel servizio.  Top 10 streaming che hai li mette tutti insieme in una sola riga.",
+  "One row for all the services together: yesterday's Top 10s in your country (FlixPatrol), only the movies and shows your Plex has, best place first, with \"#3 on Netflix\" under each.  On Home.": "Una sola riga per tutti i servizi insieme: le Top 10 di ieri nel tuo paese (FlixPatrol), solo i film e le serie TV presenti nel tuo Plex, dal miglior piazzamento, con \"#3 su Netflix\" sotto ciascuno.  Nella Home.",
+  "Pick services (Netflix, Max, Prime Video and more): each gets a row of its own, \"Top 10 on Netflix\", in that service's order, with the titles your Plex has.  On Home and in each library's Recommended.  Apart from the row above.": "Scegli i servizi (Netflix, Max, Prime Video e altri): ognuno ha una riga tutta sua, \"Top 10 su Netflix\", nell'ordine di quel servizio, con i titoli presenti nel tuo Plex.  Nella Home e in Consigliati di ogni libreria.  Separata dalla riga qui sopra.",
+  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "La V di TiviBro che scivola da una parete all'altra come il vecchio screensaver dei DVD, con un colore nuovo a ogni rimbalzo."
 });

@@ -3412,5 +3412,11 @@ I18n.add('pt-BR', {
   "When nobody has come back.": "Quando ninguém voltou.",
   "Your teams' scores and next games, slowly wandering, when they have one.": "Os placares e os próximos jogos dos seus times, se movendo devagar, quando houver.",
   "Family-friendly pictures only": "Somente filmes para toda a família",
-  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Deixa de fora títulos com classificação R, NC-17 ou TV-MA e os sem classificação."
+  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Deixa de fora títulos com classificação R, NC-17 ou TV-MA e os sem classificação.",
+  "A Top 10 row for each service": "Uma linha de Top 10 para cada serviço",
+  "Bouncing logo": "Logo quicando",
+  "Each one you turn on gets a row of its own on Home, in that service's order.  Streaming Top 10s you have mixes them all in one row.": "Cada serviço que você ativa ganha uma linha própria na Home, na ordem desse serviço.  Top 10 de streaming que você tem reúne todos em uma só linha.",
+  "One row for all the services together: yesterday's Top 10s in your country (FlixPatrol), only the movies and shows your Plex has, best place first, with \"#3 on Netflix\" under each.  On Home.": "Uma linha para todos os serviços juntos: os Top 10 de ontem no seu país (FlixPatrol), só com os filmes e séries que o seu Plex tem, da melhor posição para a pior, com \"#3 na Netflix\" embaixo de cada um.  Na Home.",
+  "Pick services (Netflix, Max, Prime Video and more): each gets a row of its own, \"Top 10 on Netflix\", in that service's order, with the titles your Plex has.  On Home and in each library's Recommended.  Apart from the row above.": "Escolha serviços (Netflix, Max, Prime Video e mais): cada um ganha uma linha própria, \"Top 10 na Netflix\", na ordem desse serviço, com os títulos que o seu Plex tem.  Na Home e em Recomendados de cada biblioteca.  À parte da linha acima.",
+  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "O V do TiviBro deslizando de uma borda à outra como o antigo protetor de tela de DVD, com uma cor nova cada vez que bate em uma."
 });

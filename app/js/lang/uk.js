@@ -2777,5 +2777,11 @@ I18n.add('uk', {
   "When nobody has come back.": "Коли ніхто не повернувся.",
   "Your teams' scores and next games, slowly wandering, when they have one.": "Рахунок ваших команд і найближчі матчі повільно пересуваються екраном, якщо вони є.",
   "Family-friendly pictures only": "Лише сімейні фільми",
-  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Приховує назви з рейтингом R, NC-17 або TV-MA, а також без рейтингу."
+  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Приховує назви з рейтингом R, NC-17 або TV-MA, а також без рейтингу.",
+  "A Top 10 row for each service": "Рядок Топ-10 для кожного сервісу",
+  "Bouncing logo": "Логотип, що відскакує",
+  "Each one you turn on gets a row of its own on Home, in that service's order.  Streaming Top 10s you have mixes them all in one row.": "Кожен увімкнений сервіс отримує окремий рядок на Головній, у порядку цього сервісу.  Топ-10 стримінгів, які у вас є, об'єднує їх в одному рядку.",
+  "One row for all the services together: yesterday's Top 10s in your country (FlixPatrol), only the movies and shows your Plex has, best place first, with \"#3 on Netflix\" under each.  On Home.": "Один рядок для всіх сервісів разом: вчорашні Топ-10 у вашій країні (FlixPatrol), лише фільми й серіали, які є у вашому Plex, найвище місце першим, з підписом \"№3 на Netflix\" під кожним.  На Головній.",
+  "Pick services (Netflix, Max, Prime Video and more): each gets a row of its own, \"Top 10 on Netflix\", in that service's order, with the titles your Plex has.  On Home and in each library's Recommended.  Apart from the row above.": "Оберіть сервіси (Netflix, Max, Prime Video та інші): кожен отримує окремий рядок, \"Топ-10 на Netflix\", у порядку цього сервісу, з тими назвами, які є у вашому Plex.  На Головній і в рекомендаціях кожної бібліотеки.  Окремо від рядка вище.",
+  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "Логотип TiviBro V ковзає від краю до краю, як на старій заставці DVD, і щоразу змінює колір, коли торкається краю."
 });

@@ -2906,5 +2906,11 @@ I18n.add('ru', {
   "When nobody has come back.": "Если никто не вернулся.",
   "Your teams' scores and next games, slowly wandering, when they have one.": "Счёт и ближайшие матчи ваших команд медленно перемещаются по экрану, если матч запланирован.",
   "Family-friendly pictures only": "Только семейное кино",
-  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Скрывает фильмы и сериалы с рейтингом R, NC-17 или TV-MA, а также без рейтинга."
+  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Скрывает фильмы и сериалы с рейтингом R, NC-17 или TV-MA, а также без рейтинга.",
+  "A Top 10 row for each service": "Отдельный ряд «Топ-10» для каждого сервиса",
+  "Bouncing logo": "Прыгающий логотип",
+  "Each one you turn on gets a row of its own on Home, in that service's order.  Streaming Top 10s you have mixes them all in one row.": "Каждый включённый сервис получает на главном экране свой ряд, в порядке этого сервиса.  «Streaming Top 10s you have» собирает все сервисы в одном ряду.",
+  "One row for all the services together: yesterday's Top 10s in your country (FlixPatrol), only the movies and shows your Plex has, best place first, with \"#3 on Netflix\" under each.  On Home.": "Один ряд для всех сервисов сразу: вчерашние топ-10 в вашей стране (FlixPatrol), только фильмы и сериалы из вашего Plex, лучшее место первым, под каждым подпись «№3 в Netflix».  На главном экране.",
+  "Pick services (Netflix, Max, Prime Video and more): each gets a row of its own, \"Top 10 on Netflix\", in that service's order, with the titles your Plex has.  On Home and in each library's Recommended.  Apart from the row above.": "Выберите сервисы (Netflix, Max, Prime Video и другие): каждый получает свой ряд, «Топ-10 в Netflix», в порядке этого сервиса, с теми названиями, что есть в вашем Plex.  На главном экране и в разделе «Рекомендуем» каждой библиотеки.  Отдельно от ряда выше.",
+  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "Буква V из TiviBro летает от края до края, как старая заставка DVD, и при каждом касании края меняет цвет."
 });

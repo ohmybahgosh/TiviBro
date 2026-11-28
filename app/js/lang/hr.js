@@ -2777,5 +2777,11 @@ I18n.add('hr', {
   "When nobody has come back.": "Kad se nitko nije vratio.",
   "Your teams' scores and next games, slowly wandering, when they have one.": "Rezultati i sljedeće utakmice vaših timova, koji polako lutaju zaslonom, kad ih imaju.",
   "Family-friendly pictures only": "Samo obiteljski filmovi",
-  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Izostavlja naslove s oznakom R, NC-17 ili TV-MA te one bez oznake."
+  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Izostavlja naslove s oznakom R, NC-17 ili TV-MA te one bez oznake.",
+  "A Top 10 row for each service": "Red Top 10 za svaku uslugu",
+  "Bouncing logo": "Odbijajući logotip",
+  "Each one you turn on gets a row of its own on Home, in that service's order.  Streaming Top 10s you have mixes them all in one row.": "Svaka koju uključite dobiva svoj red na početnom zaslonu, prema redoslijedu te usluge.  Streaming Top 10 koji imate spaja ih sve u jedan red.",
+  "One row for all the services together: yesterday's Top 10s in your country (FlixPatrol), only the movies and shows your Plex has, best place first, with \"#3 on Netflix\" under each.  On Home.": "Jedan red za sve usluge zajedno: jučerašnji Top 10 u vašoj zemlji (FlixPatrol), samo filmovi i serije koje ima vaš Plex, najbolje mjesto prvo, s oznakom \"#3 na Netflixu\" ispod svakog.  Na početnom zaslonu.",
+  "Pick services (Netflix, Max, Prime Video and more): each gets a row of its own, \"Top 10 on Netflix\", in that service's order, with the titles your Plex has.  On Home and in each library's Recommended.  Apart from the row above.": "Odaberite usluge (Netflix, Max, Prime Video i druge): svaka dobiva svoj red, \"Top 10 na Netflixu\", prema redoslijedu te usluge, s naslovima koje ima vaš Plex.  Na početnom zaslonu i u Preporučenom svake knjižnice.  Odvojeno od gornjeg reda.",
+  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "TiviBro V klizi od ruba do ruba kao stari DVD screensaver, a pri svakom udarcu o rub promijeni boju."
 });

@@ -2793,5 +2793,11 @@ I18n.add('de', {
   "When nobody has come back.": "Wenn niemand zurückgekommen ist.",
   "Your teams' scores and next games, slowly wandering, when they have one.": "Die Ergebnisse und nächsten Spiele deiner Teams, langsam wandernd, sofern sie eines haben.",
   "Family-friendly pictures only": "Nur familienfreundliche Filme",
-  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Blendet Titel mit der Freigabe R, NC-17 oder TV-MA aus, ebenso Titel ohne Altersfreigabe."
+  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Blendet Titel mit der Freigabe R, NC-17 oder TV-MA aus, ebenso Titel ohne Altersfreigabe.",
+  "A Top 10 row for each service": "Eine Top-10-Reihe pro Dienst",
+  "Bouncing logo": "Springendes Logo",
+  "Each one you turn on gets a row of its own on Home, in that service's order.  Streaming Top 10s you have mixes them all in one row.": "Jeder Dienst, den du aktivierst, bekommt auf der Startseite eine eigene Reihe, in der Reihenfolge des Dienstes.  „Streaming-Top-10, die du hast“ mischt alle in einer Reihe.",
+  "One row for all the services together: yesterday's Top 10s in your country (FlixPatrol), only the movies and shows your Plex has, best place first, with \"#3 on Netflix\" under each.  On Home.": "Eine Reihe für alle Dienste zusammen: die Top 10 von gestern in deinem Land (FlixPatrol), nur Filme und Serien, die dein Plex hat, beste Platzierung zuerst, mit „#3 auf Netflix“ darunter.  Auf der Startseite.",
+  "Pick services (Netflix, Max, Prime Video and more): each gets a row of its own, \"Top 10 on Netflix\", in that service's order, with the titles your Plex has.  On Home and in each library's Recommended.  Apart from the row above.": "Wähle Dienste (Netflix, Max, Prime Video und mehr): Jeder bekommt eine eigene Reihe, „Top 10 auf Netflix“, in der Reihenfolge des Dienstes, mit den Titeln, die dein Plex hat.  Auf der Startseite und unter „Empfohlen“ in jeder Mediathek.  Zusätzlich zur Reihe oben.",
+  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "Das TiviBro-V gleitet von Wand zu Wand wie der alte DVD-Bildschirmschoner, bei jedem Aufprall in einer neuen Farbe."
 });

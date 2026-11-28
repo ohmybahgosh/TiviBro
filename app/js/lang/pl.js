@@ -2791,5 +2791,11 @@ I18n.add('pl', {
   "When nobody has come back.": "Gdy nikt nie wrócił.",
   "Your teams' scores and next games, slowly wandering, when they have one.": "Wyniki i następne mecze Twoich drużyn, powoli wędrujące po ekranie, jeśli akurat jakiś jest.",
   "Family-friendly pictures only": "Tylko filmy dla całej rodziny",
-  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Pomija tytuły z oceną R, NC-17 lub TV-MA oraz te bez oceny."
+  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Pomija tytuły z oceną R, NC-17 lub TV-MA oraz te bez oceny.",
+  "A Top 10 row for each service": "Rząd Top 10 dla każdego serwisu",
+  "Bouncing logo": "Odbijające się logo",
+  "Each one you turn on gets a row of its own on Home, in that service's order.  Streaming Top 10s you have mixes them all in one row.": "Każdy włączony serwis dostaje własny rząd na ekranie głównym, w kolejności tego serwisu.  Opcja „Streamingowe Top 10 u Ciebie” łączy wszystkie w jednym rzędzie.",
+  "One row for all the services together: yesterday's Top 10s in your country (FlixPatrol), only the movies and shows your Plex has, best place first, with \"#3 on Netflix\" under each.  On Home.": "Jeden rząd dla wszystkich serwisów razem: wczorajsze Top 10 w Twoim kraju (FlixPatrol), tylko filmy i seriale, które ma Twój Plex, od najwyższego miejsca, z napisem „#3 na Netflix” pod każdym.  Na ekranie głównym.",
+  "Pick services (Netflix, Max, Prime Video and more): each gets a row of its own, \"Top 10 on Netflix\", in that service's order, with the titles your Plex has.  On Home and in each library's Recommended.  Apart from the row above.": "Wybierz serwisy (Netflix, Max, Prime Video i inne): każdy dostaje własny rząd, „Top 10 na Netflix”, w kolejności tego serwisu, z tytułami, które ma Twój Plex.  Na ekranie głównym i w sekcji Polecane każdej biblioteki.  Osobno od rzędu powyżej.",
+  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "Litera V z TiviBro sunie od ściany do ściany jak stary wygaszacz DVD i za każdym uderzeniem w ścianę zmienia kolor."
 });

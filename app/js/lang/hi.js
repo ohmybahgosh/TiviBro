@@ -2777,5 +2777,11 @@ I18n.add('hi', {
   "When nobody has come back.": "जब कोई वापस न आया हो।",
   "Your teams' scores and next games, slowly wandering, when they have one.": "आपकी टीमों के स्कोर और अगले गेम, धीरे-धीरे इधर-उधर घूमते हुए, जब उनका कोई गेम हो।",
   "Family-friendly pictures only": "सिर्फ़ फ़ैमिली-फ़्रेंडली फ़िल्में",
-  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "R, NC-17 या TV-MA रेटिंग वाले और बिना रेटिंग वाले टाइटल नहीं दिखाए जाते।"
+  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "R, NC-17 या TV-MA रेटिंग वाले और बिना रेटिंग वाले टाइटल नहीं दिखाए जाते।",
+  "A Top 10 row for each service": "हर सर्विस के लिए Top 10 की एक अलग पंक्ति",
+  "Bouncing logo": "उछलता लोगो",
+  "Each one you turn on gets a row of its own on Home, in that service's order.  Streaming Top 10s you have mixes them all in one row.": "आप जिसे भी चालू करते हैं, उसकी Home पर अपनी अलग पंक्ति बनती है, उसी सर्विस के क्रम में.  \"Streaming Top 10s you have\" सबको एक ही पंक्ति में मिला देता है.",
+  "One row for all the services together: yesterday's Top 10s in your country (FlixPatrol), only the movies and shows your Plex has, best place first, with \"#3 on Netflix\" under each.  On Home.": "सभी सर्विस की एक ही पंक्ति: आपके देश में कल के Top 10 (FlixPatrol), सिर्फ़ वही फ़िल्में और शो जो आपके Plex में हैं, सबसे ऊपर वाला पहले, और हर एक के नीचे \"Netflix पर #3\" लिखा होगा.  Home पर.",
+  "Pick services (Netflix, Max, Prime Video and more): each gets a row of its own, \"Top 10 on Netflix\", in that service's order, with the titles your Plex has.  On Home and in each library's Recommended.  Apart from the row above.": "सर्विस चुनें (Netflix, Max, Prime Video और भी): हर एक की अपनी पंक्ति बनती है, जैसे \"Netflix पर Top 10\", उसी सर्विस के क्रम में, उन टाइटल के साथ जो आपके Plex में हैं.  Home पर और हर लाइब्रेरी के Recommended में.  ऊपर वाली पंक्ति से अलग.",
+  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "TiviBro का V पुराने DVD स्क्रीनसेवर की तरह एक किनारे से दूसरे किनारे तक तैरता है, और हर बार किनारे से टकराने पर नया रंग बदलता है."
 });

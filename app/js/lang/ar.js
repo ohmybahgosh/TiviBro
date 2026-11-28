@@ -2777,5 +2777,11 @@ I18n.add('ar', {
   "When nobody has come back.": "عندما لا يعود أحد.",
   "Your teams' scores and next games, slowly wandering, when they have one.": "نتائج فرقك ومبارياتها القادمة، تتحرك ببطء، عند وجود مباراة.",
   "Family-friendly pictures only": "الأفلام المناسبة للعائلة فقط",
-  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "يستبعد العناوين المصنفة R أو NC-17 أو TV-MA، والعناوين التي لا تحمل تصنيفًا."
+  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "يستبعد العناوين المصنفة R أو NC-17 أو TV-MA، والعناوين التي لا تحمل تصنيفًا.",
+  "A Top 10 row for each service": "صف أفضل 10 لكل خدمة",
+  "Bouncing logo": "شعار متنقل",
+  "Each one you turn on gets a row of its own on Home, in that service's order.  Streaming Top 10s you have mixes them all in one row.": "كل خدمة تفعّلها تحصل على صف خاص بها في الرئيسية، بترتيب تلك الخدمة.  أما خيار \"Streaming Top 10s you have\" فيجمعها كلها في صف واحد.",
+  "One row for all the services together: yesterday's Top 10s in your country (FlixPatrol), only the movies and shows your Plex has, best place first, with \"#3 on Netflix\" under each.  On Home.": "صف واحد لكل الخدمات معًا: قوائم أفضل 10 لأمس في بلدك (FlixPatrol)، مع الأفلام والمسلسلات الموجودة في Plex لديك فقط، من أعلى مرتبة إلى أدناها، وتحت كل عنوان عبارة مثل \"#3 على Netflix\".  في الرئيسية.",
+  "Pick services (Netflix, Max, Prime Video and more): each gets a row of its own, \"Top 10 on Netflix\", in that service's order, with the titles your Plex has.  On Home and in each library's Recommended.  Apart from the row above.": "اختر الخدمات (Netflix وMax وPrime Video وغيرها): كل خدمة تحصل على صف خاص بها، مثل \"أفضل 10 على Netflix\"، بترتيب تلك الخدمة، مع العناوين الموجودة في Plex لديك.  في الرئيسية وفي قسم \"موصى به\" في كل مكتبة.  وهو منفصل عن الصف أعلاه.",
+  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "يتنقل حرف V الخاص بـ TiviBro من حافة إلى أخرى مثل شاشة توقف DVD القديمة، بلون جديد كلما اصطدم بحافة."
 });

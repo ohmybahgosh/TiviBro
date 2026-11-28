@@ -2903,5 +2903,11 @@ I18n.add('es', {
   "When nobody has come back.": "Cuando nadie ha vuelto.",
   "Your teams' scores and next games, slowly wandering, when they have one.": "Los marcadores y próximos partidos de tus equipos, que se desplazan lentamente, cuando los hay.",
   "Family-friendly pictures only": "Solo imágenes aptas para toda la familia",
-  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Excluye los títulos con clasificación R, NC-17 o TV-MA, y los que no tienen clasificación."
+  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Excluye los títulos con clasificación R, NC-17 o TV-MA, y los que no tienen clasificación.",
+  "A Top 10 row for each service": "Una fila de Top 10 por servicio",
+  "Bouncing logo": "Logo rebotando",
+  "Each one you turn on gets a row of its own on Home, in that service's order.  Streaming Top 10s you have mixes them all in one row.": "Cada servicio que actives tiene su propia fila en Inicio, en el orden de ese servicio.  Streaming Top 10s you have los junta todos en una sola fila.",
+  "One row for all the services together: yesterday's Top 10s in your country (FlixPatrol), only the movies and shows your Plex has, best place first, with \"#3 on Netflix\" under each.  On Home.": "Una sola fila con todos los servicios juntos: los Top 10 de ayer en tu país (FlixPatrol), solo las películas y series que tiene tu Plex, del mejor puesto al peor, con \"#3 en Netflix\" debajo de cada una.  En Inicio.",
+  "Pick services (Netflix, Max, Prime Video and more): each gets a row of its own, \"Top 10 on Netflix\", in that service's order, with the titles your Plex has.  On Home and in each library's Recommended.  Apart from the row above.": "Elige servicios (Netflix, Max, Prime Video y más): cada uno tiene su propia fila, \"Top 10 en Netflix\", en el orden de ese servicio, con los títulos que tiene tu Plex.  En Inicio y en Recomendados de cada biblioteca.  Aparte de la fila anterior.",
+  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "La V de TiviBro deslizándose de borde a borde como el viejo protector de pantalla del DVD, con un color nuevo cada vez que toca un borde."
 });

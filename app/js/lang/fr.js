@@ -2060,5 +2060,11 @@ I18n.add('fr', {
   "When nobody has come back.": "Quand personne n'est revenu.",
   "Your teams' scores and next games, slowly wandering, when they have one.": "Les scores et les prochains matchs de vos équipes, qui se déplacent lentement, quand elles en ont un.",
   "Family-friendly pictures only": "Films tout public uniquement",
-  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Exclut les titres classés R, NC-17 ou TV-MA, ainsi que ceux sans classification."
+  "Leaves out titles rated R, NC-17 or TV-MA, and ones with no rating.": "Exclut les titres classés R, NC-17 ou TV-MA, ainsi que ceux sans classification.",
+  "A Top 10 row for each service": "Une rangée Top 10 par service",
+  "Bouncing logo": "Logo rebondissant",
+  "Each one you turn on gets a row of its own on Home, in that service's order.  Streaming Top 10s you have mixes them all in one row.": "Chaque service activé a sa propre rangée sur l'accueil, dans l'ordre de ce service.  Top 10 streaming que vous avez les réunit tous dans une seule rangée.",
+  "One row for all the services together: yesterday's Top 10s in your country (FlixPatrol), only the movies and shows your Plex has, best place first, with \"#3 on Netflix\" under each.  On Home.": "Une seule rangée pour tous les services : les Top 10 d'hier dans votre pays (FlixPatrol), uniquement les films et séries que votre Plex possède, la meilleure place en premier, avec « n° 3 sur Netflix » sous chacun.  Sur l'accueil.",
+  "Pick services (Netflix, Max, Prime Video and more): each gets a row of its own, \"Top 10 on Netflix\", in that service's order, with the titles your Plex has.  On Home and in each library's Recommended.  Apart from the row above.": "Choisissez des services (Netflix, Max, Prime Video et d'autres) : chacun a sa propre rangée, « Top 10 sur Netflix », dans l'ordre de ce service, avec les titres que votre Plex possède.  Sur l'accueil et dans les recommandations de chaque bibliothèque.  En plus de la rangée ci-dessus.",
+  "The TiviBro V gliding from wall to wall like the old DVD screensaver, a new colour each time it hits one.": "Le V de TiviBro glisse d'un bord à l'autre comme l'ancien économiseur d'écran des DVD, et change de couleur à chaque rebond."
 });

@@ -3,6 +3,11 @@
 ## Unreleased
 
 - **The screensaver's games as scoreboard cards.**  Each game with both teams' logos, the score or start time and the clock, LIVE in red while it's on; bigger, steadier text that no longer flickers.  **Family-friendly pictures only** (on) keeps titles rated R, NC-17 or TV-MA out of the From your Plex look.
+- **A bouncing logo for the screensaver.**  The TiviBro V glides from wall to wall like the old DVD screensaver, a new colour each time it hits one.  Turn it on or off in Settings > Appearance > Screensaver.
+- **Team logos made for dark screens.**  Some teams' logos had black lettering (Ohio State's) that vanished on TiviBro's dark cards and in the screensaver.
+- **The Sports widget keeps up with live games.**  Android held back its minute-by-minute refresh for an app that isn't opened often, so scores only moved with the refresh button.  It now refreshes every minute while a game is live, and catches up when the app opens.
+- **The help panel no longer covers what's playing.**  In Settings with a channel in the corner, a long programme name pushed its last lines under the help panel.  The panel now starts below them.
+- **Clearer Plex Top 10 settings.**  Streaming Top 10s you have is one row mixing every service; A Top 10 row for each service gives each one you pick its own row.
 
 ## 0.6.0 (alpha 232, 2026-11-27)
 
