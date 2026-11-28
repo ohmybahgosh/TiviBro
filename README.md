@@ -1,47 +1,222 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="logos/clean/tivibro-wordmark.png">
-    <img alt="tiviBro" src="logos/clean/tivibro-wordmark-on-light.png" width="460">
+    <img alt="tiviBro" src="logos/clean/tivibro-wordmark-on-light.png" width="420">
   </picture>
 </p>
 
+<h3 align="center">The ultimate IPTV player for LG webOS</h3>
+
 <p align="center">
-  <b>The ultimate IPTV player for LG webOS.</b><br>
-  A free, open-source IPTV player for LG webOS TVs, built to feel like TiviMate and go further.<br>
-  Bring your own Xtream Codes, M3U or Stalker portal subscription.<br>
-  <b>Free DVR and timeshift:</b> record from the guide to a USB drive, and pause and rewind any live channel, not only catch-up ones.
+  Free and open source.  Built to feel like TiviMate, then go further.<br>
+  Bring your own Xtream Codes, M3U or Stalker subscription.  <b>Free DVR and timeshift</b> included.
 </p>
 
 <p align="center">
-  <img alt="Platform: LG webOS" src="https://img.shields.io/badge/platform-LG%20webOS%204%20to%2026-5B8CFF?style=flat-square">
-  <img alt="Version" src="https://img.shields.io/badge/version-0.6.0%20alpha-33E1FF?style=flat-square">
-  <img alt="Price: free" src="https://img.shields.io/badge/price-free-3DDC97?style=flat-square">
-  <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-8F9BBF?style=flat-square">
+  <a href="#install"><img alt="Install on your LG TV" src="https://img.shields.io/badge/Install_on_your_LG_TV-5B8CFF?style=for-the-badge&logo=lg&logoColor=white"></a>
+  <a href="https://tivibro.app/apk/"><img alt="Get the Android app" src="https://img.shields.io/badge/Android_app-3DDC97?style=for-the-badge&logo=android&logoColor=white"></a>
+  <a href="https://tivibro.app"><img alt="tivibro.app" src="https://img.shields.io/badge/tivibro.app-141A2E?style=for-the-badge&logo=googlechrome&logoColor=33E1FF"></a>
+  <a href="docs/USER-GUIDE.md"><img alt="User guide" src="https://img.shields.io/badge/User_guide-8F9BBF?style=for-the-badge&logo=readthedocs&logoColor=white"></a>
+</p>
+
+<p align="center">
+  <img alt="Platform: LG webOS 4 to 26" src="https://img.shields.io/badge/webOS-4%20to%2026-5B8CFF?style=flat-square">
+  <a href="https://github.com/ohmybahgosh/TiviBro/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/ohmybahgosh/TiviBro?include_prereleases&style=flat-square&color=33E1FF&label=release"></a>
   <a href="https://github.com/ohmybahgosh/TiviBro/releases"><img alt="Downloads" src="https://img.shields.io/endpoint?url=https%3A%2F%2Ftivibro.app%2Fbadges%2Fdownloads.json"></a>
-  <img alt="No bundler" src="https://img.shields.io/badge/plain-HTML%20%2F%20JS-141A2E?style=flat-square">
-  <a href="https://ohmybahgosh.dev/tivibro/"><img alt="Project page on ohmybahgosh.dev" src="https://img.shields.io/badge/ohmybahgosh.dev-project%20page-33E1FF?style=flat-square&labelColor=141A2E"></a>
+  <img alt="Price: free" src="https://img.shields.io/badge/price-free-3DDC97?style=flat-square">
+  <img alt="14 languages" src="https://img.shields.io/badge/languages-14-F5C842?style=flat-square">
+  <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-8F9BBF?style=flat-square">
   <a href="https://github.com/tolgakurtuluss/awesome-webos"><img alt="Listed in awesome-webos" src="https://img.shields.io/badge/listed%20in-awesome--webos-fc60a8?style=flat-square"></a>
+  <a href="https://ohmybahgosh.dev/tivibro/"><img alt="Project page on ohmybahgosh.dev" src="https://img.shields.io/badge/ohmybahgosh.dev-project%20page-33E1FF?style=flat-square&labelColor=141A2E"></a>
 </p>
 
-## Top features
+<p align="center">
+  <a href="https://tivibro.app/media/promo.mp4"><img src="docs/media/promo-poster.jpg" width="100%" alt="TiviBro in a minute: play the promo video"></a>
+  <br><sub><b><a href="https://tivibro.app/media/promo.mp4">▶ Watch TiviBro in a minute</a></b> (with sound): the guide, My teams, themes, settings, the phone app and the web editor.</sub>
+</p>
 
-| | |
-|---|---|
-| 📺 **Guide first, like TiviMate**<br>Live preview, details and groups on one screen.  OK previews, OK again goes fullscreen. | ⏸️ **Pause and rewind any live channel**<br>Free timeshift on every channel, not only the ones with catch-up. |
-| ⏺️ **Free DVR**<br>Record from the guide to a USB drive or a network share (Windows share or WebDAV). | ⏪ **Catch-up**<br>Rewind the guide into the past and replay what you missed. |
-| 🗓️ **A guide that fixes itself**<br>Channels with no guide filled from free public guides, a guide in the wrong time zone moved back, and a public guide with wrong times left out. | 🏈 **Sports and My teams**<br>Live scores, a page per game, your teams' scores in the corner while you watch something else. |
-| 🎬 **Movies and shows**<br>Posters, seasons, trailers, resume, My list and a Languages filter for huge libraries. | 📂 **My media**<br>Your own movies and shows from network shares, DLNA, WebDAV, Dropbox, Google Drive and media servers, with TMDB or TheTVDB details and Trakt. |
-| ⏭️ **Skip intro, skip credits, Up next**<br>A button or automatic, like Plex Pass, with the next episode counting down.  Free. | 📱 **Phone app and set up from your phone**<br>Scan a QR code to type your login on the phone.  A remote, the guide, Sports and every setting in your pocket. |
-| 🖥️ **A real web editor**<br>Hide, sort, rename and match guides for thousands of channels from any browser, then Send to TV. | 📺📺 **Multiview**<br>Two channels at once on an LG TV, something no other webOS IPTV app does. |
-| 🖼️ **Logos for every channel**<br>Missing logos filled in from open logo projects, or one matching style for the whole list. | 🔁 **Switches to a working copy**<br>Same channel in FHD, HD and SD: when one dies, TiviBro moves to the next by itself. |
-| 🔊 **Sound the TV can't play**<br>DTS and Dolby TrueHD converted to Dolby Digital while you watch.  Nothing to install. | 🌈 **HDR, Dolby Vision and Atmos**<br>Each stream sent to the player that shows it best. |
-| 🧭 **A set-up tour and clean names**<br>Countries, East or West, your city's locals and clutter sorted in a few presses; "USA \| FHD ⚽" becomes a plain name. | 🌍 **In 14 languages**<br>🇺🇸 English · 🇩🇪 German · 🇪🇸 🇲🇽 Spanish · 🇫🇷 French · 🇮🇹 Italian · 🇳🇱 Dutch · 🇵🇱 Polish · 🇧🇷 🇵🇹 Portuguese · 🇷🇺 Russian · 🇹🇷 Turkish · 🇺🇦 Ukrainian · 🇭🇷 Croatian · 🇮🇳 Hindi · 🇸🇦 Arabic, on the TV, the phone and the editor. |
-| 🍿 **Plex, built in**<br>Sign in with a code and your Plex server gets its own tab: home rows, libraries, title pages with cast and extras, Plex's quality list and subtitle search, resume and watched marks kept in step. | 📈 **Streaming Top 10s**<br>Yesterday's Top 10s on Netflix, Prime Video, Disney+ and more, with the titles your provider or your Plex has. |
-| 🔐 **Locked backups and restore points**<br>One encrypted file with everything, restored onto a new TV from the first screen. | 💸 **Free and open source**<br>Every feature free.  MIT licensed, no account, no ads, no tracking. |
+<p align="center">
+  <a href="#highlights">Highlights</a> ·
+  <a href="#new-in-alpha-232">What's new</a> ·
+  <a href="#free-here-paid-elsewhere">Free here, paid elsewhere</a> ·
+  <a href="#see-it-in-action">See it in action</a> ·
+  <a href="#a-closer-look">A closer look</a> ·
+  <a href="#gallery">Gallery</a> ·
+  <a href="#install">Install</a> ·
+  <a href="#help">Help</a> ·
+  <a href="#develop">Develop</a>
+</p>
+
+> [!NOTE]
+> **Looking for TiviMate on an LG TV?**  TiviMate is Android only, so it can't run on webOS.  TiviBro is the webOS IPTV player built to feel like it: a guide-first layout, catch-up, your own groups and clean channel names, set up from your phone.  **TiviBro does not provide any channels, streams or playlists:** you bring your own legal subscription.
+
+## Highlights
+
+<table>
+<tr>
+<td width="33%" valign="top">
+
+**📺 Guide first, like TiviMate**<br>
+<sub>Live preview, details and groups on one screen.  OK previews, OK again goes fullscreen.</sub>
+
+</td>
+<td width="33%" valign="top">
+
+**⏸️ Pause and rewind any channel**<br>
+<sub>Free timeshift on every channel, not only the ones with catch-up, with a timeline like TiviMate's.</sub>
+
+</td>
+<td width="33%" valign="top">
+
+**⏺️ Free DVR**<br>
+<sub>Record from the guide to a USB drive, or to a PC or NAS share on any TV.</sub>
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+**🍿 Plex, built in**<br>
+<sub>Your server in its own tab: home rows, libraries, title pages, Shuffle, theme music, trailers, Plex's quality list and subtitle search.</sub>
+
+</td>
+<td valign="top">
+
+**🏈 Sports and My teams**<br>
+<sub>Live scores, a page per game, and your teams' scores in the corner while you watch something else.</sub>
+
+</td>
+<td valign="top">
+
+**📂 My media**<br>
+<sub>Your own movies and shows from shares, DLNA, WebDAV, Dropbox, Google Drive and media servers.</sub>
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+**⏭️ Skip intro and credits**<br>
+<sub>A button or automatic, like Plex Pass, with Up next counting down.  Free.</sub>
+
+</td>
+<td valign="top">
+
+**🗣️ Dialogue boost and night mode**<br>
+<sub>Voices clearer over music, loud scenes tamed for late nights.  Free.</sub>
+
+</td>
+<td valign="top">
+
+**📺📺 Multiview**<br>
+<sub>Two channels at once on an LG TV, which no other webOS IPTV app does.</sub>
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+**📱 Set up from your phone**<br>
+<sub>Scan a QR code and type your login on your phone.  Then a remote, the guide and every setting in your pocket.</sub>
+
+</td>
+<td valign="top">
+
+**🖥️ A real web editor**<br>
+<sub>Hide, sort, rename and match guides for thousands of channels from any browser, then Send to TV.</sub>
+
+</td>
+<td valign="top">
+
+**🗓️ A guide that fixes itself**<br>
+<sub>Gaps filled from free public guides, wrong time zones moved back, bad guides left out.</sub>
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+**🖼️ Logos for every channel**<br>
+<sub>Missing logos filled in from open logo projects, or one matching style for the whole list.</sub>
+
+</td>
+<td valign="top">
+
+**🔁 Switches to a working copy**<br>
+<sub>Same channel in FHD, HD and SD: when one dies, TiviBro moves to the next by itself.</sub>
+
+</td>
+<td valign="top">
+
+**🌈 HDR, Dolby Vision, Atmos, DTS**<br>
+<sub>Each stream sent to the player that shows it best.  DTS and TrueHD converted while you watch.</sub>
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+**🌙 A screensaver made for OLED**<br>
+<sub>A slow, dim clock, dark drifting colours, a picture from your Plex or your teams' scores.</sub>
+
+</td>
+<td valign="top">
+
+**🌍 In 14 languages**<br>
+<sub>🇺🇸 🇩🇪 🇪🇸 🇲🇽 🇫🇷 🇮🇹 🇳🇱 🇵🇱 🇧🇷 🇵🇹 🇷🇺 🇹🇷 🇺🇦 🇭🇷 🇮🇳 🇸🇦 on the TV, the phone and the editor.</sub>
+
+</td>
+<td valign="top">
+
+**💸 Free and open source**<br>
+<sub>Every feature free.  MIT licensed, no account, no ads, no tracking.</sub>
+
+</td>
+</tr>
+</table>
+
+## New in alpha 232
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### 🌙 A screensaver made for OLED TVs
+
+After a while with no button pressed, or over a paused video, the screen goes almost black with a slow, dim clock, dark drifting colours, a picture from your Plex or your teams' scores, in turn.  Nothing stays in one place.  Each look can be turned on or off, with a preview, in **Settings > Appearance > Screensaver**.
+
+</td>
+<td width="50%" valign="top">
+
+### 🍿 Plex, the rest of the way
+
+**Shuffle** and **Play all**, a show's **theme music**, **Hide spoilers** for episodes you haven't watched, and a movie's **trailer playing behind its page** (▲ to watch it full screen).  New titles and watched marks from other apps show up by themselves, and a title from a server away from home starts smoothly.
+
+</td>
+</tr>
+</table>
+
+<details>
+<summary><b>Earlier highlights: Plex (229), dialogue boost (221), skip intro (208) and Sports (189)</b></summary>
+<br>
+
+**🍿 Alpha 229: Plex, built in.**  Sign in with a code at plex.tv/link and your Plex server gets its own tab: Continue watching, your Watchlist and your Plex home rows, each library with Recommended, Collections and Categories, and title pages with the cast, seasons, extras and More like this.  Files the TV can play play as they are, Dolby Vision included; the rest the server converts.  While watching: Plex's quality list, subtitle search, Skip intro and Up next.  A row of the titles your Plex has that are on yesterday's streaming Top 10s.  The phone app has a Plex tab laid out the same way.  [How to set it up](docs/USER-GUIDE.md#plex) · [Release notes](https://github.com/ohmybahgosh/TiviBro/releases/tag/v0.6.0-alpha.229)
+
+**🗣️ Alpha 221: Dialogue boost and night mode, free.**  Dialogue boost lifts voices over music and effects, Low or High, and night mode brings loud scenes down and quiet talk up for watching with the volume low.  On live channels, movies and shows, through the TV's speakers or a soundbar.  Plex keeps this for Plex Pass.  [How to turn it on](docs/USER-GUIDE.md#dialogue-boost-and-night-mode) · [Release notes](https://github.com/ohmybahgosh/TiviBro/releases/tag/v0.6.0-alpha.221)
+
+**⏭️ Alpha 208: Skip intro and credits, free.**  Skip intro, Skip recap and Skip credits on your movies and episodes, as a button or automatically.  Times come from the file's own chapters, or from [TheIntroDB](https://theintrodb.org) and [IntroDB](https://introdb.app), two free community databases.  Skip credits brings up Up next, counting down to the next episode.  [Release notes](https://github.com/ohmybahgosh/TiviBro/releases/tag/v0.6.0-alpha.208)
+
+**🏈 Alpha 189: Sports.**  Today's games with live scores and logos, your teams first, each tied to the channel of yours that has it.  A page for every game with the box score, leaders and standings, and your teams' live scores in the corner while you watch something else.  [Release notes](https://github.com/ohmybahgosh/TiviBro/releases/tag/v0.6.0-alpha.189)
+
+**Also lately:** four more languages (🇸🇦 Arabic, right to left, 🇮🇳 Hindi, 🇭🇷 Croatian, 🇺🇦 Ukrainian); settings put back after an install cleared them; posters, details, trailers and skip times without a TMDB token, from TheTVDB; a free DVR and live pause to a PC or NAS share on any TV; My media from Windows shares (SMB 2 and 3); Up next full screen; subtitles from a USB drive, the phone or OpenSubtitles; logos from Worldwide TV Logos; Multiview; a player timeline; much better Stalker portals; watched at 90%; going back to an earlier version from Settings; sixteen themes; signed updates.
+
+Every change is in the [changelog](CHANGELOG.md).
+
+</details>
 
 ## Free here, paid elsewhere
 
-Everything in TiviBro is free, including the things other players and media servers sell as an upgrade:
+Everything in TiviBro is free, including the things other players and media servers sell as an upgrade.
 
 | Feature | In TiviBro | Elsewhere |
 |---|---|---|
@@ -59,168 +234,11 @@ Everything in TiviBro is free, including the things other players and media serv
 
 <sub>As listed on TiviMate's and Plex's own sites, November 2026.  No account, no ads, nothing locked.</sub>
 
-<h3 align="center">🍿 New in alpha 229: Plex, built in</h3>
-<p align="center">Sign in with a code at plex.tv/link and your Plex server gets <b>its own tab</b>: Continue watching, your Watchlist and your Plex home rows, each library with Recommended, Collections and Categories, and <b>title pages</b> with the cast, seasons, extras and More like this.  Files the TV can play play as they are, Dolby Vision included; the rest the server converts.  While watching: <b>Plex's quality list, subtitle search</b>, Skip intro and Up next.  And a row of the titles your Plex has that are on <b>yesterday's streaming Top 10s</b>.  This is the first Plex release: please send anything that goes wrong with Report a problem.</p>
-<p align="center"><sub><a href="docs/USER-GUIDE.md#plex">How to set it up</a> (Settings > Plex) · <a href="https://github.com/ohmybahgosh/TiviBro/releases/tag/v0.6.0-alpha.229">Alpha 229 release notes</a></sub></p>
+<details>
+<summary><b>TiviBro and TiviMate, side by side</b></summary>
+<br>
 
-<h3 align="center">🗣️ New in alpha 221: Dialogue boost and night mode, free</h3>
-<p align="center">Can't hear the actors over the music?  <b>Dialogue boost</b> lifts voices over music and effects, Low or High, and <b>night mode</b> brings loud scenes down and quiet talk up for watching with the volume low.  On live channels, movies and shows, through the TV's speakers or a soundbar.  Plex keeps this for Plex Pass.</p>
-<p align="center"><sub><a href="docs/USER-GUIDE.md#dialogue-boost-and-night-mode">How to turn it on</a> (OK > Dialogue boost while something plays, or Settings > Audio and subtitles > Dialogue) · <a href="https://github.com/ohmybahgosh/TiviBro/releases/tag/v0.6.0-alpha.221">Alpha 221 release notes</a></sub></p>
-
-<h3 align="center">⏭️ New in alpha 208: Skip intro and credits, free</h3>
-<p align="center">Plex charges for this with Plex Pass.  TiviBro does it for free: <b>Skip intro</b>, <b>Skip recap</b> and <b>Skip credits</b> on your movies and episodes, as a button or <b>automatically</b>.  The times come from the file's own chapters, or from <b><a href="https://theintrodb.org">TheIntroDB</a></b> and <b><a href="https://introdb.app">IntroDB</a></b>, two free community databases.  Skip credits brings up <b>Up next</b>, counting down to the next episode.</p>
-<p align="center"><sub><a href="docs/USER-GUIDE.md">How to turn it on</a> (Settings > Playback > Skip intro, Skip credits) · <a href="https://github.com/ohmybahgosh/TiviBro/releases/tag/v0.6.0-alpha.208">Alpha 208 release notes</a></sub></p>
-
-<h3 align="center">🏈 New in alpha 189: Sports</h3>
-<p align="center">Today's games with <b>live scores and logos</b>, your teams first, each tied to the channel of yours that has it.  A <b>page for every game</b> with the box score, leaders and standings.  And while you watch something else, <b>your teams' live scores sit in the corner</b>, with an alert when a game is close near the end.</p>
-<p align="center"><a href="#sports"><img src="docs/screenshots/tv-sports.png" width="49%" alt="The Sports screen: your teams first, then a row per league"></a> <a href="#sports"><img src="docs/screenshots/tv-sports-corner.png" width="49%" alt="Your teams' live score in the corner while another channel plays"></a></p>
-<p align="center"><sub><a href="#sports">More about Sports</a> · <a href="https://github.com/ohmybahgosh/TiviBro/releases/tag/v0.6.0-alpha.189">Alpha 189 release notes</a></sub></p>
-
-> [!IMPORTANT]
-> **📱 Help get TiviBro for Android into the Play Store.**  The free phone app (remote and TV guide for TiviBro on your TV) is in closed testing on Google Play.  To publish it for everyone, Google needs **12 testers opted in for 14 days in a row**.
->
-> **You don't have to use it.**  Even if you never open the app, joining and **leaving it installed for 14 days** counts.  Please sign up, and **ask friends and family with an Android phone to do the same**.  Every tester gets us closer to the store.
->
-> **How to join (about 2 minutes):**
-> 1. **Join the tester group.**  With the Google account your phone uses, open [TiviBro Android testers](https://groups.google.com/g/tivibro-testers) and choose **Join group**.  Nobody sees your address and the group sends no mail.
-> 2. **Opt in on Google Play.**  Open [the TiviBro test page](https://play.google.com/apps/testing/app.tivibro.phone) and choose **Become a tester**, signed in with that same account.  It can take a few minutes after joining the group before this works.
-> 3. **Install it** from that page, or search the Play Store on your phone once you've opted in.
-> 4. **Leave it installed** for at least 14 days.  That's it.
->
-> Step by step: [tivibro.app/android-test](https://tivibro.app/android-test/) · Questions: [discussion #130](https://github.com/ohmybahgosh/TiviBro/discussions/130).  Already using the APK?  Uninstall it first (Google Play only installs and updates its own copy), then pair your TV again.  The APK on GitHub stays either way.
-
-<p align="center">
-  <a href="https://tivibro.app"><b>tivibro.app</b></a> ·
-  <a href="#top-features">Top features</a> ·
-  <a href="#what-no-other-iptv-player-does">What's different</a> ·
-  <a href="#see-it-in-action">See it in action</a> ·
-  <a href="#the-web-editor">Web editor</a> ·
-  <a href="#gallery">Gallery</a> ·
-  <a href="#install">Install</a> ·
-  <a href="docs/USER-GUIDE.md"><b>User guide</b></a> ·
-  <a href="../../wiki">Wiki</a> ·
-  <a href="#develop">Develop</a>
-</p>
-
-## Get TiviBro
-
-> **Looking for TiviMate on an LG TV?**  TiviMate is Android only, so it can't run on webOS.  TiviBro is the webOS IPTV player built to feel like it: a guide-first layout, catch-up, your own groups and clean channel names, set up from your phone.
-
-| | |
-|---|---|
-| 📺 **On your LG TV** | [How to install](#install).  Homebrew Channel repository: `https://tivibro.app/repo` |
-| 📱 **Phone app for Android** | [**Download the newest APK**](https://tivibro.app/apk/), then [pair it with your TV](#the-phone-app) |
-| 🧪 **Help get it on Google Play** | [**Join the Play test**](https://tivibro.app/android-test/): Google needs testers to keep it installed for 14 days before it can be published.  The APK stays either way. |
-| 📦 **Every build and its notes** | [Releases page](https://github.com/ohmybahgosh/TiviBro/releases) |
-| 🤖 **Building a feature with AI?** | [Download the knowledge base](https://tivibro.app/ai/tivibro-for-ai.md) for Claude, ChatGPT or Gemini |
-
-> [!WARNING]
-> **TiviBro is in alpha testing, getting ready for its first beta.**  It runs every day on real LG TVs, from a 2019 webOS 4 OLED to webOS 5, 22 and 25 sets, along with the Android phone app.  Expect some rough edges, and settings or features may still change between builds.  Keep a backup before updating (**Backups and restore points** in the phone app or the [web editor](#the-web-editor)).  Found a bug?  On the TV, **Settings > System > Report a problem** (also on the first screen) fills in a [GitHub issue](https://github.com/ohmybahgosh/TiviBro/issues) for you from your phone: see [Report a problem](#report-a-problem).
-
-<p align="center"><a href="https://tivibro.app/media/promo.mp4"><img src="docs/media/promo-poster.jpg" width="100%" alt="TiviBro in a minute: play the promo video"></a></p>
-<p align="center"><sub><b><a href="https://tivibro.app/media/promo.mp4">▶ Watch TiviBro in a minute</a></b> (with sound): the guide, My teams, themes, settings, the phone app and the web editor.  Every picture here is clickable.</sub></p>
-
-### ✨ New lately
-
-- **Plex, built in.**  Your Plex server in its own tab, laid out as Plex's TV app: home rows, libraries, title pages with cast, seasons, extras and collections, Plex's quality list and subtitle search while watching, resume and watched marks kept in step with Plex, and the phone app's Plex tab.  The first Plex release: please report what goes wrong.  [Set it up](docs/USER-GUIDE.md#plex)
-- **Four more languages:** 🇸🇦 Arabic (reading right to left), 🇮🇳 Hindi, 🇭🇷 Croatian and 🇺🇦 Ukrainian, on the TV, the phone app, the web editor and tivibro.app.
-- **Dialogue boost and night mode, free.**  Voices clearer over music and effects (Off, Low or High), and night mode for loud scenes when the volume is low.  It works on the TV's speakers and a soundbar, on channels, movies and shows.  Plex keeps this for Plex Pass.
-- **Everything works without a TMDB token.**  Movies and shows get posters, details, trailers and skip times from TheTVDB through TiviBro's own service: in the guide, Movies on now, your provider's Movies and Shows, My media, Up next and recordings.  **Where details come from** picks TMDB or TheTVDB for movies and for shows on their own, like Plex's agents.
-- **Four more languages:** 🇮🇹 Italian, 🇳🇱 Dutch, 🇵🇱 Polish and 🇹🇷 Turkish, next to 🇩🇪 German, 🇪🇸 Spanish, 🇫🇷 French, 🇧🇷 Portuguese and 🇷🇺 Russian, on the TV, the phone app and the web editor.
-- **Ready for Homebrew Channel 0.8.0**, and a helper that leaves a note of what it was doing if the TV ever has to stop it, so a problem report says why.
-- **Skip intro and Skip credits, free.**  What Plex keeps for Plex Pass: a Skip intro (and Skip recap) button, or skipped automatically; Skip credits brings up the next episode with its countdown, or jumps to a scene after the credits.  Times come from the file's chapters, else from [TheIntroDB](https://theintrodb.org) and [IntroDB](https://introdb.app), two free community databases.  For My media and your provider's movies and shows.  [Settings](docs/USER-GUIDE.md#settings-playback)
-- **A warning before your subscription ends**, 3 days ahead unless you pick otherwise.
-- **A free DVR on any TV: record and pause live TV to your PC or NAS.**  Choose a Windows or Samba share (a PC, Mac, NAS or router) or a WebDAV folder as the place for recordings, and live pause goes there too: hours of pause on a TV without root, where the TV's own storage keeps 10 minutes.  A recording on a Windows share plays while it records.  [How it works](docs/USER-GUIDE.md#recording-live-pause-and-rewind)
-- **My media from Windows and network shares (SMB).**  Your movies and shows straight from a PC, Mac, NAS or router, found on the network, with seeking and the subtitle files beside them.  SMB 2 and 3, signed and encrypted, so Windows 11 shares work.
-- **Up next, full screen.**  When an episode ends, the next one fills the screen with the show's logo art, the episode's picture, title and summary, and a countdown ring on Play.  **Skip credits** brings it up early.
-- **Subtitles your way.**  Load a .srt from a USB drive or a network share on the TV, send one from the phone app or the web editor, or find one on OpenSubtitles (by name too, for revivals filed under their own show).
-- **Logos from Worldwide TV Logos**, cleaned up and in white for dark screens, with tv-logos and iptv-org standing in where it has none.
-- **Multiview: two channels at once, the first on a webOS IPTV app.**  Two games side by side: the one you hear plays as normal video, the other as smooth live video beside it, up to 30 frames a second.  OK swaps the sound, Blue goes fullscreen, and channels are picked from your groups as in the guide.  webOS lets an app play only one video, so the second picture is made by TiviBro's helper on the TV.  On any webOS TV, rooted or not.  [How it works](docs/USER-GUIDE.md#multiview-two-channels-side-by-side)
-- **Recording, live pause and rewind.**  Record from the guide to a USB drive on a rooted TV, or to a network share on any TV, with a **Recordings** screen (posters from TMDB, resume, delete several at once).  **Pause any live channel** and carry on from there, even without catch-up, and an optional **rewind buffer** lets ◀ go back to something you just missed.  Without a drive or share, pause still works for 10 minutes on any TV.
-- **A timeline in the player, like TiviMate's.**  ▲ puts a dot on the progress bar showing what's kept and what's recorded; move it and press OK to watch from there.  It's in the quick menu too, and ◀ ▶ move back and forth whenever you're behind live, so a Magic Remote with no ⏪ ⏩ buttons works.
-- **Stalker portals, much better:** every season of long shows, the right movie every time, empty categories hidden, big portals kept between starts, and categories A to Z or as a full-screen poster wall.
-- **Watched at 90%**, as Plex (85, 90, 95 or 98% in Settings), for movies, shows, My media and recordings.
-- **Link other versions of a channel yourself** when TiviBro doesn't find them by name, and **Fixed now** on your problem reports closes them from the TV.
-- **Go back to an earlier version** from Settings > System if an update causes trouble, with your settings saved first.
-- **My teams** gathers your teams' games at the top of the guide, now with college basketball.  Games on now are tinted in the theme's colour, and one game reads the same on every channel.
-- **Sixteen themes**, from Tokyo Night and Dracula to a green-phosphor Terminal, and the guide's category colours follow the theme.
-- **Settings keep the channel playing** in the corner, and **Search settings** (Yellow) finds any setting by a word.
-- **The phone app** finds a TV that moved to another address, shows **What the TV tried** when a playlist won't add, and has passwords with an eye to show them.
-- **Signed updates**, with a second key kept offline, and errors in plain words instead of "HTTP 502".
-
-Every change is in the [changelog](CHANGELOG.md).
-
-<p align="center"><a href="docs/media/guide.mp4"><img src="docs/media/guide.gif" width="100%" alt="The TiviBro guide, preview and fullscreen"></a></p>
-<p align="center"><sub>The guide is home: browse, preview in the window, OK again for fullscreen.  <a href="docs/media/guide.mp4">Watch the full-quality MP4</a>.</sub></p>
-
-TiviBro plays your own IPTV subscription (Xtream Codes, M3U with XMLTV, or a Stalker portal) on LG webOS TVs, in English, German, Spanish, French, Italian, Dutch, Polish, Portuguese, Russian, Turkish, Ukrainian, Croatian, Hindi or Arabic.  The guide is the home screen, the Magic Remote works everywhere, and a companion web editor lets you clean up hundreds of groups from your phone or computer instead of with a TV remote.
-
-### 📱 Set it up from your phone
-
-No typing logins with a remote.  The first screen shows a QR code: scan it with your phone's camera and TiviBro's editor opens there, already signed in.  Paste your login (or restore a backup), and the TV loads your channels on its own and walks you through tidying them up.  Afterwards the same editor, on your phone or computer, renames, hides, sorts and cleans up thousands of channels.
-
-<p align="center">
-  <a href="https://tivibro.app/view/#tv-first-run"><img src="docs/screenshots/tv-first-run.png" width="58%" alt="The first screen with its QR code"></a>
-  <a href="https://tivibro.app/view/#editor-phone-welcome"><img src="docs/screenshots/editor-phone-welcome.png" width="19%" alt="The editor on a phone, right after scanning"></a>
-  <a href="https://tivibro.app/view/#editor-phone-add"><img src="docs/screenshots/editor-phone-add.png" width="19%" alt="Typing the login on the phone"></a>
-</p>
-
-> **TiviBro does not provide any channels, streams or playlists.**  You bring your own legal subscription.
-
-## Why TiviBro
-
-| | |
-|---|---|
-| 📱 **Set up from your phone** | Scan the QR code on the first screen and paste your provider's link on your phone, not with the remote.  The TV shows it arriving, says if something's wrong, and takes it from there. |
-| 🔗 **Paste the whole link** | Got one long get.php link from your provider?  Paste it under **Full link** and TiviBro fills in the server, username and password. |
-| 🎮 **A remote in your pocket** | The TiviBro app for Android pairs with the TV: a remote, Play on TV from your channel list, volume, the editor full screen, and **Turn on**, which wakes the TV over every network card and over Bluetooth, the way LG's ThinQ app does.  It updates itself when a new version is out.  Each TV gets shortcuts on the home screen (Remote, Guide, On now, Movies and Shows, My media, Reminders, Edit channels, Backups, Settings), and when a setting asks something, the question comes up on the phone.  [Get the APK](https://tivibro.app/apk/). |
-| 📺 **Guide first** | Live preview top left, details top right, groups one press away.  OK previews, OK again goes fullscreen, just like TiviMate. |
-| ⏪ **Catch-up done right** | Rewind the guide into the past and replay what you missed, or restart the show you just tuned into. |
-| 🎬 **Movies and shows** | Your provider's VOD with posters, seasons, episodes, My list and resume, Recently added, your choice of order, trailers on YouTube, and a ✓ on what you watched to the end.  A **Languages** row keeps a 160,000-title, twelve-language library to the ones you watch, categories can be hidden, adult ones stay out of the way, and MKV files bring their subtitles. |
-| 🌍 **In your language** | TiviBro follows the TV's own language: English, German, Spanish (Latin American or Spain's), French, Italian, Dutch, Polish, Portuguese (Brazil's or Portugal's), Russian, Turkish, Ukrainian, Croatian, Hindi or Arabic, or pick one in **Settings > Language**.  The web editor and the phone app come in the same languages. |
-| 📡 **Stalker portals and DASH** | Stalker portals with their movies, shows and catch-up, next to Xtream Codes and M3U.  MPEG-DASH channels play too, including ones protected with ClearKey or Widevine from `#KODIPROP` lines.  **DNS** in Settings finds a provider the TV's own DNS can't: Cloudflare, Google, Quad9, ControlD or DNS over HTTPS. |
-| 🧭 **Set up in two minutes** | A new playlist starts a tour that shows what it has (countries, East and West copies, local cities, event channels, duplicates) and tidies it with the remote, or with your phone by scanning a code. |
-| 🔊 **Sound the TV can't play** | LG TVs from 2020 to 2022 can't play DTS, and no LG TV plays Dolby TrueHD.  TiviBro picks another track in your language if the file has one, or converts the sound to Dolby Digital while you watch, picture untouched.  The converter comes with TiviBro: nothing to download or set up. |
-| 🖼️ **Logos for every channel** | Missing logos filled in from two open logo projects, matched by guide id, name, country and call sign.  Or one matching style for the whole list. |
-| 🖥️ **A real editor** | Hide, sort, rename, copy and match guides for hundreds of channels from any browser.  Drafts, undo and restore points. |
-| ⚙️ **Settings that keep playing** | The channel carries on in the corner of Settings, and Hold OK goes back to it in fullscreen.  **Search settings** (Yellow) finds any setting by a word, in your language or English.  The TV, the phone app and the web editor share one layout with the same names, every setting at most one page down: Language, Playlists and accounts, Phone app and web editor, Guide, Channels and groups, Channel and group names, Playback, Audio and subtitles, Recording and live pause, Remote and buttons, Movies and shows, My media, Reminders and watchlist, Parental controls, Appearance, API keys, Backups and restore points, and System. |
-| 🔒 **Locked backups** | Everything in one AES-256-GCM file.  Restore onto a brand-new TV straight from the first screen.  **Backups and restore points** keeps backups, the locked file and the TV's restore points in one place, on the TV, in the phone app and in the web editor. |
-| 🔁 **Backup versions** | Playlists often carry a channel in FHD, HD and SD.  TiviBro tags each copy, lets you switch between them, and if one dies it moves to the next by itself and tells you, even to copies you hid to tidy your lists. |
-| 🏟️ **Event channels** | Pay-per-view and sports passes that cram the whole listing into the channel name ("NCAAB 001 \| NORTH FLORIDA @ CHARLESTON SOUTHERN (M) \| 12.18 11:00 AM") show as **NCAAB 001**, with the game in the guide at its real time, in your time zone.  **Events by time** lists what's on next across all of them. |
-| 🧹 **Clean names, tidy lists** | Strips "USA \|", "FHD", "⚽", "ᴴᴰ" and hundreds of other tags, with prefix and suffix lists of your own for channel names and for group names.  Hides divider groups and keeps channels that say "Off Air" or "No Event Scheduled" out of the way until something is on.  A radio stream or a camera that never has a guide can be marked **No guide for this channel**, and stops saying "No guide information". |
-| ⏰ **Reminders, a watchlist and parental controls** | A reminder on any future programme, a watchlist that finds your teams and shows in the guide and reminds you, every reminder still to come in one list to cancel, and a PIN for channels, groups or Settings. |
-| 🛟 **Streams that don't quit** | Reconnects with backoff, waits out Wi-Fi drops, tries every player before giving up, and keeps a dropped channel coming back by itself.  A stream that trickles in is reconnected before it runs out, with the last picture kept on screen.  Movies and catch-up resume where they dropped. |
-| ⚡ **A buffer that learns** | The **Automatic** buffer profile learns each provider as you watch: channels start after under a second of buffer where its streams are steady, with a bigger cushion where they run dry.  Each channel remembers what it needed, after a restart too: the player it plays on, and the cushion it earned.  **Stream info** shows how long a start took and where the time went. |
-| 📐 **The right shape, the right timing** | **Aspect** in the quick menu fixes pictures with the wrong shape (Original, Fill, Zoom, 4:3, 16:9, 21:9, 4:3 to 16:9), remembered per channel, movie and episode.  **Subtitles > Timing > Frame rate** fixes subtitles made for a copy at another frame rate. |
-| 🌈 **HDR, Dolby Vision and Atmos** | Reads each stream's format before the picture starts and sends Dolby Vision to the TV's own player, HDR10 and HLG to the steadier built-in one.  The info panel shows *4K  HEVC  Dolby Vision  E-AC-3 5.1 Atmos*. |
-| 🎨 **Sixteen themes** | Midnight Electric by default, or a full theme: Black and white, Graphite, GitHub Dark, Ayu Dark, Tokyo Night, Dracula, Nord, Gruvbox, Catppuccin Mocha, Solarized Dark, One Dark, Rosé Pine, Everforest, Kanagawa, Monokai or Terminal.  Or your own mix of nine backgrounds (true black for OLED, high contrast) and twelve accents, an outline focus style for across the room, and larger text. |
-| 💸 **Free and open** | MIT licensed, no accounts, no ads, no tracking: just an anonymous daily count of installs by version, which you can switch off. |
-
-## What no other IPTV player does
-
-TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose.  These are the things we haven't found in TiviMate or any other IPTV player, on any platform:
-
-| | |
-|---|---|
-| 📱 **Set up from your phone, from the very first screen** | A QR code waits beside the login form.  Scan it and TiviBro's editor opens on your phone, signed in: type your login with a real keyboard or restore a backup, and the TV moves on by itself.  No other IPTV app on a TV starts this way. |
-| 🧭 **A set-up tour built from your own playlist** | Right after you connect, TiviBro counts what your list has and asks only about that: the countries in it, East or West, the cities its local groups carry, its event channels, its duplicates.  A running count shows what you'll keep, and the same QR code lets you do it on your phone instead. |
-| 🖼️ **Fills in missing logos, without hosting a single one** | A small index points at Worldwide TV Logos', tv-logos' and iptv-org's own logos.  Matched by guide id, cleaned name and country, and local call sign; a broken provider logo is swapped too.  Cleaned-up logos in white for dark screens, one matching style, or each channel's own. |
-| 🏟️ **Reads sports and PPV listings from channel names** | When a provider writes the event into the name instead of the guide, TiviBro turns it into a short channel name, a guide entry at the real time in your time zone, and an **Events by time** list across all your passes.  Dozens of naming styles, tested on 1,250 real event channels. |
-| 🖥️ **A full editor on your computer** | Clean up 10,000 channels with a keyboard and mouse instead of a remote: hide, sort, rename, copy and move, then **Send to TV**.  Unsent work is autosaved on the TV within seconds, with a version history, so a refresh never costs you an hour. |
-| 🏈 **Your teams, wherever they're playing** | Follow your NFL, NBA, NHL, MLB, WNBA and MLS teams, college football and college basketball, and **My teams** gathers their games near the top of the guide, tinted while they're on: on now first, then the ones starting soon, from league passes, event channels, your local station (even when the teams are only in the guide's description) and the team's own channel.  Optional reminders. |
-| 📺📺 **Multiview on an LG TV** | webOS lets an app play one video at a time, which is why no IPTV app for LG TVs could show two channels.  TiviBro plays the channel you hear as normal video and makes the second one itself, on the TV, as smooth live video beside it (up to 30 frames a second).  Two games at once, OK to swap the sound, no extra box. |
-| ⏸️ **Pause and rewind any live channel** | TiviMate can only rewind channels your provider keeps catch-up for.  TiviBro keeps the channel itself, on a USB drive or, for a short pause, in the TV's own storage: pause, carry on, move back and forth, and with the rewind buffer on, ◀ goes back to what you just missed.  Recording and pausing the same channel share one connection to your provider. |
-| 🎬 **Movies on now** | The movies in your guide get posters, years, genres and ratings, from TheTVDB with nothing to set up or from TMDB with your own free token.  The **Movies on now** screen shows them as big posters: on now, starting soon, then a shelf for each genre. |
-| 🗓️ **A guide that checks itself** | Channels your provider's guide misses are filled from free public guides.  A full guide in your server's time zone is moved back by comparing it with the provider's own times.  And a public guide whose times are hours off (one listed every US station's programmes 8 hours late) is spotted from titles that say their own time, like "News at 4:30am", and left out so a correct one fills those channels instead. |
-| 🔁 **Switches to a working copy by itself** | Same channel in FHD, HD and SD?  When one dies, TiviBro moves to the next version on its own and tells you. |
-| 🧹 **Clean-up that already knows IPTV** | Pick your city once and every local group (ABC, CBS, NBC, FOX, CW, PBS…) keeps only your stations.  Keep East or West feeds in one click.  Name rules preloaded for about 250 country codes, quality tags, symbols and emoji (no typing prefix lists by hand), countries read from any naming style, duplicates in different qualities, and **Smart match** for channels without a guide. |
-| 🙈 **Hides channels with nothing on** | Event channels that say "Off Air" or "No Event Scheduled", empty slots like "PPV 09 \|", and channels whose event in the name ended hours ago stay out of the way.  Each comes back by itself as soon as the provider names a new event on it. |
-| 🔐 **Locked backups, restored from the first screen** | One AES-256 file with every playlist, login, group and setting.  A brand-new TV restores it from a computer before you've touched a setting. |
-| 🐞 **Report a problem from the couch** | **Report a problem** shows a QR code.  Your phone opens a short form, the TV adds its version, model and log with logins and server names taken out, and GitHub's bug form opens filled in.  No copying logs off the TV. |
-| 💸 **Everything free, nothing locked** | Catch-up, multiple playlists, backups, reminders and parental controls are all included.  Open source, no account, no ads, no tracking: just an anonymous daily count of installs by version, which you can switch off. |
-| 🏈 **Sports, with your teams first** | A Sports screen of today's games with live scores and logos, each tied to the channel of yours that has it.  A page per game with the box score, leaders and standings.  While you watch something else, your teams' live scores sit in the corner, and a close finish asks whether to switch. |
-| 🚀 **Opens straight onto a channel from anywhere** | Home screens, launchers, scripts and Home Assistant can open TiviBro on a channel, a team's game, the guide, a search or a Settings page, with a `tivibro://` link or launch params, whether it's closed or already open.  Documented in [docs/LAUNCH-API.md](docs/LAUNCH-API.md). |
-| 📺 **Made for LG TVs** | Runs on the TV itself, webOS 4 and newer.  No Android box or Fire Stick needed. |
+TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose.  This is what TiviBro adds.
 
 | | TiviBro | TiviMate |
 |---|---|---|
@@ -247,255 +265,238 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 
 <sub>TiviMate column from its own site and public guides, October 2026.  TiviMate is a great app; this is what TiviBro adds.</sub>
 
+</details>
+
 ## See it in action
 
-<sub>All recordings use a made-up demo provider.  The pill in the top right shows which remote button was pressed.</sub>
+<p align="center"><a href="docs/media/guide.mp4"><img src="docs/media/guide.gif" width="100%" alt="The TiviBro guide, preview and fullscreen"></a></p>
+<p align="center"><sub>The guide is home: browse, preview in the window, OK again for fullscreen.  <a href="docs/media/guide.mp4">Full-quality MP4</a>.  All recordings use a made-up demo provider; the pill in the corner shows the button pressed.</sub></p>
 
 <table>
 <tr>
-<td width="58%"><a href="docs/media/zap.mp4"><img src="docs/media/zap.gif" width="100%" alt="Changing channels and the quick menu"></a><br><sub><a href="docs/media/zap.mp4">▶ MP4</a></sub></td>
-<td width="42%" valign="top">
-
-### Zap like cable TV
-
-**▲ ▼** or **CH +/−** to change channel, **▶** for programme info, **Yellow** for the last channel, **Green** for the guide over the video.
-
-**OK** opens the quick menu: channel list, start over, favorite, aspect, sleep timer, stream info, reconnect.  You choose which buttons it shows.
-
+<td width="50%" valign="top">
+<a href="docs/media/zap.mp4"><img src="docs/media/zap.gif" width="100%" alt="Changing channels and the quick menu"></a>
+<b>Zap like cable TV.</b>  ▲ ▼ or CH +/− to change channel, Yellow for the last one, Green for the guide over the video.  OK opens the quick menu, with the buttons you choose.
+</td>
+<td width="50%" valign="top">
+<a href="docs/media/catchup.mp4"><img src="docs/media/catchup.gif" width="100%" alt="Replaying a programme with catch-up"></a>
+<b>Catch-up.</b>  ⏪ in the guide travels back in time, and programmes marked ↺ replay from the start.  Hold OK on any programme for more.
 </td>
 </tr>
-</table>
-<table>
 <tr>
-<td width="42%" valign="top">
-
-### Catch-up
-
-Press **⏪** in the guide to travel back in time.  Programmes marked **↺** replay from the start with one press.
-
-**Hold OK** on any programme for more: watch fullscreen, earlier programmes by day, reminders, channel options.
-
+<td valign="top">
+<a href="docs/media/groups.mp4"><img src="docs/media/groups.gif" width="100%" alt="Groups and the menu"></a>
+<b>Groups beside the guide.</b>  Favorites and your own groups first, then your provider's.  ◀ once more opens the menu.
 </td>
-<td width="58%"><a href="docs/media/catchup.mp4"><img src="docs/media/catchup.gif" width="100%" alt="Replaying a programme with catch-up"></a><br><sub><a href="docs/media/catchup.mp4">▶ MP4</a></sub></td>
-</tr>
-</table>
-<table>
-<tr>
-<td width="58%"><a href="docs/media/groups.mp4"><img src="docs/media/groups.gif" width="100%" alt="Groups and the menu"></a><br><sub><a href="docs/media/groups.mp4">▶ MP4</a></sub></td>
-<td width="42%" valign="top">
-
-### Groups beside the guide
-
-Favorites and your own groups come first, then your provider's.  Moving through the list updates the guide behind it.
-
-**◀** once more opens the menu: Guide, Channels, Movies on now, Movies, Shows, My media, Search, Edit on phone, Settings.
-
+<td valign="top">
+<a href="docs/media/vod.mp4"><img src="docs/media/vod.gif" width="100%" alt="Movies and shows"></a>
+<b>Movies and shows.</b>  Posters, seasons and episodes, resume, a Languages row for huge libraries, MKV subtitles and a ✓ on what you finished.
 </td>
 </tr>
-</table>
-<table>
 <tr>
-<td width="42%" valign="top">
-
-### Movies and shows
-
-Categories, posters, ratings and plots.  Shows open into seasons and episodes, and TiviBro remembers where you stopped.  Pick the languages you watch from the **Languages** row, hide categories you never open, and turn on subtitles built into MKV files.  A title you watched to the end keeps a ✓, and **Hold OK** marks one watched or unwatched.
-
+<td valign="top">
+<a href="docs/media/search.mp4"><img src="docs/media/search.gif" width="100%" alt="Search"></a>
+<b>Search everything.</b>  Channels, programmes now, later and on catch-up, movies and shows, as you type.  Yellow adds the search to your watchlist.
 </td>
-<td width="58%"><a href="docs/media/vod.mp4"><img src="docs/media/vod.gif" width="100%" alt="Movies and shows"></a><br><sub><a href="docs/media/vod.mp4">▶ MP4</a></sub></td>
-</tr>
-</table>
-<table>
-<tr>
-<td width="58%"><a href="docs/media/search.mp4"><img src="docs/media/search.gif" width="100%" alt="Search"></a><br><sub><a href="docs/media/search.mp4">▶ MP4</a></sub></td>
-<td width="42%" valign="top">
-
-### Search everything
-
-Channels, programmes now, later and on catch-up, and your movies and shows, as you type, best match first, with filters for On now, Coming up, Replays and Movies & Shows.  OK watches, replays or sets a reminder.  Yellow adds the search to your watchlist.
-
+<td valign="top">
+<a href="docs/media/settings.mp4"><img src="docs/media/settings.gif" width="100%" alt="Settings and appearance"></a>
+<b>Make it yours.</b>  Sixteen themes or your own mix of accents and backgrounds, larger text, a focus outline for across the room, all live.
 </td>
 </tr>
-</table>
-<table>
 <tr>
-<td width="58%"><a href="docs/media/settings.mp4"><img src="docs/media/settings.gif" width="100%" alt="Settings and appearance"></a><br><sub><a href="docs/media/settings.mp4">▶ MP4</a></sub></td>
-<td width="42%" valign="top">
-
-### Make it yours
-
-Sixteen full themes (Black and white, Graphite, GitHub Dark, Ayu Dark, Tokyo Night, Dracula, Nord, Gruvbox, Catppuccin Mocha, Solarized Dark, One Dark, Rosé Pine, Everforest, Kanagawa, Monokai, Terminal), or your own mix: twelve accent colours or your own from a hue and brightness, nine backgrounds (Midnight, Black OLED, Slate, Ocean, Forest, Plum, Mocha, High contrast, Classic), a white focus outline for distance viewing, text size, panel transparency, clock, logos and more, all live.
-
-Settings has seventeen sections, named the same on the TV, in the phone app and in the web editor, and **Search settings** (Yellow) finds any of them by a word.  Plus remote remapping, parental controls, reminders, buffering profiles and on-TV diagnostics.
-
+<td valign="top">
+<a href="docs/media/versions.mp4"><img src="docs/media/versions.gif" width="100%" alt="Other versions of a channel"></a>
+<b>Never stuck on a dead channel.</b>  Other versions switches between FHD, HD and SD copies, and TiviBro moves to the next one by itself when one stops.
+</td>
+<td valign="top">
+<a href="docs/media/channels.mp4"><img src="docs/media/channels.gif" width="100%" alt="The Channels screen and channel options"></a>
+<b>The classic channel list.</b>  TiviMate's Channels layout.  Hold OK on a channel to favorite, copy, rename, match a guide, block or hide it.
+</td>
+</tr>
+<tr>
+<td valign="top">
+<a href="docs/media/reminders.mp4"><img src="docs/media/reminders.gif" width="100%" alt="Reminders"></a>
+<b>Reminders and a watchlist.</b>  OK on a programme later tonight; add "Yankees" or "Bluey" to the watchlist once and TiviBro reminds you whenever one is on.
+</td>
+<td valign="top">
+<a href="docs/media/live-edit.mp4"><img src="docs/media/live-edit.gif" width="100%" alt="Hiding groups in the editor while the TV follows"></a>
+<b>The web editor.</b>  Switching off the UK, FR and DE groups on a computer, then sending: the TV's group list follows by itself.
 </td>
 </tr>
 </table>
 
-<table>
-<tr>
-<td width="42%" valign="top">
+## A closer look
 
-### Never stuck on a dead channel
+<details>
+<summary><b>📱 Set it up from your phone</b></summary>
+<br>
 
-Same channel in FHD, HD and SD?  **Other versions** switches between them, and when one stops working TiviBro moves to the next version by itself and tells you.  Hiding the extra copies to tidy your lists (the set-up tour does it for you) keeps them as backups: hidden isn't gone.
+No typing logins with a remote.  The first screen shows a QR code: scan it with your phone's camera and TiviBro's editor opens there, already signed in.  Paste your login (or the provider's whole get.php link under **Full link**), or restore a backup, and the TV loads your channels on its own and walks you through tidying them up.
 
-</td>
-<td width="58%"><a href="docs/media/versions.mp4"><img src="docs/media/versions.gif" width="100%" alt="Other versions of a channel"></a><br><sub><a href="docs/media/versions.mp4">▶ MP4</a></sub></td>
-</tr>
-</table>
-<table>
-<tr>
-<td width="58%"><a href="docs/media/channels.mp4"><img src="docs/media/channels.gif" width="100%" alt="The Channels screen and channel options"></a><br><sub><a href="docs/media/channels.mp4">▶ MP4</a></sub></td>
-<td width="42%" valign="top">
+<p align="center">
+  <a href="https://tivibro.app/view/#tv-first-run"><img src="docs/screenshots/tv-first-run.png" width="58%" alt="The first screen with its QR code"></a>
+  <a href="https://tivibro.app/view/#editor-phone-welcome"><img src="docs/screenshots/editor-phone-welcome.png" width="19%" alt="The editor on a phone, right after scanning"></a>
+  <a href="https://tivibro.app/view/#editor-phone-add"><img src="docs/screenshots/editor-phone-add.png" width="19%" alt="Typing the login on the phone"></a>
+</p>
 
-### The classic channel list
+</details>
 
-TiviMate's Channels layout: groups, channels with what's on, and a live preview.  **Hold OK** on any channel to favorite it, copy it into your own group, rename it, assign a guide, block or hide it.
+<details>
+<summary><b>🧭 A set-up tour built from your own playlist</b></summary>
+<br>
 
-</td>
-</tr>
-</table>
-<table>
-<tr>
-<td width="42%" valign="top">
+Right after you connect, TiviBro shows what your list holds and walks you through it: the countries to keep, clean names ("USA | FHD ⚽" becomes a plain name), East or West, your city's local stations, sports and pay-per-view, the clutter, logos and colours.  It only asks about what your playlist has, keeps a running count, and changes nothing until **Apply**.  Or scan the code and finish on your phone.  [More](docs/USER-GUIDE.md#the-set-up-tour)
 
-### Reminders
+<p align="center"><a href="https://tivibro.app/view/#tv-tour-welcome"><img src="docs/screenshots/tv-tour-welcome.png" width="70%" alt="The set-up tour"></a></p>
 
-**OK** on a programme later tonight.  When it starts, TiviBro asks whether to switch, or switches by itself.
+</details>
 
-The **watchlist** does it for you: add "Yankees" or "Bluey" once, and TiviBro sets a reminder whenever one is coming up in the guide.
+<details>
+<summary><b>🍿 Plex</b></summary>
+<br>
 
-**Settings > Reminders and watchlist** lists every reminder still to come, with **Cancel** and **Cancel all**.  So do the phone app and the web editor.
+Sign in with a code at plex.tv/link in **Settings > Plex**, and your Plex server gets its own tab, laid out like Plex's TV app: Home with Continue watching, your Watchlist and your Plex home rows, a Top 10 tab, and each library with Recommended, Library, Collections, Categories and Playlists, sorting, filters and search.
 
-</td>
-<td width="58%"><a href="docs/media/reminders.mp4"><img src="docs/media/reminders.gif" width="100%" alt="Reminders"></a><br><sub><a href="docs/media/reminders.mp4">▶ MP4</a></sub></td>
-</tr>
-</table>
+- **Title pages** with backdrop and logo, badges and scores, cast and crew, seasons, extras, collections and More like this.  A movie's trailer can play behind its page (▲ watches it full screen), and a show's theme music plays quietly.
+- **Plays at full quality.**  A file the TV can play plays as it is, Dolby Vision included; the server converts the rest, within the quality you set for home and away.  A title from a server away from home starts on a cushion so it doesn't stutter, and one that keeps stopping to load offers a lower quality.
+- **While watching:** versions, audio and subtitle tracks, Plex's subtitle search, Skip intro and credits from Plex's markers, seek previews, chapters, Up next and Still watching?
+- **Shuffle and Play all** for shows, seasons, collections and playlists, **Hide spoilers** for unwatched episodes, and watched marks and new titles that keep up with your other Plex apps.
+- **Streaming Top 10s**: the titles your Plex has that are on yesterday's Top 10s, with "#3 on Netflix" under each.
+- **The phone app's Plex tab** mirrors the TV's, with title pages and Play on TV.
 
-<table>
-<tr>
-<td width="58%"><a href="https://tivibro.app/view/#tv-events-guide"><img src="docs/screenshots/tv-events-guide.png" width="100%" alt="Event channels in the guide"></a></td>
-<td width="42%" valign="top">
+[How to set it up](docs/USER-GUIDE.md#plex)
 
-### Pay-per-view and sports passes, readable
+</details>
 
-Providers often write the whole event into the channel name and leave the guide empty.  TiviBro reads it: a short channel name (**PPV 03**, **NCAAB 001**), **Starts 7:30 PM: Kings vs Pelicans** in the guide until it begins, then the matchup at its real time, converted to your time zone.  **Events by time** puts every upcoming game and fight in one list, soonest first.
+<details>
+<summary><b>🏈 Sports and My teams</b></summary>
+<br>
 
-</td>
-</tr>
-</table>
+**Sports**, in the menu, lists today's games with live scores and team logos (from ESPN): your teams first, then everything live, then a row per league, from the NFL and college football to the NBA, NHL, MLB, soccer and Formula 1.  Each game shows the channel of yours that has it.  OK opens a game's page with the box score, each team's leaders, every channel that has it and the standings.  While you watch something else, your teams' live scores sit in the top corner, and a close finish asks whether to switch.  **Hide scores** keeps a game you'll watch later spoiler-free.
 
-<table>
-<tr>
-<td width="58%"><a href="https://tivibro.app/view/#tv-tour-welcome"><img src="docs/screenshots/tv-tour-welcome.png" width="100%" alt="The set-up tour"></a></td>
-<td width="42%" valign="top">
+**My teams**: follow your NFL, NBA, NHL, MLB, WNBA and MLS teams, college football and men's college basketball, and the **My teams** group near the top of the guide gathers their games from league passes, event channels, your local station and the team's own channel, on now first.
 
-### A set-up tour from your own playlist
+<p align="center"><a href="https://tivibro.app/view/#tv-sports"><img src="docs/screenshots/tv-sports.png" width="49%" alt="Sports: your teams first, then a row per league"></a> <a href="https://tivibro.app/view/#tv-sports-game"><img src="docs/screenshots/tv-sports-game.png" width="49%" alt="A game's page: leaders, channels and standings"></a></p>
+<p align="center"><a href="https://tivibro.app/view/#tv-sports-final"><img src="docs/screenshots/tv-sports-final.png" width="49%" alt="A final: the winner marked, the loser greyed"></a> <a href="https://tivibro.app/view/#tv-sports-corner"><img src="docs/screenshots/tv-sports-corner.png" width="49%" alt="Your teams' live score in the corner while another channel plays"></a></p>
+<p align="center"><a href="https://tivibro.app/view/#tv-teams-guide"><img src="docs/screenshots/tv-teams-guide.png" width="70%" alt="My teams in the guide"></a></p>
 
-Connect, and TiviBro shows what your list holds, then walks you through it: the countries to keep, clean names, East or West, your city's local stations, sports and pay-per-view, the clutter, logos and colours.  It only asks about what your playlist has, keeps a running count, and changes nothing until **Apply**.  Or scan the code and finish on your phone.  [More](docs/USER-GUIDE.md#the-set-up-tour)
+</details>
 
-</td>
-</tr>
-</table>
+<details>
+<summary><b>📂 My media</b></summary>
+<br>
 
-<table>
-<tr>
-<td width="58%"><a href="https://tivibro.app/view/#tv-tour-logos"><img src="docs/screenshots/tv-tour-logos.png" width="100%" alt="Channel logos from the logo library"></a></td>
-<td width="42%" valign="top">
+Your own movies and TV shows next to your playlist: from a home media server (DLNA / UPnP), a Windows or network share (SMB 2 and 3: a PC, Mac, NAS or router), a WebDAV cloud, Google Drive or a Dropbox folder.  Continue watching, Favorites, Movies and TV shows shelves, seasons and episodes, Up next, Skip intro and credits, and posters and details in your language from TheTVDB with nothing to set up, or from TMDB with your own free token.  Browse it in the phone app too, and tap **Play on TV**.  Thanks to [moritzm784](https://github.com/moritzm784) for building it.
 
-### Logos for channels that have none
+<p align="center"><a href="https://tivibro.app/view/#tv-my-media"><img src="docs/screenshots/tv-my-media.png" width="49%" alt="My media"></a> <a href="https://tivibro.app/view/#tv-my-media-all"><img src="docs/screenshots/tv-my-media-all.png" width="49%" alt="My media: All movies"></a></p>
 
-The logo library matches your channels to [Worldwide TV Logos](https://worldwide-tv-logos.github.io/database/), [tv-logos](https://github.com/tv-logo/tv-logos) and [iptv-org](https://github.com/iptv-org/database) by guide id, name and country, and call sign for local stations.  Fill in only what's missing, or use it for every channel: cleaned-up logos in white for dark screens, one matching style, or each channel's own.  TiviBro hosts no images: each logo loads from its project.  [More](docs/USER-GUIDE.md#channel-logos)
+</details>
 
-</td>
-</tr>
-</table>
+<details>
+<summary><b>⏺️ Recording, live pause and rewind</b></summary>
+<br>
 
-### Movies on now
+Record from the guide to a USB drive on a rooted TV, or to a Windows, Samba or WebDAV share on any TV, with a **Recordings** screen (posters, resume, delete several at once).  **Pause any live channel** and carry on from there, even without catch-up, and the optional **rewind buffer** lets ◀ go back to something you just missed.  ▲ puts a dot on the timeline to watch from anywhere you have.  Without a drive or share, pause still works for 10 minutes on any TV.  [How it works](docs/USER-GUIDE.md#recording-live-pause-and-rewind)
 
-With nothing to set up (details from TheTVDB), or with your own free TMDB token (**Settings > API keys**), TiviBro finds the movies in your guide: the guide's Movie category, a year in the title, long programmes on movie channels, and other long programmes that TMDB knows well as films.  They get a poster, year, runtime, genres and rating in the guide, a **Movie** tag in the grid, and a **Movies on now** group: what's on (most left first), then what starts within the hour.  **Movies on now** in the menu shows them as big posters: **On now**, **Starting soon**, then a shelf for each genre (Action, Comedy, Family…).  Only titles go to TMDB, and answers are kept on the TV for 30 days.
+</details>
 
-TV series get the same in the guide: a poster, when the show started, its network, genres and rating, and the episode's own title and summary when the guide gives the season and episode.  **Info** on a series opens **About this show**, with its seasons, cast and next showings.
+<details>
+<summary><b>🎬 Movies on now</b></summary>
+<br>
+
+TiviBro finds the movies in your guide and gives them a poster, year, runtime, genres and rating, from TheTVDB with nothing to set up or from TMDB with your own token.  **Movies on now** shows them as big posters: on now, starting soon, then a shelf for each genre.  TV series get the same in the guide, and **Info** opens **About this show**.
 
 <p align="center">
   <a href="https://tivibro.app/view/#tv-guide-movie"><img src="docs/screenshots/tv-guide-movie.png" width="49%" alt="A movie in the guide with its TMDB details"></a>
   <a href="https://tivibro.app/view/#tv-guide-series"><img src="docs/screenshots/tv-guide-series.png" width="49%" alt="A series in the guide with its TMDB details"></a>
 </p>
-
 <p align="center"><a href="https://tivibro.app/view/#tv-onnow-genre"><img src="docs/screenshots/tv-onnow-genre.png" width="80%" alt="Movies on now, a genre shelf"></a></p>
 
-### Two games at once
+</details>
 
-**Multiview** puts two channels side by side.  The one with the sound icon plays as normal video; the other is live video beside it, up to 30 frames a second, made on the TV.  OK on the other box gives it the sound, OK on an empty box picks a channel from your groups, and Blue goes fullscreen.  In fullscreen: quick menu > **Multiview**, or hold OK on a channel > **Watch in Multiview**.  Each box uses one of your provider's connections.
+<details>
+<summary><b>📺📺 Two games at once (Multiview)</b></summary>
+<br>
+
+webOS lets an app play one video at a time, which is why no IPTV app for LG TVs could show two channels.  TiviBro plays the channel you hear as normal video and makes the second one itself, on the TV, as smooth live video beside it (up to 30 frames a second).  OK swaps the sound, Blue goes fullscreen.  On any webOS TV, rooted or not.  [How it works](docs/USER-GUIDE.md#multiview-two-channels-side-by-side)
 
 <p align="center"><a href="https://tivibro.app/view/#tv-multiview"><img src="docs/screenshots/tv-multiview.png" width="70%" alt="Multiview: two channels side by side"></a></p>
 
-### Sports
+</details>
 
-**Sports**, in the menu, lists today's games with live scores and team logos (from ESPN): your teams first, then everything live, then a row per league, from the NFL and college football to the NBA, NHL, MLB, soccer and Formula 1.  Each game shows the channel of yours that has it.  **OK** opens a game's page with the box score, each team's leaders, every channel of yours that has it and the standings; finals show the winner.  **Hold OK** asks to remind you or watch it now.  While you watch something else, your teams' live scores sit in the top corner (never over the game you're watching), and a close finish asks whether to switch.  **Hide scores** keeps a game you'll watch later spoiler-free.
+<details>
+<summary><b>🏟️ Pay-per-view and sports passes, readable</b></summary>
+<br>
 
-<p align="center"><a href="https://tivibro.app/view/#tv-sports"><img src="docs/screenshots/tv-sports.png" width="49%" alt="Sports: your teams first, then a row per league"></a> <a href="https://tivibro.app/view/#tv-sports-game"><img src="docs/screenshots/tv-sports-game.png" width="49%" alt="A game's page: leaders, channels and standings"></a></p>
-<p align="center"><a href="https://tivibro.app/view/#tv-sports-final"><img src="docs/screenshots/tv-sports-final.png" width="49%" alt="A final: the winner marked, the loser greyed"></a> <a href="https://tivibro.app/view/#tv-sports-corner"><img src="docs/screenshots/tv-sports-corner.png" width="49%" alt="Your teams' live score in the corner while another channel plays"></a></p>
+Providers often write the whole event into the channel name ("NCAAB 001 | NORTH FLORIDA @ CHARLESTON SOUTHERN (M) | 12.18 11:00 AM") and leave the guide empty.  TiviBro reads it: a short channel name (**NCAAB 001**), the game in the guide at its real time in your time zone, and **Events by time** listing every upcoming game and fight, soonest first.  Channels that say "Off Air" stay out of the way until something is on.  Tested on 1,250 real event channels.
 
-### My teams
+<p align="center"><a href="https://tivibro.app/view/#tv-events-guide"><img src="docs/screenshots/tv-events-guide.png" width="70%" alt="Event channels in the guide"></a></p>
 
-Follow your NFL, NBA, NHL, MLB, WNBA and MLS teams, college football and men's college basketball in **Settings > Channels and groups > My teams**, or hold OK on a team's channel and choose **Follow**.  The **My teams** group near the top of the guide lists only games: the ones on now first, every channel showing them together, then the ones starting within the next few hours.  It reads league passes, event channels, guide titles and descriptions (a local station's "NFL Football" counts when its description names the teams), and leaves out pregame shows, replays and minor league teams with the same names.  A game on now is tinted in the theme's sports colour, and a game on several channels has the same title and start on each.  The main North American leagues, college football (the FBS schools) and men's college basketball for now.
+</details>
 
-<p align="center"><a href="https://tivibro.app/view/#tv-teams-guide"><img src="docs/screenshots/tv-teams-guide.png" width="70%" alt="My teams in the guide"></a></p>
+<details>
+<summary><b>🖼️ Logos for channels that have none</b></summary>
+<br>
 
-### My media
+The logo library matches your channels to [Worldwide TV Logos](https://worldwide-tv-logos.github.io/database/), [tv-logos](https://github.com/tv-logo/tv-logos) and [iptv-org](https://github.com/iptv-org/database) by guide id, name, country and call sign.  Fill in only what's missing, or use it for every channel: cleaned-up logos in white for dark screens, one matching style, or each channel's own.  TiviBro hosts no images.  [More](docs/USER-GUIDE.md#channel-logos)
 
-Your own movies and TV shows next to your playlist: from a home media server (DLNA / UPnP, like a Fritz!Box), a Windows or network share (SMB: a PC, Mac, NAS or router), a WebDAV cloud (like premiumize), Google Drive or a Dropbox folder (sign in with the phone app), on **Continue watching**, **Favorites**, **Movies** and **TV shows** shelves, with resume, favorites and the normal movie player.  Shows open into seasons and episodes, and when one ends **Up next** fills the screen with the next one and counts down to it.  **Skip intro** and **Skip credits** work as a button or by themselves, from the file's chapters or the free TheIntroDB and IntroDB databases.  Posters, plots and details in your language come from TheTVDB with nothing to set up, or from TMDB with your own free token (pick per kind under **Where details come from**, like Plex's agents).  Trailers and extras are left out, and an unmatched file you don't want can be excluded.  It joins the menu once you add a source in **Settings > My media**.  Browse it in the phone app too, and tap **Play on TV**.  Thanks to [moritzm784](https://github.com/moritzm784) for building it.
+<p align="center"><a href="https://tivibro.app/view/#tv-tour-logos"><img src="docs/screenshots/tv-tour-logos.png" width="70%" alt="Channel logos from the logo library"></a></p>
 
-<p align="center"><a href="https://tivibro.app/view/#tv-my-media"><img src="docs/screenshots/tv-my-media.png" width="49%" alt="My media"></a> <a href="https://tivibro.app/view/#tv-my-media-all"><img src="docs/screenshots/tv-my-media-all.png" width="49%" alt="My media: All movies"></a></p>
+</details>
 
-## The web editor
+<details>
+<summary><b>🖥️ The web editor</b></summary>
+<br>
 
-Open **Edit on phone** in the TV's side menu (or hold OK on any group).  It turns the editor on and shows a QR code to scan with your phone, plus an address and a password; open it in any browser on your network, on a computer or a phone.  Changes are drafts until you press **Send to TV**, and the TV picks them up in seconds.
+Open **Edit on phone** in the TV's side menu: it shows a QR code, an address and a password; open it in any browser on your network.  Changes are drafts until you press **Send to TV**, and the TV picks them up in seconds.
 
-<p align="center"><a href="docs/media/live-edit.mp4"><img src="docs/media/live-edit.gif" width="100%" alt="Hiding groups in the editor while the TV follows"></a></p>
-<p align="center"><sub>Switching off the UK, FR and DE groups on the computer, then sending: the TV's group list updates by itself.  <a href="docs/media/live-edit.mp4">MP4</a></sub></p>
-
-- **Drafts, undo and restore points.**  Nothing reaches the TV until you press **Send to TV**.  Every change can be undone, and the TV keeps restore points.
-- **Never lose an hour of clean-up.**  Unsent work is autosaved in the browser and on the TV within seconds, with a draft history of versions.  A refresh, a closed tab or another computer picks up right where you left off.
-- **Copy or move channels into any group,** including your provider's groups.  Each group can have its own sort order.
-- **Smart clean-up.**  Keep only the countries you watch (read from codes, country words, channel prefixes or the provider's divider groups), search for your city to keep its local stations in every local group at once, keep East or West feeds, hide duplicate channels in different qualities, hide by keyword, empty groups and divider groups, and keep "Off Air" event channels out of the way.
-- **Channel and group names.**  Name rules for about 250 country codes, quality tags, symbols and emoji, plus optional ones for streaming-service prefixes, country codes at the end and status notes, and your own prefix and suffix lists for channels and for groups.
-- **The Guide page explains how your guide is built**: your provider's guide, your own sources, the public fill-in, then matching.
-- **Smart match** finds the right guide channel for channels showing "No guide information".  You approve or decline each guess.  **Ignore** the ones that never have a guide (a radio stream, a camera); they wait under **Ignored** to undo.
-- **Reminders and watchlist.**  Every reminder still to come, with **Cancel** and **Cancel all**, next to your watchlist.
-- **Backups and restore points** on one page: the locked backup file, the TV's restore points, your unsent changes and their draft history.
-- **My media**: sources, the TMDB token, and **Fix TV show episodes** for files TiviBro isn't sure about.
-- **Steps and tips that get out of the way.**  The Overview's **Clean up your guide** steps can each be skipped and fold away when done, and every tip can be dismissed (**Show hidden tips** brings them back).
-- **Live guide download progress** on big XMLTV files: speed, percent and time left, on the computer and on the TV.
-- **Recommended free guide sources** by region, each with a one-click **Test**.
-- **Public guide fill-in.**  Channels your provider sends no guide for get one from the free epg.pw and iptv-epg.org guides, matched by guide id, local call sign or name.  On by default, never over a guide you already have, and the TV downloads the files itself.
-- **Works on your phone.**  Scan the QR code in the TV's set-up tour, or open the address in any phone browser: a top bar for the pages, one pane at a time, and touch-sized controls.
-- **Paste the provider's whole link** when adding a playlist: **Full link** fills in the Xtream Codes server, username and password from it.
-- **Logins never leave the TV.**  The editor only ever sees server names.
+- **Drafts, undo and restore points**, autosaved in the browser and on the TV within seconds, with a version history.
+- **Copy or move channels into any group**, with each group's own sort order.
+- **Smart clean-up**: keep the countries you watch, your city's local stations in every local group at once, East or West feeds, no duplicates, no divider groups.
+- **Name rules** for about 250 country codes, quality tags, symbols and emoji, plus your own lists.
+- **Smart match** finds the right guide for channels showing "No guide information", and **public guide fill-in** covers the rest.
+- **Reminders, backups, My media sources** and **Report a problem**, all on one page each.
+- **Works on your phone**, and **logins never leave the TV**: the editor only sees server names.
 
 <p align="center">
   <a href="https://tivibro.app/view/#editor-overview"><img src="docs/screenshots/editor-overview.png" width="49%" alt="Editor overview"></a>
   <a href="https://tivibro.app/view/#editor-copy-move"><img src="docs/screenshots/editor-copy-move.png" width="49%" alt="Copy or move channels"></a>
-  <a href="https://tivibro.app/view/#editor-backup"><img src="docs/screenshots/editor-backup.png" width="49%" alt="Backups and restore points"></a>
-  <a href="https://tivibro.app/view/#editor-reminders"><img src="docs/screenshots/editor-reminders.png" width="49%" alt="Reminders and watchlist"></a>
   <a href="https://tivibro.app/view/#editor-smart-match"><img src="docs/screenshots/editor-smart-match.png" width="49%" alt="Smart match"></a>
   <a href="https://tivibro.app/view/#editor-smart-cleanup"><img src="docs/screenshots/editor-smart-cleanup.png" width="49%" alt="Smart clean-up"></a>
 </p>
 
-### New TV?  Restore everything in a minute
+</details>
 
-A backup holds every playlist with its login, your groups, favorites, names, guide matches and settings, locked with your passphrase (AES-256-GCM) before it leaves the TV.  On a brand-new install, choose **Set up or restore from a computer** on the very first screen:
+<details>
+<summary><b>🔐 Backups: new TV, everything back in a minute</b></summary>
+<br>
+
+A backup holds every playlist with its login, your groups, favorites, names, guide matches and settings, locked with your passphrase (AES-256-GCM) before it leaves the TV.  On a brand-new install, choose **Set up or restore from a computer** on the very first screen.
 
 <p align="center"><a href="docs/media/restore.mp4"><img src="docs/media/restore.gif" width="100%" alt="Restoring a locked backup onto a brand-new TV"></a></p>
-<p align="center"><sub>Fresh install, password from the TV, drop the file, unlock, restore.  TiviBro restarts with everything back.  <a href="docs/media/restore.mp4">MP4</a></sub></p>
+
+</details>
+
+<details>
+<summary><b>⚙️ And the rest</b></summary>
+<br>
+
+- **Stalker portals and DASH**, next to Xtream Codes and M3U, including ClearKey and Widevine from `#KODIPROP` lines.  **DNS** in Settings finds a provider the TV's own DNS can't.
+- **Sound the TV can't play:** LG TVs from 2020 to 2022 can't play DTS, and none plays Dolby TrueHD.  TiviBro picks another track or converts the sound to Dolby Digital while you watch.
+- **A buffer that learns** each provider: channels start in under a second where streams are steady, with a bigger cushion where they run dry.
+- **Streams that don't quit:** reconnects with backoff, waits out Wi-Fi drops, and resumes movies and catch-up where they dropped.
+- **Aspect** per channel, movie and episode, and **subtitle timing** for a copy at another frame rate.
+- **Settings that keep playing** in the corner, with **Search settings** (Yellow) to find any setting by a word.
+- **Opens straight onto a channel** from launchers, scripts and Home Assistant: [docs/LAUNCH-API.md](docs/LAUNCH-API.md).
+- **A warning before your subscription ends**, three days ahead.
+
+</details>
 
 ## Gallery
 
 <sub>Click any screenshot to open it full size.</sub>
 
-<details open>
+<details>
 <summary><b>The set-up tour</b></summary>
 <p align="center">
   <a href="https://tivibro.app/view/#tv-tour-welcome"><img src="docs/screenshots/tv-tour-welcome.png" width="32%" alt="What your playlist has"></a>
@@ -616,54 +617,48 @@ A backup holds every playlist with its login, your groups, favorites, names, gui
 </p>
 </details>
 
-## Help
-
-The **[user guide](docs/USER-GUIDE.md)** (also on the [wiki](../../wiki)) covers everything: every remote button, the guide, catch-up, movies and shows, other versions of a channel, event channels, reminders, parental controls, each page of the web editor, backups, and troubleshooting.  **[Every setting](docs/USER-GUIDE.md#every-setting)** explains each option in Settings, with its choices and default.
-
-### Report a problem
-
-Something broke?  Report it from the TV, no cables or log copying:
-
-1. On the TV: **Settings > System > Report a problem**.  On the first screen, when the login won't work, **Report a problem** sits beside **View log**.
-2. Scan the QR code with your phone (or open the address on a computer).  The web editor opens on **Report a problem**, signed in.
-3. Say where the problem is and what happened.  The TV adds its TiviBro version, TV model and webOS, a few settings, and the app and network helper logs.  Everything that will be shared is shown on the page first.
-4. **Save the log file**, then **Open the GitHub form**: it is filled in with what you typed, the TV's details and the recent errors.  Drag the log file in and press **Create**.  You need a free GitHub account.
-
-Before the report leaves the TV, usernames, passwords and tokens are masked and every provider, guide and unknown server name becomes `<provider>`, `<guide>` or `<server>`.  After a crash, TiviBro says so the next time it starts and points you here.
+<details>
+<summary><b>The phone app</b></summary>
+<p align="center">
+  <img src="docs/screenshots/app-my-media.png" width="30%" alt="My media in the phone app">
+  <img src="docs/screenshots/app-my-media-movie.png" width="30%" alt="Resume on TV">
+</p>
+</details>
 
 ## Install
 
-### Homebrew Channel (rooted TVs)
+> [!WARNING]
+> **TiviBro is in alpha, getting ready for its first beta.**  It runs every day on real LG TVs, from a 2019 webOS 4 OLED to webOS 25 sets.  Expect some rough edges, and keep a backup before updating (**Backups and restore points** in the phone app or the web editor).
+
+| | How | Updates |
+|---|---|---|
+| 🍺 **Homebrew Channel** (rooted TVs) | Add the repository `https://tivibro.app/repo` | From the Homebrew Channel, or inside TiviBro |
+| 💻 **One line over SSH** (rooted TVs) | `curl -fsSL https://tivibro.app/install \| sh` | Run it again |
+| 🛠️ **Developer Mode** (any TV) | Build and install from this repository | Install the new build |
+| 📱 **Phone app** (Android) | [Download the APK](https://tivibro.app/apk/), or [join the Google Play test](https://tivibro.app/android-test/) | Updates itself |
+
+<details>
+<summary><b>🍺 Homebrew Channel</b></summary>
+<br>
 
 The easiest way on a rooted TV, with updates from the TV itself.  Compatible with Homebrew Channel 0.8.0 (and 0.7):
 
 1. Open the **Homebrew Channel**, go to **Settings**, and choose **Add repository**.
 2. Enter `https://tivibro.app/repo`
-3. TiviBro appears in the Homebrew Channel's app list.  Open it and choose **Install**.  New versions show up there as **Update** (and inside TiviBro under **Settings > System**).
+3. TiviBro appears in the app list.  Open it and choose **Install**.  New versions show up there as **Update** (and inside TiviBro under **Settings > System**).
 4. Open TiviBro and scan the QR code on the first screen with your phone to add your playlist there.
 
-Want every test build as soon as it's out?  Add `https://tivibro.app/testing` instead.  Until the first full release, both addresses give you the newest test build.
+Want every test build as soon as it's out?  Add `https://tivibro.app/testing` instead.  Until the first full release, both give you the newest test build.
 
-> The short addresses are served by the website and always match the files on the `homebrew` branch, so `https://raw.githubusercontent.com/ohmybahgosh/TiviBro/homebrew/repo.json` (and `repo-testing.json`, `install.sh`) keep working too.
+> The short addresses always match the files on the `homebrew` branch, so `https://raw.githubusercontent.com/ohmybahgosh/TiviBro/homebrew/repo.json` (and `repo-testing.json`, `install.sh`) keep working too.  Test builds show a plain-number version in the Homebrew Channel, such as `0.5.10005` for 0.6.0 alpha 5: webOS only accepts numbers.  TiviBro itself shows the real name.
 
-> Test builds show a plain-number version in the Homebrew Channel, such as `0.5.10005` for 0.6.0 alpha 5.  webOS only accepts numbers, and test builds have to sort below the release they lead up to.  TiviBro itself shows the real name.
+</details>
 
-### Developer Mode (works today)
+<details>
+<summary><b>💻 Rooted TV: one line</b></summary>
+<br>
 
-1. Put your TV in [Developer Mode](https://webostv.developer.lge.com/develop/getting-started/developer-mode-app) or use a rooted TV.
-2. Build and install from this repository:
-
-```bash
-npm install                    # installs the webOS CLI (ares-*) locally
-npx ares-setup-device          # add your TV (IP, port 9922)
-npm run build                  # dist/app.tivibro.tv_<version>_all.ipk
-npm run install:tv             # install on the TV
-npm run launch
-```
-
-### Rooted TV: one line
-
-On a rooted TV, one line does it all.  Switch on SSH (or Telnet) in the Homebrew Channel, log in as `root`, and run:
+Switch on SSH (or Telnet) in the Homebrew Channel, log in as `root`, and run:
 
 ```bash
 curl -fsSL https://tivibro.app/install | sh
@@ -677,9 +672,7 @@ curl -fsSL https://tivibro.app/install | sh -s -- --tag v0.6.0        # a specif
 curl -fsSL https://tivibro.app/install | sh -s -- --ipk /tmp/app.ipk   # an IPK you copied over
 ```
 
-#### Or copy the IPK yourself
-
-On a rooted TV with SSH switched on in the Homebrew Channel (user `root`, port 22), copy the IPK from a [release](https://github.com/ohmybahgosh/TiviBro/releases) to the TV and install it with the TV's own installer:
+**Or copy the IPK yourself** from a [release](https://github.com/ohmybahgosh/TiviBro/releases) and install it with the TV's own installer:
 
 ```bash
 scp -O app.tivibro.tv_0.6.0_all.ipk root@TV_IP:/tmp/tivibro.ipk     # -O: the TV's SSH has no SFTP
@@ -687,40 +680,79 @@ ssh root@TV_IP
 luna-send-pub -i 'luna://com.webos.appInstallService/dev/install' '{"id":"com.ares.defaultName","ipkUrl":"/tmp/tivibro.ipk","subscribe":true}'
 ```
 
-Wait for `"state": "installed"`, press <kbd>Ctrl</kbd>+<kbd>C</kbd>, then `rm /tmp/tivibro.ipk`.  Installing a newer IPK the same way updates TiviBro and keeps your settings.  To start it from the shell as root: `luna-send -n 1 'luna://com.webos.applicationManager/launch' '{"id":"app.tivibro.tv"}'` (newer TVs refuse this over `luna-send-pub`).
+Wait for `"state": "installed"`, press <kbd>Ctrl</kbd>+<kbd>C</kbd>, then `rm /tmp/tivibro.ipk`.  To start it from the shell as root: `luna-send -n 1 'luna://com.webos.applicationManager/launch' '{"id":"app.tivibro.tv"}'` (newer TVs refuse this over `luna-send-pub`).  If `scp` fails, pipe the file instead: `cat app.tivibro.tv_0.6.0_all.ipk | ssh root@TV_IP 'cat > /tmp/tivibro.ipk'`.
 
-If `scp` fails, pipe the file instead: `cat app.tivibro.tv_0.6.0_all.ipk | ssh root@TV_IP 'cat > /tmp/tivibro.ipk'`.
+</details>
 
-### Updating
+<details>
+<summary><b>🛠️ Developer Mode</b></summary>
+<br>
 
-TiviBro checks for a new release every time it starts and every 6 hours while it is open (**Settings > System**).  A new version found at start is offered right away with what's new in it: on a rooted TV with the Homebrew Channel, **Install and restart** downloads it, checks it and installs it, and TiviBro restarts on the new version with all your settings, then shows what changed.  On other TVs it shows the new version; install it the same way you installed TiviBro.  An update that causes trouble can be undone: **Settings > System > Go back to an earlier version** installs an earlier release the same checked way, with your settings saved first and put back after you update again.
+Put your TV in [Developer Mode](https://webostv.developer.lge.com/develop/getting-started/developer-mode-app), then build and install from this repository:
 
-### The phone app
+```bash
+npm install                    # installs the webOS CLI (ares-*) locally
+npx ares-setup-device          # add your TV (IP, port 9922)
+npm run build                  # dist/app.tivibro.tv_<version>_all.ipk
+npm run install:tv             # install on the TV
+npm run launch
+```
 
-**TiviBro for Android** turns your phone into a remote and a second screen for the TV: arrows, OK, Back, channel and volume buttons, Play on TV from your own channel list, the web editor full screen, **Turn on** (Wake-on-LAN to every network card the TV has, plus LG's Bluetooth wake, as the ThinQ app does, and it sees the TV come on over Bluetooth even with the phone's Wi-Fi off), and a Quick Settings tile.  Browse Movies, Shows and My media on the phone and play them on the TV.  See what's recording on the TV's USB drive, record a programme from the guide, and watch, stop or delete recordings.  The home screen has shortcuts for each TV (Remote, Guide, On now, Movies and Shows, My media, Reminders, Recordings, Edit channels, Backups and Settings), the Settings tab has the same sections as the TV with its questions asked on the phone, and when a newer app is out, **Update now** downloads it, checks it against the release and installs it over the old one (the **App update** tile checks any time).
+</details>
 
-<p align="center"><img src="docs/screenshots/app-my-media.png" width="30%" alt="My media in the phone app"> <img src="docs/screenshots/app-my-media-movie.png" width="30%" alt="Resume on TV"></p>
+<details>
+<summary><b>📱 The phone app</b></summary>
+<br>
 
-1. [Download the newest APK](https://tivibro.app/apk/) on your phone and open it to install.  Android asks to allow installs from your browser the first time, and Google Play Protect checks the app each time you update it.
-2. On the TV, open **Settings > Phone app and web editor**, and choose **Pair the TiviBro app…** (it turns on **Phone app connection** for you).
+**TiviBro for Android** turns your phone into a remote and a second screen: arrows, OK, Back, channel and volume, **Turn on** (Wake-on-LAN and LG's Bluetooth wake, as the ThinQ app does), Play on TV from your channel list, Plex, Movies, Shows and My media, recordings, the web editor full screen, home-screen widgets for Sports and the remote, and every TV setting.  It updates itself when a new version is out.
+
+1. [Download the newest APK](https://tivibro.app/apk/) on your phone and open it to install.
+2. On the TV, open **Settings > Phone app and web editor** and choose **Pair the TiviBro app…**
 3. In the app, scan the QR code on the TV (or pick the TV from the list and type the code).
 
-**Rather get it from Google Play?**  The app is in a test there, and Google needs testers to keep it installed for 14 days before it can be published for everyone.  [Join the Play test](https://tivibro.app/android-test/) in three steps.  Already using the APK?  Google Play only updates its own copy, so uninstall the APK first, install from Play, and pair your TV again.  The APK on GitHub isn't going anywhere.
+**Help get it on Google Play.**  The app is in closed testing, and Google needs **12 testers opted in for 14 days** before it can be published.  You don't have to use it: joining and leaving it installed counts.  [Join the Play test](https://tivibro.app/android-test/) in about two minutes (questions: [discussion #130](https://github.com/ohmybahgosh/TiviBro/discussions/130)).  Already using the APK?  Uninstall it first, as Google Play only updates its own copy, then pair your TV again.  The APK on GitHub stays either way.
 
-The app only talks to your TVs on your home network.  See [Settings: Phone app and web editor](docs/USER-GUIDE.md#settings-phone-app-and-web-editor) for the details.
+The app only talks to your TVs on your home network.  See [Settings: Phone app and web editor](docs/USER-GUIDE.md#settings-phone-app-and-web-editor).
 
-### Moving from another TV
+</details>
 
-On the old TV, open the web editor, then **Backups and restore points > Download locked backup** (or back up in the phone app).  On the new TV, choose **Set up or restore from a computer** on the first screen and restore the file with its passphrase.
+<details>
+<summary><b>🔄 Updating and moving to a new TV</b></summary>
+<br>
+
+TiviBro checks for a new release every time it starts and every 6 hours while it is open (**Settings > System**).  On a rooted TV with the Homebrew Channel, **Install and restart** downloads it, checks its signature and installs it, then shows what changed.  On other TVs it shows the new version; install it the same way you installed TiviBro.  **Settings > System > Go back to an earlier version** undoes an update that causes trouble, with your settings saved first.
+
+**Moving from another TV:** on the old one, open the web editor, then **Backups and restore points > Download locked backup** (or back up in the phone app).  On the new one, choose **Set up or restore from a computer** on the first screen and restore the file with its passphrase.
+
+</details>
+
+## Help
+
+The **[user guide](docs/USER-GUIDE.md)** (also on the [wiki](../../wiki)) covers every remote button, every screen, each page of the web editor, backups and troubleshooting.  **[Every setting](docs/USER-GUIDE.md#every-setting)** explains each option with its choices and default.  Ideas go in [Discussions](https://github.com/ohmybahgosh/TiviBro/discussions).
+
+### Report a problem
+
+Something broke?  Report it from the TV, with no cables or log copying:
+
+1. On the TV: **Settings > System > Report a problem**.  On the first screen, when the login won't work, **Report a problem** sits beside **View log**.
+2. Scan the QR code with your phone (or open the address on a computer).  The web editor opens on **Report a problem**, signed in.
+3. Say where the problem is and what happened.  The TV adds its TiviBro version, TV model and webOS, a few settings, and the app and network helper logs.  Everything that will be shared is shown on the page first.
+4. **Save the log file**, then **Open the GitHub form**: it is filled in with what you typed, the TV's details and the recent errors.  Drag the log file in and press **Create**.  You need a free GitHub account.
+
+Before the report leaves the TV, usernames, passwords and tokens are masked and every provider, guide and unknown server name becomes `<provider>`, `<guide>` or `<server>`.  After a crash, TiviBro says so the next time it starts and points you here.
 
 ## Develop
 
-Want to help?  [CONTRIBUTING.md](CONTRIBUTING.md) has the ground rules and how to report problems; security problems go through [SECURITY.md](SECURITY.md).
+Want to help?  [CONTRIBUTING.md](CONTRIBUTING.md) has the ground rules; security problems go through [SECURITY.md](SECURITY.md).
 
 > [!TIP]
-> **Building with an AI assistant?**  Download [**tivibro-for-ai.md**](https://tivibro.app/ai/tivibro-for-ai.md) and attach it to Claude, ChatGPT or Gemini before you ask for a feature.  It's one file with the project's rules, what every source file does, the settings, the remote actions and how to test, rebuilt from `main` on every website update (or run `npm run ai`).  Coding agents pick up [AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md) on their own.
+> **Building with an AI assistant?**  Attach [**tivibro-for-ai.md**](https://tivibro.app/ai/tivibro-for-ai.md) to Claude, ChatGPT or Gemini before you ask for a feature.  It's one file with the project's rules, what every source file does, the settings, the remote actions and how to test, rebuilt from `main` on every website update (or `npm run ai`).  Coding agents pick up [AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md) on their own.
 
-TiviBro is plain HTML, CSS and JavaScript, with no bundler and no build step beyond packaging.  The same IPK runs from webOS 4 (Chromium 53) to webOS 26, with webOS 25 as the main target; see [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md).  A small webOS JS service acts as a localhost relay (CORS, custom User-Agent) and hosts the LAN web editor.
+TiviBro is plain HTML, CSS and JavaScript, with no bundler and no build step beyond packaging.  The same IPK runs from webOS 4 (Chromium 53) to webOS 26, with webOS 25 as the main target ([`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md)).  A small webOS JS service acts as a localhost relay and hosts the LAN web editor.
+
+<details>
+<summary><b>Layout, commands, demo media and releasing</b></summary>
+<br>
 
 ```
 app/              The webOS web app (what runs on the TV)
@@ -729,13 +761,12 @@ app/              The webOS web app (what runs on the TV)
   css/  img/      Styles, icons, splash and logo
   vendor/         hls.js, mpegts.js (patched, see PATCHES.md) and dash.js (loaded only for DASH channels)
 service/          webOS JS service: localhost relay + LAN web editor (service/editor/)
+android/          The phone app (Kotlin, Jetpack Compose)
 tests/            Unit tests (Node), Playwright suites, dev relay
 scripts/          build, install, launch, sim, inspect, serve, lint, bump-version
 logos/            Brand artwork; logos/clean/ holds the cleaned, ready-to-use files
 docs/             Architecture, decisions, roadmap, simulator guide, TiviMate parity
 ```
-
-Other apps and scripts can open TiviBro onto a channel, a team's game or a screen: [`docs/LAUNCH-API.md`](docs/LAUNCH-API.md).
 
 | Command | What it does |
 |---|---|
@@ -743,19 +774,17 @@ Other apps and scripts can open TiviBro onto a channel, a team's game or a scree
 | `bash scripts/build.sh --dev` | Same, unminified, for readable DevTools |
 | `npm run install:tv` | Install the built IPK on the TV (`-- -d <tv>` to pick one) |
 | `npm run launch` | Launch TiviBro on the TV |
-| `npm run sim` | Run the app in the LG webOS 25 Simulator, streaming logs to `logs/latest.log` (see [`docs/SIMULATOR.md`](docs/SIMULATOR.md)) |
+| `npm run sim` | Run the app in the LG webOS 25 Simulator ([`docs/SIMULATOR.md`](docs/SIMULATOR.md)) |
 | `npm run inspect` | DevTools for the app on the TV (`bash scripts/inspect.sh -s` for the service) |
 | `npm run serve` | Run the app in a desktop browser at http://localhost:8078 with the dev relay |
-| `npm run lint` | Syntax-check every JS and JSON file |
-| `npm test` | Unit tests: name cleaner, Smart clean-up engine, logo library and index, relay, web editor (including encrypted backups), library |
-| `npm run logos` | Build the channel logo index into `site/logos/` (the Website workflow does this on every deploy and every Monday) |
+| `npm run lint` | Syntax-check every JS and JSON file, and the comment check |
+| `npm test` | Unit tests |
+| `npm run logos` | Build the channel logo index into `site/logos/` |
 | `npm run soak:tour` | The set-up tour driven with the remote in a real browser |
-| `npm run soak:editor-mobile` | The web editor on phones and tablets: every page fits, the page list, one pane at a time, menus and dialogs on screen |
+| `npm run soak:editor-mobile` | The web editor on phones and tablets |
 | `bash scripts/bump-version.sh X.Y.Z` | Set the version everywhere it appears |
 
-### Demo media
-
-Every GIF, video and TV screenshot in this README and the [user guide](docs/USER-GUIDE.md) is recorded from the real app against a made-up provider, so they can be refreshed after any UI change:
+**Demo media.**  Every GIF, video and screenshot here and in the [user guide](docs/USER-GUIDE.md) is recorded from the real app against a made-up provider, so they can be refreshed after any UI change:
 
 ```bash
 bash scripts/demo/make-media.sh          # once: synthetic demo streams (needs ffmpeg)
@@ -763,7 +792,6 @@ node tests/mock/mock_provider.js &       # fictional Xtream provider on :8077
 MOCK_PORT=8088 MOCK_EVENTS=1 node tests/mock/mock_provider.js &   # with event channels and locals
 npm run serve                            # app on :8078 plus the dev relay
 node scripts/demo/record.js              # record every scene (or name some: guide zap)
-                                         # plus every Settings page and editor page as screenshots
 node scripts/demo/phone-shots.js         # the editor at phone size
 node scripts/demo/onnow-shots.js         # Movies on now
 node tests/soak/media-shots.js --shots docs/screenshots   # My media
@@ -771,29 +799,36 @@ bash scripts/demo/encode.sh              # GIFs and MP4s into docs/media/
 bash scripts/demo/site-shots.sh          # the website's pictures from the screenshots
 ```
 
-### Releasing
-
-Releases are built by GitHub Actions.  Every push and pull request also runs lint, tests and a test build ([CI](.github/workflows/ci.yml)).
+**Releasing.**  Releases are built by GitHub Actions; every push and pull request also runs lint, tests and a test build ([CI](.github/workflows/ci.yml)).
 
 1. `bash scripts/bump-version.sh X.Y.Z`
 2. In [`CHANGELOG.md`](CHANGELOG.md), rename `## Unreleased` to `## X.Y.Z (date)`, then commit.
 3. `npm run release`.  It checks everything locally, then tags `vX.Y.Z` and pushes the tag.
 
-The [Release workflow](.github/workflows/release.yml) then runs the tests, builds the IPK, writes the Homebrew Channel manifest and `repo.json`, and publishes a GitHub release with the CHANGELOG section as its notes.  For a pre-release, `npm run release -- alpha.1` tags `vX.Y.Z-alpha.1`; tags with a dash become pre-releases.
+The [Release workflow](.github/workflows/release.yml) then builds and signs the IPK, writes the Homebrew Channel manifest and `repo.json`, and publishes a GitHub release with the CHANGELOG section as its notes.  `npm run release -- alpha.1` tags `vX.Y.Z-alpha.1`; tags with a dash become pre-releases.  Other apps and scripts can open TiviBro onto a channel or a screen: [`docs/LAUNCH-API.md`](docs/LAUNCH-API.md).
+
+</details>
 
 ## Privacy and security
+
+<details>
+<summary><b>What stays on the TV, and the one thing that doesn't</b></summary>
+<br>
 
 - Provider logins stay on the TV.  The web editor only ever sees server names, never usernames, passwords or stream links.
 - The web editor is off at every start (except on a brand-new TV with no playlist, for the setup QR code), needs the password shown on the TV, and locks out after repeated wrong tries.
 - Backups are always encrypted with a passphrase you choose.  Without it the file cannot be opened.
-- Logs mask usernames and passwords.  **Report a problem** also replaces every provider, guide and unknown server name before anything leaves the TV, and nothing is sent until you choose to send it (on your phone, or **Send a report now** on the TV after a crash).
+- Updates are signed, with a second key kept offline.
+- Logs mask usernames and passwords.  **Report a problem** also replaces every provider, guide and unknown server name before anything leaves the TV, and nothing is sent until you choose to send it.
 - **Install numbers.**  Once a day TiviBro tells tivibro.app which version it is and which webOS the TV has, and the install script says whether it installed or updated which version.  The counter also notes the country the count came from, to see which languages to add next.  Nothing else: no address is kept (a network is counted once a day using a hash that is forgotten after two days), no ID, nothing about your channels or playlists.  Switch it off in **Settings > System > Count this TV in the install numbers**, or run the install script with `TIVIBRO_NO_COUNT=1`.
-- **My media** contacts only the sources you add.  Their logins stay on the TV and out of backups and problem reports.  For Dropbox, the phone app signs in with Dropbox and hands the TV only the sign-in it needs to read your files; removing the source signs it out.  When movie details are fetched (by you, on their own for new movies once you've saved a token, or for the movies in your guide), only a title and year (or its id) and your language go to TMDB with your own token, or to TheTVDB through TiviBro's own service (which holds its key), as set under **Where details come from**.
-- The logo library, when you turn it on, downloads lists of logo addresses from tivibro.app, one per country in your playlist, then each logo from its project.  Only the country is in the request: no channel names, logins or anything else from your playlist.
+- **My media and Plex** contact only the sources and servers you add.  Their logins stay on the TV and out of backups and problem reports.  When movie details are fetched, only a title and year (or its id) and your language go to TMDB with your own token, or to TheTVDB through TiviBro's own service, as set under **Where details come from**.
+- The logo library, when you turn it on, downloads lists of logo addresses from tivibro.app, one per country in your playlist, then each logo from its project.  Only the country is in the request.
+
+</details>
 
 ## Data from other services
 
-TiviBro uses, with thanks: [TMDB](https://www.themoviedb.org) (this product uses the TMDB API but is not endorsed or certified by TMDB), [TheTVDB](https://thetvdb.com), [Trakt](https://trakt.tv), [OpenSubtitles.com](https://www.opensubtitles.com), [TheIntroDB](https://theintrodb.org) and [IntroDB](https://introdb.app) (ODbL), and Top 10 data from [FlixPatrol](https://flixpatrol.com), used with their permission.
+TiviBro uses, with thanks: [TMDB](https://www.themoviedb.org) (this product uses the TMDB API but is not endorsed or certified by TMDB), [TheTVDB](https://thetvdb.com), [Trakt](https://trakt.tv), [OpenSubtitles.com](https://www.opensubtitles.com), [TheIntroDB](https://theintrodb.org) and [IntroDB](https://introdb.app) (ODbL), live scores from ESPN, and Top 10 data from [FlixPatrol](https://flixpatrol.com), used with their permission.
 
 ## Special thanks
 
@@ -823,18 +858,20 @@ Everyone who has helped build TiviBro with code, ideas or bug reports.  This lis
 - **[LordDonkey](https://github.com/LordDonkey)**: 1 idea or bug report
 <!-- thanks:end -->
 
-## Credits
+## Credits and license
 
-Made by **[OhMyBahGosh](https://github.com/ohmybahgosh)**.
+Made by **[OhMyBahGosh](https://github.com/ohmybahgosh)**.  [MIT](LICENSE) licensed.
 
-Playback uses [hls.js](https://github.com/video-dev/hls.js), [mpegts.js](https://github.com/xqq/mpegts.js) and, for DASH channels, [dash.js](https://github.com/Dash-Industry-Forum/dash.js) (BSD-3-Clause).  QR codes by [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator).  Channel logos in the logo library come from [Worldwide TV Logos](https://worldwide-tv-logos.github.io/database/), [iptv-org/database](https://github.com/iptv-org/database) and [tv-logo/tv-logos](https://github.com/tv-logo/tv-logos), loaded from those projects; the logos belong to their channels.  Show details without a TMDB token: metadata provided by [TheTVDB](https://thetvdb.com).  Please consider adding missing information or [subscribing](https://thetvdb.com/subscribe).  Thanks to the [webOS Homebrew](https://www.webosbrew.org/) community.
+<details>
+<summary><b>Bundled components and their licenses</b></summary>
+<br>
 
-TiviBro is an independent project.  It is not affiliated with LG Electronics or with TiviMate; those names belong to their owners.
-
-## License
-
-[MIT](LICENSE)
+Playback uses [hls.js](https://github.com/video-dev/hls.js), [mpegts.js](https://github.com/xqq/mpegts.js) and, for DASH channels, [dash.js](https://github.com/Dash-Industry-Forum/dash.js).  QR codes by [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator).  Channel logos in the logo library come from [Worldwide TV Logos](https://worldwide-tv-logos.github.io/database/), [iptv-org/database](https://github.com/iptv-org/database) and [tv-logo/tv-logos](https://github.com/tv-logo/tv-logos), loaded from those projects; the logos belong to their channels.  Show details without a TMDB token: metadata provided by [TheTVDB](https://thetvdb.com).  Please consider adding missing information or [subscribing](https://thetvdb.com/subscribe).  Thanks to the [webOS Homebrew](https://www.webosbrew.org/) community.
 
 The players bundled in `app/vendor` keep their own licenses: [hls.js](https://github.com/video-dev/hls.js) 1.5.20 ([Apache-2.0](app/vendor/hls-1.5.20.LICENSE.txt)), [mpegts.js](https://github.com/xqq/mpegts.js) 1.8.0 ([Apache-2.0](app/vendor/mpegts-1.8.0.LICENSE.txt), with the changes listed in [PATCHES.md](app/vendor/PATCHES.md)), [dash.js](https://github.com/Dash-Industry-Forum/dash.js) 4.7.4 ([BSD-3-Clause](app/vendor/dash-4.7.4.LICENSE.txt)) and Kazuhiko Arase's QR code generator (MIT, in its file header).  The fonts' licenses are in `app/fonts`.
 
-The network helper ships FFmpeg 7.1.1 (LGPL v3 or later, unmodified, built by `scripts/ffmpeg/build.sh` from ffmpeg.org's source) with Mbed TLS 3.6.5 (Apache-2.0) as the audio converter, licenses in `service/ffmpeg-bundle`.  The phone app uses AndroidX, Jetpack Compose, Kotlin, kotlinx.coroutines and Coil (all Apache-2.0) and Google's code scanner.  Every component, its license, and the services and data TiviBro credits (TMDB, OpenSubtitles, tv-logos, iptv-org, the public guides) are in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), which also ships inside the TV app.
+The network helper ships FFmpeg 7.1.1 (LGPL v3 or later, unmodified, built by `scripts/ffmpeg/build.sh` from ffmpeg.org's source) with Mbed TLS 3.6.5 (Apache-2.0) as the audio converter, licenses in `service/ffmpeg-bundle`.  The phone app uses AndroidX, Jetpack Compose, Kotlin, kotlinx.coroutines and Coil (all Apache-2.0) and Google's code scanner.  Every component, its license, and the services and data TiviBro credits are in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), which also ships inside the TV app.
+
+</details>
+
+<sub>TiviBro is an independent project.  It is not affiliated with LG Electronics, TiviMate or Plex; those names belong to their owners.</sub>
