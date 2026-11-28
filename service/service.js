@@ -166,6 +166,21 @@ var companion = require('./companion').create({
       });
     });
   },
+  /* The screen off or on again, the TV still on (the TV's own "Screen off": sound and picture stop, any button
+     brings them back), for TiviBro's screensaver set to turn the screen off (saver.js).  webOS 6 and later want
+     standbyMode; older ones take nothing.  Where the helper isn't let call it, the Homebrew Channel's root exec
+     (a rooted TV) sends the same call. */
+  screen: function (on, cb) {
+    var P = 'luna://com.webos.service.tvpower/power/' + (on ? 'turnOnScreen' : 'turnOffScreen'), tries = [{}, { standbyMode: 'active' }], i = 0, last = null;
+    function next() {
+      if (i >= tries.length * 2) return cb(new Error((last && last.errorText) || 'refused'));
+      var args = tries[i % tries.length], root = i >= tries.length; i++;
+      var done = function (r) { if (r && r.returnValue !== false && !(root && !/"returnValue"\s*:\s*true/.test(String(r.stdoutString || r.stdout || '')))) return cb(null); last = r; next(); };
+      if (!root) lcall(P, args, done);
+      else lcall('luna://org.webosbrew.hbchannel.service/exec', { command: 'luna-send -n 1 -w 3000 ' + P + ' \'' + JSON.stringify(args) + '\'' }, done);
+    }
+    next();
+  },
   // Wake on BLE: the phone's made-up Bluetooth address, registered with the TV's asc service (blewake.js).
   blewake: require('./blewake').create({ call: lcall, log: function (o) { proxy.log(o); } }).handle,
   editor: function () { return relay ? relay.editor : null; },

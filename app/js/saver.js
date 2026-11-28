@@ -13,12 +13,15 @@
    bar.  The first key press only takes it away (Burnin.activity drops it).  While it shows, and while it waits to
    start, the TV's own screensaver is held off (Awake asks Saver.holds); after an hour, with "Let the TV take over"
    (the default), TiviBro stops holding it, so the TV's screensaver or screen-off takes over for the night.
-   'off' leaves the older behaviour: the screen just dims (Burnin). */
+   'off' leaves the older behaviour: the screen just dims (Burnin).
+   saverScreenOff: instead of a look, with nothing playing, the screen is turned off as the TV's own "Screen off" does
+   (the helper asks the TV, service.js screen); the first button turns it on again.  Over a paused video the looks
+   still show.  Where the TV refuses, the looks show instead. */
 var Saver = (function () {
   'use strict';
   var T = function (s, v) { return typeof I18n !== 'undefined' ? I18n.t(s, v) : String(s).replace(/\{(\w+)\}/g, function (a, k) { return v && v[k] != null ? v[k] : a; }); };
   var homeRated = true, LOOKS = ['clock', 'aurora', 'library', 'teams', 'bounce'], MIX_MS = 4 * 60000, HOUR = 3600000, SHIFT = [[0, 0], [6, 2], [8, -4], [2, -8], [-4, -6], [-8, 0], [-6, 6], [0, 8]];
-  var last = Date.now(), el = null, on = false, since = 0, look = '', lookAt = 0, ticks = [], shiftAt = 0, handed = false, home = null, homeAt = 0;
+  var last = Date.now(), dark = false, el = null, on = false, since = 0, look = '', lookAt = 0, ticks = [], shiftAt = 0, handed = false, home = null, homeAt = 0;
 
   function S() { return (typeof Store !== 'undefined' && Store.settings) || {}; }
   function enabled() { return S().saver !== 'off'; }
@@ -43,8 +46,33 @@ var Saver = (function () {
   }
   function check() {
     var now = Date.now();
+    // The screen turned off: something started playing meanwhile (from the phone, a reminder): on again.
+    if (dark) { if (playing()) wake('something plays'); return; }
     if (on) { if (now - shiftAt > 60000) nudge(); if (now - lookAt > MIX_MS) pick(); if (!handed && S().saverHour !== 'keep' && now - since > HOUR) handOver(); return; }
-    if (due({ enabled: enabled(), hidden: document.hidden, playing: playing(), paused: paused(), idle: now - last, after: after(), pausedAfter: pausedAfter() })) show();
+    if (due({ enabled: enabled(), hidden: document.hidden, playing: playing(), paused: paused(), idle: now - last, after: after(), pausedAfter: pausedAfter() })) { if (S().saverScreenOff && !paused()) screenOff(); else show(); }
+  }
+
+  /* ---------- Turning the screen off instead ---------- */
+  // Ask the helper to turn the screen on or off: a promise, refused where the TV won't.
+  function screen(onNow) {
+    if (typeof Net === 'undefined' || !Net.port || !Net.ctlFetch) return Promise.reject(new Error('no network helper'));
+    return Net.ctlFetch('http://127.0.0.1:' + Net.port + '/companion/screen', { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ on: onNow }) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status); return j; }); });
+  }
+  function screenOff() {
+    dark = true; since = Date.now();
+    if (typeof Log !== 'undefined') Log.info('app', 'Screensaver: turning the screen off (nothing playing)');
+    screen(false).catch(function (e) {
+      if (!dark) return;
+      dark = false;
+      if (typeof Log !== 'undefined') Log.warn('app', 'The TV would not turn the screen off (' + (e && e.message) + '); the screensaver shows instead');
+      show();
+    });
+  }
+  function wake(why) {
+    dark = false; last = Date.now();
+    if (typeof Log !== 'undefined') Log.info('app', 'Screen on again (' + why + ') after ' + Math.round((Date.now() - since) / 60000) + ' min');
+    screen(true).catch(function () {});        // the TV turns it on by itself for a button: this is for the rest
   }
 
   /* ---------- Showing ---------- */
@@ -192,10 +220,10 @@ var Saver = (function () {
 
   /* ---------- For Burnin, Awake and Settings ---------- */
   // A key or the pointer (Burnin.activity): awake again; true when it only took the screensaver away.
-  function activity() { last = Date.now(); return hide(); }
+  function activity() { if (dark) { wake('a button'); return true; } last = Date.now(); return hide(); }
   // Whether the TV's own screensaver should wait: while this one is on (until it hands over) or still to come.
   function holds() { return enabled() && !document.hidden && !handed; }
   function start() { setInterval(check, 15000); }
   function preview() { last = 0; show(); }
-  return { start: start, activity: activity, holds: holds, enabled: enabled, preview: preview, get on() { return on; }, LOOKS: LOOKS, _due: due, _ready: ready, _rated: rated };
+  return { start: start, activity: activity, holds: holds, enabled: enabled, preview: preview, get on() { return on; }, get dark() { return dark; }, LOOKS: LOOKS, _due: due, _ready: ready, _rated: rated };
 })();

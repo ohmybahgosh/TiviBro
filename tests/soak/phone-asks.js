@@ -350,6 +350,10 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   pg = await sa({ op: 'choice', sec: 'look', i: nums.i, v: 1 });
   ok('a choice from the phone changes the TV', await ev(() => Store.settings.numFont) === 'even' && await ev(() => document.body.classList.contains('nums-even')));
   await sa({ op: 'choice', sec: 'look', i: nums.i, v: 0 });
+  // The screensaver turning the screen off instead (discussion #184): on the phone too, off at first.
+  const so = pg.page.rows.find((r) => r.label === 'Turn the screen off instead');
+  ok('the phone has Turn the screen off instead, off at first', so && so.kind === 'toggle' && so.on === false, JSON.stringify(pg.page.rows.map((r) => r.label)).slice(-300));
+  if (so) { await sa({ op: 'toggle', sec: 'look', i: so.i, on: true }); ok('...and turns it on on the TV', await ev(() => Store.settings.saverScreenOff) === true); await sa({ op: 'toggle', sec: 'look', i: so.i, on: false }); }
   // Every TV setting reaches the phone and the web editor too: the newest ones as well (skip times, alpha 208).
   pg = await sa({ op: 'page', sec: 'playback' });
   const sk = pg.rows.find((r) => r.label === 'Skip times from online databases');

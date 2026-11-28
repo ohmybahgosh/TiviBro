@@ -693,6 +693,11 @@ function create(opts) {
         if (st.phones.length !== before) { save(); log({ lv: 'info', event: 'companion: phone removed on the TV' }); }
         return done();
       }
+      // TiviBro's screensaver turning the screen off, or on again (service.js screen).
+      if (u === '/companion/screen' && req.method === 'POST') {
+        if (!opts.screen) return reply(501, { error: 'not on this TV' });
+        return opts.screen(!!j.on, function (e) { reply(e ? 409 : 200, e ? { error: e.message } : { ok: true }); });
+      }
       if (u === '/companion/editor-done' && req.method === 'POST') { wantEditor = 0; return done(); }
       if (u === '/companion/answer' && req.method === 'POST') return reply(200, { ok: true, waiting: answerAsk(j) });
       // TiviBro's copy of its Settings, for the phone while it is away (setsnap.js).  A new copy replaces the old.
